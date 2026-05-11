@@ -2782,7 +2782,10 @@
           </div>
         </div>
         <div class="card" style="border-color:#2a1f3d">
-          <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--lav);margin-bottom:8px">Assigned 9 May</div>
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px">
+            <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--lav)">Assigned 9 May</div>
+            <span id="hw2-submitted-badge" style="display:none;font-size:11px;font-weight:600;background:#0a1800;color:var(--lime);border:1px solid var(--lime);border-radius:20px;padding:3px 10px;white-space:nowrap">Submitted ✓</span>
+          </div>
           <div style="font-family:'Archivo Black',sans-serif;font-size:17px;margin-bottom:10px">Split flexibility conditioning</div>
           <div style="font-size:14px;color:var(--grey);line-height:1.7;margin-bottom:14px">10 minutes of hip flexor stretching daily, and hold your split prep for 90 seconds each side. Focus on keeping your hips square.</div>
           <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px" id="hw2-checklist">
@@ -3019,7 +3022,7 @@
               <div style="font-size:13px;font-weight:500;margin-bottom:2px">🦵 Splits Squad</div>
               <div style="font-size:11px;color:var(--grey)">18 members · <span style="color:var(--lime)">Join</span></div>
             </div>
-            <div onclick="joinAndShowGroup('invertsclub')" style="padding:10px 12px;border:1px solid var(--border);border-radius:8px;cursor:pointer">
+            <div id="comm-tab-invertsclub" onclick="joinAndShowGroup('invertsclub')" style="padding:10px 12px;border:1px solid var(--border);border-radius:8px;cursor:pointer">
               <div style="font-size:13px;font-weight:500;margin-bottom:2px">🙃 Inverts Club</div>
               <div style="font-size:11px;color:var(--grey)">29 members · <span style="color:var(--lime)">Join</span></div>
             </div>
@@ -5824,11 +5827,6 @@
       _pendingLevelId = null;
     }
     closeModal('level-warning-modal');
-  }
-
-  function filterCasualToPractice() {
-    const btns = document.querySelectorAll('#panel-casual .filter-btn');
-    btns.forEach(b => { if (b.textContent.trim() === 'Practice time') b.click(); });
   }
 
   function setSeasonState(state) {
