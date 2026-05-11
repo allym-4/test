@@ -1031,6 +1031,7 @@
         <button class="btn btn-ghost btn-sm" onclick="setDashState('not-enrolled')" style="font-size:11px">Not enrolled</button>
         <button class="btn btn-ghost btn-sm" onclick="setDashState('enrolled-style-only')" style="font-size:11px">Enrolled (style classes)</button>
         <button class="btn btn-ghost btn-sm" onclick="openPostTrialModal()" style="font-size:11px;color:var(--lav);border-color:var(--lav)">Post-trial login</button>
+        <button class="btn btn-ghost btn-sm" id="demo-firsttimer-btn" onclick="isFirstTimer=!isFirstTimer;this.textContent='First-timer: '+(isFirstTimer?'ON':'OFF')" style="font-size:11px;color:#ffaa44;border-color:#ffaa44">First-timer: ON</button>
         <button class="btn btn-ghost btn-sm" onclick="showAuthPanel('signup');showScreen('auth')" style="font-size:11px;color:var(--lime);border-color:var(--lime)">Sign-up flow</button>
         <button class="btn btn-ghost btn-sm" onclick="showAuthPanel('signin');showScreen('auth')" style="font-size:11px;color:var(--lime);border-color:#446600">Sign-in flow</button>
       </div>
@@ -1338,7 +1339,7 @@
 
             <!-- Level filter toggle (only when level is assigned) -->
             <div id="season-level-toggle" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;background:#0d0d0d;border:1px solid var(--border);border-radius:10px;padding:12px 16px">
-              <div style="font-size:14px">Show my level only</div>
+              <div style="font-size:14px">Show my eligible classes only</div>
               <div style="display:flex;align-items:center;gap:10px">
                 <span style="font-size:13px;color:var(--grey)" id="level-toggle-label">On</span>
                 <div id="level-toggle-track" onclick="toggleLevelFilter()" style="width:40px;height:22px;background:var(--lime);border-radius:11px;cursor:pointer;position:relative;transition:background 0.2s">
@@ -1628,7 +1629,7 @@
         <!-- Level toggle + Hide unavailable toggle -->
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;background:#0d0d0d;border:1px solid var(--border);border-radius:10px;padding:12px 16px">
-            <div style="font-size:14px">Show my level only</div>
+            <div style="font-size:14px">Show my eligible classes only</div>
             <div style="display:flex;align-items:center;gap:10px">
               <span style="font-size:13px;color:var(--grey)" id="casual-level-label">On</span>
               <div id="casual-level-track" onclick="toggleCasualLevel()" style="width:40px;height:22px;background:var(--lime);border-radius:11px;cursor:pointer;position:relative;transition:background 0.2s">
@@ -1696,31 +1697,31 @@
 
           <!-- MON 12 MAY -->
           <div class="section-label" data-section-date="2026-05-12">Mon 12 May</div>
-          <div class="casual-row has-credit" data-date="2026-05-12" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Dance Tech','Mon 12 May · 5:30pm','Chloe',true)">
+          <div class="casual-row has-credit" data-date="2026-05-12" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Dance Tech','Mon 12 May · 5:30pm','Chloe',true)">
             <div class="casual-date"><div class="casual-date-day">MON</div><div class="casual-date-num">12</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Dance Tech</div><div class="casual-meta">5:30pm · Chloe</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
             <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-12" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Floor Virgin','Mon 12 May · 5:30pm','Jaz',true)">
+          <div class="casual-row has-credit" data-date="2026-05-12" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Floor Virgin','Mon 12 May · 5:30pm','Jaz',true)">
             <div class="casual-date"><div class="casual-date-day">MON</div><div class="casual-date-num">12</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Floor Virgin</div><div class="casual-meta">5:30pm · Jaz</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
             <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-12" data-level="1" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Level 1','Mon 12 May · 6:30pm','Jaz',true)">
+          <div class="casual-row has-credit" data-date="2026-05-12" data-level="1" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Level 1','Mon 12 May · 6:30pm','Jaz',true)">
             <div class="casual-date"><div class="casual-date-day">MON</div><div class="casual-date-num">12</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Level 1</div><div class="casual-meta">6:30pm · Jaz</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
             <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-12" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" data-spots="2" onclick="openCasualModal('Level 2','Mon 12 May · 6:30pm','Chloe',true)">
+          <div class="casual-row has-credit" data-date="2026-05-12" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" data-spots="2" onclick="_maybeFirstTimerGate('Level 2','Mon 12 May · 6:30pm','Chloe',true)">
             <div class="casual-date"><div class="casual-date-day">MON</div><div class="casual-date-num">12</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Level 2</div><div class="casual-meta">6:30pm · Chloe</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
             <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-12" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Strip Virgin','Mon 12 May · 7:30pm','Jaz',true)">
+          <div class="casual-row has-credit" data-date="2026-05-12" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Strip Virgin','Mon 12 May · 7:30pm','Jaz',true)">
             <div class="casual-date"><div class="casual-date-day">MON</div><div class="casual-date-num">12</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Strip Virgin</div><div class="casual-meta">7:30pm · Jaz</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -1741,7 +1742,7 @@
 
           <!-- TUE 13 MAY -->
           <div class="section-label" style="margin-top:20px" data-section-date="2026-05-13">Tue 13 May</div>
-          <div class="casual-row has-credit" data-date="2026-05-13" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Strip Virgin','Tue 13 May · 5:30pm','Amy',true)">
+          <div class="casual-row has-credit" data-date="2026-05-13" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Strip Virgin','Tue 13 May · 5:30pm','Amy',true)">
             <div class="casual-date"><div class="casual-date-day">TUE</div><div class="casual-date-num">13</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Strip Virgin</div><div class="casual-meta">5:30pm · Amy</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -1759,7 +1760,7 @@
             <div class="casual-info"><div class="casual-name" style="color:var(--grey)">3 Tricks</div><div class="casual-meta">6:30pm · Avalon</div><div style="margin-top:6px"><span class="tag tag-grey" style="font-size:11px">Level 3 required</span></div></div>
             <div class="casual-price" style="font-size:18px;color:#555">&#128274;</div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-13" data-level="3" data-kind="class" data-catchup="true" data-status="available" data-locked="false" data-routine="true" data-enrolled="true" onclick="openCasualModal('Strip','Tue 13 May · 6:30pm','Mimi',true)">
+          <div class="casual-row has-credit" data-date="2026-05-13" data-level="3" data-kind="class" data-catchup="true" data-status="available" data-locked="false" data-routine="true" data-enrolled="true" onclick="_maybeFirstTimerGate('Strip','Tue 13 May · 6:30pm','Mimi',true)">
             <div class="casual-date"><div class="casual-date-day">TUE</div><div class="casual-date-num">13</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Strip</div><div class="casual-meta">6:30pm · Mimi</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span><span class="tag tag-grey" style="font-size:11px;margin-left:4px">Enrolled</span></div></div>
@@ -1768,19 +1769,19 @@
 
           <!-- WED 14 MAY -->
           <div class="section-label" style="margin-top:20px" data-section-date="2026-05-14">Wed 14 May</div>
-          <div class="casual-row" data-date="2026-05-14" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="openCasualModal('Practice Time','Wed 14 May · 4:30pm','Open studio',false,'$20')">
+          <div class="casual-row" data-date="2026-05-14" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Practice Time','Wed 14 May · 4:30pm','Open studio',false,'$20')">
             <div class="casual-date"><div class="casual-date-day">WED</div><div class="casual-date-num">14</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Practice Time</div><div class="casual-meta">4:30pm–6:20pm · Open studio</div><div style="margin-top:6px"><span class="tag tag-lime" style="font-size:11px">$20 enrolled rate</span></div></div>
             <div class="casual-price"><div class="casual-price-main">$20</div><div class="casual-price-full">$30</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-14" data-level="1" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Level 1','Wed 14 May · 5:30pm','Chloe',true)">
+          <div class="casual-row has-credit" data-date="2026-05-14" data-level="1" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Level 1','Wed 14 May · 5:30pm','Chloe',true)">
             <div class="casual-date"><div class="casual-date-day">WED</div><div class="casual-date-num">14</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Level 1</div><div class="casual-meta">5:30pm · Chloe</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
             <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-14" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" data-spots="4" onclick="openCasualModal('Invert Tech','Wed 14 May · 6:30pm','Maz',true)">
+          <div class="casual-row has-credit" data-date="2026-05-14" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" data-spots="4" onclick="_maybeFirstTimerGate('Invert Tech','Wed 14 May · 6:30pm','Maz',true)">
             <div class="casual-date"><div class="casual-date-day">WED</div><div class="casual-date-num">14</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Invert Tech</div><div class="casual-meta">6:30pm · Maz</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -1792,7 +1793,7 @@
             <div class="casual-info"><div class="casual-name" style="color:var(--grey)">Chair</div><div class="casual-meta">6:30pm · Chloe</div><div style="margin-top:6px"><span class="tag tag-grey" style="font-size:11px">Routine - past week 3</span></div></div>
             <div class="casual-price" style="font-size:18px;color:#555">&#128274;</div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-14" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Dance Virgin','Wed 14 May · 7:30pm','Chloe',true)">
+          <div class="casual-row has-credit" data-date="2026-05-14" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Dance Virgin','Wed 14 May · 7:30pm','Chloe',true)">
             <div class="casual-date"><div class="casual-date-day">WED</div><div class="casual-date-num">14</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Dance Virgin</div><div class="casual-meta">7:30pm · Chloe</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -1804,7 +1805,7 @@
             <div class="casual-info"><div class="casual-name" style="color:var(--grey)">Level 3</div><div class="casual-meta">7:30pm · Maz</div><div style="margin-top:6px"><span class="tag tag-grey" style="font-size:11px">Level 3 required</span></div></div>
             <div class="casual-price" style="font-size:18px;color:#555">&#128274;</div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-14" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Level 2','Wed 14 May · 8:30pm','Bambi',true)">
+          <div class="casual-row has-credit" data-date="2026-05-14" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Level 2','Wed 14 May · 8:30pm','Bambi',true)">
             <div class="casual-date"><div class="casual-date-day">WED</div><div class="casual-date-num">14</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Level 2</div><div class="casual-meta">8:30pm · Bambi</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -1813,7 +1814,7 @@
 
           <!-- THU 15 MAY -->
           <div class="section-label" style="margin-top:20px" data-section-date="2026-05-15">Thu 15 May</div>
-          <div class="casual-row has-credit" data-date="2026-05-15" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Strip Virgin','Thu 15 May · 5:30pm','Amy',true)">
+          <div class="casual-row has-credit" data-date="2026-05-15" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Strip Virgin','Thu 15 May · 5:30pm','Amy',true)">
             <div class="casual-date"><div class="casual-date-day">THU</div><div class="casual-date-num">15</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Strip Virgin</div><div class="casual-meta">5:30pm · Amy</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -1825,7 +1826,7 @@
             <div class="casual-info"><div class="casual-name" style="color:var(--grey)">Inter Floor</div><div class="casual-meta">5:30pm · Mimi</div><div style="margin-top:6px"><span class="tag tag-grey" style="font-size:11px">Routine - past week 3</span></div></div>
             <div class="casual-price" style="font-size:18px;color:#555">&#128274;</div>
           </div>
-          <div class="casual-row" data-date="2026-05-15" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="openCasualModal('Practice Time','Thu 15 May · 7:30pm','Open studio',false,'$20')">
+          <div class="casual-row" data-date="2026-05-15" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Practice Time','Thu 15 May · 7:30pm','Open studio',false,'$20')">
             <div class="casual-date"><div class="casual-date-day">THU</div><div class="casual-date-num">15</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Practice Time</div><div class="casual-meta">7:30pm–9:00pm · Open studio</div><div style="margin-top:6px"><span class="tag tag-lime" style="font-size:11px">$20 enrolled rate</span></div></div>
@@ -1837,7 +1838,7 @@
             <div class="casual-info"><div class="casual-name" style="color:var(--grey)">Strip</div><div class="casual-meta">7:30pm · Mimi</div><div style="margin-top:6px"><span class="tag tag-grey" style="font-size:11px">Routine - past week 3</span></div></div>
             <div class="casual-price" style="font-size:18px;color:#555">&#128274;</div>
           </div>
-          <div class="casual-row" data-date="2026-05-15" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="openCasualModal('Practice Time','Thu 15 May · 8:30pm','Open studio',false,'$20')">
+          <div class="casual-row" data-date="2026-05-15" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Practice Time','Thu 15 May · 8:30pm','Open studio',false,'$20')">
             <div class="casual-date"><div class="casual-date-day">THU</div><div class="casual-date-num">15</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Practice Time</div><div class="casual-meta">8:30pm–10:00pm · Open studio</div><div style="margin-top:6px"><span class="tag tag-lime" style="font-size:11px">$20 enrolled rate</span></div></div>
@@ -1846,13 +1847,13 @@
 
           <!-- FRI 16 MAY -->
           <div class="section-label" style="margin-top:20px" data-section-date="2026-05-16">Fri 16 May</div>
-          <div class="casual-row" data-date="2026-05-16" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="openCasualModal('Practice Time','Fri 16 May · 5:30pm','Open studio',false,'$20')">
+          <div class="casual-row" data-date="2026-05-16" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Practice Time','Fri 16 May · 5:30pm','Open studio',false,'$20')">
             <div class="casual-date"><div class="casual-date-day">FRI</div><div class="casual-date-num">16</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Practice Time</div><div class="casual-meta">5:30pm–7:00pm · Open studio</div><div style="margin-top:6px"><span class="tag tag-lime" style="font-size:11px">$20 enrolled rate</span></div></div>
             <div class="casual-price"><div class="casual-price-main">$20</div><div class="casual-price-full">$30</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-16" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" data-spots="1" onclick="openCasualModal('Kiki','Fri 16 May · 5:30pm','Mimi',true)">
+          <div class="casual-row has-credit" data-date="2026-05-16" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" data-spots="1" onclick="_maybeFirstTimerGate('Kiki','Fri 16 May · 5:30pm','Mimi',true)">
             <div class="casual-date"><div class="casual-date-day">FRI</div><div class="casual-date-num">16</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Kiki</div><div class="casual-meta">5:30pm · Mimi</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -1867,13 +1868,13 @@
 
           <!-- SAT 17 MAY -->
           <div class="section-label" style="margin-top:20px" data-section-date="2026-05-17">Sat 17 May</div>
-          <div class="casual-row has-credit" data-date="2026-05-17" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Unravel','Sat 17 May · 9:00am','Chloe',true)">
+          <div class="casual-row has-credit" data-date="2026-05-17" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Unravel','Sat 17 May · 9:00am','Chloe',true)">
             <div class="casual-date"><div class="casual-date-day">SAT</div><div class="casual-date-num">17</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Unravel</div><div class="casual-meta">9:00am · Chloe</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
             <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
           </div>
-          <div class="casual-row" data-date="2026-05-17" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="openCasualModal('Practice Time','Sat 17 May · 10:00am','Open studio',false,'$20')">
+          <div class="casual-row" data-date="2026-05-17" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Practice Time','Sat 17 May · 10:00am','Open studio',false,'$20')">
             <div class="casual-date"><div class="casual-date-day">SAT</div><div class="casual-date-num">17</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Practice Time</div><div class="casual-meta">10:00am–11:30am · Open studio</div><div style="margin-top:6px"><span class="tag tag-lime" style="font-size:11px">$20 enrolled rate</span></div></div>
@@ -1896,25 +1897,25 @@
             <div class="casual-info"><div class="casual-name" style="text-decoration:line-through;color:var(--grey)">Dance Tech</div><div class="casual-meta">5:30pm · Chloe</div></div>
             <div class="casual-price"><span class="tag tag-grey">Cancelled</span></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-19" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Floor Virgin','Mon 19 May · 5:30pm','Jaz',true)">
+          <div class="casual-row has-credit" data-date="2026-05-19" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Floor Virgin','Mon 19 May · 5:30pm','Jaz',true)">
             <div class="casual-date"><div class="casual-date-day">MON</div><div class="casual-date-num">19</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Floor Virgin</div><div class="casual-meta">5:30pm · Jaz</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
             <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-19" data-level="1" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Level 1','Mon 19 May · 6:30pm','Jaz',true)">
+          <div class="casual-row has-credit" data-date="2026-05-19" data-level="1" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Level 1','Mon 19 May · 6:30pm','Jaz',true)">
             <div class="casual-date"><div class="casual-date-day">MON</div><div class="casual-date-num">19</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Level 1</div><div class="casual-meta">6:30pm · Jaz</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
             <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-19" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Level 2','Mon 19 May · 6:30pm','Chloe',true)">
+          <div class="casual-row has-credit" data-date="2026-05-19" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Level 2','Mon 19 May · 6:30pm','Chloe',true)">
             <div class="casual-date"><div class="casual-date-day">MON</div><div class="casual-date-num">19</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Level 2</div><div class="casual-meta">6:30pm · Chloe</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
             <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-19" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Strip Virgin','Mon 19 May · 7:30pm','Jaz',true)">
+          <div class="casual-row has-credit" data-date="2026-05-19" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Strip Virgin','Mon 19 May · 7:30pm','Jaz',true)">
             <div class="casual-date"><div class="casual-date-day">MON</div><div class="casual-date-num">19</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Strip Virgin</div><div class="casual-meta">7:30pm · Jaz</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -1929,13 +1930,13 @@
 
           <!-- TUE 20 MAY -->
           <div class="section-label" style="margin-top:20px" data-section-date="2026-05-20">Tue 20 May</div>
-          <div class="casual-row has-credit" data-date="2026-05-20" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Strip Virgin','Tue 20 May · 5:30pm','Amy',true)">
+          <div class="casual-row has-credit" data-date="2026-05-20" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Strip Virgin','Tue 20 May · 5:30pm','Amy',true)">
             <div class="casual-date"><div class="casual-date-day">TUE</div><div class="casual-date-num">20</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Strip Virgin</div><div class="casual-meta">5:30pm · Amy</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
             <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-20" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Level 2','Tue 20 May · 5:30pm','Avalon',true)">
+          <div class="casual-row has-credit" data-date="2026-05-20" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Level 2','Tue 20 May · 5:30pm','Avalon',true)">
             <div class="casual-date"><div class="casual-date-day">TUE</div><div class="casual-date-num">20</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Level 2</div><div class="casual-meta">5:30pm · Avalon</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -1950,13 +1951,13 @@
 
           <!-- WED 21 MAY -->
           <div class="section-label" style="margin-top:20px" data-section-date="2026-05-21">Wed 21 May</div>
-          <div class="casual-row" data-date="2026-05-21" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="openCasualModal('Practice Time','Wed 21 May · 4:30pm','Open studio',false,'$20')">
+          <div class="casual-row" data-date="2026-05-21" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Practice Time','Wed 21 May · 4:30pm','Open studio',false,'$20')">
             <div class="casual-date"><div class="casual-date-day">WED</div><div class="casual-date-num">21</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Practice Time</div><div class="casual-meta">4:30pm–6:20pm · Open studio</div><div style="margin-top:6px"><span class="tag tag-lime" style="font-size:11px">$20 enrolled rate</span></div></div>
             <div class="casual-price"><div class="casual-price-main">$20</div><div class="casual-price-full">$30</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-21" data-level="1" data-kind="class" data-catchup="true" data-status="available" data-locked="false" data-spots="3" onclick="openCasualModal('Level 1','Wed 21 May · 5:30pm','Chloe',true)">
+          <div class="casual-row has-credit" data-date="2026-05-21" data-level="1" data-kind="class" data-catchup="true" data-status="available" data-locked="false" data-spots="3" onclick="_maybeFirstTimerGate('Level 1','Wed 21 May · 5:30pm','Chloe',true)">
             <div class="casual-date"><div class="casual-date-day">WED</div><div class="casual-date-num">21</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Level 1</div><div class="casual-meta">5:30pm · Chloe</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -1968,7 +1969,7 @@
             <div class="casual-info"><div class="casual-name">Invert Tech</div><div class="casual-meta">6:30pm · Maz</div><div style="margin-top:6px"><span class="tag tag-amber" style="font-size:11px">Class full</span></div></div>
             <div class="casual-price"><button class="btn btn-outline btn-sm" style="font-size:11px;padding:5px 10px;white-space:nowrap" onclick="event.stopPropagation();openCasualWaitlist('Invert Tech','Wed 21 May · 6:30pm','Maz')">Join waitlist</button></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-21" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Dance Virgin','Wed 21 May · 7:30pm','Chloe',true)">
+          <div class="casual-row has-credit" data-date="2026-05-21" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Dance Virgin','Wed 21 May · 7:30pm','Chloe',true)">
             <div class="casual-date"><div class="casual-date-day">WED</div><div class="casual-date-num">21</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Dance Virgin</div><div class="casual-meta">7:30pm · Chloe</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -1980,7 +1981,7 @@
             <div class="casual-info"><div class="casual-name" style="color:var(--grey)">Level 3</div><div class="casual-meta">7:30pm · Maz</div><div style="margin-top:6px"><span class="tag tag-grey" style="font-size:11px">Level 3 required</span></div></div>
             <div class="casual-price" style="font-size:18px;color:#555">&#128274;</div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-21" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Level 2','Wed 21 May · 8:30pm','Bambi',true)">
+          <div class="casual-row has-credit" data-date="2026-05-21" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Level 2','Wed 21 May · 8:30pm','Bambi',true)">
             <div class="casual-date"><div class="casual-date-day">WED</div><div class="casual-date-num">21</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Level 2</div><div class="casual-meta">8:30pm · Bambi</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -1989,7 +1990,7 @@
 
           <!-- THU 22 MAY -->
           <div class="section-label" style="margin-top:20px" data-section-date="2026-05-22">Thu 22 May</div>
-          <div class="casual-row has-credit" data-date="2026-05-22" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Strip Virgin','Thu 22 May · 5:30pm','Amy',true)">
+          <div class="casual-row has-credit" data-date="2026-05-22" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Strip Virgin','Thu 22 May · 5:30pm','Amy',true)">
             <div class="casual-date"><div class="casual-date-day">THU</div><div class="casual-date-num">22</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Strip Virgin</div><div class="casual-meta">5:30pm · Amy</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -2001,7 +2002,7 @@
             <div class="casual-info"><div class="casual-name" style="color:var(--grey)">Strip</div><div class="casual-meta">7:30pm · Mimi</div><div style="margin-top:6px"><span class="tag tag-grey" style="font-size:11px">Routine - past week 3</span></div></div>
             <div class="casual-price" style="font-size:18px;color:#555">&#128274;</div>
           </div>
-          <div class="casual-row" data-date="2026-05-22" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="openCasualModal('Practice Time','Thu 22 May · 7:30pm','Open studio',false,'$20')">
+          <div class="casual-row" data-date="2026-05-22" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Practice Time','Thu 22 May · 7:30pm','Open studio',false,'$20')">
             <div class="casual-date"><div class="casual-date-day">THU</div><div class="casual-date-num">22</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Practice Time</div><div class="casual-meta">7:30pm–9:00pm · Open studio</div><div style="margin-top:6px"><span class="tag tag-lime" style="font-size:11px">$20 enrolled rate</span></div></div>
@@ -2010,13 +2011,13 @@
 
           <!-- FRI 23 MAY -->
           <div class="section-label" style="margin-top:20px" data-section-date="2026-05-23">Fri 23 May</div>
-          <div class="casual-row" data-date="2026-05-23" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="openCasualModal('Practice Time','Fri 23 May · 5:30pm','Open studio',false,'$20')">
+          <div class="casual-row" data-date="2026-05-23" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Practice Time','Fri 23 May · 5:30pm','Open studio',false,'$20')">
             <div class="casual-date"><div class="casual-date-day">FRI</div><div class="casual-date-num">23</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Practice Time</div><div class="casual-meta">5:30pm–7:00pm · Open studio</div><div style="margin-top:6px"><span class="tag tag-lime" style="font-size:11px">$20 enrolled rate</span></div></div>
             <div class="casual-price"><div class="casual-price-main">$20</div><div class="casual-price-full">$30</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-23" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Kiki','Fri 23 May · 5:30pm','Mimi',true)">
+          <div class="casual-row has-credit" data-date="2026-05-23" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Kiki','Fri 23 May · 5:30pm','Mimi',true)">
             <div class="casual-date"><div class="casual-date-day">FRI</div><div class="casual-date-num">23</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Kiki</div><div class="casual-meta">5:30pm · Mimi</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -2031,19 +2032,19 @@
 
           <!-- SAT 24 MAY -->
           <div class="section-label" style="margin-top:20px" data-section-date="2026-05-24">Sat 24 May</div>
-          <div class="casual-row has-credit" data-date="2026-05-24" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Unravel','Sat 24 May · 9:00am','Chloe',true)">
+          <div class="casual-row has-credit" data-date="2026-05-24" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Unravel','Sat 24 May · 9:00am','Chloe',true)">
             <div class="casual-date"><div class="casual-date-day">SAT</div><div class="casual-date-num">24</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Unravel</div><div class="casual-meta">9:00am · Chloe</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
             <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
           </div>
-          <div class="casual-row" data-date="2026-05-24" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="openCasualModal('Practice Time','Sat 24 May · 10:00am','Open studio',false,'$20')">
+          <div class="casual-row" data-date="2026-05-24" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Practice Time','Sat 24 May · 10:00am','Open studio',false,'$20')">
             <div class="casual-date"><div class="casual-date-day">SAT</div><div class="casual-date-num">24</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Practice Time</div><div class="casual-meta">10:00am–11:30am · Open studio</div><div style="margin-top:6px"><span class="tag tag-lime" style="font-size:11px">$20 enrolled rate</span></div></div>
             <div class="casual-price"><div class="casual-price-main">$20</div><div class="casual-price-full">$30</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-24" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Floor Virgin','Sat 24 May · 12:00pm','Chloe',true)">
+          <div class="casual-row has-credit" data-date="2026-05-24" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Floor Virgin','Sat 24 May · 12:00pm','Chloe',true)">
             <div class="casual-date"><div class="casual-date-day">SAT</div><div class="casual-date-num">24</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Floor Virgin</div><div class="casual-meta">12:00pm · Chloe</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -2053,13 +2054,13 @@
 
           <!-- WEEK 3: 26-31 MAY -->
           <div class="section-label" style="margin-top:20px" data-section-date="2026-05-26">Mon 26 May</div>
-          <div class="casual-row has-credit" data-date="2026-05-26" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Floor Virgin','Mon 26 May · 5:30pm','Jaz',true)">
+          <div class="casual-row has-credit" data-date="2026-05-26" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Floor Virgin','Mon 26 May · 5:30pm','Jaz',true)">
             <div class="casual-date"><div class="casual-date-day">MON</div><div class="casual-date-num">26</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Floor Virgin</div><div class="casual-meta">5:30pm · Jaz</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
             <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-26" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Level 2','Mon 26 May · 6:30pm','Chloe',true)">
+          <div class="casual-row has-credit" data-date="2026-05-26" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Level 2','Mon 26 May · 6:30pm','Chloe',true)">
             <div class="casual-date"><div class="casual-date-day">MON</div><div class="casual-date-num">26</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Level 2</div><div class="casual-meta">6:30pm · Chloe</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -2073,13 +2074,13 @@
           </div>
 
           <div class="section-label" style="margin-top:20px" data-section-date="2026-05-27">Tue 27 May</div>
-          <div class="casual-row has-credit" data-date="2026-05-27" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Strip Virgin','Tue 27 May · 5:30pm','Amy',true)">
+          <div class="casual-row has-credit" data-date="2026-05-27" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Strip Virgin','Tue 27 May · 5:30pm','Amy',true)">
             <div class="casual-date"><div class="casual-date-day">TUE</div><div class="casual-date-num">27</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Strip Virgin</div><div class="casual-meta">5:30pm · Amy</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
             <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-27" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Level 2','Tue 27 May · 5:30pm','Avalon',true)">
+          <div class="casual-row has-credit" data-date="2026-05-27" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Level 2','Tue 27 May · 5:30pm','Avalon',true)">
             <div class="casual-date"><div class="casual-date-day">TUE</div><div class="casual-date-num">27</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Level 2</div><div class="casual-meta">5:30pm · Avalon</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -2087,19 +2088,19 @@
           </div>
 
           <div class="section-label" style="margin-top:20px" data-section-date="2026-05-28">Wed 28 May</div>
-          <div class="casual-row" data-date="2026-05-28" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="openCasualModal('Practice Time','Wed 28 May · 4:30pm','Open studio',false,'$20')">
+          <div class="casual-row" data-date="2026-05-28" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Practice Time','Wed 28 May · 4:30pm','Open studio',false,'$20')">
             <div class="casual-date"><div class="casual-date-day">WED</div><div class="casual-date-num">28</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Practice Time</div><div class="casual-meta">4:30pm · Open studio</div><div style="margin-top:6px"><span class="tag tag-grey" style="font-size:11px">Open studio</span></div></div>
             <div class="casual-price"><div class="casual-price-main">$20</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-28" data-level="1" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Level 1','Wed 28 May · 5:30pm','Chloe',true)">
+          <div class="casual-row has-credit" data-date="2026-05-28" data-level="1" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Level 1','Wed 28 May · 5:30pm','Chloe',true)">
             <div class="casual-date"><div class="casual-date-day">WED</div><div class="casual-date-num">28</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Level 1</div><div class="casual-meta">5:30pm · Chloe</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
             <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-28" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Level 2','Wed 28 May · 8:30pm','Bambi',true)">
+          <div class="casual-row has-credit" data-date="2026-05-28" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Level 2','Wed 28 May · 8:30pm','Bambi',true)">
             <div class="casual-date"><div class="casual-date-day">WED</div><div class="casual-date-num">28</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Level 2</div><div class="casual-meta">8:30pm · Bambi</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -2107,13 +2108,13 @@
           </div>
 
           <div class="section-label" style="margin-top:20px" data-section-date="2026-05-29">Thu 29 May</div>
-          <div class="casual-row has-credit" data-date="2026-05-29" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Strip Virgin','Thu 29 May · 5:30pm','Amy',true)">
+          <div class="casual-row has-credit" data-date="2026-05-29" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Strip Virgin','Thu 29 May · 5:30pm','Amy',true)">
             <div class="casual-date"><div class="casual-date-day">THU</div><div class="casual-date-num">29</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Strip Virgin</div><div class="casual-meta">5:30pm · Amy</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
             <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
           </div>
-          <div class="casual-row" data-date="2026-05-29" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="openCasualModal('Practice Time','Thu 29 May · 7:30pm','Open studio',false,'$20')">
+          <div class="casual-row" data-date="2026-05-29" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Practice Time','Thu 29 May · 7:30pm','Open studio',false,'$20')">
             <div class="casual-date"><div class="casual-date-day">THU</div><div class="casual-date-num">29</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Practice Time</div><div class="casual-meta">7:30pm · Open studio</div><div style="margin-top:6px"><span class="tag tag-grey" style="font-size:11px">Open studio</span></div></div>
@@ -2121,7 +2122,7 @@
           </div>
 
           <div class="section-label" style="margin-top:20px" data-section-date="2026-05-30">Fri 30 May</div>
-          <div class="casual-row has-credit" data-date="2026-05-30" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Kiki','Fri 30 May · 5:30pm','Mimi',true)">
+          <div class="casual-row has-credit" data-date="2026-05-30" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Kiki','Fri 30 May · 5:30pm','Mimi',true)">
             <div class="casual-date"><div class="casual-date-day">FRI</div><div class="casual-date-num">30</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Kiki</div><div class="casual-meta">5:30pm · Mimi</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -2135,13 +2136,13 @@
           </div>
 
           <div class="section-label" style="margin-top:20px" data-section-date="2026-05-31">Sat 31 May</div>
-          <div class="casual-row has-credit" data-date="2026-05-31" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Unravel','Sat 31 May · 9:00am','Chloe',true)">
+          <div class="casual-row has-credit" data-date="2026-05-31" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Unravel','Sat 31 May · 9:00am','Chloe',true)">
             <div class="casual-date"><div class="casual-date-day">SAT</div><div class="casual-date-num">31</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Unravel</div><div class="casual-meta">9:00am · Chloe</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
             <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
           </div>
-          <div class="casual-row" data-date="2026-05-31" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="openCasualModal('Practice Time','Sat 31 May · 10:00am','Open studio',false,'$20')">
+          <div class="casual-row" data-date="2026-05-31" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Practice Time','Sat 31 May · 10:00am','Open studio',false,'$20')">
             <div class="casual-date"><div class="casual-date-day">SAT</div><div class="casual-date-num">31</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Practice Time</div><div class="casual-meta">10:00am · Open studio</div><div style="margin-top:6px"><span class="tag tag-grey" style="font-size:11px">Open studio</span></div></div>
@@ -2150,13 +2151,13 @@
 
           <!-- WEEK 4: 2-6 JUN -->
           <div class="section-label" style="margin-top:20px" data-section-date="2026-06-02">Mon 2 Jun</div>
-          <div class="casual-row has-credit" data-date="2026-06-02" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Floor Virgin','Mon 2 Jun · 5:30pm','Jaz',true)">
+          <div class="casual-row has-credit" data-date="2026-06-02" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Floor Virgin','Mon 2 Jun · 5:30pm','Jaz',true)">
             <div class="casual-date"><div class="casual-date-day">MON</div><div class="casual-date-num">2</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Floor Virgin</div><div class="casual-meta">5:30pm · Jaz</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
             <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-06-02" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Level 2','Mon 2 Jun · 6:30pm','Chloe',true)">
+          <div class="casual-row has-credit" data-date="2026-06-02" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Level 2','Mon 2 Jun · 6:30pm','Chloe',true)">
             <div class="casual-date"><div class="casual-date-day">MON</div><div class="casual-date-num">2</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Level 2</div><div class="casual-meta">6:30pm · Chloe</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -2164,7 +2165,7 @@
           </div>
 
           <div class="section-label" style="margin-top:20px" data-section-date="2026-06-03">Tue 3 Jun</div>
-          <div class="casual-row has-credit" data-date="2026-06-03" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Strip Virgin','Tue 3 Jun · 5:30pm','Amy',true)">
+          <div class="casual-row has-credit" data-date="2026-06-03" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Strip Virgin','Tue 3 Jun · 5:30pm','Amy',true)">
             <div class="casual-date"><div class="casual-date-day">TUE</div><div class="casual-date-num">3</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Strip Virgin</div><div class="casual-meta">5:30pm · Amy</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -2172,13 +2173,13 @@
           </div>
 
           <div class="section-label" style="margin-top:20px" data-section-date="2026-06-04">Wed 4 Jun</div>
-          <div class="casual-row" data-date="2026-06-04" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="openCasualModal('Practice Time','Wed 4 Jun · 4:30pm','Open studio',false,'$20')">
+          <div class="casual-row" data-date="2026-06-04" data-level="0" data-kind="practice" data-catchup="false" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Practice Time','Wed 4 Jun · 4:30pm','Open studio',false,'$20')">
             <div class="casual-date"><div class="casual-date-day">WED</div><div class="casual-date-num">4</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Practice Time</div><div class="casual-meta">4:30pm · Open studio</div><div style="margin-top:6px"><span class="tag tag-grey" style="font-size:11px">Open studio</span></div></div>
             <div class="casual-price"><div class="casual-price-main">$20</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-06-04" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Level 2','Wed 4 Jun · 8:30pm','Bambi',true)">
+          <div class="casual-row has-credit" data-date="2026-06-04" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Level 2','Wed 4 Jun · 8:30pm','Bambi',true)">
             <div class="casual-date"><div class="casual-date-day">WED</div><div class="casual-date-num">4</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Level 2</div><div class="casual-meta">8:30pm · Bambi</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -2186,7 +2187,7 @@
           </div>
 
           <div class="section-label" style="margin-top:20px" data-section-date="2026-06-05">Thu 5 Jun</div>
-          <div class="casual-row has-credit" data-date="2026-06-05" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Strip Virgin','Thu 5 Jun · 5:30pm','Amy',true)">
+          <div class="casual-row has-credit" data-date="2026-06-05" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Strip Virgin','Thu 5 Jun · 5:30pm','Amy',true)">
             <div class="casual-date"><div class="casual-date-day">THU</div><div class="casual-date-num">5</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Strip Virgin</div><div class="casual-meta">5:30pm · Amy</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -2194,7 +2195,7 @@
           </div>
 
           <div class="section-label" style="margin-top:20px" data-section-date="2026-06-06">Fri 6 Jun</div>
-          <div class="casual-row has-credit" data-date="2026-06-06" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Kiki','Fri 6 Jun · 5:30pm','Mimi',true)">
+          <div class="casual-row has-credit" data-date="2026-06-06" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="_maybeFirstTimerGate('Kiki','Fri 6 Jun · 5:30pm','Mimi',true)">
             <div class="casual-date"><div class="casual-date-day">FRI</div><div class="casual-date-num">6</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Kiki</div><div class="casual-meta">5:30pm · Mimi</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -4276,6 +4277,24 @@
   </div>
 </div>
 
+<!-- FIRST-TIMER WARNING MODAL -->
+<div class="modal-overlay" id="first-timer-modal">
+  <div class="modal" style="max-width:440px">
+    <div style="font-size:28px;text-align:center;margin-bottom:12px">⚠️</div>
+    <div class="modal-title" style="text-align:center;margin-bottom:8px">Heads up</div>
+    <div style="font-size:14px;color:var(--grey);line-height:1.7;margin-bottom:6px" id="first-timer-class-meta"></div>
+    <div style="font-size:14px;color:var(--white);line-height:1.7;margin-bottom:20px">This class isn't designed for first-timers. It may involve techniques and terminology that assume prior experience. We recommend starting with a Virgin or Level 1 class first.</div>
+    <label style="display:flex;gap:12px;align-items:flex-start;cursor:pointer;margin-bottom:24px" onclick="document.getElementById('first-timer-ack').click();event.preventDefault()">
+      <input type="checkbox" id="first-timer-ack" style="width:18px;height:18px;flex-shrink:0;margin-top:2px;accent-color:var(--lime)">
+      <span style="font-size:13px;color:var(--grey);line-height:1.5">I understand this isn't a beginner class and I'm happy to proceed with the booking.</span>
+    </label>
+    <div class="modal-actions">
+      <button class="btn btn-lime" style="flex:1" id="first-timer-confirm-btn" onclick="confirmFirstTimerProceed()">Continue to booking</button>
+      <button class="btn btn-ghost" onclick="closeModal('first-timer-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- CLASS INFO MODAL -->
 <div class="modal-overlay" id="class-info-modal">
   <div class="modal" style="max-width:480px">
@@ -4598,6 +4617,7 @@
   // ─── CASUAL FILTERS ────────────────────────────────────────────────────────
   let casualLevelOn = true;
   let casualHideUnavailable = false;
+  let isFirstTimer = true; // demo: toggle off if student has attended before
   let casualTypeFilter = 'all';
   let casualDateFilter = 'all';
   let casualCalWeek    = 1;
@@ -4726,9 +4746,10 @@
           if (priceEl) { priceEl.style.cssText = 'font-size:18px;color:#555'; priceEl.innerHTML = '&#128274;'; }
           if (tagEl)   tagEl.style.opacity = '';
         } else {
+          // Show all: fully bookable appearance
           if (nameEl)  nameEl.style.color = '';
-          if (priceEl) { priceEl.style.cssText = ''; priceEl.innerHTML = '<div class="casual-price-full">$40</div>'; }
-          if (tagEl)   tagEl.style.opacity = '0.4';
+          if (priceEl) { priceEl.style.cssText = ''; priceEl.innerHTML = '<div class="casual-price-main">$40</div>'; }
+          if (tagEl)   { tagEl.style.opacity = '1'; }
         }
       }
 
@@ -4866,13 +4887,47 @@
     });
   }
 
+  // Classes a complete first-timer can safely join without warning
+  const BEGINNER_SAFE = ['strip virgin','floor virgin','dance virgin','level 1','kiki','unravel'];
+  function _isBeginnerSafe(name) {
+    return BEGINNER_SAFE.includes((name || '').toLowerCase().trim());
+  }
+
+  // Pending booking details for after first-timer acknowledgement
+  let _ftPending = null;
+
+  function _maybeFirstTimerGate(name, datetime, instructor, hasCredit) {
+    if (!isFirstTimer || _isBeginnerSafe(name)) {
+      openCasualModal(name, datetime, instructor, hasCredit);
+      return;
+    }
+    // Show first-timer warning
+    _ftPending = { name, datetime, instructor, hasCredit };
+    document.getElementById('first-timer-class-meta').textContent = [name, datetime, instructor].filter(Boolean).join(' · ');
+    document.getElementById('first-timer-ack').checked = false;
+    document.getElementById('first-timer-modal').classList.add('open');
+  }
+
+  function confirmFirstTimerProceed() {
+    if (!document.getElementById('first-timer-ack').checked) {
+      document.getElementById('first-timer-ack').focus();
+      return;
+    }
+    closeModal('first-timer-modal');
+    if (_ftPending) {
+      const { name, datetime, instructor, hasCredit } = _ftPending;
+      _ftPending = null;
+      openCasualModal(name, datetime, instructor, hasCredit);
+    }
+  }
+
   function openCasualContact(name, datetime, instructor) {
     const el = event ? event.currentTarget : null;
     const isRoutine = el && el.dataset.routine === 'true';
 
     // Non-routine level-locked rows become bookable when level filter is off
     if (!isRoutine && !casualLevelOn) {
-      openCasualModal(name, datetime, instructor, false);
+      _maybeFirstTimerGate(name, datetime, instructor, false);
       return;
     }
 
