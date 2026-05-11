@@ -405,20 +405,28 @@
   /* PROGRESS */
   .progress-bar-wrap { background: #1a1a1a; border-radius: 4px; height: 7px; margin-bottom: 22px; overflow: hidden; }
   .progress-bar-fill { height: 100%; border-radius: 4px; background: var(--lime); }
-  .trick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 10px; margin-bottom: 30px; }
+  .trick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 10px; margin-bottom: 16px; }
   .trick {
     background: var(--card); border: 1px solid var(--border);
     border-radius: 10px; padding: 16px; text-align: center; transition: all 0.15s;
   }
-  .trick.unlocked { border-color: var(--lime); background: #0d1200; }
-  .trick.in-progress { border-color: var(--lav); background: #130e1e; }
-  .trick.locked { opacity: 0.4; }
+  .trick.unlocked { border-color: var(--lime); background: #0d1200; cursor: default; }
+  .trick.in-progress { border-color: var(--lav); background: #130e1e; cursor: pointer; }
+  .trick.locked { opacity: 0.55; cursor: pointer; }
+  .trick.locked:hover, .trick.in-progress:hover { opacity: 1; border-color: #555; }
+  .trick.self-assessed { border-color: var(--lime); border-style: dashed; background: #0d1a00; cursor: pointer; opacity: 1; }
+  .trick.awaiting-confirm { border-color: #ffaa44; background: #140d00; cursor: default; opacity: 1; }
   .trick-icon { font-size: 26px; margin-bottom: 9px; }
   .trick-name { font-size: 13px; font-weight: 500; line-height: 1.3; }
   .trick-status { font-size: 11px; margin-top: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
   .trick.unlocked .trick-status { color: var(--lime); }
   .trick.in-progress .trick-status { color: var(--lav); }
   .trick.locked .trick-status { color: var(--grey); }
+  .trick.self-assessed .trick-status { color: var(--lime); }
+  .trick.awaiting-confirm .trick-status { color: #ffaa44; }
+  /* trick submit row */
+  .trick-submit-row { display:none; margin-bottom:20px; padding:14px 16px; background:#0a1400; border:1px dashed var(--lime); border-radius:10px; }
+  .trick-submit-row.visible { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
 
   /* CREDIT BADGE */
   .credit-badge {
@@ -1026,6 +1034,9 @@
 
     <div class="nav-item" onclick="showScreen('chat')">
       <span class="nav-icon">&#9675;</span> Chat
+    </div>
+    <div class="nav-item" onclick="showScreen('community')">
+      <span class="nav-icon">&#9836;</span> Community
     </div>
     <div class="nav-item" id="nav-account" onclick="showScreen('account')">
       <span class="nav-icon">&#9632;</span> Account
@@ -2595,7 +2606,8 @@
 
       <div class="tabs">
         <div class="tab active" id="tab-tricks" onclick="showProgressTab('tricks')">Tricks</div>
-        <div class="tab" id="tab-resources" onclick="showProgressTab('resources')">Class Resources</div>
+        <div class="tab" id="tab-resources" onclick="showProgressTab('resources')">Resources</div>
+        <div class="tab" id="tab-classchat" onclick="showProgressTab('classchat')">Class Chat</div>
       </div>
 
       <!-- TRICKS TAB -->
@@ -2628,21 +2640,29 @@
           </div>
         </div>
 
-        <div class="trick-grid">
-          <div class="trick unlocked"><div class="trick-icon">&#127744;</div><div class="trick-name">Back Hook Spin</div><div class="trick-status">Unlocked</div></div>
-          <div class="trick unlocked"><div class="trick-icon">&#127744;</div><div class="trick-name">Front Hook Spin</div><div class="trick-status">Unlocked</div></div>
-          <div class="trick unlocked"><div class="trick-icon">&#8593;</div><div class="trick-name">Climb</div><div class="trick-status">Unlocked</div></div>
-          <div class="trick unlocked"><div class="trick-icon">&#128260;</div><div class="trick-name">Jamilla</div><div class="trick-status">Unlocked</div></div>
-          <div class="trick unlocked"><div class="trick-icon">&#10024;</div><div class="trick-name">Invert</div><div class="trick-status">Unlocked</div></div>
-          <div class="trick unlocked"><div class="trick-icon">&#128064;</div><div class="trick-name">Bat</div><div class="trick-status">Unlocked</div></div>
-          <div class="trick unlocked"><div class="trick-icon">&#128131;</div><div class="trick-name">Sit</div><div class="trick-status">Unlocked</div></div>
-          <div class="trick unlocked"><div class="trick-icon">&#128131;</div><div class="trick-name">Kate Moss</div><div class="trick-status">Unlocked</div></div>
-          <div class="trick in-progress"><div class="trick-icon">&#128256;</div><div class="trick-name">Fireman Spin</div><div class="trick-status">In progress</div></div>
-          <div class="trick locked"><div class="trick-icon">&#129438;</div><div class="trick-name">Inside Leg Hang</div><div class="trick-status">Locked</div></div>
-          <div class="trick locked"><div class="trick-icon">&#129438;</div><div class="trick-name">Outside Leg Hang</div><div class="trick-status">Locked</div></div>
-          <div class="trick locked"><div class="trick-icon">&#127774;</div><div class="trick-name">Layback</div><div class="trick-status">Locked</div></div>
-          <div class="trick locked"><div class="trick-icon">&#11088;</div><div class="trick-name">Superman</div><div class="trick-status">Locked</div></div>
-          <div class="trick locked"><div class="trick-icon">&#127775;</div><div class="trick-name">Starfish</div><div class="trick-status">Locked</div></div>
+        <div class="trick-grid" id="trick-grid-level2">
+          <div class="trick unlocked"><div class="trick-icon">&#127744;</div><div class="trick-name">Back Hook Spin</div><div class="trick-status">✓ Unlocked</div></div>
+          <div class="trick unlocked"><div class="trick-icon">&#127744;</div><div class="trick-name">Front Hook Spin</div><div class="trick-status">✓ Unlocked</div></div>
+          <div class="trick unlocked"><div class="trick-icon">&#8593;</div><div class="trick-name">Climb</div><div class="trick-status">✓ Unlocked</div></div>
+          <div class="trick unlocked"><div class="trick-icon">&#128260;</div><div class="trick-name">Jamilla</div><div class="trick-status">✓ Unlocked</div></div>
+          <div class="trick unlocked"><div class="trick-icon">&#10024;</div><div class="trick-name">Invert</div><div class="trick-status">✓ Unlocked</div></div>
+          <div class="trick unlocked"><div class="trick-icon">&#128064;</div><div class="trick-name">Bat</div><div class="trick-status">✓ Unlocked</div></div>
+          <div class="trick unlocked"><div class="trick-icon">&#128131;</div><div class="trick-name">Sit</div><div class="trick-status">✓ Unlocked</div></div>
+          <div class="trick unlocked"><div class="trick-icon">&#128131;</div><div class="trick-name">Kate Moss</div><div class="trick-status">✓ Unlocked</div></div>
+          <div class="trick in-progress" onclick="toggleTrickAssess(this,'trick-submit-level2')"><div class="trick-icon">&#128256;</div><div class="trick-name">Fireman Spin</div><div class="trick-status">Tap if ready</div></div>
+          <div class="trick locked" onclick="toggleTrickAssess(this,'trick-submit-level2')"><div class="trick-icon">&#129438;</div><div class="trick-name">Inside Leg Hang</div><div class="trick-status">Tap if ready</div></div>
+          <div class="trick locked" onclick="toggleTrickAssess(this,'trick-submit-level2')"><div class="trick-icon">&#129438;</div><div class="trick-name">Outside Leg Hang</div><div class="trick-status">Tap if ready</div></div>
+          <div class="trick locked" onclick="toggleTrickAssess(this,'trick-submit-level2')"><div class="trick-icon">&#127774;</div><div class="trick-name">Layback</div><div class="trick-status">Tap if ready</div></div>
+          <div class="trick locked" onclick="toggleTrickAssess(this,'trick-submit-level2')"><div class="trick-icon">&#11088;</div><div class="trick-name">Superman</div><div class="trick-status">Tap if ready</div></div>
+          <div class="trick locked" onclick="toggleTrickAssess(this,'trick-submit-level2')"><div class="trick-icon">&#127775;</div><div class="trick-name">Starfish</div><div class="trick-status">Tap if ready</div></div>
+        </div>
+        <!-- Self-assess submit row -->
+        <div class="trick-submit-row" id="trick-submit-level2">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--lime)">Ready to show Chloe?</div>
+            <div style="font-size:12px;color:var(--grey);margin-top:2px" id="trick-submit-level2-count">Select tricks you feel ready on</div>
+          </div>
+          <button class="btn btn-lime btn-sm" onclick="submitTrickAssess('trick-grid-level2','trick-submit-level2','Chloe')">Submit to Chloe</button>
         </div>
 
         <div class="divider"></div>
@@ -2880,6 +2900,239 @@
             <div style="font-size:13px;color:var(--grey)">Password: markthesheet</div>
           </div>
           <button class="btn btn-ghost btn-sm">Watch</button>
+        </div>
+      </div>
+
+      <!-- CLASS CHAT TAB -->
+      <div id="panel-classchat" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+          <button class="filter-btn active" id="classchat-sel-level2" onclick="switchClassChat('level2')" style="text-align:left">Level 2 · Chloe</button>
+          <button class="filter-btn" id="classchat-sel-dance" onclick="switchClassChat('dance')" style="text-align:left">Dance · Mimi</button>
+        </div>
+
+        <!-- Level 2 chat -->
+        <div id="classchat-level2" style="border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;height:500px">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--dark)">
+            <div class="avatar" style="background:#1a3000;color:var(--lime);font-size:14px">C</div>
+            <div>
+              <div style="font-size:14px;font-weight:500">Chloe · Level 2</div>
+              <div style="font-size:12px;color:var(--grey)">Your instructor · usually replies same day</div>
+            </div>
+          </div>
+          <div id="classchat-level2-msgs" style="flex:1;padding:18px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;background:var(--black)">
+            <div style="display:flex;gap:10px;max-width:80%">
+              <div class="avatar" style="background:#1a3000;color:var(--lime);font-size:13px;width:30px;height:30px;flex-shrink:0">C</div>
+              <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;border-top-left-radius:3px;padding:11px 14px">
+                <div style="font-size:14px;line-height:1.6">Hey Jess! Great work on the invert conditioning this week. I can really see it paying off. Let me know if you have any questions about the homework.</div>
+                <div style="font-size:11px;color:var(--grey);margin-top:5px">Mon 12 May · 9:14am</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;max-width:80%;align-self:flex-end;flex-direction:row-reverse">
+              <div class="avatar" style="width:30px;height:30px;font-size:12px;flex-shrink:0">J</div>
+              <div style="background:#0f1600;border:1px solid var(--lime);border-radius:10px;border-top-right-radius:3px;padding:11px 14px">
+                <div style="font-size:14px;line-height:1.6">Thanks! I've been doing it every morning. Do you think I'm close on the fireman spin?</div>
+                <div style="font-size:11px;color:var(--grey);margin-top:5px">Mon 12 May · 10:02am</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;max-width:80%">
+              <div class="avatar" style="background:#1a3000;color:var(--lime);font-size:13px;width:30px;height:30px;flex-shrink:0">C</div>
+              <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;border-top-left-radius:3px;padding:11px 14px">
+                <div style="font-size:14px;line-height:1.6">Yes! I think another week or two of conditioning and you'll have it. You can self-assess in the Tricks tab and I'll confirm when I see you. 🙌</div>
+                <div style="font-size:11px;color:var(--grey);margin-top:5px">Mon 12 May · 10:18am</div>
+              </div>
+            </div>
+          </div>
+          <div style="padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px;background:var(--dark)">
+            <input id="classchat-level2-input" style="flex:1;background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:10px 14px;color:var(--white);font-family:'Archivo',sans-serif;font-size:14px" placeholder="Message Chloe..." onkeydown="if(event.key==='Enter')sendClassChatMsg('level2')">
+            <label class="btn btn-ghost btn-sm" style="cursor:pointer;display:flex;align-items:center" title="Attach file">
+              <input type="file" style="display:none" onchange="handleClassChatFile(this,'level2')">📎
+            </label>
+            <button class="btn btn-lime btn-sm" onclick="sendClassChatMsg('level2')">Send</button>
+          </div>
+        </div>
+
+        <!-- Dance chat -->
+        <div id="classchat-dance" style="display:none;border:1px solid var(--border);border-radius:12px;overflow:hidden;flex-direction:column;height:500px">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--dark)">
+            <div class="avatar" style="background:var(--lav);color:var(--black);font-size:14px">M</div>
+            <div>
+              <div style="font-size:14px;font-weight:500">Mimi · Dance</div>
+              <div style="font-size:12px;color:var(--grey)">Your instructor · usually replies same day</div>
+            </div>
+          </div>
+          <div id="classchat-dance-msgs" style="flex:1;padding:18px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;background:var(--black)">
+            <div style="display:flex;gap:10px;max-width:80%">
+              <div class="avatar" style="background:var(--lav);color:var(--black);font-size:13px;width:30px;height:30px;flex-shrink:0">M</div>
+              <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;border-top-left-radius:3px;padding:11px 14px">
+                <div style="font-size:14px;line-height:1.6">Loved your energy in class last Friday Jess! Keep up that split prep daily and we'll unlock it before end of season 💜</div>
+                <div style="font-size:11px;color:var(--grey);margin-top:5px">Fri 9 May · 7:45pm</div>
+              </div>
+            </div>
+          </div>
+          <div style="padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px;background:var(--dark)">
+            <input id="classchat-dance-input" style="flex:1;background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:10px 14px;color:var(--white);font-family:'Archivo',sans-serif;font-size:14px" placeholder="Message Mimi..." onkeydown="if(event.key==='Enter')sendClassChatMsg('dance')">
+            <label class="btn btn-ghost btn-sm" style="cursor:pointer;display:flex;align-items:center" title="Attach file">
+              <input type="file" style="display:none" onchange="handleClassChatFile(this,'dance')">📎
+            </label>
+            <button class="btn btn-lime btn-sm" onclick="sendClassChatMsg('dance')">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ===================================================
+         COMMUNITY
+    =================================================== -->
+    <div class="screen" id="screen-community">
+      <div class="page-header">
+        <div class="page-title">Community</div>
+        <div class="page-subtitle">Duality Pole studio groups</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:260px 1fr;gap:0;height:72vh;border:1px solid var(--border);border-radius:12px;overflow:hidden">
+
+        <!-- Group list -->
+        <div style="border-right:1px solid var(--border);background:var(--dark);display:flex;flex-direction:column;overflow-y:auto">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--grey)">Your groups</div>
+          <div id="comm-tab-headstand" class="comm-group-item active" onclick="showCommGroup('headstand')" style="padding:14px 18px;border-left:3px solid var(--lime);background:#0a1200;cursor:pointer">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+              <div style="font-size:14px;font-weight:500">🤸 Headstand Honeys</div>
+              <div style="width:8px;height:8px;background:var(--lime);border-radius:50%"></div>
+            </div>
+            <div style="font-size:12px;color:var(--grey);padding-left:0">47 members · 3 new</div>
+          </div>
+          <div id="comm-tab-handstand" class="comm-group-item" onclick="showCommGroup('handstand')" style="padding:14px 18px;border-left:3px solid transparent;cursor:pointer">
+            <div style="font-size:14px;font-weight:500;margin-bottom:3px">💪 Handstand Rockstars</div>
+            <div style="font-size:12px;color:var(--grey)">31 members</div>
+          </div>
+          <div id="comm-tab-kiki" class="comm-group-item" onclick="showCommGroup('kiki')" style="padding:14px 18px;border-left:3px solid transparent;cursor:pointer">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+              <div style="font-size:14px;font-weight:500">✨ Kiki Challenge</div>
+              <div style="width:8px;height:8px;background:var(--lav);border-radius:50%"></div>
+            </div>
+            <div style="font-size:12px;color:var(--grey)">22 members · 1 new</div>
+          </div>
+          <div style="padding:14px 18px;border-top:1px solid var(--border);margin-top:auto">
+            <div style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--grey);margin-bottom:10px">Discover groups</div>
+            <div id="comm-tab-splits" class="comm-group-item" onclick="joinAndShowGroup('splits')" style="padding:10px 12px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:8px">
+              <div style="font-size:13px;font-weight:500;margin-bottom:2px">🦵 Splits Squad</div>
+              <div style="font-size:11px;color:var(--grey)">18 members · <span style="color:var(--lime)">Join</span></div>
+            </div>
+            <div onclick="joinAndShowGroup('invertsclub')" style="padding:10px 12px;border:1px solid var(--border);border-radius:8px;cursor:pointer">
+              <div style="font-size:13px;font-weight:500;margin-bottom:2px">🙃 Inverts Club</div>
+              <div style="font-size:11px;color:var(--grey)">29 members · <span style="color:var(--lime)">Join</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Group chat pane -->
+        <div style="display:flex;flex-direction:column;background:var(--black)">
+
+          <!-- Headstand Honeys -->
+          <div id="comm-pane-headstand" style="display:flex;flex-direction:column;height:100%">
+            <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:20px">🤸</span>
+                <div>
+                  <div style="font-size:15px;font-weight:500">Headstand Honeys</div>
+                  <div style="font-size:12px;color:var(--grey)">47 members</div>
+                </div>
+              </div>
+              <button class="btn btn-ghost btn-sm" style="color:#f87171;border-color:#f87171;font-size:11px" onclick="leaveGroup('headstand')">Leave group</button>
+            </div>
+            <div id="comm-msgs-headstand" style="flex:1;padding:18px;display:flex;flex-direction:column;gap:12px;overflow-y:auto">
+              <div style="text-align:center;font-size:12px;color:var(--grey);padding:8px 0">Monday 12 May</div>
+              <div style="display:flex;gap:10px;max-width:82%">
+                <div class="avatar" style="background:var(--lav);color:var(--black);font-size:12px;width:30px;height:30px;flex-shrink:0">S</div>
+                <div>
+                  <div style="font-size:12px;color:var(--grey);margin-bottom:4px">Sophie · 9:22am</div>
+                  <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;border-top-left-radius:3px;padding:10px 14px;font-size:14px;line-height:1.6">Anyone else find the forearm balance drills from last session brutal? 😅 My shoulders are still screaming</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px;max-width:82%">
+                <div class="avatar" style="background:#ff6b9d;color:var(--white);font-size:12px;width:30px;height:30px;flex-shrink:0">R</div>
+                <div>
+                  <div style="font-size:12px;color:var(--grey);margin-bottom:4px">Ruby · 9:45am</div>
+                  <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;border-top-left-radius:3px;padding:10px 14px;font-size:14px;line-height:1.6">SAME. I filmed mine and honestly I look like a startled cat trying to hold itself up 😂</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px;max-width:82%">
+                <div class="avatar" style="background:#1a3000;color:var(--lime);font-size:12px;width:30px;height:30px;flex-shrink:0">C</div>
+                <div>
+                  <div style="font-size:12px;color:var(--grey);margin-bottom:4px">Chloe (instructor) · 10:01am</div>
+                  <div style="background:#0a1200;border:1px solid #1e3a00;border-radius:10px;border-top-left-radius:3px;padding:10px 14px;font-size:14px;line-height:1.6">Haha the shoulder burn is progress! Keep the scapular depression engaged and it'll get easier each week. You're all doing great 💪</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px;max-width:82%;align-self:flex-end;flex-direction:row-reverse">
+                <div class="avatar" style="width:30px;height:30px;font-size:12px;flex-shrink:0">J</div>
+                <div>
+                  <div style="font-size:12px;color:var(--grey);margin-bottom:4px;text-align:right">You · 10:15am</div>
+                  <div style="background:#0f1600;border:1px solid var(--lime);border-radius:10px;border-top-right-radius:3px;padding:10px 14px;font-size:14px;line-height:1.6">Finally held it for 5 seconds today!! 🎉</div>
+                </div>
+              </div>
+            </div>
+            <div style="padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px">
+              <label class="btn btn-ghost btn-sm" style="cursor:pointer;display:flex;align-items:center;gap:4px" title="Upload photo or video">
+                <input type="file" accept="image/*,video/*" style="display:none" onchange="handleCommFileUpload(this,'headstand')">📎
+              </label>
+              <input id="comm-input-headstand" style="flex:1;background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:10px 14px;color:var(--white);font-family:'Archivo',sans-serif;font-size:14px" placeholder="Message Headstand Honeys..." onkeydown="if(event.key==='Enter')sendCommMsg('headstand')">
+              <button class="btn btn-lime btn-sm" onclick="sendCommMsg('headstand')">Send</button>
+            </div>
+          </div>
+
+          <!-- Handstand Rockstars -->
+          <div id="comm-pane-handstand" style="display:none;flex-direction:column;height:100%">
+            <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;align-items:center;gap:10px"><span style="font-size:20px">💪</span><div><div style="font-size:15px;font-weight:500">Handstand Rockstars</div><div style="font-size:12px;color:var(--grey)">31 members</div></div></div>
+              <button class="btn btn-ghost btn-sm" style="color:#f87171;border-color:#f87171;font-size:11px" onclick="leaveGroup('handstand')">Leave group</button>
+            </div>
+            <div style="flex:1;padding:18px;display:flex;flex-direction:column;gap:12px;overflow-y:auto">
+              <div style="display:flex;gap:10px;max-width:82%">
+                <div class="avatar" style="background:#44ddff22;color:#44ddff;font-size:12px;width:30px;height:30px;flex-shrink:0">L</div>
+                <div><div style="font-size:12px;color:var(--grey);margin-bottom:4px">Luna · Tue 10:30am</div>
+                <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;border-top-left-radius:3px;padding:10px 14px;font-size:14px;line-height:1.6">Just got my first free-standing handstand! 30 seconds!! I'm shaking 🙌</div></div>
+              </div>
+            </div>
+            <div style="padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px">
+              <label class="btn btn-ghost btn-sm" style="cursor:pointer;display:flex;align-items:center" title="Upload"><input type="file" accept="image/*,video/*" style="display:none" onchange="handleCommFileUpload(this,'handstand')">📎</label>
+              <input id="comm-input-handstand" style="flex:1;background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:10px 14px;color:var(--white);font-family:'Archivo',sans-serif;font-size:14px" placeholder="Message Handstand Rockstars..." onkeydown="if(event.key==='Enter')sendCommMsg('handstand')">
+              <button class="btn btn-lime btn-sm" onclick="sendCommMsg('handstand')">Send</button>
+            </div>
+          </div>
+
+          <!-- Kiki Challenge -->
+          <div id="comm-pane-kiki" style="display:none;flex-direction:column;height:100%">
+            <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;align-items:center;gap:10px"><span style="font-size:20px">✨</span><div><div style="font-size:15px;font-weight:500">Kiki Challenge</div><div style="font-size:12px;color:var(--grey)">22 members</div></div></div>
+              <button class="btn btn-ghost btn-sm" style="color:#f87171;border-color:#f87171;font-size:11px" onclick="leaveGroup('kiki')">Leave group</button>
+            </div>
+            <div style="flex:1;padding:18px;display:flex;flex-direction:column;gap:12px;overflow-y:auto">
+              <div style="display:flex;gap:10px;max-width:82%">
+                <div class="avatar" style="background:var(--lav);color:var(--black);font-size:12px;width:30px;height:30px;flex-shrink:0">M</div>
+                <div><div style="font-size:12px;color:var(--grey);margin-bottom:4px">Mimi (instructor) · Mon 8:30pm</div>
+                <div style="background:#0d0a1e;border:1px solid #2a1f5e;border-radius:10px;border-top-left-radius:3px;padding:10px 14px;font-size:14px;line-height:1.6">Reminder — Kiki challenge entries close Sunday 18 May! Upload your clip to this group or DM me directly 💜</div></div>
+              </div>
+            </div>
+            <div style="padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px">
+              <label class="btn btn-ghost btn-sm" style="cursor:pointer;display:flex;align-items:center" title="Upload clip"><input type="file" accept="image/*,video/*" style="display:none" onchange="handleCommFileUpload(this,'kiki')">📎</label>
+              <input id="comm-input-kiki" style="flex:1;background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:10px 14px;color:var(--white);font-family:'Archivo',sans-serif;font-size:14px" placeholder="Message Kiki Challenge..." onkeydown="if(event.key==='Enter')sendCommMsg('kiki')">
+              <button class="btn btn-lime btn-sm" onclick="sendCommMsg('kiki')">Send</button>
+            </div>
+          </div>
+
+          <!-- Empty placeholder for joined groups -->
+          <div id="comm-pane-splits" style="display:none;flex-direction:column;height:100%;align-items:center;justify-content:center">
+            <div style="font-size:32px;margin-bottom:12px">🦵</div>
+            <div style="font-family:'Archivo Black',sans-serif;font-size:18px;margin-bottom:6px">Splits Squad</div>
+            <div style="font-size:14px;color:var(--grey);text-align:center">You just joined! Welcome to the group.</div>
+          </div>
+          <div id="comm-pane-invertsclub" style="display:none;flex-direction:column;height:100%;align-items:center;justify-content:center">
+            <div style="font-size:32px;margin-bottom:12px">🙃</div>
+            <div style="font-family:'Archivo Black',sans-serif;font-size:18px;margin-bottom:6px">Inverts Club</div>
+            <div style="font-size:14px;color:var(--grey);text-align:center">You just joined! Welcome to the group.</div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -4845,7 +5098,7 @@
     // Desktop sidebar nav
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.querySelectorAll('.nav-sub').forEach(n => n.classList.remove('active'));
-    const ids = ['dashboard','book','myclasses','progress','notifications','forms','chat','account'];
+    const ids = ['dashboard','book','myclasses','progress','notifications','forms','chat','community','account'];
     const idx = ids.indexOf(id);
     if (idx !== -1) document.querySelectorAll('.nav-item')[idx].classList.add('active');
     if (id === 'billing') {
@@ -4854,7 +5107,7 @@
     }
     // Mobile bottom nav
     document.querySelectorAll('.mob-nav-item').forEach(n => n.classList.remove('active'));
-    const mobNavMap = {dashboard:'mob-nav-dashboard',book:'mob-nav-book',myclasses:'mob-nav-myclasses',progress:'mob-nav-progress',account:'mob-nav-account',billing:'mob-nav-account'};
+    const mobNavMap = {dashboard:'mob-nav-dashboard',book:'mob-nav-book',myclasses:'mob-nav-myclasses',progress:'mob-nav-progress',account:'mob-nav-account',billing:'mob-nav-account',community:'mob-nav-account'};
     if (mobNavMap[id]) document.getElementById(mobNavMap[id]).classList.add('active');
     // Close sidebar on mobile if open
     if (window.innerWidth <= 640 && document.body.classList.contains('sidebar-open')) {
@@ -4872,10 +5125,12 @@
   }
 
   function showProgressTab(tab) {
-    document.getElementById('panel-tricks').style.display    = tab === 'tricks'    ? 'block' : 'none';
-    document.getElementById('panel-resources').style.display = tab === 'resources' ? 'block' : 'none';
-    document.getElementById('tab-tricks').classList.toggle('active',    tab === 'tricks');
-    document.getElementById('tab-resources').classList.toggle('active', tab === 'resources');
+    ['tricks','resources','classchat'].forEach(t => {
+      const panel = document.getElementById('panel-' + t);
+      const tabEl = document.getElementById('tab-' + t);
+      if (panel) panel.style.display = t === tab ? 'block' : 'none';
+      if (tabEl) tabEl.classList.toggle('active', t === tab);
+    });
   }
 
   function switchProgressClass(cls) {
@@ -4901,18 +5156,182 @@
     const notesArea = document.getElementById(hwId + '-notes-area');
     if (notesArea.style.display === 'none' || notesArea.style.display === '') {
       notesArea.style.display = 'block';
-      document.getElementById(hwId + '-submit-btn').textContent = 'Confirm &amp; send';
+      document.getElementById(hwId + '-submit-btn').textContent = 'Confirm & send';
       return;
     }
     // Actually submit
     notesArea.style.display = 'none';
     document.getElementById(hwId + '-submit-btn').style.display = 'none';
-    const badge = document.getElementById(hwId.replace('hw','hw') + '-submitted-badge') ||
-                  document.getElementById('hw1-submitted-badge');
-    // Show submitted badge on hw1
-    const b = hwId === 'hw1' ? document.getElementById('hw1-submitted-badge') : null;
-    if (b) { b.style.display = ''; }
+    const b = document.getElementById(hwId + '-submitted-badge');
+    if (b) b.style.display = '';
     showToast('Sent to instructor ✓');
+  }
+
+  // ─── TRICK SELF-ASSESSMENT ─────────────────────────────────────────────────
+  function toggleTrickAssess(el, submitRowId) {
+    if (el.classList.contains('unlocked') || el.classList.contains('awaiting-confirm')) return;
+    el.classList.toggle('self-assessed');
+    const grid = el.closest('.trick-grid');
+    const submitRow = document.getElementById(submitRowId);
+    if (!submitRow) return;
+    const count = grid.querySelectorAll('.trick.self-assessed').length;
+    const countEl = document.getElementById(submitRowId + '-count');
+    if (count > 0) {
+      submitRow.classList.add('visible');
+      if (countEl) countEl.textContent = count + ' trick' + (count > 1 ? 's' : '') + ' selected — submit when you\'re ready';
+    } else {
+      submitRow.classList.remove('visible');
+    }
+  }
+
+  function submitTrickAssess(gridId, submitRowId, instructor) {
+    const grid = document.getElementById(gridId);
+    const assessed = grid.querySelectorAll('.trick.self-assessed');
+    assessed.forEach(el => {
+      el.classList.remove('self-assessed');
+      el.classList.add('awaiting-confirm');
+      el.querySelector('.trick-status').textContent = 'Awaiting ' + instructor;
+      el.onclick = null;
+    });
+    document.getElementById(submitRowId).classList.remove('visible');
+    showToast('Self-assessment sent to ' + instructor + ' ✓');
+    // Simulate instructor confirming one trick after 3s (demo)
+    setTimeout(() => {
+      const first = grid.querySelector('.trick.awaiting-confirm');
+      if (first) {
+        first.classList.remove('awaiting-confirm');
+        first.classList.add('unlocked');
+        first.querySelector('.trick-status').textContent = '✓ Unlocked';
+        first.style.cursor = 'default';
+        showToast(first.querySelector('.trick-name').textContent + ' confirmed by ' + instructor + ' ✓');
+      }
+    }, 3000);
+  }
+
+  // ─── PROGRESS CLASS CHAT ──────────────────────────────────────────────────
+  function switchClassChat(cls) {
+    ['level2','dance'].forEach(c => {
+      const pane = document.getElementById('classchat-' + c);
+      const btn  = document.getElementById('classchat-sel-' + c);
+      if (pane) pane.style.display = c === cls ? 'flex' : 'none';
+      if (btn)  btn.classList.toggle('active', c === cls);
+    });
+  }
+
+  const _classChatReplies = {
+    level2: ["Looking good! Keep it up 💪","I'll check in with you at class on Monday.","Try filming yourself so you can review your positioning.","Great question! Let's discuss it at the start of next class."],
+    dance:  ["Love your commitment! 💜","See you Friday — we'll work on that together.","Keep up the daily stretching, it really does make a difference!","Proud of your progress this season Jess 🌟"],
+  };
+  let _classChatIdx = {level2:0, dance:0};
+
+  function sendClassChatMsg(cls) {
+    const input = document.getElementById('classchat-' + cls + '-input');
+    const text = input.value.trim();
+    if (!text) return;
+    const msgs = document.getElementById('classchat-' + cls + '-msgs');
+    const bubble = document.createElement('div');
+    bubble.style.cssText = 'display:flex;gap:10px;max-width:80%;align-self:flex-end;flex-direction:row-reverse';
+    bubble.innerHTML = `<div class="avatar" style="width:30px;height:30px;font-size:12px;flex-shrink:0">J</div>
+      <div><div style="font-size:12px;color:var(--grey);margin-bottom:4px;text-align:right">You · just now</div>
+      <div style="background:#0f1600;border:1px solid var(--lime);border-radius:10px;border-top-right-radius:3px;padding:10px 14px;font-size:14px;line-height:1.6">${text.replace(/</g,'&lt;')}</div></div>`;
+    msgs.appendChild(bubble);
+    input.value = '';
+    msgs.scrollTop = msgs.scrollHeight;
+    const replies = _classChatReplies[cls] || _classChatReplies.level2;
+    const reply = replies[_classChatIdx[cls]++ % replies.length];
+    const instrName = cls === 'dance' ? 'Mimi' : 'Chloe';
+    const instrColor = cls === 'dance' ? 'var(--lav)' : 'var(--lime)';
+    const instrBg = cls === 'dance' ? 'var(--lav)' : '#1a3000';
+    const instrTxt = cls === 'dance' ? 'var(--black)' : 'var(--lime)';
+    setTimeout(() => {
+      const r = document.createElement('div');
+      r.style.cssText = 'display:flex;gap:10px;max-width:80%';
+      r.innerHTML = `<div class="avatar" style="background:${instrBg};color:${instrTxt};font-size:13px;width:30px;height:30px;flex-shrink:0">${instrName[0]}</div>
+        <div><div style="font-size:12px;color:var(--grey);margin-bottom:4px">${instrName} · just now</div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;border-top-left-radius:3px;padding:10px 14px;font-size:14px;line-height:1.6">${reply}</div></div>`;
+      msgs.appendChild(r);
+      msgs.scrollTop = msgs.scrollHeight;
+    }, 1000);
+  }
+
+  function handleClassChatFile(input, cls) {
+    if (!input.files[0]) return;
+    const name = input.files[0].name;
+    const msgs = document.getElementById('classchat-' + cls + '-msgs');
+    const bubble = document.createElement('div');
+    bubble.style.cssText = 'display:flex;gap:10px;max-width:80%;align-self:flex-end;flex-direction:row-reverse';
+    bubble.innerHTML = `<div class="avatar" style="width:30px;height:30px;font-size:12px;flex-shrink:0">J</div>
+      <div style="background:#0f1600;border:1px solid var(--lime);border-radius:10px;border-top-right-radius:3px;padding:10px 14px;font-size:14px">📎 ${name}</div>`;
+    msgs.appendChild(bubble);
+    msgs.scrollTop = msgs.scrollHeight;
+    input.value = '';
+  }
+
+  // ─── COMMUNITY ─────────────────────────────────────────────────────────────
+  const _commGroups = ['headstand','handstand','kiki','splits','invertsclub'];
+
+  function showCommGroup(id) {
+    _commGroups.forEach(g => {
+      const tab  = document.getElementById('comm-tab-' + g);
+      const pane = document.getElementById('comm-pane-' + g);
+      if (tab)  { tab.style.borderLeftColor = g === id ? 'var(--lime)' : 'transparent'; tab.style.background = g === id ? '#0a1200' : ''; }
+      if (pane) { pane.style.display = g === id ? 'flex' : 'none'; }
+    });
+  }
+
+  function joinAndShowGroup(id) {
+    const tab = document.getElementById('comm-tab-' + id);
+    if (tab) {
+      tab.style.borderLeft = '3px solid var(--lime)';
+      const sub = tab.querySelector('div:last-child');
+      if (sub) sub.innerHTML = sub.innerHTML.replace('<span style="color:var(--lime)">Join</span>', '<span style="color:var(--grey)">Joined</span>');
+    }
+    showToast('Joined group!');
+    showCommGroup(id);
+  }
+
+  function leaveGroup(id) {
+    showToast('You\'ve left the group', '#333');
+    showCommGroup('headstand');
+  }
+
+  function sendCommMsg(groupId) {
+    const input = document.getElementById('comm-input-' + groupId);
+    if (!input) return;
+    const text = input.value.trim();
+    if (!text) return;
+    const msgs = document.getElementById('comm-msgs-' + groupId);
+    if (!msgs) return;
+    const bubble = document.createElement('div');
+    bubble.style.cssText = 'display:flex;gap:10px;max-width:82%;align-self:flex-end;flex-direction:row-reverse';
+    bubble.innerHTML = `<div class="avatar" style="width:30px;height:30px;font-size:12px;flex-shrink:0">J</div>
+      <div><div style="font-size:12px;color:var(--grey);margin-bottom:4px;text-align:right">You · just now</div>
+      <div style="background:#0f1600;border:1px solid var(--lime);border-radius:10px;border-top-right-radius:3px;padding:10px 14px;font-size:14px;line-height:1.6">${text.replace(/</g,'&lt;')}</div></div>`;
+    msgs.appendChild(bubble);
+    input.value = '';
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function handleCommFileUpload(input, groupId) {
+    if (!input.files[0]) return;
+    const file = input.files[0];
+    const msgs = document.getElementById('comm-msgs-' + groupId);
+    if (!msgs) return;
+    const bubble = document.createElement('div');
+    bubble.style.cssText = 'display:flex;gap:10px;max-width:82%;align-self:flex-end;flex-direction:row-reverse';
+    const isImage = file.type.startsWith('image/');
+    if (isImage) {
+      const url = URL.createObjectURL(file);
+      bubble.innerHTML = `<div class="avatar" style="width:30px;height:30px;font-size:12px;flex-shrink:0">J</div>
+        <div><div style="font-size:12px;color:var(--grey);margin-bottom:4px;text-align:right">You · just now</div>
+        <img src="${url}" style="max-width:200px;border-radius:10px;border:1px solid var(--lime)"></div>`;
+    } else {
+      bubble.innerHTML = `<div class="avatar" style="width:30px;height:30px;font-size:12px;flex-shrink:0">J</div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:10px;border-top-right-radius:3px;padding:10px 14px;font-size:14px">📎 ${file.name}</div>`;
+    }
+    msgs.appendChild(bubble);
+    msgs.scrollTop = msgs.scrollHeight;
+    input.value = '';
   }
 
   // ─── CASUAL FILTERS ────────────────────────────────────────────────────────
