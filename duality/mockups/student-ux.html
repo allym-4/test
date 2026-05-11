@@ -974,6 +974,34 @@
     font-size: 12px; color: var(--grey); line-height: 1.7; margin-bottom: 16px;
   }
 
+  /* BIRTHDAY MODAL */
+  @keyframes floatUp {
+    0% { transform: translateY(100px); opacity: 0; }
+    20% { opacity: 1; }
+    100% { transform: translateY(-300px) rotate(15deg); opacity: 0; }
+  }
+  #birthday-modal .modal {
+    border: 2px solid var(--lime);
+    max-width: 380px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  #birthday-modal .balloon {
+    position: absolute; font-size: 32px;
+    animation: floatUp 3s ease-in infinite; pointer-events: none;
+  }
+
+  /* GIFT CARD AMOUNT BUTTONS */
+  .gc-amt-btn {
+    background: #1a1a1a; border: 1px solid #333; border-radius: 8px;
+    padding: 12px; text-align: center;
+    font-family: 'Archivo Black', sans-serif; font-size: 16px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .gc-amt-btn:hover { border-color: #555; }
+  .gc-amt-btn.active { background: #0a1800; border-color: var(--lime); color: var(--lime); }
+
   /* PROFILE BANNER on dashboard */
   .profile-banner {
     background: #0d0a00; border: 1px solid #3a2e00;
@@ -1321,6 +1349,23 @@
       </div>
 
       </div> <!-- end dash-enrolled -->
+    </div>
+
+    <!-- BIRTHDAY MODAL -->
+    <div class="modal-overlay" id="birthday-modal">
+      <div class="modal" style="max-width:380px;text-align:center;border:2px solid var(--lime);position:relative;overflow:hidden">
+        <div class="balloon" style="left:10%;animation-delay:0s">🎈</div>
+        <div class="balloon" style="left:20%;animation-delay:0.3s">🎈</div>
+        <div class="balloon" style="left:40%;animation-delay:0.6s">🎈</div>
+        <div class="balloon" style="left:55%;animation-delay:0.9s">🎉</div>
+        <div class="balloon" style="left:70%;animation-delay:1.2s">🎊</div>
+        <div class="balloon" style="left:85%;animation-delay:1.5s">🎈</div>
+        <div style="font-size:48px;margin-bottom:14px;position:relative;z-index:1">🎂</div>
+        <div style="font-family:'Archivo Black',sans-serif;font-size:24px;color:var(--lime);margin-bottom:10px;position:relative;z-index:1">Happy Birthday, Jess!</div>
+        <div style="font-size:15px;color:var(--grey);margin-bottom:10px;line-height:1.6;position:relative;z-index:1">Wishing you a wonderful day from everyone at Duality Pole 🎉</div>
+        <div style="font-size:13px;color:var(--grey);margin-bottom:24px;line-height:1.6;position:relative;z-index:1">You have a surprise waiting — check your email 🎁</div>
+        <button onclick="document.getElementById('birthday-modal').classList.remove('open')" style="width:100%;background:var(--lime);border:none;border-radius:10px;padding:14px;font-family:'Archivo Black',sans-serif;font-size:14px;color:#000;cursor:pointer;position:relative;z-index:1">Thanks! 🎉</button>
+      </div>
     </div>
 
 
@@ -3480,6 +3525,56 @@
             </div>
             <span class="tag tag-lime">Active</span>
           </div>
+
+          <div class="divider"></div>
+
+          <!-- REFER A FRIEND -->
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
+            <div style="font-family:'Archivo Black',sans-serif;font-size:16px;margin-bottom:6px;">Refer a Friend</div>
+            <div style="font-size:13px;color:var(--grey);margin-bottom:14px;line-height:1.5;">Share your code and your friend gets $50 off their first season. You get $50 account credit once they complete their first payment.</div>
+            <div style="background:#0a1800;border:1px solid var(--lime);border-radius:8px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+              <div>
+                <div style="font-size:11px;color:var(--grey);margin-bottom:4px;">YOUR REFERRAL CODE</div>
+                <div style="font-family:'Archivo Black',sans-serif;font-size:22px;color:var(--lime);letter-spacing:3px;">JESS50</div>
+              </div>
+              <button onclick="copyReferralCode()" style="background:var(--lime);border:none;border-radius:8px;padding:10px 16px;font-family:'Archivo Black',sans-serif;font-size:12px;color:#000;cursor:pointer;">Copy</button>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+              <div style="background:#111;border:1px solid #222;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-family:'Archivo Black',sans-serif;font-size:20px;color:var(--lime)">2</div>
+                <div style="font-size:10px;color:var(--grey);text-transform:uppercase;margin-top:2px;">Referrals</div>
+              </div>
+              <div style="background:#111;border:1px solid #222;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-family:'Archivo Black',sans-serif;font-size:20px;color:#4ade80">$100</div>
+                <div style="font-size:10px;color:var(--grey);text-transform:uppercase;margin-top:2px;">Credits Earned</div>
+              </div>
+              <div style="background:#111;border:1px solid #222;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-family:'Archivo Black',sans-serif;font-size:20px;color:var(--lav)">1</div>
+                <div style="font-size:10px;color:var(--grey);text-transform:uppercase;margin-top:2px;">Pending</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GIFT CARDS -->
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+              <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">Gift Cards</div>
+              <button onclick="openModal('modal-buy-giftcard')" style="background:var(--lime);border:none;border-radius:8px;padding:8px 14px;font-family:'Archivo Black',sans-serif;font-size:12px;color:#000;cursor:pointer;">Buy a Gift Card</button>
+            </div>
+            <!-- Received gift card -->
+            <div style="background:#0a1800;border:1px solid #1e3800;border-radius:8px;padding:14px 16px;margin-bottom:10px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div>
+                  <div style="font-size:11px;color:var(--grey);margin-bottom:3px;">GIFT CARD FROM RUBY KIM</div>
+                  <div style="font-family:'Archivo Black',sans-serif;font-size:18px;color:var(--lime)">$50 remaining</div>
+                  <div style="font-size:11px;color:var(--grey);margin-top:3px;">Code: RUBY-GIFT-2025 · Expires 1 Jan 2026</div>
+                </div>
+                <div style="font-size:28px;">🎁</div>
+              </div>
+            </div>
+            <div style="font-size:12px;color:var(--grey);">Gift cards are applied automatically at checkout. <span style="color:var(--lime);cursor:pointer;" onclick="openModal('modal-redeem-giftcard')">Redeem a code</span></div>
+          </div>
+
         </div>
       </div>
 
@@ -3912,6 +4007,12 @@
           <button class="btn btn-ghost btn-sm" style="white-space:nowrap" onclick="applyDiscountCode()">Apply</button>
         </div>
         <div id="co-discount-result" style="display:none;margin-top:8px;font-size:13px;padding:8px 12px;background:#0a1800;border:1px solid var(--lime);border-radius:8px;color:var(--lime)"></div>
+        <!-- Gift card code -->
+        <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
+          <input type="text" id="gc-code-input" placeholder="Gift card code" style="flex:1;background:#1a1a1a;border:1px solid #333;border-radius:8px;color:#fff;padding:9px 12px;font-family:inherit;font-size:13px;" />
+          <button onclick="applyGiftCard()" style="background:var(--lime);border:none;border-radius:8px;padding:9px 14px;font-family:'Archivo Black',sans-serif;font-size:12px;color:#000;cursor:pointer;">Apply</button>
+        </div>
+        <div id="gc-result" style="display:none;font-size:12px;color:#4ade80;margin-top:8px;"></div>
       </div>
 
       <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px">
@@ -5066,6 +5167,46 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- BUY GIFT CARD MODAL -->
+<div class="modal-overlay" id="modal-buy-giftcard">
+  <div class="modal">
+    <div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div class="modal-title">Buy a Gift Card</div>
+      <button class="modal-close btn btn-ghost btn-sm" onclick="closeModal('modal-buy-giftcard')">✕</button>
+    </div>
+    <!-- Amount selection -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;color:var(--grey);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.7px;">Select Amount</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;" id="gc-amounts">
+        <div class="gc-amt-btn active" onclick="selectGCAmount(this,'50')">$50</div>
+        <div class="gc-amt-btn" onclick="selectGCAmount(this,'100')">$100</div>
+        <div class="gc-amt-btn" onclick="selectGCAmount(this,'150')">$150</div>
+        <div class="gc-amt-btn" onclick="selectGCAmount(this,'200')">$200</div>
+      </div>
+    </div>
+    <div style="margin-bottom:12px;"><label style="font-size:12px;color:var(--grey);display:block;margin-bottom:6px;">Recipient Name</label><input type="text" placeholder="Friend's name" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;color:#fff;padding:10px 12px;font-family:inherit;font-size:13px;" /></div>
+    <div style="margin-bottom:12px;"><label style="font-size:12px;color:var(--grey);display:block;margin-bottom:6px;">Recipient Email</label><input type="email" placeholder="friend@email.com" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;color:#fff;padding:10px 12px;font-family:inherit;font-size:13px;" /></div>
+    <div style="margin-bottom:16px;"><label style="font-size:12px;color:var(--grey);display:block;margin-bottom:6px;">Personal Message (optional)</label><textarea placeholder="Add a message..." style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;color:#fff;padding:10px 12px;font-family:inherit;font-size:13px;min-height:70px;resize:none;"></textarea></div>
+    <button onclick="alert('Gift card purchased and sent!');closeModal('modal-buy-giftcard')" style="width:100%;background:var(--lime);border:none;border-radius:10px;padding:14px;font-family:'Archivo Black',sans-serif;font-size:14px;color:#000;cursor:pointer;" id="gc-purchase-btn">Purchase &amp; Send — $50</button>
+  </div>
+</div>
+
+<!-- REDEEM GIFT CARD MODAL -->
+<div class="modal-overlay" id="modal-redeem-giftcard">
+  <div class="modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div class="modal-title">Redeem a Gift Card</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-redeem-giftcard')">✕</button>
+    </div>
+    <div style="font-size:14px;color:var(--grey);margin-bottom:20px;line-height:1.6;">Enter your gift card code below to add the credit to your account.</div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:12px;color:var(--grey);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.7px;">Gift Card Code</label>
+      <input type="text" id="redeem-gc-input" placeholder="e.g. RUBY-GIFT-2025" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;color:#fff;padding:12px 14px;font-family:'Archivo Black',sans-serif;font-size:16px;letter-spacing:2px;text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()" />
+    </div>
+    <button onclick="alert('Gift card applied! $50 credit added to your account.');closeModal('modal-redeem-giftcard')" style="width:100%;background:var(--lime);border:none;border-radius:10px;padding:14px;font-family:'Archivo Black',sans-serif;font-size:14px;color:#000;cursor:pointer;">Apply to Account</button>
   </div>
 </div>
 
@@ -7380,6 +7521,43 @@
     document.getElementById('su-step-4').style.display = 'none';
     _suUpdateDots(1);
     showAuthPanel('signin');
+  }
+
+  // ── OPEN MODAL HELPER ──────────────────────────────────────
+  function openModal(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('open');
+  }
+
+  // ── BIRTHDAY MODAL ────────────────────────────────────────
+  setTimeout(function() {
+    const bd = document.getElementById('birthday-modal');
+    if (bd) bd.classList.add('open');
+  }, 1500);
+
+  // ── REFERRAL CODE ─────────────────────────────────────────
+  function copyReferralCode() {
+    navigator.clipboard.writeText('JESS50').catch(() => {});
+    const btn = event.target;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  }
+
+  // ── GIFT CARD AMOUNT SELECTOR ─────────────────────────────
+  function selectGCAmount(el, amount) {
+    document.querySelectorAll('.gc-amt-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    const btn = document.getElementById('gc-purchase-btn');
+    if (btn) btn.textContent = 'Purchase & Send — $' + amount;
+  }
+
+  // ── APPLY GIFT CARD AT CHECKOUT ───────────────────────────
+  function applyGiftCard() {
+    const code = (document.getElementById('gc-code-input').value || '').trim().toUpperCase();
+    const result = document.getElementById('gc-result');
+    if (!code) return;
+    result.style.display = '';
+    result.textContent = '🎁 Gift card applied — $50 discount will be applied at checkout';
   }
 </script>
 </body>
