@@ -223,8 +223,6 @@
     font-family: 'Archivo Black', sans-serif; font-size: 16px;
     color: var(--lime); line-height: 1.2; margin-top: 1px;
   }
-  #season-class-list .class-row.locked .class-row-time-label { color: var(--grey); }
-  #season-class-list .class-row.locked.selected .class-row-time-label { color: var(--grey); }
   #season-class-list .class-row.locked.selected .class-row-time-block { background: #191919; }
   .class-row-body { flex: 1; min-width: 0; }
   .class-row-body .class-row-name { font-family: 'Archivo Black', sans-serif; font-size: 15px; color: var(--white); }
@@ -239,12 +237,9 @@
   #season-class-list .class-row.locked .class-row-check { display: flex; }
   #season-class-list .class-row.locked .class-row-check { border-color: #3a1a1a; }
   #season-class-list .class-row.locked.selected .class-row-check { background: #3a1a1a; border-color: #662222; color: #ff6b6b; }
-  .class-row-lock {
-    background: #1a0000; color: #ff6b6b; border: 1px solid #662222;
-    border-radius: 20px; padding: 3px 10px; font-size: 11px;
-    font-weight: 600; letter-spacing: 0.03em; flex-shrink: 0;
+  #season-class-list .class-row.locked .tag-grey {
+    background: #1a0000; color: #ff6b6b; border-color: #662222;
   }
-  #season-class-list .class-row.locked .class-row-tags { display: none; }
 
   /* FILTER GROUPS */
   .filter-group { margin-bottom: 10px; }
@@ -1426,13 +1421,13 @@
                 <div class="class-row-time-block"><div class="class-row-day-label">Mon</div><div class="class-row-time-label">7:30pm</div></div>
                 <div class="class-row-body"><div class="class-row-name">Level 4</div><div class="class-row-instr">Chloe</div></div>
                 <div class="class-row-tags"><span class="tag tag-grey">Level 4+</span></div>
-                <div class="class-row-lock">🔒</div>
+                <div class="class-row-check">✓</div>
               </div>
               <div class="class-row locked" data-day="mon" data-instr="chloe" data-level="3" data-locked="true" onclick="openLevelWarning('Level 3','Mon 8:30pm')">
                 <div class="class-row-time-block"><div class="class-row-day-label">Mon</div><div class="class-row-time-label">8:30pm</div></div>
                 <div class="class-row-body"><div class="class-row-name">Level 3</div><div class="class-row-instr">Chloe</div></div>
                 <div class="class-row-tags"><span class="tag tag-grey">Level 3+</span></div>
-                <div class="class-row-lock">🔒</div>
+                <div class="class-row-check">✓</div>
               </div>
               <!-- TUESDAY -->
               <div class="class-row" data-day="tue" data-instr="avalon" data-level="2" data-locked="false" onclick="toggleClass('l2-tue530','Level 2','Tue 5:30pm',this)">
@@ -1445,31 +1440,31 @@
                 <div class="class-row-time-block"><div class="class-row-day-label">Tue</div><div class="class-row-time-label">6:30pm</div></div>
                 <div class="class-row-body"><div class="class-row-name">3 Tricks</div><div class="class-row-instr">Avalon</div></div>
                 <div class="class-row-tags"><span class="tag tag-grey">Level 3+</span></div>
-                <div class="class-row-lock">🔒</div>
+                <div class="class-row-check">✓</div>
               </div>
               <div class="class-row locked" data-day="tue" data-instr="mimi" data-level="3" data-locked="true" onclick="openLevelWarning('Strip','Tue 6:30pm')">
                 <div class="class-row-time-block"><div class="class-row-day-label">Tue</div><div class="class-row-time-label">6:30pm</div></div>
                 <div class="class-row-body"><div class="class-row-name">Strip</div><div class="class-row-instr">Mimi</div></div>
                 <div class="class-row-tags"><span class="tag tag-grey">Level 3+</span></div>
-                <div class="class-row-lock">🔒</div>
+                <div class="class-row-check">✓</div>
               </div>
               <div class="class-row locked" data-day="tue" data-instr="chloe" data-level="5" data-locked="true" onclick="openLevelWarning('Level 5','Tue 7:30pm')">
                 <div class="class-row-time-block"><div class="class-row-day-label">Tue</div><div class="class-row-time-label">7:30pm</div></div>
                 <div class="class-row-body"><div class="class-row-name">Level 5</div><div class="class-row-instr">Chloe</div></div>
                 <div class="class-row-tags"><span class="tag tag-grey">Level 5+</span></div>
-                <div class="class-row-lock">🔒</div>
+                <div class="class-row-check">✓</div>
               </div>
               <div class="class-row locked" data-day="tue" data-instr="mimi" data-level="6" data-locked="true" onclick="openLevelWarning('Level 6','Tue 7:30pm')">
                 <div class="class-row-time-block"><div class="class-row-day-label">Tue</div><div class="class-row-time-label">7:30pm</div></div>
                 <div class="class-row-body"><div class="class-row-name">Level 6</div><div class="class-row-instr">Mimi</div></div>
                 <div class="class-row-tags"><span class="tag tag-grey">Level 6</span></div>
-                <div class="class-row-lock">🔒</div>
+                <div class="class-row-check">✓</div>
               </div>
               <div class="class-row locked" data-day="tue" data-instr="mimi" data-level="5" data-locked="true" onclick="openLevelWarning('High Tricks','Tue 8:30pm')">
                 <div class="class-row-time-block"><div class="class-row-day-label">Tue</div><div class="class-row-time-label">8:30pm</div></div>
                 <div class="class-row-body"><div class="class-row-name">High Tricks</div><div class="class-row-instr">Mimi &mdash; <span style="color:#ff6b6b">Fully booked</span></div></div>
                 <div class="class-row-tags"><span class="tag tag-grey">Level 5+</span></div>
-                <div class="class-row-lock">🔒</div>
+                <div class="class-row-check">✓</div>
               </div>
               <!-- WEDNESDAY -->
               <div class="class-row" data-day="wed" data-instr="chloe" data-level="1" data-locked="false" onclick="toggleClass('l1-wed530','Level 1','Wed 5:30pm',this)">
@@ -1488,7 +1483,7 @@
                 <div class="class-row-time-block"><div class="class-row-day-label">Wed</div><div class="class-row-time-label">6:30pm</div></div>
                 <div class="class-row-body"><div class="class-row-name">Chair</div><div class="class-row-instr">Chloe</div></div>
                 <div class="class-row-tags"><span class="tag tag-grey">Level 3+</span></div>
-                <div class="class-row-lock">🔒</div>
+                <div class="class-row-check">✓</div>
               </div>
               <div class="class-row" data-day="wed" data-instr="chloe" data-level="0" data-locked="false" onclick="toggleClass('dancevir-wed730','Dance Virgin','Wed 7:30pm',this)">
                 <div class="class-row-time-block"><div class="class-row-day-label">Wed</div><div class="class-row-time-label">7:30pm</div></div>
@@ -1500,7 +1495,7 @@
                 <div class="class-row-time-block"><div class="class-row-day-label">Wed</div><div class="class-row-time-label">7:30pm</div></div>
                 <div class="class-row-body"><div class="class-row-name">Level 3</div><div class="class-row-instr">Maz</div></div>
                 <div class="class-row-tags"><span class="tag tag-grey">Level 3+</span></div>
-                <div class="class-row-lock">🔒</div>
+                <div class="class-row-check">✓</div>
               </div>
               <div class="class-row" data-day="wed" data-instr="bambi" data-level="2" data-locked="false" onclick="toggleClass('l2-wed830','Level 2','Wed 8:30pm',this)">
                 <div class="class-row-time-block"><div class="class-row-day-label">Wed</div><div class="class-row-time-label">8:30pm</div></div>
@@ -1512,7 +1507,7 @@
                 <div class="class-row-time-block"><div class="class-row-day-label">Wed</div><div class="class-row-time-label">8:30pm</div></div>
                 <div class="class-row-body"><div class="class-row-name">4 Tricks</div><div class="class-row-instr">Chloe</div></div>
                 <div class="class-row-tags"><span class="tag tag-grey">Level 4+</span></div>
-                <div class="class-row-lock">🔒</div>
+                <div class="class-row-check">✓</div>
               </div>
               <!-- THURSDAY -->
               <div class="class-row" data-day="thu" data-instr="amy" data-level="0" data-locked="false" onclick="toggleClass('stripvir-thu530','Strip Virgin','Thu 5:30pm',this)">
@@ -1525,25 +1520,25 @@
                 <div class="class-row-time-block"><div class="class-row-day-label">Thu</div><div class="class-row-time-label">5:30pm</div></div>
                 <div class="class-row-body"><div class="class-row-name">Inter Floor</div><div class="class-row-instr">Mimi</div></div>
                 <div class="class-row-tags"><span class="tag tag-grey">Level 3+</span></div>
-                <div class="class-row-lock">🔒</div>
+                <div class="class-row-check">✓</div>
               </div>
               <div class="class-row locked" data-day="thu" data-instr="mimi" data-level="5" data-locked="true" onclick="openLevelWarning('Level 5','Thu 6:30pm')">
                 <div class="class-row-time-block"><div class="class-row-day-label">Thu</div><div class="class-row-time-label">6:30pm</div></div>
                 <div class="class-row-body"><div class="class-row-name">Level 5</div><div class="class-row-instr">Mimi</div></div>
                 <div class="class-row-tags"><span class="tag tag-grey">Level 5+</span></div>
-                <div class="class-row-lock">🔒</div>
+                <div class="class-row-check">✓</div>
               </div>
               <div class="class-row locked" data-day="thu" data-instr="mimi" data-level="3" data-locked="true" onclick="openLevelWarning('Strip','Thu 7:30pm')">
                 <div class="class-row-time-block"><div class="class-row-day-label">Thu</div><div class="class-row-time-label">7:30pm</div></div>
                 <div class="class-row-body"><div class="class-row-name">Strip</div><div class="class-row-instr">Mimi</div></div>
                 <div class="class-row-tags"><span class="tag tag-grey">Level 3+</span></div>
-                <div class="class-row-lock">🔒</div>
+                <div class="class-row-check">✓</div>
               </div>
               <div class="class-row locked" data-day="thu" data-instr="mimi" data-level="3" data-locked="true" onclick="openLevelWarning('Dirty Dance','Thu 8:30pm')">
                 <div class="class-row-time-block"><div class="class-row-day-label">Thu</div><div class="class-row-time-label">8:30pm</div></div>
                 <div class="class-row-body"><div class="class-row-name">Dirty Dance</div><div class="class-row-instr">Mimi</div></div>
                 <div class="class-row-tags"><span class="tag tag-grey">Level 3+</span></div>
-                <div class="class-row-lock">🔒</div>
+                <div class="class-row-check">✓</div>
               </div>
               <!-- FRIDAY -->
               <div class="class-row" data-day="fri" data-instr="mimi" data-level="0" data-locked="false" onclick="toggleClass('kiki-fri530','Kiki','Fri 5:30pm',this)">
@@ -1569,7 +1564,7 @@
                 <div class="class-row-time-block"><div class="class-row-day-label">Sat</div><div class="class-row-time-label">10:00am</div></div>
                 <div class="class-row-body"><div class="class-row-name">Level 4</div><div class="class-row-instr">Chloe</div></div>
                 <div class="class-row-tags"><span class="tag tag-grey">Level 4+</span></div>
-                <div class="class-row-lock">🔒</div>
+                <div class="class-row-check">✓</div>
               </div>
               <div class="class-row" data-day="sat" data-instr="chloe" data-level="0" data-locked="false" onclick="toggleClass('floorvir-sat12','Floor Virgin','Sat 12:00pm',this)">
                 <div class="class-row-time-block"><div class="class-row-day-label">Sat</div><div class="class-row-time-label">12:00pm</div></div>
@@ -1582,13 +1577,13 @@
                 <div class="class-row-time-block"><div class="class-row-day-label">Sun</div><div class="class-row-time-label">10:00am</div></div>
                 <div class="class-row-body"><div class="class-row-name">Advanced Floor</div><div class="class-row-instr">Mimi</div></div>
                 <div class="class-row-tags"><span class="tag tag-grey">Level 4+</span></div>
-                <div class="class-row-lock">🔒</div>
+                <div class="class-row-check">✓</div>
               </div>
               <div class="class-row locked" data-day="sun" data-instr="mimi" data-level="5" data-locked="true" onclick="openLevelWarning('5/6 Tricks','Sun 11:00am')">
                 <div class="class-row-time-block"><div class="class-row-day-label">Sun</div><div class="class-row-time-label">11:00am</div></div>
                 <div class="class-row-body"><div class="class-row-name">5/6 Tricks</div><div class="class-row-instr">Mimi</div></div>
                 <div class="class-row-tags"><span class="tag tag-grey">Level 5+</span></div>
-                <div class="class-row-lock">🔒</div>
+                <div class="class-row-check">✓</div>
               </div>
             </div>
 
@@ -5459,8 +5454,8 @@
 
     // Populate red lock badge text from data-level on locked season rows
     document.querySelectorAll('#season-class-list .class-row.locked').forEach(row => {
-      const lockEl = row.querySelector('.class-row-lock');
-      if (lockEl) lockEl.textContent = '🔒 Level ' + row.dataset.level + '+';
+      const tagEl = row.querySelector('.class-row-tags .tag-grey');
+      if (tagEl) tagEl.textContent = '🔒 Level ' + row.dataset.level + '+';
     });
 
     // Inject spots badges on casual rows
