@@ -4153,6 +4153,22 @@
       // Level toggle: hide level-locked rows (but NOT routine-locked - those always show)
       if (casualLevelOn && isLocked && !routine) { row.style.display = 'none'; return; }
 
+      // Level-locked rows: update appearance based on toggle state
+      if (isLocked && !routine) {
+        const nameEl  = row.querySelector('.casual-name');
+        const priceEl = row.querySelector('.casual-price');
+        const tagEl   = row.querySelector('.tag-grey');
+        if (casualLevelOn) {
+          if (nameEl)  nameEl.style.color = 'var(--grey)';
+          if (priceEl) { priceEl.style.cssText = 'font-size:18px;color:#555'; priceEl.innerHTML = '&#128274;'; }
+          if (tagEl)   tagEl.style.opacity = '';
+        } else {
+          if (nameEl)  nameEl.style.color = '';
+          if (priceEl) { priceEl.style.cssText = ''; priceEl.innerHTML = '<div class="casual-price-full">$40</div>'; }
+          if (tagEl)   tagEl.style.opacity = '0.4';
+        }
+      }
+
       // Type filter
       let typeOk = true;
       if (casualTypeFilter === 'credit')   typeOk = catchup && !routine && !isCancelled && !isFull;
