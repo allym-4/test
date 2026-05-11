@@ -359,6 +359,16 @@
   .modal-sub { color: var(--grey); font-size: 15px; margin-bottom: 26px; line-height: 1.6; }
   .modal-actions { display: flex; gap: 12px; margin-top: 28px; }
 
+  /* ONBOARDING QUIZ */
+  .onboard-option { display:flex;align-items:center;gap:14px;padding:16px 18px;background:var(--card);border:2px solid var(--border);border-radius:12px;cursor:pointer;transition:border-color 0.15s; }
+  .onboard-option:hover { border-color:#444; }
+  .onboard-option-title { font-size:15px;font-weight:500;margin-bottom:2px; }
+  .onboard-option-sub { font-size:13px;color:var(--grey); }
+  .onboard-dot { width:20px;height:20px;border-radius:50%;border:2px solid #444;flex-shrink:0; }
+  .onboard-dot.lime { border-color:var(--lime);background:var(--lime); }
+  .onboard-progress { height:3px;background:#222;border-radius:2px;margin-bottom:4px; }
+  .onboard-progress-bar { height:100%;background:var(--lime);border-radius:2px;transition:width 0.3s; }
+
   /* PAYMENT OPTIONS */
   .pay-option {
     border: 2px solid var(--border); border-radius: 12px;
@@ -646,18 +656,18 @@
       <div class="grid-3 mb-24">
         <div class="card" style="cursor:pointer;border-color:#2a2a2a;text-align:center;padding:22px 16px" onclick="showScreen('book');showBookTab('casual')" onmouseover="this.style.borderColor='#444'" onmouseout="this.style.borderColor='#2a2a2a'">
           <div style="font-size:26px;margin-bottom:10px">&#9675;</div>
-          <div style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:5px">Book a casual class</div>
+          <div style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:5px">Makeup or casual class</div>
           <div style="font-size:13px;color:var(--grey)">Drop into any eligible class</div>
         </div>
-        <div class="card" style="cursor:pointer;border-color:#2a2a2a;text-align:center;padding:22px 16px" onclick="openTrialInfo()" onmouseover="this.style.borderColor='#444'" onmouseout="this.style.borderColor='#2a2a2a'">
-          <div style="font-size:26px;margin-bottom:10px">&#9651;</div>
-          <div style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:5px">Book a trial class</div>
-          <div style="font-size:13px;color:var(--grey)">First time? Start here - $35</div>
+        <div class="card" style="cursor:pointer;border-color:#2a2a2a;text-align:center;padding:22px 16px" onclick="showScreen('book');showBookTab('casual')" onmouseover="this.style.borderColor='#444'" onmouseout="this.style.borderColor='#2a2a2a'">
+          <div style="font-size:26px;margin-bottom:10px">&#9632;</div>
+          <div style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:5px">Book practice time</div>
+          <div style="font-size:13px;color:var(--grey)">Open studio - $20</div>
         </div>
-        <div class="card" style="cursor:pointer;border-color:#2a2a2a;text-align:center;padding:22px 16px" onclick="showScreen('book');showBookTab('workshops')" onmouseover="this.style.borderColor='#444'" onmouseout="this.style.borderColor='#2a2a2a'">
-          <div style="font-size:26px;margin-bottom:10px">&#9670;</div>
-          <div style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:5px">Workshops and events</div>
-          <div style="font-size:13px;color:var(--grey)">Intensives, showcases and more</div>
+        <div class="card" style="cursor:pointer;border-color:#2a2a2a;text-align:center;padding:22px 16px" onclick="showScreen('progress')" onmouseover="this.style.borderColor='#444'" onmouseout="this.style.borderColor='#2a2a2a'">
+          <div style="font-size:26px;margin-bottom:10px">&#9651;</div>
+          <div style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:5px">See my progress</div>
+          <div style="font-size:13px;color:var(--grey)">Tricks, levels and resources</div>
         </div>
       </div>
 
@@ -1667,63 +1677,311 @@
 <!-- ONBOARDING MODAL -->
 <div class="modal-overlay open" id="onboarding-modal">
   <div class="modal" style="max-width:520px">
+
+    <!-- STEP 1: First time pole OR first time at Duality? -->
     <div id="onboard-step-1">
       <div style="font-size:32px;text-align:center;margin-bottom:18px">&#9670;</div>
       <div class="modal-title" style="text-align:center">Welcome to Duality</div>
-      <div class="modal-sub" style="text-align:center">Is this your first time pole dancing?</div>
+      <div class="modal-sub" style="text-align:center">Let's find you the right class.</div>
       <div style="display:flex;flex-direction:column;gap:12px">
-        <div style="display:flex;align-items:center;gap:14px;padding:18px 20px;background:var(--card);border:2px solid var(--border);border-radius:12px;cursor:pointer;transition:border-color 0.15s" onmouseover="this.style.borderColor='#444'" onmouseout="this.style.borderColor='var(--border)'" onclick="showOnboardStep(2)">
-          <div style="width:22px;height:22px;border-radius:50%;border:2px solid var(--lime);background:var(--lime);flex-shrink:0"></div>
+        <div class="onboard-option" onclick="showOnboardStep('1b')">
+          <div class="onboard-dot lime"></div>
           <div>
-            <div style="font-size:15px;font-weight:500;margin-bottom:3px">Yes - completely new to pole</div>
-            <div style="font-size:13px;color:var(--grey)">I'll show you where to start</div>
+            <div class="onboard-option-title">It's my first time pole dancing</div>
+            <div class="onboard-option-sub">I've never done pole or I'm a complete beginner</div>
           </div>
         </div>
-        <div style="display:flex;align-items:center;gap:14px;padding:18px 20px;background:var(--card);border:2px solid var(--border);border-radius:12px;cursor:pointer;transition:border-color 0.15s" onmouseover="this.style.borderColor='#444'" onmouseout="this.style.borderColor='var(--border)'" onclick="showOnboardStep(3)">
-          <div style="width:22px;height:22px;border-radius:50%;border:2px solid #444;flex-shrink:0"></div>
+        <div class="onboard-option" onclick="showOnboardStep('2')">
+          <div class="onboard-dot"></div>
           <div>
-            <div style="font-size:15px;font-weight:500;margin-bottom:3px">I've done some pole before</div>
-            <div style="font-size:13px;color:var(--grey)">I'll help you find the right level</div>
+            <div class="onboard-option-title">I've done pole before but I'm new to Duality</div>
+            <div class="onboard-option-sub">I've trained at another studio or took classes elsewhere</div>
           </div>
         </div>
-        <div style="display:flex;align-items:center;gap:14px;padding:18px 20px;background:var(--card);border:2px solid var(--border);border-radius:12px;cursor:pointer;transition:border-color 0.15s" onmouseover="this.style.borderColor='#444'" onmouseout="this.style.borderColor='var(--border)'" onclick="closeModal('onboarding-modal')">
-          <div style="width:22px;height:22px;border-radius:50%;border:2px solid #444;flex-shrink:0"></div>
+        <div class="onboard-option" onclick="closeModal('onboarding-modal')">
+          <div class="onboard-dot"></div>
           <div>
-            <div style="font-size:15px;font-weight:500;margin-bottom:3px">I'm already a Duality student</div>
-            <div style="font-size:13px;color:var(--grey)">Take me straight to my dashboard</div>
+            <div class="onboard-option-title">I'm already a Duality student</div>
+            <div class="onboard-option-sub">Take me straight to my dashboard</div>
           </div>
         </div>
       </div>
     </div>
 
-    <div id="onboard-step-2" style="display:none">
+    <!-- STEP 1b: First time pole - trial info + CTA -->
+    <div id="onboard-step-1b" style="display:none">
+      <button class="btn btn-ghost btn-sm" style="margin-bottom:16px" onclick="showOnboardStep('1')">Back</button>
       <div style="font-size:32px;text-align:center;margin-bottom:18px">&#9651;</div>
-      <div class="modal-title" style="text-align:center">Perfect - you're in the right place</div>
-      <div class="modal-sub" style="text-align:center">Here's how new students get started at Duality</div>
+      <div class="modal-title" style="text-align:center">You're in the right place</div>
+      <div class="modal-sub" style="text-align:center">We have trial classes designed specifically for first-timers.</div>
       <div style="background:#0f1600;border:1px solid var(--lime);border-radius:12px;padding:20px;margin-bottom:20px">
-        <div style="font-family:'Archivo Black',sans-serif;font-size:16px;color:var(--lime);margin-bottom:10px">Trial class - $35</div>
-        <div style="font-size:14px;color:var(--grey);line-height:1.7">Try before you commit. Available in Week 1 and 2 of each season. If you love it and sign up for the full season, the $35 comes off your invoice.</div>
+        <div style="font-family:'Archivo Black',sans-serif;font-size:16px;color:var(--lime);margin-bottom:8px">Trial class - $35</div>
+        <div style="font-size:14px;color:var(--grey);line-height:1.7">Try before you commit. Available in the first two weeks of each season. If you go on to enrol, the $35 comes straight off your invoice.</div>
       </div>
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:22px">
-        <div style="font-family:'Archivo Black',sans-serif;font-size:16px;margin-bottom:10px">Season enrollment</div>
-        <div style="font-size:14px;color:var(--grey);line-height:1.7">Our classes run in 8-week seasons. You'll attend the same class each week, build strength progressively, and leave with a full routine you've learned from scratch. Starting at $270.</div>
-      </div>
-      <div style="font-size:14px;color:var(--grey);margin-bottom:22px;line-height:1.7">Not sure which class to start with? <strong style="color:var(--white)">Level 1</strong> is designed for complete beginners - no experience or flexibility needed.</div>
+      <div style="font-size:14px;color:var(--grey);margin-bottom:22px;line-height:1.7">Trial classes are available for Level 1, Strip Virgin, Floor Virgin, and Kiki - all perfect starting points with no experience required.</div>
       <div style="display:flex;gap:12px">
-        <button class="btn btn-lime" style="flex:1" onclick="closeModal('onboarding-modal');openTrialInfo()">Book a trial class</button>
+        <button class="btn btn-lime" style="flex:1" onclick="closeModal('onboarding-modal');openTrialInfo()">See available trial classes</button>
         <button class="btn btn-outline" onclick="closeModal('onboarding-modal');showScreen('book');showBookTab('season')">Book the full season</button>
       </div>
     </div>
 
-    <div id="onboard-step-3" style="display:none">
-      <div style="font-size:32px;text-align:center;margin-bottom:18px">&#9670;</div>
-      <div class="modal-title" style="text-align:center">Welcome back to pole</div>
-      <div class="modal-sub" style="text-align:center">If you're new to Duality, the best place to start is Level 1 so your instructor can assess your level and move you up from there. Already know your level? Jump straight to booking.</div>
-      <div style="display:flex;gap:12px;margin-top:8px">
-        <button class="btn btn-lime" style="flex:1" onclick="closeModal('onboarding-modal');showScreen('book');showBookTab('season')">Browse classes</button>
-        <button class="btn btn-ghost" onclick="closeModal('onboarding-modal')">Skip to dashboard</button>
+    <!-- STEP 2: Done pole before - know your level or need help? -->
+    <div id="onboard-step-2" style="display:none">
+      <button class="btn btn-ghost btn-sm" style="margin-bottom:16px" onclick="showOnboardStep('1')">Back</button>
+      <div class="modal-title">Welcome back to pole</div>
+      <div class="modal-sub">What are you looking to book at Duality?</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="onboard-option" onclick="showOnboardStep('level-q1')">
+          <div class="onboard-dot lime"></div>
+          <div>
+            <div class="onboard-option-title">A level class (Level 1 - 6)</div>
+            <div class="onboard-option-sub">Help me find the right level for where I'm at</div>
+          </div>
+        </div>
+        <div class="onboard-option" onclick="showOnboardStep('suppl-q1')">
+          <div class="onboard-dot"></div>
+          <div>
+            <div class="onboard-option-title">A supplementary class</div>
+            <div class="onboard-option-sub">Strip, Dance, Floor, Kiki, Unravel and similar</div>
+          </div>
+        </div>
+        <div class="onboard-option" onclick="closeModal('onboarding-modal');showScreen('book');showBookTab('season')">
+          <div class="onboard-dot"></div>
+          <div>
+            <div class="onboard-option-title">I already know what I want</div>
+            <div class="onboard-option-sub">Take me straight to the class browser</div>
+          </div>
+        </div>
       </div>
     </div>
+
+    <!-- LEVEL QUIZ: Q1 - Can you invert? -->
+    <div id="onboard-step-level-q1" style="display:none">
+      <button class="btn btn-ghost btn-sm" style="margin-bottom:16px" onclick="showOnboardStep('2')">Back</button>
+      <div class="onboard-progress"><div class="onboard-progress-bar" style="width:25%"></div></div>
+      <div class="modal-title" style="margin-top:14px">Can you invert?</div>
+      <div class="modal-sub">An invert means getting your hips above your shoulders on the pole.</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="onboard-option" onclick="showOnboardStep('level-q1a')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">No - not yet</div></div>
+        </div>
+        <div class="onboard-option" onclick="showOnboardStep('level-q1a')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">A little - with help or a wall</div></div>
+        </div>
+        <div class="onboard-option" onclick="showOnboardStep('level-q2-floor')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">Comfortably from the floor</div></div>
+        </div>
+        <div class="onboard-option" onclick="showOnboardStep('level-q2-height')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">Comfortably from a height</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEVEL QUIZ: Q1a - No/a little invert - done a beginners course? -->
+    <div id="onboard-step-level-q1a" style="display:none">
+      <button class="btn btn-ghost btn-sm" style="margin-bottom:16px" onclick="showOnboardStep('level-q1')">Back</button>
+      <div class="onboard-progress"><div class="onboard-progress-bar" style="width:50%"></div></div>
+      <div class="modal-title" style="margin-top:14px">Have you done a multi-week beginner's course at another studio?</div>
+      <div class="modal-sub">A structured beginner's program, not just a few drop-in classes.</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="onboard-option" onclick="showOnboardResult('level1')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">No</div></div>
+        </div>
+        <div class="onboard-option" onclick="showOnboardStep('level-q1b')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">Yes</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEVEL QUIZ: Q1b - Was it in the last 2 years? -->
+    <div id="onboard-step-level-q1b" style="display:none">
+      <button class="btn btn-ghost btn-sm" style="margin-bottom:16px" onclick="showOnboardStep('level-q1a')">Back</button>
+      <div class="onboard-progress"><div class="onboard-progress-bar" style="width:75%"></div></div>
+      <div class="modal-title" style="margin-top:14px">Was that course within the last 2 years?</div>
+      <div class="modal-sub">Skills can fade - we want to put you in the right place.</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="onboard-option" onclick="showOnboardResult('level1')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">No - it's been a while</div></div>
+        </div>
+        <div class="onboard-option" onclick="showOnboardResult('level2')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">Yes - within the last 2 years</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEVEL QUIZ: Q2 floor - Leg hangs -->
+    <div id="onboard-step-level-q2-floor" style="display:none">
+      <button class="btn btn-ghost btn-sm" style="margin-bottom:16px" onclick="showOnboardStep('level-q1')">Back</button>
+      <div class="onboard-progress"><div class="onboard-progress-bar" style="width:50%"></div></div>
+      <div class="modal-title" style="margin-top:14px">Can you do leg hangs?</div>
+      <div class="modal-sub">Hanging from the pole using just your legs - no hands.</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="onboard-option" onclick="showOnboardResult('level3')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">No</div></div>
+        </div>
+        <div class="onboard-option" onclick="showOnboardResult('level4')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">Outside leg hang only</div></div>
+        </div>
+        <div class="onboard-option" onclick="showOnboardResult('level4')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">Inside leg hang only</div></div>
+        </div>
+        <div class="onboard-option" onclick="showOnboardStep('level-q3')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">Both comfortably</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEVEL QUIZ: Q2 height - Leg hangs (same logic) -->
+    <div id="onboard-step-level-q2-height" style="display:none">
+      <button class="btn btn-ghost btn-sm" style="margin-bottom:16px" onclick="showOnboardStep('level-q1')">Back</button>
+      <div class="onboard-progress"><div class="onboard-progress-bar" style="width:50%"></div></div>
+      <div class="modal-title" style="margin-top:14px">Can you do leg hangs?</div>
+      <div class="modal-sub">Hanging from the pole using just your legs - no hands.</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="onboard-option" onclick="showOnboardResult('level3')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">No</div></div>
+        </div>
+        <div class="onboard-option" onclick="showOnboardResult('level4')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">Outside leg hang only</div></div>
+        </div>
+        <div class="onboard-option" onclick="showOnboardResult('level4')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">Inside leg hang only</div></div>
+        </div>
+        <div class="onboard-option" onclick="showOnboardStep('level-q3')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">Both comfortably</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEVEL QUIZ: Q3 - Static V / Ayesha -->
+    <div id="onboard-step-level-q3" style="display:none">
+      <button class="btn btn-ghost btn-sm" style="margin-bottom:16px" onclick="showOnboardStep('level-q2-floor')">Back</button>
+      <div class="onboard-progress"><div class="onboard-progress-bar" style="width:75%"></div></div>
+      <div class="modal-title" style="margin-top:14px">Have you started working on a static V or Ayesha?</div>
+      <div class="modal-sub">Extended arm holds away from the pole - intermediate to advanced moves.</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="onboard-option" onclick="showOnboardResult('level5')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">No - haven't started</div></div>
+        </div>
+        <div class="onboard-option" onclick="showOnboardResult('level5')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">Working on it</div></div>
+        </div>
+        <div class="onboard-option" onclick="showOnboardResult('level6')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">Got it comfortably</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUPPLEMENTARY QUIZ: Q1 - What style? -->
+    <div id="onboard-step-suppl-q1" style="display:none">
+      <button class="btn btn-ghost btn-sm" style="margin-bottom:16px" onclick="showOnboardStep('2')">Back</button>
+      <div class="onboard-progress"><div class="onboard-progress-bar" style="width:33%"></div></div>
+      <div class="modal-title" style="margin-top:14px">What style interests you?</div>
+      <div class="modal-sub">We'll point you to the right starting class.</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="onboard-option" onclick="showOnboardStep('suppl-q2-heels')">
+          <div class="onboard-dot lime"></div>
+          <div>
+            <div class="onboard-option-title">Heels and burlesque</div>
+            <div class="onboard-option-sub">Strip, Strip Virgin, Chair</div>
+          </div>
+        </div>
+        <div class="onboard-option" onclick="showOnboardStep('suppl-q2-dance')">
+          <div class="onboard-dot"></div>
+          <div>
+            <div class="onboard-option-title">Contemporary and sensual movement</div>
+            <div class="onboard-option-sub">Dance, Dance Virgin, Floor, Floor Virgin</div>
+          </div>
+        </div>
+        <div class="onboard-option" onclick="showOnboardResult('suppl-flex')">
+          <div class="onboard-dot"></div>
+          <div>
+            <div class="onboard-option-title">Flexibility and conditioning</div>
+            <div class="onboard-option-sub">Kiki, Unravel</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUPPLEMENTARY QUIZ: Q2 heels - experience? -->
+    <div id="onboard-step-suppl-q2-heels" style="display:none">
+      <button class="btn btn-ghost btn-sm" style="margin-bottom:16px" onclick="showOnboardStep('suppl-q1')">Back</button>
+      <div class="onboard-progress"><div class="onboard-progress-bar" style="width:66%"></div></div>
+      <div class="modal-title" style="margin-top:14px">Have you done heels or burlesque classes before?</div>
+      <div class="modal-sub">At Duality or any other studio.</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="onboard-option" onclick="showOnboardResult('suppl-strip-virgin')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">No - first time</div></div>
+        </div>
+        <div class="onboard-option" onclick="showOnboardResult('suppl-strip-virgin')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">A little - just a few classes</div></div>
+        </div>
+        <div class="onboard-option" onclick="showOnboardResult('suppl-strip1')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">Yes - I have a solid base</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUPPLEMENTARY QUIZ: Q2 dance/floor - experience? -->
+    <div id="onboard-step-suppl-q2-dance" style="display:none">
+      <button class="btn btn-ghost btn-sm" style="margin-bottom:16px" onclick="showOnboardStep('suppl-q1')">Back</button>
+      <div class="onboard-progress"><div class="onboard-progress-bar" style="width:66%"></div></div>
+      <div class="modal-title" style="margin-top:14px">Have you done dance or floor movement classes before?</div>
+      <div class="modal-sub">At Duality or any other studio.</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="onboard-option" onclick="showOnboardResult('suppl-dance-virgin')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">No - first time</div></div>
+        </div>
+        <div class="onboard-option" onclick="showOnboardResult('suppl-dance-virgin')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">A little - just a few classes</div></div>
+        </div>
+        <div class="onboard-option" onclick="showOnboardResult('suppl-dance1')">
+          <div class="onboard-dot"></div>
+          <div><div class="onboard-option-title">Yes - I have a solid base</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="onboard-step-result" style="display:none">
+      <div style="font-size:32px;text-align:center;margin-bottom:14px">&#9670;</div>
+      <div class="modal-title" style="text-align:center" id="result-title"></div>
+      <div style="font-size:14px;color:var(--grey);text-align:center;margin-bottom:22px;line-height:1.6" id="result-body"></div>
+      <div style="background:#0f1600;border:1px solid var(--lime);border-radius:12px;padding:18px 20px;margin-bottom:22px">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--lime);margin-bottom:6px">We recommend</div>
+        <div style="font-family:'Archivo Black',sans-serif;font-size:20px" id="result-class"></div>
+      </div>
+      <div style="font-size:13px;color:var(--grey);margin-bottom:22px;line-height:1.6" id="result-note"></div>
+      <div style="display:flex;gap:12px">
+        <button class="btn btn-lime" style="flex:1" onclick="closeModal('onboarding-modal');showScreen('book');showBookTab('season')">Book this class</button>
+        <button class="btn btn-ghost" onclick="closeModal('onboarding-modal')">Go to dashboard</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -2109,9 +2367,32 @@
     });
   }
 
-  function showOnboardStep(n) {
-    [1,2,3].forEach(i => document.getElementById('onboard-step-' + i).style.display = 'none');
-    document.getElementById('onboard-step-' + n).style.display = 'block';
+  const RESULTS = {
+    level1:           { title: 'Great - Level 1 is your spot', cls: 'Level 1', note: 'Level 1 is designed for complete beginners. No experience, strength, or flexibility needed - your instructor will guide you through everything from scratch.' },
+    level2:           { title: 'Sounds like Level 2 is a great fit', cls: 'Level 2', note: 'Level 2 builds on beginner foundations - you\'ll refine your spins, start working on aerial climbs, and begin introductory inverts in a supportive environment.' },
+    level3:           { title: 'Level 3 sounds right for you', cls: 'Level 3', note: 'Level 3 is where inverting from the floor becomes the focus. You\'ll build the strength and technique to get upside down confidently and start working toward leg hangs.' },
+    level4:           { title: 'Level 4 looks like your level', cls: 'Level 4', note: 'Level 4 gets into leg hangs, chopper variations, and combining inverts with transitions. A strong intermediate class with progression built in.' },
+    level5:           { title: 'Level 5 is calling your name', cls: 'Level 5', note: 'Level 5 moves into extended arm work - static V, Ayesha, and more complex combinations. Strength and body awareness are key here.' },
+    level6:           { title: 'Level 6 - welcome to the deep end', cls: 'Level 6', note: 'Level 6 is our advanced class. If you\'ve got your Ayesha and you\'re ready for harder combinations and serious training, this is your home.' },
+    'suppl-strip-virgin': { title: 'Start with Strip Virgin', cls: 'Strip Virgin', note: 'Strip Virgin is the perfect introduction to heels and burlesque-style movement. No experience needed - just bring yourself and your best energy.' },
+    'suppl-strip1':   { title: 'Strip 1 sounds like your level', cls: 'Strip 1', note: 'Strip 1 builds on burlesque basics with more choreography and character development. A solid foundation will help you get the most out of it.' },
+    'suppl-dance-virgin': { title: 'Start with Dance Virgin or Floor Virgin', cls: 'Dance Virgin / Floor Virgin', note: 'Both are intro-level classes for contemporary and sensual movement. Dance Virgin focuses on standing choreography; Floor Virgin is all about grounded movement and transitions.' },
+    'suppl-dance1':   { title: 'Dance or Floor sounds like your level', cls: 'Dance / Floor', note: 'If you have some movement experience, jump into Dance or Floor - both build on the Virgin foundations with more complex choreography.' },
+    'suppl-flex':     { title: 'Kiki or Unravel - take your pick', cls: 'Kiki / Unravel', note: 'Kiki is flexibility-focused with splits and backbends. Unravel is a slower, more meditative conditioning class. Both are open to all levels - come as you are.' },
+  };
+
+  function showOnboardStep(key) {
+    document.querySelectorAll('[id^="onboard-step-"]').forEach(el => el.style.display = 'none');
+    document.getElementById('onboard-step-' + key).style.display = 'block';
+  }
+
+  function showOnboardResult(key) {
+    const r = RESULTS[key];
+    document.getElementById('result-title').textContent = r.title;
+    document.getElementById('result-class').textContent = r.cls;
+    document.getElementById('result-note').textContent  = r.note;
+    document.getElementById('result-body').textContent  = '';
+    showOnboardStep('result');
   }
 
   function openTrialInfo() {
