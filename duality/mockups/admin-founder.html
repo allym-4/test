@@ -342,7 +342,9 @@ tr.clickable-row:hover td { background: #141414; }
     <div class="nav-item" onclick="showScreen('bookings')"><span class="nav-icon">🎟</span> Bookings</div>
     <div class="nav-item" onclick="showScreen('billing')"><span class="nav-icon">💳</span> Billing</div>
     <div class="nav-item" onclick="showScreen('discounts')"><span class="nav-icon">🏷</span> Discounts</div>
+    <div class="nav-item" onclick="showScreen('giftcards')">🎁 Gift Cards</div>
     <div class="nav-item" onclick="showScreen('community')"><span class="nav-icon">💬</span> Community</div>
+    <div class="nav-item" onclick="showScreen('surveys')">📋 Surveys</div>
     <div class="nav-item" onclick="showScreen('staff')"><span class="nav-icon">🧑‍🏫</span> Staff</div>
     <div class="nav-item" onclick="showScreen('reporting')"><span class="nav-icon">📊</span> Reporting</div>
     <div class="nav-item" onclick="showScreen('leads')"><span class="nav-icon">🎯</span> Leads</div>
@@ -1115,6 +1117,36 @@ tr.clickable-row:hover td { background: #141414; }
       </div>
     </div>
 
+    <!-- ===== GIFT CARDS ===== -->
+    <div id="screen-giftcards" class="screen">
+      <div class="page-header">
+        <div><div class="page-title">Gift Cards</div><div class="page-sub">Issue, track and manage gift cards</div></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost" onclick="alert('Bulk issue coming soon')">Bulk Issue</button>
+          <button class="btn btn-lime" onclick="openModal('modal-create-giftcard')">+ Create Gift Card</button>
+        </div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi kpi-lime"><div class="kpi-label">Total Sold</div><div class="kpi-value">$2,140</div><div class="kpi-sub">31 cards issued</div></div>
+        <div class="kpi kpi-lav"><div class="kpi-label">Total Redeemed</div><div class="kpi-value">$1,680</div><div class="kpi-sub">23 cards used</div></div>
+        <div class="kpi kpi-amber"><div class="kpi-label">Outstanding Balance</div><div class="kpi-value">$460</div><div class="kpi-sub">8 cards active</div></div>
+        <div class="kpi"><div class="kpi-label">Issued This Month</div><div class="kpi-value">8</div><div class="kpi-sub">↑ 3 vs last month</div></div>
+      </div>
+      <div class="tbl-section">
+        <table>
+          <thead><tr><th>Code</th><th>Recipient</th><th>Issued By</th><th>Original Value</th><th>Remaining</th><th>Expiry</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr><td><b style="font-family:monospace;letter-spacing:1px;">GC-4821</b></td><td>Jess Malone<div style="font-size:11px;color:var(--grey)">jess@email.com</div></td><td>Allysha</td><td>$100</td><td class="bal-pos">$100</td><td style="color:var(--grey)">11 May 2026</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs">View</button> <button class="btn btn-ghost btn-xs" onclick="alert('Copied!')">Copy Code</button></td></tr>
+            <tr><td><b style="font-family:monospace;letter-spacing:1px;">GC-3377</b></td><td>Ruby Kim<div style="font-size:11px;color:var(--grey)">ruby@email.com</div></td><td>Allysha</td><td>$50</td><td class="bal-pos">$25</td><td style="color:var(--grey)">3 Mar 2026</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs">View</button> <button class="btn btn-ghost btn-xs" onclick="alert('Copied!')">Copy Code</button></td></tr>
+            <tr><td><b style="font-family:monospace;letter-spacing:1px;">GC-2950</b></td><td>Sophie Lawson<div style="font-size:11px;color:var(--grey)">sophie@email.com</div></td><td>Chloe</td><td>$150</td><td style="color:var(--grey)">$0</td><td style="color:var(--grey)">28 Feb 2026</td><td><span class="tag tag-grey">Redeemed</span></td><td><button class="btn btn-ghost btn-xs">View</button></td></tr>
+            <tr><td><b style="font-family:monospace;letter-spacing:1px;">GC-1084</b></td><td>Hannah Webb<div style="font-size:11px;color:var(--grey)">hannah@email.com</div></td><td>Allysha</td><td>$200</td><td style="color:var(--grey)">$0</td><td style="color:var(--grey)">1 Jan 2026</td><td><span class="tag tag-grey">Redeemed</span></td><td><button class="btn btn-ghost btn-xs">View</button></td></tr>
+            <tr><td><b style="font-family:monospace;letter-spacing:1px;">GC-0762</b></td><td>Dana Park<div style="font-size:11px;color:var(--grey)">dana@email.com</div></td><td>Allysha</td><td>$100</td><td class="bal-pos">$75</td><td style="color:var(--grey)">15 Apr 2026</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs">View</button> <button class="btn btn-ghost btn-xs" onclick="alert('Copied!')">Copy Code</button></td></tr>
+            <tr><td><b style="font-family:monospace;letter-spacing:1px;">GC-0541</b></td><td>Amber Cole<div style="font-size:11px;color:var(--grey)">amber@email.com</div></td><td>Chloe</td><td>$50</td><td class="bal-pos">$50</td><td style="color:#ff6b6b">Expired</td><td><span class="tag tag-red">Expired</span></td><td><button class="btn btn-ghost btn-xs">View</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- ===== COMMUNITY ===== -->
     <div id="screen-community" class="screen">
       <div class="page-header">
@@ -1655,7 +1687,8 @@ const _searchData = [
 const screenTitles = {
   dashboard:'Dashboard', students:'Students', timetable:'Timetable',
   seasons:'Seasons', bookings:'Bookings', billing:'Billing',
-  discounts:'Discounts', community:'Community', staff:'Staff', settings:'Settings',
+  discounts:'Discounts', giftcards:'Gift Cards', community:'Community',
+  surveys:'Surveys', staff:'Staff', settings:'Settings',
   reporting:'Reporting', leads:'Leads', kisi:'Kisi Access',
   notifications:'Automations', marketing:'Marketing',
   'student-detail':'Student Profile', attendance:'Attendance Register'
