@@ -38,6 +38,18 @@ h1,h2,h3,.black { font-family: 'Archivo Black', sans-serif; font-weight: 900; }
 .nav-item:hover { color: var(--white); background: #1a1a1a; }
 .nav-item.active { color: var(--lime); border-left-color: var(--lime); background: #0f1600; }
 .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+.nav-group-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 24px 6px; cursor: pointer; user-select: none;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+  color: #555; margin-top: 6px;
+}
+.nav-group-header:hover { color: var(--grey); }
+.nav-group-arrow { transition: transform 0.2s; font-size: 8px; }
+.nav-group-body { overflow: hidden; max-height: 500px; transition: max-height 0.25s ease; }
+.nav-group-body.collapsed { max-height: 0; }
+.nav-item.sub { padding-left: 40px; font-size: 13px; }
+.nav-divider { height: 1px; background: var(--border); margin: 6px 16px; }
 .sidebar-footer { margin-top: auto; padding: 16px 24px; border-top: 1px solid var(--border); }
 .user-badge { display: flex; align-items: center; gap: 10px; }
 .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--lime); display: flex; align-items: center; justify-content: center; font-family: 'Archivo Black', sans-serif; font-size: 13px; color: var(--black); flex-shrink: 0; }
@@ -348,21 +360,38 @@ tr.clickable-row:hover td { background: #141414; }
   <div class="sidebar-logo">DUALITY <span>POLE</span></div>
   <nav>
     <div class="nav-item active" onclick="showScreen('dashboard')"><span class="nav-icon">⬡</span> Dashboard</div>
-    <div class="nav-item" onclick="showScreen('students')"><span class="nav-icon">👤</span> Students</div>
+    <div class="nav-divider"></div>
+    <!-- Manage Studio group -->
+    <div class="nav-group-header" onclick="toggleNavGroup('manage-group')">
+      Manage Studio <span class="nav-group-arrow" id="manage-group-arrow">▼</span>
+    </div>
+    <div class="nav-group-body" id="manage-group">
+      <div class="nav-item sub" onclick="showScreen('students')"><span class="nav-icon">👤</span> Students</div>
+      <div class="nav-item sub" onclick="showScreen('staff')"><span class="nav-icon">🧑‍🏫</span> Staff</div>
+      <div class="nav-item sub" onclick="showScreen('manage-tags')"><span class="nav-icon">🏷</span> Tags</div>
+      <div class="nav-item sub" onclick="showScreen('skill-lists')"><span class="nav-icon">✅</span> Skill Lists</div>
+      <div class="nav-item sub" onclick="showScreen('rooms')"><span class="nav-icon">🏢</span> Rooms</div>
+      <div class="nav-item sub" onclick="showScreen('categories')"><span class="nav-icon">📂</span> Categories</div>
+      <div class="nav-item sub" onclick="showScreen('timetable')"><span class="nav-icon">📅</span> Classes</div>
+      <div class="nav-item sub" onclick="showScreen('seasons')"><span class="nav-icon">🌀</span> Terms</div>
+      <div class="nav-item sub" onclick="showScreen('manage-packages')"><span class="nav-icon">📦</span> Packages</div>
+      <div class="nav-item sub" onclick="showScreen('manage-memberships')"><span class="nav-icon">🪪</span> Memberships</div>
+      <div class="nav-item sub" onclick="showScreen('studio-notes')"><span class="nav-icon">📌</span> Studio Notes</div>
+      <div class="nav-item sub" onclick="showScreen('media-library')"><span class="nav-icon">🎬</span> Media Library</div>
+    </div>
+    <div class="nav-divider"></div>
     <div class="nav-item" onclick="showScreen('timetable')"><span class="nav-icon">📅</span> Timetable</div>
-    <div class="nav-item" onclick="showScreen('seasons')"><span class="nav-icon">🌀</span> Seasons</div>
     <div class="nav-item" onclick="showScreen('bookings')"><span class="nav-icon">🎟</span> Bookings</div>
     <div class="nav-item" onclick="showScreen('billing')"><span class="nav-icon">💳</span> Billing</div>
     <div class="nav-item" onclick="showScreen('discounts')"><span class="nav-icon">🏷</span> Discounts</div>
     <div class="nav-item" onclick="showScreen('giftcards')">🎁 Gift Cards</div>
     <div class="nav-item" onclick="showScreen('community')"><span class="nav-icon">💬</span> Community</div>
     <div class="nav-item" onclick="showScreen('surveys')">📋 Surveys</div>
-    <div class="nav-item" onclick="showScreen('staff')"><span class="nav-icon">🧑‍🏫</span> Staff</div>
-    <div class="nav-item" onclick="showScreen('reporting')"><span class="nav-icon">📊</span> Reporting</div>
+    <div class="nav-divider"></div>
+    <div class="nav-item" onclick="showScreen('reporting')"><span class="nav-icon">📊</span> Analytics</div>
     <div class="nav-item" onclick="showScreen('activity-log')"><span class="nav-icon">📋</span> Activity Log</div>
     <div class="nav-item" onclick="showScreen('leads')"><span class="nav-icon">🎯</span> Leads</div>
     <div class="nav-item" onclick="showScreen('kisi')"><span class="nav-icon">🔑</span> Kisi Access</div>
-    <div class="nav-item" onclick="showScreen('notifications')"><span class="nav-icon">🔔</span> Automations</div>
     <div class="nav-item" onclick="showScreen('marketing')"><span class="nav-icon">📧</span> Marketing</div>
     <div class="nav-item" onclick="showScreen('settings')"><span class="nav-icon">⚙️</span> Settings</div>
   </nav>
@@ -2134,7 +2163,7 @@ tr.clickable-row:hover td { background: #141414; }
           <button class="btn btn-lime btn-sm" onclick="openModal('modal-form-builder')">+ Create Custom Form</button>
         </div>
         <div class="notif-row">
-          <div><div style="font-weight:500;font-size:13px;">Health &amp; Injury Questionnaire</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Required before first class</div></div>
+          <div><div style="font-weight:500;font-size:13px;">Health, Injury &amp; PAR-Q Questionnaire</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Required before first class — includes physical activity readiness questions</div></div>
           <div style="display:flex;gap:8px;align-items:center;"><button class="btn btn-ghost btn-xs">Edit</button><button class="btn btn-ghost btn-xs">Preview</button><label class="toggle" title="Required"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
         </div>
         <div class="notif-row">
@@ -2731,6 +2760,266 @@ tr.clickable-row:hover td { background: #141414; }
       </div>
     </div>
 
+    <!-- ===== MANAGE: TAGS ===== -->
+    <div id="screen-manage-tags" class="screen">
+      <div class="page-header">
+        <div><div class="page-title">Tags</div><div class="page-sub">Organise students with labels and automate tag rules</div></div>
+        <button class="btn btn-lime" onclick="openModal('modal-add-tag')">+ New Tag</button>
+      </div>
+      <div class="tbl-section" style="margin-bottom:24px;">
+        <table>
+          <thead><tr><th>Tag</th><th>Colour</th><th>Students</th><th>Auto-rule</th><th></th></tr></thead>
+          <tbody>
+            <tr><td><span style="display:inline-block;background:rgba(205,165,255,0.2);color:var(--lav);font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;">VIP</span></td><td><span style="display:inline-block;width:16px;height:16px;background:var(--lav);border-radius:3px;"></span></td><td>Ruby Kim, Mia Santos + 3 more</td><td style="color:var(--grey);">Manual only</td><td><button class="btn btn-ghost btn-xs">Edit</button> <button class="btn btn-ghost btn-xs">View Students</button></td></tr>
+            <tr><td><span style="display:inline-block;background:rgba(255,170,68,0.2);color:var(--amber);font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;">At Risk</span></td><td><span style="display:inline-block;width:16px;height:16px;background:var(--amber);border-radius:3px;"></span></td><td>Jess Malone + 6 more</td><td>No booking in 21 days</td><td><button class="btn btn-ghost btn-xs">Edit</button> <button class="btn btn-ghost btn-xs">View Students</button></td></tr>
+            <tr><td><span style="display:inline-block;background:rgba(224,85,85,0.2);color:#e05555;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;">Blocked</span></td><td><span style="display:inline-block;width:16px;height:16px;background:#e05555;border-radius:3px;"></span></td><td>Kylie Rhodes + 1 more</td><td style="color:var(--grey);">Manual only</td><td><button class="btn btn-ghost btn-xs">Edit</button> <button class="btn btn-ghost btn-xs">View Students</button></td></tr>
+            <tr><td><span style="display:inline-block;background:rgba(219,255,0,0.15);color:var(--lime);font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;">New Student</span></td><td><span style="display:inline-block;width:16px;height:16px;background:var(--lime);border-radius:3px;"></span></td><td>4 students</td><td>Enrolled less than 30 days ago</td><td><button class="btn btn-ghost btn-xs">Edit</button> <button class="btn btn-ghost btn-xs">View Students</button></td></tr>
+            <tr><td><span style="display:inline-block;background:rgba(94,204,123,0.2);color:#5ecc7b;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;">Owing</span></td><td><span style="display:inline-block;width:16px;height:16px;background:#5ecc7b;border-radius:3px;"></span></td><td>3 students</td><td>Balance &lt; $0</td><td><button class="btn btn-ghost btn-xs">Edit</button> <button class="btn btn-ghost btn-xs">View Students</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="section" style="padding:18px 20px;">
+        <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:10px;">Auto-tag Rules</div>
+        <p style="font-size:12px;color:var(--grey);margin-bottom:14px;">Tags with rules are applied automatically and updated daily. Manual-only tags must be applied individually.</p>
+        <div class="notif-row"><div><div style="font-weight:500;font-size:13px;">Auto-remove tags when conditions no longer apply</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">e.g. remove "At Risk" if student books again</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+        <div class="notif-row" style="border-bottom:none;"><div><div style="font-weight:500;font-size:13px;">Notify Mimi when a student gains an At Risk tag</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+      </div>
+    </div>
+
+    <!-- ===== SKILL LISTS ===== -->
+    <div id="screen-skill-lists" class="screen">
+      <div class="page-header">
+        <div><div class="page-title">Skill Lists</div><div class="page-sub">Track student progress through level checklists</div></div>
+        <button class="btn btn-lime" onclick="alert('Add skill')">+ Add Skill</button>
+      </div>
+      <div class="subtabs" style="margin-bottom:20px;">
+        <div class="subtab active" onclick="switchSubTab(this,'sl-l1')">Level 1</div>
+        <div class="subtab" onclick="switchSubTab(this,'sl-l2')">Level 2</div>
+        <div class="subtab" onclick="switchSubTab(this,'sl-l3')">Level 3</div>
+        <div class="subtab" onclick="switchSubTab(this,'sl-ht')">High Tricks</div>
+      </div>
+      <!-- Level 1 skills -->
+      <div id="sl-l1" class="subscreen active">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+          <div class="section" style="padding:18px 20px;">
+            <div style="font-family:'Archivo Black',sans-serif;font-size:13px;margin-bottom:14px;">Foundation Skills</div>
+            ${['Fireman spin', 'Pole hold — front', 'Pole hold — back', 'Cradle spin', 'Chair spin', 'Pole sit', 'Layback', 'Pencil spin', 'Cross-ankle release'].map(s=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">${s}</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with ${s}')">Students</button><button class="btn btn-ghost btn-xs" onclick="alert('Edit skill')">Edit</button></div></div>`).join('')}
+          </div>
+          <div class="section" style="padding:18px 20px;">
+            <div style="font-family:'Archivo Black',sans-serif;font-size:13px;margin-bottom:14px;">Student Progress</div>
+            <p style="font-size:12px;color:var(--grey);margin-bottom:14px;">Select a student to view or update their Level 1 checklist</p>
+            <select id="sl-student-select" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 10px;margin-bottom:14px;" onchange="loadSkillProgress(this.value)">
+              <option value="">Select student…</option>
+              <option>Jess Malone</option>
+              <option>Ruby Kim</option>
+              <option>Sophie Lawson</option>
+              <option>Kylie Rhodes</option>
+              <option>Mia Santos</option>
+            </select>
+            <div id="sl-progress-list" style="display:flex;flex-direction:column;gap:8px;">
+              <div style="color:var(--grey);font-size:13px;text-align:center;padding:20px 0;">Select a student above to see their progress</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="sl-l2" class="subscreen">
+        <div class="section" style="padding:18px 20px;">
+          <div style="font-family:'Archivo Black',sans-serif;font-size:13px;margin-bottom:14px;">Level 2 Skills</div>
+          ${['Inside leg hang', 'Outside leg hang', 'Gemini', 'Brass monkey', 'Shoulder mount attempt', 'Ayesha prep', 'Basic invert', 'Batman', 'Crucifix'].map(s=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">${s}</span><button class="btn btn-ghost btn-xs">Students</button></div>`).join('')}
+        </div>
+      </div>
+      <div id="sl-l3" class="subscreen">
+        <div class="section" style="padding:18px 20px;">
+          <div style="font-family:'Archivo Black',sans-serif;font-size:13px;margin-bottom:14px;">Level 3 Skills</div>
+          ${['Shoulder mount', 'Handspring prep', 'Iron X prep', 'Cocoon', 'Dragon tail', 'Jade split', 'Flag', 'Straddle invert', 'Pike invert'].map(s=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">${s}</span><button class="btn btn-ghost btn-xs">Students</button></div>`).join('')}
+        </div>
+      </div>
+      <div id="sl-ht" class="subscreen">
+        <div class="section" style="padding:18px 20px;">
+          <div style="font-family:'Archivo Black',sans-serif;font-size:13px;margin-bottom:14px;">High Tricks Skills</div>
+          ${['Handspring', 'Iron X', 'Allegra', 'Titanic', 'Superman', 'Ballerina', 'Russian layback', 'Ayesha', 'Deadlift invert'].map(s=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">${s}</span><button class="btn btn-ghost btn-xs">Students</button></div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ROOMS ===== -->
+    <div id="screen-rooms" class="screen">
+      <div class="page-header">
+        <div><div class="page-title">Rooms</div><div class="page-sub">Manage studio spaces, capacity and equipment</div></div>
+        <button class="btn btn-lime" onclick="alert('Add room')">+ Add Room</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div class="section" style="padding:22px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">The Box</div>
+            <span class="tag tag-lime">Active</span>
+          </div>
+          <div class="info-row"><div class="info-label">Address</div><div class="info-val">42 Smith St, Fitzroy VIC 3065</div></div>
+          <div class="info-row"><div class="info-label">Capacity</div><div class="info-val">14 students</div></div>
+          <div class="info-row"><div class="info-label">Poles</div><div class="info-val">7 × 45mm chrome</div></div>
+          <div class="info-row"><div class="info-label">Features</div><div class="info-val">Crash mats, mirrors, sound system, AC</div></div>
+          <div class="info-row"><div class="info-label">Kisi Access</div><div class="info-val" style="color:var(--lime);">Connected ✓</div></div>
+          <div style="display:flex;gap:8px;margin-top:16px;"><button class="btn btn-ghost btn-sm">Edit</button><button class="btn btn-ghost btn-sm" onclick="showScreen('kisi')">Kisi Settings</button></div>
+        </div>
+        <div class="section" style="padding:22px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">Rhapsody</div>
+            <span class="tag tag-lime">Active</span>
+          </div>
+          <div class="info-row"><div class="info-label">Address</div><div class="info-val">18 Chapel St, Windsor VIC 3181</div></div>
+          <div class="info-row"><div class="info-label">Capacity</div><div class="info-val">10 students</div></div>
+          <div class="info-row"><div class="info-label">Poles</div><div class="info-val">5 × 45mm chrome + 1 × brass</div></div>
+          <div class="info-row"><div class="info-label">Features</div><div class="info-val">Crash mats, mirrors, mood lighting, AC</div></div>
+          <div class="info-row"><div class="info-label">Kisi Access</div><div class="info-val" style="color:var(--lime);">Connected ✓</div></div>
+          <div style="display:flex;gap:8px;margin-top:16px;"><button class="btn btn-ghost btn-sm">Edit</button><button class="btn btn-ghost btn-sm" onclick="showScreen('kisi')">Kisi Settings</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CATEGORIES ===== -->
+    <div id="screen-categories" class="screen">
+      <div class="page-header">
+        <div><div class="page-title">Categories</div><div class="page-sub">Organise your class types and offerings</div></div>
+        <button class="btn btn-lime" onclick="alert('Add category')">+ Add Category</button>
+      </div>
+      <div class="tbl-section">
+        <table>
+          <thead><tr><th>Category</th><th>Colour</th><th>Classes</th><th>Visible to Students</th><th></th></tr></thead>
+          <tbody>
+            <tr><td style="font-weight:600;">Pole</td><td><span style="display:inline-block;width:16px;height:16px;background:var(--lav);border-radius:3px;"></span></td><td>Level 1, Level 2, Level 3, High Tricks</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs">Edit</button></td></tr>
+            <tr><td style="font-weight:600;">Sensual / Exotic</td><td><span style="display:inline-block;width:16px;height:16px;background:var(--amber);border-radius:3px;"></span></td><td>Sensual Flow, Heels</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs">Edit</button></td></tr>
+            <tr><td style="font-weight:600;">Practice</td><td><span style="display:inline-block;width:16px;height:16px;background:var(--lime);border-radius:3px;"></span></td><td>Practice Time, Open Studio</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs">Edit</button></td></tr>
+            <tr><td style="font-weight:600;">Workshop</td><td><span style="display:inline-block;width:16px;height:16px;background:#5ecc7b;border-radius:3px;"></span></td><td>Guest workshops, Intensives</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs">Edit</button></td></tr>
+            <tr><td style="font-weight:600;">Aerial</td><td><span style="display:inline-block;width:16px;height:16px;background:#e05555;border-radius:3px;"></span></td><td>(none yet)</td><td><label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs">Edit</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== MANAGE PACKAGES ===== -->
+    <div id="screen-manage-packages" class="screen">
+      <div class="page-header">
+        <div><div class="page-title">Packages</div><div class="page-sub">Class packs, punch cards and multi-session bundles</div></div>
+        <button class="btn btn-lime" onclick="alert('Add package')">+ Add Package</button>
+      </div>
+      <div class="tbl-section">
+        <table>
+          <thead><tr><th>Package Name</th><th>Classes</th><th>Price</th><th>Expiry</th><th>Active Students</th><th>Visible</th><th></th></tr></thead>
+          <tbody>
+            <tr><td style="font-weight:600;">Class Pass 5×</td><td>5</td><td>$150</td><td>90 days</td><td>12</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs">Edit</button></td></tr>
+            <tr><td style="font-weight:600;">Class Pass 10×</td><td>10</td><td>$270</td><td>180 days</td><td>8</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs">Edit</button></td></tr>
+            <tr><td style="font-weight:600;">Makeup Package</td><td>3</td><td>$75</td><td>60 days</td><td>5</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs">Edit</button></td></tr>
+            <tr><td style="font-weight:600;">Intro Pack (3 classes)</td><td>3</td><td>$60</td><td>30 days</td><td>4</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs">Edit</button></td></tr>
+            <tr><td style="font-weight:600;">Pole Icon VIP Pass</td><td>Unlimited</td><td>$420</td><td>Event only</td><td>38</td><td><label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs">Edit</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== MANAGE MEMBERSHIPS ===== -->
+    <div id="screen-manage-memberships" class="screen">
+      <div class="page-header">
+        <div><div class="page-title">Memberships</div><div class="page-sub">Season enrolments, recurring and drop-in pricing</div></div>
+        <button class="btn btn-lime" onclick="alert('Add membership type')">+ Add Type</button>
+      </div>
+      <div class="tbl-section">
+        <table>
+          <thead><tr><th>Membership Type</th><th>Price</th><th>Duration</th><th>Classes / Week</th><th>Active Students</th><th>Visible</th><th></th></tr></thead>
+          <tbody>
+            <tr><td style="font-weight:600;">Season — 1 class/wk</td><td>$160</td><td>8 weeks</td><td>1</td><td>34</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs">Edit</button></td></tr>
+            <tr><td style="font-weight:600;">Season — 2 classes/wk</td><td>$290</td><td>8 weeks</td><td>2</td><td>18</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs">Edit</button></td></tr>
+            <tr><td style="font-weight:600;">Season — 3 classes/wk</td><td>$390</td><td>8 weeks</td><td>3</td><td>6</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs">Edit</button></td></tr>
+            <tr><td style="font-weight:600;">Trial Class</td><td>$25</td><td>Single</td><td>—</td><td>12</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs">Edit</button></td></tr>
+            <tr><td style="font-weight:600;">Drop-in</td><td>$35</td><td>Single</td><td>—</td><td>14</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs">Edit</button></td></tr>
+            <tr><td style="font-weight:600;">Casual Practice</td><td>$20</td><td>Single</td><td>—</td><td>9</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs">Edit</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== STUDIO NOTES ===== -->
+    <div id="screen-studio-notes" class="screen">
+      <div class="page-header">
+        <div><div class="page-title">Studio Notes</div><div class="page-sub">Noticeboard for staff — reminders, announcements, important info</div></div>
+        <button class="btn btn-lime" onclick="openModal('modal-add-studio-note')">+ Pin Note</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <!-- Pinned -->
+        <div style="background:#1a1a1a;border:2px solid var(--lime);border-radius:12px;padding:20px;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <span style="font-size:10px;font-weight:800;background:var(--lime);color:#000;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:0.5px;">📌 Pinned</span>
+              <span style="font-size:11px;color:var(--grey);">Posted by Mimi · 10 May 2026</span>
+            </div>
+            <button class="btn btn-ghost btn-xs">Unpin</button>
+          </div>
+          <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Season 4 starts 9 June — enrolments open 15 May</div>
+          <div style="font-size:13px;color:var(--grey);line-height:1.6;">Remind all students to re-enrol. New pricing takes effect. Chloe is on leave weeks 3–4, Bambi covering Mon Level 1. DO NOT change the timetable without checking with Mimi first.</div>
+        </div>
+        <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:12px;padding:20px;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <span style="font-size:10px;font-weight:800;background:var(--amber);color:#000;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:0.5px;">⚠️ Important</span>
+              <span style="font-size:11px;color:var(--grey);">Posted by Mimi · 8 May 2026</span>
+            </div>
+            <button class="btn btn-ghost btn-xs">Pin</button>
+          </div>
+          <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Kylie Rhodes — do not allow re-enrolment without Mimi approval</div>
+          <div style="font-size:13px;color:var(--grey);line-height:1.6;">Following conduct issues in Season 3. Account is currently blocked. If she contacts you directly, refer her to Mimi.</div>
+        </div>
+        <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:12px;padding:20px;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <span style="font-size:10px;font-weight:800;background:#1a1a1a;color:var(--grey);border:1px solid var(--border);padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:0.5px;">ℹ️ General</span>
+              <span style="font-size:11px;color:var(--grey);">Posted by Chloe · 5 May 2026</span>
+            </div>
+            <button class="btn btn-ghost btn-xs">Pin</button>
+          </div>
+          <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Crash mat in The Box needs replacing — corner seam is split</div>
+          <div style="font-size:13px;color:var(--grey);line-height:1.6;">Temporary fix with gaffer tape for now. Don't place directly under the spinning pole. Quote requested from supplier.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MEDIA LIBRARY ===== -->
+    <div id="screen-media-library" class="screen">
+      <div class="page-header">
+        <div><div class="page-title">Media Library</div><div class="page-sub">Videos, images and resources for classes and homework</div></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="alert('Upload from URL')">↑ URL</button>
+          <button class="btn btn-lime" onclick="alert('Upload file')">↑ Upload</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+        <input type="text" placeholder="Search media…" style="flex:1;min-width:200px;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 14px;" />
+        <select style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 12px;">
+          <option>All types</option><option>Video</option><option>Image</option><option>PDF</option>
+        </select>
+        <select style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 12px;">
+          <option>All levels</option><option>Level 1</option><option>Level 2</option><option>Level 3</option><option>High Tricks</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;">
+        ${[
+          {icon:'🎬',name:'Fireman Spin Tutorial',type:'Video',level:'Level 1',size:'42 MB'},
+          {icon:'🎬',name:'Inside Leg Hang Breakdown',type:'Video',level:'Level 2',size:'68 MB'},
+          {icon:'🎬',name:'Shoulder Mount Prep',type:'Video',level:'Level 3',size:'55 MB'},
+          {icon:'🎬',name:'Sensual Flow Routine S3',type:'Video',level:'Sensual',size:'120 MB'},
+          {icon:'🖼',name:'Level 1 Skills Poster',type:'Image',level:'Level 1',size:'2 MB'},
+          {icon:'📄',name:'Pole Care & Safety Guide',type:'PDF',level:'All',size:'1.2 MB'},
+          {icon:'🎬',name:'Jade Split Entry',type:'Video',level:'Level 3',size:'38 MB'},
+          {icon:'🎬',name:'Aerial Invert Technique',type:'Video',level:'High Tricks',size:'95 MB'},
+        ].map(m=>`<div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;" onclick="alert('Preview: ${m.name}')">
+          <div style="height:100px;background:#0a0a0a;display:flex;align-items:center;justify-content:center;font-size:36px;">${m.icon}</div>
+          <div style="padding:10px 12px;">
+            <div style="font-size:12px;font-weight:600;margin-bottom:4px;line-height:1.3;">${m.name}</div>
+            <div style="font-size:10px;color:var(--grey);">${m.type} · ${m.level} · ${m.size}</div>
+            <div style="display:flex;gap:4px;margin-top:8px;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Edit')">Edit</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Assign to homework')">Assign</button></div>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>
+
   </div><!-- end .content -->
 </div><!-- end .main -->
 
@@ -2743,6 +3032,43 @@ tr.clickable-row:hover td { background: #141414; }
 </div>
 
 <!-- ===== MODALS ===== -->
+
+<!-- Add Tag Modal -->
+<div class="modal-overlay" id="modal-add-tag">
+  <div class="modal">
+    <div class="modal-title">New Tag <button class="modal-close" onclick="closeModal('modal-add-tag')">✕</button></div>
+    <div class="field"><label>Tag Name</label><input type="text" placeholder="e.g. Showcase Ready" /></div>
+    <div class="field"><label>Colour</label>
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <div style="width:28px;height:28px;border-radius:6px;background:var(--lav);cursor:pointer;border:2px solid var(--lav);"></div>
+        <div style="width:28px;height:28px;border-radius:6px;background:var(--lime);cursor:pointer;"></div>
+        <div style="width:28px;height:28px;border-radius:6px;background:var(--amber);cursor:pointer;"></div>
+        <div style="width:28px;height:28px;border-radius:6px;background:#e05555;cursor:pointer;"></div>
+        <div style="width:28px;height:28px;border-radius:6px;background:#5ecc7b;cursor:pointer;"></div>
+        <div style="width:28px;height:28px;border-radius:6px;background:#888;cursor:pointer;"></div>
+      </div>
+    </div>
+    <div class="field"><label>Auto-rule (optional)</label><input type="text" placeholder="e.g. No booking in 21 days — leave blank for manual" /></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-add-tag')">Cancel</button><button class="btn btn-lime" onclick="alert('Tag created!');closeModal('modal-add-tag')">Create Tag</button></div>
+  </div>
+</div>
+
+<!-- Add Studio Note Modal -->
+<div class="modal-overlay" id="modal-add-studio-note">
+  <div class="modal">
+    <div class="modal-title">Pin Studio Note <button class="modal-close" onclick="closeModal('modal-add-studio-note')">✕</button></div>
+    <div class="field"><label>Title</label><input type="text" placeholder="Short headline…" /></div>
+    <div class="field"><label>Body</label><textarea rows="4" placeholder="Details, instructions, context…"></textarea></div>
+    <div class="field"><label>Priority</label>
+      <select style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 10px;">
+        <option>📌 Pinned (always visible)</option>
+        <option>⚠️ Important</option>
+        <option>ℹ️ General</option>
+      </select>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-add-studio-note')">Cancel</button><button class="btn btn-lime" onclick="alert('Note pinned!');closeModal('modal-add-studio-note')">Pin Note</button></div>
+  </div>
+</div>
 
 <!-- Add Student Modal -->
 <div class="modal-overlay" id="modal-add-student">
@@ -3492,7 +3818,10 @@ const screenTitles = {
   seasons:'Seasons', bookings:'Bookings', billing:'Billing',
   discounts:'Discounts', giftcards:'Gift Cards', community:'Community',
   surveys:'Surveys', staff:'Staff', settings:'Settings',
-  reporting:'Reporting', 'activity-log':'Activity Log', leads:'Leads', kisi:'Kisi Access',
+  reporting:'Analytics', 'activity-log':'Activity Log', leads:'Leads', kisi:'Kisi Access',
+  'manage-tags':'Tags', 'skill-lists':'Skill Lists', rooms:'Rooms', categories:'Categories',
+  'manage-packages':'Packages', 'manage-memberships':'Memberships',
+  'studio-notes':'Studio Notes', 'media-library':'Media Library',
   notifications:'Automations', marketing:'Marketing',
   'student-detail':'Student Profile', attendance:'Attendance Register',
   'season-edit':'Edit Season',
@@ -3746,6 +4075,29 @@ function filterStudentsTable(val) {
     const name = (row.dataset.name || '').toLowerCase();
     row.style.display = (!q || name.includes(q)) ? '' : 'none';
   });
+}
+
+// ===== NAV GROUP TOGGLE =====
+function toggleNavGroup(id) {
+  const body = document.getElementById(id);
+  const arrow = document.getElementById(id + '-arrow');
+  body.classList.toggle('collapsed');
+  if (arrow) arrow.style.transform = body.classList.contains('collapsed') ? 'rotate(-90deg)' : '';
+}
+
+// ===== SKILL LISTS =====
+function loadSkillProgress(name) {
+  const el = document.getElementById('sl-progress-list');
+  if (!el || !name) return;
+  const skills = ['Fireman spin','Pole hold — front','Pole hold — back','Cradle spin','Chair spin','Pole sit','Layback','Pencil spin','Cross-ankle release'];
+  const achieved = name === 'Jess Malone' ? [0,1,2,3,4] : name === 'Ruby Kim' ? [0,1,2,3,4,5,6,7,8] : [0,1,2];
+  el.innerHTML = skills.map((s,i) => {
+    const done = achieved.includes(i);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);">
+      <div style="width:20px;height:20px;border-radius:50%;border:2px solid ${done?'var(--lime)':'var(--border)'};background:${done?'var(--lime)':'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;" onclick="this.style.background=this.style.background?'':'var(--lime)';this.style.borderColor='var(--lime)';">${done?'<svg width="10" height="8" viewBox="0 0 10 8"><polyline points="1,4 4,7 9,1" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round"/></svg>':''}</div>
+      <span style="font-size:13px;color:${done?'var(--white)':'var(--grey)'};">${s}</span>
+    </div>`;
+  }).join('');
 }
 
 // ===== CAMPAIGNS =====
