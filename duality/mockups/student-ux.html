@@ -723,14 +723,18 @@
     /* Shell */
     .shell { max-width: 100%; min-height: 100dvh; }
 
-    /* Sidebar: hidden off-screen by default, slides in when body.sidebar-open */
+    /* Sidebar: full-screen drawer on mobile */
     .sidebar {
-      transform: translateX(-260px);
+      transform: translateX(-100vw);
       transition: transform 0.28s ease;
-      width: 260px; min-width: 260px;
+      width: 100vw; min-width: 0;
       z-index: 190;
+      overflow-y: auto;
     }
     body.sidebar-open .sidebar { transform: translateX(0); }
+
+    /* Hide dev demo bar on mobile */
+    .demo-bar { display: none !important; }
 
     /* Main content: no left margin, clear topbar + bottom nav */
     .main { margin-left: 0; padding: 68px 16px 80px; }
@@ -958,7 +962,7 @@
   <!-- MOBILE TOP BAR -->
   <div class="mob-topbar" id="mob-topbar">
     <button class="mob-ham" onclick="toggleMobileSidebar()">&#9776;</button>
-    <span style="font-family:'Archivo Black';color:var(--lime);font-size:18px">Duality<span style="color:var(--white)">.</span></span>
+    <span style="font-family:'Archivo Black';color:var(--lime);font-size:16px;letter-spacing:1px">DUALITY <span style="color:var(--white)">POLE</span></span>
     <div class="mob-notif-btn" onclick="showScreen('notifications')">
       &#9711;
       <div class="mob-notif-badge">3</div>
@@ -971,7 +975,7 @@
   <!-- SIDEBAR -->
   <nav class="sidebar" style="position:relative">
     <button class="mob-sidebar-close" onclick="toggleMobileSidebar()">&#10005;</button>
-    <div class="sidebar-logo">Duality<span>.</span></div>
+    <div class="sidebar-logo">DUALITY <span>POLE</span></div>
 
     <div class="nav-item active" onclick="showScreen('dashboard')">
       <span class="nav-icon">&#9670;</span> Dashboard
@@ -1023,7 +1027,7 @@
     <div class="screen active" id="screen-dashboard">
 
       <!-- Demo toggle (remove in real build) -->
-      <div style="background:#111;border:1px solid #222;border-radius:8px;padding:10px 16px;margin-bottom:28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--grey)">
+      <div class="demo-bar" style="background:#111;border:1px solid #222;border-radius:8px;padding:10px 16px;margin-bottom:28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--grey)">
         <span>Demo state:</span>
         <button class="btn btn-ghost btn-sm" onclick="setDashState('enrolled-no-new-season')" style="font-size:11px">Enrolled, no new season yet</button>
         <button class="btn btn-ghost btn-sm" onclick="setDashState('enrolled-s4-open')" style="font-size:11px">Enrolled + S4 open</button>
@@ -3089,7 +3093,7 @@
   <!-- AUTH SCREEN (sign in / sign up) -->
   <div id="screen-auth">
     <div class="auth-card">
-      <div class="auth-logo">Duality<span>.</span></div>
+      <div class="auth-logo">DUALITY <span>POLE</span></div>
 
       <!-- SIGN IN -->
       <div id="auth-panel-signin">
