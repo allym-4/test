@@ -813,15 +813,15 @@
               </div>
 
               <div id="season-locked-section">
-                <div class="section-label" style="color:#444">Not available at your level</div>
+                <div class="section-label" style="color:#444" id="locked-section-label">Not available at your level</div>
                 <div class="grid-2">
-                  <div class="class-card locked">
+                  <div class="class-card locked" id="locked-card-1" onclick="openLevelWarning('Level 4','Mon 8:00pm')">
                     <div class="class-day">Monday - 8:00pm</div>
                     <div class="class-name">Level 4</div>
                     <div class="class-meta"><span class="tag tag-grey">Level 4 required</span></div>
                     <div class="class-instructor">Mimi - Studio A</div>
                   </div>
-                  <div class="class-card locked">
+                  <div class="class-card locked" id="locked-card-2" onclick="openLevelWarning('High Tricks','Thu 8:30pm')">
                     <div class="class-day">Thursday - 8:30pm</div>
                     <div class="class-name">High Tricks</div>
                     <div class="class-meta"><span class="tag tag-grey">Level 6 required</span></div>
@@ -2240,6 +2240,23 @@
   </div>
 </div>
 
+<!-- LEVEL WARNING MODAL -->
+<div class="modal-overlay" id="level-warning-modal">
+  <div class="modal" style="max-width:420px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="modal-title">Heads up</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('level-warning-modal')">Close</button>
+    </div>
+    <div style="font-size:22px;text-align:center;margin-bottom:16px">&#9651;</div>
+    <div style="font-size:15px;font-weight:500;margin-bottom:10px" id="level-warning-class"></div>
+    <div style="font-size:14px;color:var(--grey);line-height:1.7;margin-bottom:24px">Your current level doesn't match this class. Please make sure you've checked with your instructor before enrolling - they'll be able to confirm if you're ready to step up.</div>
+    <div class="modal-actions">
+      <button class="btn btn-lime" style="flex:1" id="level-warning-confirm" onclick="closeModal('level-warning-modal')">I've checked - book it</button>
+      <button class="btn btn-ghost" onclick="closeModal('level-warning-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- WAITLIST MODAL -->
 <div class="modal-overlay" id="waitlist-modal">
   <div class="modal" style="max-width:420px">
@@ -2299,15 +2316,31 @@
   let levelFilterOn = true;
   function toggleLevelFilter() {
     levelFilterOn = !levelFilterOn;
-    const track = document.getElementById('level-toggle-track');
-    const thumb = document.getElementById('level-toggle-thumb');
-    const label = document.getElementById('level-toggle-label');
+    const track  = document.getElementById('level-toggle-track');
+    const thumb  = document.getElementById('level-toggle-thumb');
+    const label  = document.getElementById('level-toggle-label');
     const locked = document.getElementById('season-locked-section');
+    const lockedCards = locked.querySelectorAll('.class-card');
+    const sectionLabel = document.getElementById('locked-section-label');
+
     track.style.background = levelFilterOn ? 'var(--lime)' : '#333';
     thumb.style.right = levelFilterOn ? '3px' : 'auto';
     thumb.style.left  = levelFilterOn ? 'auto' : '3px';
     label.textContent = levelFilterOn ? 'On' : 'Off';
     locked.style.display = levelFilterOn ? 'none' : 'block';
+
+    // When shown (toggle off): make cards fully visible and clickable
+    lockedCards.forEach(c => {
+      c.style.opacity = levelFilterOn ? '' : '1';
+      c.style.cursor  = levelFilterOn ? '' : 'pointer';
+    });
+    if (sectionLabel) sectionLabel.style.color = levelFilterOn ? '#444' : 'var(--grey)';
+  }
+
+  function openLevelWarning(className, time) {
+    if (levelFilterOn) return; // shouldn't be reachable but guard anyway
+    document.getElementById('level-warning-class').textContent = className + ' - ' + time;
+    document.getElementById('level-warning-modal').classList.add('open');
   }
 
   function filterCasualToPractice() {
