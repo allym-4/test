@@ -457,6 +457,18 @@
   .chip-locked { background:#191919;color:#555;border:1px solid #222; }
   .chip-full { background:#2a1000;color:#cc7744;border:1px solid #4a2000; }
   .chip-cancelled { background:#1a1a1a;color:#444;border:1px solid #1a1a1a;text-decoration:line-through; }
+  /* Post-trial modal */
+  #post-trial-modal { z-index: 1000; }
+  #post-trial-modal .modal-overlay-inner { pointer-events: none; } /* prevent click-outside close */
+  .pt-star-row { display:flex; flex-direction:column; gap:14px; margin-bottom:20px; }
+  .pt-star-q { display:flex; align-items:center; justify-content:space-between; }
+  .pt-star-q-label { font-size:14px; }
+  .pt-stars { display:flex; gap:4px; }
+  .pt-star { font-size:24px; cursor:pointer; color:#333; transition:color 0.1s; line-height:1; user-select:none; }
+  .pt-star.lit { color:#DBFF00; }
+  .pt-screen { animation: pt-fade-in 0.25s ease; }
+  @keyframes pt-fade-in { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
   .spots-badge { font-size:11px;font-weight:600;border-radius:20px;padding:3px 9px;flex-shrink:0; }
   .spots-badge.selling-fast { background:#1a1200;color:#ccaa00;border:1px solid #443a00; }
   .spots-badge.one-left { background:#1a0000;color:#ff4444;border:1px solid #550000; animation: pulse-spots 1.4s ease-in-out infinite; }
@@ -848,6 +860,7 @@
         <button class="btn btn-ghost btn-sm" onclick="setDashState('enrolled-s4-secured')" style="font-size:11px">Enrolled + S4 secured</button>
         <button class="btn btn-ghost btn-sm" onclick="setDashState('not-enrolled')" style="font-size:11px">Not enrolled</button>
         <button class="btn btn-ghost btn-sm" onclick="setDashState('enrolled-style-only')" style="font-size:11px">Enrolled (style classes)</button>
+        <button class="btn btn-ghost btn-sm" onclick="openPostTrialModal()" style="font-size:11px;color:var(--lav);border-color:var(--lav)">Post-trial login</button>
       </div>
 
       <!-- STATE: Season open CTA (shown when new season is open and student not yet booked) -->
@@ -2897,6 +2910,91 @@
   </main>
 </div>
 
+
+<!-- POST-TRIAL MODAL (no close button - must complete a path) -->
+<div class="modal-overlay" id="post-trial-modal" style="z-index:1000">
+  <div class="modal" style="max-width:460px">
+
+    <!-- Screen 1: Enrol prompt -->
+    <div id="pt-screen-prompt" class="pt-screen">
+      <div style="font-size:36px;text-align:center;margin-bottom:16px">🎉</div>
+      <div style="font-family:'Archivo Black',sans-serif;font-size:22px;text-align:center;margin-bottom:10px">We loved having you in class!</div>
+      <div style="font-size:15px;color:var(--grey);text-align:center;line-height:1.7;margin-bottom:28px">Did you love it as much as we did? Would you like to enrol in the rest of the course?</div>
+      <div style="background:#0a1200;border:1px solid #2a3a00;border-radius:10px;padding:14px 18px;margin-bottom:22px">
+        <div style="font-size:13px;color:var(--grey);margin-bottom:6px">Season 3 - Level 1 · 7 classes remaining</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:15px;font-weight:500">Enrol and lock in your spot</div>
+          <div style="font-family:'Archivo Black',sans-serif;font-size:20px;color:var(--lime)">$236</div>
+        </div>
+        <div style="font-size:12px;color:var(--grey);margin-top:4px">$33.75/class · your trial class credited</div>
+      </div>
+      <button class="btn btn-lime" style="width:100%;margin-bottom:10px;font-size:15px" onclick="postTrialYes()">Yes - enrol now · $236</button>
+      <button class="btn btn-ghost" style="width:100%" onclick="postTrialNo()">No thanks</button>
+    </div>
+
+    <!-- Screen 2: Feedback quiz -->
+    <div id="pt-screen-feedback" class="pt-screen" style="display:none">
+      <div style="font-family:'Archivo Black',sans-serif;font-size:20px;margin-bottom:6px">Thanks for trying us out</div>
+      <div style="font-size:14px;color:var(--grey);margin-bottom:22px;line-height:1.6">We'd love to know what you thought - takes 30 seconds.</div>
+      <div class="pt-star-row">
+        <div class="pt-star-q">
+          <span class="pt-star-q-label">Did you enjoy the class?</span>
+          <div class="pt-stars" data-key="class">
+            <span class="pt-star" onclick="rateStar('class',1)">★</span>
+            <span class="pt-star" onclick="rateStar('class',2)">★</span>
+            <span class="pt-star" onclick="rateStar('class',3)">★</span>
+            <span class="pt-star" onclick="rateStar('class',4)">★</span>
+            <span class="pt-star" onclick="rateStar('class',5)">★</span>
+          </div>
+        </div>
+        <div class="pt-star-q">
+          <span class="pt-star-q-label">Did you enjoy the instructor?</span>
+          <div class="pt-stars" data-key="instructor">
+            <span class="pt-star" onclick="rateStar('instructor',1)">★</span>
+            <span class="pt-star" onclick="rateStar('instructor',2)">★</span>
+            <span class="pt-star" onclick="rateStar('instructor',3)">★</span>
+            <span class="pt-star" onclick="rateStar('instructor',4)">★</span>
+            <span class="pt-star" onclick="rateStar('instructor',5)">★</span>
+          </div>
+        </div>
+        <div class="pt-star-q">
+          <span class="pt-star-q-label">Did you like the facilities?</span>
+          <div class="pt-stars" data-key="facilities">
+            <span class="pt-star" onclick="rateStar('facilities',1)">★</span>
+            <span class="pt-star" onclick="rateStar('facilities',2)">★</span>
+            <span class="pt-star" onclick="rateStar('facilities',3)">★</span>
+            <span class="pt-star" onclick="rateStar('facilities',4)">★</span>
+            <span class="pt-star" onclick="rateStar('facilities',5)">★</span>
+          </div>
+        </div>
+        <div class="pt-star-q">
+          <span class="pt-star-q-label">Did you like the class structure?</span>
+          <div class="pt-stars" data-key="structure">
+            <span class="pt-star" onclick="rateStar('structure',1)">★</span>
+            <span class="pt-star" onclick="rateStar('structure',2)">★</span>
+            <span class="pt-star" onclick="rateStar('structure',3)">★</span>
+            <span class="pt-star" onclick="rateStar('structure',4)">★</span>
+            <span class="pt-star" onclick="rateStar('structure',5)">★</span>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:14px;font-weight:500;margin-bottom:8px">We'd love to know why you're not joining us for the season</div>
+      <div style="font-size:13px;color:var(--grey);margin-bottom:10px">Please give us some details - it genuinely helps us improve.</div>
+      <textarea id="pt-reason" rows="3" placeholder="e.g. timing doesn't work for me, I'd like to try a different class first, budget reasons..." style="width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:12px;color:var(--white);font-size:14px;font-family:inherit;resize:vertical;line-height:1.5;margin-bottom:6px"></textarea>
+      <div id="pt-feedback-error" style="display:none;font-size:12px;color:#ff6b6b;margin-bottom:10px">Please rate each category and share a few words before submitting.</div>
+      <button class="btn btn-lime" style="width:100%;margin-top:12px" onclick="postTrialSubmitFeedback()">Submit feedback</button>
+    </div>
+
+    <!-- Screen 3: All done -->
+    <div id="pt-screen-thanks" class="pt-screen" style="display:none;text-align:center;padding:16px 0">
+      <div style="font-size:42px;margin-bottom:14px">💜</div>
+      <div style="font-family:'Archivo Black',sans-serif;font-size:20px;margin-bottom:10px">Thank you!</div>
+      <div style="font-size:14px;color:var(--grey);line-height:1.7;margin-bottom:26px">Your feedback means a lot. We hope to see you again - drop in for a casual class any time, or keep an eye out when Season 4 opens.</div>
+      <button class="btn btn-outline" style="width:100%" onclick="closeModal('post-trial-modal')">Go to my dashboard</button>
+    </div>
+
+  </div>
+</div>
 
 <!-- CHECKOUT MODAL -->
 <div class="modal-overlay" id="checkout-modal">
@@ -5400,6 +5498,8 @@
   }
 
   document.querySelectorAll('.modal-overlay').forEach(o => {
+    // post-trial modal cannot be dismissed by clicking outside
+    if (o.id === 'post-trial-modal') return;
     o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
   });
 
@@ -5544,6 +5644,60 @@
       enrolled.style.display = 'block';
       setTricksStat('level');
     }
+  }
+
+  // Post-trial flow
+  const ptRatings = { class: 0, instructor: 0, facilities: 0, structure: 0 };
+
+  function openPostTrialModal() {
+    // Reset to first screen
+    ['pt-screen-prompt','pt-screen-feedback','pt-screen-thanks'].forEach((id, i) => {
+      document.getElementById(id).style.display = i === 0 ? '' : 'none';
+    });
+    // Reset ratings
+    Object.keys(ptRatings).forEach(k => { ptRatings[k] = 0; });
+    document.querySelectorAll('.pt-star').forEach(s => s.classList.remove('lit'));
+    document.getElementById('pt-reason').value = '';
+    document.getElementById('pt-feedback-error').style.display = 'none';
+    document.getElementById('post-trial-modal').classList.add('open');
+  }
+
+  function postTrialYes() {
+    closeModal('post-trial-modal');
+    showBookingSuccess('enrol');
+    // In a real build this would open the checkout flow
+  }
+
+  function postTrialNo() {
+    document.getElementById('pt-screen-prompt').style.display = 'none';
+    const fb = document.getElementById('pt-screen-feedback');
+    fb.style.display = '';
+    // re-trigger animation
+    fb.classList.remove('pt-screen');
+    void fb.offsetWidth;
+    fb.classList.add('pt-screen');
+  }
+
+  function rateStar(key, val) {
+    ptRatings[key] = val;
+    const stars = document.querySelectorAll(`.pt-stars[data-key="${key}"] .pt-star`);
+    stars.forEach((s, i) => s.classList.toggle('lit', i < val));
+  }
+
+  function postTrialSubmitFeedback() {
+    const allRated = Object.values(ptRatings).every(v => v > 0);
+    const reason   = document.getElementById('pt-reason').value.trim();
+    if (!allRated || !reason) {
+      document.getElementById('pt-feedback-error').style.display = '';
+      return;
+    }
+    document.getElementById('pt-feedback-error').style.display = 'none';
+    document.getElementById('pt-screen-feedback').style.display = 'none';
+    const thanks = document.getElementById('pt-screen-thanks');
+    thanks.style.display = '';
+    thanks.classList.remove('pt-screen');
+    void thanks.offsetWidth;
+    thanks.classList.add('pt-screen');
   }
 
   function notifyInstructorLevelUp() {
