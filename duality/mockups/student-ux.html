@@ -1885,57 +1885,219 @@
     <div class="screen" id="screen-myclasses">
       <div class="page-header">
         <div class="page-title">My Classes</div>
-        <div class="page-subtitle">Season 3 - Week 4 of 8 - ends 6 Jun</div>
       </div>
 
-      <div class="section-label">Enrolled this season</div>
-      <div class="class-row mb-8">
-        <div class="class-row-date"><div class="class-row-day">MON</div><div class="class-row-num" style="color:var(--white);font-size:18px">6:30</div></div>
-        <div class="class-row-divider"></div>
-        <div class="class-row-info"><div class="class-row-name">Level 2</div><div class="class-row-meta">Studio A - Chloe - Weeks 1-8</div></div>
-        <span class="tag tag-lime">Active</span>
-      </div>
-      <div class="class-row mb-8">
-        <div class="class-row-date"><div class="class-row-day">FRI</div><div class="class-row-num" style="color:var(--white);font-size:18px">6:30</div></div>
-        <div class="class-row-divider"></div>
-        <div class="class-row-info"><div class="class-row-name">Dance</div><div class="class-row-meta">Studio B - Mimi - Weeks 1-8</div></div>
-        <span class="tag tag-lime">Active</span>
+      <div class="tabs">
+        <div class="tab active" id="mctab-active" onclick="showMyClassesTab('active')">Active Season</div>
+        <div class="tab" id="mctab-future" onclick="showMyClassesTab('future')">Future Season</div>
+        <div class="tab" id="mctab-past" onclick="showMyClassesTab('past')">Past Seasons</div>
       </div>
 
-      <div class="divider"></div>
+      <!-- ── ACTIVE SEASON (Season 3) ── -->
+      <div id="mcpanel-active">
+        <div class="page-subtitle" style="margin-bottom:20px">Season 3 · Week 4 of 8 · ends 6 Jun</div>
 
-      <div class="flex items-center justify-between mb-16">
-        <div class="section-label" style="margin-bottom:0">Catch-up credits</div>
-        <button class="btn btn-lav btn-sm" onclick="showScreen('book');showBookTab('casual')">Use a credit</button>
-      </div>
-      <div class="credit-badge">
-        <div class="credit-count">1</div>
-        <div>
-          <div class="credit-label">Credit available</div>
-          <div class="credit-sub">Missed Level 2 - Mon 7 May - Expires end of Season 3</div>
+        <!-- Enrolled classes -->
+        <div class="section-label">Enrolled this season</div>
+        <div class="class-row mb-8">
+          <div class="class-row-date"><div class="class-row-day">MON</div><div class="class-row-num" style="color:var(--white);font-size:18px">6:30</div></div>
+          <div class="class-row-divider"></div>
+          <div class="class-row-info"><div class="class-row-name">Level 2</div><div class="class-row-meta">Studio A · Chloe · Weeks 1–8</div></div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+            <span class="tag tag-lime">Active</span>
+            <button class="btn btn-ghost btn-sm" style="font-size:11px;color:#666;padding:3px 8px" onclick="openCancelBookingModal('Level 2 – Mon 6:30pm')">Cancel</button>
+          </div>
+        </div>
+        <div class="class-row mb-8">
+          <div class="class-row-date"><div class="class-row-day">FRI</div><div class="class-row-num" style="color:var(--white);font-size:18px">6:30</div></div>
+          <div class="class-row-divider"></div>
+          <div class="class-row-info"><div class="class-row-name">Dance</div><div class="class-row-meta">Studio B · Mimi · Weeks 1–8</div></div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+            <span class="tag tag-lime">Active</span>
+            <button class="btn btn-ghost btn-sm" style="font-size:11px;color:#666;padding:3px 8px" onclick="openCancelBookingModal('Dance – Fri 6:30pm')">Cancel</button>
+          </div>
+        </div>
+        <!-- Pricing + add another -->
+        <div style="background:#0d0d0d;border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <div style="font-size:13px;color:var(--grey)">2 classes · Season 3</div>
+            <div style="font-family:'Archivo Black',sans-serif;font-size:17px">$440</div>
+          </div>
+          <div style="font-size:12px;color:#666;margin-bottom:12px">$220/class · 8 weeks</div>
+          <div style="font-size:13px;color:var(--grey);margin-bottom:10px">Add a 3rd class → just <strong style="color:var(--lime)">$17.50/session</strong> + 1 free practice session/week</div>
+          <button class="btn btn-outline btn-sm" style="font-size:12px" onclick="showScreen('book');showBookTab('season')">Browse classes to add</button>
+        </div>
+
+        <!-- Catch-up credit -->
+        <div class="divider"></div>
+        <div class="credit-badge">
+          <div class="credit-count">1</div>
+          <div>
+            <div class="credit-label">Catch-up credit available</div>
+            <div class="credit-sub">Missed Level 2 – Mon 7 May · Expires end of Season 3</div>
+          </div>
+        </div>
+
+        <!-- Upcoming schedule -->
+        <div class="divider"></div>
+        <div class="section-label">Upcoming</div>
+        <div class="class-row">
+          <div class="class-row-date"><div class="class-row-day">Mon</div><div class="class-row-num">12</div></div>
+          <div class="class-row-divider"></div>
+          <div class="class-row-info"><div class="class-row-name">Level 2 · Studio A</div><div class="class-row-meta">6:30pm · Chloe · Week 4</div></div>
+          <button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Level 2','Mon 12 May, 6:30pm', true)">Mark Away</button>
+        </div>
+        <div class="class-row">
+          <div class="class-row-date"><div class="class-row-day">Fri</div><div class="class-row-num">16</div></div>
+          <div class="class-row-divider"></div>
+          <div class="class-row-info"><div class="class-row-name">Dance · Studio B</div><div class="class-row-meta">6:30pm · Mimi · Week 4</div></div>
+          <button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Dance','Fri 16 May, 6:30pm', true)">Mark Away</button>
+        </div>
+        <div class="class-row">
+          <div class="class-row-date"><div class="class-row-day">Mon</div><div class="class-row-num">19</div></div>
+          <div class="class-row-divider"></div>
+          <div class="class-row-info"><div class="class-row-name">Level 2 · Studio A</div><div class="class-row-meta">6:30pm · Chloe · Week 5</div></div>
+          <button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Level 2','Mon 19 May, 6:30pm', false)">Mark Away</button>
+        </div>
+        <div class="class-row">
+          <div class="class-row-date"><div class="class-row-day">Fri</div><div class="class-row-num">23</div></div>
+          <div class="class-row-divider"></div>
+          <div class="class-row-info"><div class="class-row-name">Dance · Studio B</div><div class="class-row-meta">6:30pm · Mimi · Week 5</div></div>
+          <button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Dance','Fri 23 May, 6:30pm', false)">Mark Away</button>
+        </div>
+
+        <!-- Casual / Catch-ups -->
+        <div class="divider"></div>
+        <div class="section-label">Casual &amp; Catch-ups</div>
+
+        <!-- Upcoming casual (using credit for Dance makeup) -->
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--grey);margin-bottom:8px">Upcoming</div>
+        <div class="card mb-8" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+          <div>
+            <div style="font-size:15px;font-weight:500">Dance make up</div>
+            <div style="font-size:13px;color:var(--grey);margin-top:3px">Fri 16 May · 6:30pm · Mimi</div>
+          </div>
+          <span class="tag tag-lav" style="flex-shrink:0">Credit booked</span>
+        </div>
+
+        <!-- Past casuals -->
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--grey);margin:16px 0 8px">Past</div>
+        <div class="card mb-8" style="display:flex;align-items:center;justify-content:space-between;gap:16px;opacity:0.6">
+          <div>
+            <div style="font-size:15px;font-weight:500">Level 2 make up</div>
+            <div style="font-size:13px;color:var(--grey);margin-top:3px">Wed 14 May · 8:30pm · Bambi · credit used</div>
+          </div>
+          <span class="tag tag-grey" style="flex-shrink:0">Attended</span>
+        </div>
+        <div class="card mb-8" style="display:flex;align-items:center;justify-content:space-between;gap:16px;opacity:0.6">
+          <div>
+            <div style="font-size:15px;font-weight:500">Kiki</div>
+            <div style="font-size:13px;color:var(--grey);margin-top:3px">Fri 9 May · 5:30pm · Mimi · $40</div>
+          </div>
+          <span class="tag tag-grey" style="flex-shrink:0">Attended</span>
+        </div>
+        <div class="card mb-8" style="display:flex;align-items:center;justify-content:space-between;gap:16px;opacity:0.6">
+          <div>
+            <div style="font-size:15px;font-weight:500">Invert Tech</div>
+            <div style="font-size:13px;color:var(--grey);margin-top:3px">Wed 7 May · 6:30pm · Maz · $40</div>
+          </div>
+          <span class="tag tag-grey" style="flex-shrink:0">Attended</span>
+        </div>
+        <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:16px;opacity:0.6">
+          <div>
+            <div style="font-size:15px;font-weight:500">Strip Virgin</div>
+            <div style="font-size:13px;color:var(--grey);margin-top:3px">Tue 29 Apr · 5:30pm · Amy · $40</div>
+          </div>
+          <span class="tag tag-grey" style="flex-shrink:0">Attended</span>
+        </div>
+
+        <div style="margin-top:16px">
+          <button class="btn btn-lav btn-sm" onclick="showScreen('book');showBookTab('casual')">Book a casual or catch-up →</button>
         </div>
       </div>
 
-      <div class="divider"></div>
+      <!-- ── FUTURE SEASON (Season 4) ── -->
+      <div id="mcpanel-future" style="display:none">
+        <div class="page-subtitle" style="margin-bottom:20px">Season 4 · Starts 2 Jun · 8 weeks</div>
 
-      <div class="section-label">Upcoming schedule</div>
-      <div class="class-row">
-        <div class="class-row-date"><div class="class-row-day">Mon</div><div class="class-row-num">12</div></div>
-        <div class="class-row-divider"></div>
-        <div class="class-row-info"><div class="class-row-name">Level 2 - Studio A</div><div class="class-row-meta">6:30pm - Chloe - Week 4</div></div>
-        <button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Level 2','Mon 12 May, 6:30pm', true)">Mark Away</button>
+        <div class="section-label">Enrolled in Season 4</div>
+        <div class="class-row mb-8">
+          <div class="class-row-date"><div class="class-row-day">MON</div><div class="class-row-num" style="color:var(--lime);font-size:18px">6:30</div></div>
+          <div class="class-row-divider"></div>
+          <div class="class-row-info"><div class="class-row-name">Level 2</div><div class="class-row-meta">Chloe · Weeks 1–8</div></div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+            <span class="tag tag-lime">Booked</span>
+            <button class="btn btn-ghost btn-sm" style="font-size:11px;color:#666;padding:3px 8px" onclick="openCancelBookingModal('Level 2 – Mon 6:30pm (Season 4)')">Cancel</button>
+          </div>
+        </div>
+        <div class="class-row mb-8">
+          <div class="class-row-date"><div class="class-row-day">FRI</div><div class="class-row-num" style="color:var(--lime);font-size:18px">6:30</div></div>
+          <div class="class-row-divider"></div>
+          <div class="class-row-info"><div class="class-row-name">Dance</div><div class="class-row-meta">Mimi · Weeks 1–8</div></div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+            <span class="tag tag-lime">Booked</span>
+            <button class="btn btn-ghost btn-sm" style="font-size:11px;color:#666;padding:3px 8px" onclick="openCancelBookingModal('Dance – Fri 6:30pm (Season 4)')">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Pricing -->
+        <div style="background:#0d0d0d;border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <div style="font-size:13px;color:var(--grey)">2 classes · Season 4</div>
+            <div style="font-family:'Archivo Black',sans-serif;font-size:17px">$440</div>
+          </div>
+          <div style="font-size:12px;color:#666;margin-bottom:12px">$220/class · 8 weeks · payment plan available</div>
+          <div style="font-size:13px;color:var(--grey);margin-bottom:10px">Add a 3rd class → just <strong style="color:var(--lime)">$17.50/session</strong> + 1 free practice session/week</div>
+          <button class="btn btn-lime btn-sm" onclick="showScreen('book');showBookTab('season')">Add a class to Season 4</button>
+        </div>
+
+        <!-- Workshops -->
+        <div class="section-label">Workshops booked</div>
+        <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+          <div><div style="font-size:15px;font-weight:500">Flexi Intensive with Mimi</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Sat 31 May · 10am–1pm · $75</div></div>
+          <span class="tag tag-lime" style="flex-shrink:0">Booked</span>
+        </div>
       </div>
-      <div class="class-row">
-        <div class="class-row-date"><div class="class-row-day">Fri</div><div class="class-row-num">16</div></div>
-        <div class="class-row-divider"></div>
-        <div class="class-row-info"><div class="class-row-name">Dance - Studio B</div><div class="class-row-meta">6:30pm - Mimi - Week 4</div></div>
-        <button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Dance','Fri 16 May, 6:30pm', true)">Mark Away</button>
-      </div>
-      <div class="class-row">
-        <div class="class-row-date"><div class="class-row-day">Mon</div><div class="class-row-num">19</div></div>
-        <div class="class-row-divider"></div>
-        <div class="class-row-info"><div class="class-row-name">Level 2 - Studio A</div><div class="class-row-meta">6:30pm - Chloe - Week 5</div></div>
-        <button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Level 2','Mon 19 May, 6:30pm', false)">Mark Away</button>
+
+      <!-- ── PAST SEASONS ── -->
+      <div id="mcpanel-past" style="display:none">
+
+        <!-- Season 2 -->
+        <div style="font-family:'Archivo Black',sans-serif;font-size:16px;margin-bottom:14px">Season 2 <span style="font-size:13px;font-weight:normal;color:var(--grey);font-family:'Archivo',sans-serif">· Jan – Mar 2026</span></div>
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--grey);margin-bottom:8px">Enrolled</div>
+        <div class="card mb-8" style="display:flex;align-items:center;justify-content:space-between;gap:16px;opacity:0.7">
+          <div><div style="font-size:15px;font-weight:500">Level 1</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Mon 6:30pm · Jaz · 8 weeks · $270</div></div>
+          <span class="tag tag-grey">Completed</span>
+        </div>
+        <div class="card mb-16" style="display:flex;align-items:center;justify-content:space-between;gap:16px;opacity:0.7">
+          <div><div style="font-size:15px;font-weight:500">Floor Virgin</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Sat 12:00pm · Chloe · 8 weeks · $270</div></div>
+          <span class="tag tag-grey">Completed</span>
+        </div>
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--grey);margin-bottom:8px">Casual &amp; Catch-ups</div>
+        <div class="card mb-8" style="display:flex;align-items:center;justify-content:space-between;gap:16px;opacity:0.5">
+          <div><div style="font-size:15px;font-weight:500">Strip Virgin</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Tue 3 Feb · 5:30pm · Amy · $40</div></div>
+          <span class="tag tag-grey">Attended</span>
+        </div>
+        <div class="card mb-24" style="display:flex;align-items:center;justify-content:space-between;gap:16px;opacity:0.5">
+          <div><div style="font-size:15px;font-weight:500">Level 1 make up</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Wed 18 Feb · 5:30pm · Chloe · credit used</div></div>
+          <span class="tag tag-grey">Attended</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Season 1 -->
+        <div style="font-family:'Archivo Black',sans-serif;font-size:16px;margin:18px 0 14px">Season 1 <span style="font-size:13px;font-weight:normal;color:var(--grey);font-family:'Archivo',sans-serif">· Sep – Nov 2025</span></div>
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--grey);margin-bottom:8px">Enrolled</div>
+        <div class="card mb-16" style="display:flex;align-items:center;justify-content:space-between;gap:16px;opacity:0.7">
+          <div><div style="font-size:15px;font-weight:500">Level 1</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Mon 6:30pm · Jaz · 8 weeks · $270</div></div>
+          <span class="tag tag-grey">Completed</span>
+        </div>
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--grey);margin-bottom:8px">Casual &amp; Catch-ups</div>
+        <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:16px;opacity:0.5">
+          <div><div style="font-size:15px;font-weight:500">Dance Tech</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Mon 13 Oct · 5:30pm · Chloe · $40</div></div>
+          <span class="tag tag-grey">Attended</span>
+        </div>
+
       </div>
     </div>
 
@@ -2315,82 +2477,6 @@
       <div class="page-header">
         <div class="page-title">Account</div>
       </div>
-
-      <!-- MY BOOKINGS -->
-      <div class="section-label mb-8">My Bookings</div>
-
-      <!-- Season 3 -->
-      <div style="font-family:'Archivo Black',sans-serif;font-size:16px;margin-bottom:12px">Season 3 <span style="font-size:13px;font-weight:normal;color:var(--grey);font-family:'Archivo',sans-serif">· Week 4 of 8 · ends 6 Jun</span></div>
-      <div class="filters mb-12 booking-season-tabs" style="margin-bottom:14px">
-        <button class="filter-btn active" onclick="setBookingTab('s3full',this)">Full Season</button>
-        <button class="filter-btn" onclick="setBookingTab('s3casual',this)">Casual Classes</button>
-        <button class="filter-btn" onclick="setBookingTab('s3makeup',this)">Make Up Classes</button>
-      </div>
-
-      <!-- S3 Full Season -->
-      <div id="booking-s3full">
-        <div class="card mb-8" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
-          <div><div style="font-size:15px;font-weight:500">Level 2</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Mon 6:30pm · Chloe · 8 weeks</div></div>
-          <button class="btn btn-ghost btn-sm" style="font-size:12px;color:#888" onclick="openCancelBookingModal('Level 2 – Mon 6:30pm')">Cancel</button>
-        </div>
-        <div class="card mb-8" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
-          <div><div style="font-size:15px;font-weight:500">Dance</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Fri 6:30pm · Mimi · 8 weeks</div></div>
-          <button class="btn btn-ghost btn-sm" style="font-size:12px;color:#888" onclick="openCancelBookingModal('Dance – Fri 6:30pm')">Cancel</button>
-        </div>
-      </div>
-
-      <!-- S3 Casual Classes -->
-      <div id="booking-s3casual" style="display:none">
-        <div class="card mb-8" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
-          <div><div style="font-size:15px;font-weight:500">Strip Virgin</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Tue 29 Apr · 5:30pm · Amy · $40</div></div>
-          <span class="tag tag-lime" style="flex-shrink:0">Attended</span>
-        </div>
-        <div class="card mb-8" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
-          <div><div style="font-size:15px;font-weight:500">Invert Tech</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Wed 7 May · 6:30pm · Maz · $40</div></div>
-          <span class="tag tag-lime" style="flex-shrink:0">Attended</span>
-        </div>
-        <div class="card mb-8" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
-          <div><div style="font-size:15px;font-weight:500">Kiki</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Fri 9 May · 5:30pm · Mimi · $40</div></div>
-          <span class="tag tag-lime" style="flex-shrink:0">Attended</span>
-        </div>
-      </div>
-
-      <!-- S3 Make Up Classes -->
-      <div id="booking-s3makeup" style="display:none">
-        <div class="card mb-8" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
-          <div><div style="font-size:15px;font-weight:500">Level 2 make up</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Wed 14 May · 8:30pm · Bambi · credit used</div></div>
-          <span class="tag tag-lav" style="flex-shrink:0">Credit used</span>
-        </div>
-        <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:16px;opacity:0.55">
-          <div><div style="font-size:15px;font-weight:500">Dance make up</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Fri 16 May · 6:30pm · Mimi · 1 credit remaining</div></div>
-          <span class="tag tag-grey" style="flex-shrink:0">Upcoming</span>
-        </div>
-      </div>
-
-      <div class="divider" style="margin:22px 0 18px"></div>
-
-      <!-- Season 4 -->
-      <div style="font-family:'Archivo Black',sans-serif;font-size:16px;margin-bottom:12px">Season 4 <span style="font-size:13px;font-weight:normal;color:var(--lime);font-family:'Archivo',sans-serif">· Starts 2 Jun</span></div>
-      <div class="card mb-8" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
-        <div><div style="font-size:15px;font-weight:500">Level 2</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Mon 6:30pm · Chloe · 8 weeks</div></div>
-        <button class="btn btn-ghost btn-sm" style="font-size:12px;color:#888" onclick="openCancelBookingModal('Level 2 – Mon 6:30pm (Season 4)')">Cancel</button>
-      </div>
-      <div class="card mb-8" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
-        <div><div style="font-size:15px;font-weight:500">Dance</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Fri 6:30pm · Mimi · 8 weeks</div></div>
-        <button class="btn btn-ghost btn-sm" style="font-size:12px;color:#888" onclick="openCancelBookingModal('Dance – Fri 6:30pm (Season 4)')">Cancel</button>
-      </div>
-      <button class="btn btn-outline btn-sm mb-16" onclick="showScreen('book');showBookTab('season')">+ Add a class to Season 4</button>
-
-      <div class="divider" style="margin:6px 0 18px"></div>
-
-      <!-- Workshops -->
-      <div style="font-family:'Archivo Black',sans-serif;font-size:16px;margin-bottom:12px">Workshops</div>
-      <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
-        <div><div style="font-size:15px;font-weight:500">Flexi Intensive with Mimi</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Sat 31 May · 10am–1pm · $75</div></div>
-        <span class="tag tag-lime" style="flex-shrink:0">Booked</span>
-      </div>
-
-      <div class="divider" style="margin:26px 0 18px"></div>
 
       <div class="grid-2">
         <div>
@@ -3330,7 +3416,7 @@
       <strong style="color:var(--white)">Want to transfer or have other questions?</strong>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-lav" style="flex:1" onclick="closeModal('cancel-booking-modal');openCasualContact('Season class enquiry','','')" >Reach out</button>
+      <button class="btn btn-lav" style="flex:1" onclick="closeModal('cancel-booking-modal');openBookingEnquiry(document.getElementById('cancel-booking-name').textContent)">Reach out</button>
       <button class="btn btn-ghost" onclick="closeModal('cancel-booking-modal')">Go to dashboard</button>
     </div>
   </div>
@@ -3344,7 +3430,7 @@
       <button class="btn btn-ghost btn-sm" onclick="closeModal('casual-contact-modal')">Close</button>
     </div>
     <div style="font-size:14px;font-weight:500;color:var(--white);margin-bottom:4px" id="casual-contact-class"></div>
-    <div style="font-size:14px;color:var(--grey);line-height:1.6;margin-bottom:20px">This class is currently outside your assessed level. If you think you're ready or want to discuss options, send us a message and we'll get back to you.</div>
+    <div id="casual-contact-desc" style="font-size:14px;color:var(--grey);line-height:1.6;margin-bottom:20px">This class is currently outside your assessed level. If you think you're ready or want to discuss options, send us a message and we'll get back to you.</div>
     <textarea id="casual-contact-message" class="contact-msg-input" rows="5" placeholder="Your message…"></textarea>
     <div class="modal-actions" style="margin-top:16px">
       <button class="btn btn-lime" style="flex:1" onclick="closeModal('casual-contact-modal')">Send message</button>
@@ -3779,23 +3865,33 @@
   }
 
   // ─── MY BOOKINGS ────────────────────────────────────────────────────────────
-  function setBookingTab(tab, btn) {
-    ['s3full','s3casual','s3makeup'].forEach(id => {
-      document.getElementById('booking-' + id).style.display = id === tab ? '' : 'none';
-    });
-    btn.closest('.booking-season-tabs').querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-  }
+
 
   function openCancelBookingModal(className) {
     document.getElementById('cancel-booking-name').textContent = className;
     document.getElementById('cancel-booking-modal').classList.add('open');
   }
 
-  function openCasualContact(name, datetime, instructor) {
-    document.getElementById('casual-contact-class').textContent = name + ' · ' + datetime + (instructor ? ' · ' + instructor : '');
+  function openBookingEnquiry(className) {
+    document.getElementById('casual-contact-class').textContent = className;
+    document.getElementById('casual-contact-desc').textContent = 'Send us a message and we\'ll get back to you as soon as we can.';
     document.getElementById('casual-contact-message').value =
-      `Hi, I'm interested in attending ${name} (${datetime}) but I'm currently at Level 2. Is there any way to discuss options?`;
+      `Hi, I have a question about my ${className} booking and would like to discuss options.`;
+    document.getElementById('casual-contact-modal').classList.add('open');
+  }
+
+  function showMyClassesTab(tab) {
+    ['active','future','past'].forEach(t => {
+      document.getElementById('mcpanel-' + t).style.display = t === tab ? '' : 'none';
+      document.getElementById('mctab-' + t).classList.toggle('active', t === tab);
+    });
+  }
+
+  function openCasualContact(name, datetime, instructor) {
+    document.getElementById('casual-contact-class').textContent = [name, datetime, instructor].filter(Boolean).join(' · ');
+    document.getElementById('casual-contact-desc').textContent = 'This class is currently outside your assessed level. If you think you\'re ready or want to discuss options, send us a message and we\'ll get back to you.';
+    document.getElementById('casual-contact-message').value =
+      `Hi, I'm interested in attending ${name}${datetime ? ' (' + datetime + ')' : ''} but I'm currently at Level 2. Is there any way to discuss options?`;
     document.getElementById('casual-contact-modal').classList.add('open');
   }
 
