@@ -856,7 +856,7 @@
         <div style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--lav);margin-bottom:8px">Season 4 - secured</div>
         <div style="font-size:14px;color:var(--grey);line-height:1.7;margin-bottom:12px">
           You've locked in <strong style="color:var(--white)">Level 2 (Mon 6:30pm)</strong> and <strong style="color:var(--white)">Dance (Fri 6:30pm)</strong> for Season 4.
-          Did you know adding a 3rd class drops your per-class cost by $20? You'd also unlock <span style="color:var(--lime)">1 free practice session per week</span>.
+          Your 3rd class works out to just <strong style="color:var(--lime)">$17.50 per session</strong> — and unlocks <span style="color:var(--lime)">1 free practice session per week</span>.
         </div>
         <button class="btn btn-outline btn-sm" onclick="showScreen('book');showBookTab('season')">Add a class to Season 4</button>
       </div>
@@ -2193,45 +2193,117 @@
         <div class="page-title">Chat</div>
       </div>
       <div style="display:grid;grid-template-columns:250px 1fr;gap:0;height:72vh;border:1px solid var(--border);border-radius:12px;overflow:hidden">
-        <div style="border-right:1px solid var(--border);background:var(--dark)">
+
+        <!-- Sidebar -->
+        <div style="border-right:1px solid var(--border);background:var(--dark);display:flex;flex-direction:column">
           <div style="padding:17px 22px;border-bottom:1px solid var(--border);font-family:'Archivo Black',sans-serif;font-size:15px">Messages</div>
-          <div style="padding:15px 22px;background:#0f1600;border-left:3px solid var(--lime);cursor:pointer">
-            <div style="display:flex;align-items:center;justify-content:space-between">
-              <div style="font-size:15px;font-weight:500">Duality Studio</div>
-              <div style="width:8px;height:8px;background:var(--lime);border-radius:50%"></div>
+          <!-- AI thread -->
+          <div id="chat-tab-ai" style="padding:14px 20px;background:#0d1600;border-left:3px solid var(--lime);cursor:pointer" onclick="showChatThread('ai')">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:3px">
+              <span style="font-size:16px">🤖</span>
+              <div style="font-size:14px;font-weight:500">Duality Assistant</div>
             </div>
-            <div style="font-size:13px;color:var(--grey);margin-top:4px">Hey Jess! Just checking in...</div>
+            <div style="font-size:12px;color:var(--grey);padding-left:26px">Hey Jess! How can I help?</div>
+          </div>
+          <!-- Human thread -->
+          <div id="chat-tab-human" style="padding:14px 20px;border-left:3px solid transparent;cursor:pointer" onclick="showChatThread('human')">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:16px">👯</span>
+                <div style="font-size:14px;font-weight:500">Mimi &amp; Chloe</div>
+              </div>
+              <div style="width:8px;height:8px;background:var(--lav);border-radius:50%"></div>
+            </div>
+            <div style="font-size:12px;color:var(--grey);padding-left:26px">Hey Jess! Just checking in...</div>
           </div>
         </div>
-        <div style="display:flex;flex-direction:column;background:var(--black)">
-          <div style="padding:17px 26px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px">
-            <div class="avatar" style="background:var(--lime);color:var(--black);font-size:14px">D</div>
+
+        <!-- AI thread content -->
+        <div id="chat-thread-ai" style="display:flex;flex-direction:column;background:var(--black)">
+          <div style="padding:14px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:12px">
+              <span style="font-size:22px">🤖</span>
+              <div>
+                <div style="font-size:15px;font-weight:500">Duality Assistant</div>
+                <div style="font-size:12px;color:var(--grey)">AI studio helper · usually instant</div>
+              </div>
+            </div>
+            <button class="btn btn-outline btn-sm" style="font-size:12px" onclick="showChatThread('human')">Speak to Mimi &amp; Chloe</button>
+          </div>
+          <div style="flex:1;padding:22px;display:flex;flex-direction:column;gap:14px;overflow-y:auto">
+            <!-- AI greeting -->
+            <div style="display:flex;gap:10px;max-width:78%">
+              <span style="font-size:20px;flex-shrink:0;margin-top:2px">🤖</span>
+              <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;border-top-left-radius:3px;padding:13px 16px">
+                <div style="font-size:14px;line-height:1.7">Hey Jess! I'm Duality's studio assistant. I can help with class info, season bookings, pricing, and general studio questions. What's up?</div>
+                <div style="font-size:11px;color:var(--grey);margin-top:6px">Just now</div>
+              </div>
+            </div>
+            <!-- User question -->
+            <div style="display:flex;gap:10px;max-width:78%;align-self:flex-end;flex-direction:row-reverse">
+              <div class="avatar" style="width:32px;height:32px;font-size:13px;flex-shrink:0">J</div>
+              <div style="background:#0f1600;border:1px solid var(--lime);border-radius:12px;border-top-right-radius:3px;padding:13px 16px">
+                <div style="font-size:14px;line-height:1.7">When does Season 4 start and what's the pricing?</div>
+                <div style="font-size:11px;color:var(--grey);margin-top:6px">Just now</div>
+              </div>
+            </div>
+            <!-- AI response -->
+            <div style="display:flex;gap:10px;max-width:78%">
+              <span style="font-size:20px;flex-shrink:0;margin-top:2px">🤖</span>
+              <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;border-top-left-radius:3px;padding:13px 16px">
+                <div style="font-size:14px;line-height:1.7">Season 4 runs <strong>2 Jun – 25 Jul</strong> (8 weeks). Bookings close end of Week 3.<br><br>
+                  Pricing stacks as you add classes:<br>
+                  1 class — $270<br>
+                  2 classes — $440 ($220 each)<br>
+                  3 classes — $580 ($17.50/session for the 3rd!) + 1 free practice per week<br>
+                  4+ classes — from $700, unlimited practice + locker hire<br><br>
+                  You currently have 2 classes locked in for Season 4. Adding a 3rd unlocks the practice perk ✨</div>
+                <div style="font-size:11px;color:var(--grey);margin-top:6px">Just now</div>
+              </div>
+            </div>
+            <!-- Human handoff nudge -->
+            <div style="background:#0d0d0d;border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-top:4px">
+              <div style="font-size:13px;color:var(--grey);margin-bottom:10px">Need something I can't handle — like changing your level or a custom question?</div>
+              <button class="btn btn-lav btn-sm" onclick="showChatThread('human')">Speak to Mimi &amp; Chloe</button>
+            </div>
+          </div>
+          <div style="padding:14px 18px;border-top:1px solid var(--border);display:flex;gap:10px">
+            <input style="flex:1;background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:11px 16px;color:var(--white);font-family:'Archivo',sans-serif;font-size:14px" placeholder="Ask anything..." />
+            <button class="btn btn-lime btn-sm">Send</button>
+          </div>
+        </div>
+
+        <!-- Human thread content -->
+        <div id="chat-thread-human" style="display:none;flex-direction:column;background:var(--black)">
+          <div style="padding:14px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px">
+            <div class="avatar" style="background:var(--lav);color:var(--black);font-size:14px">MC</div>
             <div>
-              <div style="font-size:15px;font-weight:500">Duality Studio</div>
-              <div style="font-size:12px;color:var(--grey)">Mimi and Chloe</div>
+              <div style="font-size:15px;font-weight:500">Mimi &amp; Chloe</div>
+              <div style="font-size:12px;color:var(--grey)">Usually replies within a few hours</div>
             </div>
           </div>
           <div style="flex:1;padding:26px;display:flex;flex-direction:column;gap:15px;overflow-y:auto">
             <div style="display:flex;gap:12px;max-width:72%">
-              <div class="avatar" style="background:var(--lime);color:var(--black);font-size:13px;width:32px;height:32px;flex-shrink:0">D</div>
+              <div class="avatar" style="background:var(--lav);color:var(--black);font-size:13px;width:32px;height:32px;flex-shrink:0">M</div>
               <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;border-top-left-radius:3px;padding:14px 16px">
-                <div style="font-size:14px;line-height:1.7">Hey Jess! Just checking in - saw you marked away for last Wednesday. How's the invert practice going? Mimi mentioned you're so close!</div>
-                <div style="font-size:11px;color:var(--grey);margin-top:7px">Wed 9:12am</div>
+                <div style="font-size:14px;line-height:1.7">Hey Jess! Just checking in — saw you marked away for last Wednesday. How's the invert practice going? Mimi mentioned you're so close!</div>
+                <div style="font-size:11px;color:var(--grey);margin-top:7px">Wed 9:12am · Mimi</div>
               </div>
             </div>
             <div style="display:flex;gap:12px;max-width:72%;align-self:flex-end;flex-direction:row-reverse">
               <div class="avatar" style="width:32px;height:32px;font-size:13px;flex-shrink:0">J</div>
               <div style="background:#0f1600;border:1px solid var(--lime);border-radius:12px;border-top-right-radius:3px;padding:14px 16px">
-                <div style="font-size:14px;line-height:1.7">Thank you!! Yeah I was travelling for work. So close to getting it consistently - I'll be back this week for sure!</div>
+                <div style="font-size:14px;line-height:1.7">Thank you!! Yeah I was travelling for work. So close to getting it consistently — I'll be back this week for sure!</div>
                 <div style="font-size:11px;color:var(--grey);margin-top:7px">Thu 11:34am</div>
               </div>
             </div>
           </div>
-          <div style="padding:17px 22px;border-top:1px solid var(--border);display:flex;gap:10px">
+          <div style="padding:14px 18px;border-top:1px solid var(--border);display:flex;gap:10px">
             <input style="flex:1;background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:11px 16px;color:var(--white);font-family:'Archivo',sans-serif;font-size:14px" placeholder="Type a message..." />
             <button class="btn btn-lime btn-sm">Send</button>
           </div>
         </div>
+
       </div>
     </div>
 
@@ -2243,6 +2315,82 @@
       <div class="page-header">
         <div class="page-title">Account</div>
       </div>
+
+      <!-- MY BOOKINGS -->
+      <div class="section-label mb-8">My Bookings</div>
+
+      <!-- Season 3 -->
+      <div style="font-family:'Archivo Black',sans-serif;font-size:16px;margin-bottom:12px">Season 3 <span style="font-size:13px;font-weight:normal;color:var(--grey);font-family:'Archivo',sans-serif">· Week 4 of 8 · ends 6 Jun</span></div>
+      <div class="filters mb-12 booking-season-tabs" style="margin-bottom:14px">
+        <button class="filter-btn active" onclick="setBookingTab('s3full',this)">Full Season</button>
+        <button class="filter-btn" onclick="setBookingTab('s3casual',this)">Casual Classes</button>
+        <button class="filter-btn" onclick="setBookingTab('s3makeup',this)">Make Up Classes</button>
+      </div>
+
+      <!-- S3 Full Season -->
+      <div id="booking-s3full">
+        <div class="card mb-8" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+          <div><div style="font-size:15px;font-weight:500">Level 2</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Mon 6:30pm · Chloe · 8 weeks</div></div>
+          <button class="btn btn-ghost btn-sm" style="font-size:12px;color:#888" onclick="openCancelBookingModal('Level 2 – Mon 6:30pm')">Cancel</button>
+        </div>
+        <div class="card mb-8" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+          <div><div style="font-size:15px;font-weight:500">Dance</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Fri 6:30pm · Mimi · 8 weeks</div></div>
+          <button class="btn btn-ghost btn-sm" style="font-size:12px;color:#888" onclick="openCancelBookingModal('Dance – Fri 6:30pm')">Cancel</button>
+        </div>
+      </div>
+
+      <!-- S3 Casual Classes -->
+      <div id="booking-s3casual" style="display:none">
+        <div class="card mb-8" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+          <div><div style="font-size:15px;font-weight:500">Strip Virgin</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Tue 29 Apr · 5:30pm · Amy · $40</div></div>
+          <span class="tag tag-lime" style="flex-shrink:0">Attended</span>
+        </div>
+        <div class="card mb-8" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+          <div><div style="font-size:15px;font-weight:500">Invert Tech</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Wed 7 May · 6:30pm · Maz · $40</div></div>
+          <span class="tag tag-lime" style="flex-shrink:0">Attended</span>
+        </div>
+        <div class="card mb-8" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+          <div><div style="font-size:15px;font-weight:500">Kiki</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Fri 9 May · 5:30pm · Mimi · $40</div></div>
+          <span class="tag tag-lime" style="flex-shrink:0">Attended</span>
+        </div>
+      </div>
+
+      <!-- S3 Make Up Classes -->
+      <div id="booking-s3makeup" style="display:none">
+        <div class="card mb-8" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+          <div><div style="font-size:15px;font-weight:500">Level 2 make up</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Wed 14 May · 8:30pm · Bambi · credit used</div></div>
+          <span class="tag tag-lav" style="flex-shrink:0">Credit used</span>
+        </div>
+        <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:16px;opacity:0.55">
+          <div><div style="font-size:15px;font-weight:500">Dance make up</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Fri 16 May · 6:30pm · Mimi · 1 credit remaining</div></div>
+          <span class="tag tag-grey" style="flex-shrink:0">Upcoming</span>
+        </div>
+      </div>
+
+      <div class="divider" style="margin:22px 0 18px"></div>
+
+      <!-- Season 4 -->
+      <div style="font-family:'Archivo Black',sans-serif;font-size:16px;margin-bottom:12px">Season 4 <span style="font-size:13px;font-weight:normal;color:var(--lime);font-family:'Archivo',sans-serif">· Starts 2 Jun</span></div>
+      <div class="card mb-8" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+        <div><div style="font-size:15px;font-weight:500">Level 2</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Mon 6:30pm · Chloe · 8 weeks</div></div>
+        <button class="btn btn-ghost btn-sm" style="font-size:12px;color:#888" onclick="openCancelBookingModal('Level 2 – Mon 6:30pm (Season 4)')">Cancel</button>
+      </div>
+      <div class="card mb-8" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+        <div><div style="font-size:15px;font-weight:500">Dance</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Fri 6:30pm · Mimi · 8 weeks</div></div>
+        <button class="btn btn-ghost btn-sm" style="font-size:12px;color:#888" onclick="openCancelBookingModal('Dance – Fri 6:30pm (Season 4)')">Cancel</button>
+      </div>
+      <button class="btn btn-outline btn-sm mb-16" onclick="showScreen('book');showBookTab('season')">+ Add a class to Season 4</button>
+
+      <div class="divider" style="margin:6px 0 18px"></div>
+
+      <!-- Workshops -->
+      <div style="font-family:'Archivo Black',sans-serif;font-size:16px;margin-bottom:12px">Workshops</div>
+      <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+        <div><div style="font-size:15px;font-weight:500">Flexi Intensive with Mimi</div><div style="font-size:13px;color:var(--grey);margin-top:3px">Sat 31 May · 10am–1pm · $75</div></div>
+        <span class="tag tag-lime" style="flex-shrink:0">Booked</span>
+      </div>
+
+      <div class="divider" style="margin:26px 0 18px"></div>
 
       <div class="grid-2">
         <div>
@@ -3164,6 +3312,30 @@
   </div>
 </div>
 
+<!-- CANCEL BOOKING MODAL -->
+<div class="modal-overlay" id="cancel-booking-modal">
+  <div class="modal" style="max-width:440px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="modal-title">Season bookings can't be cancelled</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('cancel-booking-modal')">Close</button>
+    </div>
+    <div style="font-size:14px;font-weight:500;color:var(--grey);margin-bottom:14px" id="cancel-booking-name"></div>
+    <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;font-size:14px;color:var(--grey);line-height:1.7;margin-bottom:18px">
+      As stated in our <a href="#" style="color:var(--lav)" onclick="event.preventDefault()">terms and conditions</a>, season class bookings are non-refundable and cannot be cancelled once made.
+    </div>
+    <div style="font-size:14px;color:var(--grey);margin-bottom:18px;line-height:1.6">
+      <strong style="color:var(--white)">Want to mark away from a single class?</strong> Head to your dashboard — you can mark away there and a catch-up credit will be added to your account.
+    </div>
+    <div style="font-size:14px;color:var(--grey);margin-bottom:20px;line-height:1.6">
+      <strong style="color:var(--white)">Want to transfer or have other questions?</strong>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-lav" style="flex:1" onclick="closeModal('cancel-booking-modal');openCasualContact('Season class enquiry','','')" >Reach out</button>
+      <button class="btn btn-ghost" onclick="closeModal('cancel-booking-modal')">Go to dashboard</button>
+    </div>
+  </div>
+</div>
+
 <!-- CASUAL CONTACT MODAL -->
 <div class="modal-overlay" id="casual-contact-modal">
   <div class="modal" style="max-width:440px">
@@ -3595,6 +3767,31 @@
     });
   }
 
+  // ─── CHAT ──────────────────────────────────────────────────────────────────
+  function showChatThread(thread) {
+    const isAI = thread === 'ai';
+    document.getElementById('chat-thread-ai').style.display    = isAI ? 'flex' : 'none';
+    document.getElementById('chat-thread-human').style.display = isAI ? 'none' : 'flex';
+    document.getElementById('chat-tab-ai').style.background    = isAI ? '#0d1600' : 'transparent';
+    document.getElementById('chat-tab-ai').style.borderLeftColor = isAI ? 'var(--lime)' : 'transparent';
+    document.getElementById('chat-tab-human').style.background    = isAI ? 'transparent' : '#1a0d2e';
+    document.getElementById('chat-tab-human').style.borderLeftColor = isAI ? 'transparent' : 'var(--lav)';
+  }
+
+  // ─── MY BOOKINGS ────────────────────────────────────────────────────────────
+  function setBookingTab(tab, btn) {
+    ['s3full','s3casual','s3makeup'].forEach(id => {
+      document.getElementById('booking-' + id).style.display = id === tab ? '' : 'none';
+    });
+    btn.closest('.booking-season-tabs').querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function openCancelBookingModal(className) {
+    document.getElementById('cancel-booking-name').textContent = className;
+    document.getElementById('cancel-booking-modal').classList.add('open');
+  }
+
   function openCasualContact(name, datetime, instructor) {
     document.getElementById('casual-contact-class').textContent = name + ' · ' + datetime + (instructor ? ' · ' + instructor : '');
     document.getElementById('casual-contact-message').value =
@@ -3931,7 +4128,7 @@
     if (hasLevel(3) && !hasSpec())
       suggestions.push({ name: 'Dirty Dance', icon: '🎀', reason: 'Sensual pole choreography to complement your Level class. Week by week, you\'ll build something stunning.' });
     if (Object.keys(cart).length === 2 && !hasCond())
-      suggestions.push({ name: 'Kiki', icon: '💡', reason: 'A 3rd class drops your per-class price — and Kiki works for every level.' });
+      suggestions.push({ name: 'Kiki', icon: '💡', reason: '3 classes = $580 total. Your 3rd class works out to just $17.50 per session, and unlocks a free practice session each week.' });
 
     // deduplicate
     const seen = new Set();
