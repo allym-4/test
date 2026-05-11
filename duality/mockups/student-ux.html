@@ -5003,6 +5003,7 @@
 
   let classPassCredits = 0;
   let casualModalSelection = 'pay';
+  let _casualHasCredit = false; // tracks whether current modal has a catch-up credit
   const ENROLLED_CASUAL_RATE = 30;
   const STANDARD_CASUAL_RATE = 40;
   const casualIsEnrolled = true; // Jess is enrolled in Season 3
@@ -5010,6 +5011,8 @@
   function openCasualModal(name, meta, instructor, hasCredit, price) {
     document.getElementById('casual-modal-title').textContent = name;
     document.getElementById('casual-modal-meta').textContent  = meta + ' · ' + instructor;
+
+    _casualHasCredit = !!hasCredit;
 
     // Reset enrol checkbox
     document.getElementById('casual-enrol-checkbox').checked = false;
@@ -5076,7 +5079,8 @@
     const cb = document.getElementById('casual-enrol-checkbox');
     cb.checked = !cb.checked;
     const enrolling = cb.checked;
-    document.getElementById('casual-credit-option').style.display = enrolling ? 'none' : (parseInt(document.getElementById('casual-credit-sub').textContent) > 0 ? 'block' : 'none');
+    const totalCredits = (_casualHasCredit ? 1 : 0) + classPassCredits;
+    document.getElementById('casual-credit-option').style.display = enrolling ? 'none' : (totalCredits > 0 ? 'block' : 'none');
     document.getElementById('casual-pay-card').style.display  = enrolling ? 'none' : '';
     document.getElementById('casual-pass-card').style.display = enrolling ? 'none' : '';
     document.getElementById('casual-main-btn').textContent = enrolling ? 'Enrol and pay $140'
@@ -5087,9 +5091,11 @@
 
   function confirmCasualBooking() {
     if (casualModalSelection === 'pass') {
-      classPassCredits = 4;
-      document.getElementById('casual-classpass-line').style.display = 'block';
-      document.getElementById('casual-classpass-num').textContent = '4';
+      // Bought 4-class pass, used 1 for this booking → 3 remaining
+      classPassCredits = 3;
+    } else if (casualModalSelection === 'credit') {
+      // Used one credit (catch-up or class pass)
+      if (classPassCredits > 0) classPassCredits = Math.max(0, classPassCredits - 1);
     }
     closeModal('casual-modal');
   }
