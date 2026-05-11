@@ -807,6 +807,7 @@
         <button class="btn btn-ghost btn-sm" onclick="setDashState('enrolled-s4-open')" style="font-size:11px">Enrolled + S4 open</button>
         <button class="btn btn-ghost btn-sm" onclick="setDashState('enrolled-s4-secured')" style="font-size:11px">Enrolled + S4 secured</button>
         <button class="btn btn-ghost btn-sm" onclick="setDashState('not-enrolled')" style="font-size:11px">Not enrolled</button>
+        <button class="btn btn-ghost btn-sm" onclick="setDashState('enrolled-style-only')" style="font-size:11px">Enrolled (style classes)</button>
       </div>
 
       <!-- STATE: Season open CTA (shown when new season is open and student not yet booked) -->
@@ -4782,6 +4783,11 @@
       s4Secured.style.display = 'block';
       enrolled.style.display  = 'block';
       setTricksStat('level');
+
+    } else if (state === 'enrolled-style-only') {
+      // Enrolled in style/specialty classes only (e.g. Strip, Dance) — no tricks
+      enrolled.style.display = 'block';
+      setTricksStat('style');
 
     } else {
       // enrolled-no-new-season (default)
