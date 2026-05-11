@@ -1440,13 +1440,27 @@
           </div>
         </div>
 
-        <!-- Level toggle -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;background:#0d0d0d;border:1px solid var(--border);border-radius:10px;padding:12px 16px">
-          <div style="font-size:14px">Show my level only</div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <span style="font-size:13px;color:var(--grey)" id="casual-level-label">On</span>
-            <div id="casual-level-track" onclick="toggleCasualLevel()" style="width:40px;height:22px;background:var(--lime);border-radius:11px;cursor:pointer;position:relative;transition:background 0.2s">
-              <div id="casual-level-thumb" style="position:absolute;top:3px;right:3px;width:16px;height:16px;background:#000;border-radius:50%;transition:right 0.2s,left 0.2s"></div>
+        <!-- Level toggle + Hide unavailable toggle -->
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;background:#0d0d0d;border:1px solid var(--border);border-radius:10px;padding:12px 16px">
+            <div style="font-size:14px">Show my level only</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:13px;color:var(--grey)" id="casual-level-label">On</span>
+              <div id="casual-level-track" onclick="toggleCasualLevel()" style="width:40px;height:22px;background:var(--lime);border-radius:11px;cursor:pointer;position:relative;transition:background 0.2s">
+                <div id="casual-level-thumb" style="position:absolute;top:3px;right:3px;width:16px;height:16px;background:#000;border-radius:50%;transition:right 0.2s,left 0.2s"></div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:#0d0d0d;border:1px solid var(--border);border-radius:10px;padding:12px 16px">
+            <div>
+              <div style="font-size:14px">Hide unavailable classes</div>
+              <div style="font-size:12px;color:var(--grey);margin-top:2px">Hides routine-based classes you can't join mid-season</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:13px;color:var(--grey)" id="casual-hide-label">Off</span>
+              <div id="casual-hide-track" onclick="toggleCasualHide()" style="width:40px;height:22px;background:#333;border-radius:11px;cursor:pointer;position:relative;transition:background 0.2s">
+                <div id="casual-hide-thumb" style="position:absolute;top:3px;left:3px;width:16px;height:16px;background:#666;border-radius:50%;transition:right 0.2s,left 0.2s"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -1560,11 +1574,11 @@
             <div class="casual-info"><div class="casual-name" style="color:var(--grey)">3 Tricks</div><div class="casual-meta">6:30pm · Avalon</div><div style="margin-top:6px"><span class="tag tag-grey" style="font-size:11px">Level 3 required</span></div></div>
             <div class="casual-price" style="font-size:18px;color:#555">&#128274;</div>
           </div>
-          <div class="casual-row level-locked" data-date="2026-05-13" data-level="3" data-kind="class" data-catchup="false" data-status="available" data-locked="true" data-routine="true" onclick="openCasualContact('Strip','Tue 13 May · 6:30pm','Mimi')">
+          <div class="casual-row has-credit" data-date="2026-05-13" data-level="3" data-kind="class" data-catchup="true" data-status="available" data-locked="false" data-routine="true" data-enrolled="true" onclick="openCasualModal('Strip','Tue 13 May · 6:30pm','Mimi',true)">
             <div class="casual-date"><div class="casual-date-day">TUE</div><div class="casual-date-num">13</div></div>
-            <div style="width:3px;align-self:stretch;background:#2a2a2a;border-radius:2px;flex-shrink:0"></div>
-            <div class="casual-info"><div class="casual-name" style="color:var(--grey)">Strip</div><div class="casual-meta">6:30pm · Mimi</div><div style="margin-top:6px"><span class="tag tag-grey" style="font-size:11px">Routine - past week 3</span></div></div>
-            <div class="casual-price" style="font-size:18px;color:#555">&#128274;</div>
+            <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
+            <div class="casual-info"><div class="casual-name">Strip</div><div class="casual-meta">6:30pm · Mimi</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span><span class="tag tag-grey" style="font-size:11px;margin-left:4px">Enrolled</span></div></div>
+            <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
           </div>
 
           <!-- WED 14 MAY -->
@@ -3753,6 +3767,30 @@
   </div>
 </div>
 
+<!-- EXEMPTION MODAL -->
+<div class="modal-overlay" id="exemption-modal">
+  <div class="modal" style="max-width:460px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div class="modal-title">Apply for an exemption</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('exemption-modal')">Close</button>
+    </div>
+    <div style="font-size:14px;color:var(--grey);margin-bottom:18px" id="exemption-class-meta"></div>
+    <div style="background:#1a0d00;border:1px solid #664400;border-radius:10px;padding:14px 16px;margin-bottom:20px;font-size:13px;color:#cc8844;line-height:1.6">
+      <strong style="color:#ffaa44">Heads up:</strong> <span id="exemption-warning-text">This class runs a routine and you'd be joining in week X. You'll be behind the group from day one - instructors may not be able to catch you up mid-season.</span>
+    </div>
+    <div style="font-size:14px;font-weight:500;margin-bottom:8px">Why do you want to join this class?</div>
+    <div style="font-size:13px;color:var(--grey);margin-bottom:10px">Tell us a bit about your background and why you'd like to join mid-season. Your instructor will review and get back to you.</div>
+    <textarea id="exemption-reason" rows="4" placeholder="e.g. I've done this routine before at another studio, or I have a strong background in this style and feel confident catching up..." style="width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:12px;color:var(--white);font-size:14px;font-family:inherit;resize:vertical;line-height:1.5"></textarea>
+    <div id="exemption-sent" style="display:none;margin-top:14px;padding:12px 14px;background:#0a1800;border:1px solid var(--lime);border-radius:8px;font-size:13px;color:var(--lime)">
+      Request sent. Your instructor will review and be in touch - usually within 24 hours.
+    </div>
+    <div class="modal-actions" style="margin-top:18px" id="exemption-actions">
+      <button class="btn btn-lime" style="flex:1" onclick="submitExemption()">Send request</button>
+      <button class="btn btn-ghost" onclick="closeModal('exemption-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- CASUAL CONTACT MODAL -->
 <div class="modal-overlay" id="casual-contact-modal">
   <div class="modal" style="max-width:440px">
@@ -4052,6 +4090,7 @@
 
   // ─── CASUAL FILTERS ────────────────────────────────────────────────────────
   let casualLevelOn = true;
+  let casualHideUnavailable = false;
   let casualTypeFilter = 'all';
   let casualDateFilter = 'all';
   let casualCalWeek    = 1;
@@ -4062,6 +4101,19 @@
   let casualInstrFilter = 'all';
   const WEEK3 = ['2026-05-26','2026-05-27','2026-05-28','2026-05-29','2026-05-30','2026-05-31'];
   const WEEK4 = ['2026-06-02','2026-06-03','2026-06-04','2026-06-05','2026-06-06'];
+
+  function toggleCasualHide() {
+    casualHideUnavailable = !casualHideUnavailable;
+    const track = document.getElementById('casual-hide-track');
+    const thumb = document.getElementById('casual-hide-thumb');
+    const label = document.getElementById('casual-hide-label');
+    track.style.background = casualHideUnavailable ? 'var(--lime)' : '#333';
+    thumb.style.right = casualHideUnavailable ? '3px' : 'auto';
+    thumb.style.left  = casualHideUnavailable ? 'auto' : '3px';
+    thumb.style.background = casualHideUnavailable ? '#000' : '#666';
+    label.textContent = casualHideUnavailable ? 'On' : 'Off';
+    applyCasualFilters();
+  }
 
   function toggleCasualLevel() {
     casualLevelOn = !casualLevelOn;
@@ -4152,6 +4204,10 @@
 
       // Level toggle: hide level-locked rows (but NOT routine-locked - those always show)
       if (casualLevelOn && isLocked && !routine) { row.style.display = 'none'; return; }
+
+      // Hide unavailable toggle: hide routine-locked rows unless enrolled in that class
+      const isEnrolled = row.dataset.enrolled === 'true';
+      if (casualHideUnavailable && routine && !isEnrolled) { row.style.display = 'none'; return; }
 
       // Level-locked rows: update appearance based on toggle state
       if (isLocked && !routine) {
@@ -4313,15 +4369,44 @@
       return;
     }
 
-    document.getElementById('casual-contact-class').textContent = [name, datetime, instructor].filter(Boolean).join(' · ');
+    // Routine-locked rows open the exemption dialog
     if (isRoutine) {
-      document.getElementById('casual-contact-desc').textContent = "This is a routine-based class and new catch-ups aren't available after Week 3 - you'd be joining mid-routine. Get in touch if you'd like to discuss options.";
-      document.getElementById('casual-contact-message').value = `Hi, I'm interested in ${name} (${datetime}) but I know catch-ups close after Week 3. Is there any flexibility or other options available?`;
-    } else {
-      document.getElementById('casual-contact-desc').textContent = "This class is currently outside your assessed level. If you think you're ready or want to discuss options, send us a message and we'll get back to you.";
-      document.getElementById('casual-contact-message').value = `Hi, I'm interested in attending ${name}${datetime ? ' (' + datetime + ')' : ''} but I'm currently at Level 2. Is there any way to discuss options?`;
+      openExemptionModal(name, datetime, instructor, el);
+      return;
     }
+
+    // Level-locked (toggle on) - generic contact
+    document.getElementById('casual-contact-class').textContent = [name, datetime, instructor].filter(Boolean).join(' · ');
+    document.getElementById('casual-contact-desc').textContent = "This class is currently outside your assessed level. If you think you're ready or want to discuss options, send us a message and we'll get back to you.";
+    document.getElementById('casual-contact-message').value = `Hi, I'm interested in attending ${name}${datetime ? ' (' + datetime + ')' : ''} but I'm currently at Level 2. Is there any way to discuss options?`;
     document.getElementById('casual-contact-modal').classList.add('open');
+  }
+
+  function _seasonWeekNum(dateStr) {
+    const seasonStart = new Date('2026-04-07T00:00:00');
+    const classDate   = new Date(dateStr + 'T00:00:00');
+    const diffDays    = Math.floor((classDate - seasonStart) / (1000 * 60 * 60 * 24));
+    return Math.floor(diffDays / 7) + 1;
+  }
+
+  function openExemptionModal(name, datetime, instructor, rowEl) {
+    const dateStr  = rowEl ? rowEl.dataset.date : null;
+    const weekNum  = dateStr ? _seasonWeekNum(dateStr) : '?';
+    document.getElementById('exemption-class-meta').textContent = [name, datetime, instructor].filter(Boolean).join(' · ');
+    document.getElementById('exemption-warning-text').textContent =
+      `This class runs a routine and you'd be joining in week ${weekNum} of 8. ` +
+      `You'll be behind the group from day one - instructors may not be able to catch you up mid-season.`;
+    document.getElementById('exemption-reason').value = '';
+    document.getElementById('exemption-sent').style.display = 'none';
+    document.getElementById('exemption-actions').style.display = '';
+    document.getElementById('exemption-modal').classList.add('open');
+  }
+
+  function submitExemption() {
+    const reason = document.getElementById('exemption-reason').value.trim();
+    if (!reason) { document.getElementById('exemption-reason').focus(); return; }
+    document.getElementById('exemption-actions').style.display = 'none';
+    document.getElementById('exemption-sent').style.display = '';
   }
 
   function openCasualWaitlist(name, datetime, instructor) {
