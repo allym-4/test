@@ -3240,16 +3240,14 @@
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap">
           <div>
             <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--grey);margin-bottom:6px">Current balance</div>
-            <div id="billing-balance-amt" style="font-family:'Archivo Black',sans-serif;font-size:32px;color:#f87171">$140.00 owing</div>
+            <div id="billing-balance-amt" style="font-family:'Archivo Black',sans-serif;font-size:32px;color:#f87171">$120.00 owing</div>
+            <div style="font-size:13px;color:var(--grey);margin-top:4px" id="billing-credit-line">$140 owed − <span style="color:#4ade80">$20 credit applied</span> = <strong style="color:var(--white)">$120 to pay</strong></div>
             <div id="billing-balance-due" style="font-size:13px;color:var(--grey);margin-top:6px">Due by <strong style="color:var(--white)">31 May 2026</strong> · Season 3 instalment 2 of 2</div>
           </div>
           <div style="display:flex;flex-direction:column;gap:8px;min-width:160px">
-            <button class="btn btn-lime btn-sm" style="font-size:13px" onclick="openBillingPayModal('full')">Pay now · $140</button>
+            <button id="billing-pay-btn" class="btn btn-lime btn-sm" style="font-size:13px" onclick="openBillingPayModal('full')">Pay now · $120</button>
             <button class="btn btn-outline btn-sm" style="font-size:13px" onclick="openBillingPayModal('partial')">Pay partial amount</button>
           </div>
-        </div>
-        <div style="margin-top:16px;padding-top:14px;border-top:1px solid #222;font-size:12px;color:var(--grey);line-height:1.6">
-          💡 Your $20 catch-up credit will be applied automatically to your next booking — it cannot be used toward outstanding balances.
         </div>
       </div>
 
@@ -5847,45 +5845,79 @@
 
   // ─── BILLING PAY MODAL ─────────────────────────────────────────────────────
   function openBillingPayModal(type) {
-    const amt = type === 'full' ? '$140.00' : '';
+    const netAmt = 120; // $140 owing - $20 credit
     const label = type === 'full' ? 'Pay outstanding balance' : 'Pay partial amount';
-    const placeholder = type === 'full' ? '$140.00' : 'Enter amount';
-    const el = document.getElementById('billing-pay-modal');
-    if (!el) {
-      const m = document.createElement('div');
-      m.id = 'billing-pay-modal';
-      m.className = 'modal-overlay active';
-      m.innerHTML = `<div class="modal" style="max-width:400px">
-        <div class="modal-header">
-          <div class="modal-title" id="bpm-title">${label}</div>
-          <button class="modal-close" onclick="document.getElementById('billing-pay-modal').remove()">✕</button>
-        </div>
-        <div class="modal-body" style="padding-top:0">
-          <div style="font-size:13px;color:var(--grey);margin-bottom:16px">Season 3 instalment · due 31 May 2026</div>
-          ${type === 'partial' ? `<div class="form-row" style="margin-bottom:16px">
-            <label class="form-label">Amount to pay</label>
-            <input class="form-input" type="number" placeholder="e.g. 70.00" min="1" max="140" id="bpm-amount" />
-          </div>` : `<div style="font-family:'Archivo Black',sans-serif;font-size:28px;margin-bottom:16px">$140.00</div>`}
-          <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px">
-            <label for="bpm-saved-card" style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px">
-              <input type="checkbox" id="bpm-saved-card" checked style="width:16px;height:16px;accent-color:var(--lime)">
-              Use saved card &nbsp;<span style="color:var(--grey);font-size:12px">Visa ···· 4242</span>
-            </label>
-          </div>
-          <button class="btn btn-lime" style="width:100%" onclick="completeBillingPayment()">Confirm payment</button>
-        </div>
-      </div>`;
-      document.body.appendChild(m);
+    // Remove any existing instance so we can recreate fresh
+    const existing = document.getElementById('billing-pay-modal');
+    if (existing) existing.remove();
+    const m = document.createElement('div');
+    m.id = 'billing-pay-modal';
+    m.className = 'modal-overlay open';
+    m.innerHTML = `<div class="modal" style="max-width:420px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <div class="modal-title">${label}</div>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('billing-pay-modal').remove()">Close</button>
+      </div>
+      <div style="font-size:13px;color:var(--grey);margin-bottom:16px">Season 3 · due 31 May 2026</div>
+      ${type === 'partial' ? `
+        <div class="form-row" style="margin-bottom:16px">
+          <label class="form-label">Amount to pay</label>
+          <input class="form-input" type="number" placeholder="e.g. 60.00" min="1" max="${netAmt}" id="bpm-amount" />
+          <div style="font-size:12px;color:var(--grey);margin-top:6px">Maximum $${netAmt} (after $20 credit)</div>
+        </div>` : `
+        <div style="margin-bottom:16px">
+          <div style="font-family:'Archivo Black',sans-serif;font-size:28px;margin-bottom:4px">$${netAmt}.00</div>
+          <div style="font-size:12px;color:var(--grey)">$140 balance − $20 account credit</div>
+        </div>`}
+      <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:6px">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px">
+          <input type="checkbox" checked style="width:16px;height:16px;accent-color:var(--lime);flex-shrink:0">
+          <span>Apply $20 account credit</span>
+          <span style="margin-left:auto;font-size:12px;color:#4ade80;font-weight:600">−$20</span>
+        </label>
+      </div>
+      <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px">
+          <input type="checkbox" checked style="width:16px;height:16px;accent-color:var(--lime);flex-shrink:0">
+          Use saved card &nbsp;<span style="color:var(--grey);font-size:12px">Visa ···· 4242</span>
+        </label>
+      </div>
+      <button class="btn btn-lime" style="width:100%" onclick="completeBillingPayment(${type === 'partial' ? 'true' : 'false'})">Confirm payment</button>
+    </div>`;
+    document.body.appendChild(m);
+  }
+
+  function completeBillingPayment(isPartial) {
+    const modal = document.getElementById('billing-pay-modal');
+    if (modal) modal.remove();
+    if (isPartial) {
+      const input = document.getElementById('bpm-amount');
+      const paid = input ? parseFloat(input.value) || 60 : 60;
+      const remaining = Math.max(0, 120 - paid);
+      if (remaining <= 0) {
+        _billingClearOwing();
+      } else {
+        document.getElementById('billing-balance-amt').textContent = '$' + remaining.toFixed(2) + ' owing';
+        document.getElementById('billing-balance-due').textContent = 'Remaining balance · due 31 May 2026';
+        const btn = document.getElementById('billing-pay-btn');
+        if (btn) btn.textContent = 'Pay now · $' + remaining.toFixed(0);
+        const cl = document.getElementById('billing-credit-line');
+        if (cl) cl.style.display = 'none';
+        showToast('Partial payment received ✓');
+      }
     } else {
-      el.classList.add('active');
+      _billingClearOwing();
     }
   }
 
-  function completeBillingPayment() {
-    document.getElementById('billing-pay-modal').remove();
-    document.getElementById('billing-balance-amt').textContent = '$20.00 credit';
+  function _billingClearOwing() {
+    document.getElementById('billing-balance-amt').textContent = 'All paid up!';
     document.getElementById('billing-balance-amt').style.color = '#4ade80';
-    document.getElementById('billing-balance-due').textContent = 'Season 3 fully paid · $20 credit on account';
+    document.getElementById('billing-balance-due').textContent = 'Season 3 fully paid — thank you!';
+    const cl = document.getElementById('billing-credit-line');
+    if (cl) cl.style.display = 'none';
+    const btn = document.getElementById('billing-pay-btn');
+    if (btn) btn.style.display = 'none';
     showToast('Payment received ✓');
   }
 
