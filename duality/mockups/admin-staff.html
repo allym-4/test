@@ -291,13 +291,13 @@ tr:hover td { background: #0d0d0d; }
       </div>
 
       <div class="kpi-grid">
-        <div class="kpi kpi-lime"><div class="kpi-label">Students Today</div><div class="kpi-value">25</div><div class="kpi-sub">Across 2 classes</div></div>
-        <div class="kpi kpi-lav"><div class="kpi-label">Homework Pending</div><div class="kpi-value">3</div><div class="kpi-sub">Submissions to review</div></div>
-        <div class="kpi kpi-amber"><div class="kpi-label">Unread Messages</div><div class="kpi-value">2</div><div class="kpi-sub">1 message request</div></div>
-        <div class="kpi kpi-red"><div class="kpi-label">No-shows This Week</div><div class="kpi-value">1</div><div class="kpi-sub">Ruby K. — Mon Sensual</div></div>
+        <div class="kpi kpi-lime" style="cursor:pointer" onclick="showScreen('attendance')"><div class="kpi-label">Students Today</div><div class="kpi-value">25</div><div class="kpi-sub">Across 2 classes →</div></div>
+        <div class="kpi kpi-lav" style="cursor:pointer" onclick="showScreen('homework')"><div class="kpi-label">Homework Pending</div><div class="kpi-value">3</div><div class="kpi-sub">Submissions to review →</div></div>
+        <div class="kpi kpi-amber" style="cursor:pointer" onclick="showScreen('messages')"><div class="kpi-label">Unread Messages</div><div class="kpi-value">2</div><div class="kpi-sub">1 message request →</div></div>
+        <div class="kpi kpi-red" style="cursor:pointer" onclick="showScreen('attendance')"><div class="kpi-label">No-shows This Week</div><div class="kpi-value">1</div><div class="kpi-sub">Ruby K. — Mon Sensual →</div></div>
       </div>
 
-      <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:16px;margin-bottom:16px;">Today's Classes</div>
+      <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:16px;margin-bottom:16px;">Your Classes Today</div>
       <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:28px;">
         <div class="class-card-today" onclick="goToAttendance('level2-mon')">
           <div class="class-time-block">
@@ -327,16 +327,31 @@ tr:hover td { background: #0d0d0d; }
         </div>
       </div>
 
-      <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:14px;">Upcoming This Week</div>
+      <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:14px;">Your Upcoming This Week</div>
+      <div class="tbl-section" style="margin-bottom:28px;">
+        <table>
+          <thead><tr><th>Day</th><th>Class</th><th>Studio</th><th>Enrolled</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            <tr style="cursor:pointer" onclick="showScreen('attendance')" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''"><td>Mon 6:30pm</td><td><b>Level 2</b></td><td>The Box</td><td>15/15</td><td><span class="tag tag-amber">Full</span></td><td style="color:var(--grey);font-size:12px;">View roster →</td></tr>
+            <tr style="cursor:pointer" onclick="showScreen('attendance')" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''"><td>Mon 8:30pm</td><td><b>Level 1 Int.</b></td><td>Rhapsody</td><td>10/12</td><td><span class="tag tag-lime">Active</span></td><td style="color:var(--grey);font-size:12px;">View roster →</td></tr>
+            <tr style="cursor:pointer" onclick="showScreen('attendance')" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''"><td>Tue 8:30pm</td><td><b>Level 1 Int.</b></td><td>Rhapsody</td><td>8/12</td><td><span class="tag tag-lime">Active</span></td><td style="color:var(--grey);font-size:12px;">View roster →</td></tr>
+            <tr style="cursor:pointer" onclick="showScreen('attendance')" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''"><td>Thu 6:30pm</td><td><b>Level 2</b></td><td>Rhapsody</td><td>11/12</td><td><span class="tag tag-lime">Active</span></td><td style="color:var(--grey);font-size:12px;">View roster →</td></tr>
+            <tr style="cursor:pointer" onclick="showScreen('attendance')" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''"><td>Sat 10:00am</td><td><b>Level 1</b></td><td>The Box</td><td>9/12</td><td><span class="tag tag-lime">Active</span></td><td style="color:var(--grey);font-size:12px;">View roster →</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:14px;">All Classes Today</div>
       <div class="tbl-section">
         <table>
-          <thead><tr><th>Day</th><th>Class</th><th>Studio</th><th>Enrolled</th><th>Status</th></tr></thead>
+          <thead><tr><th>Time</th><th>Class</th><th>Instructor</th><th>Studio</th><th>Enrolled</th><th>Status</th></tr></thead>
           <tbody>
-            <tr><td>Mon 6:30pm</td><td><b>Level 2</b></td><td>The Box</td><td>15/15</td><td><span class="tag tag-amber">Full</span></td></tr>
-            <tr><td>Mon 8:30pm</td><td><b>Level 1 Int.</b></td><td>Rhapsody</td><td>10/12</td><td><span class="tag tag-lime">Active</span></td></tr>
-            <tr><td>Tue 8:30pm</td><td><b>Level 1 Int.</b></td><td>Rhapsody</td><td>8/12</td><td><span class="tag tag-lime">Active</span></td></tr>
-            <tr><td>Thu 6:30pm</td><td><b>Level 2</b></td><td>Rhapsody</td><td>11/12</td><td><span class="tag tag-lime">Active</span></td></tr>
-            <tr><td>Sat 10:00am</td><td><b>Level 1</b></td><td>The Box</td><td>9/12</td><td><span class="tag tag-lime">Active</span></td></tr>
+            <tr><td>5:30pm</td><td><b>Level 1</b></td><td>Chloe</td><td>The Box</td><td>10/12</td><td><span class="tag tag-lime">Active</span></td></tr>
+            <tr><td>6:00pm</td><td><b>Sensual Flow</b></td><td>Mia</td><td>Rhapsody</td><td>8/10</td><td><span class="tag tag-lime">Active</span></td></tr>
+            <tr style="background:#0a1800"><td>6:30pm</td><td><b>Level 2</b> <span style="font-size:10px;background:var(--lime);color:#000;border-radius:4px;padding:1px 5px;margin-left:4px;font-family:'Archivo Black',sans-serif;">YOURS</span></td><td>Chloe</td><td>The Box</td><td>15/15</td><td><span class="tag tag-amber">Full</span></td></tr>
+            <tr><td>7:30pm</td><td><b>High Tricks</b></td><td>Allysha</td><td>The Box</td><td>8/10</td><td><span class="tag tag-lime">Active</span></td></tr>
+            <tr><td>8:00pm</td><td><b>Exotic Floor</b></td><td>Mia</td><td>Rhapsody</td><td>6/10</td><td><span class="tag tag-lime">Active</span></td></tr>
+            <tr style="background:#0a1800"><td>8:30pm</td><td><b>Level 1 Int.</b> <span style="font-size:10px;background:var(--lime);color:#000;border-radius:4px;padding:1px 5px;margin-left:4px;font-family:'Archivo Black',sans-serif;">YOURS</span></td><td>Chloe</td><td>Rhapsody</td><td>10/12</td><td><span class="tag tag-lime">Active</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -424,27 +439,36 @@ tr:hover td { background: #0d0d0d; }
         <div><span style="font-size:11px;text-transform:uppercase;color:var(--grey);">Enrolled</span><div style="font-size:13px;font-family:'Archivo Black',sans-serif;color:var(--lime);margin-top:3px;">15/15</div></div>
       </div>
 
+      <!-- Filter toggle -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="font-size:12px;color:var(--grey);">Show:</span>
+        <div style="display:flex;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <button id="att-filter-attending" onclick="filterAttendance('attending')" style="padding:7px 14px;font-size:12px;font-weight:500;border:none;cursor:pointer;background:var(--lime);color:#000;font-family:inherit;">Attending</button>
+          <button id="att-filter-away" onclick="filterAttendance('away')" style="padding:7px 14px;font-size:12px;font-weight:500;border:none;cursor:pointer;background:transparent;color:var(--grey);font-family:inherit;">Marked Away / Cancelled</button>
+        </div>
+      </div>
+
       <div class="tbl-section" id="att-roster">
         <div style="padding:0 4px;">
           <!-- Roster rows -->
           <!-- Row 0: Jess Malone — owing $120, staff note: shoulder injury -->
-          <div class="att-row" id="att-row-0">
+          <div class="att-row" id="att-row-0" data-status="attending">
             <div class="s-avatar" style="background:var(--lav);">J</div>
             <div class="att-name">
               <div class="att-name-text">Jess Malone <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
-              <div class="att-level">Level 2 · Season 3</div>
+              <div class="att-level">Level 2 · Mon 6:30pm</div>
               <div class="owing-badge">$120 owing</div>
             </div>
-            <div class="att-type"><span class="tag tag-lav" style="font-size:10px;">Season</span></div>
+            <div class="att-type"><span class="tag tag-lav" style="font-size:10px;">Course</span></div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
               <select class="att-status-sel sel-present" id="sel-0" onchange="onStatusChange(0)">
                 <option value="present" selected>Present</option>
-                <option value="noshow">No-show + $25 fee</option>
+                <option value="noshow">No-show + $20 fee</option>
                 <option value="noshow-waived">No-show — fee waived</option>
                 <option value="late">Late</option>
                 <option value="excused">Excused</option>
               </select>
-              <div class="att-fee-msg" id="fee-0" style="display:none;">$25 no-show fee will be added</div>
+              <div class="att-fee-msg" id="fee-0" style="display:none;">$20 no-show fee will be added</div>
               <div class="att-fee-waived" id="waived-0">No fee charged</div>
             </div>
             <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
@@ -453,65 +477,65 @@ tr:hover td { background: #0d0d0d; }
             </div>
           </div>
           <!-- Row 1: Tara Bell — no notes, no owing -->
-          <div class="att-row" id="att-row-1">
+          <div class="att-row" id="att-row-1" data-status="attending">
             <div class="s-avatar" style="background:#44ff99;">T</div>
             <div class="att-name">
               <div class="att-name-text">Tara Bell <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
-              <div class="att-level">Level 2 · Season 3</div>
+              <div class="att-level">Level 2 · Mon 6:30pm</div>
             </div>
-            <div class="att-type"><span class="tag tag-lav" style="font-size:10px;">Season</span></div>
+            <div class="att-type"><span class="tag tag-lav" style="font-size:10px;">Course</span></div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
               <select class="att-status-sel sel-present" id="sel-1" onchange="onStatusChange(1)">
                 <option value="present" selected>Present</option>
-                <option value="noshow">No-show + $25 fee</option>
+                <option value="noshow">No-show + $20 fee</option>
                 <option value="noshow-waived">No-show — fee waived</option>
                 <option value="late">Late</option>
                 <option value="excused">Excused</option>
               </select>
-              <div class="att-fee-msg" id="fee-1" style="display:none;">$25 no-show fee will be added</div>
+              <div class="att-fee-msg" id="fee-1" style="display:none;">$20 no-show fee will be added</div>
               <div class="att-fee-waived" id="waived-1">No fee charged</div>
             </div>
             <button class="att-note-btn" onclick="openNoteModal('Tara Bell')" title="Add attendance note">✏️</button>
           </div>
-          <!-- Row 2: Dana Park — owing $75 -->
-          <div class="att-row" id="att-row-2">
+          <!-- Row 2: Dana Park — owing $75, today only drop-in -->
+          <div class="att-row" id="att-row-2" data-status="attending">
             <div class="s-avatar" style="background:#ffcc88;">D</div>
             <div class="att-name">
               <div class="att-name-text">Dana Park <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
-              <div class="att-level">Level 2 · Season 3</div>
+              <div class="att-level">Level 2 · Drop-in today</div>
               <div class="owing-badge">$75 owing</div>
             </div>
-            <div class="att-type"><span class="tag tag-grey" style="font-size:10px;">Casual</span></div>
+            <div class="att-type"><span class="tag tag-grey" style="font-size:10px;">Today Only</span></div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
               <select class="att-status-sel sel-present" id="sel-2" onchange="onStatusChange(2)">
                 <option value="present" selected>Present</option>
-                <option value="noshow">No-show + $25 fee</option>
+                <option value="noshow">No-show + $20 fee</option>
                 <option value="noshow-waived">No-show — fee waived</option>
                 <option value="late">Late</option>
                 <option value="excused">Excused</option>
               </select>
-              <div class="att-fee-msg" id="fee-2" style="display:none;">$25 no-show fee will be added</div>
+              <div class="att-fee-msg" id="fee-2" style="display:none;">$20 no-show fee will be added</div>
               <div class="att-fee-waived" id="waived-2">No fee charged</div>
             </div>
             <button class="att-note-btn" onclick="openNoteModal('Dana Park')" title="Add attendance note">✏️</button>
           </div>
-          <!-- Row 3: Nina Torres — staff note: cross-enrol, check cert -->
-          <div class="att-row" id="att-row-3">
+          <!-- Row 3: Nina Torres — catch-up from Wed Level 3 -->
+          <div class="att-row" id="att-row-3" data-status="attending">
             <div class="s-avatar" style="background:#b0f0b0;">N</div>
             <div class="att-name">
               <div class="att-name-text">Nina Torres <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
-              <div class="att-level">Level 3 · Season 3 (cross-enrol)</div>
+              <div class="att-level">Level 2 · Catch-up from Wed Level 3</div>
             </div>
-            <div class="att-type"><span class="tag tag-lav" style="font-size:10px;">Season</span></div>
+            <div class="att-type"><span class="tag tag-lav" style="font-size:10px;">Course</span></div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
               <select class="att-status-sel sel-present" id="sel-3" onchange="onStatusChange(3)">
                 <option value="present" selected>Present</option>
-                <option value="noshow">No-show + $25 fee</option>
+                <option value="noshow">No-show + $20 fee</option>
                 <option value="noshow-waived">No-show — fee waived</option>
                 <option value="late">Late</option>
                 <option value="excused">Excused</option>
               </select>
-              <div class="att-fee-msg" id="fee-3" style="display:none;">$25 no-show fee will be added</div>
+              <div class="att-fee-msg" id="fee-3" style="display:none;">$20 no-show fee will be added</div>
               <div class="att-fee-waived" id="waived-3">No fee charged</div>
             </div>
             <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
@@ -519,45 +543,48 @@ tr:hover td { background: #0d0d0d; }
               <button class="att-note-btn" onclick="openNoteModal('Nina Torres')" title="Add attendance note">✏️</button>
             </div>
           </div>
-          <!-- Row 4: Hannah Webb — no notes -->
-          <div class="att-row" id="att-row-4">
+          <!-- Row 4: Hannah Webb — trial student -->
+          <div class="att-row" id="att-row-4" data-status="attending">
             <div class="s-avatar" style="background:#9ac4ff;">H</div>
             <div class="att-name">
               <div class="att-name-text">Hannah Webb <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
-              <div class="att-level">Level 1 · Season 3 (drop-in)</div>
+              <div class="att-level">Level 2 · Trial class</div>
             </div>
-            <div class="att-type"><span class="tag tag-grey" style="font-size:10px;">Casual</span></div>
+            <div class="att-type"><span class="tag tag-amber" style="font-size:10px;">Trial</span></div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
               <select class="att-status-sel sel-present" id="sel-4" onchange="onStatusChange(4)">
                 <option value="present" selected>Present</option>
-                <option value="noshow">No-show + $25 fee</option>
+                <option value="noshow">No-show + $20 fee</option>
                 <option value="noshow-waived">No-show — fee waived</option>
                 <option value="late">Late</option>
                 <option value="excused">Excused</option>
               </select>
-              <div class="att-fee-msg" id="fee-4" style="display:none;">$25 no-show fee will be added</div>
+              <div class="att-fee-msg" id="fee-4" style="display:none;">$20 no-show fee will be added</div>
               <div class="att-fee-waived" id="waived-4">No fee charged</div>
             </div>
             <button class="att-note-btn" onclick="openNoteModal('Hannah Webb')" title="Add attendance note">✏️</button>
           </div>
-          <!-- Row 5: Amber Cole — staff note: 3 no-shows, difficult, owing $50 -->
-          <div class="att-row" id="att-row-5">
+          <!-- Row 5: Amber Cole — FIRST TIME, staff note, owing $50 -->
+          <div class="att-row" id="att-row-5" data-status="attending">
             <div class="s-avatar" style="background:#ffb3de;">A</div>
             <div class="att-name">
               <div class="att-name-text">Amber Cole <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
-              <div class="att-level">Level 1 · Season 3</div>
-              <div class="owing-badge">$50 owing</div>
+              <div class="att-level">Level 2 · Mon 6:30pm</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:3px;">
+                <div class="owing-badge">$50 owing</div>
+                <div style="display:inline-block;font-size:10px;font-weight:900;background:var(--lime);color:#000;border-radius:4px;padding:2px 8px;letter-spacing:0.5px;font-family:'Archivo Black',sans-serif;">FIRST TIME 🌟</div>
+              </div>
             </div>
-            <div class="att-type"><span class="tag tag-lav" style="font-size:10px;">Season</span></div>
+            <div class="att-type"><span class="tag tag-lav" style="font-size:10px;">Course</span></div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
               <select class="att-status-sel sel-present" id="sel-5" onchange="onStatusChange(5)">
                 <option value="present" selected>Present</option>
-                <option value="noshow">No-show + $25 fee</option>
+                <option value="noshow">No-show + $20 fee</option>
                 <option value="noshow-waived">No-show — fee waived</option>
                 <option value="late">Late</option>
                 <option value="excused">Excused</option>
               </select>
-              <div class="att-fee-msg" id="fee-5" style="display:none;">$25 no-show fee will be added</div>
+              <div class="att-fee-msg" id="fee-5" style="display:none;">$20 no-show fee will be added</div>
               <div class="att-fee-waived" id="waived-5">No fee charged</div>
             </div>
             <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
@@ -565,23 +592,24 @@ tr:hover td { background: #0d0d0d; }
               <button class="att-note-btn" onclick="openNoteModal('Amber Cole')" title="Add attendance note">✏️</button>
             </div>
           </div>
-          <!-- Row 6: Sophie Lawson — no notes -->
-          <div class="att-row" id="att-row-6">
+          <!-- Row 6: Sophie Lawson — trial, first time at this level -->
+          <div class="att-row" id="att-row-6" data-status="attending">
             <div class="s-avatar" style="background:var(--lime);">S</div>
             <div class="att-name">
               <div class="att-name-text">Sophie Lawson <span style="font-size:11px;color:var(--grey);font-weight:400;">they/them</span></div>
-              <div class="att-level">Level 1 · Season 3</div>
+              <div class="att-level">Level 2 · Trial class</div>
+              <div style="margin-top:3px;display:inline-block;font-size:10px;font-weight:900;background:var(--lime);color:#000;border-radius:4px;padding:2px 8px;letter-spacing:0.5px;font-family:'Archivo Black',sans-serif;">FIRST TIME 🌟</div>
             </div>
-            <div class="att-type"><span class="tag tag-lav" style="font-size:10px;">Season</span></div>
+            <div class="att-type"><span class="tag tag-amber" style="font-size:10px;">Trial</span></div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
               <select class="att-status-sel sel-present" id="sel-6" onchange="onStatusChange(6)">
                 <option value="present" selected>Present</option>
-                <option value="noshow">No-show + $25 fee</option>
+                <option value="noshow">No-show + $20 fee</option>
                 <option value="noshow-waived">No-show — fee waived</option>
                 <option value="late">Late</option>
                 <option value="excused">Excused</option>
               </select>
-              <div class="att-fee-msg" id="fee-6" style="display:none;">$25 no-show fee will be added</div>
+              <div class="att-fee-msg" id="fee-6" style="display:none;">$20 no-show fee will be added</div>
               <div class="att-fee-waived" id="waived-6">No fee charged</div>
             </div>
             <button class="att-note-btn" onclick="openNoteModal('Sophie Lawson')" title="Add attendance note">✏️</button>
@@ -600,64 +628,89 @@ tr:hover td { background: #0d0d0d; }
     <!-- ===== STUDENTS (read-only) ===== -->
     <div id="screen-students" class="screen">
       <div class="page-header">
-        <div><div class="page-title">My Students</div><div class="page-sub">Students enrolled in your classes</div></div>
+        <div><div class="page-title">All Students</div><div class="page-sub">94 active students across all classes</div></div>
       </div>
       <div class="filter-bar">
-        <input class="search-input" type="text" placeholder="Search name…" />
-        <select class="select-input"><option>All Classes</option><option>Level 2 Mon</option><option>Level 1 Int. Mon</option><option>Level 2 Thu</option><option>Level 1 Sat</option></select>
+        <input class="search-input" type="text" placeholder="Search name, email…" oninput="filterStudentTable(this.value)" />
+        <select class="select-input"><option>All Classes</option><option>Level 2 Mon 6:30pm</option><option>Level 1 Int. Mon 8:30pm</option><option>Level 2 Thu 6:30pm</option><option>Level 1 Sat 10am</option><option>Sensual Flow</option><option>High Tricks</option></select>
+        <select class="select-input"><option>All Levels</option><option>Level 1</option><option>Level 2</option><option>Level 3</option><option>High Tricks</option></select>
+        <select class="select-input"><option>All Statuses</option><option>Active</option><option>Owing</option><option>Trial</option></select>
       </div>
       <div class="tbl-section">
         <table>
-          <thead><tr><th></th><th>Name</th><th>Level</th><th>Season</th><th>Attendance Rate</th><th>Balance</th><th>Action</th></tr></thead>
-          <tbody>
+          <thead><tr><th></th><th>Name</th><th>Pronouns</th><th>Level</th><th>Enrolment</th><th>Attendance</th><th>Balance</th><th>Actions</th></tr></thead>
+          <tbody id="students-tbody">
             <tr style="cursor:pointer" onclick="openStudentReadPanel('Jess Malone')">
               <td><div class="s-avatar" style="background:var(--lav);">J</div></td>
-              <td><b>Jess Malone</b></td><td>Level 2</td><td>Season 3</td>
+              <td><b>Jess Malone</b><div style="font-size:11px;color:var(--grey)">jess@email.com</div></td>
+              <td style="color:var(--grey);font-size:12px;">she/her</td><td>Level 2</td><td><span class="tag tag-lav" style="font-size:10px;">Course</span></td>
               <td><span style="color:var(--lime);">87%</span></td>
-              <td><span style="color:#ff6b6b;">Owing</span></td>
-              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Jess Malone')">View</button></td>
+              <td><span style="color:#ff6b6b;font-weight:500;">$120 owing</span></td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Jess Malone')">View</button> <button class="btn btn-lime btn-xs" onclick="event.stopPropagation();openTakePayment('Jess Malone','$120')">Take Payment</button></td>
             </tr>
             <tr style="cursor:pointer" onclick="openStudentReadPanel('Tara Bell')">
               <td><div class="s-avatar" style="background:#44ff99;">T</div></td>
-              <td><b>Tara Bell</b></td><td>Level 2</td><td>Season 3</td>
+              <td><b>Tara Bell</b><div style="font-size:11px;color:var(--grey)">tara@email.com</div></td>
+              <td style="color:var(--grey);font-size:12px;">she/her</td><td>Level 2</td><td><span class="tag tag-lav" style="font-size:10px;">Course</span></td>
               <td><span style="color:var(--lime);">100%</span></td>
-              <td><span style="color:#44ff99;">Clear</span></td>
+              <td><span style="color:#4ade80;">Clear</span></td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Tara Bell')">View</button></td>
             </tr>
             <tr style="cursor:pointer" onclick="openStudentReadPanel('Dana Park')">
               <td><div class="s-avatar" style="background:#ffcc88;">D</div></td>
-              <td><b>Dana Park</b></td><td>Level 2</td><td>Season 3</td>
+              <td><b>Dana Park</b><div style="font-size:11px;color:var(--grey)">dana@email.com</div></td>
+              <td style="color:var(--grey);font-size:12px;">she/her</td><td>Level 2</td><td><span class="tag tag-grey" style="font-size:10px;">Today Only</span></td>
               <td><span style="color:var(--amber);">72%</span></td>
-              <td><span style="color:#ff6b6b;">Owing</span></td>
-              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Dana Park')">View</button></td>
+              <td><span style="color:#ff6b6b;font-weight:500;">$75 owing</span></td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Dana Park')">View</button> <button class="btn btn-lime btn-xs" onclick="event.stopPropagation();openTakePayment('Dana Park','$75')">Take Payment</button></td>
             </tr>
             <tr style="cursor:pointer" onclick="openStudentReadPanel('Nina Torres')">
               <td><div class="s-avatar" style="background:#b0f0b0;">N</div></td>
-              <td><b>Nina Torres</b></td><td>Level 3</td><td>Season 3</td>
+              <td><b>Nina Torres</b><div style="font-size:11px;color:var(--grey)">nina@email.com</div></td>
+              <td style="color:var(--grey);font-size:12px;">she/her</td><td>Level 3</td><td><span class="tag tag-lav" style="font-size:10px;">Course</span></td>
               <td><span style="color:var(--lime);">95%</span></td>
-              <td><span style="color:#44ff99;">Clear</span></td>
+              <td><span style="color:#4ade80;">Clear</span></td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Nina Torres')">View</button></td>
             </tr>
             <tr style="cursor:pointer" onclick="openStudentReadPanel('Sophie Lawson')">
               <td><div class="s-avatar" style="background:var(--lime);">S</div></td>
-              <td><b>Sophie Lawson</b></td><td>Level 1</td><td>Season 3</td>
+              <td><b>Sophie Lawson</b><div style="font-size:11px;color:var(--grey)">sophie@email.com</div></td>
+              <td style="color:var(--grey);font-size:12px;">they/them</td><td>Level 1</td><td><span class="tag tag-amber" style="font-size:10px;">Trial</span></td>
               <td><span style="color:var(--lime);">100%</span></td>
-              <td><span style="color:#44ff99;">Clear</span></td>
+              <td><span style="color:#4ade80;">Clear</span></td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Sophie Lawson')">View</button></td>
             </tr>
             <tr style="cursor:pointer" onclick="openStudentReadPanel('Amber Cole')">
               <td><div class="s-avatar" style="background:#ffb3de;">A</div></td>
-              <td><b>Amber Cole</b></td><td>Level 1</td><td>Season 3</td>
+              <td><b>Amber Cole</b><div style="font-size:11px;color:var(--grey)">amber@email.com</div></td>
+              <td style="color:var(--grey);font-size:12px;">she/her</td><td>Level 1</td><td><span class="tag tag-lav" style="font-size:10px;">Course</span></td>
               <td><span style="color:var(--amber);">67%</span></td>
-              <td><span style="color:#ff6b6b;">Owing</span></td>
-              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Amber Cole')">View</button></td>
+              <td><span style="color:#ff6b6b;font-weight:500;">$50 owing</span></td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Amber Cole')">View</button> <button class="btn btn-lime btn-xs" onclick="event.stopPropagation();openTakePayment('Amber Cole','$50')">Take Payment</button></td>
             </tr>
             <tr style="cursor:pointer" onclick="openStudentReadPanel('Hannah Webb')">
               <td><div class="s-avatar" style="background:#9ac4ff;">H</div></td>
-              <td><b>Hannah Webb</b></td><td>Level 1</td><td>Casual</td>
+              <td><b>Hannah Webb</b><div style="font-size:11px;color:var(--grey)">hannah@email.com</div></td>
+              <td style="color:var(--grey);font-size:12px;">she/her</td><td>Level 2</td><td><span class="tag tag-amber" style="font-size:10px;">Trial</span></td>
               <td><span style="color:var(--lime);">100%</span></td>
-              <td><span style="color:#44ff99;">Clear</span></td>
+              <td><span style="color:#4ade80;">Clear</span></td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Hannah Webb')">View</button></td>
+            </tr>
+            <tr style="cursor:pointer" onclick="openStudentReadPanel('Ruby Kim')">
+              <td><div class="s-avatar" style="background:var(--lav);">R</div></td>
+              <td><b>Ruby Kim</b><div style="font-size:11px;color:var(--grey)">ruby@email.com</div></td>
+              <td style="color:var(--grey);font-size:12px;">she/her</td><td>Level 3</td><td><span class="tag tag-lav" style="font-size:10px;">Course</span></td>
+              <td><span style="color:var(--lime);">92%</span></td>
+              <td><span style="color:#4ade80;">Clear</span></td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Ruby Kim')">View</button></td>
+            </tr>
+            <tr style="cursor:pointer" onclick="openStudentReadPanel('Mia Santos')">
+              <td><div class="s-avatar" style="background:#4ade80;">M</div></td>
+              <td><b>Mia Santos</b><div style="font-size:11px;color:var(--grey)">mia@email.com</div></td>
+              <td style="color:var(--grey);font-size:12px;">she/they</td><td>High Tricks</td><td><span class="tag tag-lav" style="font-size:10px;">Course</span></td>
+              <td><span style="color:var(--lime);">98%</span></td>
+              <td><span style="color:#4ade80;">Clear</span></td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Mia Santos')">View</button></td>
             </tr>
           </tbody>
         </table>
@@ -680,7 +733,7 @@ tr:hover td { background: #0d0d0d; }
       <div id="hw-active" class="subscreen active">
         <div class="hw-card" onclick="openModal('modal-hw-detail')">
           <div class="hw-card-header">
-            <div><div class="hw-card-title">Spinning Pole — Week 3 Checklist</div><div class="hw-card-meta">Level 2 · Assigned 8 May 2025</div></div>
+            <div><div class="hw-card-title">Spinning Pole — Week 3 Checklist</div><div class="hw-card-meta">Level 2 · Mon 6:30pm · Assigned 8 May 2025</div></div>
             <span class="tag tag-lime">Active</span>
           </div>
           <div class="hw-card-progress">
@@ -691,7 +744,7 @@ tr:hover td { background: #0d0d0d; }
         </div>
         <div class="hw-card" onclick="openModal('modal-hw-detail')">
           <div class="hw-card-header">
-            <div><div class="hw-card-title">Invert Conditioning Drills</div><div class="hw-card-meta">Level 2 · Assigned 5 May 2025</div></div>
+            <div><div class="hw-card-title">Invert Conditioning Drills</div><div class="hw-card-meta">Level 2 · Mon 6:30pm · Assigned 5 May 2025</div></div>
             <span class="tag tag-amber">3 pending review</span>
           </div>
           <div class="hw-card-progress">
@@ -702,7 +755,7 @@ tr:hover td { background: #0d0d0d; }
         </div>
         <div class="hw-card" onclick="openModal('modal-hw-detail')">
           <div class="hw-card-header">
-            <div><div class="hw-card-title">Flexibility Flow — Shoulder Prep</div><div class="hw-card-meta">Level 1 Int. · Assigned 6 May 2025</div></div>
+            <div><div class="hw-card-title">Flexibility Flow — Shoulder Prep</div><div class="hw-card-meta">Level 1 Int. · Mon 8:30pm · Assigned 6 May 2025</div></div>
             <span class="tag tag-lav">New</span>
           </div>
           <div class="hw-card-progress">
@@ -885,13 +938,26 @@ tr:hover td { background: #0d0d0d; }
       <div class="info-row"><div class="info-label">Emergency</div><div class="info-val">Kate Malone — 0411 222 333</div></div>
     </div>
     <div id="sp-bookings" class="subscreen">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.7px;color:var(--grey);margin-bottom:8px;">Current Enrolments</div>
+      <div class="tbl-section" style="margin-bottom:16px;">
+        <table>
+          <thead><tr><th>Class</th><th>Type</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Level 2 · Mon 6:30pm</td><td>Course</td><td><span class="tag tag-lime" style="font-size:10px;">Active</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.7px;color:var(--grey);margin-bottom:8px;">Booking History</div>
       <div class="tbl-section">
         <table>
-          <thead><tr><th>Class</th><th>Season</th><th>Status</th></tr></thead>
+          <thead><tr><th>Date</th><th>Class</th><th>Type</th><th>Attended</th></tr></thead>
           <tbody>
-            <tr><td>Level 2 · Mon 6:30pm</td><td>Season 3</td><td><span class="tag tag-lime" style="font-size:10px;">Enrolled</span></td></tr>
-            <tr><td>Level 1 · Mon 5:30pm</td><td>Season 2</td><td><span class="tag tag-grey" style="font-size:10px;">Completed</span></td></tr>
-            <tr><td>Sensual Flow · Fri</td><td>12 May</td><td><span class="tag tag-red" style="font-size:10px;">No-show</span></td></tr>
+            <tr><td style="color:var(--grey);font-size:12px;">5 May</td><td>Level 2 · Mon</td><td style="color:var(--grey);font-size:11px;">Course</td><td><span class="tag tag-lime" style="font-size:10px;">Present</span></td></tr>
+            <tr><td style="color:var(--grey);font-size:12px;">28 Apr</td><td>Level 2 · Mon</td><td style="color:var(--grey);font-size:11px;">Course</td><td><span class="tag tag-lime" style="font-size:10px;">Present</span></td></tr>
+            <tr><td style="color:var(--grey);font-size:12px;">21 Apr</td><td>Level 2 · Mon</td><td style="color:var(--grey);font-size:11px;">Course</td><td><span class="tag tag-amber" style="font-size:10px;">Late</span></td></tr>
+            <tr><td style="color:var(--grey);font-size:12px;">14 Apr</td><td>Sensual Flow · Fri</td><td style="color:var(--grey);font-size:11px;">Drop-in</td><td><span class="tag tag-red" style="font-size:10px;">No-show</span></td></tr>
+            <tr><td style="color:var(--grey);font-size:12px;">7 Apr</td><td>Level 2 · Mon</td><td style="color:var(--grey);font-size:11px;">Course</td><td><span class="tag tag-lime" style="font-size:10px;">Present</span></td></tr>
+            <tr><td style="color:var(--grey);font-size:12px;">31 Mar</td><td>Level 1 · Mon</td><td style="color:var(--grey);font-size:11px;">Season 2</td><td><span class="tag tag-lime" style="font-size:10px;">Present</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -1039,6 +1105,19 @@ document.querySelectorAll('.modal-overlay').forEach(m => {
 
 function goToAttendance(classId) { showScreen('attendance'); }
 
+function filterAttendance(mode) {
+  const rows = document.querySelectorAll('#att-roster .att-row');
+  rows.forEach(r => {
+    const status = r.dataset.status || 'attending';
+    if (mode === 'attending') r.style.display = (status === 'attending') ? '' : 'none';
+    else r.style.display = (status === 'away') ? '' : 'none';
+  });
+  document.getElementById('att-filter-attending').style.background = mode === 'attending' ? 'var(--lime)' : 'transparent';
+  document.getElementById('att-filter-attending').style.color = mode === 'attending' ? '#000' : 'var(--grey)';
+  document.getElementById('att-filter-away').style.background = mode === 'away' ? 'var(--lime)' : 'transparent';
+  document.getElementById('att-filter-away').style.color = mode === 'away' ? '#000' : 'var(--grey)';
+}
+
 function openNoteModal(name) {
   document.getElementById('modal-note-title').textContent = 'Note — ' + name;
   openModal('modal-note');
@@ -1127,7 +1206,7 @@ function saveRegister() {
   const summary = document.getElementById('att-summary');
   summary.classList.add('visible');
   summary.innerHTML = '✓ Register saved — <b style="color:var(--lime);">' + present + ' attended</b>' +
-    (noshow ? ', <b style="color:#ff6b6b;">' + noshow + ' no-show' + (noshow > 1 ? 's' : '') + '</b> ($' + (noshow * 25) + ' in fees added)' : '') +
+    (noshow ? ', <b style="color:#ff6b6b;">' + noshow + ' no-show' + (noshow > 1 ? 's' : '') + '</b> ($' + (noshow * 20) + ' in fees added)' : '') +
     (waived ? ', <b style="color:var(--amber);">' + waived + ' no-show (fee waived)</b>' : '') +
     (late ? ', <b style="color:var(--amber);">' + late + ' late</b>' : '') +
     (excused ? ', <b style="color:var(--lav);">' + excused + ' excused</b>' : '') + '.';
@@ -1200,11 +1279,79 @@ function addHwItem() {
   container.appendChild(row);
 }
 
+let _selectedPaymentMethod = 'square';
+function openTakePayment(name, balance) {
+  document.getElementById('tp-title').textContent = 'Take Payment — ' + name;
+  document.getElementById('tp-subtitle').textContent = 'Outstanding balance: ' + balance;
+  document.getElementById('tp-amount').value = balance.replace('$','');
+  selectPaymentMethod('square');
+  openModal('modal-take-payment');
+}
+function selectPaymentMethod(method) {
+  _selectedPaymentMethod = method;
+  const sq = document.getElementById('tp-square');
+  const ca = document.getElementById('tp-cash');
+  sq.style.background = method === 'square' ? '#0a1800' : '#1a1a1a';
+  sq.style.borderColor = method === 'square' ? 'var(--lime)' : 'var(--border)';
+  sq.querySelector('div:nth-child(2)').style.color = method === 'square' ? 'var(--lime)' : 'var(--white)';
+  ca.style.background = method === 'cash' ? '#0a1800' : '#1a1a1a';
+  ca.style.borderColor = method === 'cash' ? 'var(--lime)' : 'var(--border)';
+}
+function confirmPayment() {
+  const amt = document.getElementById('tp-amount').value;
+  const method = _selectedPaymentMethod === 'square' ? 'Square (card)' : 'Cash';
+  alert('Payment of $' + amt + ' recorded via ' + method + '. Balance updated.');
+  closeModal('modal-take-payment');
+}
+function filterStudentTable(query) {
+  const q = query.toLowerCase();
+  document.querySelectorAll('#students-tbody tr').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
 function removeHwItem(btn) {
   const row = btn.closest('.hw-item-row');
   if(row) row.remove();
 }
 </script>
+
+<!-- TAKE PAYMENT MODAL -->
+<div class="modal-overlay" id="modal-take-payment">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="tp-title">Take Payment — Jess Malone</div>
+        <div style="font-size:12px;color:var(--grey);margin-top:3px;" id="tp-subtitle">Outstanding balance: $120</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-take-payment')" style="background:none;border:none;color:var(--grey);font-size:20px;cursor:pointer;padding:4px 8px;border-radius:6px;">✕</button>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:12px;color:var(--grey);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.7px;">Amount</label>
+      <input type="number" id="tp-amount" placeholder="0.00" style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:12px 14px;border-radius:8px;font-family:'Archivo Black',sans-serif;font-size:22px;" />
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:12px;color:var(--grey);display:block;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.7px;">Payment Method</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div id="tp-square" onclick="selectPaymentMethod('square')" style="background:#0a1800;border:2px solid var(--lime);border-radius:10px;padding:14px 16px;cursor:pointer;text-align:center;">
+          <div style="font-size:20px;margin-bottom:4px;">🟦</div>
+          <div style="font-family:'Archivo Black',sans-serif;font-size:14px;color:var(--lime);">Square</div>
+          <div style="font-size:11px;color:var(--grey);margin-top:2px;">Card via Square terminal</div>
+        </div>
+        <div id="tp-cash" onclick="selectPaymentMethod('cash')" style="background:#1a1a1a;border:2px solid var(--border);border-radius:10px;padding:14px 16px;cursor:pointer;text-align:center;">
+          <div style="font-size:20px;margin-bottom:4px;">💵</div>
+          <div style="font-family:'Archivo Black',sans-serif;font-size:14px;">Cash</div>
+          <div style="font-size:11px;color:var(--grey);margin-top:2px;">Record manual cash payment</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:12px;color:var(--grey);display:block;margin-bottom:6px;">Note (optional)</label>
+      <input type="text" placeholder="e.g. Partial payment — rest on Friday" style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;font-size:13px;" />
+    </div>
+    <button onclick="confirmPayment()" style="width:100%;background:var(--lime);border:none;border-radius:10px;padding:14px;font-family:'Archivo Black',sans-serif;font-size:15px;color:#000;cursor:pointer;">Confirm Payment</button>
+  </div>
+</div>
 
 <!-- STAFF NOTES MODAL -->
 <div class="modal-overlay" id="modal-staff-notes">
