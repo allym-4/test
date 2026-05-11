@@ -182,6 +182,50 @@
   .class-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
   .class-instructor { font-size: 13px; color: var(--grey); }
 
+  /* SEASON CLASS ROWS (flat list) */
+  .class-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 14px; border: 1px solid var(--border);
+    border-radius: 10px; margin-bottom: 8px; cursor: pointer;
+    background: var(--card); transition: all 0.15s;
+  }
+  .class-row:hover { border-color: #333; background: #1a1a1a; }
+  .class-row.selected { border-color: var(--lime); background: #0d1200; }
+  .class-row.locked { opacity: 0.38; cursor: not-allowed; }
+  .class-row-time-block {
+    min-width: 68px; text-align: center;
+    background: #191919; border-radius: 7px; padding: 7px 8px; flex-shrink: 0;
+  }
+  .class-row.selected .class-row-time-block { background: #0a1800; }
+  .class-row-day-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--grey);
+  }
+  .class-row-time-label {
+    font-family: 'Archivo Black', sans-serif; font-size: 16px;
+    color: var(--lime); line-height: 1.2; margin-top: 1px;
+  }
+  .class-row.locked .class-row-time-label { color: #555; }
+  .class-row-body { flex: 1; min-width: 0; }
+  .class-row-name { font-family: 'Archivo Black', sans-serif; font-size: 15px; color: var(--white); }
+  .class-row-instr { font-size: 13px; color: var(--grey); margin-top: 2px; }
+  .class-row-tags { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; flex-shrink: 0; }
+  .class-row-check {
+    width: 24px; height: 24px; border-radius: 50%;
+    border: 2px solid #333; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: transparent; flex-shrink: 0; transition: all 0.15s;
+  }
+  .class-row.selected .class-row-check { background: var(--lime); border-color: var(--lime); color: var(--black); }
+  .class-row.locked .class-row-check { display: none; }
+  .class-row-lock { font-size: 13px; color: #3a3a3a; flex-shrink: 0; }
+
+  /* FILTER GROUPS */
+  .filter-group { margin-bottom: 10px; }
+  .filter-group-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--grey); margin-bottom: 6px;
+  }
+
   /* FILTERS */
   .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 26px; }
   .filter-btn {
@@ -502,6 +546,13 @@
     .class-name { font-size: 15px; }
     .class-day  { font-size: 11px; }
 
+    /* Season class rows */
+    .class-row { gap: 10px; padding: 10px 12px; }
+    .class-row-time-block { min-width: 58px; padding: 6px 7px; }
+    .class-row-time-label { font-size: 14px; }
+    .class-row-tags { display: none; }
+    .filter-group-label { font-size: 9px; }
+
     /* Pay options */
     .pay-option { padding: 12px 14px; }
     .pay-option-title { font-size: 14px; }
@@ -608,9 +659,18 @@
       <div class="page-header">
         <div class="page-title">Hey Jess</div>
         <div class="enrolled-summary">
-          You're enrolled in <strong>Level 2, 6:30pm Mondays with Chloe</strong> and <strong>Dance, 6:30pm Fridays with Mimi.</strong>
-          Season 3 is underway - Week 4 of 8.
+          You're enrolled in <strong>Level 2, 6:30pm Mondays with Chloe</strong> and <strong>Dance, 6:30pm Fridays with Mimi</strong> for Season 3 - Week 4 of 8 is underway.
         </div>
+      </div>
+
+      <!-- Season 4 secured banner -->
+      <div style="background:#0d0d0d;border:1px solid #2a2a2a;border-radius:12px;padding:18px 22px;margin-bottom:24px">
+        <div style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--lav);margin-bottom:8px">Season 4 - secured</div>
+        <div style="font-size:14px;color:var(--grey);line-height:1.7;margin-bottom:12px">
+          You've locked in <strong style="color:var(--white)">Level 2 (Mon 6:30pm)</strong> and <strong style="color:var(--white)">Dance (Fri 6:30pm)</strong> for Season 4.
+          Did you know adding a 3rd class drops your per-class cost by $20? You'd also unlock <span style="color:var(--lime)">1 free practice session per week</span>.
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="showScreen('book');showBookTab('season')">Add a class to Season 4</button>
       </div>
 
       <div class="grid-4 mb-24">
@@ -820,149 +880,246 @@
               </div>
             </div>
 
-            <div class="filters">
-              <button class="filter-btn active" onclick="toggleFilter(this)">All</button>
-              <button class="filter-btn" onclick="toggleFilter(this)">Levelled</button>
-              <button class="filter-btn" onclick="toggleFilter(this)">Specialty</button>
-              <button class="filter-btn" onclick="toggleFilter(this)">Conditioning</button>
-              <button class="filter-btn" onclick="toggleFilter(this)">Monday</button>
-              <button class="filter-btn" onclick="toggleFilter(this)">Tuesday</button>
-              <button class="filter-btn" onclick="toggleFilter(this)">Wednesday</button>
-              <button class="filter-btn" onclick="toggleFilter(this)">Thursday</button>
-            </div>
-
-            <!-- LEVEL ASSIGNED: sectioned view (Level 2) -->
-            <div id="season-classes-levelled">
-              <div class="section-label">Your level</div>
-              <div class="grid-2 mb-24">
-                <div class="class-card" onclick="toggleClass('l2-mon630','Level 2','Mon 6:30pm',this)">
-                  <div class="check">+</div><div class="class-day">Monday - 6:30pm</div>
-                  <div class="class-name">Level 2</div>
-                  <div class="class-meta"><span class="tag tag-lav">Your level</span></div>
-                  <div class="class-instructor">Chloe</div>
-                </div>
-                <div class="class-card" onclick="toggleClass('l2-tue530','Level 2','Tue 5:30pm',this)">
-                  <div class="check">+</div><div class="class-day">Tuesday - 5:30pm</div>
-                  <div class="class-name">Level 2</div>
-                  <div class="class-meta"><span class="tag tag-lav">Your level</span></div>
-                  <div class="class-instructor">Avalon</div>
-                </div>
-                <div class="class-card" onclick="toggleClass('l2-wed830','Level 2','Wed 8:30pm',this)">
-                  <div class="check">+</div><div class="class-day">Wednesday - 8:30pm</div>
-                  <div class="class-name">Level 2</div>
-                  <div class="class-meta"><span class="tag tag-lav">Your level</span></div>
-                  <div class="class-instructor">Bambi - <span style="color:#ffaa44">Almost full</span></div>
+            <!-- Filter groups: Day / Instructor / Level -->
+            <div id="season-filter-groups" style="margin-bottom:20px">
+              <div class="filter-group">
+                <div class="filter-group-label">Day</div>
+                <div class="filters" style="margin-bottom:0">
+                  <button class="filter-btn active" onclick="setSeasonFilter('day','all',this)">All</button>
+                  <button class="filter-btn" onclick="setSeasonFilter('day','mon',this)">Mon</button>
+                  <button class="filter-btn" onclick="setSeasonFilter('day','tue',this)">Tue</button>
+                  <button class="filter-btn" onclick="setSeasonFilter('day','wed',this)">Wed</button>
+                  <button class="filter-btn" onclick="setSeasonFilter('day','thu',this)">Thu</button>
+                  <button class="filter-btn" onclick="setSeasonFilter('day','fri',this)">Fri</button>
+                  <button class="filter-btn" onclick="setSeasonFilter('day','sat',this)">Sat</button>
+                  <button class="filter-btn" onclick="setSeasonFilter('day','sun',this)">Sun</button>
                 </div>
               </div>
-
-              <div class="section-label">Conditioning - eligible for you</div>
-              <div class="grid-2 mb-24">
-                <div class="class-card" onclick="toggleClass('dancetch-mon530','Dance Tech','Mon 5:30pm',this)">
-                  <div class="check">+</div><div class="class-day">Monday - 5:30pm</div>
-                  <div class="class-name">Dance Tech</div>
-                  <div class="class-meta"><span class="tag tag-grey">All levels</span></div>
-                  <div class="class-instructor">Chloe</div>
-                </div>
-                <div class="class-card" onclick="toggleClass('invert-wed630','Invert Tech','Wed 6:30pm',this)">
-                  <div class="check">+</div><div class="class-day">Wednesday - 6:30pm</div>
-                  <div class="class-name">Invert Tech</div>
-                  <div class="class-meta"><span class="tag tag-grey">Level 2+</span></div>
-                  <div class="class-instructor">Maz</div>
-                </div>
-                <div class="class-card" onclick="toggleClass('kiki-fri530','Kiki','Fri 5:30pm',this)">
-                  <div class="check">+</div><div class="class-day">Friday - 5:30pm</div>
-                  <div class="class-name">Kiki</div>
-                  <div class="class-meta"><span class="tag tag-grey">All levels</span></div>
-                  <div class="class-instructor">Mimi</div>
-                </div>
-                <div class="class-card" onclick="toggleClass('unravel-sat9','Unravel','Sat 9:00am',this)">
-                  <div class="check">+</div><div class="class-day">Saturday - 9:00am</div>
-                  <div class="class-name">Unravel</div>
-                  <div class="class-meta"><span class="tag tag-grey">All levels</span></div>
-                  <div class="class-instructor">Chloe</div>
+              <div class="filter-group">
+                <div class="filter-group-label">Instructor</div>
+                <div class="filters" style="margin-bottom:0">
+                  <button class="filter-btn active" onclick="setSeasonFilter('instr','all',this)">All</button>
+                  <button class="filter-btn" onclick="setSeasonFilter('instr','chloe',this)">Chloe</button>
+                  <button class="filter-btn" onclick="setSeasonFilter('instr','mimi',this)">Mimi</button>
+                  <button class="filter-btn" onclick="setSeasonFilter('instr','jaz',this)">Jaz</button>
+                  <button class="filter-btn" onclick="setSeasonFilter('instr','avalon',this)">Avalon</button>
+                  <button class="filter-btn" onclick="setSeasonFilter('instr','maz',this)">Maz</button>
+                  <button class="filter-btn" onclick="setSeasonFilter('instr','amy',this)">Amy</button>
+                  <button class="filter-btn" onclick="setSeasonFilter('instr','bambi',this)">Bambi</button>
                 </div>
               </div>
-
-              <div class="section-label">Specialty - eligible for you</div>
-              <div class="grid-2 mb-24">
-                <div class="class-card" onclick="toggleClass('dance-fri630','Dance','Fri 6:30pm',this)">
-                  <div class="check">+</div><div class="class-day">Friday - 6:30pm</div>
-                  <div class="class-name">Dance</div>
-                  <div class="class-meta"><span class="tag tag-grey">Level 2+</span></div>
-                  <div class="class-instructor">Mimi</div>
-                </div>
-                <div class="class-card" onclick="toggleClass('dancevir-wed730','Dance Virgin','Wed 7:30pm',this)">
-                  <div class="check">+</div><div class="class-day">Wednesday - 7:30pm</div>
-                  <div class="class-name">Dance Virgin</div>
-                  <div class="class-meta"><span class="tag tag-grey">Beginner</span></div>
-                  <div class="class-instructor">Chloe</div>
-                </div>
-                <div class="class-card" onclick="toggleClass('stripvir-mon730','Strip Virgin','Mon 7:30pm',this)">
-                  <div class="check">+</div><div class="class-day">Monday - 7:30pm</div>
-                  <div class="class-name">Strip Virgin</div>
-                  <div class="class-meta"><span class="tag tag-grey">Beginner</span></div>
-                  <div class="class-instructor">Jaz</div>
-                </div>
-                <div class="class-card" onclick="toggleClass('stripvir-thu530','Strip Virgin','Thu 5:30pm',this)">
-                  <div class="check">+</div><div class="class-day">Thursday - 5:30pm</div>
-                  <div class="class-name">Strip Virgin</div>
-                  <div class="class-meta"><span class="tag tag-grey">Beginner</span></div>
-                  <div class="class-instructor">Amy</div>
-                </div>
-                <div class="class-card" onclick="toggleClass('floorvir-mon530','Floor Virgin','Mon 5:30pm',this)">
-                  <div class="check">+</div><div class="class-day">Monday - 5:30pm</div>
-                  <div class="class-name">Floor Virgin</div>
-                  <div class="class-meta"><span class="tag tag-grey">Beginner</span></div>
-                  <div class="class-instructor">Jaz</div>
-                </div>
-                <div class="class-card" onclick="toggleClass('floorvir-sat12','Floor Virgin','Sat 12:00pm',this)">
-                  <div class="check">+</div><div class="class-day">Saturday - 12:00pm</div>
-                  <div class="class-name">Floor Virgin</div>
-                  <div class="class-meta"><span class="tag tag-grey">Beginner</span></div>
-                  <div class="class-instructor">Chloe</div>
-                </div>
-              </div>
-
-              <div id="season-locked-section">
-                <div class="section-label" style="color:#444" id="locked-section-label">Not available at your level</div>
-                <div class="grid-2">
-                  <div class="class-card locked" onclick="openLevelWarning('Level 3','Mon 8:30pm')"><div class="class-day">Monday - 8:30pm</div><div class="class-name">Level 3</div><div class="class-meta"><span class="tag tag-grey">Level 3+</span></div><div class="class-instructor">Chloe</div></div>
-                  <div class="class-card locked" onclick="openLevelWarning('Level 3','Wed 7:30pm')"><div class="class-day">Wednesday - 7:30pm</div><div class="class-name">Level 3</div><div class="class-meta"><span class="tag tag-grey">Level 3+</span></div><div class="class-instructor">Maz</div></div>
-                  <div class="class-card locked" onclick="openLevelWarning('Level 4','Mon 7:30pm')"><div class="class-day">Monday - 7:30pm</div><div class="class-name">Level 4</div><div class="class-meta"><span class="tag tag-grey">Level 4+</span></div><div class="class-instructor">Chloe</div></div>
-                  <div class="class-card locked" onclick="openLevelWarning('Level 4','Sat 10:00am')"><div class="class-day">Saturday - 10:00am</div><div class="class-name">Level 4</div><div class="class-meta"><span class="tag tag-grey">Level 4+</span></div><div class="class-instructor">Chloe</div></div>
-                  <div class="class-card locked" onclick="openLevelWarning('Level 5','Tue 7:30pm')"><div class="class-day">Tuesday - 7:30pm</div><div class="class-name">Level 5</div><div class="class-meta"><span class="tag tag-grey">Level 5+</span></div><div class="class-instructor">Chloe</div></div>
-                  <div class="class-card locked" onclick="openLevelWarning('Level 5','Thu 6:30pm')"><div class="class-day">Thursday - 6:30pm</div><div class="class-name">Level 5</div><div class="class-meta"><span class="tag tag-grey">Level 5+</span></div><div class="class-instructor">Mimi</div></div>
-                  <div class="class-card locked" onclick="openLevelWarning('Level 6','Tue 7:30pm')"><div class="class-day">Tuesday - 7:30pm</div><div class="class-name">Level 6</div><div class="class-meta"><span class="tag tag-grey">Level 6</span></div><div class="class-instructor">Mimi</div></div>
-                  <div class="class-card locked" onclick="openLevelWarning('Strip','Tue 6:30pm')"><div class="class-day">Tuesday - 6:30pm</div><div class="class-name">Strip</div><div class="class-meta"><span class="tag tag-grey">Level 3+</span></div><div class="class-instructor">Mimi</div></div>
-                  <div class="class-card locked" onclick="openLevelWarning('Strip','Thu 7:30pm')"><div class="class-day">Thursday - 7:30pm</div><div class="class-name">Strip</div><div class="class-meta"><span class="tag tag-grey">Level 3+</span></div><div class="class-instructor">Mimi</div></div>
-                  <div class="class-card locked" onclick="openLevelWarning('High Tricks','Tue 8:30pm')"><div class="class-day">Tuesday - 8:30pm</div><div class="class-name">High Tricks</div><div class="class-meta"><span class="tag tag-grey">Level 5+</span></div><div class="class-instructor">Mimi - <span style="color:#ff6b6b">Fully booked</span></div></div>
-                  <div class="class-card locked" onclick="openLevelWarning('3 Tricks','Tue 6:30pm')"><div class="class-day">Tuesday - 6:30pm</div><div class="class-name">3 Tricks</div><div class="class-meta"><span class="tag tag-grey">Level 3+</span></div><div class="class-instructor">Avalon</div></div>
-                  <div class="class-card locked" onclick="openLevelWarning('4 Tricks','Wed 8:30pm')"><div class="class-day">Wednesday - 8:30pm</div><div class="class-name">4 Tricks</div><div class="class-meta"><span class="tag tag-grey">Level 4+</span></div><div class="class-instructor">Chloe</div></div>
-                  <div class="class-card locked" onclick="openLevelWarning('Chair','Wed 6:30pm')"><div class="class-day">Wednesday - 6:30pm</div><div class="class-name">Chair</div><div class="class-meta"><span class="tag tag-grey">Level 3+</span></div><div class="class-instructor">Chloe</div></div>
-                  <div class="class-card locked" onclick="openLevelWarning('Dirty Dance','Thu 8:30pm')"><div class="class-day">Thursday - 8:30pm</div><div class="class-name">Dirty Dance</div><div class="class-meta"><span class="tag tag-grey">Level 3+</span></div><div class="class-instructor">Mimi</div></div>
-                  <div class="class-card locked" onclick="openLevelWarning('Inter Floor','Thu 5:30pm')"><div class="class-day">Thursday - 5:30pm</div><div class="class-name">Inter Floor</div><div class="class-meta"><span class="tag tag-grey">Level 3+</span></div><div class="class-instructor">Mimi</div></div>
-                  <div class="class-card locked" onclick="openLevelWarning('Advanced Floor','Sun 10:00am')"><div class="class-day">Sunday - 10:00am</div><div class="class-name">Advanced Floor</div><div class="class-meta"><span class="tag tag-grey">Level 4+</span></div><div class="class-instructor">Mimi</div></div>
-                  <div class="class-card locked" onclick="openLevelWarning('5/6 Tricks','Sun 11:00am')"><div class="class-day">Sunday - 11:00am</div><div class="class-name">5/6 Tricks</div><div class="class-meta"><span class="tag tag-grey">Level 5+</span></div><div class="class-instructor">Mimi</div></div>
+              <div class="filter-group">
+                <div class="filter-group-label">Level</div>
+                <div class="filters" style="margin-bottom:0">
+                  <button class="filter-btn active" onclick="setSeasonFilter('level','all',this)">All</button>
+                  <button class="filter-btn" onclick="setSeasonFilter('level','0',this)">Beginner</button>
+                  <button class="filter-btn" onclick="setSeasonFilter('level','1',this)">Level 1</button>
+                  <button class="filter-btn" onclick="setSeasonFilter('level','2',this)">Level 2</button>
+                  <button class="filter-btn" onclick="setSeasonFilter('level','3',this)">Level 3+</button>
                 </div>
               </div>
             </div>
 
-            <!-- NO LEVEL: all classes flat list -->
-            <div id="season-classes-all" style="display:none">
-              <div class="section-label">All classes</div>
-              <div class="grid-2 mb-24">
-                <div class="class-card" onclick="toggleClass('l1-wed530','Level 1','Wed 5:30pm',this)"><div class="check">+</div><div class="class-day">Wednesday - 5:30pm</div><div class="class-name">Level 1</div><div class="class-meta"><span class="tag tag-lime">Recommended for you</span></div><div class="class-instructor">Chloe</div></div>
-                <div class="class-card" onclick="toggleClass('l1-mon630','Level 1','Mon 6:30pm',this)"><div class="check">+</div><div class="class-day">Monday - 6:30pm</div><div class="class-name">Level 1</div><div class="class-meta"><span class="tag tag-lime">Recommended for you</span></div><div class="class-instructor">Jaz</div></div>
-                <div class="class-card" onclick="toggleClass('l2-mon630b','Level 2','Mon 6:30pm',this)"><div class="check">+</div><div class="class-day">Monday - 6:30pm</div><div class="class-name">Level 2</div><div class="class-meta"><span class="tag tag-grey">Levelled</span></div><div class="class-instructor">Chloe</div></div>
-                <div class="class-card" onclick="toggleClass('l2-tue530b','Level 2','Tue 5:30pm',this)"><div class="check">+</div><div class="class-day">Tuesday - 5:30pm</div><div class="class-name">Level 2</div><div class="class-meta"><span class="tag tag-grey">Levelled</span></div><div class="class-instructor">Avalon</div></div>
-                <div class="class-card" onclick="toggleClass('l3-mon830','Level 3','Mon 8:30pm',this)"><div class="check">+</div><div class="class-day">Monday - 8:30pm</div><div class="class-name">Level 3</div><div class="class-meta"><span class="tag tag-grey">Levelled</span></div><div class="class-instructor">Chloe</div></div>
-                <div class="class-card" onclick="toggleClass('l4-mon730','Level 4','Mon 7:30pm',this)"><div class="check">+</div><div class="class-day">Monday - 7:30pm</div><div class="class-name">Level 4</div><div class="class-meta"><span class="tag tag-grey">Levelled</span></div><div class="class-instructor">Chloe</div></div>
-                <div class="class-card" onclick="toggleClass('stripvir-mon730b','Strip Virgin','Mon 7:30pm',this)"><div class="check">+</div><div class="class-day">Monday - 7:30pm</div><div class="class-name">Strip Virgin</div><div class="class-meta"><span class="tag tag-grey">Specialty</span></div><div class="class-instructor">Jaz</div></div>
-                <div class="class-card" onclick="toggleClass('dancevir-wed730b','Dance Virgin','Wed 7:30pm',this)"><div class="check">+</div><div class="class-day">Wednesday - 7:30pm</div><div class="class-name">Dance Virgin</div><div class="class-meta"><span class="tag tag-grey">Specialty</span></div><div class="class-instructor">Chloe</div></div>
-                <div class="class-card" onclick="toggleClass('kiki-fri530b','Kiki','Fri 5:30pm',this)"><div class="check">+</div><div class="class-day">Friday - 5:30pm</div><div class="class-name">Kiki</div><div class="class-meta"><span class="tag tag-grey">Conditioning</span></div><div class="class-instructor">Mimi</div></div>
-                <div class="class-card" onclick="toggleClass('unravel-sat9b','Unravel','Sat 9:00am',this)"><div class="check">+</div><div class="class-day">Saturday - 9:00am</div><div class="class-name">Unravel</div><div class="class-meta"><span class="tag tag-grey">Conditioning</span></div><div class="class-instructor">Chloe</div></div>
-                <div class="class-card" onclick="toggleClass('floorvir-sat12b','Floor Virgin','Sat 12:00pm',this)"><div class="check">+</div><div class="class-day">Saturday - 12:00pm</div><div class="class-name">Floor Virgin</div><div class="class-meta"><span class="tag tag-grey">Specialty</span></div><div class="class-instructor">Chloe</div></div>
-                <div class="class-card" onclick="toggleClass('dance-fri630b','Dance','Fri 6:30pm',this)"><div class="check">+</div><div class="class-day">Friday - 6:30pm</div><div class="class-name">Dance</div><div class="class-meta"><span class="tag tag-grey">Specialty</span></div><div class="class-instructor">Mimi</div></div>
+            <!-- Single flat class list ordered Mon → Sun -->
+            <div id="season-class-list">
+              <!-- MONDAY -->
+              <div class="class-row" data-day="mon" data-instr="jaz" data-level="0" data-locked="false" onclick="toggleClass('floorvir-mon530','Floor Virgin','Mon 5:30pm',this)">
+                <div class="class-row-time-block"><div class="class-row-day-label">Mon</div><div class="class-row-time-label">5:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Floor Virgin</div><div class="class-row-instr">Jaz</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Beginner</span></div>
+                <div class="class-row-check">✓</div>
+              </div>
+              <div class="class-row" data-day="mon" data-instr="chloe" data-level="0" data-locked="false" onclick="toggleClass('dancetch-mon530','Dance Tech','Mon 5:30pm',this)">
+                <div class="class-row-time-block"><div class="class-row-day-label">Mon</div><div class="class-row-time-label">5:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Dance Tech</div><div class="class-row-instr">Chloe</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">All levels</span></div>
+                <div class="class-row-check">✓</div>
+              </div>
+              <div class="class-row" data-day="mon" data-instr="jaz" data-level="1" data-locked="false" onclick="toggleClass('l1-mon630','Level 1','Mon 6:30pm',this)">
+                <div class="class-row-time-block"><div class="class-row-day-label">Mon</div><div class="class-row-time-label">6:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Level 1</div><div class="class-row-instr">Jaz</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Level 1</span></div>
+                <div class="class-row-check">✓</div>
+              </div>
+              <div class="class-row" data-day="mon" data-instr="chloe" data-level="2" data-locked="false" onclick="toggleClass('l2-mon630','Level 2','Mon 6:30pm',this)">
+                <div class="class-row-time-block"><div class="class-row-day-label">Mon</div><div class="class-row-time-label">6:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Level 2</div><div class="class-row-instr">Chloe</div></div>
+                <div class="class-row-tags"><span class="tag tag-lav">Your level</span></div>
+                <div class="class-row-check">✓</div>
+              </div>
+              <div class="class-row" data-day="mon" data-instr="jaz" data-level="0" data-locked="false" onclick="toggleClass('stripvir-mon730','Strip Virgin','Mon 7:30pm',this)">
+                <div class="class-row-time-block"><div class="class-row-day-label">Mon</div><div class="class-row-time-label">7:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Strip Virgin</div><div class="class-row-instr">Jaz</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Beginner</span></div>
+                <div class="class-row-check">✓</div>
+              </div>
+              <div class="class-row locked" data-day="mon" data-instr="chloe" data-level="4" data-locked="true" onclick="openLevelWarning('Level 4','Mon 7:30pm')">
+                <div class="class-row-time-block"><div class="class-row-day-label">Mon</div><div class="class-row-time-label">7:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Level 4</div><div class="class-row-instr">Chloe</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Level 4+</span></div>
+                <div class="class-row-lock">🔒</div>
+              </div>
+              <div class="class-row locked" data-day="mon" data-instr="chloe" data-level="3" data-locked="true" onclick="openLevelWarning('Level 3','Mon 8:30pm')">
+                <div class="class-row-time-block"><div class="class-row-day-label">Mon</div><div class="class-row-time-label">8:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Level 3</div><div class="class-row-instr">Chloe</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Level 3+</span></div>
+                <div class="class-row-lock">🔒</div>
+              </div>
+              <!-- TUESDAY -->
+              <div class="class-row" data-day="tue" data-instr="avalon" data-level="2" data-locked="false" onclick="toggleClass('l2-tue530','Level 2','Tue 5:30pm',this)">
+                <div class="class-row-time-block"><div class="class-row-day-label">Tue</div><div class="class-row-time-label">5:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Level 2</div><div class="class-row-instr">Avalon</div></div>
+                <div class="class-row-tags"><span class="tag tag-lav">Your level</span></div>
+                <div class="class-row-check">✓</div>
+              </div>
+              <div class="class-row locked" data-day="tue" data-instr="avalon" data-level="3" data-locked="true" onclick="openLevelWarning('3 Tricks','Tue 6:30pm')">
+                <div class="class-row-time-block"><div class="class-row-day-label">Tue</div><div class="class-row-time-label">6:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">3 Tricks</div><div class="class-row-instr">Avalon</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Level 3+</span></div>
+                <div class="class-row-lock">🔒</div>
+              </div>
+              <div class="class-row locked" data-day="tue" data-instr="mimi" data-level="3" data-locked="true" onclick="openLevelWarning('Strip','Tue 6:30pm')">
+                <div class="class-row-time-block"><div class="class-row-day-label">Tue</div><div class="class-row-time-label">6:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Strip</div><div class="class-row-instr">Mimi</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Level 3+</span></div>
+                <div class="class-row-lock">🔒</div>
+              </div>
+              <div class="class-row locked" data-day="tue" data-instr="chloe" data-level="5" data-locked="true" onclick="openLevelWarning('Level 5','Tue 7:30pm')">
+                <div class="class-row-time-block"><div class="class-row-day-label">Tue</div><div class="class-row-time-label">7:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Level 5</div><div class="class-row-instr">Chloe</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Level 5+</span></div>
+                <div class="class-row-lock">🔒</div>
+              </div>
+              <div class="class-row locked" data-day="tue" data-instr="mimi" data-level="6" data-locked="true" onclick="openLevelWarning('Level 6','Tue 7:30pm')">
+                <div class="class-row-time-block"><div class="class-row-day-label">Tue</div><div class="class-row-time-label">7:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Level 6</div><div class="class-row-instr">Mimi</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Level 6</span></div>
+                <div class="class-row-lock">🔒</div>
+              </div>
+              <div class="class-row locked" data-day="tue" data-instr="mimi" data-level="5" data-locked="true" onclick="openLevelWarning('High Tricks','Tue 8:30pm')">
+                <div class="class-row-time-block"><div class="class-row-day-label">Tue</div><div class="class-row-time-label">8:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">High Tricks</div><div class="class-row-instr">Mimi &mdash; <span style="color:#ff6b6b">Fully booked</span></div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Level 5+</span></div>
+                <div class="class-row-lock">🔒</div>
+              </div>
+              <!-- WEDNESDAY -->
+              <div class="class-row" data-day="wed" data-instr="chloe" data-level="1" data-locked="false" onclick="toggleClass('l1-wed530','Level 1','Wed 5:30pm',this)">
+                <div class="class-row-time-block"><div class="class-row-day-label">Wed</div><div class="class-row-time-label">5:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Level 1</div><div class="class-row-instr">Chloe</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Level 1</span></div>
+                <div class="class-row-check">✓</div>
+              </div>
+              <div class="class-row" data-day="wed" data-instr="maz" data-level="2" data-locked="false" onclick="toggleClass('invert-wed630','Invert Tech','Wed 6:30pm',this)">
+                <div class="class-row-time-block"><div class="class-row-day-label">Wed</div><div class="class-row-time-label">6:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Invert Tech</div><div class="class-row-instr">Maz</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Level 2+</span></div>
+                <div class="class-row-check">✓</div>
+              </div>
+              <div class="class-row locked" data-day="wed" data-instr="chloe" data-level="3" data-locked="true" onclick="openLevelWarning('Chair','Wed 6:30pm')">
+                <div class="class-row-time-block"><div class="class-row-day-label">Wed</div><div class="class-row-time-label">6:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Chair</div><div class="class-row-instr">Chloe</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Level 3+</span></div>
+                <div class="class-row-lock">🔒</div>
+              </div>
+              <div class="class-row" data-day="wed" data-instr="chloe" data-level="0" data-locked="false" onclick="toggleClass('dancevir-wed730','Dance Virgin','Wed 7:30pm',this)">
+                <div class="class-row-time-block"><div class="class-row-day-label">Wed</div><div class="class-row-time-label">7:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Dance Virgin</div><div class="class-row-instr">Chloe</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Beginner</span></div>
+                <div class="class-row-check">✓</div>
+              </div>
+              <div class="class-row locked" data-day="wed" data-instr="maz" data-level="3" data-locked="true" onclick="openLevelWarning('Level 3','Wed 7:30pm')">
+                <div class="class-row-time-block"><div class="class-row-day-label">Wed</div><div class="class-row-time-label">7:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Level 3</div><div class="class-row-instr">Maz</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Level 3+</span></div>
+                <div class="class-row-lock">🔒</div>
+              </div>
+              <div class="class-row" data-day="wed" data-instr="bambi" data-level="2" data-locked="false" onclick="toggleClass('l2-wed830','Level 2','Wed 8:30pm',this)">
+                <div class="class-row-time-block"><div class="class-row-day-label">Wed</div><div class="class-row-time-label">8:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Level 2</div><div class="class-row-instr">Bambi &mdash; <span style="color:#ffaa44">Almost full</span></div></div>
+                <div class="class-row-tags"><span class="tag tag-lav">Your level</span></div>
+                <div class="class-row-check">✓</div>
+              </div>
+              <div class="class-row locked" data-day="wed" data-instr="chloe" data-level="4" data-locked="true" onclick="openLevelWarning('4 Tricks','Wed 8:30pm')">
+                <div class="class-row-time-block"><div class="class-row-day-label">Wed</div><div class="class-row-time-label">8:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">4 Tricks</div><div class="class-row-instr">Chloe</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Level 4+</span></div>
+                <div class="class-row-lock">🔒</div>
+              </div>
+              <!-- THURSDAY -->
+              <div class="class-row" data-day="thu" data-instr="amy" data-level="0" data-locked="false" onclick="toggleClass('stripvir-thu530','Strip Virgin','Thu 5:30pm',this)">
+                <div class="class-row-time-block"><div class="class-row-day-label">Thu</div><div class="class-row-time-label">5:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Strip Virgin</div><div class="class-row-instr">Amy</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Beginner</span></div>
+                <div class="class-row-check">✓</div>
+              </div>
+              <div class="class-row locked" data-day="thu" data-instr="mimi" data-level="3" data-locked="true" onclick="openLevelWarning('Inter Floor','Thu 5:30pm')">
+                <div class="class-row-time-block"><div class="class-row-day-label">Thu</div><div class="class-row-time-label">5:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Inter Floor</div><div class="class-row-instr">Mimi</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Level 3+</span></div>
+                <div class="class-row-lock">🔒</div>
+              </div>
+              <div class="class-row locked" data-day="thu" data-instr="mimi" data-level="5" data-locked="true" onclick="openLevelWarning('Level 5','Thu 6:30pm')">
+                <div class="class-row-time-block"><div class="class-row-day-label">Thu</div><div class="class-row-time-label">6:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Level 5</div><div class="class-row-instr">Mimi</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Level 5+</span></div>
+                <div class="class-row-lock">🔒</div>
+              </div>
+              <div class="class-row locked" data-day="thu" data-instr="mimi" data-level="3" data-locked="true" onclick="openLevelWarning('Strip','Thu 7:30pm')">
+                <div class="class-row-time-block"><div class="class-row-day-label">Thu</div><div class="class-row-time-label">7:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Strip</div><div class="class-row-instr">Mimi</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Level 3+</span></div>
+                <div class="class-row-lock">🔒</div>
+              </div>
+              <div class="class-row locked" data-day="thu" data-instr="mimi" data-level="3" data-locked="true" onclick="openLevelWarning('Dirty Dance','Thu 8:30pm')">
+                <div class="class-row-time-block"><div class="class-row-day-label">Thu</div><div class="class-row-time-label">8:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Dirty Dance</div><div class="class-row-instr">Mimi</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Level 3+</span></div>
+                <div class="class-row-lock">🔒</div>
+              </div>
+              <!-- FRIDAY -->
+              <div class="class-row" data-day="fri" data-instr="mimi" data-level="0" data-locked="false" onclick="toggleClass('kiki-fri530','Kiki','Fri 5:30pm',this)">
+                <div class="class-row-time-block"><div class="class-row-day-label">Fri</div><div class="class-row-time-label">5:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Kiki</div><div class="class-row-instr">Mimi</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">All levels</span></div>
+                <div class="class-row-check">✓</div>
+              </div>
+              <div class="class-row" data-day="fri" data-instr="mimi" data-level="2" data-locked="false" onclick="toggleClass('dance-fri630','Dance','Fri 6:30pm',this)">
+                <div class="class-row-time-block"><div class="class-row-day-label">Fri</div><div class="class-row-time-label">6:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Dance</div><div class="class-row-instr">Mimi</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Level 2+</span></div>
+                <div class="class-row-check">✓</div>
+              </div>
+              <!-- SATURDAY -->
+              <div class="class-row" data-day="sat" data-instr="chloe" data-level="0" data-locked="false" onclick="toggleClass('unravel-sat9','Unravel','Sat 9:00am',this)">
+                <div class="class-row-time-block"><div class="class-row-day-label">Sat</div><div class="class-row-time-label">9:00am</div></div>
+                <div class="class-row-body"><div class="class-row-name">Unravel</div><div class="class-row-instr">Chloe</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">All levels</span></div>
+                <div class="class-row-check">✓</div>
+              </div>
+              <div class="class-row locked" data-day="sat" data-instr="chloe" data-level="4" data-locked="true" onclick="openLevelWarning('Level 4','Sat 10:00am')">
+                <div class="class-row-time-block"><div class="class-row-day-label">Sat</div><div class="class-row-time-label">10:00am</div></div>
+                <div class="class-row-body"><div class="class-row-name">Level 4</div><div class="class-row-instr">Chloe</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Level 4+</span></div>
+                <div class="class-row-lock">🔒</div>
+              </div>
+              <div class="class-row" data-day="sat" data-instr="chloe" data-level="0" data-locked="false" onclick="toggleClass('floorvir-sat12','Floor Virgin','Sat 12:00pm',this)">
+                <div class="class-row-time-block"><div class="class-row-day-label">Sat</div><div class="class-row-time-label">12:00pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Floor Virgin</div><div class="class-row-instr">Chloe</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Beginner</span></div>
+                <div class="class-row-check">✓</div>
+              </div>
+              <!-- SUNDAY -->
+              <div class="class-row locked" data-day="sun" data-instr="mimi" data-level="4" data-locked="true" onclick="openLevelWarning('Advanced Floor','Sun 10:00am')">
+                <div class="class-row-time-block"><div class="class-row-day-label">Sun</div><div class="class-row-time-label">10:00am</div></div>
+                <div class="class-row-body"><div class="class-row-name">Advanced Floor</div><div class="class-row-instr">Mimi</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Level 4+</span></div>
+                <div class="class-row-lock">🔒</div>
+              </div>
+              <div class="class-row locked" data-day="sun" data-instr="mimi" data-level="5" data-locked="true" onclick="openLevelWarning('5/6 Tricks','Sun 11:00am')">
+                <div class="class-row-time-block"><div class="class-row-day-label">Sun</div><div class="class-row-time-label">11:00am</div></div>
+                <div class="class-row-body"><div class="class-row-name">5/6 Tricks</div><div class="class-row-instr">Mimi</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Level 5+</span></div>
+                <div class="class-row-lock">🔒</div>
               </div>
             </div>
 
@@ -2505,38 +2662,54 @@
     el.classList.add('active');
   }
 
+  let seasonFilters = { day: 'all', instr: 'all', level: 'all' };
+
+  function setSeasonFilter(group, val, btn) {
+    seasonFilters[group] = val;
+    btn.closest('.filters').querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applySeasonFilters();
+  }
+
+  function applySeasonFilters() {
+    document.querySelectorAll('#season-class-list .class-row').forEach(row => {
+      const isLocked = row.dataset.locked === 'true';
+      if (levelFilterOn && isLocked) { row.style.display = 'none'; return; }
+
+      const dayOk   = seasonFilters.day   === 'all' || row.dataset.day   === seasonFilters.day;
+      const instrOk = seasonFilters.instr === 'all' || row.dataset.instr === seasonFilters.instr;
+      let levelOk = true;
+      if (seasonFilters.level !== 'all') {
+        const rowLevel = parseInt(row.dataset.level || '0');
+        const fLevel   = parseInt(seasonFilters.level);
+        if (fLevel <= 0)      levelOk = rowLevel <= 0;
+        else if (fLevel <= 2) levelOk = rowLevel === fLevel;
+        else                  levelOk = rowLevel >= fLevel;
+      }
+      row.style.display = (dayOk && instrOk && levelOk) ? '' : 'none';
+    });
+  }
+
   let levelFilterOn = true;
   function toggleLevelFilter() {
     levelFilterOn = !levelFilterOn;
-    const track  = document.getElementById('level-toggle-track');
-    const thumb  = document.getElementById('level-toggle-thumb');
-    const label  = document.getElementById('level-toggle-label');
-    const locked = document.getElementById('season-locked-section');
-    const lockedCards = locked.querySelectorAll('.class-card');
-    const sectionLabel = document.getElementById('locked-section-label');
-
+    const track = document.getElementById('level-toggle-track');
+    const thumb = document.getElementById('level-toggle-thumb');
+    const label = document.getElementById('level-toggle-label');
     track.style.background = levelFilterOn ? 'var(--lime)' : '#333';
     thumb.style.right = levelFilterOn ? '3px' : 'auto';
     thumb.style.left  = levelFilterOn ? 'auto' : '3px';
     label.textContent = levelFilterOn ? 'On' : 'Off';
-    locked.style.display = levelFilterOn ? 'none' : 'block';
-
-    // When shown (toggle off): make cards fully visible and clickable
-    lockedCards.forEach(c => {
-      c.style.opacity = levelFilterOn ? '' : '1';
-      c.style.cursor  = levelFilterOn ? '' : 'pointer';
-    });
-    if (sectionLabel) sectionLabel.style.color = levelFilterOn ? '#444' : 'var(--grey)';
+    applySeasonFilters();
   }
 
   function openLevelWarning(className, time) {
-    if (levelFilterOn) return; // shouldn't be reachable but guard anyway
+    if (levelFilterOn) return;
     document.getElementById('level-warning-class').textContent = className + ' - ' + time;
     document.getElementById('level-warning-modal').classList.add('open');
   }
 
   function filterCasualToPractice() {
-    // Click the "Practice time" filter button in the casual tab
     const btns = document.querySelectorAll('#panel-casual .filter-btn');
     btns.forEach(b => { if (b.textContent.trim() === 'Practice time') b.click(); });
   }
@@ -2545,19 +2718,19 @@
     const isLevel = state === 'level';
     document.getElementById('season-demo-level').classList.toggle('active', isLevel);
     document.getElementById('season-demo-nolevel').classList.toggle('active', !isLevel);
-    document.getElementById('season-nolevel-banner').style.display  = isLevel ? 'none' : 'block';
-    document.getElementById('season-level-toggle').style.display    = isLevel ? '' : 'none';
-    document.getElementById('season-classes-levelled').style.display = isLevel ? 'block' : 'none';
-    document.getElementById('season-classes-all').style.display      = isLevel ? 'none' : 'block';
+    document.getElementById('season-nolevel-banner').style.display = isLevel ? 'none' : 'block';
+    document.getElementById('season-level-toggle').style.display   = isLevel ? '' : 'none';
     document.getElementById('season-intro-text').textContent = isLevel
-      ? 'Select your classes below - your pricing updates automatically as you add more. Only classes you\'re eligible for based on your current level are shown.'
-      : 'Select your classes below - your pricing updates automatically as you add more. Your level will be confirmed by your instructor in your first class.';
+      ? 'Select your classes below — your pricing updates automatically as you add more. Only classes you\'re eligible for based on your current level are shown.'
+      : 'Select your classes below — your pricing updates automatically as you add more. Your level will be confirmed by your instructor in your first class.';
+    if (!isLevel) {
+      document.querySelectorAll('#season-class-list .class-row').forEach(r => r.style.display = '');
+    } else {
+      applySeasonFilters();
+    }
   }
 
-  // Init: hide locked section (toggle is On by default)
-  document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('season-locked-section').style.display = 'none';
-  });
+  document.addEventListener('DOMContentLoaded', () => { applySeasonFilters(); });
 
   function toggleClass(id, name, time, el) {
     if (el.classList.contains('locked')) return;
@@ -2573,7 +2746,7 @@
 
   function removeFromCart(id) {
     delete cart[id];
-    document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
+    document.querySelectorAll('.class-card, .class-row').forEach(c => c.classList.remove('selected'));
     Object.keys(cart).forEach(k => {
       // re-select remaining
     });
