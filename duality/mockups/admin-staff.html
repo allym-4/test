@@ -194,6 +194,11 @@ tr:hover td { background: #0d0d0d; }
 .att-note-btn { background: none; border: none; color: var(--grey); cursor: pointer; font-size: 14px; padding: 4px; border-radius: 4px; }
 .att-note-btn:hover { color: var(--white); background: #222; }
 .att-fee-msg { font-size: 11px; color: #ff6b6b; margin-top: 4px; }
+.att-fee-waived { font-size: 11px; color: var(--amber); margin-top: 4px; display:none; }
+.att-status-sel.sel-noshow-waived { border-color: var(--amber); color: var(--amber); background-color: #1a0f00; }
+.owing-badge { display:inline-block; font-size:10px; font-weight:600; background:#2a0000; color:#ff6b6b; border:1px solid #ff3333; border-radius:20px; padding:2px 7px; margin-top:3px; }
+.staff-notes-btn { background:none; border:1px solid #333; border-radius:6px; color:var(--amber); font-size:11px; padding:3px 8px; cursor:pointer; white-space:nowrap; }
+.staff-notes-btn:hover { background:#1a1a1a; }
 
 /* HOMEWORK CARD */
 .hw-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 12px; cursor: pointer; transition: border-color 0.15s; }
@@ -422,110 +427,164 @@ tr:hover td { background: #0d0d0d; }
       <div class="tbl-section" id="att-roster">
         <div style="padding:0 4px;">
           <!-- Roster rows -->
+          <!-- Row 0: Jess Malone — owing $120, staff note: shoulder injury -->
           <div class="att-row" id="att-row-0">
             <div class="s-avatar" style="background:var(--lav);">J</div>
-            <div class="att-name"><div class="att-name-text">Jess Malone</div><div class="att-level">Level 2 · Season 3</div></div>
+            <div class="att-name">
+              <div class="att-name-text">Jess Malone <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
+              <div class="att-level">Level 2 · Season 3</div>
+              <div class="owing-badge">$120 owing</div>
+            </div>
             <div class="att-type"><span class="tag tag-lav" style="font-size:10px;">Season</span></div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
               <select class="att-status-sel sel-present" id="sel-0" onchange="onStatusChange(0)">
                 <option value="present" selected>Present</option>
-                <option value="noshow">No-show</option>
+                <option value="noshow">No-show + $25 fee</option>
+                <option value="noshow-waived">No-show — fee waived</option>
                 <option value="late">Late</option>
                 <option value="excused">Excused</option>
               </select>
               <div class="att-fee-msg" id="fee-0" style="display:none;">$25 no-show fee will be added</div>
+              <div class="att-fee-waived" id="waived-0">No fee charged</div>
             </div>
-            <button class="att-note-btn" onclick="openNoteModal('Jess Malone')" title="Add note">✏️</button>
+            <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
+              <button class="staff-notes-btn" onclick="showStaffNotes('Jess Malone')">⚠ Notes</button>
+              <button class="att-note-btn" onclick="openNoteModal('Jess Malone')" title="Add attendance note">✏️</button>
+            </div>
           </div>
+          <!-- Row 1: Tara Bell — no notes, no owing -->
           <div class="att-row" id="att-row-1">
             <div class="s-avatar" style="background:#44ff99;">T</div>
-            <div class="att-name"><div class="att-name-text">Tara Bell</div><div class="att-level">Level 2 · Season 3</div></div>
+            <div class="att-name">
+              <div class="att-name-text">Tara Bell <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
+              <div class="att-level">Level 2 · Season 3</div>
+            </div>
             <div class="att-type"><span class="tag tag-lav" style="font-size:10px;">Season</span></div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
               <select class="att-status-sel sel-present" id="sel-1" onchange="onStatusChange(1)">
                 <option value="present" selected>Present</option>
-                <option value="noshow">No-show</option>
+                <option value="noshow">No-show + $25 fee</option>
+                <option value="noshow-waived">No-show — fee waived</option>
                 <option value="late">Late</option>
                 <option value="excused">Excused</option>
               </select>
               <div class="att-fee-msg" id="fee-1" style="display:none;">$25 no-show fee will be added</div>
+              <div class="att-fee-waived" id="waived-1">No fee charged</div>
             </div>
-            <button class="att-note-btn" onclick="openNoteModal('Tara Bell')" title="Add note">✏️</button>
+            <button class="att-note-btn" onclick="openNoteModal('Tara Bell')" title="Add attendance note">✏️</button>
           </div>
+          <!-- Row 2: Dana Park — owing $75 -->
           <div class="att-row" id="att-row-2">
             <div class="s-avatar" style="background:#ffcc88;">D</div>
-            <div class="att-name"><div class="att-name-text">Dana Park</div><div class="att-level">Level 2 · Season 3</div></div>
+            <div class="att-name">
+              <div class="att-name-text">Dana Park <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
+              <div class="att-level">Level 2 · Season 3</div>
+              <div class="owing-badge">$75 owing</div>
+            </div>
             <div class="att-type"><span class="tag tag-grey" style="font-size:10px;">Casual</span></div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
               <select class="att-status-sel sel-present" id="sel-2" onchange="onStatusChange(2)">
                 <option value="present" selected>Present</option>
-                <option value="noshow">No-show</option>
+                <option value="noshow">No-show + $25 fee</option>
+                <option value="noshow-waived">No-show — fee waived</option>
                 <option value="late">Late</option>
                 <option value="excused">Excused</option>
               </select>
               <div class="att-fee-msg" id="fee-2" style="display:none;">$25 no-show fee will be added</div>
+              <div class="att-fee-waived" id="waived-2">No fee charged</div>
             </div>
-            <button class="att-note-btn" onclick="openNoteModal('Dana Park')" title="Add note">✏️</button>
+            <button class="att-note-btn" onclick="openNoteModal('Dana Park')" title="Add attendance note">✏️</button>
           </div>
+          <!-- Row 3: Nina Torres — staff note: cross-enrol, check cert -->
           <div class="att-row" id="att-row-3">
             <div class="s-avatar" style="background:#b0f0b0;">N</div>
-            <div class="att-name"><div class="att-name-text">Nina Torres</div><div class="att-level">Level 3 · Season 3 (cross-enrol)</div></div>
+            <div class="att-name">
+              <div class="att-name-text">Nina Torres <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
+              <div class="att-level">Level 3 · Season 3 (cross-enrol)</div>
+            </div>
             <div class="att-type"><span class="tag tag-lav" style="font-size:10px;">Season</span></div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
               <select class="att-status-sel sel-present" id="sel-3" onchange="onStatusChange(3)">
                 <option value="present" selected>Present</option>
-                <option value="noshow">No-show</option>
+                <option value="noshow">No-show + $25 fee</option>
+                <option value="noshow-waived">No-show — fee waived</option>
                 <option value="late">Late</option>
                 <option value="excused">Excused</option>
               </select>
               <div class="att-fee-msg" id="fee-3" style="display:none;">$25 no-show fee will be added</div>
+              <div class="att-fee-waived" id="waived-3">No fee charged</div>
             </div>
-            <button class="att-note-btn" onclick="openNoteModal('Nina Torres')" title="Add note">✏️</button>
+            <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
+              <button class="staff-notes-btn" onclick="showStaffNotes('Nina Torres')">⚠ Notes</button>
+              <button class="att-note-btn" onclick="openNoteModal('Nina Torres')" title="Add attendance note">✏️</button>
+            </div>
           </div>
+          <!-- Row 4: Hannah Webb — no notes -->
           <div class="att-row" id="att-row-4">
             <div class="s-avatar" style="background:#9ac4ff;">H</div>
-            <div class="att-name"><div class="att-name-text">Hannah Webb</div><div class="att-level">Level 1 · Season 3 (drop-in)</div></div>
+            <div class="att-name">
+              <div class="att-name-text">Hannah Webb <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
+              <div class="att-level">Level 1 · Season 3 (drop-in)</div>
+            </div>
             <div class="att-type"><span class="tag tag-grey" style="font-size:10px;">Casual</span></div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
               <select class="att-status-sel sel-present" id="sel-4" onchange="onStatusChange(4)">
                 <option value="present" selected>Present</option>
-                <option value="noshow">No-show</option>
+                <option value="noshow">No-show + $25 fee</option>
+                <option value="noshow-waived">No-show — fee waived</option>
                 <option value="late">Late</option>
                 <option value="excused">Excused</option>
               </select>
               <div class="att-fee-msg" id="fee-4" style="display:none;">$25 no-show fee will be added</div>
+              <div class="att-fee-waived" id="waived-4">No fee charged</div>
             </div>
-            <button class="att-note-btn" onclick="openNoteModal('Hannah Webb')" title="Add note">✏️</button>
+            <button class="att-note-btn" onclick="openNoteModal('Hannah Webb')" title="Add attendance note">✏️</button>
           </div>
+          <!-- Row 5: Amber Cole — staff note: 3 no-shows, difficult, owing $50 -->
           <div class="att-row" id="att-row-5">
             <div class="s-avatar" style="background:#ffb3de;">A</div>
-            <div class="att-name"><div class="att-name-text">Amber Cole</div><div class="att-level">Level 1 · Season 3</div></div>
+            <div class="att-name">
+              <div class="att-name-text">Amber Cole <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
+              <div class="att-level">Level 1 · Season 3</div>
+              <div class="owing-badge">$50 owing</div>
+            </div>
             <div class="att-type"><span class="tag tag-lav" style="font-size:10px;">Season</span></div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
               <select class="att-status-sel sel-present" id="sel-5" onchange="onStatusChange(5)">
                 <option value="present" selected>Present</option>
-                <option value="noshow">No-show</option>
+                <option value="noshow">No-show + $25 fee</option>
+                <option value="noshow-waived">No-show — fee waived</option>
                 <option value="late">Late</option>
                 <option value="excused">Excused</option>
               </select>
               <div class="att-fee-msg" id="fee-5" style="display:none;">$25 no-show fee will be added</div>
+              <div class="att-fee-waived" id="waived-5">No fee charged</div>
             </div>
-            <button class="att-note-btn" onclick="openNoteModal('Amber Cole')" title="Add note">✏️</button>
+            <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
+              <button class="staff-notes-btn" onclick="showStaffNotes('Amber Cole')">⚠ Notes</button>
+              <button class="att-note-btn" onclick="openNoteModal('Amber Cole')" title="Add attendance note">✏️</button>
+            </div>
           </div>
+          <!-- Row 6: Sophie Lawson — no notes -->
           <div class="att-row" id="att-row-6">
             <div class="s-avatar" style="background:var(--lime);">S</div>
-            <div class="att-name"><div class="att-name-text">Sophie Lawson</div><div class="att-level">Level 1 · Season 3</div></div>
+            <div class="att-name">
+              <div class="att-name-text">Sophie Lawson <span style="font-size:11px;color:var(--grey);font-weight:400;">they/them</span></div>
+              <div class="att-level">Level 1 · Season 3</div>
+            </div>
             <div class="att-type"><span class="tag tag-lav" style="font-size:10px;">Season</span></div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
               <select class="att-status-sel sel-present" id="sel-6" onchange="onStatusChange(6)">
                 <option value="present" selected>Present</option>
-                <option value="noshow">No-show</option>
+                <option value="noshow">No-show + $25 fee</option>
+                <option value="noshow-waived">No-show — fee waived</option>
                 <option value="late">Late</option>
                 <option value="excused">Excused</option>
               </select>
               <div class="att-fee-msg" id="fee-6" style="display:none;">$25 no-show fee will be added</div>
+              <div class="att-fee-waived" id="waived-6">No fee charged</div>
             </div>
-            <button class="att-note-btn" onclick="openNoteModal('Sophie Lawson')" title="Add note">✏️</button>
+            <button class="att-note-btn" onclick="openNoteModal('Sophie Lawson')" title="Add attendance note">✏️</button>
           </div>
         </div>
       </div>
@@ -985,20 +1044,61 @@ function openNoteModal(name) {
   openModal('modal-note');
 }
 
+const _staffNotes = {
+  'Jess Malone': [
+    { tag: 'Injury', text: 'Right shoulder impingement — avoid overhead loading and inverted drops. Check in before class.' },
+    { tag: 'Billing', text: 'On a payment plan. Balance $120 outstanding — do not turn away, flag to Allysha if issue arises.' },
+  ],
+  'Nina Torres': [
+    { tag: 'Enrolment', text: 'Cross-enrolled from Level 3. Confirm she has completed the Level 3 prerequisite assessment before attempting Level 4 moves.' },
+  ],
+  'Amber Cole': [
+    { tag: 'Attendance', text: '3 no-shows this season — already at the warning threshold. If she no-shows again, flag to Allysha before issuing another fee.' },
+    { tag: 'Conduct', text: 'Has been difficult with other students on two occasions. Escalate to Allysha if any conflict arises in class. Handle with care.' },
+    { tag: 'Billing', text: '$50 outstanding from no-show fees. Account may be blocked at next booking attempt.' },
+  ],
+};
+
+function showStaffNotes(name) {
+  const notes = _staffNotes[name] || [];
+  const modal = document.getElementById('modal-staff-notes');
+  document.getElementById('snotes-title').textContent = 'Staff Notes — ' + name;
+  const body = document.getElementById('snotes-body');
+  body.innerHTML = '';
+  if (!notes.length) {
+    body.innerHTML = '<div style="color:var(--grey);font-size:13px;">No staff notes for this student.</div>';
+  } else {
+    notes.forEach(n => {
+      const tagColor = n.tag === 'Injury' ? 'var(--amber)' : n.tag === 'Conduct' ? '#ff6b6b' : n.tag === 'Billing' ? '#ff6b6b' : 'var(--lav)';
+      body.innerHTML += '<div style="padding:12px 14px;background:#1a1a1a;border-radius:8px;margin-bottom:8px;">' +
+        '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + tagColor + ';margin-bottom:6px;">' + n.tag + '</div>' +
+        '<div style="font-size:13px;line-height:1.5;">' + n.text + '</div></div>';
+    });
+  }
+  openModal('modal-staff-notes');
+}
+
 function onStatusChange(idx) {
   const sel = document.getElementById('sel-' + idx);
   const row = document.getElementById('att-row-' + idx);
   const fee = document.getElementById('fee-' + idx);
+  const waived = document.getElementById('waived-' + idx);
   const val = sel.value;
   sel.className = 'att-status-sel';
   row.style.background = '';
-  fee.style.display = 'none';
+  if (fee) fee.style.display = 'none';
+  if (waived) waived.style.display = 'none';
   if(val === 'noshow') {
     sel.classList.add('sel-noshow');
     row.style.background = '#1a0000';
-    fee.style.display = 'block';
+    if (fee) fee.style.display = 'block';
+  } else if(val === 'noshow-waived') {
+    sel.classList.add('sel-noshow-waived');
+    row.style.background = '#1a0f00';
+    if (waived) waived.style.display = 'block';
   } else if(val === 'present') {
     sel.classList.add('sel-present');
+    row.style.background = '#001a05';
   } else if(val === 'late') {
     sel.classList.add('sel-late');
   } else if(val === 'excused') {
@@ -1014,19 +1114,23 @@ function markAllPresent() {
 }
 
 function saveRegister() {
-  let present = 0, noshow = 0, late = 0;
+  let present = 0, noshow = 0, waived = 0, late = 0, excused = 0;
   for(let i = 0; i < 7; i++) {
     const sel = document.getElementById('sel-' + i);
     if(!sel) continue;
     if(sel.value === 'present') present++;
     else if(sel.value === 'noshow') noshow++;
+    else if(sel.value === 'noshow-waived') waived++;
     else if(sel.value === 'late') late++;
+    else if(sel.value === 'excused') excused++;
   }
   const summary = document.getElementById('att-summary');
   summary.classList.add('visible');
   summary.innerHTML = '✓ Register saved — <b style="color:var(--lime);">' + present + ' attended</b>' +
     (noshow ? ', <b style="color:#ff6b6b;">' + noshow + ' no-show' + (noshow > 1 ? 's' : '') + '</b> ($' + (noshow * 25) + ' in fees added)' : '') +
-    (late ? ', <b style="color:var(--amber);">' + late + ' late</b>' : '') + '.';
+    (waived ? ', <b style="color:var(--amber);">' + waived + ' no-show (fee waived)</b>' : '') +
+    (late ? ', <b style="color:var(--amber);">' + late + ' late</b>' : '') +
+    (excused ? ', <b style="color:var(--lav);">' + excused + ' excused</b>' : '') + '.';
 }
 
 function openStudentReadPanel(name) {
@@ -1101,5 +1205,27 @@ function removeHwItem(btn) {
   if(row) row.remove();
 }
 </script>
+
+<!-- STAFF NOTES MODAL -->
+<div class="modal-overlay" id="modal-staff-notes">
+  <div class="modal" style="max-width:460px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div>
+        <div id="snotes-title" style="font-family:'Archivo Black',sans-serif;font-size:16px;"></div>
+        <div style="font-size:11px;color:var(--grey);margin-top:3px;">Internal staff notes — not visible to student</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-staff-notes')" style="background:none;border:none;color:var(--grey);font-size:20px;cursor:pointer;padding:4px 8px;border-radius:6px;">✕</button>
+    </div>
+    <div id="snotes-body"></div>
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+      <div style="font-size:11px;color:var(--grey);margin-bottom:8px;">Add a note (visible to all staff)</div>
+      <textarea placeholder="e.g. 'Prone to injury — check in before class'" style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;font-size:13px;min-height:70px;resize:none;"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn btn-lime btn-sm" onclick="alert('Note saved');closeModal('modal-staff-notes')">Save Note</button>
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-staff-notes')">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
