@@ -3902,8 +3902,17 @@
       <div id="co-card-fields" style="display:none">
       </div>
 
-      <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px">
-        <button class="btn btn-lime" style="width:100%" id="pay-btn" onclick="closeModal('checkout-modal')">Confirm and pay - <span id="checkout-btn-val"></span></button>
+      <!-- Discount code -->
+      <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px">
+        <div id="co-discount-row" style="display:flex;gap:8px;align-items:center">
+          <input id="co-discount-input" style="flex:1;background:#111;border:1px solid #333;border-radius:8px;padding:9px 14px;color:var(--white);font-family:'Archivo',sans-serif;font-size:13px" placeholder="Discount code (optional)" oninput="this.value=this.value.toUpperCase()">
+          <button class="btn btn-ghost btn-sm" style="white-space:nowrap" onclick="applyDiscountCode()">Apply</button>
+        </div>
+        <div id="co-discount-result" style="display:none;margin-top:8px;font-size:13px;padding:8px 12px;background:#0a1800;border:1px solid var(--lime);border-radius:8px;color:var(--lime)"></div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px">
+        <button class="btn btn-lime" style="width:100%" id="pay-btn" onclick="closeModal('checkout-modal');showBookingSuccess('enrol')">Confirm and pay - <span id="checkout-btn-val"></span></button>
         <button class="btn btn-outline" style="width:100%" onclick="showCoStep('plan')">Request a payment plan</button>
         <button class="btn btn-ghost" style="width:100%" onclick="showCoStep('cash')">I want to pay cash</button>
       </div>
@@ -6203,6 +6212,49 @@
     });
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 4000);
+  }
+
+  // ─── DISCOUNT CODES ───────────────────────────────────────────────────────
+  const _discountCodes = {
+    'NEWPOLE10': { type: 'pct', value: 10, label: '10% off — NEWPOLE10 applied' },
+    'SUMMER25':  { type: 'fixed', value: 25, label: '$25 off — SUMMER25 applied' },
+    'FRIEND50':  { type: 'pct', value: 50, label: '50% off — FRIEND50 applied' },
+    'TRIAL0':    { type: 'free', value: 100, label: 'Free trial — no charge today' },
+    'EARLYBIRD': { type: 'pct', value: 15, label: '15% off — EARLYBIRD applied' },
+  };
+  let _appliedDiscount = null;
+
+  function applyDiscountCode() {
+    const code = (document.getElementById('co-discount-input').value || '').trim().toUpperCase();
+    const result = document.getElementById('co-discount-result');
+    const d = _discountCodes[code];
+    if (!d) {
+      result.style.display = '';
+      result.style.background = '#1a0000';
+      result.style.borderColor = '#662222';
+      result.style.color = '#f87171';
+      result.textContent = 'Code not found or expired.';
+      _appliedDiscount = null;
+      return;
+    }
+    _appliedDiscount = d;
+    result.style.display = '';
+    result.style.background = '#0a1800';
+    result.style.borderColor = 'var(--lime)';
+    result.style.color = 'var(--lime)';
+    result.textContent = '✓ ' + d.label;
+    // Update pay button price
+    const valEl = document.getElementById('checkout-btn-val');
+    const payBtn = document.getElementById('pay-btn');
+    if (valEl && payBtn) {
+      const rawText = valEl.textContent.replace(/[^0-9.]/g, '');
+      const orig = parseFloat(rawText) || 0;
+      let discounted = orig;
+      if (d.type === 'pct') discounted = orig * (1 - d.value / 100);
+      else if (d.type === 'fixed') discounted = Math.max(0, orig - d.value);
+      else if (d.type === 'free') discounted = 0;
+      valEl.innerHTML = `<s style="opacity:0.5;font-size:0.85em">$${orig.toFixed(0)}</s> $${discounted.toFixed(0)}`;
+    }
   }
 
   function showToast(msg, bg) {
