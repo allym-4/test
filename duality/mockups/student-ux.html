@@ -182,21 +182,21 @@
   .class-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
   .class-instructor { font-size: 13px; color: var(--grey); }
 
-  /* SEASON CLASS ROWS (flat list) */
-  .class-row {
+  /* SEASON CLASS ROWS (flat list) — scoped to avoid dashboard .class-row conflicts */
+  #season-class-list .class-row {
     display: flex; align-items: center; gap: 14px;
     padding: 12px 14px; border: 1px solid var(--border);
     border-radius: 10px; margin-bottom: 8px; cursor: pointer;
     background: var(--card); transition: all 0.15s;
   }
-  .class-row:hover { border-color: #333; background: #1a1a1a; }
-  .class-row.selected { border-color: var(--lime); background: #0d1200; }
-  .class-row.locked { opacity: 0.38; cursor: not-allowed; }
+  #season-class-list .class-row:hover { border-color: #333; background: #1a1a1a; }
+  #season-class-list .class-row.selected { border-color: var(--lime); background: #0d1200; }
+  #season-class-list .class-row.locked { opacity: 0.38; cursor: not-allowed; }
   .class-row-time-block {
     min-width: 68px; text-align: center;
     background: #191919; border-radius: 7px; padding: 7px 8px; flex-shrink: 0;
   }
-  .class-row.selected .class-row-time-block { background: #0a1800; }
+  #season-class-list .class-row.selected .class-row-time-block { background: #0a1800; }
   .class-row-day-label {
     font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
     text-transform: uppercase; color: var(--grey);
@@ -205,9 +205,9 @@
     font-family: 'Archivo Black', sans-serif; font-size: 16px;
     color: var(--lime); line-height: 1.2; margin-top: 1px;
   }
-  .class-row.locked .class-row-time-label { color: #555; }
+  #season-class-list .class-row.locked .class-row-time-label { color: #555; }
   .class-row-body { flex: 1; min-width: 0; }
-  .class-row-name { font-family: 'Archivo Black', sans-serif; font-size: 15px; color: var(--white); }
+  .class-row-body .class-row-name { font-family: 'Archivo Black', sans-serif; font-size: 15px; color: var(--white); }
   .class-row-instr { font-size: 13px; color: var(--grey); margin-top: 2px; }
   .class-row-tags { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; flex-shrink: 0; }
   .class-row-check {
@@ -215,8 +215,8 @@
     border: 2px solid #333; display: flex; align-items: center; justify-content: center;
     font-size: 11px; color: transparent; flex-shrink: 0; transition: all 0.15s;
   }
-  .class-row.selected .class-row-check { background: var(--lime); border-color: var(--lime); color: var(--black); }
-  .class-row.locked .class-row-check { display: none; }
+  #season-class-list .class-row.selected .class-row-check { background: var(--lime); border-color: var(--lime); color: var(--black); }
+  #season-class-list .class-row.locked .class-row-check { display: none; }
   .class-row-lock { font-size: 13px; color: #3a3a3a; flex-shrink: 0; }
 
   /* FILTER GROUPS */
@@ -225,6 +225,78 @@
     font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
     text-transform: uppercase; color: var(--grey); margin-bottom: 6px;
   }
+
+  /* MORE INFO BUTTON on class rows */
+  .class-info-btn {
+    display: inline-block; margin-top: 5px;
+    font-size: 11px; color: var(--grey); background: none; border: none;
+    cursor: pointer; padding: 0; text-decoration: underline;
+    text-underline-offset: 2px; transition: color 0.15s;
+  }
+  .class-info-btn:hover { color: var(--white); }
+
+  /* CLASS INFO MODAL extras */
+  .info-prereq-list { list-style: none; margin: 0; padding: 0; }
+  .info-prereq-list li {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--grey); padding: 5px 0;
+    border-bottom: 1px solid #1a1a1a;
+  }
+  .info-prereq-list li:last-child { border-bottom: none; }
+  .info-prereq-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--lime); flex-shrink: 0; }
+  .info-move-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border: 1px solid var(--border);
+    border-radius: 8px; margin-bottom: 6px; cursor: pointer; transition: all 0.15s;
+    user-select: none;
+  }
+  .info-move-item.done { border-color: var(--lime); background: #0a1800; }
+  .info-move-check {
+    width: 18px; height: 18px; border-radius: 50%; border: 2px solid #444;
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: transparent; transition: all 0.15s;
+  }
+  .info-move-item.done .info-move-check { background: var(--lime); border-color: var(--lime); color: var(--black); }
+  .info-move-label { font-size: 13px; flex: 1; }
+  .info-move-item.done .info-move-label { color: var(--lime); text-decoration: line-through; text-decoration-color: #444; }
+
+  /* CHECKOUT UPSELL */
+  .upsell-card {
+    border: 1px solid #2a2a2a; border-radius: 10px; padding: 14px 16px;
+    margin-bottom: 10px; display: flex; gap: 14px; align-items: flex-start;
+  }
+  .upsell-card-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+  .upsell-card-body { flex: 1; min-width: 0; }
+  .upsell-card-name { font-family: 'Archivo Black', sans-serif; font-size: 14px; color: var(--white); margin-bottom: 4px; }
+  .upsell-card-reason { font-size: 12px; color: var(--grey); line-height: 1.5; margin-bottom: 8px; }
+  .upsell-card-add { font-size: 12px; color: var(--lime); cursor: pointer; background: none; border: none; padding: 0; text-decoration: underline; text-underline-offset: 2px; }
+
+  /* LEVEL PROGRESSION TRACKER */
+  .level-progress-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px 22px; margin-bottom: 24px;
+  }
+  .level-progress-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+  }
+  .level-progress-title { font-family: 'Archivo Black', sans-serif; font-size: 15px; }
+  .level-progress-sub { font-size: 12px; color: var(--grey); margin-top: 2px; line-height: 1.5; }
+  .level-move-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border: 1px solid var(--border);
+    border-radius: 8px; margin-bottom: 6px; cursor: pointer;
+    transition: all 0.15s; user-select: none;
+  }
+  .level-move-row:hover { border-color: #333; }
+  .level-move-row.ticked { border-color: var(--lime); background: #0a1800; }
+  .level-move-tick {
+    width: 18px; height: 18px; border-radius: 50%; border: 2px solid #444;
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: transparent; transition: all 0.15s;
+  }
+  .level-move-row.ticked .level-move-tick { background: var(--lime); border-color: var(--lime); color: var(--black); }
+  .level-move-name { font-size: 13px; flex: 1; }
+  .level-move-row.ticked .level-move-name { color: var(--lime); text-decoration: line-through; text-decoration-color: #3a3a3a; }
 
   /* FILTERS */
   .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 26px; }
@@ -547,7 +619,7 @@
     .class-day  { font-size: 11px; }
 
     /* Season class rows */
-    .class-row { gap: 10px; padding: 10px 12px; }
+    #season-class-list .class-row { gap: 10px; padding: 10px 12px; }
     .class-row-time-block { min-width: 58px; padding: 6px 7px; }
     .class-row-time-label { font-size: 14px; }
     .class-row-tags { display: none; }
@@ -671,6 +743,38 @@
           Did you know adding a 3rd class drops your per-class cost by $20? You'd also unlock <span style="color:var(--lime)">1 free practice session per week</span>.
         </div>
         <button class="btn btn-outline btn-sm" onclick="showScreen('book');showBookTab('season')">Add a class to Season 4</button>
+      </div>
+
+      <!-- Level progression tracker -->
+      <div class="level-progress-card">
+        <div class="level-progress-header">
+          <div>
+            <div class="level-progress-title">Ready for Level 3?</div>
+            <div class="level-progress-sub">Tick off these moves as you nail them. Your instructor signs you off when you're ready to move up.</div>
+          </div>
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--grey)" id="level-progress-count">0 / 4</div>
+        </div>
+        <div id="level-progress-moves">
+          <div class="level-move-row" onclick="toggleLevelMove(this)">
+            <div class="level-move-tick">✓</div>
+            <div class="level-move-name">Invert</div>
+          </div>
+          <div class="level-move-row" onclick="toggleLevelMove(this)">
+            <div class="level-move-tick">✓</div>
+            <div class="level-move-name">Bat</div>
+          </div>
+          <div class="level-move-row" onclick="toggleLevelMove(this)">
+            <div class="level-move-tick">✓</div>
+            <div class="level-move-name">Handstands with chest on pole (stag and open leg)</div>
+          </div>
+          <div class="level-move-row" onclick="toggleLevelMove(this)">
+            <div class="level-move-tick">✓</div>
+            <div class="level-move-name">Open Leg Jamilla</div>
+          </div>
+        </div>
+        <div id="level-progress-complete" style="display:none;margin-top:12px;padding:12px 14px;background:#0a1800;border:1px solid var(--lime);border-radius:8px;font-size:13px;color:var(--lime)">
+          🎉 Looking good! Let your instructor know — they'll do a formal check-off and get you enrolled in Level 3.
+        </div>
       </div>
 
       <div class="grid-4 mb-24">
@@ -1868,6 +1972,12 @@
       </div>
     </div>
 
+    <!-- UPSELL (shown when suggestions exist) -->
+    <div id="checkout-upsell" style="display:none;margin-bottom:22px">
+      <div style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--grey);margin-bottom:10px">Before you checkout</div>
+      <div id="checkout-upsell-cards"></div>
+    </div>
+
     <!-- STEP 1: Choose payment type -->
     <div id="co-step-1">
       <div style="font-size:15px;font-weight:500;margin-bottom:14px">How would you like to pay?</div>
@@ -2212,7 +2322,7 @@
         </div>
         <div class="onboard-option" onclick="showOnboardStep('level-q1a')">
           <div class="onboard-dot"></div>
-          <div><div class="onboard-option-title">A little - with help or a wall</div></div>
+          <div><div class="onboard-option-title">A little - with a spotter or spot of help</div></div>
         </div>
         <div class="onboard-option" onclick="showOnboardStep('level-q2-floor')">
           <div class="onboard-dot"></div>
@@ -2352,7 +2462,7 @@
         <div class="onboard-option" onclick="showOnboardStep('suppl-q2-dance')">
           <div class="onboard-dot"></div>
           <div>
-            <div class="onboard-option-title">Contemporary and sensual movement</div>
+            <div class="onboard-option-title">Sensual movement and pole dance</div>
             <div class="onboard-option-sub">Dance, Dance Virgin, Floor, Floor Virgin</div>
           </div>
         </div>
@@ -2625,6 +2735,48 @@
   </div>
 </div>
 
+<!-- CLASS INFO MODAL -->
+<div class="modal-overlay" id="class-info-modal">
+  <div class="modal" style="max-width:480px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <div class="modal-title" id="ci-name">Class Name</div>
+        <div style="margin-top:4px" id="ci-tag-wrap"><span class="tag tag-grey" id="ci-tag"></span></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('class-info-modal')">Close</button>
+    </div>
+
+    <div style="font-size:14px;color:var(--grey);line-height:1.7;margin-bottom:20px" id="ci-desc"></div>
+
+    <!-- Prerequisites -->
+    <div id="ci-prereqs-wrap" style="display:none;margin-bottom:20px">
+      <div style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--grey);margin-bottom:8px">Prerequisites</div>
+      <ul class="info-prereq-list" id="ci-prereqs"></ul>
+    </div>
+
+    <!-- To progress to next level -->
+    <div id="ci-progress-wrap" style="display:none;margin-bottom:20px">
+      <div style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--lime);margin-bottom:4px">To move up to <span id="ci-progress-to"></span></div>
+      <div style="font-size:12px;color:var(--grey);margin-bottom:10px">Tick these off as you nail them. Your instructor confirms when you're ready.</div>
+      <div id="ci-progress-moves"></div>
+    </div>
+
+    <!-- Format + What to bring -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px" id="ci-meta-grid">
+      <div style="background:#0d0d0d;border:1px solid var(--border);border-radius:8px;padding:12px 14px">
+        <div style="font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--grey);margin-bottom:5px">Format</div>
+        <div style="font-size:13px;color:var(--white);line-height:1.5" id="ci-format"></div>
+      </div>
+      <div style="background:#0d0d0d;border:1px solid var(--border);border-radius:8px;padding:12px 14px">
+        <div style="font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--grey);margin-bottom:5px">What to bring</div>
+        <div style="font-size:13px;color:var(--white);line-height:1.5" id="ci-bring"></div>
+      </div>
+    </div>
+
+    <button class="btn btn-lime" style="width:100%" id="ci-cta" onclick="closeModal('class-info-modal');showScreen('book');showBookTab('season')">Book this class</button>
+  </div>
+</div>
+
 <script>
   const PRICING   = [0, 270, 440, 580, 700, 800, 900];
   const PER_CLASS = [0, 33.75, 27.50, 24.15, 21.80, 20.00, 18.75];
@@ -2730,7 +2882,296 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => { applySeasonFilters(); });
+  // ─── CLASS INFO DATA ──────────────────────────────────────────────────────
+  const CLASS_INFO = {
+    'level-1': {
+      name: 'Level 1', tag: 'No prerequisites',
+      description: 'Your pole era starts here. Learn spins, grips, floorwork to build strength and tease out your sensual side. You\'ll also learn how to put it all together and dance a full routine. Perfect if you\'ve never touched a pole before (and no, drunk on Cityrail doesn\'t count).',
+      format: '8-week season — builds into a full routine you can perform at the end-of-season showcase.',
+      bring: 'Shorts or hotpants (thigh and stomach skin is your grip), sports bra. Heels optional.',
+      prereqs: null,
+      progressMoves: ['Front Hook Spin', 'Back Hook Spin', 'Kate Moss', 'Climb', 'Jamilla', 'Sit'],
+      progressTo: 'Level 2',
+    },
+    'level-2': {
+      name: 'Level 2', tag: 'Level 2',
+      description: 'Can you execute all your tricks from Level 1? Wow, you\'re amazing! Time to climb higher, invert for the first time (yes, that\'s upside down — you\'re ready).',
+      format: '8-week season — builds into a full routine you can perform at the end-of-season showcase.',
+      bring: 'Shorts or hotpants, sports bra. Heels optional.',
+      prereqs: ['Front Hook Spin', 'Back Hook Spin', 'Kate Moss', 'Climb', 'Jamilla', 'Sit'],
+      progressMoves: ['Invert', 'Bat', 'Handstands with chest on pole (stag and open leg)', 'Open Leg Jamilla'],
+      progressTo: 'Level 3',
+    },
+    'level-3': {
+      name: 'Level 3', tag: 'Level 3+',
+      description: 'You\'re officially upside down and zen about it. Expect single-limb hangs, trickier spins, and routines that test your grit (and your thigh skin). Think carnival ride chaos, minus the creepy carnie.',
+      format: '8-week season — builds into a full routine you can perform at the end-of-season showcase.',
+      bring: 'Shorts or hotpants, sports bra. Heels optional.',
+      prereqs: ['Invert', 'Bat', 'Handstands with chest on pole (stag and open leg)', 'Open Leg Jamilla'],
+      progressMoves: ['Invert from Climb', 'Outside Leg Hang', 'Layback'],
+      progressTo: 'Level 4',
+    },
+    'level-4': {
+      name: 'Level 4', tag: 'Level 4+',
+      description: 'The floor is lava, babe. You\'ll chain together long, brain-bending combos with inversions and seamless transitions, all wrapped into a sweaty, stamina-testing routine.',
+      format: '8-week season — builds into a full routine you can perform at the end-of-season showcase.',
+      bring: 'Shorts or hotpants, sports bra. Heels optional.',
+      prereqs: ['Invert from Climb', 'Outside Leg Hang', 'Layback'],
+      progressMoves: ['Shoulder Mount', 'Inside Leg Hang', 'Pike', 'Venus/Butterfly', 'Starfish to Nosedive', 'Superman', 'Worm'],
+      progressTo: 'Level 5',
+    },
+    'level-5': {
+      name: 'Level 5', tag: 'Level 5+',
+      description: 'Did you get through your Level 4 routine and barely miss a beat? You\'ve earned your stripes. Learn a myriad of new tricks and fancier long combos and transitions, then stitch them into Duality-style choreography. Challenging and equally satisfying.',
+      format: '8-week season — builds into a full routine you can perform at the end-of-season showcase.',
+      bring: 'Shorts or hotpants, sports bra. Heels optional.',
+      prereqs: ['Shoulder Mount', 'Inside Leg Hang', 'Pike', 'Venus/Butterfly', 'Starfish to Nosedive', 'Superman', 'Worm'],
+      progressMoves: ['Twisted Grip Static V (Ayesha)', 'Extended Butterfly from Jamilla', 'Allegra Variations', 'Switcheroo'],
+      progressTo: 'Level 6',
+    },
+    'level-6': {
+      name: 'Level 6', tag: 'Level 6',
+      description: 'The wild, wild west of pole. Expect handstands everywhere, elite tricks fresh from the industry, and artistry that\'ll have you comp-ready before you can say "Miss Pole Dance." Limit? Never met her.',
+      format: '8-week season — builds into a full routine you can perform at the end-of-season showcase.',
+      bring: 'Shorts or hotpants, sports bra. Heels optional.',
+      prereqs: ['Twisted Grip Static V (Ayesha)', 'Extended Butterfly from Jamilla', 'Allegra Variations', 'Switcheroo'],
+      progressMoves: null, progressTo: null,
+    },
+    'dance': {
+      name: 'Dance', tag: 'Level 2+',
+      description: 'Already comfortable with the basics? Jump into a new pole-based routine every week. Fun, sweaty, nostalgic, and a little cheeky.',
+      format: 'Routine changes weekly — drop in any time.',
+      bring: 'Heels highly recommended. Shorts or dance attire.',
+      prereqs: null, progressMoves: null, progressTo: null,
+    },
+    'dance-virgin': {
+      name: 'Dance Virgin', tag: 'Beginner',
+      description: 'First time dancing? We\'ll keep the pace slower and treat you extra kind while you learn funky grips, transitions, and a fresh routine each week.',
+      format: 'Routine changes weekly — drop in any time.',
+      bring: 'Heels highly recommended. Shorts or dance attire.',
+      prereqs: null, progressMoves: null, progressTo: null,
+    },
+    'strip': {
+      name: 'Strip', tag: 'Level 3+',
+      description: 'For Level 3+ or experienced dancers. A spicier class with sexier choreography, clever reveals, and floorwork that oozes confidence.',
+      format: '8-week season choreography.',
+      bring: 'Heels required. Lingerie or showgirl-style attire welcome.',
+      prereqs: null, progressMoves: null, progressTo: null,
+    },
+    'strip-virgin': {
+      name: 'Strip Virgin', tag: 'Beginner',
+      description: 'From brand new through Level 3. Flow around the pole and floor with sensual choreography, learning reveals and transitions at a slower pace.',
+      format: '8-week season choreography.',
+      bring: 'Heels optional but encouraged. Comfortable attire.',
+      prereqs: null, progressMoves: null, progressTo: null,
+    },
+    'chair': {
+      name: 'Chair', tag: 'Level 3+',
+      description: 'For Level 3+ students ready to dial up the sensuality and dance technique. Expect playful, powerful routines that make IKEA aisles feel like a stage.',
+      format: '8-week season choreography.',
+      bring: 'Heels required. Bring your most dramatic energy.',
+      prereqs: null, progressMoves: null, progressTo: null,
+    },
+    'floor-virgin': {
+      name: 'Floor Virgin', tag: 'Beginner',
+      description: 'New to floorwork? Learn fundamental rolls and transitions put together in a fun, sexy routine you\'ll learn and perfect over 8 weeks.',
+      format: '8-week season.',
+      bring: 'Comfy shorts, bare feet or socks. Knee pads optional.',
+      prereqs: null, progressMoves: null, progressTo: null,
+    },
+    'inter-floor': {
+      name: 'Inter Floor', tag: 'Floor Virgin grads',
+      description: 'Completed Floor Virgin looking for your next challenge? Look no further! Build upon your floorwork skills with harder holds, rolls and transitions.',
+      format: '8-week season.',
+      bring: 'Comfy shorts, bare feet or socks. Knee pads optional.',
+      prereqs: null, progressMoves: null, progressTo: null,
+    },
+    'advanced-floor': {
+      name: 'Advanced Floor', tag: 'Int Floor grads',
+      description: 'Are you comfortable with everything in Intermediate Floor? Cause you\'re gonna wanna be! Get ready to work, bitch — there are no limits!',
+      format: '8-week season.',
+      bring: 'Comfy shorts, bare feet or socks. Knee pads optional.',
+      prereqs: null, progressMoves: null, progressTo: null,
+    },
+    'dance-tech': {
+      name: 'Dance Tech', tag: 'All levels',
+      description: 'Learn how to move between tricks with fluidity, perfect turns and mesmerise yourself in the mirror (and anyone lucky enough to watch). The perfect addition to any levelled class. Why? Because good technique never goes out of style...',
+      format: 'Technique-focused — no routine. Drop in welcome.',
+      bring: 'Heels recommended. Comfortable attire.',
+      prereqs: null, progressMoves: null, progressTo: null,
+    },
+    'invert-tech': {
+      name: 'Invert Tech', tag: 'Level 2+',
+      description: 'Heads up (and soon, heads down): this class isn\'t for beginners. You\'ll train your inverts from the floor and up the pole with conditioning and focused technique. Expect to sweat, repeat, and nail that "arse up" moment. Suitable for those who\'ve finished at least one Level 2 season and beyond.',
+      format: 'Technique-focused conditioning — no routine.',
+      bring: 'Shorts or hotpants, sports bra.',
+      prereqs: null, progressMoves: null, progressTo: null,
+    },
+    'kiki': {
+      name: 'Kiki', tag: 'All levels',
+      description: 'Picture it: 2010, you\'re sweaty, electric, and taking over the dance floor at your favorite club. That\'s the vibe of Kiki, our signature class created by co-founder Mimi. You\'ll fire up those gorgeous muscles with conditioning, then melt into stretches that build full body flexibility.',
+      format: 'Conditioning and flexibility — no routine. Drop in any time.',
+      bring: 'Comfy workout attire. Grip socks optional.',
+      prereqs: null, progressMoves: null, progressTo: null,
+    },
+    'unravel': {
+      name: 'Unravel', tag: 'All levels',
+      description: 'Need something a little softer? Unravel is Kiki\'s more chilled-out cousin. You\'ll still work through conditioning and guided stretching, but at a slower pace with a focus on release and recovery. A class to sweat less and reset more.',
+      format: 'Gentle conditioning and stretch — no routine. Drop in any time.',
+      bring: 'Comfy workout attire, yoga mat if you have one.',
+      prereqs: null, progressMoves: null, progressTo: null,
+    },
+    '3-tricks': {
+      name: '3 Tricks', tag: 'Level 3+',
+      description: 'Leg hangs giving you attitude? Let\'s fix that. This session breaks down inside/outside hangs and transition tricks so you can flow into combos like a pro. For repeat Level 3+ polers only.',
+      format: 'Technique-focused — no routine.',
+      bring: 'Shorts or hotpants, sports bra.',
+      prereqs: null, progressMoves: null, progressTo: null,
+    },
+    '4-tricks': {
+      name: '4 Tricks', tag: 'Level 4+',
+      description: 'Everything you need to bridge the gap to Level 5. Focused technique drills on Level 4 prerequisites — shoulder mounts, inside leg hangs, pike, and big combos. For repeat Level 4 students only.',
+      format: 'Technique-focused — no routine.',
+      bring: 'Shorts or hotpants, sports bra.',
+      prereqs: null, progressMoves: null, progressTo: null,
+    },
+    '5-6-tricks': {
+      name: '5/6 Tricks', tag: 'Level 5+',
+      description: 'For the advanced pole dancer ready to explore beyond the usual. This no-routine class focuses on high-level skills — deadlifts, Bird of Paradise, Eagles, Satellite, and countless others. Each session, you\'ll get the space to refine and expand your repertoire.',
+      format: 'Advanced technique — no routine. Content changes weekly.',
+      bring: 'Shorts or hotpants, sports bra.',
+      prereqs: null, progressMoves: null, progressTo: null,
+    },
+    'high-tricks': {
+      name: 'High Tricks', tag: 'Level 6+',
+      description: 'For the advanced pole dancer ready to explore beyond the usual. This no-routine class focuses on high-level skills — deadlifts, Bird of Paradise, Eagles, Satellite, Janero, Hunter Press, Blenix, Phoenix and countless others. Let\'s not forget the handstands... Each session, you\'ll get the space to refine and expand your repertoire.',
+      format: 'Advanced technique — no routine. Content changes weekly.',
+      bring: 'Shorts or hotpants, sports bra.',
+      prereqs: null, progressMoves: null, progressTo: null,
+    },
+    'dirty-dance': {
+      name: 'Dirty Dance', tag: 'Level 3+',
+      description: 'Sensual pole dance choreography that builds week by week. Expect floor to pole transitions, body rolls, and movement that drips with intention. This is where pole meets its most seductive form.',
+      format: '8-week season choreography.',
+      bring: 'Heels recommended. Shorts or sensual attire.',
+      prereqs: null, progressMoves: null, progressTo: null,
+    },
+  };
+
+  function nameToKey(name) {
+    return name.toLowerCase().replace(/[\s/]+/g, '-').replace(/[^a-z0-9-]/g, '');
+  }
+
+  function openClassInfo(key) {
+    const info = CLASS_INFO[key];
+    if (!info) return;
+    document.getElementById('ci-name').textContent = info.name;
+    document.getElementById('ci-tag').textContent  = info.tag;
+    document.getElementById('ci-desc').textContent = info.description;
+    document.getElementById('ci-format').textContent = info.format;
+    document.getElementById('ci-bring').textContent  = info.bring;
+
+    // Prerequisites
+    const prereqWrap = document.getElementById('ci-prereqs-wrap');
+    const prereqList = document.getElementById('ci-prereqs');
+    if (info.prereqs && info.prereqs.length) {
+      prereqList.innerHTML = info.prereqs.map(m => `<li><span class="info-prereq-dot"></span>${m}</li>`).join('');
+      prereqWrap.style.display = 'block';
+    } else {
+      prereqWrap.style.display = 'none';
+    }
+
+    // Progress moves
+    const progWrap = document.getElementById('ci-progress-wrap');
+    const progMoves = document.getElementById('ci-progress-moves');
+    if (info.progressMoves && info.progressMoves.length) {
+      document.getElementById('ci-progress-to').textContent = info.progressTo;
+      progMoves.innerHTML = info.progressMoves.map(m =>
+        `<div class="info-move-item" onclick="this.classList.toggle('done')">
+          <div class="info-move-check">✓</div>
+          <div class="info-move-label">${m}</div>
+        </div>`
+      ).join('');
+      progWrap.style.display = 'block';
+    } else {
+      progWrap.style.display = 'none';
+    }
+
+    document.getElementById('class-info-modal').classList.add('open');
+  }
+
+  // ─── CHECKOUT UPSELL ──────────────────────────────────────────────────────
+  function getUpsellSuggestions() {
+    const cartNames = Object.values(cart).map(c => c.name);
+    const hasLevel  = n => cartNames.includes('Level ' + n);
+    const hasAny    = (...ns) => ns.some(n => cartNames.includes(n));
+    const hasCond   = () => hasAny('Kiki', 'Unravel', 'Dance Tech', 'Invert Tech', '3 Tricks', '4 Tricks', '5/6 Tricks', 'High Tricks');
+    const hasSpec   = () => hasAny('Dance', 'Strip', 'Dance Virgin', 'Strip Virgin', 'Dirty Dance', 'Chair', 'Floor Virgin');
+
+    const suggestions = [];
+
+    if ((hasLevel(5) || hasLevel(6)) && !hasAny('High Tricks', '5/6 Tricks'))
+      suggestions.push({ name: 'High Tricks', icon: '⭐', reason: 'Level 5+ students who add an open tricks class progress faster and get way more variety.' });
+    if ((hasLevel(4) || hasLevel(5) || hasLevel(6)) && !hasCond())
+      suggestions.push({ name: 'Kiki', icon: '💪', reason: 'Kiki is the perfect companion for any Level 4+ class — it builds the strength and flexibility your tricks need.' });
+    if ((hasLevel(1) || hasLevel(2) || hasLevel(3)) && !hasCond())
+      suggestions.push({ name: 'Dance Tech', icon: '✨', reason: 'Dance Tech teaches you to move between tricks with fluidity. The best add-on for any levelled class.' });
+    if ((hasLevel(2) || hasLevel(3) || hasLevel(4)) && !hasSpec())
+      suggestions.push({ name: 'Dance', icon: '🎀', reason: 'A new pole routine every week — the perfect complement to your levelled training.' });
+    if (hasLevel(3) && !hasSpec())
+      suggestions.push({ name: 'Dirty Dance', icon: '🎀', reason: 'Sensual pole choreography to complement your Level class. Week by week, you\'ll build something stunning.' });
+    if (Object.keys(cart).length === 2 && !hasCond())
+      suggestions.push({ name: 'Kiki', icon: '💡', reason: 'A 3rd class drops your per-class price — and Kiki works for every level.' });
+
+    // deduplicate
+    const seen = new Set();
+    return suggestions.filter(s => seen.has(s.name) ? false : seen.add(s.name)).slice(0, 2);
+  }
+
+  function renderUpsell() {
+    const suggestions = getUpsellSuggestions();
+    const wrap  = document.getElementById('checkout-upsell');
+    const cards = document.getElementById('checkout-upsell-cards');
+    if (!suggestions.length) { wrap.style.display = 'none'; return; }
+    cards.innerHTML = suggestions.map(s => `
+      <div class="upsell-card">
+        <div class="upsell-card-icon">${s.icon}</div>
+        <div class="upsell-card-body">
+          <div class="upsell-card-name">${s.name}</div>
+          <div class="upsell-card-reason">${s.reason}</div>
+          <button class="upsell-card-add" onclick="closeModal('checkout-modal');showScreen('book');showBookTab('season')">View class →</button>
+        </div>
+      </div>`).join('');
+    wrap.style.display = 'block';
+  }
+
+  // ─── LEVEL PROGRESSION TRACKER ───────────────────────────────────────────
+  function toggleLevelMove(row) {
+    row.classList.toggle('ticked');
+    const total  = document.querySelectorAll('#level-progress-moves .level-move-row').length;
+    const done   = document.querySelectorAll('#level-progress-moves .level-move-row.ticked').length;
+    document.getElementById('level-progress-count').textContent = done + ' / ' + total;
+    document.getElementById('level-progress-complete').style.display = (done === total) ? 'block' : 'none';
+  }
+
+  // ─── INIT ─────────────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    applySeasonFilters();
+
+    // Inject "More info" buttons into season class rows
+    document.querySelectorAll('#season-class-list .class-row').forEach(row => {
+      const body = row.querySelector('.class-row-body');
+      const nameEl = row.querySelector('.class-row-name');
+      if (!body || !nameEl) return;
+      const key = nameToKey(nameEl.textContent.trim());
+      if (!CLASS_INFO[key]) return;
+      const btn = document.createElement('button');
+      btn.className = 'class-info-btn';
+      btn.textContent = 'More info';
+      btn.onclick = (e) => { e.stopPropagation(); openClassInfo(key); };
+      body.appendChild(btn);
+    });
+  });
 
   function toggleClass(id, name, time, el) {
     if (el.classList.contains('locked')) return;
@@ -2828,6 +3269,7 @@
       `Minimum deposit: $${minDeposit} (${count >= 2 ? '2+ classes' : '1 class'})`;
     document.getElementById('plan-deposit-input').min = minDeposit;
 
+    renderUpsell();
     showCoStep('1');
     document.getElementById('checkout-modal').classList.add('open');
   }
@@ -3029,7 +3471,7 @@
     level6:           { title: 'Level 6 - welcome to the deep end', cls: 'Level 6', note: 'Level 6 is our advanced class. If you\'ve got your Ayesha and you\'re ready for harder combinations and serious training, this is your home.' },
     'suppl-strip-virgin': { title: 'Start with Strip Virgin', cls: 'Strip Virgin', note: 'Strip Virgin is the perfect introduction to heels and burlesque-style movement. No experience needed - just bring yourself and your best energy.' },
     'suppl-strip1':   { title: 'Strip 1 sounds like your level', cls: 'Strip 1', note: 'Strip 1 builds on burlesque basics with more choreography and character development. A solid foundation will help you get the most out of it.' },
-    'suppl-dance-virgin': { title: 'Start with Dance Virgin or Floor Virgin', cls: 'Dance Virgin / Floor Virgin', note: 'Both are intro-level classes for contemporary and sensual movement. Dance Virgin focuses on standing choreography; Floor Virgin is all about grounded movement and transitions.' },
+    'suppl-dance-virgin': { title: 'Start with Dance Virgin or Floor Virgin', cls: 'Dance Virgin / Floor Virgin', note: 'Both are intro-level classes for sensual movement. Dance Virgin is pole-based, focusing on standing choreography and connection to the pole; Floor Virgin is all about grounded movement and transitions.' },
     'suppl-dance1':   { title: 'Dance or Floor sounds like your level', cls: 'Dance / Floor', note: 'If you have some movement experience, jump into Dance or Floor - both build on the Virgin foundations with more complex choreography.' },
     'suppl-flex':     { title: 'Kiki or Unravel - take your pick', cls: 'Kiki / Unravel', note: 'Kiki is flexibility-focused with splits and backbends. Unravel is a slower, more meditative conditioning class. Both are open to all levels - come as you are.' },
   };
