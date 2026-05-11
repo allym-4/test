@@ -655,17 +655,93 @@
   .text-sm   { font-size: 13px; }
   .text-xs   { font-size: 12px; }
 
+  /* ── MOBILE TOP BAR ──────────────────────────────────────── */
+  .mob-topbar {
+    position: fixed; top: 0; left: 0; right: 0; height: 52px; z-index: 200;
+    background: var(--dark); border-bottom: 1px solid var(--border);
+    display: none;
+    align-items: center; justify-content: space-between;
+    padding: 0 14px;
+  }
+  .mob-ham {
+    background: none; border: none; color: var(--white);
+    font-size: 22px; cursor: pointer; padding: 6px 8px;
+    line-height: 1; border-radius: 6px;
+  }
+  .mob-ham:hover { background: #1a1a1a; }
+  .mob-notif-btn {
+    position: relative; cursor: pointer;
+    padding: 6px 8px; color: var(--grey); font-size: 18px;
+  }
+  .mob-notif-badge {
+    position: absolute; top: 2px; right: 2px;
+    background: var(--lime); color: var(--black);
+    font-family: 'Archivo Black', sans-serif; font-size: 10px;
+    border-radius: 10px; min-width: 16px; height: 16px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 3px;
+  }
+
+  /* ── MOBILE OVERLAY ───────────────────────────────────────── */
+  .mob-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.65); z-index: 180;
+  }
+  .mob-overlay.visible { display: block; }
+
+  /* ── MOBILE SIDEBAR CLOSE BTN ─────────────────────────────── */
+  .mob-sidebar-close {
+    display: none; position: absolute; top: 14px; right: 14px;
+    background: none; border: none; color: var(--grey);
+    font-size: 20px; cursor: pointer; padding: 4px 8px;
+    border-radius: 6px; line-height: 1;
+  }
+  .mob-sidebar-close:hover { color: var(--white); background: #1a1a1a; }
+
+  /* ── MOBILE BOTTOM NAV ────────────────────────────────────── */
+  .mob-bottom-nav {
+    display: none;
+    position: fixed; bottom: 0; left: 0; right: 0; height: 58px;
+    background: var(--dark); border-top: 1px solid var(--border);
+    z-index: 200; align-items: center; justify-content: space-around;
+    padding: 0 4px;
+  }
+  .mob-nav-item {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; flex: 1; cursor: pointer; padding: 6px 2px;
+    color: var(--grey); transition: color 0.15s; user-select: none;
+  }
+  .mob-nav-item:hover { color: var(--white); }
+  .mob-nav-item.active { color: var(--lime); }
+  .mob-nav-icon { font-size: 18px; line-height: 1; }
+  .mob-nav-label { font-size: 10px; font-weight: 500; letter-spacing: 0.3px; }
+
   /* ── MOBILE ─────────────────────────────────────────────── */
   @media (max-width: 640px) {
     body { font-size: 15px; }
 
+    /* Show mobile UI elements */
+    .mob-topbar { display: flex; }
+    .mob-bottom-nav { display: flex; }
+    .mob-sidebar-close { display: block; }
+
     /* Shell */
-    .shell { max-width: 100%; border-radius: 0; border-left: none; border-right: none; min-height: 100dvh; }
-    .topbar { padding: 0 16px; }
-    .screen { padding: 20px 16px 100px; }
-    .bottom-nav { border-radius: 0; padding: 0 4px; }
-    .nav-item { font-size: 10px; gap: 4px; padding: 10px 6px; }
-    .nav-item svg, .nav-icon { width: 20px; height: 20px; }
+    .shell { max-width: 100%; min-height: 100dvh; }
+
+    /* Sidebar: hidden off-screen by default, slides in when body.sidebar-open */
+    .sidebar {
+      transform: translateX(-260px);
+      transition: transform 0.28s ease;
+      width: 260px; min-width: 260px;
+      z-index: 190;
+    }
+    body.sidebar-open .sidebar { transform: translateX(0); }
+
+    /* Main content: no left margin, clear topbar + bottom nav */
+    .main { margin-left: 0; padding: 68px 16px 80px; }
+
+    /* Page header */
+    .page-header { margin-bottom: 24px; }
 
     /* Typography */
     .page-title { font-size: 26px; }
@@ -685,20 +761,21 @@
     /* Class rows */
     .class-row { gap: 10px; }
     .class-row-actions { flex-shrink: 0; }
+    .class-row-tags { display: none; }
 
     /* Casual rows */
     .casual-row { gap: 10px; padding: 14px 12px; }
     .casual-date-num { font-size: 20px; }
 
     /* Tabs */
-    .tabs { gap: 0; }
-    .tab { font-size: 12px; padding: 12px 10px; }
+    .tabs { flex-wrap: wrap; gap: 2px; }
+    .tab { font-size: 12px; padding: 10px 10px; flex: none; }
 
     /* Filters */
     .filters { gap: 6px; }
     .filter-btn { font-size: 11px; padding: 6px 10px; }
 
-    /* Modal */
+    /* Modal: slide up from bottom */
     .modal-overlay { align-items: flex-end; padding: 0; }
     .modal { border-radius: 20px 20px 0 0; max-height: 92dvh; overflow-y: auto; width: 100%; max-width: 100% !important; padding: 24px 20px 32px; }
     .modal-title { font-size: 20px; }
@@ -722,11 +799,10 @@
     .class-name { font-size: 15px; }
     .class-day  { font-size: 11px; }
 
-    /* Season class rows */
+    /* Season class rows: compact but readable */
     #season-class-list .class-row { gap: 10px; padding: 10px 12px; }
     .class-row-time-block { min-width: 58px; padding: 6px 7px; }
     .class-row-time-label { font-size: 14px; }
-    .class-row-tags { display: none; }
     .filter-group-label { font-size: 9px; }
 
     /* Pay options */
@@ -740,8 +816,14 @@
     /* Notifications */
     .notif-item { gap: 10px; padding: 14px 0; }
 
-    /* Season demo toggles */
+    /* Demo state buttons: wrap + smaller */
     #season-demo-level, #season-demo-nolevel { font-size: 11px; padding: 5px 10px; }
+
+    /* Post-trial star questions */
+    .pt-star-q { flex-direction: column; align-items: flex-start; gap: 8px; }
+
+    /* Billing history: hide Date column */
+    .billing-col-date { display: none; }
 
     /* Profile / waiver modal */
     .profile-step { display: none; }
@@ -814,8 +896,22 @@
 
 <div class="shell">
 
+  <!-- MOBILE TOP BAR -->
+  <div class="mob-topbar">
+    <button class="mob-ham" onclick="toggleMobileSidebar()">&#9776;</button>
+    <span style="font-family:'Archivo Black';color:var(--lime);font-size:18px">Duality<span style="color:var(--white)">.</span></span>
+    <div class="mob-notif-btn" onclick="showScreen('notifications')">
+      &#9711;
+      <div class="mob-notif-badge">3</div>
+    </div>
+  </div>
+
+  <!-- MOBILE SIDEBAR OVERLAY -->
+  <div class="mob-overlay" id="mob-overlay" onclick="toggleMobileSidebar()"></div>
+
   <!-- SIDEBAR -->
-  <nav class="sidebar">
+  <nav class="sidebar" style="position:relative">
+    <button class="mob-sidebar-close" onclick="toggleMobileSidebar()">&#10005;</button>
     <div class="sidebar-logo">Duality<span>.</span></div>
 
     <div class="nav-item active" onclick="showScreen('dashboard')">
@@ -2927,6 +3023,31 @@
     </div>
 
   </main>
+
+  <!-- MOBILE BOTTOM NAV -->
+  <nav class="mob-bottom-nav" id="mob-bottom-nav">
+    <div class="mob-nav-item active" id="mob-nav-dashboard" onclick="showScreen('dashboard')">
+      <span class="mob-nav-icon">&#9670;</span>
+      <span class="mob-nav-label">Dashboard</span>
+    </div>
+    <div class="mob-nav-item" id="mob-nav-book" onclick="showScreen('book');showBookTab('season')">
+      <span class="mob-nav-icon">+</span>
+      <span class="mob-nav-label">Book</span>
+    </div>
+    <div class="mob-nav-item" id="mob-nav-myclasses" onclick="showScreen('myclasses')">
+      <span class="mob-nav-icon">&#9633;</span>
+      <span class="mob-nav-label">My Classes</span>
+    </div>
+    <div class="mob-nav-item" id="mob-nav-progress" onclick="showScreen('progress')">
+      <span class="mob-nav-icon">&#9651;</span>
+      <span class="mob-nav-label">Progress</span>
+    </div>
+    <div class="mob-nav-item" id="mob-nav-account" onclick="showScreen('account')">
+      <span class="mob-nav-icon">&#9632;</span>
+      <span class="mob-nav-label">Account</span>
+    </div>
+  </nav>
+
 </div>
 
 
@@ -4192,6 +4313,7 @@
   function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('screen-' + id).classList.add('active');
+    // Desktop sidebar nav
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.querySelectorAll('.nav-sub').forEach(n => n.classList.remove('active'));
     const ids = ['dashboard','book','myclasses','progress','notifications','forms','chat','account'];
@@ -4201,6 +4323,20 @@
       document.getElementById('nav-account').classList.add('active');
       document.getElementById('nav-billing').classList.add('active');
     }
+    // Mobile bottom nav
+    document.querySelectorAll('.mob-nav-item').forEach(n => n.classList.remove('active'));
+    const mobNavMap = {dashboard:'mob-nav-dashboard',book:'mob-nav-book',myclasses:'mob-nav-myclasses',progress:'mob-nav-progress',account:'mob-nav-account',billing:'mob-nav-account'};
+    if (mobNavMap[id]) document.getElementById(mobNavMap[id]).classList.add('active');
+    // Close sidebar on mobile if open
+    if (window.innerWidth <= 640 && document.body.classList.contains('sidebar-open')) {
+      toggleMobileSidebar();
+    }
+  }
+
+  function toggleMobileSidebar() {
+    const open = document.body.classList.toggle('sidebar-open');
+    const overlay = document.getElementById('mob-overlay');
+    if (overlay) overlay.classList.toggle('visible', open);
   }
 
   function showProgressTab(tab) {
