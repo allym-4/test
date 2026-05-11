@@ -227,7 +227,12 @@
   }
   #season-class-list .class-row.selected .class-row-check { background: var(--lime); border-color: var(--lime); color: var(--black); }
   #season-class-list .class-row.locked .class-row-check { display: none; }
-  .class-row-lock { font-size: 15px; color: var(--grey); flex-shrink: 0; }
+  .class-row-lock {
+    background: #1a0000; color: #ff6b6b; border: 1px solid #662222;
+    border-radius: 20px; padding: 3px 10px; font-size: 11px;
+    font-weight: 600; letter-spacing: 0.03em; flex-shrink: 0;
+  }
+  #season-class-list .class-row.locked .class-row-tags { display: none; }
 
   /* FILTER GROUPS */
   .filter-group { margin-bottom: 10px; }
@@ -1609,7 +1614,7 @@
             <div class="casual-info"><div class="casual-name">Kiki</div><div class="casual-meta">5:30pm · Mimi</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
             <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
           </div>
-          <div class="casual-row" data-date="2026-05-16" data-level="2" data-kind="class" data-catchup="false" data-status="available" data-locked="false" data-routine="true" onclick="openCasualModal('Dance','Fri 16 May · 6:30pm','Mimi',false)">
+          <div class="casual-row level-locked" data-date="2026-05-16" data-level="2" data-kind="class" data-catchup="false" data-status="available" data-locked="true" data-routine="true" onclick="openCasualContact('Dance','Fri 16 May · 6:30pm','Mimi')">
             <div class="casual-date"><div class="casual-date-day">FRI</div><div class="casual-date-num">16</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Dance</div><div class="casual-meta">6:30pm · Mimi</div><div style="margin-top:6px"><span class="tag tag-grey" style="font-size:11px">Routine based</span></div><div class="casual-routine-notice">Catch-ups not available after Week 3 unless enrolled</div></div>
@@ -1773,7 +1778,7 @@
             <div class="casual-info"><div class="casual-name">Kiki</div><div class="casual-meta">5:30pm · Mimi</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
             <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
           </div>
-          <div class="casual-row" data-date="2026-05-23" data-level="2" data-kind="class" data-catchup="false" data-status="available" data-locked="false" data-routine="true" onclick="openCasualModal('Dance','Fri 23 May · 6:30pm','Mimi',false)">
+          <div class="casual-row level-locked" data-date="2026-05-23" data-level="2" data-kind="class" data-catchup="false" data-status="available" data-locked="true" data-routine="true" onclick="openCasualContact('Dance','Fri 23 May · 6:30pm','Mimi')">
             <div class="casual-date"><div class="casual-date-day">FRI</div><div class="casual-date-num">23</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Dance</div><div class="casual-meta">6:30pm · Mimi</div><div style="margin-top:6px"><span class="tag tag-grey" style="font-size:11px">Routine based</span></div><div class="casual-routine-notice">Catch-ups not available after Week 3 unless enrolled</div></div>
@@ -3435,7 +3440,7 @@
     <div style="font-size:15px;font-weight:500;margin-bottom:10px" id="level-warning-class"></div>
     <div style="font-size:14px;color:var(--grey);line-height:1.7;margin-bottom:24px">Your current level doesn't match this class. Please make sure you've checked with your instructor before enrolling - they'll be able to confirm if you're ready to step up.</div>
     <div class="modal-actions">
-      <button class="btn btn-lime" style="flex:1" id="level-warning-confirm" onclick="closeModal('level-warning-modal')">I've checked - book it</button>
+      <button class="btn btn-lime" style="flex:1" id="level-warning-confirm" onclick="confirmLevelWarning()">I've checked - book it</button>
       <button class="btn btn-ghost" onclick="closeModal('level-warning-modal')">Cancel</button>
     </div>
   </div>
@@ -4027,10 +4032,36 @@
     applySeasonFilters();
   }
 
+  let _pendingLevelEl = null;
+  let _pendingLevelId = null;
+
   function openLevelWarning(className, time) {
-    if (levelFilterOn) return;
-    document.getElementById('level-warning-class').textContent = className + ' - ' + time;
+    const el = event.currentTarget;
+    const id = (className + time).toLowerCase().replace(/[\s:+]/g, '');
+    // If already confirmed and selected — deselect on second click
+    if (el.classList.contains('selected')) {
+      delete cart[id];
+      el.classList.remove('selected');
+      renderCart();
+      return;
+    }
+    _pendingLevelEl = el;
+    _pendingLevelId = id;
+    document.getElementById('level-warning-class').textContent = className + ' · ' + time;
     document.getElementById('level-warning-modal').classList.add('open');
+  }
+
+  function confirmLevelWarning() {
+    if (_pendingLevelEl && _pendingLevelId) {
+      const text = document.getElementById('level-warning-class').textContent;
+      const parts = text.split(' · ');
+      cart[_pendingLevelId] = { name: parts[0], time: parts[1] || '' };
+      _pendingLevelEl.classList.add('selected');
+      renderCart();
+      _pendingLevelEl = null;
+      _pendingLevelId = null;
+    }
+    closeModal('level-warning-modal');
   }
 
   function filterCasualToPractice() {
@@ -4048,6 +4079,14 @@
       ? 'Select your classes below — your pricing updates automatically as you add more. Only classes you\'re eligible for based on your current level are shown.'
       : 'Select your classes below — your pricing updates automatically as you add more. Your level will be confirmed by your instructor in your first class.';
     if (!isLevel) {
+      // No level assigned: show all rows and turn off level filter
+      levelFilterOn = false;
+      const track = document.getElementById('level-toggle-track');
+      const thumb = document.getElementById('level-toggle-thumb');
+      const label = document.getElementById('level-toggle-label');
+      if (track) { track.style.background = '#333'; }
+      if (thumb) { thumb.style.right = 'auto'; thumb.style.left = '3px'; }
+      if (label) { label.textContent = 'Off'; }
       document.querySelectorAll('#season-class-list .class-row').forEach(r => r.style.display = '');
     } else {
       applySeasonFilters();
@@ -4446,12 +4485,19 @@
       btn.onclick = (e) => { e.stopPropagation(); openClassInfo(key); };
       body.appendChild(btn);
     });
+    // Populate red lock badge text from data-level on locked season rows
+    document.querySelectorAll('#season-class-list .class-row.locked').forEach(row => {
+      const lockEl = row.querySelector('.class-row-lock');
+      if (lockEl) lockEl.textContent = '🔒 Level ' + row.dataset.level + '+';
+    });
+
     applySeasonFilters();
     applyCasualFilters();
   });
 
   function toggleClass(id, name, time, el) {
-    if (el.classList.contains('locked')) return;
+    // Locked rows go through the level-warning modal instead; only block direct toggle
+    if (el.classList.contains('locked') && !el.classList.contains('selected')) return;
     if (cart[id]) {
       delete cart[id];
       el.classList.remove('selected');
