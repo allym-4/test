@@ -1977,8 +1977,8 @@
       </div>
       <div style="font-size:13px;color:var(--grey);margin-bottom:22px;line-height:1.6" id="result-note"></div>
       <div style="display:flex;gap:12px">
-        <button class="btn btn-lime" style="flex:1" onclick="closeModal('onboarding-modal');showScreen('book');showBookTab('season')">Book this class</button>
-        <button class="btn btn-ghost" onclick="closeModal('onboarding-modal')">Go to dashboard</button>
+        <button class="btn btn-lime" style="flex:1" id="result-primary-btn"></button>
+        <button class="btn btn-outline" id="result-secondary-btn"></button>
       </div>
     </div>
 
@@ -2392,6 +2392,22 @@
     document.getElementById('result-class').textContent = r.cls;
     document.getElementById('result-note').textContent  = r.note;
     document.getElementById('result-body').textContent  = '';
+
+    const primary   = document.getElementById('result-primary-btn');
+    const secondary = document.getElementById('result-secondary-btn');
+
+    if (key === 'level1') {
+      primary.textContent = 'Book a trial class';
+      primary.onclick = () => { closeModal('onboarding-modal'); openTrialInfo(); };
+      secondary.textContent = 'Explore all classes';
+      secondary.onclick = () => { closeModal('onboarding-modal'); showScreen('book'); showBookTab('season'); };
+    } else {
+      primary.textContent = 'Book this class';
+      primary.onclick = () => { closeModal('onboarding-modal'); showScreen('book'); showBookTab('season'); };
+      secondary.textContent = 'Go to dashboard';
+      secondary.onclick = () => { closeModal('onboarding-modal'); };
+    }
+
     showOnboardStep('result');
   }
 
