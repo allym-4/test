@@ -1074,12 +1074,26 @@
 
       <!-- SEASON TAB -->
       <div id="panel-season">
-        <div class="page-title" style="margin-bottom:4px">Book for Season 4</div>
-        <div style="font-size:14px;color:var(--grey);margin-bottom:20px">Season runs 2 Jun – 25 Jul</div>
-        <div class="banner banner-lime" style="margin-bottom:22px">
-          <span style="font-size:18px">&#9651;</span>
-          <div><strong>Season 4 bookings are open.</strong> Season 4 runs 2 Jun - 25 Jul. Bookings close end of Week 3.</div>
-        </div>
+  <!-- Season selector (future season first when on sale) -->
+  <div class="subtabs" style="margin-bottom:20px">
+    <div class="subtab active" id="season-stab-s4" onclick="switchSeasonBook('s4')">Season 4 &nbsp;<span style="font-weight:400;font-size:12px;color:var(--grey)">2 Jun – 25 Jul</span></div>
+    <div class="subtab" id="season-stab-s3" onclick="switchSeasonBook('s3')">Season 3 &nbsp;<span style="font-weight:400;font-size:12px;color:var(--grey)">7 Apr – 6 Jun</span></div>
+  </div>
+
+  <div class="page-title" id="season-book-title" style="margin-bottom:4px">Book for Season 4</div>
+  <div style="font-size:14px;color:var(--grey);margin-bottom:20px" id="season-book-dates">Season runs 2 Jun – 25 Jul</div>
+
+  <!-- S4 open banner (only when S4 tab active) -->
+  <div class="banner banner-lime" id="season-open-banner" style="margin-bottom:22px">
+    <span style="font-size:18px">&#9651;</span>
+    <div><strong>Season 4 bookings are open.</strong> Season 4 runs 2 Jun - 25 Jul. Bookings close end of Week 3.</div>
+  </div>
+
+  <!-- Late-entry warning (only when S3 tab active, past week 3) -->
+  <div id="season-late-entry-banner" style="display:none;background:#1a0d00;border:1px solid #664400;border-radius:12px;padding:16px 20px;margin-bottom:22px">
+    <div style="font-size:13px;font-weight:600;color:#ffaa44;margin-bottom:6px">We're currently in Week 4 of Season 3</div>
+    <div style="font-size:13px;color:var(--grey);line-height:1.6">Booking now means joining partway through the season — please ensure you're comfortable committing to the full 8-week course. If you'd prefer a lower commitment, <span onclick="showBookTab('casual')" style="color:var(--lav);cursor:pointer;text-decoration:underline">browse casual and catch-up classes instead</span>.</div>
+  </div>
 
         <!-- Demo toggle -->
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;font-size:13px;color:var(--grey)">
@@ -2815,36 +2829,66 @@
 
 <!-- CASUAL BOOKING MODAL -->
 <div class="modal-overlay" id="casual-modal">
-  <div class="modal" style="max-width:440px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+  <div class="modal" style="max-width:460px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <div class="modal-title" id="casual-modal-title">Kiki</div>
       <button class="btn btn-ghost btn-sm" onclick="closeModal('casual-modal')">Close</button>
     </div>
-    <div style="font-size:14px;color:var(--grey);margin-bottom:24px" id="casual-modal-meta"></div>
+    <div style="font-size:14px;color:var(--grey);margin-bottom:18px" id="casual-modal-meta"></div>
 
-    <div id="casual-credit-option" style="background:#1a1028;border:1px solid var(--lav);border-radius:10px;padding:18px 20px;margin-bottom:14px;cursor:pointer">
+    <!-- Credits summary chips -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+      <span id="casual-catchup-chip" style="display:none;background:#1a1028;color:var(--lav);border:1px solid #3a1a5a;border-radius:20px;padding:4px 12px;font-size:12px">1 catch-up credit</span>
+      <span id="casual-classpass-chip" style="display:none;background:#0d1a00;color:var(--lime);border:1px solid #2a4400;border-radius:20px;padding:4px 12px;font-size:12px" id="casual-classpass-chip">0 class pass credits</span>
+    </div>
+
+    <!-- Enrol in full course checkbox -->
+    <div id="casual-enrol-row" style="background:#0a0a0a;border:1px solid #2a2a2a;border-radius:10px;padding:14px 18px;margin-bottom:14px">
+      <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer" onclick="toggleCasualEnrol()">
+        <input type="checkbox" id="casual-enrol-checkbox" style="width:17px;height:17px;margin-top:2px;accent-color:var(--lime);flex-shrink:0" onclick="event.stopPropagation()">
+        <div>
+          <div style="font-size:14px;font-weight:500" id="casual-enrol-label">Enrol in the full Season 3 course instead</div>
+          <div style="font-size:12px;color:var(--grey);margin-top:3px;line-height:1.5" id="casual-enrol-sub">Add this class to your season · $140 total · $17.50/session (3rd class rate)</div>
+        </div>
+      </label>
+    </div>
+
+    <!-- Catch-up credit option -->
+    <div id="casual-credit-option" style="display:none;background:#1a1028;border:1px solid var(--lav);border-radius:10px;padding:16px 20px;margin-bottom:10px;cursor:pointer">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div>
-          <div style="font-weight:500;font-size:15px;margin-bottom:5px">Use catch-up credit</div>
-          <div style="font-size:13px;color:var(--grey)">You have 1 credit - no charge</div>
+          <div style="font-weight:500;font-size:15px;margin-bottom:4px">Use catch-up credit</div>
+          <div style="font-size:13px;color:var(--grey)" id="casual-credit-sub">You have 1 credit · no charge</div>
         </div>
         <span style="font-family:'Archivo Black',sans-serif;font-size:20px;color:var(--lav)">FREE</span>
       </div>
     </div>
 
-    <div style="background:#0a0a0a;border:1px solid #2a2a2a;border-radius:10px;padding:18px 20px;margin-bottom:22px;cursor:pointer">
+    <!-- Pay option (updates when enrol checkbox ticked) -->
+    <div id="casual-pay-card" style="background:#0a0a0a;border:1px solid #2a2a2a;border-radius:10px;padding:16px 20px;margin-bottom:10px;cursor:pointer">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div>
-          <div style="font-weight:500;font-size:15px;margin-bottom:5px">Pay casual rate</div>
-          <div style="font-size:13px;color:var(--grey)">Charged to your saved Visa ending 4242</div>
+          <div style="font-weight:500;font-size:15px;margin-bottom:4px" id="casual-pay-label">Pay casual rate</div>
+          <div style="font-size:13px;color:var(--grey)" id="casual-pay-sub">Charged to your saved Visa ending 4242</div>
         </div>
-        <span style="font-family:'Archivo Black',sans-serif;font-size:20px">$40</span>
+        <span style="font-family:'Archivo Black',sans-serif;font-size:20px" id="casual-pay-price">$40</span>
+      </div>
+    </div>
+
+    <!-- 4-class pass option (hidden when enrol checkbox ticked) -->
+    <div id="casual-pass-card" style="background:#0a1600;border:1px solid #2a4400;border-radius:10px;padding:16px 20px;margin-bottom:20px;cursor:pointer" onclick="selectCasualPass(this)">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-weight:500;font-size:15px;margin-bottom:4px">Buy a 4 class pass · <span style="color:var(--lime)">save $20</span></div>
+          <div style="font-size:13px;color:var(--grey)">$35/class · use across any eligible casual or catch-up class</div>
+        </div>
+        <span style="font-family:'Archivo Black',sans-serif;font-size:20px">$140</span>
       </div>
     </div>
 
     <div class="modal-actions">
-      <button class="btn btn-lav" style="flex:1" onclick="closeModal('casual-modal')">Book with credit</button>
-      <button class="btn btn-outline" id="casual-pay-btn" onclick="closeModal('casual-modal')">Pay $40</button>
+      <button class="btn btn-lav" id="casual-credit-btn" style="display:none;flex:1" onclick="closeModal('casual-modal')">Book with credit</button>
+      <button class="btn btn-lime" id="casual-main-btn" style="flex:1" onclick="closeModal('casual-modal')">Pay $40</button>
     </div>
   </div>
 </div>
@@ -4665,13 +4709,72 @@
     document.getElementById('markaway-after').style.display  = markAwayBeforeCutoff ? 'none'  : 'block';
   }
 
+  let classPassCredits = 0;
+
   function openCasualModal(name, meta, instructor, hasCredit, price) {
     price = price || '$40';
     document.getElementById('casual-modal-title').textContent = name;
-    document.getElementById('casual-modal-meta').textContent  = meta + ' - ' + instructor;
+    document.getElementById('casual-modal-meta').textContent  = meta + ' · ' + instructor;
+
+    // Reset checkbox state
+    const enrolCb = document.getElementById('casual-enrol-checkbox');
+    enrolCb.checked = false;
+    setCasualEnrolState(false);
+
+    // Credits chips
+    document.getElementById('casual-catchup-chip').style.display = hasCredit ? 'inline-block' : 'none';
+    document.getElementById('casual-classpass-chip').style.display = classPassCredits > 0 ? 'inline-block' : 'none';
+    if (classPassCredits > 0) {
+      document.getElementById('casual-classpass-chip').textContent = classPassCredits + ' class pass credit' + (classPassCredits !== 1 ? 's' : '');
+    }
+
+    // Credit option
     document.getElementById('casual-credit-option').style.display = hasCredit ? 'block' : 'none';
-    document.getElementById('casual-pay-btn').textContent = 'Pay ' + price;
+    document.getElementById('casual-credit-btn').style.display    = hasCredit ? 'flex' : 'none';
+
+    // Pay button label
+    document.getElementById('casual-pay-price').textContent = price;
+    document.getElementById('casual-main-btn').textContent  = 'Pay ' + price;
+
     document.getElementById('casual-modal').classList.add('open');
+  }
+
+  function toggleCasualEnrol() {
+    const cb = document.getElementById('casual-enrol-checkbox');
+    cb.checked = !cb.checked;
+    setCasualEnrolState(cb.checked);
+  }
+
+  function setCasualEnrolState(enrolling) {
+    document.getElementById('casual-pay-card').style.background  = enrolling ? '#0a1600' : '#0a0a0a';
+    document.getElementById('casual-pay-card').style.borderColor = enrolling ? '#3a6600' : '#2a2a2a';
+    document.getElementById('casual-pay-label').textContent  = enrolling ? 'Enrol in Season 3 – add to your booking' : 'Pay casual rate';
+    document.getElementById('casual-pay-sub').textContent    = enrolling ? 'Brings your total to $580 for 3 classes · $17.50/session' : 'Charged to your saved Visa ending 4242';
+    document.getElementById('casual-pay-price').textContent  = enrolling ? '$140' : '$40';
+    document.getElementById('casual-main-btn').textContent   = enrolling ? 'Enrol and pay $140' : 'Pay $40';
+    document.getElementById('casual-main-btn').className     = enrolling ? 'btn btn-lime' : 'btn btn-lime';
+    document.getElementById('casual-pass-card').style.display = enrolling ? 'none' : '';
+  }
+
+  function selectCasualPass(card) {
+    classPassCredits = 4;
+    const chip = document.getElementById('casual-classpass-chip');
+    chip.style.display = 'inline-block';
+    chip.textContent   = '4 class pass credits';
+    document.getElementById('casual-main-btn').textContent  = 'Buy pass and book this class';
+    document.getElementById('casual-pass-card').style.background  = '#0a1a00';
+    document.getElementById('casual-pass-card').style.borderColor = 'var(--lime)';
+  }
+
+  function switchSeasonBook(season) {
+    ['s4','s3'].forEach(s => {
+      document.getElementById('season-stab-' + s).classList.toggle('active', s === season);
+    });
+    const isS4 = season === 's4';
+    document.getElementById('season-book-title').textContent = isS4 ? 'Book for Season 4' : 'Book for Season 3';
+    document.getElementById('season-book-dates').textContent = isS4 ? 'Season runs 2 Jun – 25 Jul' : 'Season runs 7 Apr – 6 Jun';
+    document.getElementById('season-open-banner').style.display       = isS4 ? '' : 'none';
+    document.getElementById('season-late-entry-banner').style.display = isS4 ? 'none' : '';
   }
 
   function openFormModal() {
