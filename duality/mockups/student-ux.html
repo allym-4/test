@@ -191,7 +191,7 @@
   }
   #season-class-list .class-row:hover { border-color: #333; background: #1a1a1a; }
   #season-class-list .class-row.selected { border-color: var(--lime); background: #0d1200; }
-  #season-class-list .class-row.locked { opacity: 0.38; cursor: not-allowed; }
+  #season-class-list .class-row.locked { opacity: 1; cursor: pointer; }
   .class-row-time-block {
     min-width: 68px; text-align: center;
     background: #191919; border-radius: 7px; padding: 7px 8px; flex-shrink: 0;
@@ -205,7 +205,7 @@
     font-family: 'Archivo Black', sans-serif; font-size: 16px;
     color: var(--lime); line-height: 1.2; margin-top: 1px;
   }
-  #season-class-list .class-row.locked .class-row-time-label { color: #555; }
+  #season-class-list .class-row.locked .class-row-time-label { color: var(--grey); }
   .class-row-body { flex: 1; min-width: 0; }
   .class-row-body .class-row-name { font-family: 'Archivo Black', sans-serif; font-size: 15px; color: var(--white); }
   .class-row-instr { font-size: 13px; color: var(--grey); margin-top: 2px; }
@@ -217,7 +217,7 @@
   }
   #season-class-list .class-row.selected .class-row-check { background: var(--lime); border-color: var(--lime); color: var(--black); }
   #season-class-list .class-row.locked .class-row-check { display: none; }
-  .class-row-lock { font-size: 13px; color: #3a3a3a; flex-shrink: 0; }
+  .class-row-lock { font-size: 15px; color: var(--grey); flex-shrink: 0; }
 
   /* FILTER GROUPS */
   .filter-group { margin-bottom: 10px; }
@@ -225,6 +225,16 @@
     font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
     text-transform: uppercase; color: var(--grey); margin-bottom: 6px;
   }
+  .season-select {
+    appearance: none; -webkit-appearance: none;
+    background: #1a1a1a url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center;
+    border: 1px solid var(--border); border-radius: 8px;
+    color: var(--white); font-size: 13px; font-family: inherit;
+    padding: 8px 34px 8px 12px; cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .season-select:focus { outline: none; border-color: #555; }
+  .season-select option { background: #1a1a1a; }
 
   /* MORE INFO BUTTON on class rows */
   .class-info-btn {
@@ -1022,6 +1032,8 @@
 
       <!-- SEASON TAB -->
       <div id="panel-season">
+        <div class="page-title" style="margin-bottom:4px">Book for Season 4</div>
+        <div style="font-size:14px;color:var(--grey);margin-bottom:20px">Season runs 2 Jun – 25 Jul</div>
         <div class="banner banner-lime" style="margin-bottom:22px">
           <span style="font-size:18px">&#9651;</span>
           <div><strong>Season 4 bookings are open.</strong> Season 4 runs 2 Jun - 25 Jul. Bookings close end of Week 3.</div>
@@ -1061,43 +1073,40 @@
             </div>
 
             <!-- Filter groups: Day / Instructor / Level -->
-            <div id="season-filter-groups" style="margin-bottom:20px">
-              <div class="filter-group">
-                <div class="filter-group-label">Day</div>
-                <div class="filters" style="margin-bottom:0">
-                  <button class="filter-btn active" onclick="setSeasonFilter('day','all',this)">All</button>
-                  <button class="filter-btn" onclick="setSeasonFilter('day','mon',this)">Mon</button>
-                  <button class="filter-btn" onclick="setSeasonFilter('day','tue',this)">Tue</button>
-                  <button class="filter-btn" onclick="setSeasonFilter('day','wed',this)">Wed</button>
-                  <button class="filter-btn" onclick="setSeasonFilter('day','thu',this)">Thu</button>
-                  <button class="filter-btn" onclick="setSeasonFilter('day','fri',this)">Fri</button>
-                  <button class="filter-btn" onclick="setSeasonFilter('day','sat',this)">Sat</button>
-                  <button class="filter-btn" onclick="setSeasonFilter('day','sun',this)">Sun</button>
-                </div>
-              </div>
-              <div class="filter-group">
-                <div class="filter-group-label">Instructor</div>
-                <div class="filters" style="margin-bottom:0">
-                  <button class="filter-btn active" onclick="setSeasonFilter('instr','all',this)">All</button>
-                  <button class="filter-btn" onclick="setSeasonFilter('instr','chloe',this)">Chloe</button>
-                  <button class="filter-btn" onclick="setSeasonFilter('instr','mimi',this)">Mimi</button>
-                  <button class="filter-btn" onclick="setSeasonFilter('instr','jaz',this)">Jaz</button>
-                  <button class="filter-btn" onclick="setSeasonFilter('instr','avalon',this)">Avalon</button>
-                  <button class="filter-btn" onclick="setSeasonFilter('instr','maz',this)">Maz</button>
-                  <button class="filter-btn" onclick="setSeasonFilter('instr','amy',this)">Amy</button>
-                  <button class="filter-btn" onclick="setSeasonFilter('instr','bambi',this)">Bambi</button>
-                </div>
-              </div>
-              <div class="filter-group">
-                <div class="filter-group-label">Level</div>
-                <div class="filters" style="margin-bottom:0">
-                  <button class="filter-btn active" onclick="setSeasonFilter('level','all',this)">All</button>
-                  <button class="filter-btn" onclick="setSeasonFilter('level','0',this)">Beginner</button>
-                  <button class="filter-btn" onclick="setSeasonFilter('level','1',this)">Level 1</button>
-                  <button class="filter-btn" onclick="setSeasonFilter('level','2',this)">Level 2</button>
-                  <button class="filter-btn" onclick="setSeasonFilter('level','3',this)">Level 3+</button>
-                </div>
-              </div>
+            <div id="season-filter-groups" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+              <select class="season-select" onchange="setSeasonFilterDrop('day',this.value)">
+                <option value="all">All days</option>
+                <option value="mon">Monday</option>
+                <option value="tue">Tuesday</option>
+                <option value="wed">Wednesday</option>
+                <option value="thu">Thursday</option>
+                <option value="fri">Friday</option>
+                <option value="sat">Saturday</option>
+                <option value="sun">Sunday</option>
+              </select>
+              <select class="season-select" onchange="setSeasonFilterDrop('instr',this.value)">
+                <option value="all">All instructors</option>
+                <option value="chloe">Chloe</option>
+                <option value="mimi">Mimi</option>
+                <option value="jaz">Jaz</option>
+                <option value="avalon">Avalon</option>
+                <option value="maz">Maz</option>
+                <option value="amy">Amy</option>
+                <option value="bambi">Bambi</option>
+              </select>
+              <select class="season-select" onchange="setSeasonFilterDrop('type',this.value)">
+                <option value="all">All class types</option>
+                <option value="level">Level classes</option>
+                <option value="tricks">Tricks classes</option>
+                <option value="conditioning">Conditioning &amp; flexibility</option>
+                <option value="specialty">Specialty classes</option>
+              </select>
+              <select class="season-select" onchange="setSeasonFilterDrop('exp',this.value)">
+                <option value="all">All experience levels</option>
+                <option value="friendly">First time friendly</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="advanced">Advanced</option>
+              </select>
             </div>
 
             <!-- Single flat class list ordered Mon → Sun -->
@@ -3118,12 +3127,19 @@
     el.classList.add('active');
   }
 
-  let seasonFilters = { day: 'all', instr: 'all', level: 'all' };
+  const CLASS_TYPES = {
+    'level 1':'level','level 2':'level','level 3':'level','level 4':'level','level 5':'level','level 6':'level',
+    '3 tricks':'tricks','4 tricks':'tricks','5/6 tricks':'tricks','high tricks':'tricks','invert tech':'tricks',
+    'dance tech':'conditioning','kiki':'conditioning','unravel':'conditioning',
+    'strip':'specialty','strip virgin':'specialty','dance':'specialty','dance virgin':'specialty',
+    'floor virgin':'specialty','inter floor':'specialty','advanced floor':'specialty',
+    'chair':'specialty','dirty dance':'specialty',
+  };
 
-  function setSeasonFilter(group, val, btn) {
+  let seasonFilters = { day: 'all', instr: 'all', type: 'all', exp: 'all' };
+
+  function setSeasonFilterDrop(group, val) {
     seasonFilters[group] = val;
-    btn.closest('.filters').querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
     applySeasonFilters();
   }
 
@@ -3134,15 +3150,15 @@
 
       const dayOk   = seasonFilters.day   === 'all' || row.dataset.day   === seasonFilters.day;
       const instrOk = seasonFilters.instr === 'all' || row.dataset.instr === seasonFilters.instr;
-      let levelOk = true;
-      if (seasonFilters.level !== 'all') {
-        const rowLevel = parseInt(row.dataset.level || '0');
-        const fLevel   = parseInt(seasonFilters.level);
-        if (fLevel <= 0)      levelOk = rowLevel <= 0;
-        else if (fLevel <= 2) levelOk = rowLevel === fLevel;
-        else                  levelOk = rowLevel >= fLevel;
+      const typeOk  = seasonFilters.type  === 'all' || row.dataset.type  === seasonFilters.type;
+      let expOk = true;
+      if (seasonFilters.exp !== 'all') {
+        const lvl = parseInt(row.dataset.level || '0');
+        if (seasonFilters.exp === 'friendly')     expOk = lvl <= 1;
+        else if (seasonFilters.exp === 'intermediate') expOk = lvl >= 2 && lvl <= 3;
+        else if (seasonFilters.exp === 'advanced')     expOk = lvl >= 4;
       }
-      row.style.display = (dayOk && instrOk && levelOk) ? '' : 'none';
+      row.style.display = (dayOk && instrOk && typeOk && expOk) ? '' : 'none';
     });
   }
 
@@ -3560,14 +3576,17 @@
 
   // ─── INIT ─────────────────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', () => {
-    applySeasonFilters();
-
-    // Inject "More info" buttons into season class rows
+    // Inject data-type and "More info" buttons into season class rows
     document.querySelectorAll('#season-class-list .class-row').forEach(row => {
       const body = row.querySelector('.class-row-body');
       const nameEl = row.querySelector('.class-row-name');
       if (!body || !nameEl) return;
-      const key = nameToKey(nameEl.textContent.trim());
+      const rawName = nameEl.textContent.trim();
+      // Inject data-type
+      const classType = CLASS_TYPES[rawName.toLowerCase()];
+      if (classType) row.dataset.type = classType;
+      // Inject More info button
+      const key = nameToKey(rawName);
       if (!CLASS_INFO[key]) return;
       const btn = document.createElement('button');
       btn.className = 'class-info-btn';
@@ -3575,6 +3594,7 @@
       btn.onclick = (e) => { e.stopPropagation(); openClassInfo(key); };
       body.appendChild(btn);
     });
+    applySeasonFilters();
   });
 
   function toggleClass(id, name, time, el) {
