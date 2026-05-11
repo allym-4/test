@@ -457,6 +457,30 @@
   .chip-locked { background:#191919;color:#555;border:1px solid #222; }
   .chip-full { background:#2a1000;color:#cc7744;border:1px solid #4a2000; }
   .chip-cancelled { background:#1a1a1a;color:#444;border:1px solid #1a1a1a;text-decoration:line-through; }
+  .spots-badge { font-size:11px;font-weight:600;border-radius:20px;padding:3px 9px;flex-shrink:0; }
+  .spots-badge.selling-fast { background:#1a1200;color:#ccaa00;border:1px solid #443a00; }
+  .spots-badge.one-left { background:#1a0000;color:#ff4444;border:1px solid #550000; animation: pulse-spots 1.4s ease-in-out infinite; }
+  @keyframes pulse-spots { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+  /* Booking success modal */
+  #booking-success-modal { z-index: 900; }
+  #booking-success-modal .modal { text-align:center; max-width:360px; padding:36px 28px; position:relative; overflow:hidden; }
+  .success-emoji { font-size:52px; display:block; margin-bottom:12px; animation: pop-in 0.4s cubic-bezier(0.175,0.885,0.32,1.275); }
+  .success-title { font-family:'Archivo Black',sans-serif; font-size:22px; margin-bottom:8px; }
+  .success-sub { font-size:14px; color:var(--grey); line-height:1.6; margin-bottom:24px; }
+  @keyframes pop-in { from{transform:scale(0.4);opacity:0} to{transform:scale(1);opacity:1} }
+  /* Confetti pieces */
+  .confetti-piece { position:absolute; width:8px; height:8px; border-radius:2px; animation: confetti-fall 1.8s ease-in forwards; pointer-events:none; }
+  @keyframes confetti-fall {
+    0%   { transform: translateY(-20px) rotate(0deg); opacity:1; }
+    100% { transform: translateY(320px) rotate(720deg); opacity:0; }
+  }
+  /* Firework burst */
+  .fw-dot { position:absolute; width:6px; height:6px; border-radius:50%; animation: fw-burst 0.9s ease-out forwards; pointer-events:none; }
+  @keyframes fw-burst { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:var(--tx,60px) var(--ty,-60px) scale(0);opacity:0} }
+  /* Heart balloon float */
+  .balloon { position:absolute; font-size:22px; animation: balloon-rise 2.2s ease-out forwards; pointer-events:none; }
+  @keyframes balloon-rise { 0%{transform:translateY(0) scale(0.5);opacity:1} 100%{transform:translateY(-300px) scale(1);opacity:0} }
   .casual-cal-no-class { font-size:11px;color:#333;text-align:center;padding-top:20px; }
   .contact-msg-input { width:100%;background:#111;border:1px solid var(--border);border-radius:8px;padding:12px;color:var(--white);font-size:14px;resize:none;font-family:inherit;box-sizing:border-box; }
   .contact-msg-input:focus { outline:none;border-color:#555; }
@@ -960,8 +984,12 @@
             <div class="level-move-name">Open Leg Jamilla</div>
           </div>
         </div>
-        <div id="level-progress-complete" style="display:none;margin-top:12px;padding:12px 14px;background:#0a1800;border:1px solid var(--lime);border-radius:8px;font-size:13px;color:var(--lime)">
-          🎉 Looking good! Let your instructor know — they'll do a formal check-off and get you enrolled in Level 3.
+        <div id="level-progress-complete" style="display:none;margin-top:12px;padding:14px 16px;background:#0a1800;border:1px solid var(--lime);border-radius:8px">
+          <div style="font-size:13px;color:var(--lime);margin-bottom:10px">🎉 Looking good! Your instructor will do a formal check-off when they're happy you're ready — tap below to flag it to them.</div>
+          <div id="level-notify-btn-wrap">
+            <button class="btn btn-lime btn-sm" onclick="notifyInstructorLevelUp()">Notify instructor</button>
+          </div>
+          <div id="level-notify-sent" style="display:none;font-size:13px;color:var(--grey)">✅ Message sent to Chloe — she'll check in with you at your next class.</div>
         </div>
       </div>
 
@@ -1487,7 +1515,7 @@
             <div class="casual-info"><div class="casual-name">Level 1</div><div class="casual-meta">6:30pm · Jaz</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
             <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-12" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Level 2','Mon 12 May · 6:30pm','Chloe',true)">
+          <div class="casual-row has-credit" data-date="2026-05-12" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" data-spots="2" onclick="openCasualModal('Level 2','Mon 12 May · 6:30pm','Chloe',true)">
             <div class="casual-date"><div class="casual-date-day">MON</div><div class="casual-date-num">12</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Level 2</div><div class="casual-meta">6:30pm · Chloe</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -1553,7 +1581,7 @@
             <div class="casual-info"><div class="casual-name">Level 1</div><div class="casual-meta">5:30pm · Chloe</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
             <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-14" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Invert Tech','Wed 14 May · 6:30pm','Maz',true)">
+          <div class="casual-row has-credit" data-date="2026-05-14" data-level="2" data-kind="class" data-catchup="true" data-status="available" data-locked="false" data-spots="4" onclick="openCasualModal('Invert Tech','Wed 14 May · 6:30pm','Maz',true)">
             <div class="casual-date"><div class="casual-date-day">WED</div><div class="casual-date-num">14</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Invert Tech</div><div class="casual-meta">6:30pm · Maz</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -1625,7 +1653,7 @@
             <div class="casual-info"><div class="casual-name">Practice Time</div><div class="casual-meta">5:30pm–7:00pm · Open studio</div><div style="margin-top:6px"><span class="tag tag-lime" style="font-size:11px">$20 enrolled rate</span></div></div>
             <div class="casual-price"><div class="casual-price-main">$20</div><div class="casual-price-full">$30</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-16" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Kiki','Fri 16 May · 5:30pm','Mimi',true)">
+          <div class="casual-row has-credit" data-date="2026-05-16" data-level="0" data-kind="class" data-catchup="true" data-status="available" data-locked="false" data-spots="1" onclick="openCasualModal('Kiki','Fri 16 May · 5:30pm','Mimi',true)">
             <div class="casual-date"><div class="casual-date-day">FRI</div><div class="casual-date-num">16</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Kiki</div><div class="casual-meta">5:30pm · Mimi</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -1729,7 +1757,7 @@
             <div class="casual-info"><div class="casual-name">Practice Time</div><div class="casual-meta">4:30pm–6:20pm · Open studio</div><div style="margin-top:6px"><span class="tag tag-lime" style="font-size:11px">$20 enrolled rate</span></div></div>
             <div class="casual-price"><div class="casual-price-main">$20</div><div class="casual-price-full">$30</div></div>
           </div>
-          <div class="casual-row has-credit" data-date="2026-05-21" data-level="1" data-kind="class" data-catchup="true" data-status="available" data-locked="false" onclick="openCasualModal('Level 1','Wed 21 May · 5:30pm','Chloe',true)">
+          <div class="casual-row has-credit" data-date="2026-05-21" data-level="1" data-kind="class" data-catchup="true" data-status="available" data-locked="false" data-spots="3" onclick="openCasualModal('Level 1','Wed 21 May · 5:30pm','Chloe',true)">
             <div class="casual-date"><div class="casual-date-day">WED</div><div class="casual-date-num">21</div></div>
             <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
             <div class="casual-info"><div class="casual-name">Level 1</div><div class="casual-meta">5:30pm · Chloe</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
@@ -2384,6 +2412,31 @@
             <button class="btn btn-ghost btn-sm">Watch reference video</button>
           </div>
         </div>
+
+        <div class="divider"></div>
+
+        <!-- Progress notes -->
+        <div class="flex items-center justify-between mb-20">
+          <div>
+            <div style="font-family:'Archivo Black',sans-serif;font-size:20px">Progress notes</div>
+            <div style="font-size:14px;color:var(--grey);margin-top:4px">Other tricks &amp; instructor notes</div>
+          </div>
+        </div>
+        <div class="card" style="border-color:#1a2a1a;margin-bottom:12px">
+          <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#6db36d;margin-bottom:6px">12 May · Chloe</div>
+          <div style="font-size:15px;font-weight:500;margin-bottom:6px">Flatline Scorpio — looking good!</div>
+          <div style="font-size:14px;color:var(--grey);line-height:1.6">Hip placement is really coming together. Keep working on the extended arm line before we mark it as unlocked — almost there.</div>
+        </div>
+        <div class="card" style="border-color:#1a2a1a;margin-bottom:12px">
+          <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#6db36d;margin-bottom:6px">28 Apr · Chloe</div>
+          <div style="font-size:15px;font-weight:500;margin-bottom:6px">Shoulder mount progression started</div>
+          <div style="font-size:14px;color:var(--grey);line-height:1.6">First attempts at shoulder mount from the floor. Core strength is there — keep conditioning the shoulder press. Will revisit in 2–3 weeks.</div>
+        </div>
+        <div class="card" style="border-color:#1a1a1a">
+          <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:6px">14 Apr · Chloe</div>
+          <div style="font-size:15px;font-weight:500;margin-bottom:6px">Cross knee release ✓</div>
+          <div style="font-size:14px;color:var(--grey);line-height:1.6">Nailed cross knee release both sides consistently. Added to your repertoire even though it's technically Level 3 — you were ready.</div>
+        </div>
       </div>
 
       <!-- CLASS RESOURCES TAB -->
@@ -2800,6 +2853,31 @@
           </div>
         </div>
       </div>
+
+      <div class="divider" style="margin-top:32px"></div>
+
+      <div class="section-label" style="margin-bottom:16px">Billing history</div>
+      <div style="display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:12px;overflow:hidden">
+        <div style="display:grid;grid-template-columns:1fr 1fr 120px 80px;gap:12px;padding:10px 16px;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--grey);border-bottom:1px solid var(--border)">
+          <span>Description</span><span>Date</span><span>Type</span><span style="text-align:right">Amount</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 120px 80px;gap:12px;padding:14px 16px;font-size:14px;border-bottom:1px solid var(--border);align-items:center">
+          <span style="font-weight:500">Season 3 – Level 2 + Dance</span><span style="color:var(--grey)">7 Apr 2026</span><span><span class="tag tag-lime" style="font-size:11px">Season</span></span><span style="text-align:right;font-weight:600">$440.00</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 120px 80px;gap:12px;padding:14px 16px;font-size:14px;border-bottom:1px solid var(--border);align-items:center">
+          <span style="font-weight:500">Catch-up · Kiki (Fri 4 Apr)</span><span style="color:var(--grey)">2 Apr 2026</span><span><span class="tag" style="font-size:11px;background:#1a0d2e;color:var(--lav);border:1px solid #3a1a5a">Catch-up</span></span><span style="text-align:right;font-weight:600">$0.00</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 120px 80px;gap:12px;padding:14px 16px;font-size:14px;border-bottom:1px solid var(--border);align-items:center">
+          <span style="font-weight:500">Season 2 – Level 2</span><span style="color:var(--grey)">10 Feb 2026</span><span><span class="tag tag-lime" style="font-size:11px">Season</span></span><span style="text-align:right;font-weight:600">$270.00</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 120px 80px;gap:12px;padding:14px 16px;font-size:14px;border-bottom:1px solid var(--border);align-items:center">
+          <span style="font-weight:500">Casual · Level 1 (Wed 5 Feb)</span><span style="color:var(--grey)">3 Feb 2026</span><span><span class="tag" style="font-size:11px;background:#0d1800;color:var(--lime);border:1px solid #1a3000">Casual</span></span><span style="text-align:right;font-weight:600">$40.00</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 120px 80px;gap:12px;padding:14px 16px;font-size:14px;align-items:center">
+          <span style="font-weight:500">Season 1 – Level 1</span><span style="color:var(--grey)">15 Nov 2025</span><span><span class="tag tag-lime" style="font-size:11px">Season</span></span><span style="text-align:right;font-weight:600">$270.00</span>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:12px">Download all invoices</button>
     </div>
 
   </main>
@@ -2991,7 +3069,7 @@
     <div id="markaway-after" style="display:none">
       <div style="background:#1a0900;border:1px solid #ffaa44;border-radius:10px;padding:18px 20px;margin-bottom:20px">
         <div style="font-family:'Archivo Black',sans-serif;font-size:15px;color:#ffaa44;margin-bottom:6px">No catch-up credit for this one</div>
-        <div style="font-size:14px;color:var(--grey);line-height:1.6">This is within 4 hours of your class - the cancellation window has passed. You can still mark away so we know you're not coming, but no credit will be issued.</div>
+        <div style="font-size:14px;color:var(--grey);line-height:1.6">This is within 4 hours of your class — the cancellation window has passed. You can still mark away so we know you're not coming, but no credit will be issued. If you don't mark away and don't attend, a <strong style="color:#ffaa44">$20 no-show fee</strong> will be charged.</div>
       </div>
       <div class="modal-actions">
         <button class="btn btn-outline" style="flex:1" onclick="closeModal('markaway-modal')">Mark away anyway</button>
@@ -3573,7 +3651,7 @@
       <div style="background:#0d0d0d;border:1px solid #2a2a2a;border-radius:12px;padding:18px 20px;margin-bottom:8px">
         <div style="font-size:14px;font-weight:500;margin-bottom:8px">Don't see any trial classes?</div>
         <div style="font-size:13px;color:var(--grey);line-height:1.7">That's because we're currently in week 3 of the season. Our classes run routines and build on skills over 8 weeks - we don't want you jumping in and feeling behind or out of your depth. Trial spots open again at the start of each new season. <span style="color:var(--white)">Jump on our waitlist</span> and we'll let you know the moment enrolments open.</div>
-        <button class="btn btn-outline btn-sm" style="margin-top:14px" onclick="closeModal('trial-modal')">Join season waitlist</button>
+        <button class="btn btn-outline btn-sm" style="margin-top:14px" onclick="closeModal('trial-modal');_openWaitlist('Season 4','Starting 2 Jun 2026','season')">Join season waitlist</button>
       </div>
     </div>
   </div>
@@ -3621,18 +3699,33 @@
 <div class="modal-overlay" id="waitlist-modal">
   <div class="modal" style="max-width:420px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-      <div class="modal-title">Join waitlist</div>
+      <div class="modal-title" id="waitlist-modal-title">Join waitlist</div>
       <button class="btn btn-ghost btn-sm" onclick="closeModal('waitlist-modal')">Close</button>
     </div>
     <div style="font-size:15px;font-weight:500;margin-bottom:6px" id="waitlist-class-name"></div>
     <div style="font-size:14px;color:var(--grey);margin-bottom:22px" id="waitlist-class-date"></div>
-    <div style="background:#1a1028;border:1px solid var(--lav);border-radius:10px;padding:16px 18px;margin-bottom:22px;font-size:14px;color:var(--grey);line-height:1.6">
-      We'll notify you by push notification and email the moment a spot opens up. You'll have 2 hours to confirm your booking before the next person on the list is offered the spot.
+    <!-- Single-class waitlist copy -->
+    <div id="waitlist-single-copy" style="background:#1a1028;border:1px solid var(--lav);border-radius:10px;padding:16px 18px;margin-bottom:22px;font-size:14px;color:var(--grey);line-height:1.6">
+      We'll notify you by push notification and email the moment a spot opens in this class. You'll have 2 hours to confirm before the spot is offered to the next person.
+    </div>
+    <!-- Season waitlist copy -->
+    <div id="waitlist-season-copy" style="display:none;background:#1a1028;border:1px solid var(--lav);border-radius:10px;padding:16px 18px;margin-bottom:22px;font-size:14px;color:var(--grey);line-height:1.6">
+      You'll be added to the waitlist for a full season enrolment. We'll only contact you if a complete season spot becomes available — we won't notify you for individual class openings. You'll have 48 hours to confirm before it's offered to the next person.
     </div>
     <div class="modal-actions">
-      <button class="btn btn-lav" style="flex:1" onclick="closeModal('waitlist-modal')">Add me to the waitlist</button>
+      <button class="btn btn-lav" style="flex:1" onclick="confirmWaitlist()">Add me to the waitlist</button>
       <button class="btn btn-ghost" onclick="closeModal('waitlist-modal')">Cancel</button>
     </div>
+  </div>
+</div>
+
+<!-- BOOKING SUCCESS MODAL -->
+<div class="modal-overlay" id="booking-success-modal">
+  <div class="modal" style="text-align:center;max-width:360px;padding:36px 28px;position:relative;overflow:hidden" id="booking-success-inner">
+    <span class="success-emoji" id="success-emoji">🎉</span>
+    <div class="success-title" id="success-title">You're booked!</div>
+    <div class="success-sub" id="success-sub">See you on the pole.</div>
+    <button class="btn btn-lime" style="width:100%" onclick="closeModal('booking-success-modal')">Done</button>
   </div>
 </div>
 
@@ -4216,9 +4309,7 @@
   }
 
   function openCasualWaitlist(name, datetime, instructor) {
-    document.getElementById('waitlist-class-name').textContent = name;
-    document.getElementById('waitlist-class-date').textContent = datetime + ' · ' + instructor;
-    document.getElementById('waitlist-modal').classList.add('open');
+    _openWaitlist(name, datetime + ' · ' + instructor, 'single');
   }
 
   function filterCasualToPractice() {
@@ -4737,6 +4828,17 @@
       if (lockEl) lockEl.textContent = '🔒 Level ' + row.dataset.level + '+';
     });
 
+    // Inject spots badges on casual rows
+    document.querySelectorAll('#casual-list-view .casual-row[data-spots]').forEach(row => {
+      const spots = parseInt(row.dataset.spots);
+      if (isNaN(spots) || spots >= 5) return;
+      const badge = document.createElement('span');
+      badge.className = 'spots-badge ' + (spots <= 2 ? 'one-left' : 'selling-fast');
+      badge.textContent = spots <= 2 ? (spots === 1 ? '1 spot left!' : '2 spots left!') : 'Selling fast';
+      const priceEl = row.querySelector('.casual-price');
+      if (priceEl) priceEl.insertAdjacentElement('beforebegin', badge);
+    });
+
     applySeasonFilters();
     applyCasualFilters();
   });
@@ -5091,13 +5193,90 @@
 
   function confirmCasualBooking() {
     if (casualModalSelection === 'pass') {
-      // Bought 4-class pass, used 1 for this booking → 3 remaining
-      classPassCredits = 3;
+      classPassCredits = 3; // bought 4, used 1 immediately
     } else if (casualModalSelection === 'credit') {
-      // Used one credit (catch-up or class pass)
       if (classPassCredits > 0) classPassCredits = Math.max(0, classPassCredits - 1);
     }
     closeModal('casual-modal');
+    const enrol = document.getElementById('casual-enrol-checkbox').checked;
+    showBookingSuccess(enrol ? 'enrol' : 'casual');
+  }
+
+  const SUCCESS_VARIANTS = [
+    { emoji:'🎉', title:"You're booked!", sub:'See you on the pole. Don\'t forget to warm up.' },
+    { emoji:'🔥', title:'Hell yes!', sub:'Another class locked in. You\'re on a roll.' },
+    { emoji:'✨', title:'Booking confirmed!', sub:'The pole has been warned.' },
+    { emoji:'💪', title:'Get ready!', sub:'You\'re all set. See you in the studio.' },
+    { emoji:'🌟', title:'You\'re in!', sub:'Can\'t wait to see you on the floor.' },
+    { emoji:'🎊', title:'Booked and sorted!', sub:'Time to practice your favourite outfit choice.' },
+    { emoji:'💃', title:'Let\'s go!', sub:'Your spot is saved. The pole awaits.' },
+  ];
+  const ENROL_VARIANTS = [
+    { emoji:'🏆', title:'Season enrolment confirmed!', sub:'Welcome to the full course. This is your season.' },
+    { emoji:'🌙', title:'You\'re enrolled!', sub:'We\'ll see you every week. Get ready for the journey.' },
+    { emoji:'⭐', title:'See you every week!', sub:'Your season enrolment is locked in. Let\'s do this.' },
+  ];
+  const WAITLIST_VARIANTS = [
+    { emoji:'⏳', title:'You\'re on the list!', sub:'We\'ll ping you the moment a spot opens up.' },
+    { emoji:'🔔', title:'Waitlist confirmed!', sub:'First in, first served — we\'ll let you know ASAP.' },
+  ];
+
+  let _lastSuccessIdx = -1;
+
+  function showBookingSuccess(type) {
+    const pool = type === 'enrol' ? ENROL_VARIANTS : type === 'waitlist' ? WAITLIST_VARIANTS : SUCCESS_VARIANTS;
+    let idx;
+    do { idx = Math.floor(Math.random() * pool.length); } while (idx === _lastSuccessIdx && pool.length > 1);
+    _lastSuccessIdx = idx;
+    const v = pool[idx];
+    document.getElementById('success-emoji').textContent = v.emoji;
+    document.getElementById('success-title').textContent = v.title;
+    document.getElementById('success-sub').textContent   = v.sub;
+
+    // Clear previous particles
+    const inner = document.getElementById('booking-success-inner');
+    inner.querySelectorAll('.confetti-piece,.fw-dot,.balloon').forEach(el => el.remove());
+
+    // Pick animation style randomly
+    const anim = ['confetti','fireworks','balloons'][Math.floor(Math.random() * 3)];
+    if (anim === 'confetti') spawnConfetti(inner);
+    else if (anim === 'fireworks') spawnFireworks(inner);
+    else spawnBalloons(inner);
+
+    document.getElementById('booking-success-modal').classList.add('open');
+  }
+
+  const CONFETTI_COLORS = ['#DBFF00','#CDA5FF','#ff6b9d','#44ddff','#ffaa44','#ffffff'];
+  function spawnConfetti(parent) {
+    for (let i = 0; i < 28; i++) {
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.cssText = `left:${Math.random()*100}%;top:0;background:${CONFETTI_COLORS[i%CONFETTI_COLORS.length]};animation-delay:${Math.random()*0.8}s;animation-duration:${1.4+Math.random()*0.8}s`;
+      parent.appendChild(el);
+    }
+  }
+  function spawnFireworks(parent) {
+    const cx = ['30%','50%','70%'];
+    cx.forEach((x, ci) => {
+      for (let i = 0; i < 10; i++) {
+        const angle = (i / 10) * 2 * Math.PI;
+        const dist  = 40 + Math.random() * 40;
+        const el    = document.createElement('div');
+        el.className = 'fw-dot';
+        el.style.cssText = `left:${x};top:${20+ci*20}%;background:${CONFETTI_COLORS[(ci*3+i)%CONFETTI_COLORS.length]};--tx:${Math.cos(angle)*dist}px;--ty:${Math.sin(angle)*dist}px;transform:translate(-50%,-50%);animation-delay:${ci*0.25}s`;
+        parent.appendChild(el);
+      }
+    });
+  }
+  function spawnBalloons(parent) {
+    const emojis = ['🩷','💜','💛','🤍','🩵','💗','✨'];
+    for (let i = 0; i < 10; i++) {
+      const el = document.createElement('div');
+      el.className = 'balloon';
+      el.textContent = emojis[i % emojis.length];
+      el.style.cssText = `left:${10+Math.random()*80}%;bottom:-10px;animation-delay:${Math.random()*0.8}s;animation-duration:${1.8+Math.random()*0.8}s`;
+      parent.appendChild(el);
+    }
   }
 
   function switchSeasonBook(season) {
@@ -5199,9 +5378,7 @@
   }
 
   function openWaitlistModal(className, date) {
-    document.getElementById('waitlist-class-name').textContent = className;
-    document.getElementById('waitlist-class-date').textContent = date;
-    document.getElementById('waitlist-modal').classList.add('open');
+    _openWaitlist(className, date, 'single');
   }
 
   function openWorkshopModal(title, date, instructor, price, desc, soldOut) {
@@ -5213,9 +5390,21 @@
   }
 
   function openWaitlist(name, date) {
+    _openWaitlist(name, date, 'single');
+  }
+
+  function _openWaitlist(name, date, type) {
     document.getElementById('waitlist-class-name').textContent = name;
     document.getElementById('waitlist-class-date').textContent = date;
+    document.getElementById('waitlist-modal-title').textContent = type === 'season' ? 'Join season waitlist' : 'Join waitlist';
+    document.getElementById('waitlist-single-copy').style.display = type === 'season' ? 'none' : '';
+    document.getElementById('waitlist-season-copy').style.display = type === 'season' ? '' : 'none';
     document.getElementById('waitlist-modal').classList.add('open');
+  }
+
+  function confirmWaitlist() {
+    closeModal('waitlist-modal');
+    showBookingSuccess('waitlist');
   }
 
   function setDashState(state) {
@@ -5254,6 +5443,11 @@
       enrolled.style.display = 'block';
       setTricksStat('level');
     }
+  }
+
+  function notifyInstructorLevelUp() {
+    document.getElementById('level-notify-btn-wrap').style.display = 'none';
+    document.getElementById('level-notify-sent').style.display = '';
   }
 
   function setTricksStat(type) {
