@@ -831,84 +831,118 @@
               <button class="filter-btn" onclick="toggleFilter(this)">Thursday</button>
             </div>
 
-            <!-- LEVEL ASSIGNED: sectioned view -->
+            <!-- LEVEL ASSIGNED: sectioned view (Level 2) -->
             <div id="season-classes-levelled">
               <div class="section-label">Your level</div>
               <div class="grid-2 mb-24">
-                <div class="class-card" onclick="toggleClass('l2-mon','Level 2','Mon 6:30pm',this)">
-                  <div class="check">+</div>
-                  <div class="class-day">Monday - 6:30pm</div>
+                <div class="class-card" onclick="toggleClass('l2-mon630','Level 2','Mon 6:30pm',this)">
+                  <div class="check">+</div><div class="class-day">Monday - 6:30pm</div>
                   <div class="class-name">Level 2</div>
-                  <div class="class-meta"><span class="tag tag-lav">Your level</span><span class="tag tag-grey">Studio A</span></div>
+                  <div class="class-meta"><span class="tag tag-lav">Your level</span></div>
                   <div class="class-instructor">Chloe</div>
                 </div>
-                <div class="class-card" onclick="toggleClass('l2-wed','Level 2','Wed 7:30pm',this)">
-                  <div class="check">+</div>
-                  <div class="class-day">Wednesday - 7:30pm</div>
+                <div class="class-card" onclick="toggleClass('l2-tue530','Level 2','Tue 5:30pm',this)">
+                  <div class="check">+</div><div class="class-day">Tuesday - 5:30pm</div>
                   <div class="class-name">Level 2</div>
-                  <div class="class-meta"><span class="tag tag-lav">Your level</span><span class="tag tag-grey">Studio B</span></div>
-                  <div class="class-instructor">Mimi - <span style="color:#ffaa44">Almost full</span></div>
+                  <div class="class-meta"><span class="tag tag-lav">Your level</span></div>
+                  <div class="class-instructor">Avalon</div>
+                </div>
+                <div class="class-card" onclick="toggleClass('l2-wed830','Level 2','Wed 8:30pm',this)">
+                  <div class="check">+</div><div class="class-day">Wednesday - 8:30pm</div>
+                  <div class="class-name">Level 2</div>
+                  <div class="class-meta"><span class="tag tag-lav">Your level</span></div>
+                  <div class="class-instructor">Bambi - <span style="color:#ffaa44">Almost full</span></div>
                 </div>
               </div>
 
               <div class="section-label">Conditioning - eligible for you</div>
               <div class="grid-2 mb-24">
-                <div class="class-card" onclick="toggleClass('kiki-fri','Kiki','Fri 7pm',this)">
-                  <div class="check">+</div>
-                  <div class="class-day">Friday - 7:00pm</div>
-                  <div class="class-name">Kiki</div>
-                  <div class="class-meta"><span class="tag tag-lime">Bundle discount</span></div>
+                <div class="class-card" onclick="toggleClass('dancetch-mon530','Dance Tech','Mon 5:30pm',this)">
+                  <div class="check">+</div><div class="class-day">Monday - 5:30pm</div>
+                  <div class="class-name">Dance Tech</div>
+                  <div class="class-meta"><span class="tag tag-grey">All levels</span></div>
                   <div class="class-instructor">Chloe</div>
                 </div>
-                <div class="class-card" onclick="toggleClass('invert-thu','Invert Tech','Thu 7pm',this)">
-                  <div class="check">+</div>
-                  <div class="class-day">Thursday - 7:00pm</div>
+                <div class="class-card" onclick="toggleClass('invert-wed630','Invert Tech','Wed 6:30pm',this)">
+                  <div class="check">+</div><div class="class-day">Wednesday - 6:30pm</div>
                   <div class="class-name">Invert Tech</div>
                   <div class="class-meta"><span class="tag tag-grey">Level 2+</span></div>
+                  <div class="class-instructor">Maz</div>
+                </div>
+                <div class="class-card" onclick="toggleClass('kiki-fri530','Kiki','Fri 5:30pm',this)">
+                  <div class="check">+</div><div class="class-day">Friday - 5:30pm</div>
+                  <div class="class-name">Kiki</div>
+                  <div class="class-meta"><span class="tag tag-grey">All levels</span></div>
                   <div class="class-instructor">Mimi</div>
                 </div>
-                <div class="class-card" onclick="toggleClass('spin-sat','Spin Virgin','Sat 10am',this)">
-                  <div class="check">+</div>
-                  <div class="class-day">Saturday - 10:00am</div>
-                  <div class="class-name">Spin Virgin</div>
-                  <div class="class-meta"><span class="tag tag-grey">Beginner</span></div>
+                <div class="class-card" onclick="toggleClass('unravel-sat9','Unravel','Sat 9:00am',this)">
+                  <div class="check">+</div><div class="class-day">Saturday - 9:00am</div>
+                  <div class="class-name">Unravel</div>
+                  <div class="class-meta"><span class="tag tag-grey">All levels</span></div>
                   <div class="class-instructor">Chloe</div>
                 </div>
               </div>
 
               <div class="section-label">Specialty - eligible for you</div>
               <div class="grid-2 mb-24">
-                <div class="class-card" onclick="toggleClass('dance-fri','Dance','Fri 6:30pm',this)">
-                  <div class="check">+</div>
-                  <div class="class-day">Friday - 6:30pm</div>
+                <div class="class-card" onclick="toggleClass('dance-fri630','Dance','Fri 6:30pm',this)">
+                  <div class="check">+</div><div class="class-day">Friday - 6:30pm</div>
                   <div class="class-name">Dance</div>
                   <div class="class-meta"><span class="tag tag-grey">Level 2+</span></div>
-                  <div class="class-instructor">Mimi - Studio B</div>
+                  <div class="class-instructor">Mimi</div>
                 </div>
-                <div class="class-card" onclick="toggleClass('strip-tue','Strip Virgin','Tue 8pm',this)">
-                  <div class="check">+</div>
-                  <div class="class-day">Tuesday - 8:00pm</div>
+                <div class="class-card" onclick="toggleClass('dancevir-wed730','Dance Virgin','Wed 7:30pm',this)">
+                  <div class="check">+</div><div class="class-day">Wednesday - 7:30pm</div>
+                  <div class="class-name">Dance Virgin</div>
+                  <div class="class-meta"><span class="tag tag-grey">Beginner</span></div>
+                  <div class="class-instructor">Chloe</div>
+                </div>
+                <div class="class-card" onclick="toggleClass('stripvir-mon730','Strip Virgin','Mon 7:30pm',this)">
+                  <div class="check">+</div><div class="class-day">Monday - 7:30pm</div>
                   <div class="class-name">Strip Virgin</div>
-                  <div class="class-meta"><span class="tag tag-grey">Beginner - Level 3</span></div>
-                  <div class="class-instructor">Chloe - Studio A</div>
+                  <div class="class-meta"><span class="tag tag-grey">Beginner</span></div>
+                  <div class="class-instructor">Jaz</div>
+                </div>
+                <div class="class-card" onclick="toggleClass('stripvir-thu530','Strip Virgin','Thu 5:30pm',this)">
+                  <div class="check">+</div><div class="class-day">Thursday - 5:30pm</div>
+                  <div class="class-name">Strip Virgin</div>
+                  <div class="class-meta"><span class="tag tag-grey">Beginner</span></div>
+                  <div class="class-instructor">Amy</div>
+                </div>
+                <div class="class-card" onclick="toggleClass('floorvir-mon530','Floor Virgin','Mon 5:30pm',this)">
+                  <div class="check">+</div><div class="class-day">Monday - 5:30pm</div>
+                  <div class="class-name">Floor Virgin</div>
+                  <div class="class-meta"><span class="tag tag-grey">Beginner</span></div>
+                  <div class="class-instructor">Jaz</div>
+                </div>
+                <div class="class-card" onclick="toggleClass('floorvir-sat12','Floor Virgin','Sat 12:00pm',this)">
+                  <div class="check">+</div><div class="class-day">Saturday - 12:00pm</div>
+                  <div class="class-name">Floor Virgin</div>
+                  <div class="class-meta"><span class="tag tag-grey">Beginner</span></div>
+                  <div class="class-instructor">Chloe</div>
                 </div>
               </div>
 
               <div id="season-locked-section">
                 <div class="section-label" style="color:#444" id="locked-section-label">Not available at your level</div>
                 <div class="grid-2">
-                  <div class="class-card locked" id="locked-card-1" onclick="openLevelWarning('Level 4','Mon 8:00pm')">
-                    <div class="class-day">Monday - 8:00pm</div>
-                    <div class="class-name">Level 4</div>
-                    <div class="class-meta"><span class="tag tag-grey">Level 4 required</span></div>
-                    <div class="class-instructor">Mimi - Studio A</div>
-                  </div>
-                  <div class="class-card locked" id="locked-card-2" onclick="openLevelWarning('High Tricks','Thu 8:30pm')">
-                    <div class="class-day">Thursday - 8:30pm</div>
-                    <div class="class-name">High Tricks</div>
-                    <div class="class-meta"><span class="tag tag-grey">Level 6 required</span></div>
-                    <div class="class-instructor">Chloe - <span style="color:#ff6b6b">Fully booked</span></div>
-                  </div>
+                  <div class="class-card locked" onclick="openLevelWarning('Level 3','Mon 8:30pm')"><div class="class-day">Monday - 8:30pm</div><div class="class-name">Level 3</div><div class="class-meta"><span class="tag tag-grey">Level 3+</span></div><div class="class-instructor">Chloe</div></div>
+                  <div class="class-card locked" onclick="openLevelWarning('Level 3','Wed 7:30pm')"><div class="class-day">Wednesday - 7:30pm</div><div class="class-name">Level 3</div><div class="class-meta"><span class="tag tag-grey">Level 3+</span></div><div class="class-instructor">Maz</div></div>
+                  <div class="class-card locked" onclick="openLevelWarning('Level 4','Mon 7:30pm')"><div class="class-day">Monday - 7:30pm</div><div class="class-name">Level 4</div><div class="class-meta"><span class="tag tag-grey">Level 4+</span></div><div class="class-instructor">Chloe</div></div>
+                  <div class="class-card locked" onclick="openLevelWarning('Level 4','Sat 10:00am')"><div class="class-day">Saturday - 10:00am</div><div class="class-name">Level 4</div><div class="class-meta"><span class="tag tag-grey">Level 4+</span></div><div class="class-instructor">Chloe</div></div>
+                  <div class="class-card locked" onclick="openLevelWarning('Level 5','Tue 7:30pm')"><div class="class-day">Tuesday - 7:30pm</div><div class="class-name">Level 5</div><div class="class-meta"><span class="tag tag-grey">Level 5+</span></div><div class="class-instructor">Chloe</div></div>
+                  <div class="class-card locked" onclick="openLevelWarning('Level 5','Thu 6:30pm')"><div class="class-day">Thursday - 6:30pm</div><div class="class-name">Level 5</div><div class="class-meta"><span class="tag tag-grey">Level 5+</span></div><div class="class-instructor">Mimi</div></div>
+                  <div class="class-card locked" onclick="openLevelWarning('Level 6','Tue 7:30pm')"><div class="class-day">Tuesday - 7:30pm</div><div class="class-name">Level 6</div><div class="class-meta"><span class="tag tag-grey">Level 6</span></div><div class="class-instructor">Mimi</div></div>
+                  <div class="class-card locked" onclick="openLevelWarning('Strip','Tue 6:30pm')"><div class="class-day">Tuesday - 6:30pm</div><div class="class-name">Strip</div><div class="class-meta"><span class="tag tag-grey">Level 3+</span></div><div class="class-instructor">Mimi</div></div>
+                  <div class="class-card locked" onclick="openLevelWarning('Strip','Thu 7:30pm')"><div class="class-day">Thursday - 7:30pm</div><div class="class-name">Strip</div><div class="class-meta"><span class="tag tag-grey">Level 3+</span></div><div class="class-instructor">Mimi</div></div>
+                  <div class="class-card locked" onclick="openLevelWarning('High Tricks','Tue 8:30pm')"><div class="class-day">Tuesday - 8:30pm</div><div class="class-name">High Tricks</div><div class="class-meta"><span class="tag tag-grey">Level 5+</span></div><div class="class-instructor">Mimi - <span style="color:#ff6b6b">Fully booked</span></div></div>
+                  <div class="class-card locked" onclick="openLevelWarning('3 Tricks','Tue 6:30pm')"><div class="class-day">Tuesday - 6:30pm</div><div class="class-name">3 Tricks</div><div class="class-meta"><span class="tag tag-grey">Level 3+</span></div><div class="class-instructor">Avalon</div></div>
+                  <div class="class-card locked" onclick="openLevelWarning('4 Tricks','Wed 8:30pm')"><div class="class-day">Wednesday - 8:30pm</div><div class="class-name">4 Tricks</div><div class="class-meta"><span class="tag tag-grey">Level 4+</span></div><div class="class-instructor">Chloe</div></div>
+                  <div class="class-card locked" onclick="openLevelWarning('Chair','Wed 6:30pm')"><div class="class-day">Wednesday - 6:30pm</div><div class="class-name">Chair</div><div class="class-meta"><span class="tag tag-grey">Level 3+</span></div><div class="class-instructor">Chloe</div></div>
+                  <div class="class-card locked" onclick="openLevelWarning('Dirty Dance','Thu 8:30pm')"><div class="class-day">Thursday - 8:30pm</div><div class="class-name">Dirty Dance</div><div class="class-meta"><span class="tag tag-grey">Level 3+</span></div><div class="class-instructor">Mimi</div></div>
+                  <div class="class-card locked" onclick="openLevelWarning('Inter Floor','Thu 5:30pm')"><div class="class-day">Thursday - 5:30pm</div><div class="class-name">Inter Floor</div><div class="class-meta"><span class="tag tag-grey">Level 3+</span></div><div class="class-instructor">Mimi</div></div>
+                  <div class="class-card locked" onclick="openLevelWarning('Advanced Floor','Sun 10:00am')"><div class="class-day">Sunday - 10:00am</div><div class="class-name">Advanced Floor</div><div class="class-meta"><span class="tag tag-grey">Level 4+</span></div><div class="class-instructor">Mimi</div></div>
+                  <div class="class-card locked" onclick="openLevelWarning('5/6 Tricks','Sun 11:00am')"><div class="class-day">Sunday - 11:00am</div><div class="class-name">5/6 Tricks</div><div class="class-meta"><span class="tag tag-grey">Level 5+</span></div><div class="class-instructor">Mimi</div></div>
                 </div>
               </div>
             </div>
@@ -917,62 +951,18 @@
             <div id="season-classes-all" style="display:none">
               <div class="section-label">All classes</div>
               <div class="grid-2 mb-24">
-                <div class="class-card" onclick="toggleClass('l1-tue','Level 1','Tue 6:30pm',this)">
-                  <div class="check">+</div>
-                  <div class="class-day">Tuesday - 6:30pm</div>
-                  <div class="class-name">Level 1</div>
-                  <div class="class-meta"><span class="tag tag-lime">Recommended for you</span></div>
-                  <div class="class-instructor">Chloe - Studio A</div>
-                </div>
-                <div class="class-card" onclick="toggleClass('l1-sat','Level 1','Sat 10am',this)">
-                  <div class="check">+</div>
-                  <div class="class-day">Saturday - 10:00am</div>
-                  <div class="class-name">Level 1</div>
-                  <div class="class-meta"><span class="tag tag-lime">Recommended for you</span></div>
-                  <div class="class-instructor">Mimi - <span style="color:#ffaa44">Almost full</span></div>
-                </div>
-                <div class="class-card" onclick="toggleClass('l2-mon','Level 2','Mon 6:30pm',this)">
-                  <div class="check">+</div>
-                  <div class="class-day">Monday - 6:30pm</div>
-                  <div class="class-name">Level 2</div>
-                  <div class="class-meta"><span class="tag tag-grey">Studio A</span></div>
-                  <div class="class-instructor">Chloe</div>
-                </div>
-                <div class="class-card" onclick="toggleClass('l2-wed','Level 2','Wed 7:30pm',this)">
-                  <div class="check">+</div>
-                  <div class="class-day">Wednesday - 7:30pm</div>
-                  <div class="class-name">Level 2</div>
-                  <div class="class-meta"><span class="tag tag-grey">Studio B</span></div>
-                  <div class="class-instructor">Mimi</div>
-                </div>
-                <div class="class-card" onclick="toggleClass('kiki-fri','Kiki','Fri 7pm',this)">
-                  <div class="check">+</div>
-                  <div class="class-day">Friday - 7:00pm</div>
-                  <div class="class-name">Kiki</div>
-                  <div class="class-meta"><span class="tag tag-grey">Conditioning</span></div>
-                  <div class="class-instructor">Chloe</div>
-                </div>
-                <div class="class-card" onclick="toggleClass('strip-tue','Strip Virgin','Tue 8pm',this)">
-                  <div class="check">+</div>
-                  <div class="class-day">Tuesday - 8:00pm</div>
-                  <div class="class-name">Strip Virgin</div>
-                  <div class="class-meta"><span class="tag tag-grey">Specialty</span></div>
-                  <div class="class-instructor">Chloe - Studio A</div>
-                </div>
-                <div class="class-card" onclick="toggleClass('dance-fri','Dance','Fri 6:30pm',this)">
-                  <div class="check">+</div>
-                  <div class="class-day">Friday - 6:30pm</div>
-                  <div class="class-name">Dance</div>
-                  <div class="class-meta"><span class="tag tag-grey">Specialty</span></div>
-                  <div class="class-instructor">Mimi - Studio B</div>
-                </div>
-                <div class="class-card" onclick="toggleClass('l4-mon','Level 4','Mon 8pm',this)">
-                  <div class="check">+</div>
-                  <div class="class-day">Monday - 8:00pm</div>
-                  <div class="class-name">Level 4</div>
-                  <div class="class-meta"><span class="tag tag-grey">Studio A</span></div>
-                  <div class="class-instructor">Mimi</div>
-                </div>
+                <div class="class-card" onclick="toggleClass('l1-wed530','Level 1','Wed 5:30pm',this)"><div class="check">+</div><div class="class-day">Wednesday - 5:30pm</div><div class="class-name">Level 1</div><div class="class-meta"><span class="tag tag-lime">Recommended for you</span></div><div class="class-instructor">Chloe</div></div>
+                <div class="class-card" onclick="toggleClass('l1-mon630','Level 1','Mon 6:30pm',this)"><div class="check">+</div><div class="class-day">Monday - 6:30pm</div><div class="class-name">Level 1</div><div class="class-meta"><span class="tag tag-lime">Recommended for you</span></div><div class="class-instructor">Jaz</div></div>
+                <div class="class-card" onclick="toggleClass('l2-mon630b','Level 2','Mon 6:30pm',this)"><div class="check">+</div><div class="class-day">Monday - 6:30pm</div><div class="class-name">Level 2</div><div class="class-meta"><span class="tag tag-grey">Levelled</span></div><div class="class-instructor">Chloe</div></div>
+                <div class="class-card" onclick="toggleClass('l2-tue530b','Level 2','Tue 5:30pm',this)"><div class="check">+</div><div class="class-day">Tuesday - 5:30pm</div><div class="class-name">Level 2</div><div class="class-meta"><span class="tag tag-grey">Levelled</span></div><div class="class-instructor">Avalon</div></div>
+                <div class="class-card" onclick="toggleClass('l3-mon830','Level 3','Mon 8:30pm',this)"><div class="check">+</div><div class="class-day">Monday - 8:30pm</div><div class="class-name">Level 3</div><div class="class-meta"><span class="tag tag-grey">Levelled</span></div><div class="class-instructor">Chloe</div></div>
+                <div class="class-card" onclick="toggleClass('l4-mon730','Level 4','Mon 7:30pm',this)"><div class="check">+</div><div class="class-day">Monday - 7:30pm</div><div class="class-name">Level 4</div><div class="class-meta"><span class="tag tag-grey">Levelled</span></div><div class="class-instructor">Chloe</div></div>
+                <div class="class-card" onclick="toggleClass('stripvir-mon730b','Strip Virgin','Mon 7:30pm',this)"><div class="check">+</div><div class="class-day">Monday - 7:30pm</div><div class="class-name">Strip Virgin</div><div class="class-meta"><span class="tag tag-grey">Specialty</span></div><div class="class-instructor">Jaz</div></div>
+                <div class="class-card" onclick="toggleClass('dancevir-wed730b','Dance Virgin','Wed 7:30pm',this)"><div class="check">+</div><div class="class-day">Wednesday - 7:30pm</div><div class="class-name">Dance Virgin</div><div class="class-meta"><span class="tag tag-grey">Specialty</span></div><div class="class-instructor">Chloe</div></div>
+                <div class="class-card" onclick="toggleClass('kiki-fri530b','Kiki','Fri 5:30pm',this)"><div class="check">+</div><div class="class-day">Friday - 5:30pm</div><div class="class-name">Kiki</div><div class="class-meta"><span class="tag tag-grey">Conditioning</span></div><div class="class-instructor">Mimi</div></div>
+                <div class="class-card" onclick="toggleClass('unravel-sat9b','Unravel','Sat 9:00am',this)"><div class="check">+</div><div class="class-day">Saturday - 9:00am</div><div class="class-name">Unravel</div><div class="class-meta"><span class="tag tag-grey">Conditioning</span></div><div class="class-instructor">Chloe</div></div>
+                <div class="class-card" onclick="toggleClass('floorvir-sat12b','Floor Virgin','Sat 12:00pm',this)"><div class="check">+</div><div class="class-day">Saturday - 12:00pm</div><div class="class-name">Floor Virgin</div><div class="class-meta"><span class="tag tag-grey">Specialty</span></div><div class="class-instructor">Chloe</div></div>
+                <div class="class-card" onclick="toggleClass('dance-fri630b','Dance','Fri 6:30pm',this)"><div class="check">+</div><div class="class-day">Friday - 6:30pm</div><div class="class-name">Dance</div><div class="class-meta"><span class="tag tag-grey">Specialty</span></div><div class="class-instructor">Mimi</div></div>
               </div>
             </div>
 
@@ -1028,61 +1018,105 @@
           <button class="filter-btn" onclick="toggleFilter(this)">Next week</button>
         </div>
 
-        <div class="section-label">Wed 14 May</div>
-        <div class="casual-row has-credit" onclick="openCasualModal('Kiki','Wed 14 May - 7:00pm','Chloe',true)">
-          <div class="casual-date"><div class="casual-date-day">WED</div><div class="casual-date-num">14</div></div>
+        <div class="section-label">Mon 12 May</div>
+        <div class="casual-row has-credit" onclick="openCasualModal('Dance Tech','Mon 12 May - 5:30pm','Chloe',true)">
+          <div class="casual-date"><div class="casual-date-day">MON</div><div class="casual-date-num">12</div></div>
           <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
-          <div class="casual-info">
-            <div class="casual-name">Kiki</div>
-            <div class="casual-meta">7:00pm - Chloe - Studio B - Studio B</div>
-            <div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div>
-          </div>
+          <div class="casual-info"><div class="casual-name">Dance Tech</div><div class="casual-meta">5:30pm - Chloe</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
+          <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
+        </div>
+        <div class="casual-row has-credit" onclick="openCasualModal('Floor Virgin','Mon 12 May - 5:30pm','Jaz',true)">
+          <div class="casual-date"><div class="casual-date-day">MON</div><div class="casual-date-num">12</div></div>
+          <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
+          <div class="casual-info"><div class="casual-name">Floor Virgin</div><div class="casual-meta">5:30pm - Jaz</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
+          <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
+        </div>
+        <div class="casual-row has-credit" onclick="openCasualModal('Strip Virgin','Mon 12 May - 7:30pm','Jaz',true)">
+          <div class="casual-date"><div class="casual-date-day">MON</div><div class="casual-date-num">12</div></div>
+          <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
+          <div class="casual-info"><div class="casual-name">Strip Virgin</div><div class="casual-meta">7:30pm - Jaz</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
           <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
         </div>
 
-        <div class="casual-row has-credit" onclick="openCasualModal('Spin Virgin','Wed 14 May - 8:00pm','Mimi',true)">
-          <div class="casual-date"><div class="casual-date-day">WED</div><div class="casual-date-num">14</div></div>
+        <div class="section-label mt-16">Tue 13 May</div>
+        <div class="casual-row has-credit" onclick="openCasualModal('Strip Virgin','Tue 13 May - 5:30pm','Amy',true)">
+          <div class="casual-date"><div class="casual-date-day">TUE</div><div class="casual-date-num">13</div></div>
           <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
-          <div class="casual-info">
-            <div class="casual-name">Spin Virgin</div>
-            <div class="casual-meta">8:00pm - Mimi - Studio A - Studio A</div>
-            <div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div>
-          </div>
+          <div class="casual-info"><div class="casual-name">Strip Virgin</div><div class="casual-meta">5:30pm - Amy</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
           <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
         </div>
 
-        <div class="section-label mt-16">Thu 15 May</div>
-        <div class="casual-row" onclick="openCasualModal('Practice Time','Thu 15 May - 8:00pm','Open studio',false,'$20')">
-          <div class="casual-date"><div class="casual-date-day">THU</div><div class="casual-date-num">15</div></div>
+        <div class="section-label mt-16">Wed 14 May</div>
+        <div class="casual-row has-credit" onclick="openCasualModal('Invert Tech','Wed 14 May - 6:30pm','Maz',true)">
+          <div class="casual-date"><div class="casual-date-day">WED</div><div class="casual-date-num">14</div></div>
           <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
-          <div class="casual-info">
-            <div class="casual-name">Practice Time</div>
-            <div class="casual-meta">8:00pm - 9:30pm - Open studio </div>
-            <div style="margin-top:6px"><span class="tag tag-lime" style="font-size:11px">$20 enrolled rate</span></div>
-          </div>
+          <div class="casual-info"><div class="casual-name">Invert Tech</div><div class="casual-meta">6:30pm - Maz</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
+          <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
+        </div>
+        <div class="casual-row has-credit" onclick="openCasualModal('Dance Virgin','Wed 14 May - 7:30pm','Chloe',true)">
+          <div class="casual-date"><div class="casual-date-day">WED</div><div class="casual-date-num">14</div></div>
+          <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
+          <div class="casual-info"><div class="casual-name">Dance Virgin</div><div class="casual-meta">7:30pm - Chloe</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
+          <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
+        </div>
+        <div class="casual-row" onclick="openCasualModal('Practice Time','Wed 14 May - 4:30pm','Reception',false,'$20')">
+          <div class="casual-date"><div class="casual-date-day">WED</div><div class="casual-date-num">14</div></div>
+          <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
+          <div class="casual-info"><div class="casual-name">Practice Time</div><div class="casual-meta">4:30pm - 6:20pm - Open studio</div><div style="margin-top:6px"><span class="tag tag-lime" style="font-size:11px">$20 enrolled rate</span></div></div>
           <div class="casual-price"><div class="casual-price-main">$20</div><div class="casual-price-full">$30</div></div>
         </div>
 
-        <div class="casual-row has-credit" onclick="openCasualModal('Invert Tech','Thu 15 May - 7:00pm','Mimi',true)">
+        <div class="section-label mt-16">Thu 15 May</div>
+        <div class="casual-row" onclick="openCasualModal('Practice Time','Thu 15 May - 7:30pm','Reception',false,'$20')">
           <div class="casual-date"><div class="casual-date-day">THU</div><div class="casual-date-num">15</div></div>
           <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
-          <div class="casual-info">
-            <div class="casual-name">Invert Tech</div>
-            <div class="casual-meta">7:00pm - Mimi - Studio A - Studio A</div>
-            <div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div>
-          </div>
-          <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
+          <div class="casual-info"><div class="casual-name">Practice Time</div><div class="casual-meta">7:30pm - 9:00pm - Open studio</div><div style="margin-top:6px"><span class="tag tag-lime" style="font-size:11px">$20 enrolled rate</span></div></div>
+          <div class="casual-price"><div class="casual-price-main">$20</div><div class="casual-price-full">$30</div></div>
+        </div>
+        <div class="casual-row" onclick="openCasualModal('Practice Time','Thu 15 May - 8:30pm','Reception',false,'$20')">
+          <div class="casual-date"><div class="casual-date-day">THU</div><div class="casual-date-num">15</div></div>
+          <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
+          <div class="casual-info"><div class="casual-name">Practice Time</div><div class="casual-meta">8:30pm - 10:00pm - Open studio</div><div style="margin-top:6px"><span class="tag tag-lime" style="font-size:11px">$20 enrolled rate</span></div></div>
+          <div class="casual-price"><div class="casual-price-main">$20</div><div class="casual-price-full">$30</div></div>
         </div>
 
         <div class="section-label mt-16">Fri 16 May</div>
+        <div class="casual-row has-credit" onclick="openCasualModal('Kiki','Fri 16 May - 5:30pm','Mimi',true)">
+          <div class="casual-date"><div class="casual-date-day">FRI</div><div class="casual-date-num">16</div></div>
+          <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
+          <div class="casual-info"><div class="casual-name">Kiki</div><div class="casual-meta">5:30pm - Mimi</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
+          <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
+        </div>
         <div class="casual-row has-credit" onclick="openCasualModal('Dance','Fri 16 May - 6:30pm','Mimi',true)">
           <div class="casual-date"><div class="casual-date-day">FRI</div><div class="casual-date-num">16</div></div>
           <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
-          <div class="casual-info">
-            <div class="casual-name">Dance</div>
-            <div class="casual-meta">6:30pm - Mimi - Studio B - Studio B</div>
-            <div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div>
-          </div>
+          <div class="casual-info"><div class="casual-name">Dance</div><div class="casual-meta">6:30pm - Mimi</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
+          <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
+        </div>
+        <div class="casual-row" onclick="openCasualModal('Practice Time','Fri 16 May - 5:30pm','Reception',false,'$20')">
+          <div class="casual-date"><div class="casual-date-day">FRI</div><div class="casual-date-num">16</div></div>
+          <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
+          <div class="casual-info"><div class="casual-name">Practice Time</div><div class="casual-meta">5:30pm - 7:00pm - Open studio</div><div style="margin-top:6px"><span class="tag tag-lime" style="font-size:11px">$20 enrolled rate</span></div></div>
+          <div class="casual-price"><div class="casual-price-main">$20</div><div class="casual-price-full">$30</div></div>
+        </div>
+
+        <div class="section-label mt-16">Sat 17 May</div>
+        <div class="casual-row has-credit" onclick="openCasualModal('Unravel','Sat 17 May - 9:00am','Chloe',true)">
+          <div class="casual-date"><div class="casual-date-day">SAT</div><div class="casual-date-num">17</div></div>
+          <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
+          <div class="casual-info"><div class="casual-name">Unravel</div><div class="casual-meta">9:00am - Chloe</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
+          <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
+        </div>
+        <div class="casual-row" onclick="openCasualModal('Practice Time','Sat 17 May - 10:00am','Reception',false,'$20')">
+          <div class="casual-date"><div class="casual-date-day">SAT</div><div class="casual-date-num">17</div></div>
+          <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
+          <div class="casual-info"><div class="casual-name">Practice Time</div><div class="casual-meta">10:00am - 11:30am - Open studio</div><div style="margin-top:6px"><span class="tag tag-lime" style="font-size:11px">$20 enrolled rate</span></div></div>
+          <div class="casual-price"><div class="casual-price-main">$20</div><div class="casual-price-full">$30</div></div>
+        </div>
+        <div class="casual-row has-credit" onclick="openCasualModal('Floor Virgin','Sat 17 May - 12:00pm','Chloe',true)">
+          <div class="casual-date"><div class="casual-date-day">SAT</div><div class="casual-date-num">17</div></div>
+          <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
+          <div class="casual-info"><div class="casual-name">Floor Virgin</div><div class="casual-meta">12:00pm - Chloe</div><div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div></div>
           <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
         </div>
       </div>
@@ -1734,7 +1768,7 @@
       <div style="display:flex;gap:8px;margin-bottom:22px">
         <button class="filter-btn active" id="plan-freq-weekly" onclick="setPlanFreq(this,'weekly')">Weekly</button>
         <button class="filter-btn" id="plan-freq-fortnightly" onclick="setPlanFreq(this,'fortnightly')">Fortnightly</button>
-        <button class="filter-btn" id="plan-freq-monthly" onclick="setPlanFreq(this,'monthly')">Monthly</button>
+        <button class="filter-btn" id="plan-freq-monthly" onclick="setPlanFreq(this,'monthly')">Monthly (2x)</button>
       </div>
 
       <div style="font-size:13px;color:var(--grey);margin-bottom:12px">When would you like to start payments?</div>
@@ -2676,18 +2710,20 @@
 
     const SEASON_START = new Date(2026, 5, 2);  // 2 Jun 2026
     const SEASON_END   = new Date(2026, 6, 25); // 25 Jul 2026
-    const freqDays = { weekly: 7, fortnightly: 14, monthly: 30 };
+    const freqDays = { weekly: 7, fortnightly: 14, monthly: 28 };
     const days = freqDays[planFreq];
     const startDate = planStart === 'season' ? new Date(SEASON_START) : new Date();
 
-    // Calculate how many instalments fit before season end
-    let numPayments = 0;
-    const testDate = new Date(startDate);
-    while (testDate <= SEASON_END) {
-      numPayments++;
-      testDate.setDate(testDate.getDate() + days);
+    // Monthly = exactly 2 payments (Week 1 + Week 5); others fill to season end
+    let numPayments;
+    if (planFreq === 'monthly') {
+      numPayments = 2;
+    } else {
+      numPayments = 0;
+      const testDate = new Date(startDate);
+      while (testDate <= SEASON_END) { numPayments++; testDate.setDate(testDate.getDate() + days); }
+      numPayments = Math.max(1, numPayments);
     }
-    numPayments = Math.max(1, numPayments);
     const instalment = (remaining / numPayments).toFixed(2);
 
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
