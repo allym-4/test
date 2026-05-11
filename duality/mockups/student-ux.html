@@ -1622,11 +1622,11 @@
 
       <!-- CASUAL AND CATCH-UPS TAB -->
       <div id="panel-casual" style="display:none">
-        <div class="credit-badge">
-          <div class="credit-count">1</div>
+        <div class="credit-badge" id="casual-credit-badge">
+          <div class="credit-count" id="casual-credit-badge-count">1</div>
           <div>
-            <div class="credit-label">Catch-up credit available</div>
-            <div class="credit-sub">Expires end of Season 3 – use it to attend any eligible class for free</div>
+            <div class="credit-label" id="casual-credit-badge-label">Catch-up credit available</div>
+            <div class="credit-sub" id="casual-credit-badge-sub">Expires end of Season 3 – use it to attend any eligible class for free</div>
           </div>
         </div>
 
@@ -4288,7 +4288,7 @@
     <div class="modal-title" style="text-align:center;margin-bottom:8px">Heads up</div>
     <div style="font-size:14px;color:var(--grey);line-height:1.7;margin-bottom:6px" id="first-timer-class-meta"></div>
     <div style="font-size:14px;color:var(--white);line-height:1.7;margin-bottom:20px">This class isn't designed for first-timers. It may involve techniques and terminology that assume prior experience. We recommend starting with a Virgin or Level 1 class first.</div>
-    <label style="display:flex;gap:12px;align-items:flex-start;cursor:pointer;margin-bottom:24px" onclick="document.getElementById('first-timer-ack').click();event.preventDefault()">
+    <label for="first-timer-ack" style="display:flex;gap:12px;align-items:flex-start;cursor:pointer;margin-bottom:24px">
       <input type="checkbox" id="first-timer-ack" style="width:18px;height:18px;flex-shrink:0;margin-top:2px;accent-color:var(--lime)">
       <span style="font-size:13px;color:var(--grey);line-height:1.5">I understand this isn't a beginner class and I'm happy to proceed with the booking.</span>
     </label>
@@ -6109,8 +6109,44 @@
     enrolled.style.display    = 'none';
     s4Secured.style.display   = 'none';
 
+    // Restore casual rows to enrolled/catch-up state by default
+    if (state !== 'not-enrolled') {
+      classPassCredits = 0;
+      const badge = document.getElementById('casual-credit-badge');
+      if (badge) {
+        document.getElementById('casual-credit-badge-count').textContent = '1';
+        document.getElementById('casual-credit-badge-label').textContent = 'Catch-up credit available';
+        document.getElementById('casual-credit-badge-sub').textContent = 'Expires end of Season 3 – use it to attend any eligible class for free';
+      }
+      document.querySelectorAll('#casual-list-view .casual-row[data-was-catchup="true"]').forEach(row => {
+        row.classList.add('has-credit');
+        row.dataset.catchup = 'true';
+        delete row.dataset.wasCatchup;
+        const priceEl = row.querySelector('.casual-price');
+        if (priceEl) priceEl.innerHTML = '<div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div>';
+      });
+    }
+
     if (state === 'not-enrolled') {
       notEnrolled.style.display = 'block';
+      // Credit badge: show class pass credits, not catch-up
+      classPassCredits = 2;
+      const badge = document.getElementById('casual-credit-badge');
+      if (badge) {
+        document.getElementById('casual-credit-badge-count').textContent = '2';
+        document.getElementById('casual-credit-badge-label').textContent = 'Casual class pass credits';
+        document.getElementById('casual-credit-badge-sub').textContent = 'Use these to drop into any casual class at no extra charge';
+      }
+      // Remove has-credit from catch-up rows (catch-up requires enrolment); show flat $40
+      document.querySelectorAll('#casual-list-view .casual-row').forEach(row => {
+        if (row.dataset.catchup === 'true' && row.dataset.enrolled !== 'true') {
+          row.dataset.wasCatchup = 'true'; // remember for restore
+          row.classList.remove('has-credit');
+          row.dataset.catchup = 'false';
+          const priceEl = row.querySelector('.casual-price');
+          if (priceEl) priceEl.innerHTML = '<div class="casual-price-main">$40</div>';
+        }
+      });
 
     } else if (state === 'enrolled-s4-open') {
       // New season open, not yet booked - show CTA banner only
