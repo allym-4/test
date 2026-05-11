@@ -941,7 +941,18 @@ tr.clickable-row:hover td { background: #141414; }
             <button class="btn btn-ghost btn-sm">Next →</button>
           </div>
         </div>
-        <button class="btn btn-lime" onclick="openModal('modal-class')">+ Add Class</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost" onclick="alert('No additional conflicts found.')">Check for Conflicts</button>
+          <button class="btn btn-lime" onclick="openModal('modal-class')">+ Add Class</button>
+        </div>
+      </div>
+      <div id="timetable-conflict-banner" style="background:#2a0000;border:1px solid #ff3333;border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <span style="font-size:18px;">⚠️</span>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#ff6b6b;">2 scheduling conflicts detected</div>
+          <div style="font-size:12px;color:var(--grey);margin-top:2px;">The Box is double-booked on Wednesday 7:00pm. Rhapsody has overlapping classes on Friday 6:00–7:30pm.</div>
+        </div>
+        <button class="btn btn-ghost btn-xs" style="margin-left:auto;" onclick="document.getElementById('timetable-conflict-banner').style.display='none'">Dismiss</button>
       </div>
       <div class="tt-grid">
         <div class="tt-head"></div>
@@ -1493,6 +1504,74 @@ tr.clickable-row:hover td { background: #141414; }
           <div style="margin-top:12px;"><button class="btn btn-lime btn-sm">Save</button></div>
         </div>
       </div>
+
+      <!-- GST & Tax Settings -->
+      <div class="section" style="margin-top:20px;">
+        <div class="section-title">GST &amp; Tax Settings</div>
+        <div class="notif-row">
+          <div><div style="font-weight:500;font-size:13px;">GST Registered</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Your business is registered for GST</div></div>
+          <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+        </div>
+        <div class="notif-row">
+          <div style="flex:1;"><div style="font-weight:500;font-size:13px;">ABN</div></div>
+          <input type="text" value="12 345 678 901" style="width:180px;background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:monospace;font-size:13px;padding:6px 10px;" />
+        </div>
+        <div class="notif-row">
+          <div><div style="font-weight:500;font-size:13px;">GST Rate</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Australian standard GST rate — locked</div></div>
+          <span style="color:var(--grey);font-size:13px;background:#1a1a1a;border:1px solid var(--border);border-radius:6px;padding:6px 14px;">10%</span>
+        </div>
+        <div class="notif-row">
+          <div><div style="font-weight:500;font-size:13px;">Automatically include GST breakdown on all invoices</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Tax invoices will show GST component separately</div></div>
+          <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+        </div>
+        <div class="notif-row" style="border-bottom:none;">
+          <div style="flex:1;"><div style="font-weight:500;font-size:13px;">Business Name on Invoices</div></div>
+          <input type="text" value="Duality Pole Pty Ltd" style="width:200px;background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:13px;padding:6px 10px;" />
+        </div>
+        <div style="margin-top:14px;"><button class="btn btn-lime btn-sm" onclick="alert('Tax settings saved!')">Save</button></div>
+      </div>
+
+      <!-- Xero Integration -->
+      <div class="section" style="margin-top:20px;">
+        <div class="section-title">Xero Integration
+          <span class="tag tag-grey">Not Connected</span>
+        </div>
+        <p style="font-size:13px;color:var(--grey);line-height:1.5;margin-bottom:16px;">Sync invoices, payments and refunds directly to your Xero account. New transactions sync automatically every hour.</p>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <button class="btn btn-outline" onclick="alert('Redirecting to Xero OAuth…')">Connect Xero</button>
+          <button class="btn btn-ghost" style="opacity:0.4;cursor:not-allowed;" disabled>Sync Now</button>
+        </div>
+        <!-- Once connected, these fields become active:
+        <div class="info-row"><div class="info-label">Organisation</div><div class="info-val">Duality Pole Pty Ltd</div></div>
+        <div class="info-row"><div class="info-label">Last Sync</div><div class="info-val" style="color:var(--grey)">—</div></div>
+        <div class="info-row"><div class="info-label">Revenue Account</div><div class="info-val"><input type="text" placeholder="e.g. 200" /></div></div>
+        <div class="info-row"><div class="info-label">Fees Account</div><div class="info-val"><input type="text" placeholder="e.g. 404" /></div></div>
+        <div class="info-row"><div class="info-label">Credits Account</div><div class="info-val"><input type="text" placeholder="e.g. 820" /></div></div>
+        -->
+      </div>
+
+      <!-- Forms & Documents -->
+      <div class="section" style="margin-top:20px;">
+        <div class="section-title">Forms &amp; Documents
+          <button class="btn btn-lime btn-sm" onclick="openModal('modal-form-builder')">+ Create Custom Form</button>
+        </div>
+        <div class="notif-row">
+          <div><div style="font-weight:500;font-size:13px;">Health &amp; Injury Questionnaire</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Required before first class</div></div>
+          <div style="display:flex;gap:8px;align-items:center;"><button class="btn btn-ghost btn-xs">Edit</button><button class="btn btn-ghost btn-xs">Preview</button><label class="toggle" title="Required"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+        </div>
+        <div class="notif-row">
+          <div><div style="font-weight:500;font-size:13px;">Photo &amp; Media Consent</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Collected on sign up</div></div>
+          <div style="display:flex;gap:8px;align-items:center;"><button class="btn btn-ghost btn-xs">Edit</button><button class="btn btn-ghost btn-xs">Preview</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+        </div>
+        <div class="notif-row">
+          <div><div style="font-weight:500;font-size:13px;">Studio Waiver</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Required before each season</div></div>
+          <div style="display:flex;gap:8px;align-items:center;"><button class="btn btn-ghost btn-xs">Edit</button><button class="btn btn-ghost btn-xs">Preview</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+        </div>
+        <div class="notif-row" style="border-bottom:none;">
+          <div><div style="font-weight:500;font-size:13px;">Season Enrolment Agreement</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Required before each season enrolment</div></div>
+          <div style="display:flex;gap:8px;align-items:center;"><button class="btn btn-ghost btn-xs">Edit</button><button class="btn btn-ghost btn-xs">Preview</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+        </div>
+      </div>
     </div>
 
     <!-- ===== REPORTING ===== -->
@@ -1846,6 +1925,28 @@ tr.clickable-row:hover td { background: #141414; }
     <div class="field"><label>Phone</label><input type="text" placeholder="0400 000 000" /></div>
     <div class="field"><label>Source</label><select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;"><option>Instagram</option><option>Google</option><option>Referral</option><option>Website</option><option>Walk-in</option></select></div>
     <div style="display:flex;gap:8px;margin-top:4px;"><button class="btn btn-lime" onclick="alert('Lead added!');closeModal('modal-add-lead')">Add Lead</button><button class="btn btn-ghost" onclick="closeModal('modal-add-lead')">Cancel</button></div>
+  </div>
+</div>
+
+<!-- Form Builder Modal -->
+<div class="modal-overlay" id="modal-form-builder">
+  <div class="modal modal-lg">
+    <div class="modal-title">Form Builder <button class="modal-close" onclick="closeModal('modal-form-builder')">✕</button></div>
+    <div class="field"><label>Form Name</label><input type="text" placeholder="e.g. Health & Injury Questionnaire" /></div>
+    <div class="field"><label>When to Collect</label><select><option>On Sign Up</option><option>Before First Class</option><option>Before Each Season</option><option>On Demand</option></select></div>
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:10px;">Fields</div>
+    <div id="form-fields" style="display:flex;flex-direction:column;gap:8px;">
+      <div class="field-row" style="align-items:center;gap:8px;">
+        <div class="field" style="flex:1;margin-bottom:0;"><input type="text" value="Do you have any injuries or medical conditions we should know about?" /></div>
+        <div class="field" style="width:160px;margin-bottom:0;"><select><option>Long Text</option><option>Short Text</option><option>Multiple Choice</option><option>Checkbox</option><option>Date</option><option>Signature</option><option>File Upload</option></select></div>
+      </div>
+      <div class="field-row" style="align-items:center;gap:8px;">
+        <div class="field" style="flex:1;margin-bottom:0;"><input type="text" value="I agree to the studio waiver and terms" /></div>
+        <div class="field" style="width:160px;margin-bottom:0;"><select><option>Checkbox</option><option>Short Text</option><option>Long Text</option><option>Multiple Choice</option><option>Date</option><option>Signature</option><option>File Upload</option></select></div>
+      </div>
+    </div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="(function(){const c=document.getElementById('form-fields');const row=document.createElement('div');row.className='field-row';row.style.cssText='align-items:center;gap:8px;';row.innerHTML='<div class=\'field\' style=\'flex:1;margin-bottom:0;\'><input type=\'text\' placeholder=\'Enter field label…\' /></div><div class=\'field\' style=\'width:160px;margin-bottom:0;\'><select><option>Short Text</option><option>Long Text</option><option>Multiple Choice</option><option>Checkbox</option><option>Date</option><option>Signature</option><option>File Upload</option></select></div>';c.appendChild(row);})()">+ Add Field</button>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-form-builder')">Cancel</button><button class="btn btn-lime" onclick="alert('Form saved!');closeModal('modal-form-builder')">Save Form</button></div>
   </div>
 </div>
 
