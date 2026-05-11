@@ -2368,11 +2368,11 @@
             <div class="onboard-option-sub">Help me find the right level for where I'm at</div>
           </div>
         </div>
-        <div class="onboard-option" onclick="showOnboardStep('suppl-q1')">
+        <div class="onboard-option" onclick="showOnboardStep('suppl-q0')">
           <div class="onboard-dot"></div>
           <div>
             <div class="onboard-option-title">A supplementary class</div>
-            <div class="onboard-option-sub">Strip, Dance, Floor, Kiki, Unravel and similar</div>
+            <div class="onboard-option-sub">Strip, Dance, Floor, Chair, Kiki, Unravel and more</div>
           </div>
         </div>
         <div class="onboard-option" onclick="closeModal('onboarding-modal');showScreen('book');showBookTab('season')">
@@ -2522,76 +2522,98 @@
     </div>
 
     <!-- SUPPLEMENTARY QUIZ: Q1 - What style? -->
-    <div id="onboard-step-suppl-q1" style="display:none">
+    <!-- SUPPLEMENTARY QUIZ: Q0 — Tricks/conditioning vs Dance/movement -->
+    <div id="onboard-step-suppl-q0" style="display:none">
       <button class="btn btn-ghost btn-sm" style="margin-bottom:16px" onclick="showOnboardStep('2')">Back</button>
-      <div class="onboard-progress"><div class="onboard-progress-bar" style="width:33%"></div></div>
-      <div class="modal-title" style="margin-top:14px">What style interests you?</div>
-      <div class="modal-sub">We'll point you to the right starting class.</div>
+      <div class="onboard-progress"><div class="onboard-progress-bar" style="width:25%"></div></div>
+      <div class="modal-title" style="margin-top:14px">What draws you to supplementary classes?</div>
+      <div class="modal-sub">We'll match you to the right style.</div>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <div class="onboard-option" onclick="showOnboardStep('suppl-q2-heels')">
+        <div class="onboard-option" onclick="showOnboardResult('suppl-conditioning')">
+          <div class="onboard-dot"></div>
+          <div>
+            <div class="onboard-option-title">Tricks, technique and conditioning</div>
+            <div class="onboard-option-sub">No routine — focused on skills, drills, and building strength</div>
+          </div>
+        </div>
+        <div class="onboard-option" onclick="showOnboardStep('suppl-q1')">
           <div class="onboard-dot lime"></div>
           <div>
-            <div class="onboard-option-title">Heels and burlesque</div>
-            <div class="onboard-option-sub">Strip, Strip Virgin, Chair</div>
-          </div>
-        </div>
-        <div class="onboard-option" onclick="showOnboardStep('suppl-q2-dance')">
-          <div class="onboard-dot"></div>
-          <div>
-            <div class="onboard-option-title">Sensual movement and pole dance</div>
-            <div class="onboard-option-sub">Dance, Dance Virgin, Floor, Floor Virgin</div>
-          </div>
-        </div>
-        <div class="onboard-option" onclick="showOnboardResult('suppl-flex')">
-          <div class="onboard-dot"></div>
-          <div>
-            <div class="onboard-option-title">Flexibility and conditioning</div>
-            <div class="onboard-option-sub">Kiki, Unravel</div>
+            <div class="onboard-option-title">Dance and movement</div>
+            <div class="onboard-option-sub">Choreography, sensual movement, and performance styles</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SUPPLEMENTARY QUIZ: Q2 heels - experience? -->
-    <div id="onboard-step-suppl-q2-heels" style="display:none">
-      <button class="btn btn-ghost btn-sm" style="margin-bottom:16px" onclick="showOnboardStep('suppl-q1')">Back</button>
-      <div class="onboard-progress"><div class="onboard-progress-bar" style="width:66%"></div></div>
-      <div class="modal-title" style="margin-top:14px">Have you done heels or burlesque classes before?</div>
-      <div class="modal-sub">At Duality or any other studio.</div>
+    <!-- SUPPLEMENTARY QUIZ: Q1 — On pole or off pole? -->
+    <div id="onboard-step-suppl-q1" style="display:none">
+      <button class="btn btn-ghost btn-sm" style="margin-bottom:16px" onclick="showOnboardStep('suppl-q0')">Back</button>
+      <div class="onboard-progress"><div class="onboard-progress-bar" style="width:50%"></div></div>
+      <div class="modal-title" style="margin-top:14px">On pole or off pole?</div>
+      <div class="modal-sub">Both are equally sweaty and equally fun.</div>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <div class="onboard-option" onclick="showOnboardResult('suppl-strip-virgin')">
-          <div class="onboard-dot"></div>
-          <div><div class="onboard-option-title">No - first time</div></div>
+        <div class="onboard-option" onclick="showOnboardStep('suppl-q2-pole')">
+          <div class="onboard-dot lime"></div>
+          <div>
+            <div class="onboard-option-title">On pole</div>
+            <div class="onboard-option-sub">Strip, Dance, Chole — pole-based choreography and sensual movement</div>
+          </div>
         </div>
-        <div class="onboard-option" onclick="showOnboardResult('suppl-strip-virgin')">
+        <div class="onboard-option" onclick="showOnboardStep('suppl-q2-floor')">
           <div class="onboard-dot"></div>
-          <div><div class="onboard-option-title">A little - just a few classes</div></div>
-        </div>
-        <div class="onboard-option" onclick="showOnboardResult('suppl-strip1')">
-          <div class="onboard-dot"></div>
-          <div><div class="onboard-option-title">Yes - I have a solid base</div></div>
+          <div>
+            <div class="onboard-option-title">Off pole</div>
+            <div class="onboard-option-sub">Chair, Floor, Tease — floorwork, chair dance, and sensual movement without the pole</div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- SUPPLEMENTARY QUIZ: Q2 dance/floor - experience? -->
-    <div id="onboard-step-suppl-q2-dance" style="display:none">
+    <!-- SUPPLEMENTARY QUIZ: Q2 pole — experience level? -->
+    <div id="onboard-step-suppl-q2-pole" style="display:none">
       <button class="btn btn-ghost btn-sm" style="margin-bottom:16px" onclick="showOnboardStep('suppl-q1')">Back</button>
-      <div class="onboard-progress"><div class="onboard-progress-bar" style="width:66%"></div></div>
-      <div class="modal-title" style="margin-top:14px">Have you done dance or floor movement classes before?</div>
-      <div class="modal-sub">At Duality or any other studio.</div>
+      <div class="onboard-progress"><div class="onboard-progress-bar" style="width:75%"></div></div>
+      <div class="modal-title" style="margin-top:14px">Where are you at with this style?</div>
+      <div class="modal-sub">Honest answer gets the best recommendation.</div>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <div class="onboard-option" onclick="showOnboardResult('suppl-dance-virgin')">
+        <div class="onboard-option" onclick="showOnboardResult('suppl-pole-virgin')">
           <div class="onboard-dot"></div>
-          <div><div class="onboard-option-title">No - first time</div></div>
+          <div>
+            <div class="onboard-option-title">First time to intermediate</div>
+            <div class="onboard-option-sub">New to this style, or only done a few classes</div>
+          </div>
         </div>
-        <div class="onboard-option" onclick="showOnboardResult('suppl-dance-virgin')">
+        <div class="onboard-option" onclick="showOnboardResult('suppl-pole-advanced')">
           <div class="onboard-dot"></div>
-          <div><div class="onboard-option-title">A little - just a few classes</div></div>
+          <div>
+            <div class="onboard-option-title">Intermediate to elite</div>
+            <div class="onboard-option-sub">Solid foundation, ready to go deeper</div>
+          </div>
         </div>
-        <div class="onboard-option" onclick="showOnboardResult('suppl-dance1')">
+      </div>
+    </div>
+
+    <!-- SUPPLEMENTARY QUIZ: Q2 floor — experience level? -->
+    <div id="onboard-step-suppl-q2-floor" style="display:none">
+      <button class="btn btn-ghost btn-sm" style="margin-bottom:16px" onclick="showOnboardStep('suppl-q1')">Back</button>
+      <div class="onboard-progress"><div class="onboard-progress-bar" style="width:75%"></div></div>
+      <div class="modal-title" style="margin-top:14px">Where are you at with this style?</div>
+      <div class="modal-sub">Honest answer gets the best recommendation.</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="onboard-option" onclick="showOnboardResult('suppl-floor-virgin')">
           <div class="onboard-dot"></div>
-          <div><div class="onboard-option-title">Yes - I have a solid base</div></div>
+          <div>
+            <div class="onboard-option-title">First time to intermediate</div>
+            <div class="onboard-option-sub">New to this style, or only done a few classes</div>
+          </div>
+        </div>
+        <div class="onboard-option" onclick="showOnboardResult('suppl-floor-advanced')">
+          <div class="onboard-dot"></div>
+          <div>
+            <div class="onboard-option-title">Intermediate to elite</div>
+            <div class="onboard-option-sub">Solid foundation, ready to level up</div>
+          </div>
         </div>
       </div>
     </div>
@@ -3851,10 +3873,11 @@
     level4:           { title: 'Level 4 looks like your level', cls: 'Level 4', note: 'Level 4 gets into leg hangs, chopper variations, and combining inverts with transitions. A strong intermediate class with progression built in.' },
     level5:           { title: 'Level 5 is calling your name', cls: 'Level 5', note: 'Level 5 moves into extended arm work - static V, Ayesha, and more complex combinations. Strength and body awareness are key here.' },
     level6:           { title: 'Level 6 - welcome to the deep end', cls: 'Level 6', note: 'Level 6 is our advanced class. If you\'ve got your Ayesha and you\'re ready for harder combinations and serious training, this is your home.' },
-    'suppl-strip-virgin': { title: 'Start with Strip Virgin', cls: 'Strip Virgin', note: 'Strip Virgin is the perfect introduction to heels and burlesque-style movement. No experience needed - just bring yourself and your best energy.' },
-    'suppl-strip1':   { title: 'Strip 1 sounds like your level', cls: 'Strip 1', note: 'Strip 1 builds on burlesque basics with more choreography and character development. A solid foundation will help you get the most out of it.' },
-    'suppl-dance-virgin': { title: 'Start with Dance Virgin or Floor Virgin', cls: 'Dance Virgin / Floor Virgin', note: 'Both are intro-level classes for sensual movement. Dance Virgin is pole-based, focusing on standing choreography and connection to the pole; Floor Virgin is all about grounded movement and transitions.' },
-    'suppl-dance1':   { title: 'Dance or Floor sounds like your level', cls: 'Dance / Floor', note: 'If you have some movement experience, jump into Dance or Floor - both build on the Virgin foundations with more complex choreography.' },
+    'suppl-conditioning': { title: 'Drills, skills, and sweat — welcome home', cls: 'Dance Tech, Invert Tech, or Kiki', note: 'No routines, no performance pressure — just focused training that makes everything else better. Dance Tech builds fluidity and technique between tricks. Invert Tech targets your inversions from the floor up. Kiki fires up conditioning and flexibility for all levels.' },
+    'suppl-pole-virgin': { title: 'The virgins are calling your name', cls: 'Strip Virgin, Dance Virgin, or Chole', note: 'All designed for first-timers to this style — slower pace, loads of fun, and zero judgment. Strip Virgin is heels and reveals. Dance Virgin brings a new pole-based routine every week at a beginner pace. Chole is a cheeky pole-and-chair hybrid that\'s incredibly addictive.' },
+    'suppl-pole-advanced': { title: 'You\'re ready for the real thing', cls: 'Strip, Dance, or Chole', note: 'With your experience you can jump straight in. Strip is sexy and choreography-heavy. Dance brings a fresh pole routine every week. Chole is the most daring — a pole and chair hybrid for Level 3 repeaters who want something that challenges everything.' },
+    'suppl-floor-virgin': { title: 'Start on the floor — build from the ground up', cls: 'Chair Virgin, Floor Virgin, or Tease', note: 'All beginner-friendly with zero pressure. Chair Virgin introduces you to the art of chair and lap dancing with a focus on confidence and tease. Floor Virgin builds fundamental floorwork rolls and transitions into a routine. Tease is a sensual movement class perfect for first-timers finding their style.' },
+    'suppl-floor-advanced': { title: 'Pick your next challenge', cls: 'Chair, Inter Floor, or Adv Floor', note: 'With your background you\'re ready for the intermediate to advanced off-pole options. Chair brings powerful, playful lap dance choreography that\'ll make any room feel like a stage. Inter Floor and Advanced Floor level up your floorwork progressively — harder holds, more complex transitions, no limits.' },
     'suppl-flex':     { title: 'Kiki or Unravel - take your pick', cls: 'Kiki / Unravel', note: 'Kiki is flexibility-focused with splits and backbends. Unravel is a slower, more meditative conditioning class. Both are open to all levels - come as you are.' },
   };
 
