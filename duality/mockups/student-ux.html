@@ -6215,46 +6215,21 @@
   }
 
   // ─── DISCOUNT CODES ───────────────────────────────────────────────────────
-  const _discountCodes = {
-    'NEWPOLE10': { type: 'pct', value: 10, label: '10% off — NEWPOLE10 applied' },
-    'SUMMER25':  { type: 'fixed', value: 25, label: '$25 off — SUMMER25 applied' },
-    'FRIEND50':  { type: 'pct', value: 50, label: '50% off — FRIEND50 applied' },
-    'TRIAL0':    { type: 'free', value: 100, label: 'Free trial — no charge today' },
-    'EARLYBIRD': { type: 'pct', value: 15, label: '15% off — EARLYBIRD applied' },
-  };
+  // Codes are managed in the founder admin — validated server-side in production.
+  // This mockup accepts any non-empty code so the UI flow can be demonstrated.
   let _appliedDiscount = null;
 
   function applyDiscountCode() {
     const code = (document.getElementById('co-discount-input').value || '').trim().toUpperCase();
     const result = document.getElementById('co-discount-result');
-    const d = _discountCodes[code];
-    if (!d) {
-      result.style.display = '';
-      result.style.background = '#1a0000';
-      result.style.borderColor = '#662222';
-      result.style.color = '#f87171';
-      result.textContent = 'Code not found or expired.';
-      _appliedDiscount = null;
-      return;
-    }
-    _appliedDiscount = d;
+    if (!code) return;
+    // In production this hits the API; for the mockup we just confirm the field exists
+    _appliedDiscount = { code };
     result.style.display = '';
     result.style.background = '#0a1800';
     result.style.borderColor = 'var(--lime)';
     result.style.color = 'var(--lime)';
-    result.textContent = '✓ ' + d.label;
-    // Update pay button price
-    const valEl = document.getElementById('checkout-btn-val');
-    const payBtn = document.getElementById('pay-btn');
-    if (valEl && payBtn) {
-      const rawText = valEl.textContent.replace(/[^0-9.]/g, '');
-      const orig = parseFloat(rawText) || 0;
-      let discounted = orig;
-      if (d.type === 'pct') discounted = orig * (1 - d.value / 100);
-      else if (d.type === 'fixed') discounted = Math.max(0, orig - d.value);
-      else if (d.type === 'free') discounted = 0;
-      valEl.innerHTML = `<s style="opacity:0.5;font-size:0.85em">$${orig.toFixed(0)}</s> $${discounted.toFixed(0)}`;
-    }
+    result.textContent = '✓ Code applied — discount will be calculated at checkout';
   }
 
   function showToast(msg, bg) {
