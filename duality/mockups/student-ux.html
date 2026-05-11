@@ -638,7 +638,72 @@
 
     /* Season demo toggles */
     #season-demo-level, #season-demo-nolevel { font-size: 11px; padding: 5px 10px; }
+
+    /* Profile / waiver modal */
+    .profile-step { display: none; }
+    .profile-step.active { display: block; }
+    #sig-canvas { width: 100%; touch-action: none; }
+    .profile-steps-nav { flex-direction: column; gap: 6px; }
   }
+
+  /* PROFILE FORM */
+  .form-row { margin-bottom: 16px; }
+  .form-label { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; color: var(--grey); margin-bottom: 6px; display: block; }
+  .form-label .req { color: var(--lime); margin-left: 2px; }
+  .form-input {
+    width: 100%; background: #0d0d0d; border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 14px; color: var(--white);
+    font-family: 'Archivo', sans-serif; font-size: 14px; outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-input:focus { border-color: var(--lime); }
+  .form-input::placeholder { color: #444; }
+  select.form-input { appearance: none; cursor: pointer; }
+  textarea.form-input { resize: vertical; min-height: 80px; }
+  .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-hint { font-size: 11px; color: var(--grey); margin-top: 4px; line-height: 1.4; }
+
+  /* PROFILE STEP NAV */
+  .profile-steps-nav {
+    display: flex; gap: 6px; margin-bottom: 24px;
+  }
+  .profile-step-dot {
+    flex: 1; height: 3px; border-radius: 2px; background: #222; transition: background 0.2s;
+  }
+  .profile-step-dot.done { background: var(--lime); }
+  .profile-step-dot.active { background: var(--lav); }
+
+  /* SIGNATURE PAD */
+  .sig-pad-wrap {
+    border: 1px solid var(--border); border-radius: 10px;
+    background: #0a0a0a; overflow: hidden; margin-bottom: 10px; position: relative;
+  }
+  #sig-canvas { display: block; cursor: crosshair; }
+  .sig-clear {
+    position: absolute; top: 8px; right: 10px;
+    font-size: 11px; color: var(--grey); cursor: pointer; background: none;
+    border: none; padding: 0; text-decoration: underline;
+  }
+  .sig-clear:hover { color: var(--white); }
+
+  /* WAIVER TEXT */
+  .waiver-scroll {
+    background: #050505; border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; max-height: 160px; overflow-y: auto;
+    font-size: 12px; color: var(--grey); line-height: 1.7; margin-bottom: 16px;
+  }
+
+  /* PROFILE BANNER on dashboard */
+  .profile-banner {
+    background: #0d0a00; border: 1px solid #3a2e00;
+    border-radius: 12px; padding: 16px 20px; margin-bottom: 24px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .profile-banner-icon { font-size: 22px; flex-shrink: 0; }
+  .profile-banner-body { flex: 1; }
+  .profile-banner-title { font-family: 'Archivo Black', sans-serif; font-size: 14px; color: var(--white); margin-bottom: 3px; }
+  .profile-banner-sub { font-size: 12px; color: var(--grey); line-height: 1.5; }
+  .profile-banner-pct { font-family: 'Archivo Black', sans-serif; font-size: 22px; color: #DBFF00; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -733,6 +798,17 @@
         <div class="enrolled-summary">
           You're enrolled in <strong>Level 2, 6:30pm Mondays with Chloe</strong> and <strong>Dance, 6:30pm Fridays with Mimi</strong> for Season 3 - Week 4 of 8 is underway.
         </div>
+      </div>
+
+      <!-- Profile incomplete banner (shown until profile + waiver complete) -->
+      <div class="profile-banner" id="profile-banner">
+        <div class="profile-banner-icon">📋</div>
+        <div class="profile-banner-body">
+          <div class="profile-banner-title">Complete your profile</div>
+          <div class="profile-banner-sub">We need a few details and your signed waiver before your first class. Takes about 2 minutes.</div>
+          <button class="btn btn-outline btn-sm" style="margin-top:10px;border-color:#DBFF00;color:#DBFF00" onclick="openProfileModal()">Complete now</button>
+        </div>
+        <div class="profile-banner-pct" id="profile-pct">0%</div>
       </div>
 
       <!-- Season 4 secured banner -->
@@ -2777,6 +2853,212 @@
   </div>
 </div>
 
+<!-- PROFILE + WAIVER MODAL -->
+<div class="modal-overlay" id="profile-modal">
+  <div class="modal" style="max-width:560px">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <div>
+        <div class="modal-title" id="profile-modal-title">Complete your profile</div>
+        <div style="font-size:13px;color:var(--grey);margin-top:3px" id="profile-modal-sub">Step 1 of 3 — Personal details</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('profile-modal')">Close</button>
+    </div>
+
+    <!-- Step progress -->
+    <div class="profile-steps-nav">
+      <div class="profile-step-dot active" id="pdot-1"></div>
+      <div class="profile-step-dot" id="pdot-2"></div>
+      <div class="profile-step-dot" id="pdot-3"></div>
+    </div>
+
+    <!-- STEP 1: Personal details -->
+    <div class="profile-step active" id="profile-step-1">
+
+      <!-- Profile photo -->
+      <div class="form-row" style="display:flex;align-items:center;gap:18px;margin-bottom:22px">
+        <div id="profile-photo-preview" style="width:72px;height:72px;border-radius:50%;background:var(--lav);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Archivo Black',sans-serif;font-size:22px;color:var(--black);background-size:cover;background-position:center">JT</div>
+        <div>
+          <label id="profile-photo-label" for="profile-photo-input" class="btn btn-outline btn-sm" style="cursor:pointer;display:inline-block">Upload photo</label>
+          <input type="file" id="profile-photo-input" accept="image/*" style="display:none" onchange="handlePhotoUpload(this)">
+          <div class="form-hint" style="margin-top:6px">JPG or PNG. Used on your profile and visible to instructors.</div>
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label class="form-label">First name <span class="req">*</span></label>
+          <input type="text" class="form-input" id="pf-first" placeholder="Jessica">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Last name <span class="req">*</span></label>
+          <input type="text" class="form-input" id="pf-last" placeholder="Taylor">
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Preferred name</label>
+        <input type="text" class="form-input" id="pf-preferred" placeholder="What should we call you?">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Pronouns</label>
+        <select class="form-input" id="pf-pronouns">
+          <option value="">Select...</option>
+          <option>She/Her</option>
+          <option>He/Him</option>
+          <option>They/Them</option>
+          <option>She/They</option>
+          <option>He/They</option>
+          <option>Any/All</option>
+          <option>Prefer not to say</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Email <span class="req">*</span></label>
+        <input type="email" class="form-input" id="pf-email" placeholder="jess@example.com">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Phone number <span class="req">*</span></label>
+        <input type="tel" class="form-input" id="pf-phone" placeholder="04XX XXX XXX">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Address</label>
+        <input type="text" class="form-input" id="pf-address" placeholder="Street address, suburb, state, postcode">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Date of birth <span class="req">*</span></label>
+        <input type="date" class="form-input" id="pf-dob">
+        <div class="form-hint">You must be 18 or over to participate. We take privacy seriously — this is never shared.</div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Prior pole experience</label>
+        <select class="form-input" id="pf-experience">
+          <option value="">Select...</option>
+          <option>First time ever</option>
+          <option>Tried it once or twice</option>
+          <option>Trained elsewhere — less than 1 year</option>
+          <option>Trained elsewhere — 1–3 years</option>
+          <option>Trained elsewhere — 3+ years</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">How did you hear about us?</label>
+        <select class="form-input" id="pf-referral">
+          <option value="">Select...</option>
+          <option>Instagram</option>
+          <option>TikTok</option>
+          <option>Google</option>
+          <option>A friend</option>
+          <option>Walked past</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <button class="btn btn-lime" style="width:100%;margin-top:6px" onclick="profileNextStep(2)">Continue →</button>
+    </div>
+
+    <!-- STEP 2: Health & safety -->
+    <div class="profile-step" id="profile-step-2">
+      <div class="form-row">
+        <label class="form-label">Emergency contact name <span class="req">*</span></label>
+        <input type="text" class="form-input" id="pf-ec-name" placeholder="Full name">
+      </div>
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label class="form-label">Relationship</label>
+          <select class="form-input" id="pf-ec-rel">
+            <option value="">Select...</option>
+            <option>Partner</option>
+            <option>Parent</option>
+            <option>Sibling</option>
+            <option>Friend</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Emergency contact phone <span class="req">*</span></label>
+          <input type="tel" class="form-input" id="pf-ec-phone" placeholder="04XX XXX XXX">
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Any injuries you'd like to disclose?</label>
+        <textarea class="form-input" id="pf-injuries" placeholder="e.g. shoulder impingement, lower back issues — leave blank if none"></textarea>
+        <div class="form-hint">This helps your instructor modify where needed. Nothing stops you from coming — we just want to keep you safe.</div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Any other considerations?</label>
+        <textarea class="form-input" id="pf-considerations" placeholder="e.g. anxiety, sensory sensitivities, anything you'd like us to know — leave blank if none"></textarea>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Medical conditions</label>
+        <textarea class="form-input" id="pf-medical" placeholder="e.g. epilepsy, diabetes, asthma — leave blank if none"></textarea>
+        <div class="form-hint">Kept strictly confidential. Only shared with your instructor and only if relevant to your safety.</div>
+      </div>
+      <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:18px">
+        <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;font-size:13px;color:var(--grey);line-height:1.6">
+          <input type="checkbox" id="pf-photo-consent" style="margin-top:3px;accent-color:var(--lime);flex-shrink:0">
+          <span>I consent to being photographed or filmed during classes for Duality's social media and marketing. I understand I can withdraw this consent at any time.</span>
+        </label>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-ghost" style="flex:1" onclick="profileNextStep(1)">← Back</button>
+        <button class="btn btn-lime" style="flex:2" onclick="profileNextStep(3)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Waiver + signature -->
+    <div class="profile-step" id="profile-step-3">
+      <div style="font-size:13px;font-weight:500;color:var(--white);margin-bottom:10px">Read and sign the Duality Waiver</div>
+
+      <div class="waiver-scroll" id="waiver-text">
+        <strong style="color:var(--white)">DUALITY POLE — PARTICIPANT WAIVER AND RELEASE OF LIABILITY</strong><br><br>
+        By signing this waiver, I acknowledge that I have read and understood the following:<br><br>
+        <strong style="color:var(--white)">1. Nature of the Activity</strong><br>
+        I understand that pole dancing and aerial fitness activities involve physical risk, including but not limited to falls, muscle strains, joint injuries, and bruising. I acknowledge that participation is voluntary.<br><br>
+        <strong style="color:var(--white)">2. Assumption of Risk</strong><br>
+        I voluntarily assume all risks associated with participation in classes, workshops, and events at Duality Pole. I understand that instructors will provide guidance but cannot guarantee my safety at all times.<br><br>
+        <strong style="color:var(--white)">3. Medical Fitness</strong><br>
+        I confirm that I am in suitable physical and mental health to participate. I have disclosed any injuries, medical conditions, or considerations that may affect my ability to participate safely. I agree to inform Duality of any changes to my health status.<br><br>
+        <strong style="color:var(--white)">4. Release of Liability</strong><br>
+        To the fullest extent permitted by law, I release Duality Pole, its owners, instructors, employees, and agents from any and all liability for injury, loss, or damage arising from my participation in classes or use of the studio facilities.<br><br>
+        <strong style="color:var(--white)">5. Studio Rules</strong><br>
+        I agree to follow all studio rules and instructor guidance. I understand that failure to do so may result in removal from class without refund.<br><br>
+        <strong style="color:var(--white)">6. Photography and Media</strong><br>
+        I understand that Duality may photograph or film classes for marketing and social media purposes. I have indicated my consent or non-consent in my profile.<br><br>
+        <strong style="color:var(--white)">7. Cancellation and Refund Policy</strong><br>
+        I have read and agree to Duality's cancellation and refund policy as outlined in the Terms &amp; Conditions available on the Duality website.<br><br>
+        <strong style="color:var(--white)">8. Age</strong><br>
+        I confirm that I am 18 years of age or older, or that I have obtained written consent from a parent or guardian.<br><br>
+        This waiver is governed by the laws of New South Wales, Australia.
+      </div>
+
+      <div class="form-row">
+        <label class="form-label">Full legal name <span class="req">*</span></label>
+        <input type="text" class="form-input" id="waiver-name" placeholder="As it appears on your ID" oninput="checkWaiverReady()">
+      </div>
+
+      <label class="form-label" style="margin-bottom:8px">Signature <span class="req">*</span></label>
+      <div class="sig-pad-wrap">
+        <canvas id="sig-canvas" height="130"></canvas>
+        <button class="sig-clear" onclick="clearSig()">Clear</button>
+      </div>
+      <div class="form-hint" style="margin-bottom:16px">Draw your signature above using your mouse or finger.</div>
+
+      <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:18px">
+        <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;font-size:13px;color:var(--grey);line-height:1.6">
+          <input type="checkbox" id="waiver-agree" style="margin-top:3px;accent-color:var(--lime);flex-shrink:0" onchange="checkWaiverReady()">
+          <span>I confirm I have read and understood the Duality Pole Waiver, and I agree to be bound by its terms and conditions. I am 18 years of age or over.</span>
+        </label>
+      </div>
+
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-ghost" style="flex:1" onclick="profileNextStep(2)">← Back</button>
+        <button class="btn btn-lime" style="flex:2;opacity:0.4;pointer-events:none" id="waiver-submit" onclick="submitWaiver()">Sign and submit</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <script>
   const PRICING   = [0, 270, 440, 580, 700, 800, 900];
   const PER_CLASS = [0, 33.75, 27.50, 24.15, 21.80, 20.00, 18.75];
@@ -3152,6 +3434,106 @@
     const done   = document.querySelectorAll('#level-progress-moves .level-move-row.ticked').length;
     document.getElementById('level-progress-count').textContent = done + ' / ' + total;
     document.getElementById('level-progress-complete').style.display = (done === total) ? 'block' : 'none';
+  }
+
+  // ─── PROFILE + WAIVER ────────────────────────────────────────────────────
+  let profileComplete = false;
+  let sigCanvas, sigCtx, sigDrawing = false, sigHasMark = false;
+
+  function openProfileModal(startStep) {
+    profileNextStep(startStep || 1);
+    document.getElementById('profile-modal').classList.add('open');
+    // Init canvas after modal is visible
+    setTimeout(initSigCanvas, 50);
+  }
+
+  function profileNextStep(step) {
+    document.querySelectorAll('.profile-step').forEach(s => s.classList.remove('active'));
+    document.getElementById('profile-step-' + step).classList.add('active');
+    document.querySelectorAll('.profile-step-dot').forEach((d, i) => {
+      d.classList.toggle('done',   i < step - 1);
+      d.classList.toggle('active', i === step - 1);
+    });
+    const titles = ['', 'Personal details', 'Health & safety', 'Waiver & signature'];
+    const subs   = ['', 'Step 1 of 3', 'Step 2 of 3', 'Step 3 of 3'];
+    document.getElementById('profile-modal-title').textContent = step === 3 ? 'Waiver' : 'Complete your profile';
+    document.getElementById('profile-modal-sub').textContent   = subs[step] + ' — ' + titles[step];
+    if (step === 3) setTimeout(initSigCanvas, 50);
+  }
+
+  function initSigCanvas() {
+    sigCanvas = document.getElementById('sig-canvas');
+    if (!sigCanvas) return;
+    sigCtx = sigCanvas.getContext('2d');
+    const w = sigCanvas.offsetWidth;
+    if (w) sigCanvas.width = w;
+    sigCtx.strokeStyle = '#DBFF00';
+    sigCtx.lineWidth   = 2;
+    sigCtx.lineCap     = 'round';
+    sigCtx.lineJoin    = 'round';
+
+    const getPos = (e) => {
+      const r = sigCanvas.getBoundingClientRect();
+      const src = e.touches ? e.touches[0] : e;
+      return { x: src.clientX - r.left, y: src.clientY - r.top };
+    };
+    sigCanvas.onmousedown = sigCanvas.ontouchstart = (e) => {
+      e.preventDefault(); sigDrawing = true;
+      const p = getPos(e); sigCtx.beginPath(); sigCtx.moveTo(p.x, p.y);
+    };
+    sigCanvas.onmousemove = sigCanvas.ontouchmove = (e) => {
+      e.preventDefault(); if (!sigDrawing) return;
+      const p = getPos(e); sigCtx.lineTo(p.x, p.y); sigCtx.stroke();
+      sigHasMark = true; checkWaiverReady();
+    };
+    sigCanvas.onmouseup = sigCanvas.ontouchend = () => { sigDrawing = false; };
+  }
+
+  function clearSig() {
+    if (!sigCtx) return;
+    sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+    sigHasMark = false; checkWaiverReady();
+  }
+
+  function checkWaiverReady() {
+    const nameOk  = (document.getElementById('waiver-name')?.value || '').trim().length > 1;
+    const agreed  = document.getElementById('waiver-agree')?.checked;
+    const sigOk   = sigHasMark;
+    const btn = document.getElementById('waiver-submit');
+    if (btn) {
+      btn.style.opacity       = (nameOk && agreed && sigOk) ? '1' : '0.4';
+      btn.style.pointerEvents = (nameOk && agreed && sigOk) ? 'auto' : 'none';
+    }
+  }
+
+  function submitWaiver() {
+    profileComplete = true;
+    document.getElementById('profile-banner').style.display = 'none';
+    closeModal('profile-modal');
+    // Show confirmation toast
+    const toast = document.createElement('div');
+    toast.textContent = '✓ Profile complete — you\'re all set for your first class!';
+    Object.assign(toast.style, {
+      position:'fixed', bottom:'28px', left:'50%', transform:'translateX(-50%)',
+      background:'var(--lime)', color:'var(--black)', fontFamily:"'Archivo Black',sans-serif",
+      fontSize:'13px', padding:'12px 20px', borderRadius:'30px',
+      zIndex:'9999', whiteSpace:'nowrap', boxShadow:'0 4px 20px rgba(0,0,0,0.4)',
+    });
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+  }
+
+  // Profile photo preview
+  function handlePhotoUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('profile-photo-preview').style.backgroundImage = `url(${e.target.result})`;
+      document.getElementById('profile-photo-preview').style.backgroundSize  = 'cover';
+      document.getElementById('profile-photo-label').textContent = 'Change photo';
+    };
+    reader.readAsDataURL(file);
   }
 
   // ─── INIT ─────────────────────────────────────────────────────────────────
