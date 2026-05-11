@@ -1672,8 +1672,8 @@
             onchange="pickCasualDate(this.value)">
         </div>
 
-        <!-- Day + Instructor dropdowns -->
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+        <!-- Day + Instructor + Level dropdowns + Trial filter -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
           <select class="season-select" onchange="setCasualFilter('day',this.value)">
             <option value="all">All days</option>
             <option value="1">Monday</option>
@@ -1693,6 +1693,14 @@
             <option value="amy">Amy</option>
             <option value="bambi">Bambi</option>
           </select>
+          <select class="season-select" id="casual-level-select" onchange="setCasualFilter('level',this.value)">
+            <option value="all">All levels</option>
+            <option value="0">Any level (Virgin / open)</option>
+            <option value="1">Level 1</option>
+            <option value="2">Level 2</option>
+            <option value="3">Level 3+</option>
+          </select>
+          <button class="filter-btn" id="casual-trial-btn" onclick="toggleCasualTrialFilter(this)" style="white-space:nowrap">Beginner trial</button>
         </div>
 
         <!-- View toggle -->
@@ -4692,8 +4700,10 @@
 
   const WEEK1 = ['2026-05-12','2026-05-13','2026-05-14','2026-05-15','2026-05-16','2026-05-17'];
   const WEEK2 = ['2026-05-19','2026-05-20','2026-05-21','2026-05-22','2026-05-23','2026-05-24'];
-  let casualDayFilter = 'all';
+  let casualDayFilter   = 'all';
   let casualInstrFilter = 'all';
+  let casualLevelFilter = 'all';
+  let casualTrialOnly   = false;
   const WEEK3 = ['2026-05-26','2026-05-27','2026-05-28','2026-05-29','2026-05-30','2026-05-31'];
   const WEEK4 = ['2026-06-02','2026-06-03','2026-06-04','2026-06-05','2026-06-06'];
 
@@ -4742,6 +4752,13 @@
   function setCasualFilter(type, val) {
     if (type === 'day')   casualDayFilter   = val;
     if (type === 'instr') casualInstrFilter = val;
+    if (type === 'level') casualLevelFilter = val;
+    applyCasualFilters();
+  }
+
+  function toggleCasualTrialFilter(btn) {
+    casualTrialOnly = !casualTrialOnly;
+    btn.classList.toggle('active', casualTrialOnly);
     applyCasualFilters();
   }
 
@@ -4850,7 +4867,23 @@
         instrOk = instrText === casualInstrFilter;
       }
 
-      row.style.display = (typeOk && dateOk && dayOk && instrOk) ? '' : 'none';
+      // Level filter
+      let levelOk = true;
+      if (casualLevelFilter !== 'all') {
+        const rowLevel = parseInt(row.dataset.level || '0');
+        if (casualLevelFilter === '3') levelOk = rowLevel >= 3;
+        else levelOk = rowLevel === parseInt(casualLevelFilter);
+      }
+
+      // Beginner trial filter: only Virgin, Level 1, Kiki, Unravel (data-level 0 or 1, not locked)
+      let trialOk = true;
+      if (casualTrialOnly) {
+        const rowLevel = parseInt(row.dataset.level || '0');
+        const rowName  = (row.querySelector('.casual-name') || {}).textContent || '';
+        trialOk = (rowLevel <= 1) && !isLocked && _isBeginnerSafe(rowName);
+      }
+
+      row.style.display = (typeOk && dateOk && dayOk && instrOk && levelOk && trialOk) ? '' : 'none';
     });
 
     // Show/hide section labels
