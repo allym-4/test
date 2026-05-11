@@ -1710,7 +1710,7 @@
       </div>
       <div style="font-size:14px;color:var(--grey);margin-bottom:22px;line-height:1.7">Not sure which class to start with? <strong style="color:var(--white)">Level 1</strong> is designed for complete beginners - no experience or flexibility needed.</div>
       <div style="display:flex;gap:12px">
-        <button class="btn btn-lime" style="flex:1" onclick="closeModal('onboarding-modal');showScreen('book');showBookTab('casual')">Book a trial class</button>
+        <button class="btn btn-lime" style="flex:1" onclick="closeModal('onboarding-modal');openTrialInfo()">Book a trial class</button>
         <button class="btn btn-outline" onclick="closeModal('onboarding-modal');showScreen('book');showBookTab('season')">Book the full season</button>
       </div>
     </div>
@@ -1729,23 +1729,141 @@
 
 <!-- TRIAL INFO MODAL -->
 <div class="modal-overlay" id="trial-modal">
-  <div class="modal" style="max-width:460px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-      <div class="modal-title">Trial class</div>
+  <div class="modal" style="max-width:500px;max-height:90vh;overflow-y:auto;padding-bottom:0">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;position:sticky;top:0;background:#111;padding:24px 24px 0;margin:-24px -24px 0;z-index:1">
+      <div class="modal-title">Book a trial class</div>
       <button class="btn btn-ghost btn-sm" onclick="closeModal('trial-modal')">Close</button>
     </div>
-    <div style="background:#0f1600;border:1px solid var(--lime);border-radius:12px;padding:20px;margin-bottom:20px">
-      <div style="font-family:'Archivo Black',sans-serif;font-size:22px;color:var(--lime);margin-bottom:6px">$35</div>
-      <div style="font-size:14px;color:var(--grey);line-height:1.7">Available in Week 1 and 2 of the current season. If you go on to enrol in the full season, this $35 is deducted from your invoice.</div>
+    <div style="padding:0 24px 24px">
+      <div style="font-size:14px;color:var(--grey);margin:14px 0 20px;line-height:1.6">Trial classes are $35 and available for first-timers only. If you go on to enrol in the full season, your $35 is deducted from your invoice.</div>
+
+      <!-- Ready to commit CTA -->
+      <div style="background:#0d0d0d;border:1px solid #2a2a2a;border-radius:12px;padding:16px 18px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div>
+          <div style="font-size:14px;font-weight:500;margin-bottom:3px">Already know you want in?</div>
+          <div style="font-size:13px;color:var(--grey)">Skip the trial and jump straight into a season</div>
+        </div>
+        <button class="btn btn-outline btn-sm" style="white-space:nowrap;flex-shrink:0" onclick="closeModal('trial-modal');showScreen('book');showBookTab('season')">View seasons</button>
+      </div>
+
+      <!-- AVAILABLE FOR TRIALS label -->
+      <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--lime);margin-bottom:16px">Available for trials</div>
+
+      <!-- Level 1 -->
+      <div style="margin-bottom:22px">
+        <div style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:5px">Upcoming Level 1 sessions</div>
+        <div style="font-size:13px;color:var(--grey);line-height:1.6;margin-bottom:12px">The perfect starting point. Level 1 covers the foundational pole skills - spins, climbs, and basic conditioning - in a supportive, beginner-friendly environment. No experience needed.</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div>
+              <div style="font-size:14px;font-weight:500">Monday 12 May - 6:30pm</div>
+              <div style="font-size:13px;color:var(--grey);margin-top:3px">Chloe - Studio A</div>
+            </div>
+            <button class="btn btn-lime btn-sm" style="flex-shrink:0" onclick="openTrialBooking('Level 1','Monday 12 May - 6:30pm','Chloe')">Book - $35</button>
+          </div>
+          <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div>
+              <div style="font-size:14px;font-weight:500">Wednesday 14 May - 7:00pm</div>
+              <div style="font-size:13px;color:var(--grey);margin-top:3px">Mimi - Studio B</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+              <span style="font-size:11px;font-weight:600;color:#f59e0b;background:rgba(245,158,11,0.12);padding:3px 8px;border-radius:20px;white-space:nowrap">Almost full</span>
+              <button class="btn btn-lime btn-sm" onclick="openTrialBooking('Level 1','Wednesday 14 May - 7:00pm','Mimi')">Book - $35</button>
+            </div>
+          </div>
+          <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div>
+              <div style="font-size:14px;font-weight:500">Saturday 17 May - 10:00am</div>
+              <div style="font-size:13px;color:var(--grey);margin-top:3px">Chloe - Studio A</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+              <span style="font-size:11px;font-weight:600;color:#ef4444;background:rgba(239,68,68,0.12);padding:3px 8px;border-radius:20px;white-space:nowrap">Fully booked</span>
+              <button class="btn btn-outline btn-sm" onclick="openWaitlistModal('Level 1','Saturday 17 May - 10:00am')">Join waitlist</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Strip Virgin -->
+      <div style="margin-bottom:22px">
+        <div style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:5px">Upcoming Strip Virgin sessions</div>
+        <div style="font-size:13px;color:var(--grey);line-height:1.6;margin-bottom:12px">An introduction to heels and burlesque-inspired movement. Strip Virgin is all about confidence, expression, and finding your performance energy - heels optional but encouraged.</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div>
+              <div style="font-size:14px;font-weight:500">Tuesday 13 May - 7:00pm</div>
+              <div style="font-size:13px;color:var(--grey);margin-top:3px">Mimi - Studio B</div>
+            </div>
+            <button class="btn btn-lime btn-sm" style="flex-shrink:0" onclick="openTrialBooking('Strip Virgin','Tuesday 13 May - 7:00pm','Mimi')">Book - $35</button>
+          </div>
+          <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div>
+              <div style="font-size:14px;font-weight:500">Friday 16 May - 6:30pm</div>
+              <div style="font-size:13px;color:var(--grey);margin-top:3px">Chloe - Studio A</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+              <span style="font-size:11px;font-weight:600;color:#f59e0b;background:rgba(245,158,11,0.12);padding:3px 8px;border-radius:20px;white-space:nowrap">Almost full</span>
+              <button class="btn btn-lime btn-sm" onclick="openTrialBooking('Strip Virgin','Friday 16 May - 6:30pm','Chloe')">Book - $35</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Floor Virgin -->
+      <div style="margin-bottom:22px">
+        <div style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:5px">Upcoming Floor Virgin sessions</div>
+        <div style="font-size:13px;color:var(--grey);line-height:1.6;margin-bottom:12px">Floor work, transitions, and movement flow - no pole required. Floor Virgin focuses on strength, flexibility, and sensual grounded movement. Great standalone or as a complement to your pole practice.</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div>
+              <div style="font-size:14px;font-weight:500">Thursday 15 May - 8:00pm</div>
+              <div style="font-size:13px;color:var(--grey);margin-top:3px">Mimi - Studio B</div>
+            </div>
+            <button class="btn btn-lime btn-sm" style="flex-shrink:0" onclick="openTrialBooking('Floor Virgin','Thursday 15 May - 8:00pm','Mimi')">Book - $35</button>
+          </div>
+          <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div>
+              <div style="font-size:14px;font-weight:500">Sunday 18 May - 11:00am</div>
+              <div style="font-size:13px;color:var(--grey);margin-top:3px">Chloe - Studio A</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+              <span style="font-size:11px;font-weight:600;color:#ef4444;background:rgba(239,68,68,0.12);padding:3px 8px;border-radius:20px;white-space:nowrap">Fully booked</span>
+              <button class="btn btn-outline btn-sm" onclick="openWaitlistModal('Floor Virgin','Sunday 18 May - 11:00am')">Join waitlist</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kiki -->
+      <div style="margin-bottom:28px">
+        <div style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:5px">Upcoming Kiki sessions</div>
+        <div style="font-size:13px;color:var(--grey);line-height:1.6;margin-bottom:12px">Kiki is flexibility, conditioning, and body awareness - think splits, backbends, and mobility work. Suitable for all levels and a perfect addition to any movement practice. Come as you are.</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div>
+              <div style="font-size:14px;font-weight:500">Wednesday 14 May - 6:00pm</div>
+              <div style="font-size:13px;color:var(--grey);margin-top:3px">Chloe - Studio B</div>
+            </div>
+            <button class="btn btn-lime btn-sm" style="flex-shrink:0" onclick="openTrialBooking('Kiki','Wednesday 14 May - 6:00pm','Chloe')">Book - $35</button>
+          </div>
+          <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div>
+              <div style="font-size:14px;font-weight:500">Saturday 17 May - 12:00pm</div>
+              <div style="font-size:13px;color:var(--grey);margin-top:3px">Mimi - Studio A</div>
+            </div>
+            <button class="btn btn-lime btn-sm" style="flex-shrink:0" onclick="openTrialBooking('Kiki','Saturday 17 May - 12:00pm','Mimi')">Book - $35</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Don't see any trial classes -->
+      <div style="background:#0d0d0d;border:1px solid #2a2a2a;border-radius:12px;padding:18px 20px;margin-bottom:8px">
+        <div style="font-size:14px;font-weight:500;margin-bottom:8px">Don't see any trial classes?</div>
+        <div style="font-size:13px;color:var(--grey);line-height:1.7">That's because we're currently in week 3 of the season. Our classes run routines and build on skills over 8 weeks - we don't want you jumping in and feeling behind or out of your depth. Trial spots open again at the start of each new season. <span style="color:var(--white)">Jump on our waitlist</span> and we'll let you know the moment enrolments open.</div>
+        <button class="btn btn-outline btn-sm" style="margin-top:14px" onclick="closeModal('trial-modal')">Join season waitlist</button>
+      </div>
     </div>
-    <div style="font-size:15px;font-weight:500;margin-bottom:12px">Trial classes are available for</div>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:22px">
-      <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--grey)"><span style="color:var(--lime)">+</span> Level 1 - perfect if you've never touched a pole before</div>
-      <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--grey)"><span style="color:var(--lime)">+</span> Kiki or Unravel - flexibility and conditioning</div>
-      <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--grey)"><span style="color:var(--lime)">+</span> Dance Virgin, Floor Virgin, Chair Virgin</div>
-    </div>
-    <div style="font-size:14px;color:var(--grey);margin-bottom:22px;line-height:1.6">Trial classes are only available for people attending Duality for the first time. One trial per person.</div>
-    <button class="btn btn-lime" style="width:100%" onclick="closeModal('trial-modal');showScreen('book');showBookTab('casual')">Browse and book a trial</button>
   </div>
 </div>
 
@@ -1898,6 +2016,9 @@
   }
 
   function openCheckout() {
+    // Restore options that may have been hidden by trial booking
+    document.getElementById('pay-deposit').style.display = '';
+    document.querySelectorAll('.pay-option').forEach(el => el.style.display = '');
     const count   = Object.keys(cart).length;
     const price   = PRICING[Math.min(count, 6)];
     const deposit = price / 2;
@@ -1994,6 +2115,31 @@
 
   function openTrialInfo() {
     document.getElementById('trial-modal').classList.add('open');
+  }
+
+  function openTrialBooking(className, date, instructor) {
+    document.getElementById('checkout-summary').innerHTML =
+      `<div style="display:flex;justify-content:space-between"><span>${className} trial</span><span>${instructor}</span></div>` +
+      `<div style="font-size:13px;color:var(--grey)">${date}</div>`;
+    document.getElementById('checkout-total-val').textContent  = '$35';
+    document.getElementById('pay-full-price').textContent      = '$35';
+    document.getElementById('pay-deposit-price').textContent   = '$35';
+    document.getElementById('pay-deposit-desc').textContent    = 'One-off trial class.';
+    document.getElementById('pay-plan-price').textContent      = '$35';
+    document.getElementById('checkout-btn-val').textContent    = '$35';
+    // Hide deposit and plan options for flat $35 trial
+    document.getElementById('pay-deposit').style.display = 'none';
+    document.querySelector('.pay-option:last-of-type').style.display = 'none';
+    document.getElementById('pay-full').classList.add('selected');
+    selectedPayMode = 'full';
+    closeModal('trial-modal');
+    document.getElementById('checkout-modal').classList.add('open');
+  }
+
+  function openWaitlistModal(className, date) {
+    document.getElementById('waitlist-class-name').textContent = className;
+    document.getElementById('waitlist-class-date').textContent = date;
+    document.getElementById('waitlist-modal').classList.add('open');
   }
 
   function openWorkshopModal(title, date, instructor, price, desc, soldOut) {
