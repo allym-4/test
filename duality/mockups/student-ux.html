@@ -801,15 +801,16 @@
     <div class="screen active" id="screen-dashboard">
 
       <!-- Demo toggle (remove in real build) -->
-      <div style="background:#111;border:1px solid #222;border-radius:8px;padding:10px 16px;margin-bottom:28px;display:flex;align-items:center;gap:12px;font-size:13px;color:var(--grey)">
+      <div style="background:#111;border:1px solid #222;border-radius:8px;padding:10px 16px;margin-bottom:28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--grey)">
         <span>Demo state:</span>
         <button class="btn btn-ghost btn-sm" onclick="setDashState('enrolled-no-new-season')" style="font-size:11px">Enrolled, no new season yet</button>
-        <button class="btn btn-ghost btn-sm" onclick="setDashState('enrolled-new-season-open')" style="font-size:11px">Enrolled + Season 4 open</button>
+        <button class="btn btn-ghost btn-sm" onclick="setDashState('enrolled-s4-open')" style="font-size:11px">Enrolled + S4 open</button>
+        <button class="btn btn-ghost btn-sm" onclick="setDashState('enrolled-s4-secured')" style="font-size:11px">Enrolled + S4 secured</button>
         <button class="btn btn-ghost btn-sm" onclick="setDashState('not-enrolled')" style="font-size:11px">Not enrolled</button>
       </div>
 
       <!-- STATE: Season open CTA (shown when new season is open and student not yet booked) -->
-      <div id="dash-season-cta" style="display:none;background:var(--lime);border-radius:14px;padding:28px 32px;margin-bottom:32px;display:none">
+      <div id="dash-season-cta" style="display:none;background:var(--lime);border-radius:14px;padding:28px 32px;margin-bottom:32px">
         <div style="font-family:'Archivo Black',sans-serif;font-size:26px;color:var(--black);margin-bottom:8px">Season 4 is now open for bookings</div>
         <div style="font-size:15px;color:rgba(0,0,0,0.65);margin-bottom:22px;line-height:1.6">Season 4 runs 2 Jun - 25 Jul. Secure your spot before classes fill up - bookings close end of Week 3.</div>
         <button class="btn" style="background:var(--black);color:var(--lime);font-size:14px" onclick="showScreen('book');showBookTab('season')">Book Season 4 now</button>
@@ -851,46 +852,14 @@
         <div class="profile-banner-pct" id="profile-pct">0%</div>
       </div>
 
-      <!-- Season 4 secured banner -->
-      <div style="background:#0d0d0d;border:1px solid #2a2a2a;border-radius:12px;padding:18px 22px;margin-bottom:24px">
+      <!-- Season 4 secured banner (shown only when S4 is booked) -->
+      <div id="dash-s4-secured" style="display:none;background:#0d0d0d;border:1px solid #2a2a2a;border-radius:12px;padding:18px 22px;margin-bottom:24px">
         <div style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--lav);margin-bottom:8px">Season 4 - secured</div>
         <div style="font-size:14px;color:var(--grey);line-height:1.7;margin-bottom:12px">
           You've locked in <strong style="color:var(--white)">Level 2 (Mon 6:30pm)</strong> and <strong style="color:var(--white)">Dance (Fri 6:30pm)</strong> for Season 4.
           Your 3rd class works out to just <strong style="color:var(--lime)">$17.50 per session</strong> — and unlocks <span style="color:var(--lime)">1 free practice session per week</span>.
         </div>
         <button class="btn btn-outline btn-sm" onclick="showScreen('book');showBookTab('season')">Add a class to Season 4</button>
-      </div>
-
-      <!-- Level progression tracker -->
-      <div class="level-progress-card">
-        <div class="level-progress-header">
-          <div>
-            <div class="level-progress-title">Ready for Level 3?</div>
-            <div class="level-progress-sub">Tick off these moves as you nail them. Your instructor signs you off when you're ready to move up.</div>
-          </div>
-          <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--grey)" id="level-progress-count">0 / 4</div>
-        </div>
-        <div id="level-progress-moves">
-          <div class="level-move-row" onclick="toggleLevelMove(this)">
-            <div class="level-move-tick">✓</div>
-            <div class="level-move-name">Invert</div>
-          </div>
-          <div class="level-move-row" onclick="toggleLevelMove(this)">
-            <div class="level-move-tick">✓</div>
-            <div class="level-move-name">Bat</div>
-          </div>
-          <div class="level-move-row" onclick="toggleLevelMove(this)">
-            <div class="level-move-tick">✓</div>
-            <div class="level-move-name">Handstands with chest on pole (stag and open leg)</div>
-          </div>
-          <div class="level-move-row" onclick="toggleLevelMove(this)">
-            <div class="level-move-tick">✓</div>
-            <div class="level-move-name">Open Leg Jamilla</div>
-          </div>
-        </div>
-        <div id="level-progress-complete" style="display:none;margin-top:12px;padding:12px 14px;background:#0a1800;border:1px solid var(--lime);border-radius:8px;font-size:13px;color:var(--lime)">
-          🎉 Looking good! Let your instructor know — they'll do a formal check-off and get you enrolled in Level 3.
-        </div>
       </div>
 
       <div class="grid-4 mb-24">
@@ -904,10 +873,10 @@
           <div class="stat-value">1</div>
           <div class="stat-sub">Expires end of season</div>
         </div>
-        <div class="stat">
-          <div class="stat-label">Tricks unlocked</div>
-          <div class="stat-value">14</div>
-          <div class="stat-sub">of 22 in Level 2</div>
+        <div class="stat" id="stat-tricks">
+          <div class="stat-label" id="stat-tricks-label">Tricks unlocked</div>
+          <div class="stat-value" id="stat-tricks-value">14</div>
+          <div class="stat-sub" id="stat-tricks-sub">of 22 in Level 2</div>
         </div>
         <div class="stat">
           <div class="stat-label">Weeks remaining</div>
@@ -944,6 +913,38 @@
         </div>
         <div class="class-row-actions">
           <button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Dance','Fri 16 May, 6:30pm', true)">Mark Away</button>
+        </div>
+      </div>
+
+      <!-- Level progression tracker -->
+      <div class="level-progress-card" style="margin-top:20px">
+        <div class="level-progress-header">
+          <div>
+            <div class="level-progress-title">Ready for Level 3?</div>
+            <div class="level-progress-sub">Tick off these moves as you nail them. Your instructor signs you off when you're ready to move up.</div>
+          </div>
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--grey)" id="level-progress-count">0 / 4</div>
+        </div>
+        <div id="level-progress-moves">
+          <div class="level-move-row" onclick="toggleLevelMove(this)">
+            <div class="level-move-tick">✓</div>
+            <div class="level-move-name">Invert</div>
+          </div>
+          <div class="level-move-row" onclick="toggleLevelMove(this)">
+            <div class="level-move-tick">✓</div>
+            <div class="level-move-name">Bat</div>
+          </div>
+          <div class="level-move-row" onclick="toggleLevelMove(this)">
+            <div class="level-move-tick">✓</div>
+            <div class="level-move-name">Handstands with chest on pole (stag and open leg)</div>
+          </div>
+          <div class="level-move-row" onclick="toggleLevelMove(this)">
+            <div class="level-move-tick">✓</div>
+            <div class="level-move-name">Open Leg Jamilla</div>
+          </div>
+        </div>
+        <div id="level-progress-complete" style="display:none;margin-top:12px;padding:12px 14px;background:#0a1800;border:1px solid var(--lime);border-radius:8px;font-size:13px;color:var(--lime)">
+          🎉 Looking good! Let your instructor know — they'll do a formal check-off and get you enrolled in Level 3.
         </div>
       </div>
 
@@ -1037,7 +1038,7 @@
       <div style="background:#0d0d0d;border:1px solid var(--border);border-radius:12px;padding:22px 26px;display:flex;align-items:center;justify-content:space-between;gap:20px">
         <div>
           <div style="font-family:'Archivo Black',sans-serif;font-size:16px;margin-bottom:6px">You're on 2 classes per week</div>
-          <div style="font-size:14px;color:var(--grey)">Add a 3rd class to unlock <span style="color:var(--lime)">1 free practice session per week</span> from Season 4.</div>
+          <div style="font-size:14px;color:var(--grey)">Add a 3rd class to unlock <span style="color:var(--lime)">1 free practice session per week</span>.</div>
         </div>
         <button class="btn btn-outline btn-sm" style="white-space:nowrap" onclick="showScreen('book'); showBookTab('season')">Add a class</button>
       </div>
@@ -4757,21 +4758,51 @@
   }
 
   function setDashState(state) {
-    const seasonCta   = document.getElementById('dash-season-cta');
-    const notEnrolled = document.getElementById('dash-not-enrolled');
-    const enrolled    = document.getElementById('dash-enrolled');
+    const seasonCta  = document.getElementById('dash-season-cta');
+    const notEnrolled= document.getElementById('dash-not-enrolled');
+    const enrolled   = document.getElementById('dash-enrolled');
+    const s4Secured  = document.getElementById('dash-s4-secured');
 
     seasonCta.style.display   = 'none';
     notEnrolled.style.display = 'none';
     enrolled.style.display    = 'none';
+    s4Secured.style.display   = 'none';
 
     if (state === 'not-enrolled') {
       notEnrolled.style.display = 'block';
-    } else if (state === 'enrolled-new-season-open') {
+
+    } else if (state === 'enrolled-s4-open') {
+      // New season open, not yet booked — show CTA banner only
       seasonCta.style.display = 'block';
       enrolled.style.display  = 'block';
+      setTricksStat('level');
+
+    } else if (state === 'enrolled-s4-secured') {
+      // New season booked — show secured card, hide open banner
+      s4Secured.style.display = 'block';
+      enrolled.style.display  = 'block';
+      setTricksStat('level');
+
     } else {
+      // enrolled-no-new-season (default)
       enrolled.style.display = 'block';
+      setTricksStat('level');
+    }
+  }
+
+  function setTricksStat(type) {
+    const label = document.getElementById('stat-tricks-label');
+    const value = document.getElementById('stat-tricks-value');
+    const sub   = document.getElementById('stat-tricks-sub');
+    if (!label) return;
+    if (type === 'style') {
+      label.textContent = 'Combos nailed';
+      value.textContent = '—';
+      sub.textContent   = 'Style classes only';
+    } else {
+      label.textContent = 'Tricks unlocked';
+      value.textContent = '14';
+      sub.textContent   = 'of 22 in Level 2';
     }
   }
 </script>
