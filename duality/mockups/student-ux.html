@@ -217,9 +217,9 @@
   .cart-perks { margin: 14px 0; }
   .perk { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--grey); padding: 5px 0; }
   .perk-icon { color: var(--lime); }
-  .cart-total { border-top: 1px solid var(--border); padding-top: 18px; margin-top: 10px; }
+  .cart-total { border-top: 1px solid var(--border); padding-top: 18px; margin-top: 10px; overflow: hidden; }
   .cart-total-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--grey); margin-bottom: 7px; }
-  .cart-total-row.main { color: var(--white); font-family: 'Archivo Black', sans-serif; font-size: 20px; margin-top: 10px; }
+  .cart-total-row.main { color: var(--white); font-family: 'Archivo Black', sans-serif; font-size: 18px; margin-top: 10px; white-space: nowrap; }
 
   /* CLASS ROWS */
   .class-row {
@@ -434,6 +434,88 @@
   .text-lav  { color: var(--lav); }
   .text-sm   { font-size: 13px; }
   .text-xs   { font-size: 12px; }
+
+  /* ── MOBILE ─────────────────────────────────────────────── */
+  @media (max-width: 640px) {
+    body { font-size: 15px; }
+
+    /* Shell */
+    .shell { max-width: 100%; border-radius: 0; border-left: none; border-right: none; min-height: 100dvh; }
+    .topbar { padding: 0 16px; }
+    .screen { padding: 20px 16px 100px; }
+    .bottom-nav { border-radius: 0; padding: 0 4px; }
+    .nav-item { font-size: 10px; gap: 4px; padding: 10px 6px; }
+    .nav-item svg, .nav-icon { width: 20px; height: 20px; }
+
+    /* Typography */
+    .page-title { font-size: 26px; }
+    .section-label { font-size: 10px; }
+
+    /* Cards and grids */
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .card { padding: 16px; }
+
+    /* Booking layout: stack cart below class list */
+    .booking-layout { grid-template-columns: 1fr; }
+    .cart { position: static; margin-top: 24px; }
+
+    /* Stats row */
+    .stats { grid-template-columns: repeat(2, 1fr); }
+
+    /* Class rows */
+    .class-row { gap: 10px; }
+    .class-row-actions { flex-shrink: 0; }
+
+    /* Casual rows */
+    .casual-row { gap: 10px; padding: 14px 12px; }
+    .casual-date-num { font-size: 20px; }
+
+    /* Tabs */
+    .tabs { gap: 0; }
+    .tab { font-size: 12px; padding: 12px 10px; }
+
+    /* Filters */
+    .filters { gap: 6px; }
+    .filter-btn { font-size: 11px; padding: 6px 10px; }
+
+    /* Modal */
+    .modal-overlay { align-items: flex-end; padding: 0; }
+    .modal { border-radius: 20px 20px 0 0; max-height: 92dvh; overflow-y: auto; width: 100%; max-width: 100% !important; padding: 24px 20px 32px; }
+    .modal-title { font-size: 20px; }
+
+    /* Onboarding options */
+    .onboard-option { padding: 14px 14px; }
+    .onboard-option-title { font-size: 14px; }
+
+    /* Banner */
+    .banner { font-size: 13px; padding: 12px 14px; }
+
+    /* Tricks grid */
+    .tricks-grid { grid-template-columns: repeat(2, 1fr); }
+
+    /* Progress tabs */
+    .progress-tabs { gap: 0; }
+    .progress-tab { font-size: 12px; padding: 10px 12px; }
+
+    /* Class cards in season booking */
+    .class-card { padding: 14px; }
+    .class-name { font-size: 15px; }
+    .class-day  { font-size: 11px; }
+
+    /* Pay options */
+    .pay-option { padding: 12px 14px; }
+    .pay-option-title { font-size: 14px; }
+    .pay-option-price { font-size: 16px; }
+
+    /* Stripe fields */
+    .stripe-row { flex-direction: column; }
+
+    /* Notifications */
+    .notif-item { gap: 10px; padding: 14px 0; }
+
+    /* Season demo toggles */
+    #season-demo-level, #season-demo-nolevel { font-size: 11px; padding: 5px 10px; }
+  }
 </style>
 </head>
 <body>
@@ -1579,78 +1661,141 @@
 
 <!-- CHECKOUT MODAL -->
 <div class="modal-overlay" id="checkout-modal">
-  <div class="modal">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:26px">
-      <div class="modal-title">Payment options</div>
+  <div class="modal" style="max-width:500px">
+
+    <!-- ORDER SUMMARY (shared) -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div class="modal-title" id="co-modal-title">Payment options</div>
       <button class="btn btn-ghost btn-sm" onclick="closeModal('checkout-modal')">Close</button>
     </div>
-
-    <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:17px 20px;margin-bottom:26px">
-      <div style="font-size:12px;color:var(--grey);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">Order summary</div>
-      <div id="checkout-summary" style="font-size:15px;line-height:2;color:var(--grey)"></div>
-      <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:14px;display:flex;justify-content:space-between">
-        <span style="font-family:'Archivo Black',sans-serif;font-size:16px">Season total</span>
-        <span style="font-family:'Archivo Black',sans-serif;font-size:18px" id="checkout-total-val"></span>
+    <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:22px">
+      <div style="font-size:11px;color:var(--grey);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Order summary</div>
+      <div id="checkout-summary" style="font-size:14px;line-height:1.9;color:var(--grey)"></div>
+      <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:12px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-family:'Archivo Black',sans-serif;font-size:15px">Total</span>
+        <span style="font-family:'Archivo Black',sans-serif;font-size:18px;color:var(--lime)" id="checkout-total-val"></span>
       </div>
     </div>
 
-    <div style="font-size:15px;font-weight:500;margin-bottom:14px">How would you like to pay?</div>
+    <!-- STEP 1: Choose payment type -->
+    <div id="co-step-1">
+      <div style="font-size:15px;font-weight:500;margin-bottom:14px">How would you like to pay?</div>
 
-    <div class="pay-option selected" onclick="selectPayOption(this,'full')" id="pay-full">
-      <div class="pay-radio"></div>
-      <div class="pay-option-top">
-        <div class="pay-option-title">Pay in full today</div>
-        <div class="pay-option-price" id="pay-full-price">$270</div>
+      <div class="pay-option selected" onclick="selectPayOption(this,'full')" id="pay-full">
+        <div class="pay-radio"></div>
+        <div class="pay-option-top">
+          <div class="pay-option-title">Pay in full today</div>
+          <div class="pay-option-price" id="pay-full-price">$270</div>
+        </div>
+        <div class="pay-option-desc">One payment, nothing more to think about.</div>
       </div>
-      <div class="pay-option-desc">One payment. Done. No balance to think about.</div>
+
+      <div class="pay-option" onclick="selectPayOption(this,'deposit')" id="pay-deposit">
+        <div class="pay-radio"></div>
+        <div class="pay-option-top">
+          <div class="pay-option-title">Pay 50% deposit today</div>
+          <div class="pay-option-price" id="pay-deposit-price">$135</div>
+        </div>
+        <div class="pay-option-desc" id="pay-deposit-desc">Balance charged automatically on Sunday of Week 1 (1 Jun).</div>
+      </div>
+
+      <div id="co-card-fields" style="margin-top:20px">
+        <div class="stripe-field">
+          <div class="stripe-label">Card number</div>
+          <input class="stripe-input" placeholder="1234 5678 9012 3456" />
+        </div>
+        <div class="stripe-row">
+          <div class="stripe-field"><div class="stripe-label">Expiry</div><input class="stripe-input" placeholder="MM / YY" /></div>
+          <div class="stripe-field"><div class="stripe-label">CVC</div><input class="stripe-input" placeholder="..." /></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px">
+        <button class="btn btn-lime" style="width:100%" id="pay-btn" onclick="closeModal('checkout-modal')">Confirm and pay - <span id="checkout-btn-val"></span></button>
+        <button class="btn btn-outline" style="width:100%" onclick="showCoStep('plan')">Request a payment plan</button>
+        <button class="btn btn-ghost" style="width:100%" onclick="showCoStep('cash')">I want to pay cash</button>
+      </div>
+
+      <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border);font-size:12px;color:var(--grey);line-height:1.7;text-align:center">
+        By booking you agree to our <a href="#" style="color:var(--white);text-decoration:underline" onclick="return false">terms and conditions</a>. Payments secured by Stripe.
+      </div>
     </div>
 
-    <div class="pay-option" onclick="selectPayOption(this,'deposit')" id="pay-deposit">
-      <div class="pay-radio"></div>
-      <div class="pay-option-top">
-        <div class="pay-option-title">Pay 50% deposit today</div>
-        <div class="pay-option-price" id="pay-deposit-price">$135</div>
-      </div>
-      <div class="pay-option-desc" id="pay-deposit-desc">Balance of $135 charged automatically on Sunday of Week 1 (1 Jun).</div>
-    </div>
+    <!-- STEP 2: Payment plan -->
+    <div id="co-step-plan" style="display:none">
+      <button class="btn btn-ghost btn-sm" style="margin-bottom:16px" onclick="showCoStep('1')">Back</button>
+      <div style="font-size:15px;font-weight:500;margin-bottom:16px">Set up a payment plan</div>
 
-    <div class="pay-option" onclick="selectPayOption(this,'plan')">
-      <div class="pay-radio"></div>
-      <div class="pay-option-top">
-        <div class="pay-option-title">Payment plan</div>
-        <div class="pay-option-price" style="font-size:14px;color:var(--lav)" id="pay-plan-price">4 x $67.50</div>
+      <div style="font-size:13px;color:var(--grey);margin-bottom:16px">How frequently would you like to pay?</div>
+      <div style="display:flex;gap:8px;margin-bottom:22px">
+        <button class="filter-btn active" id="plan-freq-weekly" onclick="setPlanFreq(this,'weekly')">Weekly</button>
+        <button class="filter-btn" id="plan-freq-fortnightly" onclick="setPlanFreq(this,'fortnightly')">Fortnightly</button>
+        <button class="filter-btn" id="plan-freq-monthly" onclick="setPlanFreq(this,'monthly')">Monthly</button>
       </div>
-      <div class="pay-option-desc">Split your season into 4 fortnightly payments. First payment charged today, remainder automatically on the following fortnights.</div>
-    </div>
 
-    <div id="card-fields" style="margin-top:24px">
-      <div class="stripe-field">
+      <div style="font-size:13px;color:var(--grey);margin-bottom:12px">When would you like to start payments?</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:22px">
+        <div class="onboard-option" id="plan-start-today" onclick="setPlanStart('today')" style="padding:14px 16px">
+          <div class="onboard-dot lime" id="plan-start-today-dot"></div>
+          <div><div class="onboard-option-title">Today</div></div>
+        </div>
+        <div class="onboard-option" id="plan-start-season" onclick="setPlanStart('season')" style="padding:14px 16px">
+          <div class="onboard-dot" id="plan-start-season-dot"></div>
+          <div><div class="onboard-option-title">When the season commences</div></div>
+        </div>
+      </div>
+
+      <!-- Deposit required if season start -->
+      <div id="plan-deposit-box" style="display:none;background:#1a1028;border:1px solid var(--lav);border-radius:10px;padding:16px 18px;margin-bottom:22px">
+        <div style="font-size:13px;color:var(--lav);font-weight:500;margin-bottom:8px">A deposit is required to hold your spot</div>
+        <div style="font-size:13px;color:var(--grey);margin-bottom:14px;line-height:1.6" id="plan-deposit-min-text">Minimum deposit: $100 (2+ classes)</div>
+        <div class="stripe-field">
+          <div class="stripe-label">Deposit amount to charge now ($)</div>
+          <input class="stripe-input" id="plan-deposit-input" placeholder="e.g. 100" type="number" min="50" />
+        </div>
+      </div>
+
+      <div class="stripe-field" style="margin-bottom:8px">
         <div class="stripe-label">Card number</div>
         <input class="stripe-input" placeholder="1234 5678 9012 3456" />
       </div>
-      <div class="stripe-row">
-        <div class="stripe-field">
-          <div class="stripe-label">Expiry</div>
-          <input class="stripe-input" placeholder="MM / YY" />
-        </div>
-        <div class="stripe-field">
-          <div class="stripe-label">CVC</div>
-          <input class="stripe-input" placeholder="..." />
-        </div>
+      <div class="stripe-row" style="margin-bottom:20px">
+        <div class="stripe-field"><div class="stripe-label">Expiry</div><input class="stripe-input" placeholder="MM / YY" /></div>
+        <div class="stripe-field"><div class="stripe-label">CVC</div><input class="stripe-input" placeholder="..." /></div>
+      </div>
+
+      <button class="btn btn-lime" style="width:100%;margin-bottom:10px" onclick="closeModal('checkout-modal')">Submit payment plan request</button>
+      <div style="font-size:12px;color:var(--grey);text-align:center;line-height:1.7">
+        By booking you agree to our <a href="#" style="color:var(--white);text-decoration:underline" onclick="return false">terms and conditions</a>.
       </div>
     </div>
 
-    <div id="plan-fields" style="display:none;margin-top:24px">
-      <div style="background:#1a1028;border:1px solid var(--lav);border-radius:10px;padding:14px 18px;margin-bottom:18px;font-size:14px;color:var(--grey);line-height:1.6">
-        <span style="color:var(--lav);font-weight:500">4 fortnightly payments.</span> First payment today, then automatically on the following 3 fortnights. Card details saved securely via Stripe.
+    <!-- STEP 3: Pay cash -->
+    <div id="co-step-cash" style="display:none">
+      <button class="btn btn-ghost btn-sm" style="margin-bottom:16px" onclick="showCoStep('1')">Back</button>
+      <div style="font-size:15px;font-weight:500;margin-bottom:10px">Pay cash on the day</div>
+      <div style="background:#1a1028;border:1px solid var(--lav);border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:var(--grey);line-height:1.6">
+        Your card details are saved securely but <strong style="color:var(--white)">won't be charged</strong> unless you don't pay cash on the day you've selected.
+      </div>
+
+      <div class="stripe-field" style="margin-bottom:8px">
+        <div class="stripe-label">Card number (held, not charged)</div>
+        <input class="stripe-input" placeholder="1234 5678 9012 3456" />
+      </div>
+      <div class="stripe-row" style="margin-bottom:22px">
+        <div class="stripe-field"><div class="stripe-label">Expiry</div><input class="stripe-input" placeholder="MM / YY" /></div>
+        <div class="stripe-field"><div class="stripe-label">CVC</div><input class="stripe-input" placeholder="..." /></div>
+      </div>
+
+      <div style="font-size:13px;color:var(--grey);margin-bottom:12px">When will you be bringing cash?</div>
+      <div id="cash-calendar" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:22px"></div>
+
+      <button class="btn btn-lime" style="width:100%;margin-bottom:10px" id="cash-confirm-btn" onclick="closeModal('checkout-modal')">Confirm booking</button>
+      <div style="font-size:12px;color:var(--grey);text-align:center;line-height:1.7">
+        By booking you agree to our <a href="#" style="color:var(--white);text-decoration:underline" onclick="return false">terms and conditions</a>.
       </div>
     </div>
 
-    <div class="modal-actions">
-      <button class="btn btn-lime" style="flex:1" id="pay-btn" onclick="closeModal('checkout-modal')">Confirm and pay - <span id="checkout-btn-val"></span></button>
-      <button class="btn btn-ghost" onclick="closeModal('checkout-modal')">Cancel</button>
-    </div>
-    <div style="font-size:12px;color:var(--grey);text-align:center;margin-top:12px">Secured by Stripe</div>
   </div>
 </div>
 
@@ -2438,53 +2583,110 @@
     document.getElementById('cart-cta').disabled = false;
   }
 
+  let planFreq = 'weekly';
+  let planStart = 'today';
+
   function openCheckout() {
-    // Restore options that may have been hidden by trial booking
-    document.getElementById('pay-deposit').style.display = '';
-    document.querySelectorAll('.pay-option').forEach(el => el.style.display = '');
     const count   = Object.keys(cart).length;
     const price   = PRICING[Math.min(count, 6)];
     const deposit = price / 2;
 
     document.getElementById('checkout-summary').innerHTML =
       Object.values(cart).map(c =>
-        `<div style="display:flex;justify-content:space-between"><span>${c.name}</span><span>${c.time}</span></div>`
+        `<div style="display:flex;justify-content:space-between;gap:16px"><span>${c.name}</span><span style="color:var(--grey)">${c.time}</span></div>`
       ).join('');
 
-    const installment = (price / 4).toFixed(2);
     document.getElementById('checkout-total-val').textContent = '$' + price;
     document.getElementById('pay-full-price').textContent     = '$' + price;
     document.getElementById('pay-deposit-price').textContent  = '$' + deposit;
     document.getElementById('pay-deposit-desc').textContent   = 'Balance of $' + deposit + ' charged automatically on Sunday of Week 1 (1 Jun).';
-    document.getElementById('pay-plan-price').textContent     = '4 x $' + installment;
     document.getElementById('checkout-btn-val').textContent   = '$' + price;
 
-    selectedPayMode = 'full';
+    // Set deposit minimum text based on class count
+    const minDeposit = count >= 2 ? 100 : 50;
+    document.getElementById('plan-deposit-min-text').textContent =
+      `Minimum deposit: $${minDeposit} (${count >= 2 ? '2+ classes' : '1 class'})`;
+    document.getElementById('plan-deposit-input').min = minDeposit;
+
+    showCoStep('1');
     document.getElementById('checkout-modal').classList.add('open');
+  }
+
+  function showCoStep(step) {
+    ['1','plan','cash'].forEach(s =>
+      document.getElementById('co-step-' + (s === '1' ? '1' : s)).style.display = 'none'
+    );
+    document.getElementById('co-step-' + (step === '1' ? '1' : step)).style.display = 'block';
+    document.getElementById('co-modal-title').textContent =
+      step === 'plan' ? 'Payment plan' : step === 'cash' ? 'Pay cash' : 'Payment options';
+    if (step === 'cash') buildCashCalendar();
   }
 
   function selectPayOption(el, mode) {
     document.querySelectorAll('.pay-option').forEach(o => o.classList.remove('selected'));
     el.classList.add('selected');
     selectedPayMode = mode;
+    const count   = Object.keys(cart).length;
+    const price   = PRICING[Math.min(count, 6)];
+    const deposit = price / 2;
+    const amt = mode === 'full' ? price : deposit;
+    document.getElementById('pay-btn').innerHTML = 'Confirm and pay - $' + amt;
+  }
 
-    const count       = Object.keys(cart).length;
-    const price       = PRICING[Math.min(count, 6)];
-    const deposit     = price / 2;
-    const installment = (price / 4).toFixed(2);
-    const cardFields  = document.getElementById('card-fields');
-    const planFields  = document.getElementById('plan-fields');
-    const payBtn      = document.getElementById('pay-btn');
+  function setPlanFreq(el, freq) {
+    planFreq = freq;
+    ['weekly','fortnightly','monthly'].forEach(f =>
+      document.getElementById('plan-freq-' + f).classList.remove('active')
+    );
+    el.classList.add('active');
+  }
 
-    if (mode === 'plan') {
-      cardFields.style.display = 'block';
-      planFields.style.display = 'block';
-      payBtn.innerHTML = 'Confirm - first payment $' + installment;
-    } else {
-      cardFields.style.display = 'block';
-      planFields.style.display = 'none';
-      const amt = mode === 'full' ? price : deposit;
-      payBtn.innerHTML = 'Confirm and pay - $' + amt;
+  function setPlanStart(val) {
+    planStart = val;
+    document.getElementById('plan-start-today-dot').className  = 'onboard-dot' + (val === 'today' ? ' lime' : '');
+    document.getElementById('plan-start-season-dot').className = 'onboard-dot' + (val === 'season' ? ' lime' : '');
+    document.getElementById('plan-start-today').style.borderColor  = val === 'today' ? 'var(--lime)' : 'var(--border)';
+    document.getElementById('plan-start-season').style.borderColor = val === 'season' ? 'var(--lime)' : 'var(--border)';
+    document.getElementById('plan-deposit-box').style.display = val === 'season' ? 'block' : 'none';
+  }
+
+  function buildCashCalendar() {
+    const cal = document.getElementById('cash-calendar');
+    cal.innerHTML = '';
+    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    let selected = null;
+    const today = new Date();
+    // Day-of-week headers
+    days.forEach(d => {
+      const h = document.createElement('div');
+      h.style.cssText = 'text-align:center;font-size:10px;color:var(--grey);padding-bottom:2px;';
+      h.textContent = d;
+      cal.appendChild(h);
+    });
+    // Pad to start on correct weekday
+    const startDay = today.getDay();
+    for (let i = 0; i < startDay; i++) {
+      cal.appendChild(document.createElement('div'));
+    }
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      const btn = document.createElement('button');
+      btn.textContent = d.getDate();
+      btn.title = days[d.getDay()] + ' ' + d.getDate() + ' ' + months[d.getMonth()];
+      btn.style.cssText = 'border:1px solid var(--border);background:#0a0a0a;color:var(--white);border-radius:8px;padding:8px 4px;font-size:13px;cursor:pointer;transition:all 0.15s;width:100%';
+      btn.onmouseover = () => { if (btn !== selected) btn.style.background = '#1a1a1a'; };
+      btn.onmouseout  = () => { if (btn !== selected) btn.style.background = '#0a0a0a'; };
+      btn.onclick = () => {
+        if (selected) { selected.style.background = '#0a0a0a'; selected.style.borderColor = 'var(--border)'; selected.style.color = 'var(--white)'; }
+        selected = btn;
+        btn.style.background = 'var(--lime)';
+        btn.style.borderColor = 'var(--lime)';
+        btn.style.color = '#000';
+        document.getElementById('cash-confirm-btn').textContent = 'Confirm - bringing cash ' + btn.title;
+      };
+      cal.appendChild(btn);
     }
   }
 
@@ -2583,19 +2785,17 @@
 
   function openTrialBooking(className, date, instructor) {
     document.getElementById('checkout-summary').innerHTML =
-      `<div style="display:flex;justify-content:space-between"><span>${className} trial</span><span>${instructor}</span></div>` +
+      `<div style="display:flex;justify-content:space-between;gap:16px"><span>${className} trial</span><span style="color:var(--grey)">${instructor}</span></div>` +
       `<div style="font-size:13px;color:var(--grey)">${date}</div>`;
-    document.getElementById('checkout-total-val').textContent  = '$35';
-    document.getElementById('pay-full-price').textContent      = '$35';
-    document.getElementById('pay-deposit-price').textContent   = '$35';
-    document.getElementById('pay-deposit-desc').textContent    = 'One-off trial class.';
-    document.getElementById('pay-plan-price').textContent      = '$35';
-    document.getElementById('checkout-btn-val').textContent    = '$35';
-    // Hide deposit and plan options for flat $35 trial
+    document.getElementById('checkout-total-val').textContent = '$35';
+    document.getElementById('pay-full-price').textContent     = '$35';
+    document.getElementById('pay-deposit-price').textContent  = '$35';
+    document.getElementById('pay-deposit-desc').textContent   = 'One-off trial class.';
+    document.getElementById('checkout-btn-val').textContent   = '$35';
     document.getElementById('pay-deposit').style.display = 'none';
-    document.querySelector('.pay-option:last-of-type').style.display = 'none';
     document.getElementById('pay-full').classList.add('selected');
     selectedPayMode = 'full';
+    showCoStep('1');
     closeModal('trial-modal');
     document.getElementById('checkout-modal').classList.add('open');
   }
