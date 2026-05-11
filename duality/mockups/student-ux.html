@@ -146,6 +146,16 @@
   .tab.active { background: var(--black); color: var(--white); }
   .tab:hover:not(.active) { color: var(--white); }
 
+  /* SUB-TABS (within a panel) */
+  .subtabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+  .subtab {
+    padding: 9px 18px; font-size: 13px; font-weight: 500; cursor: pointer;
+    color: var(--grey); border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: color 0.15s; user-select: none;
+  }
+  .subtab.active { color: var(--white); border-bottom-color: var(--lime); }
+  .subtab:hover:not(.active) { color: var(--white); }
+
   /* GRID */
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
@@ -1899,7 +1909,14 @@
       <div id="mcpanel-active">
         <div class="page-subtitle" style="margin-bottom:20px">Season 3 · Week 4 of 8 · ends 6 Jun</div>
 
-        <!-- Enrolled classes -->
+        <!-- Sub-tabs -->
+        <div class="subtabs">
+          <div class="subtab active" id="mc-subtab-enrolled" onclick="showMCSubTab('enrolled')">Enrolled classes</div>
+          <div class="subtab" id="mc-subtab-catchups" onclick="showMCSubTab('catchups')">Casual &amp; catch-ups</div>
+        </div>
+
+        <!-- SUB-PANEL: Enrolled classes -->
+        <div id="mc-subpanel-enrolled">
         <div class="section-label">Enrolled this season</div>
         <div class="class-row mb-8">
           <div class="class-row-date"><div class="class-row-day">MON</div><div class="class-row-num" style="color:var(--white);font-size:18px">6:30</div></div>
@@ -1930,8 +1947,10 @@
           <button class="btn btn-outline btn-sm" style="font-size:12px" onclick="showScreen('book');showBookTab('season')">Browse classes to add</button>
         </div>
 
-        <!-- Catch-up credit -->
-        <div class="divider"></div>
+        </div> <!-- end mc-subpanel-enrolled -->
+
+        <!-- SUB-PANEL: Casual & Catch-ups -->
+        <div id="mc-subpanel-catchups" style="display:none">
         <div class="credit-badge">
           <div class="credit-count">1</div>
           <div>
@@ -1967,10 +1986,6 @@
           <div class="class-row-info"><div class="class-row-name">Dance · Studio B</div><div class="class-row-meta">6:30pm · Mimi · Week 5</div></div>
           <button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Dance','Fri 23 May, 6:30pm', false)">Mark Away</button>
         </div>
-
-        <!-- Casual / Catch-ups -->
-        <div class="divider"></div>
-        <div class="section-label">Casual &amp; Catch-ups</div>
 
         <!-- Upcoming casual (using credit for Dance makeup) -->
         <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--grey);margin-bottom:8px">Upcoming</div>
@@ -2016,6 +2031,7 @@
         <div style="margin-top:16px">
           <button class="btn btn-lav btn-sm" onclick="showScreen('book');showBookTab('casual')">Book a casual or catch-up →</button>
         </div>
+        </div> <!-- end mc-subpanel-catchups -->
       </div>
 
       <!-- ── FUTURE SEASON (Season 4) ── -->
@@ -3889,6 +3905,13 @@
     });
   }
 
+  function showMCSubTab(sub) {
+    ['enrolled','catchups'].forEach(s => {
+      document.getElementById('mc-subpanel-' + s).style.display = s === sub ? '' : 'none';
+      document.getElementById('mc-subtab-' + s).classList.toggle('active', s === sub);
+    });
+  }
+
   function openCasualContact(name, datetime, instructor) {
     document.getElementById('casual-contact-class').textContent = [name, datetime, instructor].filter(Boolean).join(' · ');
     document.getElementById('casual-contact-desc').textContent = 'This class is currently outside your assessed level. If you think you\'re ready or want to discuss options, send us a message and we\'ll get back to you.';
@@ -4802,9 +4825,9 @@
     const sub   = document.getElementById('stat-tricks-sub');
     if (!label) return;
     if (type === 'style') {
-      label.textContent = 'Combos nailed';
-      value.textContent = '—';
-      sub.textContent   = 'Style classes only';
+      label.textContent = 'Classes attended';
+      value.textContent = '7';
+      sub.textContent   = 'This season';
     } else {
       label.textContent = 'Tricks unlocked';
       value.textContent = '14';
