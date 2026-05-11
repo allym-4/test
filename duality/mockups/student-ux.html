@@ -1759,6 +1759,12 @@
         </div>
       </div>
 
+      <!-- Payment schedule preview -->
+      <div style="margin-bottom:22px">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--grey);margin-bottom:10px">Your payment schedule</div>
+        <div id="plan-schedule" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+
       <div class="stripe-field" style="margin-bottom:8px">
         <div class="stripe-label">Card number</div>
         <input class="stripe-input" placeholder="1234 5678 9012 3456" />
@@ -2627,6 +2633,7 @@
     document.getElementById('co-modal-title').textContent =
       step === 'plan' ? 'Payment plan' : step === 'cash' ? 'Pay cash' : 'Payment options';
     if (step === 'cash') buildCashCalendar();
+    if (step === 'plan') buildPlanSchedule();
   }
 
   function selectPayOption(el, mode) {
@@ -2646,6 +2653,7 @@
       document.getElementById('plan-freq-' + f).classList.remove('active')
     );
     el.classList.add('active');
+    buildPlanSchedule();
   }
 
   function setPlanStart(val) {
@@ -2655,6 +2663,66 @@
     document.getElementById('plan-start-today').style.borderColor  = val === 'today' ? 'var(--lime)' : 'var(--border)';
     document.getElementById('plan-start-season').style.borderColor = val === 'season' ? 'var(--lime)' : 'var(--border)';
     document.getElementById('plan-deposit-box').style.display = val === 'season' ? 'block' : 'none';
+    buildPlanSchedule();
+  }
+
+  function buildPlanSchedule() {
+    const count   = Object.keys(cart).length;
+    const total   = PRICING[Math.min(count, 6)];
+    const deposit = planStart === 'season'
+      ? (parseInt(document.getElementById('plan-deposit-input').value) || (count >= 2 ? 100 : 50))
+      : 0;
+    const remaining = total - deposit;
+
+    // How many instalments and days between each
+    const freqDays = { weekly: 7, fortnightly: 14, monthly: 30 };
+    const days = freqDays[planFreq];
+
+    // Number of instalments: spread remaining over 4 (or fewer if monthly fits in season)
+    const numPayments = planFreq === 'monthly' ? 3 : planFreq === 'fortnightly' ? 4 : 8;
+    const instalment  = (remaining / numPayments).toFixed(2);
+
+    // Start date
+    const SEASON_START = new Date(2026, 5, 2); // 2 Jun 2026
+    const startDate = planStart === 'season' ? new Date(SEASON_START) : new Date();
+
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const fmt = d => `${d.getDate()} ${months[d.getMonth()]}`;
+
+    const rows = [];
+
+    // Deposit row if season start
+    if (deposit > 0) {
+      rows.push({ label: 'Deposit (today)', amount: '$' + deposit, note: 'Charged now to hold your spot', lime: true });
+    }
+
+    // Instalment rows
+    for (let i = 0; i < numPayments; i++) {
+      const d = new Date(startDate);
+      d.setDate(startDate.getDate() + i * days);
+      const isFirst = i === 0;
+      rows.push({
+        label: fmt(d),
+        amount: '$' + instalment,
+        note: isFirst && planStart === 'today' ? 'First payment' : '',
+        lime: false
+      });
+    }
+
+    const el = document.getElementById('plan-schedule');
+    el.innerHTML = rows.map((r, i) =>
+      `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#0a0a0a;border:1px solid ${r.lime ? 'var(--lav)' : 'var(--border)'};border-radius:8px;gap:12px">
+        <div>
+          <div style="font-size:13px;font-weight:500;color:${r.lime ? 'var(--lav)' : 'var(--white)'}">${r.label}</div>
+          ${r.note ? `<div style="font-size:11px;color:var(--grey);margin-top:2px">${r.note}</div>` : ''}
+        </div>
+        <div style="font-family:'Archivo Black',sans-serif;font-size:15px;white-space:nowrap;color:${r.lime ? 'var(--lav)' : 'var(--lime)'}">${r.amount}</div>
+      </div>`
+    ).join('');
+
+    // Also update deposit input listener so schedule recalcs when amount changes
+    const depInput = document.getElementById('plan-deposit-input');
+    depInput.oninput = buildPlanSchedule;
   }
 
   function buildCashCalendar() {
