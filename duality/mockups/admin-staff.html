@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Duality Pole — Staff Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --black: #000000; --white: #FFFFFF; --lime: #DBFF00; --lav: #CDA5FF;
+  --lilac: #E9BAFF; --grey: #949494; --dark: #111111; --mid: #1A1A1A;
+  --card: #141414; --border: #1f1f1f; --amber: #ffaa44;
+}
+body { background: var(--black); color: var(--white); font-family: 'Archivo', sans-serif; font-size: 14px; }
+h1,h2,h3,.black { font-family: 'Archivo Black', sans-serif; font-weight: 900; }
+.shell { display: flex; min-height: 100vh; }
+
+/* SIDEBAR */
+.sidebar {
+  width: 220px; min-width: 220px; background: var(--dark);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  position: fixed; top: 0; left: 0; height: 100vh; z-index: 100;
+}
+.sidebar-logo {
+  font-family: 'Archivo Black', sans-serif; font-size: 20px;
+  letter-spacing: 2px; color: var(--lime); padding: 28px 24px 30px;
+  text-transform: uppercase; border-bottom: 1px solid var(--border);
+}
+.sidebar-logo span { color: var(--white); }
+.nav-item {
+  display: flex; align-items: center; gap: 11px;
+  padding: 12px 24px; color: var(--grey); cursor: pointer;
+  font-size: 14px; transition: all 0.15s;
+  border-left: 3px solid transparent; user-select: none; position: relative;
+}
+.nav-item:hover { color: var(--white); background: #1a1a1a; }
+.nav-item.active { color: var(--lime); border-left-color: var(--lime); background: #0f1600; }
+.nav-icon { font-size: 16px; width: 20px; text-align: center; }
+.nav-badge { margin-left: auto; background: #ff6b6b; color: #fff; font-family: 'Archivo Black', sans-serif; font-size: 10px; padding: 2px 6px; border-radius: 10px; }
+.sidebar-footer { margin-top: auto; padding: 16px 24px; border-top: 1px solid var(--border); }
+.user-badge { display: flex; align-items: center; gap: 10px; }
+.avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--lav); display: flex; align-items: center; justify-content: center; font-family: 'Archivo Black', sans-serif; font-size: 13px; color: var(--black); flex-shrink: 0; }
+.user-name { font-size: 13px; font-weight: 500; }
+.user-role { font-size: 11px; color: var(--lav); margin-top: 1px; }
+
+/* MAIN */
+.main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 40px; border-bottom: 1px solid var(--border);
+  background: var(--dark); position: sticky; top: 0; z-index: 50;
+}
+.breadcrumb { font-size: 13px; color: var(--grey); }
+.breadcrumb span { color: var(--white); font-weight: 500; }
+.topbar-user { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.topbar-user .avatar { width: 30px; height: 30px; font-size: 11px; }
+
+.content { padding: 36px 40px; flex: 1; }
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* PAGE HEADER */
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+.page-title { font-family: 'Archivo Black', sans-serif; font-size: 28px; }
+.page-sub { color: var(--grey); font-size: 13px; margin-top: 4px; }
+
+/* KPI CARDS */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+.kpi { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 22px; }
+.kpi-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--grey); margin-bottom: 8px; }
+.kpi-value { font-family: 'Archivo Black', sans-serif; font-size: 28px; }
+.kpi-sub { font-size: 12px; color: var(--grey); margin-top: 4px; }
+.kpi-lime .kpi-value { color: var(--lime); }
+.kpi-lav .kpi-value { color: var(--lav); }
+.kpi-amber .kpi-value { color: var(--amber); }
+.kpi-red .kpi-value { color: #ff6b6b; }
+
+/* TABLES */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--grey); font-family: 'Archivo', sans-serif; font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+td { padding: 12px 14px; border-bottom: 1px solid #1a1a1a; font-size: 13px; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #0d0d0d; }
+.tbl-section { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+
+/* TAGS */
+.tag { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; letter-spacing: 0.2px; text-transform: uppercase; }
+.tag-lime { background: #0f1600; color: var(--lime); border: 1px solid var(--lime); }
+.tag-lav { background: #1a1028; color: var(--lav); border: 1px solid var(--lav); }
+.tag-grey { background: #1a1a1a; color: var(--grey); border: 1px solid #333; }
+.tag-red { background: #1a0000; color: #ff6b6b; border: 1px solid #ff6b6b; }
+.tag-amber { background: #1a0f00; color: var(--amber); border: 1px solid var(--amber); }
+.tag-green { background: #001a0a; color: #44ff99; border: 1px solid #44ff99; }
+
+/* BUTTONS */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 20px; border-radius: 8px; font-family: 'Archivo Black', sans-serif; font-size: 12px; letter-spacing: 0.5px; text-transform: uppercase; cursor: pointer; border: none; transition: all 0.15s; user-select: none; }
+.btn-lime { background: var(--lime); color: var(--black); }
+.btn-lime:hover { background: #c8f000; }
+.btn-lav { background: var(--lav); color: var(--black); }
+.btn-outline { background: transparent; color: var(--white); border: 1px solid #333; }
+.btn-outline:hover { border-color: var(--white); }
+.btn-ghost { background: transparent; color: var(--grey); border: 1px solid #222; font-family: 'Archivo', sans-serif; font-weight: 500; }
+.btn-ghost:hover { color: var(--white); border-color: #444; }
+.btn-red { background: #ff6b6b; color: var(--black); }
+.btn-sm { padding: 7px 14px; font-size: 11px; }
+.btn-xs { padding: 5px 10px; font-size: 10px; }
+
+/* GRID HELPERS */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+/* SECTION CARD */
+.section { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; margin-bottom: 20px; }
+.section-title { font-family: 'Archivo Black', sans-serif; font-size: 15px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+
+/* TODAY'S CLASS CARD */
+.class-card-today {
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+  padding: 20px 24px; cursor: pointer; transition: border-color 0.15s;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.class-card-today:hover { border-color: var(--lime); }
+.class-card-today.full { border-color: #ff6b6b; }
+.class-time-block { text-align: center; min-width: 64px; }
+.class-time-label { font-family: 'Archivo Black', sans-serif; font-size: 20px; color: var(--lime); }
+.class-day-label { font-size: 10px; text-transform: uppercase; color: var(--grey); letter-spacing: 0.8px; }
+.class-info { flex: 1; padding: 0 20px; }
+.class-name-large { font-family: 'Archivo Black', sans-serif; font-size: 16px; }
+.class-meta-row { font-size: 12px; color: var(--grey); margin-top: 3px; }
+.class-go-btn { font-size: 12px; color: var(--grey); }
+
+/* SEARCH / FILTER BAR */
+.filter-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+.search-input { background: #1a1a1a; border: 1px solid var(--border); border-radius: 8px; color: var(--white); font-family: inherit; font-size: 13px; padding: 9px 14px; min-width: 220px; }
+.search-input:focus { outline: none; border-color: #555; }
+.select-input { appearance: none; background: #1a1a1a url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center; border: 1px solid var(--border); border-radius: 8px; color: var(--white); font-family: inherit; font-size: 13px; padding: 9px 28px 9px 12px; cursor: pointer; }
+.select-input:focus { outline: none; border-color: #555; }
+.select-input option { background: #1a1a1a; }
+
+/* STUDENT INIT AVATAR */
+.s-avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Archivo Black', sans-serif; font-size: 12px; color: var(--black); flex-shrink: 0; }
+
+/* MODALS */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 300; display: none; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--dark); border: 1px solid var(--border); border-radius: 14px; padding: 28px 30px; width: 520px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+.modal-lg { width: 640px; }
+.modal-title { font-family: 'Archivo Black', sans-serif; font-size: 20px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; }
+.modal-close { background: none; border: none; color: var(--grey); font-size: 20px; cursor: pointer; }
+.modal-close:hover { color: var(--white); }
+.modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+/* FORM FIELDS */
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--grey); margin-bottom: 6px; }
+.field input, .field select, .field textarea { width: 100%; background: #1a1a1a; border: 1px solid var(--border); border-radius: 8px; color: var(--white); font-family: inherit; font-size: 13px; padding: 10px 12px; }
+.field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: #555; }
+.field textarea { min-height: 80px; resize: vertical; }
+.field select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
+.field select option { background: #1a1a1a; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* SUBTABS */
+.subtabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 22px; }
+.subtab { padding: 9px 16px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--grey); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s; user-select: none; }
+.subtab.active { color: var(--white); border-bottom-color: var(--lime); }
+.subtab:hover:not(.active) { color: var(--white); }
+.subscreen { display: none; }
+.subscreen.active { display: block; }
+
+/* TAB STRIP (top-level in screens) */
+.tab-strip { display: flex; gap: 4px; background: var(--dark); border-radius: 10px; padding: 4px; margin-bottom: 24px; width: fit-content; }
+.tab-btn { padding: 9px 18px; border-radius: 7px; font-size: 13px; font-weight: 500; color: var(--grey); cursor: pointer; transition: all 0.15s; user-select: none; }
+.tab-btn.active { background: var(--black); color: var(--white); }
+.tab-btn:hover:not(.active) { color: var(--white); }
+
+/* ATTENDANCE ROW */
+.att-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid #1a1a1a; transition: background 0.15s; }
+.att-row:last-child { border-bottom: none; }
+.att-row.no-show-row { background: #1a0000; }
+.att-row.no-show-row td { background: transparent; }
+.att-name { flex: 1; min-width: 0; }
+.att-name-text { font-size: 13px; font-weight: 500; }
+.att-level { font-size: 11px; color: var(--grey); margin-top: 1px; }
+.att-type { min-width: 70px; }
+.att-status-sel { width: 130px; background: #1a1a1a; border: 1px solid var(--border); border-radius: 7px; color: var(--white); font-family: inherit; font-size: 12px; padding: 7px 10px; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; padding-right: 24px; }
+.att-status-sel.sel-noshow { border-color: #ff6b6b; color: #ff6b6b; background-color: #1a0000; }
+.att-status-sel.sel-present { border-color: var(--lime); color: var(--lime); background-color: #0f1600; }
+.att-status-sel.sel-late { border-color: var(--amber); color: var(--amber); background-color: #1a0f00; }
+.att-status-sel.sel-excused { border-color: var(--lav); color: var(--lav); background-color: #1a1028; }
+.att-note-btn { background: none; border: none; color: var(--grey); cursor: pointer; font-size: 14px; padding: 4px; border-radius: 4px; }
+.att-note-btn:hover { color: var(--white); background: #222; }
+.att-fee-msg { font-size: 11px; color: #ff6b6b; margin-top: 4px; }
+
+/* HOMEWORK CARD */
+.hw-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 12px; cursor: pointer; transition: border-color 0.15s; }
+.hw-card:hover { border-color: #444; }
+.hw-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.hw-card-title { font-family: 'Archivo Black', sans-serif; font-size: 15px; }
+.hw-card-meta { font-size: 12px; color: var(--grey); }
+.hw-card-progress { display: flex; gap: 8px; align-items: center; margin-top: 10px; font-size: 12px; color: var(--grey); }
+.progress-bar { flex: 1; height: 4px; background: #222; border-radius: 4px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--lime); border-radius: 4px; transition: width 0.3s; }
+
+/* STUDENT PANEL (slide-out) */
+.panel-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: none; }
+.panel-overlay.open { display: block; }
+.slide-panel { position: fixed; top: 0; right: -420px; width: 420px; height: 100vh; background: var(--dark); border-left: 1px solid var(--border); z-index: 201; transition: right 0.3s ease; overflow-y: auto; display: flex; flex-direction: column; }
+.slide-panel.open { right: 0; }
+.panel-header { padding: 22px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: var(--dark); z-index: 2; }
+.panel-title { font-family: 'Archivo Black', sans-serif; font-size: 18px; }
+.panel-close { background: none; border: none; color: var(--grey); font-size: 20px; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+.panel-close:hover { color: var(--white); background: #1a1a1a; }
+.panel-body { padding: 22px 24px; flex: 1; }
+
+/* INFO ROWS */
+.info-row { display: flex; padding: 10px 0; border-bottom: 1px solid #1a1a1a; align-items: flex-start; }
+.info-row:last-child { border-bottom: none; }
+.info-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--grey); width: 130px; flex-shrink: 0; padding-top: 1px; }
+.info-val { font-size: 13px; flex: 1; }
+
+/* NOTE ITEMS */
+.note-item { padding: 12px 0; border-bottom: 1px solid #1a1a1a; }
+.note-item:last-child { border-bottom: none; }
+.note-meta { font-size: 11px; color: var(--grey); margin-bottom: 4px; }
+.note-text { font-size: 13px; line-height: 1.5; }
+
+/* MESSAGE THREADS */
+.msg-thread { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #1a1a1a; cursor: pointer; transition: background 0.15s; border-radius: 8px; padding: 12px; }
+.msg-thread:hover { background: #1a1a1a; }
+.msg-thread.unread .msg-preview { color: var(--white); font-weight: 500; }
+.msg-preview { font-size: 12px; color: var(--grey); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+.msg-time { font-size: 11px; color: var(--grey); margin-left: auto; flex-shrink: 0; }
+.unread-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lime); flex-shrink: 0; }
+
+/* CHECKLIST */
+.checklist-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 13px; }
+.checklist-item input[type=checkbox] { accent-color: var(--lime); width: 15px; height: 15px; }
+.checklist-done { color: var(--grey); text-decoration: line-through; }
+
+/* ATTENDANCE SUMMARY BANNER */
+.att-summary { background: #0f1600; border: 1px solid var(--lime); border-radius: 10px; padding: 14px 18px; margin-top: 16px; font-size: 13px; display: none; }
+.att-summary.visible { display: block; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">DUALITY <span>POLE</span></div>
+  <nav>
+    <div class="nav-item active" onclick="showScreen('dashboard')"><span class="nav-icon">⬡</span> Dashboard</div>
+    <div class="nav-item" onclick="showScreen('myclasses')"><span class="nav-icon">📅</span> My Classes</div>
+    <div class="nav-item" onclick="showScreen('attendance')"><span class="nav-icon">✅</span> Attendance</div>
+    <div class="nav-item" onclick="showScreen('students')"><span class="nav-icon">👤</span> Students</div>
+    <div class="nav-item" onclick="showScreen('homework')"><span class="nav-icon">📝</span> Homework <span class="nav-badge">3</span></div>
+    <div class="nav-item" onclick="showScreen('messages')"><span class="nav-icon">💬</span> Messages <span class="nav-badge">2</span></div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-badge">
+      <div class="avatar" style="background:var(--lav);">C</div>
+      <div><div class="user-name">Chloe</div><div class="user-role">Instructor</div></div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="breadcrumb">Staff Portal / <span id="topbar-title">Dashboard</span></div>
+    <div class="topbar-user">
+      <div class="avatar" style="background:var(--lav);">C</div>
+      <span style="font-size:13px;">Chloe <span style="color:var(--lav);font-family:'Archivo Black',sans-serif;font-size:11px;">INSTRUCTOR</span></span>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- ===== DASHBOARD ===== -->
+    <div id="screen-dashboard" class="screen active">
+      <div class="page-header">
+        <div><div class="page-title">Good evening, Chloe</div><div class="page-sub">Monday, 12 May 2025</div></div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi kpi-lime"><div class="kpi-label">Students Today</div><div class="kpi-value">25</div><div class="kpi-sub">Across 2 classes</div></div>
+        <div class="kpi kpi-lav"><div class="kpi-label">Homework Pending</div><div class="kpi-value">3</div><div class="kpi-sub">Submissions to review</div></div>
+        <div class="kpi kpi-amber"><div class="kpi-label">Unread Messages</div><div class="kpi-value">2</div><div class="kpi-sub">1 message request</div></div>
+        <div class="kpi kpi-red"><div class="kpi-label">No-shows This Week</div><div class="kpi-value">1</div><div class="kpi-sub">Ruby K. — Mon Sensual</div></div>
+      </div>
+
+      <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:16px;margin-bottom:16px;">Today's Classes</div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:28px;">
+        <div class="class-card-today" onclick="goToAttendance('level2-mon')">
+          <div class="class-time-block">
+            <div class="class-day-label">Mon</div>
+            <div class="class-time-label">6:30</div>
+            <div style="font-size:10px;color:var(--grey);">pm</div>
+          </div>
+          <div class="class-info">
+            <div class="class-name-large">Level 2</div>
+            <div class="class-meta-row">The Box · 15/15 enrolled</div>
+            <div style="margin-top:6px;"><span class="tag tag-amber">Full</span> <span style="font-size:12px;color:var(--grey);margin-left:4px;">Register not yet saved</span></div>
+          </div>
+          <div class="class-go-btn">Take Attendance →</div>
+        </div>
+        <div class="class-card-today" onclick="goToAttendance('tricks-mon')">
+          <div class="class-time-block">
+            <div class="class-day-label">Mon</div>
+            <div class="class-time-label">8:30</div>
+            <div style="font-size:10px;color:var(--grey);">pm</div>
+          </div>
+          <div class="class-info">
+            <div class="class-name-large">Level 1 Intermediate</div>
+            <div class="class-meta-row">Rhapsody · 10/12 enrolled</div>
+            <div style="margin-top:6px;"><span class="tag tag-lime">Active</span> <span style="font-size:12px;color:var(--grey);margin-left:4px;">Register not yet saved</span></div>
+          </div>
+          <div class="class-go-btn">Take Attendance →</div>
+        </div>
+      </div>
+
+      <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:14px;">Upcoming This Week</div>
+      <div class="tbl-section">
+        <table>
+          <thead><tr><th>Day</th><th>Class</th><th>Studio</th><th>Enrolled</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Mon 6:30pm</td><td><b>Level 2</b></td><td>The Box</td><td>15/15</td><td><span class="tag tag-amber">Full</span></td></tr>
+            <tr><td>Mon 8:30pm</td><td><b>Level 1 Int.</b></td><td>Rhapsody</td><td>10/12</td><td><span class="tag tag-lime">Active</span></td></tr>
+            <tr><td>Tue 8:30pm</td><td><b>Level 1 Int.</b></td><td>Rhapsody</td><td>8/12</td><td><span class="tag tag-lime">Active</span></td></tr>
+            <tr><td>Thu 6:30pm</td><td><b>Level 2</b></td><td>Rhapsody</td><td>11/12</td><td><span class="tag tag-lime">Active</span></td></tr>
+            <tr><td>Sat 10:00am</td><td><b>Level 1</b></td><td>The Box</td><td>9/12</td><td><span class="tag tag-lime">Active</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== MY CLASSES ===== -->
+    <div id="screen-myclasses" class="screen">
+      <div class="page-header">
+        <div>
+          <div class="page-title">My Classes</div>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:10px;">
+            <button class="btn btn-ghost btn-sm">← Prev Week</button>
+            <span style="font-size:14px;font-weight:500;">Week of 12 May 2025</span>
+            <button class="btn btn-ghost btn-sm">Next Week →</button>
+          </div>
+        </div>
+      </div>
+      <div class="tbl-section">
+        <table>
+          <thead><tr><th>Day / Time</th><th>Class</th><th>Studio</th><th>Enrolled</th><th>Attendance</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><b>Mon 6:30pm</b><div style="font-size:11px;color:var(--grey)">12 May</div></td>
+              <td>Level 2</td><td>The Box</td><td>15/15</td>
+              <td><span class="tag tag-amber">Not saved</span></td>
+              <td><button class="btn btn-lime btn-xs" onclick="showScreen('attendance')">Take Register</button></td>
+            </tr>
+            <tr>
+              <td><b>Mon 8:30pm</b><div style="font-size:11px;color:var(--grey)">12 May</div></td>
+              <td>Level 1 Int.</td><td>Rhapsody</td><td>10/12</td>
+              <td><span class="tag tag-amber">Not saved</span></td>
+              <td><button class="btn btn-lime btn-xs" onclick="showScreen('attendance')">Take Register</button></td>
+            </tr>
+            <tr>
+              <td><b>Tue 8:30pm</b><div style="font-size:11px;color:var(--grey)">13 May</div></td>
+              <td>Level 1 Int.</td><td>Rhapsody</td><td>8/12</td>
+              <td><span class="tag tag-grey">Upcoming</span></td>
+              <td><button class="btn btn-ghost btn-xs">View Roster</button></td>
+            </tr>
+            <tr>
+              <td><b>Thu 6:30pm</b><div style="font-size:11px;color:var(--grey)">15 May</div></td>
+              <td>Level 2</td><td>Rhapsody</td><td>11/12</td>
+              <td><span class="tag tag-grey">Upcoming</span></td>
+              <td><button class="btn btn-ghost btn-xs">View Roster</button></td>
+            </tr>
+            <tr>
+              <td><b>Sat 10:00am</b><div style="font-size:11px;color:var(--grey)">17 May</div></td>
+              <td>Level 1</td><td>The Box</td><td>9/12</td>
+              <td><span class="tag tag-grey">Upcoming</span></td>
+              <td><button class="btn btn-ghost btn-xs">View Roster</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== ATTENDANCE ===== -->
+    <div id="screen-attendance" class="screen">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Attendance</div>
+          <div style="margin-top:10px;">
+            <select class="select-input" style="min-width:320px;">
+              <option>Level 2 — Mon 12 May, 6:30pm — The Box</option>
+              <option>Level 1 Int. — Mon 12 May, 8:30pm — Rhapsody</option>
+              <option>Level 2 — Thu 15 May, 6:30pm — Rhapsody</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-ghost btn-sm" onclick="markAllPresent()">✓ All Present</button>
+          <button class="btn btn-lime" onclick="saveRegister()">Save Register</button>
+        </div>
+      </div>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:16px;padding:16px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div><span style="font-size:11px;text-transform:uppercase;color:var(--grey);">Class</span><div style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-top:3px;">Level 2</div></div>
+        <div style="width:1px;height:36px;background:var(--border);"></div>
+        <div><span style="font-size:11px;text-transform:uppercase;color:var(--grey);">Date</span><div style="font-size:13px;margin-top:3px;">Monday 12 May 2025</div></div>
+        <div style="width:1px;height:36px;background:var(--border);"></div>
+        <div><span style="font-size:11px;text-transform:uppercase;color:var(--grey);">Time</span><div style="font-size:13px;margin-top:3px;">6:30pm</div></div>
+        <div style="width:1px;height:36px;background:var(--border);"></div>
+        <div><span style="font-size:11px;text-transform:uppercase;color:var(--grey);">Studio</span><div style="font-size:13px;margin-top:3px;">The Box</div></div>
+        <div style="width:1px;height:36px;background:var(--border);"></div>
+        <div><span style="font-size:11px;text-transform:uppercase;color:var(--grey);">Enrolled</span><div style="font-size:13px;font-family:'Archivo Black',sans-serif;color:var(--lime);margin-top:3px;">15/15</div></div>
+      </div>
+
+      <div class="tbl-section" id="att-roster">
+        <div style="padding:0 4px;">
+          <!-- Roster rows -->
+          <div class="att-row" id="att-row-0">
+            <div class="s-avatar" style="background:var(--lav);">J</div>
+            <div class="att-name"><div class="att-name-text">Jess Malone</div><div class="att-level">Level 2 · Season 3</div></div>
+            <div class="att-type"><span class="tag tag-lav" style="font-size:10px;">Season</span></div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+              <select class="att-status-sel sel-present" id="sel-0" onchange="onStatusChange(0)">
+                <option value="present" selected>Present</option>
+                <option value="noshow">No-show</option>
+                <option value="late">Late</option>
+                <option value="excused">Excused</option>
+              </select>
+              <div class="att-fee-msg" id="fee-0" style="display:none;">$25 no-show fee will be added</div>
+            </div>
+            <button class="att-note-btn" onclick="openNoteModal('Jess Malone')" title="Add note">✏️</button>
+          </div>
+          <div class="att-row" id="att-row-1">
+            <div class="s-avatar" style="background:#44ff99;">T</div>
+            <div class="att-name"><div class="att-name-text">Tara Bell</div><div class="att-level">Level 2 · Season 3</div></div>
+            <div class="att-type"><span class="tag tag-lav" style="font-size:10px;">Season</span></div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+              <select class="att-status-sel sel-present" id="sel-1" onchange="onStatusChange(1)">
+                <option value="present" selected>Present</option>
+                <option value="noshow">No-show</option>
+                <option value="late">Late</option>
+                <option value="excused">Excused</option>
+              </select>
+              <div class="att-fee-msg" id="fee-1" style="display:none;">$25 no-show fee will be added</div>
+            </div>
+            <button class="att-note-btn" onclick="openNoteModal('Tara Bell')" title="Add note">✏️</button>
+          </div>
+          <div class="att-row" id="att-row-2">
+            <div class="s-avatar" style="background:#ffcc88;">D</div>
+            <div class="att-name"><div class="att-name-text">Dana Park</div><div class="att-level">Level 2 · Season 3</div></div>
+            <div class="att-type"><span class="tag tag-grey" style="font-size:10px;">Casual</span></div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+              <select class="att-status-sel sel-present" id="sel-2" onchange="onStatusChange(2)">
+                <option value="present" selected>Present</option>
+                <option value="noshow">No-show</option>
+                <option value="late">Late</option>
+                <option value="excused">Excused</option>
+              </select>
+              <div class="att-fee-msg" id="fee-2" style="display:none;">$25 no-show fee will be added</div>
+            </div>
+            <button class="att-note-btn" onclick="openNoteModal('Dana Park')" title="Add note">✏️</button>
+          </div>
+          <div class="att-row" id="att-row-3">
+            <div class="s-avatar" style="background:#b0f0b0;">N</div>
+            <div class="att-name"><div class="att-name-text">Nina Torres</div><div class="att-level">Level 3 · Season 3 (cross-enrol)</div></div>
+            <div class="att-type"><span class="tag tag-lav" style="font-size:10px;">Season</span></div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+              <select class="att-status-sel sel-present" id="sel-3" onchange="onStatusChange(3)">
+                <option value="present" selected>Present</option>
+                <option value="noshow">No-show</option>
+                <option value="late">Late</option>
+                <option value="excused">Excused</option>
+              </select>
+              <div class="att-fee-msg" id="fee-3" style="display:none;">$25 no-show fee will be added</div>
+            </div>
+            <button class="att-note-btn" onclick="openNoteModal('Nina Torres')" title="Add note">✏️</button>
+          </div>
+          <div class="att-row" id="att-row-4">
+            <div class="s-avatar" style="background:#9ac4ff;">H</div>
+            <div class="att-name"><div class="att-name-text">Hannah Webb</div><div class="att-level">Level 1 · Season 3 (drop-in)</div></div>
+            <div class="att-type"><span class="tag tag-grey" style="font-size:10px;">Casual</span></div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+              <select class="att-status-sel sel-present" id="sel-4" onchange="onStatusChange(4)">
+                <option value="present" selected>Present</option>
+                <option value="noshow">No-show</option>
+                <option value="late">Late</option>
+                <option value="excused">Excused</option>
+              </select>
+              <div class="att-fee-msg" id="fee-4" style="display:none;">$25 no-show fee will be added</div>
+            </div>
+            <button class="att-note-btn" onclick="openNoteModal('Hannah Webb')" title="Add note">✏️</button>
+          </div>
+          <div class="att-row" id="att-row-5">
+            <div class="s-avatar" style="background:#ffb3de;">A</div>
+            <div class="att-name"><div class="att-name-text">Amber Cole</div><div class="att-level">Level 1 · Season 3</div></div>
+            <div class="att-type"><span class="tag tag-lav" style="font-size:10px;">Season</span></div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+              <select class="att-status-sel sel-present" id="sel-5" onchange="onStatusChange(5)">
+                <option value="present" selected>Present</option>
+                <option value="noshow">No-show</option>
+                <option value="late">Late</option>
+                <option value="excused">Excused</option>
+              </select>
+              <div class="att-fee-msg" id="fee-5" style="display:none;">$25 no-show fee will be added</div>
+            </div>
+            <button class="att-note-btn" onclick="openNoteModal('Amber Cole')" title="Add note">✏️</button>
+          </div>
+          <div class="att-row" id="att-row-6">
+            <div class="s-avatar" style="background:var(--lime);">S</div>
+            <div class="att-name"><div class="att-name-text">Sophie Lawson</div><div class="att-level">Level 1 · Season 3</div></div>
+            <div class="att-type"><span class="tag tag-lav" style="font-size:10px;">Season</span></div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+              <select class="att-status-sel sel-present" id="sel-6" onchange="onStatusChange(6)">
+                <option value="present" selected>Present</option>
+                <option value="noshow">No-show</option>
+                <option value="late">Late</option>
+                <option value="excused">Excused</option>
+              </select>
+              <div class="att-fee-msg" id="fee-6" style="display:none;">$25 no-show fee will be added</div>
+            </div>
+            <button class="att-note-btn" onclick="openNoteModal('Sophie Lawson')" title="Add note">✏️</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="att-summary" id="att-summary"></div>
+
+      <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-ghost" onclick="markAllPresent()">Mark All Present</button>
+        <button class="btn btn-lime" onclick="saveRegister()">Save Register</button>
+      </div>
+    </div>
+
+    <!-- ===== STUDENTS (read-only) ===== -->
+    <div id="screen-students" class="screen">
+      <div class="page-header">
+        <div><div class="page-title">My Students</div><div class="page-sub">Students enrolled in your classes</div></div>
+      </div>
+      <div class="filter-bar">
+        <input class="search-input" type="text" placeholder="Search name…" />
+        <select class="select-input"><option>All Classes</option><option>Level 2 Mon</option><option>Level 1 Int. Mon</option><option>Level 2 Thu</option><option>Level 1 Sat</option></select>
+      </div>
+      <div class="tbl-section">
+        <table>
+          <thead><tr><th></th><th>Name</th><th>Level</th><th>Season</th><th>Attendance Rate</th><th>Balance</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr style="cursor:pointer" onclick="openStudentReadPanel('Jess Malone')">
+              <td><div class="s-avatar" style="background:var(--lav);">J</div></td>
+              <td><b>Jess Malone</b></td><td>Level 2</td><td>Season 3</td>
+              <td><span style="color:var(--lime);">87%</span></td>
+              <td><span style="color:#ff6b6b;">Owing</span></td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Jess Malone')">View</button></td>
+            </tr>
+            <tr style="cursor:pointer" onclick="openStudentReadPanel('Tara Bell')">
+              <td><div class="s-avatar" style="background:#44ff99;">T</div></td>
+              <td><b>Tara Bell</b></td><td>Level 2</td><td>Season 3</td>
+              <td><span style="color:var(--lime);">100%</span></td>
+              <td><span style="color:#44ff99;">Clear</span></td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Tara Bell')">View</button></td>
+            </tr>
+            <tr style="cursor:pointer" onclick="openStudentReadPanel('Dana Park')">
+              <td><div class="s-avatar" style="background:#ffcc88;">D</div></td>
+              <td><b>Dana Park</b></td><td>Level 2</td><td>Season 3</td>
+              <td><span style="color:var(--amber);">72%</span></td>
+              <td><span style="color:#ff6b6b;">Owing</span></td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Dana Park')">View</button></td>
+            </tr>
+            <tr style="cursor:pointer" onclick="openStudentReadPanel('Nina Torres')">
+              <td><div class="s-avatar" style="background:#b0f0b0;">N</div></td>
+              <td><b>Nina Torres</b></td><td>Level 3</td><td>Season 3</td>
+              <td><span style="color:var(--lime);">95%</span></td>
+              <td><span style="color:#44ff99;">Clear</span></td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Nina Torres')">View</button></td>
+            </tr>
+            <tr style="cursor:pointer" onclick="openStudentReadPanel('Sophie Lawson')">
+              <td><div class="s-avatar" style="background:var(--lime);">S</div></td>
+              <td><b>Sophie Lawson</b></td><td>Level 1</td><td>Season 3</td>
+              <td><span style="color:var(--lime);">100%</span></td>
+              <td><span style="color:#44ff99;">Clear</span></td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Sophie Lawson')">View</button></td>
+            </tr>
+            <tr style="cursor:pointer" onclick="openStudentReadPanel('Amber Cole')">
+              <td><div class="s-avatar" style="background:#ffb3de;">A</div></td>
+              <td><b>Amber Cole</b></td><td>Level 1</td><td>Season 3</td>
+              <td><span style="color:var(--amber);">67%</span></td>
+              <td><span style="color:#ff6b6b;">Owing</span></td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Amber Cole')">View</button></td>
+            </tr>
+            <tr style="cursor:pointer" onclick="openStudentReadPanel('Hannah Webb')">
+              <td><div class="s-avatar" style="background:#9ac4ff;">H</div></td>
+              <td><b>Hannah Webb</b></td><td>Level 1</td><td>Casual</td>
+              <td><span style="color:var(--lime);">100%</span></td>
+              <td><span style="color:#44ff99;">Clear</span></td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Hannah Webb')">View</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== HOMEWORK ===== -->
+    <div id="screen-homework" class="screen">
+      <div class="page-header">
+        <div><div class="page-title">Homework</div><div class="page-sub">Assignments for your classes</div></div>
+        <button class="btn btn-lime" onclick="openModal('modal-assign-hw')">+ Assign Homework</button>
+      </div>
+      <div class="tab-strip">
+        <div class="tab-btn active" onclick="switchHwTab(this,'hw-active')">Active</div>
+        <div class="tab-btn" onclick="switchHwTab(this,'hw-submitted')">Submitted</div>
+        <div class="tab-btn" onclick="switchHwTab(this,'hw-all')">All</div>
+      </div>
+
+      <!-- Active Tab -->
+      <div id="hw-active" class="subscreen active">
+        <div class="hw-card" onclick="openModal('modal-hw-detail')">
+          <div class="hw-card-header">
+            <div><div class="hw-card-title">Spinning Pole — Week 3 Checklist</div><div class="hw-card-meta">Level 2 · Assigned 8 May 2025</div></div>
+            <span class="tag tag-lime">Active</span>
+          </div>
+          <div class="hw-card-progress">
+            <span>10/15 submitted</span>
+            <div class="progress-bar"><div class="progress-fill" style="width:67%"></div></div>
+            <span style="color:var(--lime);">67%</span>
+          </div>
+        </div>
+        <div class="hw-card" onclick="openModal('modal-hw-detail')">
+          <div class="hw-card-header">
+            <div><div class="hw-card-title">Invert Conditioning Drills</div><div class="hw-card-meta">Level 2 · Assigned 5 May 2025</div></div>
+            <span class="tag tag-amber">3 pending review</span>
+          </div>
+          <div class="hw-card-progress">
+            <span>8/15 submitted</span>
+            <div class="progress-bar"><div class="progress-fill" style="width:53%"></div></div>
+            <span style="color:var(--amber);">53%</span>
+          </div>
+        </div>
+        <div class="hw-card" onclick="openModal('modal-hw-detail')">
+          <div class="hw-card-header">
+            <div><div class="hw-card-title">Flexibility Flow — Shoulder Prep</div><div class="hw-card-meta">Level 1 Int. · Assigned 6 May 2025</div></div>
+            <span class="tag tag-lav">New</span>
+          </div>
+          <div class="hw-card-progress">
+            <span>3/10 submitted</span>
+            <div class="progress-bar"><div class="progress-fill" style="width:30%"></div></div>
+            <span style="color:var(--grey);">30%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submitted Tab -->
+      <div id="hw-submitted" class="subscreen">
+        <div class="tbl-section">
+          <table>
+            <thead><tr><th>Student</th><th>Assignment</th><th>Submitted</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr><td><b>Jess Malone</b></td><td>Spinning Pole Week 3</td><td style="color:var(--grey);">11 May</td><td><span class="tag tag-grey">Not reviewed</span></td><td><button class="btn btn-lime btn-xs" onclick="openModal('modal-hw-review')">Review</button></td></tr>
+              <tr><td><b>Nina Torres</b></td><td>Invert Conditioning</td><td style="color:var(--grey);">10 May</td><td><span class="tag tag-grey">Not reviewed</span></td><td><button class="btn btn-lime btn-xs" onclick="openModal('modal-hw-review')">Review</button></td></tr>
+              <tr><td><b>Tara Bell</b></td><td>Invert Conditioning</td><td style="color:var(--grey);">9 May</td><td><span class="tag tag-grey">Not reviewed</span></td><td><button class="btn btn-lime btn-xs" onclick="openModal('modal-hw-review')">Review</button></td></tr>
+              <tr><td><b>Sophie Lawson</b></td><td>Spinning Pole Week 3</td><td style="color:var(--grey);">8 May</td><td><span class="tag tag-lime">Reviewed</span></td><td><button class="btn btn-ghost btn-xs">View</button></td></tr>
+              <tr><td><b>Dana Park</b></td><td>Spinning Pole Week 3</td><td style="color:var(--grey);">7 May</td><td><span class="tag tag-lime">Reviewed</span></td><td><button class="btn btn-ghost btn-xs">View</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- All Tab -->
+      <div id="hw-all" class="subscreen">
+        <div class="tbl-section">
+          <table>
+            <thead><tr><th>Title</th><th>Class</th><th>Assigned</th><th>Submissions</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Spinning Pole — Week 3 Checklist</td><td>Level 2</td><td style="color:var(--grey);">8 May</td><td>10/15</td><td><span class="tag tag-lime">Active</span></td></tr>
+              <tr><td>Invert Conditioning Drills</td><td>Level 2</td><td style="color:var(--grey);">5 May</td><td>8/15</td><td><span class="tag tag-lime">Active</span></td></tr>
+              <tr><td>Flexibility Flow — Shoulder Prep</td><td>Level 1 Int.</td><td style="color:var(--grey);">6 May</td><td>3/10</td><td><span class="tag tag-lime">Active</span></td></tr>
+              <tr><td>Cross-knee Release Checklist</td><td>Level 2</td><td style="color:var(--grey);">28 Apr</td><td>15/15</td><td><span class="tag tag-grey">Closed</span></td></tr>
+              <tr><td>Core Strength Week 1</td><td>Level 1 Int.</td><td style="color:var(--grey);">21 Apr</td><td>9/10</td><td><span class="tag tag-grey">Closed</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MESSAGES ===== -->
+    <div id="screen-messages" class="screen">
+      <div class="page-header">
+        <div><div class="page-title">Messages</div></div>
+        <button class="btn btn-lime btn-sm" onclick="openModal('modal-compose')">+ Compose</button>
+      </div>
+      <div class="tab-strip">
+        <div class="tab-btn active" onclick="switchMsgTab(this,'msg-requests')">Requests <span style="background:#ff6b6b;color:#fff;font-size:10px;padding:2px 6px;border-radius:10px;margin-left:4px;">1</span></div>
+        <div class="tab-btn" onclick="switchMsgTab(this,'msg-direct')">Direct Messages</div>
+        <div class="tab-btn" onclick="switchMsgTab(this,'msg-sent')">Sent</div>
+      </div>
+
+      <!-- Requests -->
+      <div id="msg-requests" class="subscreen active">
+        <div class="section" style="padding:16px 18px;">
+          <div class="feed-item" style="padding:16px 0;flex-direction:column;gap:10px;border-bottom:1px solid #1a1a1a;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="s-avatar" style="background:var(--lav);">J</div>
+                <div><b style="font-size:13px;">Jess Malone</b><div style="font-size:11px;color:var(--grey);">Level 2 Group · 12 min ago</div></div>
+              </div>
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-lime btn-xs">Approve</button>
+                <button class="btn btn-ghost btn-xs">Decline</button>
+              </div>
+            </div>
+            <div style="font-size:13px;color:#ccc;padding:10px 12px;background:#1a1a1a;border-radius:8px;">"Anyone else obsessed with the new choreo? Chloe absolutely smashed it last night 🔥"</div>
+          </div>
+          <div style="padding:24px 0;text-align:center;color:var(--grey);font-size:13px;">No more pending requests</div>
+        </div>
+      </div>
+
+      <!-- Direct Messages -->
+      <div id="msg-direct" class="subscreen">
+        <div class="section" style="padding:8px 8px;">
+          <div class="msg-thread unread" onclick="openModal('modal-dm')">
+            <div class="s-avatar" style="background:var(--lime);flex-shrink:0;">J</div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <b style="font-size:13px;">Jess Malone</b>
+                <span class="msg-time">5 min</span>
+              </div>
+              <div class="msg-preview">Hi Chloe! Quick question about the cross-knee release — is it ok to practise at home?</div>
+            </div>
+            <div class="unread-dot"></div>
+          </div>
+          <div class="msg-thread unread" onclick="openModal('modal-dm')">
+            <div class="s-avatar" style="background:#44ff99;flex-shrink:0;">T</div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <b style="font-size:13px;">Tara Bell</b>
+                <span class="msg-time">1 hr</span>
+              </div>
+              <div class="msg-preview">Thanks for the feedback on my homework! Really helpful 😊</div>
+            </div>
+            <div class="unread-dot"></div>
+          </div>
+          <div class="msg-thread" onclick="openModal('modal-dm')">
+            <div class="s-avatar" style="background:#b0f0b0;flex-shrink:0;">N</div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <b style="font-size:13px;">Nina Torres</b>
+                <span class="msg-time">Yesterday</span>
+              </div>
+              <div class="msg-preview">Can I swap into Thursday Level 2 instead of Monday?</div>
+            </div>
+          </div>
+          <div class="msg-thread" onclick="openModal('modal-dm')">
+            <div class="s-avatar" style="background:var(--lime);flex-shrink:0;">A</div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <b style="font-size:13px;">Allysha Carter</b>
+                <span class="msg-time">2 days</span>
+              </div>
+              <div class="msg-preview">Hey, can you cover Jade's Level 1 on Saturday?</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sent -->
+      <div id="msg-sent" class="subscreen">
+        <div class="section" style="padding:8px 8px;">
+          <div class="msg-thread">
+            <div class="s-avatar" style="background:var(--lav);flex-shrink:0;">J</div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <b style="font-size:13px;">Jess Malone</b>
+                <span class="msg-time">3 hrs ago</span>
+              </div>
+              <div class="msg-preview">Hi Jess! Yes, you can practise the cross-knee hold on a low static pole...</div>
+            </div>
+          </div>
+          <div class="msg-thread">
+            <div class="s-avatar" style="background:#222;flex-shrink:0;" style="color:var(--grey);">L2</div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <b style="font-size:13px;">Level 2 Group (broadcast)</b>
+                <span class="msg-time">8 May</span>
+              </div>
+              <div class="msg-preview">Reminder: this week we're moving into spinning pole combinations. Please make sure your...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end .content -->
+</div><!-- end .main -->
+
+<!-- ===== STUDENT READ-ONLY SLIDE PANEL ===== -->
+<div class="panel-overlay" id="student-overlay" onclick="closeStudentPanel()"></div>
+<div class="slide-panel" id="student-panel">
+  <div class="panel-header">
+    <div>
+      <div class="panel-title" id="panel-name">Jess Malone</div>
+      <div style="margin-top:5px;"><span class="tag tag-lime">Active</span></div>
+    </div>
+    <button class="panel-close" onclick="closeStudentPanel()">✕</button>
+  </div>
+  <div class="panel-body">
+    <div class="subtabs">
+      <div class="subtab active" onclick="switchSubTab(this,'sp-info')">Info</div>
+      <div class="subtab" onclick="switchSubTab(this,'sp-bookings')">Bookings</div>
+      <div class="subtab" onclick="switchSubTab(this,'sp-notes')">Notes</div>
+    </div>
+    <div id="sp-info" class="subscreen active">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+        <div style="width:52px;height:52px;border-radius:50%;background:var(--lav);display:flex;align-items:center;justify-content:center;font-family:'Archivo Black',sans-serif;font-size:20px;color:var(--black);" id="panel-avatar">J</div>
+        <div><div style="font-family:'Archivo Black',sans-serif;font-size:16px;" id="panel-name-lg">Jess Malone</div><div style="font-size:12px;color:var(--grey);margin-top:3px;">Member since Season 1</div></div>
+      </div>
+      <div class="info-row"><div class="info-label">Email</div><div class="info-val">jess@email.com</div></div>
+      <div class="info-row"><div class="info-label">Phone</div><div class="info-val">0412 345 678</div></div>
+      <div class="info-row"><div class="info-label">Level</div><div class="info-val">Level 2</div></div>
+      <div class="info-row"><div class="info-label">Attendance Rate</div><div class="info-val" style="color:var(--lime);">87%</div></div>
+      <div class="info-row"><div class="info-label">Balance</div><div class="info-val" style="color:#ff6b6b;">−$120 owing</div></div>
+      <div class="info-row"><div class="info-label">Emergency</div><div class="info-val">Kate Malone — 0411 222 333</div></div>
+    </div>
+    <div id="sp-bookings" class="subscreen">
+      <div class="tbl-section">
+        <table>
+          <thead><tr><th>Class</th><th>Season</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Level 2 · Mon 6:30pm</td><td>Season 3</td><td><span class="tag tag-lime" style="font-size:10px;">Enrolled</span></td></tr>
+            <tr><td>Level 1 · Mon 5:30pm</td><td>Season 2</td><td><span class="tag tag-grey" style="font-size:10px;">Completed</span></td></tr>
+            <tr><td>Sensual Flow · Fri</td><td>12 May</td><td><span class="tag tag-red" style="font-size:10px;">No-show</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div id="sp-notes" class="subscreen">
+      <div class="note-item"><div class="note-meta">You · 8 May 2025</div><div class="note-text">Progressing really well with spinning holds. Ready to attempt cross-knee release next session.</div></div>
+      <div class="note-item"><div class="note-meta">You · 14 Mar 2025</div><div class="note-text">Needs more shoulder conditioning before inverts. Recommended home exercises.</div></div>
+      <div style="margin-top:16px;">
+        <textarea style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:10px 12px;min-height:70px;margin-bottom:8px;resize:vertical;" placeholder="Add a note about this student…"></textarea>
+        <button class="btn btn-lime btn-sm">Add Note</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- Note Modal -->
+<div class="modal-overlay" id="modal-note">
+  <div class="modal">
+    <div class="modal-title" id="modal-note-title">Note — Jess Malone <button class="modal-close" onclick="closeModal('modal-note')">✕</button></div>
+    <div class="field"><label>Note</label><textarea placeholder="Enter your observation or note…" style="min-height:100px;"></textarea></div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input type="checkbox" id="private-note" style="accent-color:var(--lime);" /><label for="private-note" style="font-size:13px;color:var(--grey);">Private (visible to instructors only)</label>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-note')">Cancel</button><button class="btn btn-lime">Save Note</button></div>
+  </div>
+</div>
+
+<!-- Homework Detail Modal -->
+<div class="modal-overlay" id="modal-hw-detail">
+  <div class="modal modal-lg">
+    <div class="modal-title">Spinning Pole — Week 3 Checklist <button class="modal-close" onclick="closeModal('modal-hw-detail')">✕</button></div>
+    <div style="margin-bottom:16px;font-size:13px;color:var(--grey);">Level 2 · Assigned 8 May 2025 · 10/15 submitted</div>
+    <div class="tbl-section" style="margin-bottom:20px;">
+      <table>
+        <thead><tr><th>Student</th><th>Status</th><th>Submitted</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td>Jess Malone</td><td><span class="tag tag-grey">Not reviewed</span></td><td style="color:var(--grey)">11 May</td><td><button class="btn btn-lime btn-xs" onclick="openModal('modal-hw-review');closeModal('modal-hw-detail')">Review</button></td></tr>
+          <tr><td>Tara Bell</td><td><span class="tag tag-lime">Reviewed</span></td><td style="color:var(--grey)">10 May</td><td><button class="btn btn-ghost btn-xs">View</button></td></tr>
+          <tr><td>Nina Torres</td><td><span class="tag tag-lime">Reviewed</span></td><td style="color:var(--grey)">9 May</td><td><button class="btn btn-ghost btn-xs">View</button></td></tr>
+          <tr><td>Sophie Lawson</td><td><span class="tag tag-grey">Not reviewed</span></td><td style="color:var(--grey)">8 May</td><td><button class="btn btn-lime btn-xs" onclick="openModal('modal-hw-review');closeModal('modal-hw-detail')">Review</button></td></tr>
+          <tr><td>Dana Park</td><td><span class="tag tag-grey">Not submitted</span></td><td>—</td><td>—</td></tr>
+          <tr><td>Amber Cole</td><td><span class="tag tag-grey">Not submitted</span></td><td>—</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-hw-detail')">Close</button></div>
+  </div>
+</div>
+
+<!-- Homework Review Modal -->
+<div class="modal-overlay" id="modal-hw-review">
+  <div class="modal">
+    <div class="modal-title">Review Submission — Jess Malone <button class="modal-close" onclick="closeModal('modal-hw-review')">✕</button></div>
+    <div style="margin-bottom:14px;font-size:13px;color:var(--grey);">Spinning Pole — Week 3 Checklist · Submitted 11 May 2025</div>
+    <div style="background:#1a1a1a;border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+      <div style="font-size:12px;text-transform:uppercase;color:var(--grey);letter-spacing:0.8px;margin-bottom:10px;">Student's Checklist</div>
+      <div class="checklist-item"><input type="checkbox" checked disabled /><span class="checklist-done">Practiced figure-4 hold ×10 each side</span></div>
+      <div class="checklist-item"><input type="checkbox" checked disabled /><span class="checklist-done">Filmed spinning butterfly attempt</span></div>
+      <div class="checklist-item"><input type="checkbox" checked disabled /><span class="checklist-done">Shoulder warm-up routine × 3 sessions</span></div>
+      <div class="checklist-item"><input type="checkbox" disabled /><span>Attempted carousel spin (skipped — felt uncertain)</span></div>
+      <div style="margin-top:10px;padding:10px 12px;background:#111;border-radius:8px;font-size:13px;color:#ccc;">"Feeling much more confident with the figure-4! Couldn't quite get the carousel to feel smooth yet. Will try again this week."</div>
+    </div>
+    <div class="field"><label>Feedback</label><textarea placeholder="Write your feedback for Jess…"></textarea></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-hw-review')">Cancel</button><button class="btn btn-lime">Mark Reviewed + Send Feedback</button></div>
+  </div>
+</div>
+
+<!-- Assign Homework Modal -->
+<div class="modal-overlay" id="modal-assign-hw">
+  <div class="modal">
+    <div class="modal-title">Assign Homework <button class="modal-close" onclick="closeModal('modal-assign-hw')">✕</button></div>
+    <div class="field"><label>Class</label><select><option>Level 2 — Mon &amp; Thu</option><option>Level 1 Int. — Mon &amp; Tue</option><option>Level 1 — Sat</option></select></div>
+    <div class="field"><label>Title</label><input type="text" placeholder="e.g. Week 4 Spinning Pole Checklist" /></div>
+    <div class="field"><label>Description</label><textarea placeholder="Explain the task to students…"></textarea></div>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:10px;">Checklist Items</div>
+      <div id="hw-checklist-items">
+        <div style="display:flex;gap:8px;margin-bottom:8px;" class="hw-item-row"><input type="text" placeholder="Checklist item…" style="flex:1;background:#1a1a1a;border:1px solid var(--border);border-radius:7px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 10px;" /><button class="btn btn-ghost btn-xs" onclick="removeHwItem(this)">✕</button></div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;" class="hw-item-row"><input type="text" placeholder="Checklist item…" style="flex:1;background:#1a1a1a;border:1px solid var(--border);border-radius:7px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 10px;" /><button class="btn btn-ghost btn-xs" onclick="removeHwItem(this)">✕</button></div>
+      </div>
+      <button class="btn btn-ghost btn-xs" onclick="addHwItem()" style="margin-top:4px;">+ Add item</button>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-assign-hw')">Cancel</button><button class="btn btn-lime">Assign</button></div>
+  </div>
+</div>
+
+<!-- DM Modal -->
+<div class="modal-overlay" id="modal-dm">
+  <div class="modal">
+    <div class="modal-title">Jess Malone <button class="modal-close" onclick="closeModal('modal-dm')">✕</button></div>
+    <div style="background:#1a1a1a;border-radius:10px;padding:14px;margin-bottom:16px;max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
+      <div style="align-self:flex-start;max-width:80%;">
+        <div style="background:#222;border-radius:0 10px 10px 10px;padding:10px 13px;font-size:13px;">Hi Chloe! Quick question — is it ok to practise the cross-knee release at home on a low pole?</div>
+        <div style="font-size:11px;color:var(--grey);margin-top:3px;">Jess · 6:12pm</div>
+      </div>
+      <div style="align-self:flex-end;max-width:80%;">
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:10px 0 10px 10px;padding:10px 13px;font-size:13px;">Hi Jess! Yes definitely — just make sure you have a crash mat and practice the hold first before releasing 🙂</div>
+        <div style="font-size:11px;color:var(--grey);margin-top:3px;text-align:right;">You · 6:18pm</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <textarea style="flex:1;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:10px 12px;min-height:60px;resize:none;" placeholder="Write a message…"></textarea>
+      <button class="btn btn-lime btn-sm" style="align-self:flex-end;">Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- Compose Modal -->
+<div class="modal-overlay" id="modal-compose">
+  <div class="modal">
+    <div class="modal-title">New Message <button class="modal-close" onclick="closeModal('modal-compose')">✕</button></div>
+    <div class="field"><label>To</label><select><option>Jess Malone</option><option>Tara Bell</option><option>Dana Park</option><option>Nina Torres</option><option>Sophie Lawson</option><option>Level 2 Group</option><option>Level 1 Int. Group</option></select></div>
+    <div class="field"><label>Message</label><textarea style="min-height:120px;" placeholder="Write your message…"></textarea></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-compose')">Cancel</button><button class="btn btn-lime">Send</button></div>
+  </div>
+</div>
+
+<script>
+const screenTitles = {
+  dashboard:'Dashboard', myclasses:'My Classes', attendance:'Attendance',
+  students:'Students', homework:'Homework', messages:'Messages'
+};
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const el = document.getElementById('screen-' + id);
+  if(el) el.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    const label = n.textContent.trim().toLowerCase();
+    const key = id.toLowerCase();
+    if(label.startsWith(key.slice(0,5)) || (key==='myclasses' && label.includes('class'))) n.classList.add('active');
+  });
+  document.getElementById('topbar-title').textContent = screenTitles[id] || id;
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if(e.target === m) m.classList.remove('open'); });
+});
+
+function goToAttendance(classId) { showScreen('attendance'); }
+
+function openNoteModal(name) {
+  document.getElementById('modal-note-title').textContent = 'Note — ' + name;
+  openModal('modal-note');
+}
+
+function onStatusChange(idx) {
+  const sel = document.getElementById('sel-' + idx);
+  const row = document.getElementById('att-row-' + idx);
+  const fee = document.getElementById('fee-' + idx);
+  const val = sel.value;
+  sel.className = 'att-status-sel';
+  row.style.background = '';
+  fee.style.display = 'none';
+  if(val === 'noshow') {
+    sel.classList.add('sel-noshow');
+    row.style.background = '#1a0000';
+    fee.style.display = 'block';
+  } else if(val === 'present') {
+    sel.classList.add('sel-present');
+  } else if(val === 'late') {
+    sel.classList.add('sel-late');
+  } else if(val === 'excused') {
+    sel.classList.add('sel-excused');
+  }
+}
+
+function markAllPresent() {
+  for(let i = 0; i < 7; i++) {
+    const sel = document.getElementById('sel-' + i);
+    if(sel) { sel.value = 'present'; onStatusChange(i); }
+  }
+}
+
+function saveRegister() {
+  let present = 0, noshow = 0, late = 0;
+  for(let i = 0; i < 7; i++) {
+    const sel = document.getElementById('sel-' + i);
+    if(!sel) continue;
+    if(sel.value === 'present') present++;
+    else if(sel.value === 'noshow') noshow++;
+    else if(sel.value === 'late') late++;
+  }
+  const summary = document.getElementById('att-summary');
+  summary.classList.add('visible');
+  summary.innerHTML = '✓ Register saved — <b style="color:var(--lime);">' + present + ' attended</b>' +
+    (noshow ? ', <b style="color:#ff6b6b;">' + noshow + ' no-show' + (noshow > 1 ? 's' : '') + '</b> ($' + (noshow * 25) + ' in fees added)' : '') +
+    (late ? ', <b style="color:var(--amber);">' + late + ' late</b>' : '') + '.';
+}
+
+function openStudentReadPanel(name) {
+  document.getElementById('panel-name').textContent = name;
+  document.getElementById('panel-name-lg').textContent = name;
+  const initials = name.split(' ').map(w => w[0]).join('').slice(0,1);
+  document.getElementById('panel-avatar').textContent = initials;
+  document.getElementById('student-overlay').classList.add('open');
+  document.getElementById('student-panel').classList.add('open');
+  switchSubTabById('sp-info');
+}
+
+function closeStudentPanel() {
+  document.getElementById('student-overlay').classList.remove('open');
+  document.getElementById('student-panel').classList.remove('open');
+}
+
+function switchSubTab(el, targetId) {
+  const container = el.closest('.slide-panel') || el.closest('.modal') || document.body;
+  container.querySelectorAll('.subtab').forEach(t => t.classList.remove('active'));
+  container.querySelectorAll('.subscreen').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  const t = document.getElementById(targetId);
+  if(t) t.classList.add('active');
+}
+
+function switchSubTabById(targetId) {
+  const panel = document.getElementById('student-panel');
+  panel.querySelectorAll('.subscreen').forEach(s => s.classList.remove('active'));
+  const t = document.getElementById(targetId);
+  if(t) t.classList.add('active');
+  panel.querySelectorAll('.subtab').forEach(tab => {
+    const ids = ['sp-info','sp-bookings','sp-notes'];
+    const i = Array.from(panel.querySelectorAll('.subtab')).indexOf(tab);
+    tab.classList.toggle('active', ids[i] === targetId);
+  });
+}
+
+function switchHwTab(el, targetId) {
+  document.querySelectorAll('.tab-strip .tab-btn').forEach(t => t.classList.remove('active'));
+  ['hw-active','hw-submitted','hw-all'].forEach(id => {
+    const s = document.getElementById(id);
+    if(s) s.classList.remove('active');
+  });
+  el.classList.add('active');
+  const t = document.getElementById(targetId);
+  if(t) t.classList.add('active');
+}
+
+function switchMsgTab(el, targetId) {
+  document.querySelectorAll('#screen-messages .tab-strip .tab-btn').forEach(t => t.classList.remove('active'));
+  ['msg-requests','msg-direct','msg-sent'].forEach(id => {
+    const s = document.getElementById(id);
+    if(s) s.classList.remove('active');
+  });
+  el.classList.add('active');
+  const t = document.getElementById(targetId);
+  if(t) t.classList.add('active');
+}
+
+function addHwItem() {
+  const container = document.getElementById('hw-checklist-items');
+  const row = document.createElement('div');
+  row.className = 'hw-item-row';
+  row.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;';
+  row.innerHTML = '<input type="text" placeholder="Checklist item…" style="flex:1;background:#1a1a1a;border:1px solid var(--border);border-radius:7px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 10px;" /><button class="btn btn-ghost btn-xs" onclick="removeHwItem(this)">✕</button>';
+  container.appendChild(row);
+}
+
+function removeHwItem(btn) {
+  const row = btn.closest('.hw-item-row');
+  if(row) row.remove();
+}
+</script>
+</body>
+</html>
