@@ -240,6 +240,11 @@
   #season-class-list .class-row.locked .tag-grey {
     background: #1a0000; color: #ff6b6b; border-color: #662222;
   }
+  /* Waitlisted (fully booked) season class rows */
+  #season-class-list .class-row.waitlisted .class-row-check { background: var(--lav); border-color: var(--lav); color: var(--black); }
+  #season-class-list .class-row.waitlisted .class-row-instr { color: var(--grey); }
+  #season-class-list .class-row.full-booked { cursor: pointer; }
+  #season-class-list .class-row.full-booked .class-row-time-label { color: var(--grey); }
 
   /* FILTER GROUPS */
   .filter-group { margin-bottom: 10px; }
@@ -342,6 +347,17 @@
 
   /* CART */
   .booking-layout { display: grid; grid-template-columns: 1fr 340px; gap: 28px; align-items: start; }
+  /* Mobile floating proceed button */
+  #mob-proceed-btn {
+    display: none;
+    position: fixed; bottom: 70px; left: 16px; right: 16px; z-index: 150;
+    background: var(--lime); color: var(--black);
+    font-family: 'Archivo Black', sans-serif; font-size: 15px;
+    border: none; border-radius: 14px; padding: 16px 24px;
+    cursor: pointer; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    transition: opacity 0.2s;
+  }
+  #mob-proceed-btn:active { opacity: 0.85; }
   .cart {
     background: var(--dark); border: 1px solid var(--border);
     border-radius: 14px; padding: 26px;
@@ -759,6 +775,9 @@
     /* Booking layout: stack cart below class list */
     .booking-layout { grid-template-columns: 1fr; }
     .cart { position: static; margin-top: 24px; }
+    /* Show floating proceed button, hide desktop cart CTA */
+    #mob-proceed-btn { display: block; }
+    #season-cart { display: none; }
 
     /* Stats row */
     .stats { grid-template-columns: repeat(2, 1fr); }
@@ -1015,11 +1034,18 @@
       Billing history
     </div>
 
-    <div class="sidebar-user">
-      <div class="avatar">J</div>
-      <div>
-        <div class="avatar-name">Jess M.</div>
-        <div class="avatar-level">Level 2</div>
+    <div class="sidebar-user" style="flex-direction:column;align-items:flex-start;gap:10px">
+      <div style="display:flex;align-items:center;gap:12px;width:100%">
+        <div class="avatar">J</div>
+        <div>
+          <div class="avatar-name">Jess M.</div>
+          <div class="avatar-level">Level 2 &amp; Dance</div>
+        </div>
+      </div>
+      <div style="width:100%;padding:10px 12px;background:#0a1800;border:1px solid #1e3800;border-radius:8px">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.07em;color:var(--grey);margin-bottom:4px">Account balance</div>
+        <div id="sidebar-balance-display" style="font-size:15px;font-weight:600;color:#4ade80">$20.00 credit</div>
+        <div style="font-size:11px;color:var(--grey);margin-top:2px" id="sidebar-balance-sub">Applied to your next booking automatically</div>
       </div>
     </div>
   </nav>
@@ -1130,7 +1156,7 @@
         </div>
         <div class="class-row-divider"></div>
         <div class="class-row-info">
-          <div class="class-row-name">Level 2 - Studio A</div>
+          <div class="class-row-name">Level 2 · The Box</div>
           <div class="class-row-meta">6:30pm - Chloe - <span style="color:#ffaa44">Almost full</span></div>
         </div>
         <div class="class-row-actions">
@@ -1144,8 +1170,8 @@
         </div>
         <div class="class-row-divider"></div>
         <div class="class-row-info">
-          <div class="class-row-name">Dance - Studio B</div>
-          <div class="class-row-meta">6:30pm - Mimi - Studio B</div>
+          <div class="class-row-name">Dance · Rhapsody</div>
+          <div class="class-row-meta">6:30pm - Mimi - Rhapsody</div>
         </div>
         <div class="class-row-actions">
           <button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Dance','Fri 16 May, 6:30pm', true)">Mark Away</button>
@@ -1280,7 +1306,7 @@
           <div style="font-family:'Archivo Black',sans-serif;font-size:16px;margin-bottom:6px">You're on 2 classes per week</div>
           <div style="font-size:14px;color:var(--grey)">Add a 3rd class to unlock <span style="color:var(--lime)">1 free practice session per week</span>.</div>
         </div>
-        <button class="btn btn-outline btn-sm" style="white-space:nowrap" onclick="showScreen('book'); showBookTab('season')">Add a class</button>
+        <button class="btn btn-outline btn-sm" style="white-space:nowrap" onclick="showScreen('book'); showBookTab('season'); switchSeasonBook('s3')">Add a class</button>
       </div>
 
       </div> <!-- end dash-enrolled -->
@@ -1470,9 +1496,9 @@
                 <div class="class-row-tags"><span class="tag tag-grey">Level 6</span></div>
                 <div class="class-row-check">✓</div>
               </div>
-              <div class="class-row locked" data-day="tue" data-instr="mimi" data-level="5" data-locked="true" onclick="openLevelWarning('High Tricks','Tue 8:30pm')">
+              <div class="class-row locked full-booked" data-day="tue" data-instr="mimi" data-level="5" data-locked="true" data-full="true" onclick="openLevelWarning('High Tricks','Tue 8:30pm')">
                 <div class="class-row-time-block"><div class="class-row-day-label">Tue</div><div class="class-row-time-label">8:30pm</div></div>
-                <div class="class-row-body"><div class="class-row-name">High Tricks</div><div class="class-row-instr">Mimi &mdash; <span style="color:#ff6b6b">Fully booked</span></div></div>
+                <div class="class-row-body"><div class="class-row-name">High Tricks</div><div class="class-row-instr">Mimi &mdash; <span style="color:#ff6b6b">Fully booked</span> · The Box</div></div>
                 <div class="class-row-tags"><span class="tag tag-grey">Level 5+</span></div>
                 <div class="class-row-check">✓</div>
               </div>
@@ -2256,7 +2282,7 @@
               <div style="font-size:14px;color:var(--grey);line-height:1.6;margin-bottom:14px">3-hour deep dive into flexibility and conditioning. Suitable for all levels. A great add-on alongside your regular classes.</div>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <span class="tag tag-lime">All levels</span>
-                <span class="tag tag-grey">Studio A</span>
+                <span class="tag tag-grey">The Box</span>
                 <span class="tag tag-grey">3 hours</span>
               </div>
             </div>
@@ -2279,7 +2305,7 @@
               <div style="font-size:14px;color:var(--grey);line-height:1.6;margin-bottom:14px">Final run-through before the Season 3 showcase. All enrolled students welcome. Costume and shoes required.</div>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <span class="tag tag-lav">Enrolled students</span>
-                <span class="tag tag-grey">Studio A + B</span>
+                <span class="tag tag-grey">The Box + Rhapsody</span>
                 <span class="tag tag-amber">Almost full</span>
               </div>
             </div>
@@ -2359,7 +2385,7 @@
         <div class="class-row mb-8">
           <div class="class-row-date"><div class="class-row-day">MON</div><div class="class-row-num" style="color:var(--white);font-size:18px">6:30</div></div>
           <div class="class-row-divider"></div>
-          <div class="class-row-info"><div class="class-row-name">Level 2</div><div class="class-row-meta">Studio A · Chloe · Weeks 1–8</div></div>
+          <div class="class-row-info"><div class="class-row-name">Level 2</div><div class="class-row-meta">The Box · Chloe · Weeks 1–8</div></div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
             <span class="tag tag-lime">Active</span>
             <button class="btn btn-ghost btn-sm" style="font-size:11px;color:#666;padding:3px 8px" onclick="openCancelBookingModal('Level 2 – Mon 6:30pm')">Cancel</button>
@@ -2368,7 +2394,7 @@
         <div class="class-row mb-8">
           <div class="class-row-date"><div class="class-row-day">FRI</div><div class="class-row-num" style="color:var(--white);font-size:18px">6:30</div></div>
           <div class="class-row-divider"></div>
-          <div class="class-row-info"><div class="class-row-name">Dance</div><div class="class-row-meta">Studio B · Mimi · Weeks 1–8</div></div>
+          <div class="class-row-info"><div class="class-row-name">Dance</div><div class="class-row-meta">Rhapsody · Mimi · Weeks 1–8</div></div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
             <span class="tag tag-lime">Active</span>
             <button class="btn btn-ghost btn-sm" style="font-size:11px;color:#666;padding:3px 8px" onclick="openCancelBookingModal('Dance – Fri 6:30pm')">Cancel</button>
@@ -2403,25 +2429,25 @@
         <div class="class-row">
           <div class="class-row-date"><div class="class-row-day">Mon</div><div class="class-row-num">12</div></div>
           <div class="class-row-divider"></div>
-          <div class="class-row-info"><div class="class-row-name">Level 2 · Studio A</div><div class="class-row-meta">6:30pm · Chloe · Week 4</div></div>
+          <div class="class-row-info"><div class="class-row-name">Level 2 · The Box</div><div class="class-row-meta">6:30pm · Chloe · Week 4</div></div>
           <button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Level 2','Mon 12 May, 6:30pm', true)">Mark Away</button>
         </div>
         <div class="class-row">
           <div class="class-row-date"><div class="class-row-day">Fri</div><div class="class-row-num">16</div></div>
           <div class="class-row-divider"></div>
-          <div class="class-row-info"><div class="class-row-name">Dance · Studio B</div><div class="class-row-meta">6:30pm · Mimi · Week 4</div></div>
+          <div class="class-row-info"><div class="class-row-name">Dance · Rhapsody</div><div class="class-row-meta">6:30pm · Mimi · Week 4</div></div>
           <button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Dance','Fri 16 May, 6:30pm', true)">Mark Away</button>
         </div>
         <div class="class-row">
           <div class="class-row-date"><div class="class-row-day">Mon</div><div class="class-row-num">19</div></div>
           <div class="class-row-divider"></div>
-          <div class="class-row-info"><div class="class-row-name">Level 2 · Studio A</div><div class="class-row-meta">6:30pm · Chloe · Week 5</div></div>
+          <div class="class-row-info"><div class="class-row-name">Level 2 · The Box</div><div class="class-row-meta">6:30pm · Chloe · Week 5</div></div>
           <button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Level 2','Mon 19 May, 6:30pm', false)">Mark Away</button>
         </div>
         <div class="class-row">
           <div class="class-row-date"><div class="class-row-day">Fri</div><div class="class-row-num">23</div></div>
           <div class="class-row-divider"></div>
-          <div class="class-row-info"><div class="class-row-name">Dance · Studio B</div><div class="class-row-meta">6:30pm · Mimi · Week 5</div></div>
+          <div class="class-row-info"><div class="class-row-name">Dance · Rhapsody</div><div class="class-row-meta">6:30pm · Mimi · Week 5</div></div>
           <button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Dance','Fri 23 May, 6:30pm', false)">Mark Away</button>
         </div>
 
@@ -2564,7 +2590,7 @@
     <div class="screen" id="screen-progress">
       <div class="page-header">
         <div class="page-title">Progress</div>
-        <div class="page-subtitle">Level 2 - Season 3</div>
+        <div class="page-subtitle">Season 3 · Level 2 &amp; Dance</div>
       </div>
 
       <div class="tabs">
@@ -2574,10 +2600,19 @@
 
       <!-- TRICKS TAB -->
       <div id="panel-tricks">
+
+        <!-- Class selector -->
+        <div style="display:flex;gap:8px;margin-bottom:20px">
+          <button class="filter-btn active" id="prog-sel-level2" onclick="switchProgressClass('level2')">Level 2</button>
+          <button class="filter-btn" id="prog-sel-dance" onclick="switchProgressClass('dance')">Dance</button>
+        </div>
+
+        <!-- LEVEL 2 progress panel -->
+        <div id="prog-panel-level2">
         <div class="card mb-24">
           <div class="flex items-center justify-between mb-16">
             <div>
-              <div style="font-family:'Archivo Black',sans-serif;font-size:20px">Level 2</div>
+              <div style="font-family:'Archivo Black',sans-serif;font-size:20px">Level 2 · The Box</div>
               <div style="font-size:14px;color:var(--grey);margin-top:4px">14 of 22 tricks unlocked</div>
             </div>
             <div style="text-align:right">
@@ -2620,12 +2655,36 @@
           </div>
           <span class="tag tag-lav">1 new</span>
         </div>
-        <div class="card" style="border-color:#2a1f3d">
-          <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--lav);margin-bottom:8px">New - assigned 12 May</div>
+        <div class="card" style="border-color:#2a1f3d" id="hw-card-1">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px">
+            <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--lav)">New - assigned 12 May</div>
+            <span id="hw1-submitted-badge" style="display:none;font-size:11px;font-weight:600;background:#0a1800;color:var(--lime);border:1px solid var(--lime);border-radius:20px;padding:3px 10px;white-space:nowrap">Submitted ✓</span>
+          </div>
           <div style="font-family:'Archivo Black',sans-serif;font-size:17px;margin-bottom:10px">Invert conditioning drill - 3 sets daily</div>
-          <div style="font-size:14px;color:var(--grey);line-height:1.7">Focus on squeezing your core before initiating the invert. Practice from the floor first, then attempt from climb. Film yourself so you can see your hip positioning.</div>
-          <div style="margin-top:18px;padding-top:18px;border-top:1px solid #222;display:flex;gap:10px">
-            <button class="btn btn-lav btn-sm">Submit notes</button>
+          <div style="font-size:14px;color:var(--grey);line-height:1.7;margin-bottom:14px">Focus on squeezing your core before initiating the invert. Practice from the floor first, then attempt from climb. Film yourself so you can see your hip positioning.</div>
+          <!-- Tick-off checklist -->
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px" id="hw1-checklist">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:var(--lav);flex-shrink:0" onchange="updateHwProgress('hw1-checklist','hw1-progress','hw1-submit-btn')">
+              Floor invert - 3 sets (squeeze core before initiating)
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:var(--lav);flex-shrink:0" onchange="updateHwProgress('hw1-checklist','hw1-progress','hw1-submit-btn')">
+              Climb invert attempt - film yourself
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:var(--lav);flex-shrink:0" onchange="updateHwProgress('hw1-checklist','hw1-progress','hw1-submit-btn')">
+              Review hip positioning in video
+            </label>
+          </div>
+          <div id="hw1-progress" style="font-size:12px;color:var(--grey);margin-bottom:14px">0 / 3 done</div>
+          <!-- Notes input (hidden until submit clicked) -->
+          <div id="hw1-notes-area" style="display:none;margin-bottom:14px">
+            <div style="font-size:13px;color:var(--grey);margin-bottom:6px">Notes for Chloe (optional)</div>
+            <textarea id="hw1-notes-text" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:10px 12px;color:var(--white);font-family:'Archivo',sans-serif;font-size:14px;min-height:80px;resize:vertical" placeholder="How did it go? Anything Chloe should know..."></textarea>
+          </div>
+          <div style="padding-top:14px;border-top:1px solid #222;display:flex;gap:10px;flex-wrap:wrap">
+            <button id="hw1-submit-btn" class="btn btn-lav btn-sm" onclick="submitHomework('hw1')">Submit to Chloe</button>
             <button class="btn btn-ghost btn-sm">Watch reference video</button>
           </div>
         </div>
@@ -2654,7 +2713,104 @@
           <div style="font-size:15px;font-weight:500;margin-bottom:6px">Cross knee release ✓</div>
           <div style="font-size:14px;color:var(--grey);line-height:1.6">Nailed cross knee release both sides consistently. Added to your repertoire even though it's technically Level 3 - you were ready.</div>
         </div>
-      </div>
+        </div><!-- end prog-panel-level2 -->
+
+        <!-- DANCE progress panel -->
+        <div id="prog-panel-dance" style="display:none">
+        <div class="card mb-24">
+          <div class="flex items-center justify-between mb-16">
+            <div>
+              <div style="font-family:'Archivo Black',sans-serif;font-size:20px">Dance · Rhapsody</div>
+              <div style="font-size:14px;color:var(--grey);margin-top:4px">9 of 16 skills unlocked</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-family:'Archivo Black',sans-serif;font-size:32px;color:var(--lime)">56%</div>
+            </div>
+          </div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" style="width:56%"></div>
+          </div>
+          <div style="font-size:13px;color:var(--grey);line-height:1.7">
+            You're progressing well - Mimi is happy with your floor transitions and expression work this season.
+          </div>
+        </div>
+
+        <div class="trick-grid">
+          <div class="trick unlocked"><div class="trick-icon">&#127775;</div><div class="trick-name">Basic Floor Sequence</div><div class="trick-status">Unlocked</div></div>
+          <div class="trick unlocked"><div class="trick-icon">&#127775;</div><div class="trick-name">Hip Rolls</div><div class="trick-status">Unlocked</div></div>
+          <div class="trick unlocked"><div class="trick-icon">&#10024;</div><div class="trick-name">Body Roll</div><div class="trick-status">Unlocked</div></div>
+          <div class="trick unlocked"><div class="trick-icon">&#10024;</div><div class="trick-name">Floor Transitions</div><div class="trick-status">Unlocked</div></div>
+          <div class="trick unlocked"><div class="trick-icon">&#128260;</div><div class="trick-name">Pirouette</div><div class="trick-status">Unlocked</div></div>
+          <div class="trick unlocked"><div class="trick-icon">&#128131;</div><div class="trick-name">Léger Walk</div><div class="trick-status">Unlocked</div></div>
+          <div class="trick unlocked"><div class="trick-icon">&#128064;</div><div class="trick-name">Attitude Turns</div><div class="trick-status">Unlocked</div></div>
+          <div class="trick unlocked"><div class="trick-icon">&#127744;</div><div class="trick-name">Floorwork Crawl</div><div class="trick-status">Unlocked</div></div>
+          <div class="trick unlocked"><div class="trick-icon">&#9672;</div><div class="trick-name">Back Walk Over (assisted)</div><div class="trick-status">Unlocked</div></div>
+          <div class="trick in-progress"><div class="trick-icon">&#128256;</div><div class="trick-name">Split Prep</div><div class="trick-status">In progress</div></div>
+          <div class="trick locked"><div class="trick-icon">&#129438;</div><div class="trick-name">Full Split</div><div class="trick-status">Locked</div></div>
+          <div class="trick locked"><div class="trick-icon">&#129438;</div><div class="trick-name">Acro Sequence</div><div class="trick-status">Locked</div></div>
+          <div class="trick locked"><div class="trick-icon">&#127774;</div><div class="trick-name">Penché</div><div class="trick-status">Locked</div></div>
+          <div class="trick locked"><div class="trick-icon">&#11088;</div><div class="trick-name">Chaine Turns</div><div class="trick-status">Locked</div></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Dance Homework -->
+        <div class="flex items-center justify-between mb-20">
+          <div>
+            <div style="font-family:'Archivo Black',sans-serif;font-size:20px">Homework</div>
+            <div style="font-size:14px;color:var(--grey);margin-top:4px">Set by Mimi</div>
+          </div>
+        </div>
+        <div class="card" style="border-color:#2a1f3d">
+          <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--lav);margin-bottom:8px">Assigned 9 May</div>
+          <div style="font-family:'Archivo Black',sans-serif;font-size:17px;margin-bottom:10px">Split flexibility conditioning</div>
+          <div style="font-size:14px;color:var(--grey);line-height:1.7;margin-bottom:14px">10 minutes of hip flexor stretching daily, and hold your split prep for 90 seconds each side. Focus on keeping your hips square.</div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px" id="hw2-checklist">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:var(--lav);flex-shrink:0" onchange="updateHwProgress('hw2-checklist','hw2-progress','hw2-submit-btn')">
+              Hip flexor stretch - 10 min (both sides)
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:var(--lav);flex-shrink:0" onchange="updateHwProgress('hw2-checklist','hw2-progress','hw2-submit-btn')">
+              Split prep hold - 90 sec right
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:var(--lav);flex-shrink:0" onchange="updateHwProgress('hw2-checklist','hw2-progress','hw2-submit-btn')">
+              Split prep hold - 90 sec left
+            </label>
+          </div>
+          <div id="hw2-progress" style="font-size:12px;color:var(--grey);margin-bottom:14px">0 / 3 done</div>
+          <div id="hw2-notes-area" style="display:none;margin-bottom:14px">
+            <div style="font-size:13px;color:var(--grey);margin-bottom:6px">Notes for Mimi (optional)</div>
+            <textarea id="hw2-notes-text" style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:10px 12px;color:var(--white);font-family:'Archivo',sans-serif;font-size:14px;min-height:80px;resize:vertical" placeholder="How did it go? Anything Mimi should know..."></textarea>
+          </div>
+          <div style="padding-top:14px;border-top:1px solid #222;display:flex;gap:10px;flex-wrap:wrap">
+            <button id="hw2-submit-btn" class="btn btn-lav btn-sm" onclick="submitHomework('hw2')">Submit to Mimi</button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Dance Progress notes -->
+        <div class="flex items-center justify-between mb-20">
+          <div>
+            <div style="font-family:'Archivo Black',sans-serif;font-size:20px">Progress notes</div>
+            <div style="font-size:14px;color:var(--grey);margin-top:4px">Instructor notes from Mimi</div>
+          </div>
+        </div>
+        <div class="card" style="border-color:#1a2a1a;margin-bottom:12px">
+          <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#6db36d;margin-bottom:6px">9 May · Mimi</div>
+          <div style="font-size:15px;font-weight:500;margin-bottom:6px">Expression is really coming through</div>
+          <div style="font-size:14px;color:var(--grey);line-height:1.6">Loved your energy this week - you're really starting to inhabit the movement. Keep working on that split prep and we'll mark it off soon.</div>
+        </div>
+        <div class="card" style="border-color:#1a1a1a">
+          <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:6px">25 Apr · Mimi</div>
+          <div style="font-size:15px;font-weight:500;margin-bottom:6px">Floor transitions ✓</div>
+          <div style="font-size:14px;color:var(--grey);line-height:1.6">Consistent on both sides and looking fluid. Unlocked.</div>
+        </div>
+        </div><!-- end prog-panel-dance -->
+
+      </div><!-- end panel-tricks -->
 
       <!-- CLASS RESOURCES TAB -->
       <div id="panel-resources" style="display:none">
@@ -2771,7 +2927,7 @@
         <div class="notif-dot-circle" style="background:#0a0a0a">&#9675;</div>
         <div>
           <div class="notif-title">Class reminder - Level 2 tomorrow</div>
-          <div class="notif-body">Don't forget - Level 2 with Chloe is tomorrow, Monday 5 May at 6:30pm. Studio A. Remember bare legs and grip!</div>
+          <div class="notif-body">Don't forget - Level 2 with Chloe is tomorrow, Monday 5 May at 6:30pm. The Box. Remember bare legs and grip!</div>
           <div class="notif-time">Sun 4 May, 6:00pm</div>
         </div>
       </div>
@@ -2911,8 +3067,8 @@
             </div>
           </div>
           <div style="padding:14px 18px;border-top:1px solid var(--border);display:flex;gap:10px">
-            <input style="flex:1;background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:11px 16px;color:var(--white);font-family:'Archivo',sans-serif;font-size:14px" placeholder="Ask anything..." />
-            <button class="btn btn-lime btn-sm">Send</button>
+            <input id="chat-ai-input" style="flex:1;background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:11px 16px;color:var(--white);font-family:'Archivo',sans-serif;font-size:14px" placeholder="Ask anything..." onkeydown="if(event.key==='Enter'){sendChatMessage();}" />
+            <button class="btn btn-lime btn-sm" onclick="sendChatMessage()">Send</button>
           </div>
         </div>
 
@@ -3076,8 +3232,28 @@
     <!-- BILLING HISTORY SCREEN -->
     <div class="screen" id="screen-billing">
       <div class="page-header">
-        <div class="page-title">Billing history</div>
+        <div class="page-title">Billing</div>
       </div>
+
+      <!-- Outstanding balance card -->
+      <div style="background:#0d0d0d;border:1px solid #333;border-radius:14px;padding:22px 26px;margin-bottom:28px;max-width:820px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap">
+          <div>
+            <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--grey);margin-bottom:6px">Current balance</div>
+            <div id="billing-balance-amt" style="font-family:'Archivo Black',sans-serif;font-size:32px;color:#f87171">$140.00 owing</div>
+            <div id="billing-balance-due" style="font-size:13px;color:var(--grey);margin-top:6px">Due by <strong style="color:var(--white)">31 May 2026</strong> · Season 3 instalment 2 of 2</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;min-width:160px">
+            <button class="btn btn-lime btn-sm" style="font-size:13px" onclick="openBillingPayModal('full')">Pay now · $140</button>
+            <button class="btn btn-outline btn-sm" style="font-size:13px" onclick="openBillingPayModal('partial')">Pay partial amount</button>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding-top:14px;border-top:1px solid #222;font-size:12px;color:var(--grey);line-height:1.6">
+          💡 Your $20 catch-up credit will be applied automatically to your next booking — it cannot be used toward outstanding balances.
+        </div>
+      </div>
+
+      <div style="font-family:'Archivo Black',sans-serif;font-size:16px;margin-bottom:14px">Payment history</div>
       <div class="billing-table" style="display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:12px;overflow:hidden;max-width:820px">
         <div class="billing-row" style="display:grid;grid-template-columns:1fr 140px 120px 90px;gap:12px;padding:10px 16px;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--grey);border-bottom:1px solid var(--border)">
           <span>Description</span><span class="billing-col-date">Date</span><span>Type</span><span style="text-align:right">Amount</span>
@@ -3100,6 +3276,9 @@
       </div>
       <button class="btn btn-ghost btn-sm" style="margin-top:14px">Download all invoices</button>
     </div>
+
+  <!-- MOBILE FLOATING PROCEED BUTTON (season booking) -->
+  <button id="mob-proceed-btn" style="display:none" onclick="openCheckout()">Select a class to get started</button>
 
   </main>
 
@@ -3434,8 +3613,24 @@
         </div>
       </div>
 
+      <!-- Saved card -->
+      <div style="margin-top:20px;background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:14px 16px">
+        <label for="co-saved-card" style="display:flex;align-items:center;gap:12px;cursor:pointer">
+          <input type="checkbox" id="co-saved-card" checked style="width:17px;height:17px;accent-color:var(--lime);flex-shrink:0" onchange="document.getElementById('co-card-manual').style.display=this.checked?'none':'block'">
+          <div>
+            <div style="font-size:14px;font-weight:500">Use saved card</div>
+            <div style="font-size:12px;color:var(--grey);margin-top:2px">Visa ending 4242 · expires 09/27</div>
+          </div>
+          <svg style="margin-left:auto;flex-shrink:0" width="38" height="24" viewBox="0 0 38 24" fill="none"><rect width="38" height="24" rx="4" fill="#1A1F71"/><path d="M14.5 16.5H12l1.5-9h2.5L14.5 16.5zM22.5 7.7c-.5-.2-1.3-.4-2.2-.4-2.4 0-4.1 1.3-4.1 3.1 0 1.3 1.2 2 2.1 2.4.9.4 1.2.7 1.2 1.1 0 .6-.7.9-1.4.9-1 0-1.5-.1-2.3-.5l-.3-.1-.4 2.2c.6.3 1.7.5 2.8.5 2.6 0 4.3-1.3 4.3-3.2 0-1.1-.6-1.9-2-2.5-.8-.4-1.3-.7-1.3-1.1 0-.4.4-.7 1.3-.7.7 0 1.3.1 1.7.3l.2.1.4-2.1zM28.2 7.5h-1.9c-.6 0-1 .2-1.2.7l-3.5 8.3H24l.5-1.4h3.1l.3 1.4h2.3L28.2 7.5zm-3.1 5.6l1-2.7.6 2.7h-1.6zM11.5 7.5L9.2 13.6l-.3-1.2c-.4-1.4-1.7-3-3.1-3.7l2.1 7.8h2.6l3.9-9H11.5z" fill="white"/><path d="M7.3 7.5H3.3l-.1.3c3.1.8 5.2 2.7 6 5l-.9-4.5c-.1-.5-.5-.8-1-.8z" fill="#F9A51A"/></svg>
+        </label>
+        <div id="co-card-manual" style="display:none;margin-top:14px;border-top:1px solid var(--border);padding-top:14px">
+          <div class="stripe-field"><div class="stripe-label">Card number</div><input class="stripe-input" placeholder="1234 5678 9012 3456"/></div>
+          <div class="stripe-row"><div class="stripe-field"><div class="stripe-label">Expiry</div><input class="stripe-input" placeholder="MM / YY"/></div><div class="stripe-field"><div class="stripe-label">CVC</div><input class="stripe-input" placeholder="···"/></div></div>
+        </div>
+      </div>
+
       <!-- Express checkout: Apple Pay / Google Pay -->
-      <div id="co-express-pay" style="margin-top:20px">
+      <div id="co-express-pay" style="margin-top:14px">
         <div style="display:flex;gap:10px;margin-bottom:16px">
           <button class="btn-express-pay" id="btn-apple-pay" onclick="closeModal('checkout-modal');showBookingSuccess('enrol')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:#000;color:#fff;border:1px solid #333;border-radius:10px;padding:13px 16px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:background 0.15s">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
@@ -3453,15 +3648,7 @@
         </div>
       </div>
 
-      <div id="co-card-fields">
-        <div class="stripe-field">
-          <div class="stripe-label">Card number</div>
-          <input class="stripe-input" placeholder="1234 5678 9012 3456" />
-        </div>
-        <div class="stripe-row">
-          <div class="stripe-field"><div class="stripe-label">Expiry</div><input class="stripe-input" placeholder="MM / YY" /></div>
-          <div class="stripe-field"><div class="stripe-label">CVC</div><input class="stripe-input" placeholder="..." /></div>
-        </div>
+      <div id="co-card-fields" style="display:none">
       </div>
 
       <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px">
@@ -4107,14 +4294,14 @@
           <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
             <div>
               <div style="font-size:14px;font-weight:500">Monday 12 May - 6:30pm</div>
-              <div style="font-size:13px;color:var(--grey);margin-top:3px">Chloe - Studio A</div>
+              <div style="font-size:13px;color:var(--grey);margin-top:3px">Chloe - The Box</div>
             </div>
             <button class="btn btn-lime btn-sm" style="flex-shrink:0" onclick="openTrialBooking('Level 1','Monday 12 May - 6:30pm','Chloe')">Book - $35</button>
           </div>
           <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
             <div>
               <div style="font-size:14px;font-weight:500">Wednesday 14 May - 7:00pm</div>
-              <div style="font-size:13px;color:var(--grey);margin-top:3px">Mimi - Studio B</div>
+              <div style="font-size:13px;color:var(--grey);margin-top:3px">Mimi - Rhapsody</div>
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
               <span style="font-size:11px;font-weight:600;color:#f59e0b;background:rgba(245,158,11,0.12);padding:3px 8px;border-radius:20px;white-space:nowrap">Almost full</span>
@@ -4124,7 +4311,7 @@
           <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
             <div>
               <div style="font-size:14px;font-weight:500">Saturday 17 May - 10:00am</div>
-              <div style="font-size:13px;color:var(--grey);margin-top:3px">Chloe - Studio A</div>
+              <div style="font-size:13px;color:var(--grey);margin-top:3px">Chloe - The Box</div>
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
               <span style="font-size:11px;font-weight:600;color:#ef4444;background:rgba(239,68,68,0.12);padding:3px 8px;border-radius:20px;white-space:nowrap">Fully booked</span>
@@ -4142,14 +4329,14 @@
           <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
             <div>
               <div style="font-size:14px;font-weight:500">Tuesday 13 May - 7:00pm</div>
-              <div style="font-size:13px;color:var(--grey);margin-top:3px">Mimi - Studio B</div>
+              <div style="font-size:13px;color:var(--grey);margin-top:3px">Mimi - Rhapsody</div>
             </div>
             <button class="btn btn-lime btn-sm" style="flex-shrink:0" onclick="openTrialBooking('Strip Virgin','Tuesday 13 May - 7:00pm','Mimi')">Book - $35</button>
           </div>
           <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
             <div>
               <div style="font-size:14px;font-weight:500">Friday 16 May - 6:30pm</div>
-              <div style="font-size:13px;color:var(--grey);margin-top:3px">Chloe - Studio A</div>
+              <div style="font-size:13px;color:var(--grey);margin-top:3px">Chloe - The Box</div>
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
               <span style="font-size:11px;font-weight:600;color:#f59e0b;background:rgba(245,158,11,0.12);padding:3px 8px;border-radius:20px;white-space:nowrap">Almost full</span>
@@ -4167,14 +4354,14 @@
           <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
             <div>
               <div style="font-size:14px;font-weight:500">Thursday 15 May - 8:00pm</div>
-              <div style="font-size:13px;color:var(--grey);margin-top:3px">Mimi - Studio B</div>
+              <div style="font-size:13px;color:var(--grey);margin-top:3px">Mimi - Rhapsody</div>
             </div>
             <button class="btn btn-lime btn-sm" style="flex-shrink:0" onclick="openTrialBooking('Floor Virgin','Thursday 15 May - 8:00pm','Mimi')">Book - $35</button>
           </div>
           <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
             <div>
               <div style="font-size:14px;font-weight:500">Sunday 18 May - 11:00am</div>
-              <div style="font-size:13px;color:var(--grey);margin-top:3px">Chloe - Studio A</div>
+              <div style="font-size:13px;color:var(--grey);margin-top:3px">Chloe - The Box</div>
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
               <span style="font-size:11px;font-weight:600;color:#ef4444;background:rgba(239,68,68,0.12);padding:3px 8px;border-radius:20px;white-space:nowrap">Fully booked</span>
@@ -4192,14 +4379,14 @@
           <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
             <div>
               <div style="font-size:14px;font-weight:500">Wednesday 14 May - 6:00pm</div>
-              <div style="font-size:13px;color:var(--grey);margin-top:3px">Chloe - Studio B</div>
+              <div style="font-size:13px;color:var(--grey);margin-top:3px">Chloe - Rhapsody</div>
             </div>
             <button class="btn btn-lime btn-sm" style="flex-shrink:0" onclick="openTrialBooking('Kiki','Wednesday 14 May - 6:00pm','Chloe')">Book - $35</button>
           </div>
           <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
             <div>
               <div style="font-size:14px;font-weight:500">Saturday 17 May - 12:00pm</div>
-              <div style="font-size:13px;color:var(--grey);margin-top:3px">Mimi - Studio A</div>
+              <div style="font-size:13px;color:var(--grey);margin-top:3px">Mimi - The Box</div>
             </div>
             <button class="btn btn-lime btn-sm" style="flex-shrink:0" onclick="openTrialBooking('Kiki','Saturday 17 May - 12:00pm','Mimi')">Book - $35</button>
           </div>
@@ -4675,6 +4862,9 @@
     if (window.innerWidth <= 640 && document.body.classList.contains('sidebar-open')) {
       toggleMobileSidebar();
     }
+    // Show/hide mobile proceed button only on season booking tab
+    const mobBtn = document.getElementById('mob-proceed-btn');
+    if (mobBtn) mobBtn.style.display = (id === 'book') ? '' : 'none';
   }
 
   function toggleMobileSidebar() {
@@ -4688,6 +4878,43 @@
     document.getElementById('panel-resources').style.display = tab === 'resources' ? 'block' : 'none';
     document.getElementById('tab-tricks').classList.toggle('active',    tab === 'tricks');
     document.getElementById('tab-resources').classList.toggle('active', tab === 'resources');
+  }
+
+  function switchProgressClass(cls) {
+    document.getElementById('prog-panel-level2').style.display = cls === 'level2' ? 'block' : 'none';
+    document.getElementById('prog-panel-dance').style.display  = cls === 'dance'  ? 'block' : 'none';
+    document.getElementById('prog-sel-level2').classList.toggle('active', cls === 'level2');
+    document.getElementById('prog-sel-dance').classList.toggle('active',  cls === 'dance');
+  }
+
+  function updateHwProgress(checklistId, progressId, submitBtnId) {
+    const checks = document.querySelectorAll('#' + checklistId + ' input[type="checkbox"]');
+    const done = Array.from(checks).filter(c => c.checked).length;
+    const total = checks.length;
+    document.getElementById(progressId).textContent = done + ' / ' + total + ' done';
+    document.getElementById(progressId).style.color = done === total ? 'var(--lime)' : 'var(--grey)';
+    if (done === total) {
+      document.getElementById(submitBtnId).style.background = 'var(--lime)';
+      document.getElementById(submitBtnId).style.color = 'var(--black)';
+    }
+  }
+
+  function submitHomework(hwId) {
+    const notesArea = document.getElementById(hwId + '-notes-area');
+    if (notesArea.style.display === 'none' || notesArea.style.display === '') {
+      notesArea.style.display = 'block';
+      document.getElementById(hwId + '-submit-btn').textContent = 'Confirm &amp; send';
+      return;
+    }
+    // Actually submit
+    notesArea.style.display = 'none';
+    document.getElementById(hwId + '-submit-btn').style.display = 'none';
+    const badge = document.getElementById(hwId.replace('hw','hw') + '-submitted-badge') ||
+                  document.getElementById('hw1-submitted-badge');
+    // Show submitted badge on hw1
+    const b = hwId === 'hw1' ? document.getElementById('hw1-submitted-badge') : null;
+    if (b) { b.style.display = ''; }
+    showToast('Sent to instructor ✓');
   }
 
   // ─── CASUAL FILTERS ────────────────────────────────────────────────────────
@@ -5141,6 +5368,11 @@
 
   function openLevelWarning(className, time) {
     const el = event.currentTarget;
+    // Fully booked → redirect to season waitlist flow regardless of level
+    if (el.dataset.full === 'true') {
+      _openSeasonFullWaitlist(className, time, el);
+      return;
+    }
     const id = (className + time).toLowerCase().replace(/[\s:+]/g, '');
     // If already confirmed and selected - deselect on second click
     if (el.classList.contains('selected')) {
@@ -5556,6 +5788,107 @@
     setTimeout(() => toast.remove(), 4000);
   }
 
+  function showToast(msg, bg) {
+    const t = document.createElement('div');
+    t.textContent = msg;
+    Object.assign(t.style, {
+      position:'fixed', bottom:'28px', left:'50%', transform:'translateX(-50%)',
+      background: bg || 'var(--lime)', color: bg ? 'var(--white)' : 'var(--black)',
+      fontFamily:"'Archivo Black',sans-serif", fontSize:'13px',
+      padding:'12px 20px', borderRadius:'30px', zIndex:'9999',
+      whiteSpace:'nowrap', boxShadow:'0 4px 20px rgba(0,0,0,0.4)',
+    });
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  // ─── CHAT ──────────────────────────────────────────────────────────────────
+  const _chatReplies = [
+    "Got it! Is there anything else I can help you with?",
+    "Great question. For anything specific to your account or bookings, Mimi & Chloe are always happy to help via the studio chat.",
+    "Thanks for reaching out! I'll do my best to help. Could you give me a bit more detail?",
+    "Season 3 is currently in Week 4 of 8. You have 2 classes enrolled - Level 2 (Mon) and Dance (Fri).",
+    "Your next class is Level 2 with Chloe this Monday at 6:30pm in The Box. Remember bare legs and grip!",
+  ];
+  let _chatReplyIdx = 0;
+
+  function sendChatMessage() {
+    const input = document.getElementById('chat-ai-input');
+    const text = input.value.trim();
+    if (!text) return;
+    const thread = document.getElementById('chat-thread-ai').querySelector('[style*="flex:1"]') ||
+                   document.getElementById('chat-thread-ai').children[1];
+    // User bubble
+    const userBubble = document.createElement('div');
+    userBubble.style.cssText = 'display:flex;gap:10px;max-width:78%;align-self:flex-end;flex-direction:row-reverse';
+    userBubble.innerHTML = `<div class="avatar" style="width:32px;height:32px;font-size:13px;flex-shrink:0">J</div>
+      <div style="background:#0f1600;border:1px solid var(--lime);border-radius:12px;border-top-right-radius:3px;padding:13px 16px">
+        <div style="font-size:14px;line-height:1.7">${text.replace(/</g,'&lt;')}</div>
+        <div style="font-size:11px;color:var(--grey);margin-top:6px">Just now</div>
+      </div>`;
+    thread.appendChild(userBubble);
+    input.value = '';
+    // AI reply after short delay
+    const reply = _chatReplies[_chatReplyIdx % _chatReplies.length];
+    _chatReplyIdx++;
+    setTimeout(() => {
+      const aiBubble = document.createElement('div');
+      aiBubble.style.cssText = 'display:flex;gap:10px;max-width:78%';
+      aiBubble.innerHTML = `<span style="font-size:20px;flex-shrink:0;margin-top:2px">🤖</span>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;border-top-left-radius:3px;padding:13px 16px">
+          <div style="font-size:14px;line-height:1.7">${reply}</div>
+          <div style="font-size:11px;color:var(--grey);margin-top:6px">Just now</div>
+        </div>`;
+      thread.appendChild(aiBubble);
+      thread.scrollTop = thread.scrollHeight;
+    }, 900);
+    thread.scrollTop = thread.scrollHeight;
+  }
+
+  // ─── BILLING PAY MODAL ─────────────────────────────────────────────────────
+  function openBillingPayModal(type) {
+    const amt = type === 'full' ? '$140.00' : '';
+    const label = type === 'full' ? 'Pay outstanding balance' : 'Pay partial amount';
+    const placeholder = type === 'full' ? '$140.00' : 'Enter amount';
+    const el = document.getElementById('billing-pay-modal');
+    if (!el) {
+      const m = document.createElement('div');
+      m.id = 'billing-pay-modal';
+      m.className = 'modal-overlay active';
+      m.innerHTML = `<div class="modal" style="max-width:400px">
+        <div class="modal-header">
+          <div class="modal-title" id="bpm-title">${label}</div>
+          <button class="modal-close" onclick="document.getElementById('billing-pay-modal').remove()">✕</button>
+        </div>
+        <div class="modal-body" style="padding-top:0">
+          <div style="font-size:13px;color:var(--grey);margin-bottom:16px">Season 3 instalment · due 31 May 2026</div>
+          ${type === 'partial' ? `<div class="form-row" style="margin-bottom:16px">
+            <label class="form-label">Amount to pay</label>
+            <input class="form-input" type="number" placeholder="e.g. 70.00" min="1" max="140" id="bpm-amount" />
+          </div>` : `<div style="font-family:'Archivo Black',sans-serif;font-size:28px;margin-bottom:16px">$140.00</div>`}
+          <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px">
+            <label for="bpm-saved-card" style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px">
+              <input type="checkbox" id="bpm-saved-card" checked style="width:16px;height:16px;accent-color:var(--lime)">
+              Use saved card &nbsp;<span style="color:var(--grey);font-size:12px">Visa ···· 4242</span>
+            </label>
+          </div>
+          <button class="btn btn-lime" style="width:100%" onclick="completeBillingPayment()">Confirm payment</button>
+        </div>
+      </div>`;
+      document.body.appendChild(m);
+    } else {
+      el.classList.add('active');
+    }
+  }
+
+  function completeBillingPayment() {
+    document.getElementById('billing-pay-modal').remove();
+    document.getElementById('billing-balance-amt').textContent = '$20.00 credit';
+    document.getElementById('billing-balance-amt').style.color = '#4ade80';
+    document.getElementById('billing-balance-due').textContent = 'Season 3 fully paid · $20 credit on account';
+    showToast('Payment received ✓');
+  }
+
   // Profile photo preview
   function handlePhotoUpload(input) {
     const file = input.files[0];
@@ -5633,6 +5966,11 @@
   });
 
   function toggleClass(id, name, time, el) {
+    // Fully booked → waitlist flow
+    if (el.dataset.full === 'true') {
+      _openSeasonFullWaitlist(name, time, el);
+      return;
+    }
     // Locked rows go through the level-warning modal instead; only block direct toggle
     if (el.classList.contains('locked') && !el.classList.contains('selected')) return;
     if (cart[id]) {
@@ -5667,6 +6005,8 @@
       document.getElementById('cart-perks').style.display    = 'none';
       document.getElementById('cart-total').style.display    = 'none';
       document.getElementById('cart-cta').disabled = true;
+      const mobBtn = document.getElementById('mob-proceed-btn');
+      if (mobBtn) { mobBtn.textContent = 'Select a class to get started'; mobBtn.disabled = true; }
       return;
     }
 
@@ -5702,6 +6042,13 @@
     document.getElementById('cart-total').style.display = 'block';
     document.getElementById('cart-total-val').textContent = '$' + price;
     document.getElementById('cart-cta').disabled = false;
+
+    // Mobile floating button
+    const mobBtn = document.getElementById('mob-proceed-btn');
+    if (mobBtn) {
+      mobBtn.textContent = `Proceed with ${count} class${count !== 1 ? 'es' : ''} · $${price}`;
+      mobBtn.disabled = false;
+    }
   }
 
   let planFreq = 'weekly';
@@ -6036,11 +6383,18 @@
     { emoji:'⏳', title:'You\'re on the list!', sub:'We\'ll ping you the moment a spot opens up.' },
     { emoji:'🔔', title:'Waitlist confirmed!', sub:'First in, first served - we\'ll let you know ASAP.' },
   ];
+  const SEASON_WAITLIST_VARIANTS = [
+    { emoji:'💜', title:'You\'re on the waitlist!', sub:'We\'ve popped you on the waiting list for the season. We\'ll be in touch if a spot opens up.' },
+    { emoji:'🩷', title:'Waitlist confirmed!', sub:'We\'ve popped you on the waiting list for this season class. We\'ll reach out if a spot becomes available.' },
+  ];
 
   let _lastSuccessIdx = -1;
 
   function showBookingSuccess(type) {
-    const pool = type === 'enrol' ? ENROL_VARIANTS : type === 'waitlist' ? WAITLIST_VARIANTS : SUCCESS_VARIANTS;
+    const pool = type === 'enrol' ? ENROL_VARIANTS
+               : type === 'waitlist' ? WAITLIST_VARIANTS
+               : type === 'season-waitlist' ? SEASON_WAITLIST_VARIANTS
+               : SUCCESS_VARIANTS;
     let idx;
     do { idx = Math.floor(Math.random() * pool.length); } while (idx === _lastSuccessIdx && pool.length > 1);
     _lastSuccessIdx = idx;
@@ -6195,7 +6549,25 @@
     document.getElementById('checkout-modal').classList.add('open');
   }
 
+  let _pendingSeasonWaitlistEl = null;
+
+  function _openSeasonFullWaitlist(className, time, el) {
+    // Toggle off if already waitlisted
+    if (el.classList.contains('waitlisted')) {
+      el.classList.remove('waitlisted');
+      return;
+    }
+    _pendingSeasonWaitlistEl = el;
+    document.getElementById('waitlist-class-name').textContent = className;
+    document.getElementById('waitlist-class-date').textContent = time;
+    document.getElementById('waitlist-modal-title').textContent = 'Join season waitlist';
+    document.getElementById('waitlist-single-copy').style.display = 'none';
+    document.getElementById('waitlist-season-copy').style.display = '';
+    document.getElementById('waitlist-modal').classList.add('open');
+  }
+
   function openWaitlistModal(className, date) {
+    _pendingSeasonWaitlistEl = null;
     _openWaitlist(className, date, 'single');
   }
 
@@ -6222,7 +6594,13 @@
 
   function confirmWaitlist() {
     closeModal('waitlist-modal');
-    showBookingSuccess('waitlist');
+    if (_pendingSeasonWaitlistEl) {
+      _pendingSeasonWaitlistEl.classList.add('waitlisted');
+      _pendingSeasonWaitlistEl = null;
+      showBookingSuccess('season-waitlist');
+    } else {
+      showBookingSuccess('waitlist');
+    }
   }
 
   function setDashState(state) {
