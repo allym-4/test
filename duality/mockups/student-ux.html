@@ -850,6 +850,69 @@
   .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .form-hint { font-size: 11px; color: var(--grey); margin-top: 4px; line-height: 1.4; }
 
+  /* AUTH SCREEN */
+  #screen-auth {
+    position: fixed; inset: 0; z-index: 300;
+    background: var(--black);
+    display: none; align-items: center; justify-content: center;
+    padding: 24px 16px; overflow-y: auto;
+  }
+  #screen-auth.active { display: flex; }
+  .auth-card {
+    width: 100%; max-width: 420px;
+    background: var(--dark); border: 1px solid var(--border);
+    border-radius: 20px; padding: 40px 36px;
+  }
+  .auth-logo {
+    font-family: 'Archivo Black', sans-serif; font-size: 28px;
+    color: var(--lime); letter-spacing: -0.5px; margin-bottom: 32px;
+    text-align: center;
+  }
+  .auth-logo span { color: var(--white); }
+  .auth-step-indicator {
+    display: flex; gap: 6px; justify-content: center; margin-bottom: 28px;
+  }
+  .auth-step-dot {
+    height: 4px; border-radius: 2px; background: #2a2a2a;
+    transition: all 0.25s; flex: 1;
+  }
+  .auth-step-dot.active { background: var(--lime); }
+  .auth-step-dot.done   { background: #446600; }
+  .auth-heading { font-family: 'Archivo Black', sans-serif; font-size: 22px; margin-bottom: 6px; }
+  .auth-sub { font-size: 14px; color: var(--grey); margin-bottom: 24px; line-height: 1.5; }
+  .auth-switch { text-align: center; font-size: 13px; color: var(--grey); margin-top: 20px; }
+  .auth-switch a { color: var(--lav); cursor: pointer; text-decoration: none; }
+  .auth-switch a:hover { text-decoration: underline; }
+  .auth-error { background: #1a0000; border: 1px solid #440000; border-radius: 8px;
+    padding: 10px 14px; font-size: 13px; color: #ff6b6b;
+    margin-bottom: 16px; display: none; }
+  .auth-password-wrap { position: relative; }
+  .auth-password-wrap .form-input { padding-right: 44px; }
+  .auth-eye { position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    cursor: pointer; color: var(--grey); font-size: 16px; background: none; border: none;
+    padding: 4px; line-height: 1; }
+  .waiver-box {
+    background: #0a0a0a; border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px; max-height: 180px; overflow-y: auto;
+    font-size: 12px; color: var(--grey); line-height: 1.7; margin-bottom: 16px;
+  }
+  .auth-checkbox-row {
+    display: flex; gap: 12px; align-items: flex-start;
+    margin-bottom: 12px; cursor: pointer;
+  }
+  .auth-checkbox-row input[type="checkbox"] {
+    width: 18px; height: 18px; flex-shrink: 0; margin-top: 2px;
+    accent-color: var(--lime); cursor: pointer;
+  }
+  .auth-checkbox-row span { font-size: 13px; color: var(--grey); line-height: 1.5; }
+  .auth-checkbox-row span a { color: var(--lav); }
+  @media (max-width: 480px) {
+    .auth-card { padding: 32px 20px; border-radius: 0; border-left: none; border-right: none;
+      border-top: none; min-height: 100dvh; border-radius: 0; background: var(--black); }
+    #screen-auth { padding: 0; align-items: flex-start; }
+    .auth-logo { margin-top: 40px; }
+  }
+
   /* PROFILE STEP NAV */
   .profile-steps-nav {
     display: flex; gap: 6px; margin-bottom: 24px;
@@ -898,7 +961,7 @@
 <div class="shell">
 
   <!-- MOBILE TOP BAR -->
-  <div class="mob-topbar">
+  <div class="mob-topbar" id="mob-topbar">
     <button class="mob-ham" onclick="toggleMobileSidebar()">&#9776;</button>
     <span style="font-family:'Archivo Black';color:var(--lime);font-size:18px">Duality<span style="color:var(--white)">.</span></span>
     <div class="mob-notif-btn" onclick="showScreen('notifications')">
@@ -973,6 +1036,8 @@
         <button class="btn btn-ghost btn-sm" onclick="setDashState('not-enrolled')" style="font-size:11px">Not enrolled</button>
         <button class="btn btn-ghost btn-sm" onclick="setDashState('enrolled-style-only')" style="font-size:11px">Enrolled (style classes)</button>
         <button class="btn btn-ghost btn-sm" onclick="openPostTrialModal()" style="font-size:11px;color:var(--lav);border-color:var(--lav)">Post-trial login</button>
+        <button class="btn btn-ghost btn-sm" onclick="showAuthPanel('signup');showScreen('auth')" style="font-size:11px;color:var(--lime);border-color:var(--lime)">Sign-up flow</button>
+        <button class="btn btn-ghost btn-sm" onclick="showAuthPanel('signin');showScreen('auth')" style="font-size:11px;color:var(--lime);border-color:#446600">Sign-in flow</button>
       </div>
 
       <!-- STATE: Season open CTA (shown when new season is open and student not yet booked) -->
@@ -3025,6 +3090,175 @@
 
   </main>
 
+  <!-- AUTH SCREEN (sign in / sign up) -->
+  <div id="screen-auth">
+    <div class="auth-card">
+      <div class="auth-logo">Duality<span>.</span></div>
+
+      <!-- SIGN IN -->
+      <div id="auth-panel-signin">
+        <div class="auth-heading">Welcome back</div>
+        <div class="auth-sub">Sign in to your account</div>
+        <div class="auth-error" id="signin-error">Incorrect email or password. Please try again.</div>
+        <div class="form-row">
+          <label class="form-label">Email</label>
+          <input class="form-input" type="email" id="signin-email" placeholder="you@email.com" autocomplete="email">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Password</label>
+          <div class="auth-password-wrap">
+            <input class="form-input" type="password" id="signin-password" placeholder="Your password" autocomplete="current-password">
+            <button class="auth-eye" onclick="toggleAuthPw('signin-password',this)" tabindex="-1">👁</button>
+          </div>
+        </div>
+        <div style="text-align:right;margin-bottom:20px">
+          <a style="font-size:13px;color:var(--grey);cursor:pointer" onclick="showAuthForgot()">Forgot password?</a>
+        </div>
+        <button class="btn btn-lime" style="width:100%" onclick="doSignIn()">Sign in</button>
+        <div class="auth-switch">Don't have an account? <a onclick="showAuthPanel('signup')">Create one</a></div>
+      </div>
+
+      <!-- FORGOT PASSWORD -->
+      <div id="auth-panel-forgot" style="display:none">
+        <div class="auth-heading">Reset password</div>
+        <div class="auth-sub">We'll send a reset link to your email.</div>
+        <div class="form-row">
+          <label class="form-label">Email</label>
+          <input class="form-input" type="email" id="forgot-email" placeholder="you@email.com">
+        </div>
+        <button class="btn btn-lime" style="width:100%" onclick="doForgot()">Send reset link</button>
+        <div id="forgot-sent" style="display:none;margin-top:14px;padding:12px 14px;background:#0a1800;border:1px solid var(--lime);border-radius:8px;font-size:13px;color:var(--lime)">
+          Check your inbox - reset link sent.
+        </div>
+        <div class="auth-switch"><a onclick="showAuthPanel('signin')">Back to sign in</a></div>
+      </div>
+
+      <!-- SIGN UP (multi-step) -->
+      <div id="auth-panel-signup" style="display:none">
+        <!-- Step dots -->
+        <div class="auth-step-indicator">
+          <div class="auth-step-dot active" id="su-dot-1"></div>
+          <div class="auth-step-dot" id="su-dot-2"></div>
+          <div class="auth-step-dot" id="su-dot-3"></div>
+        </div>
+
+        <!-- Step 1: Credentials -->
+        <div id="su-step-1">
+          <div class="auth-heading">Create your account</div>
+          <div class="auth-sub">Step 1 of 3 - your login details</div>
+          <div class="auth-error" id="su-error-1"></div>
+          <div class="form-row">
+            <label class="form-label">Email <span class="req">*</span></label>
+            <input class="form-input" type="email" id="su-email" placeholder="you@email.com" autocomplete="email">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Password <span class="req">*</span></label>
+            <div class="auth-password-wrap">
+              <input class="form-input" type="password" id="su-password" placeholder="Min. 8 characters" autocomplete="new-password">
+              <button class="auth-eye" onclick="toggleAuthPw('su-password',this)" tabindex="-1">👁</button>
+            </div>
+            <div class="form-hint">At least 8 characters.</div>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Confirm password <span class="req">*</span></label>
+            <div class="auth-password-wrap">
+              <input class="form-input" type="password" id="su-password2" placeholder="Repeat password" autocomplete="new-password">
+              <button class="auth-eye" onclick="toggleAuthPw('su-password2',this)" tabindex="-1">👁</button>
+            </div>
+          </div>
+          <button class="btn btn-lime" style="width:100%;margin-top:4px" onclick="suNext(1)">Continue</button>
+          <div class="auth-switch">Already have an account? <a onclick="showAuthPanel('signin')">Sign in</a></div>
+        </div>
+
+        <!-- Step 2: Personal details -->
+        <div id="su-step-2" style="display:none">
+          <div class="auth-heading">About you</div>
+          <div class="auth-sub">Step 2 of 3 - your personal details</div>
+          <div class="auth-error" id="su-error-2"></div>
+          <div class="form-grid-2" style="margin-bottom:0">
+            <div class="form-row">
+              <label class="form-label">First name <span class="req">*</span></label>
+              <input class="form-input" type="text" id="su-fname" placeholder="Jess" autocomplete="given-name">
+            </div>
+            <div class="form-row">
+              <label class="form-label">Last name <span class="req">*</span></label>
+              <input class="form-input" type="text" id="su-lname" placeholder="Mitchell" autocomplete="family-name">
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Phone <span class="req">*</span></label>
+            <input class="form-input" type="tel" id="su-phone" placeholder="0412 345 678" autocomplete="tel">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Date of birth <span class="req">*</span></label>
+            <input class="form-input" type="date" id="su-dob" autocomplete="bday">
+            <div class="form-hint">You must be 18 or over to participate.</div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:4px">
+            <button class="btn btn-ghost" style="flex:1" onclick="suBack(2)">Back</button>
+            <button class="btn btn-lime" style="flex:2" onclick="suNext(2)">Continue</button>
+          </div>
+        </div>
+
+        <!-- Step 3: Emergency contact + waiver -->
+        <div id="su-step-3" style="display:none">
+          <div class="auth-heading">Almost there</div>
+          <div class="auth-sub">Step 3 of 3 - emergency contact and waiver</div>
+          <div class="auth-error" id="su-error-3"></div>
+          <div class="form-row">
+            <label class="form-label">Emergency contact name <span class="req">*</span></label>
+            <input class="form-input" type="text" id="su-ec-name" placeholder="Sarah Mitchell" autocomplete="off">
+          </div>
+          <div class="form-grid-2" style="margin-bottom:0">
+            <div class="form-row">
+              <label class="form-label">Relationship <span class="req">*</span></label>
+              <input class="form-input" type="text" id="su-ec-rel" placeholder="Sister">
+            </div>
+            <div class="form-row">
+              <label class="form-label">Phone <span class="req">*</span></label>
+              <input class="form-input" type="tel" id="su-ec-phone" placeholder="0412 999 888">
+            </div>
+          </div>
+          <div class="form-row" style="margin-top:8px">
+            <label class="form-label" style="margin-bottom:8px">Waiver</label>
+            <div class="waiver-box">
+              I acknowledge that pole fitness and aerial arts involve physical activity that carries inherent risks, including the possibility of injury. I voluntarily choose to participate in classes at Duality Pole Studio and accept full responsibility for any injury or damage that may occur.<br><br>
+              I confirm that I am in good physical health and have no medical conditions that would prevent me from safely participating. I have disclosed any relevant health information to the studio.<br><br>
+              I agree to follow all studio rules and instructor directions at all times. I understand that the studio reserves the right to refuse participation if my safety or the safety of others is at risk.<br><br>
+              I release Duality Pole Studio, its instructors, employees, and agents from any liability for personal injury, property damage, or loss arising from my participation, except where caused by negligence.<br><br>
+              This waiver is valid for the duration of my membership and all future visits unless revoked in writing.
+            </div>
+            <label class="auth-checkbox-row" onclick="this.querySelector('input').click();event.preventDefault()">
+              <input type="checkbox" id="su-waiver">
+              <span>I have read and agree to the <a>waiver and liability release</a> above. <span style="color:var(--lime)">*</span></span>
+            </label>
+            <label class="auth-checkbox-row" onclick="this.querySelector('input').click();event.preventDefault()">
+              <input type="checkbox" id="su-terms">
+              <span>I agree to the <a>Terms & Conditions</a> and <a>Privacy Policy</a>. <span style="color:var(--lime)">*</span></span>
+            </label>
+            <label class="auth-checkbox-row" onclick="this.querySelector('input').click();event.preventDefault()">
+              <input type="checkbox" id="su-marketing">
+              <span>I'd like to receive updates about new classes, events, and offers from Duality. (Optional)</span>
+            </label>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:4px">
+            <button class="btn btn-ghost" style="flex:1" onclick="suBack(3)">Back</button>
+            <button class="btn btn-lime" style="flex:2" onclick="suSubmit()">Create account</button>
+          </div>
+        </div>
+
+        <!-- Step 4: Done -->
+        <div id="su-step-4" style="display:none;text-align:center;padding:16px 0">
+          <div style="font-size:48px;margin-bottom:16px">🎉</div>
+          <div class="auth-heading">You're in!</div>
+          <div class="auth-sub" style="margin-bottom:28px">Welcome to Duality, <span id="su-welcome-name" style="color:var(--white);font-weight:600">Jess</span>! Your account is set up and ready to go.</div>
+          <button class="btn btn-lime" style="width:100%" onclick="suFinish()">Go to my dashboard</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- MOBILE BOTTOM NAV -->
   <nav class="mob-bottom-nav" id="mob-bottom-nav">
     <div class="mob-nav-item active" id="mob-nav-dashboard" onclick="showScreen('dashboard')">
@@ -4312,6 +4546,25 @@
   let selectedPayMode = 'full';
 
   function showScreen(id) {
+    // Auth screen is a special full-screen overlay
+    const authScreen = document.getElementById('screen-auth');
+    if (id === 'auth') {
+      authScreen.classList.add('active');
+      // Hide mobile chrome while auth is shown
+      const topbar = document.getElementById('mob-topbar');
+      const bottomNav = document.getElementById('mob-bottom-nav');
+      if (topbar) topbar.style.display = 'none';
+      if (bottomNav) bottomNav.style.display = 'none';
+      return;
+    }
+    // Dismiss auth if showing
+    if (authScreen) authScreen.classList.remove('active');
+    // Restore mobile chrome
+    const topbar = document.getElementById('mob-topbar');
+    const bottomNav = document.getElementById('mob-bottom-nav');
+    if (topbar) topbar.style.display = '';
+    if (bottomNav) bottomNav.style.display = '';
+
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('screen-' + id).classList.add('active');
     // Desktop sidebar nav
@@ -5902,6 +6155,158 @@
       value.textContent = '14';
       sub.textContent   = 'of 22 in Level 2';
     }
+  }
+
+  // ── AUTH SCREEN ──────────────────────────────────────────────────────────
+
+  function showAuthPanel(panel) {
+    ['signin','forgot','signup'].forEach(p => {
+      const el = document.getElementById('auth-panel-' + p);
+      if (el) el.style.display = p === panel ? '' : 'none';
+    });
+    // Reset errors when switching panels
+    ['signin-error','su-error-1','su-error-2','su-error-3'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+  }
+
+  function doSignIn() {
+    const email = document.getElementById('signin-email').value.trim();
+    const pw    = document.getElementById('signin-password').value;
+    const err   = document.getElementById('signin-error');
+    if (!email || !pw) {
+      err.textContent = 'Please enter your email and password.';
+      err.style.display = '';
+      return;
+    }
+    err.style.display = 'none';
+    showScreen('dashboard');
+  }
+
+  function showAuthForgot() {
+    showAuthPanel('forgot');
+    document.getElementById('forgot-sent').style.display = 'none';
+    const emailField = document.getElementById('signin-email');
+    const forgotField = document.getElementById('forgot-email');
+    if (emailField && forgotField) forgotField.value = emailField.value;
+  }
+
+  function doForgot() {
+    const email = document.getElementById('forgot-email').value.trim();
+    const sent  = document.getElementById('forgot-sent');
+    if (!email) { document.getElementById('forgot-email').focus(); return; }
+    sent.style.display = '';
+  }
+
+  function toggleAuthPw(id, btn) {
+    const input = document.getElementById(id);
+    if (!input) return;
+    const isText = input.type === 'text';
+    input.type = isText ? 'password' : 'text';
+    btn.style.opacity = isText ? '' : '1';
+  }
+
+  // Update step indicator dots: done=past steps, active=current step
+  function _suUpdateDots(currentStep) {
+    for (let i = 1; i <= 3; i++) {
+      const dot = document.getElementById('su-dot-' + i);
+      if (!dot) continue;
+      dot.className = 'auth-step-dot' + (i < currentStep ? ' done' : i === currentStep ? ' active' : '');
+    }
+  }
+
+  function suNext(step) {
+    const errEl = document.getElementById('su-error-' + step);
+    const hide  = msg => { errEl.textContent = msg || ''; errEl.style.display = msg ? '' : 'none'; };
+
+    if (step === 1) {
+      const email = document.getElementById('su-email').value.trim();
+      const pw    = document.getElementById('su-password').value;
+      const pw2   = document.getElementById('su-password2').value;
+      if (!email) { hide('Please enter your email address.'); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { hide('Please enter a valid email address.'); return; }
+      if (pw.length < 8) { hide('Password must be at least 8 characters.'); return; }
+      if (pw !== pw2)    { hide('Passwords do not match.'); return; }
+      hide();
+      document.getElementById('su-step-1').style.display = 'none';
+      document.getElementById('su-step-2').style.display = '';
+      _suUpdateDots(2);
+    } else if (step === 2) {
+      const fname = document.getElementById('su-fname').value.trim();
+      const lname = document.getElementById('su-lname').value.trim();
+      const phone = document.getElementById('su-phone').value.trim();
+      const dob   = document.getElementById('su-dob').value;
+      if (!fname || !lname) { hide('Please enter your first and last name.'); return; }
+      if (!phone)  { hide('Please enter your phone number.'); return; }
+      if (!dob)    { hide('Please enter your date of birth.'); return; }
+      // Check age >= 18
+      const birthDate = new Date(dob);
+      const age = Math.floor((Date.now() - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
+      if (age < 18) { hide('You must be 18 or over to join.'); return; }
+      hide();
+      document.getElementById('su-step-2').style.display = 'none';
+      document.getElementById('su-step-3').style.display = '';
+      _suUpdateDots(3);
+    }
+  }
+
+  function suBack(step) {
+    // step is the current step number
+    document.getElementById('su-step-' + step).style.display = 'none';
+    document.getElementById('su-step-' + (step - 1)).style.display = '';
+    _suUpdateDots(step - 1);
+  }
+
+  function suSubmit() {
+    const errEl = document.getElementById('su-error-3');
+    const hide  = msg => { errEl.textContent = msg || ''; errEl.style.display = msg ? '' : 'none'; };
+
+    const ecName  = document.getElementById('su-ec-name').value.trim();
+    const ecRel   = document.getElementById('su-ec-rel').value.trim();
+    const ecPhone = document.getElementById('su-ec-phone').value.trim();
+    const waiver  = document.getElementById('su-waiver').checked;
+    const terms   = document.getElementById('su-terms').checked;
+
+    if (!ecName || !ecRel || !ecPhone) { hide('Please fill in all emergency contact details.'); return; }
+    if (!waiver) { hide('You must agree to the waiver to continue.'); return; }
+    if (!terms)  { hide('You must agree to the Terms & Conditions to continue.'); return; }
+
+    hide();
+
+    // Populate welcome name from step 2
+    const fname = document.getElementById('su-fname').value.trim();
+    const welcomeEl = document.getElementById('su-welcome-name');
+    if (welcomeEl && fname) welcomeEl.textContent = fname;
+
+    document.getElementById('su-step-3').style.display = 'none';
+    document.getElementById('su-step-4').style.display = '';
+    // Mark all dots done
+    for (let i = 1; i <= 3; i++) {
+      const dot = document.getElementById('su-dot-' + i);
+      if (dot) dot.className = 'auth-step-dot done';
+    }
+  }
+
+  function suFinish() {
+    showScreen('dashboard');
+    // Reset sign-up form for next demo run
+    ['su-email','su-password','su-password2','su-fname','su-lname','su-phone','su-dob',
+     'su-ec-name','su-ec-rel','su-ec-phone'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    ['su-waiver','su-terms','su-marketing'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.checked = false;
+    });
+    // Reset to step 1
+    document.getElementById('su-step-1').style.display = '';
+    document.getElementById('su-step-2').style.display = 'none';
+    document.getElementById('su-step-3').style.display = 'none';
+    document.getElementById('su-step-4').style.display = 'none';
+    _suUpdateDots(1);
+    showAuthPanel('signin');
   }
 </script>
 </body>
