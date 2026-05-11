@@ -865,7 +865,7 @@
         </div>
 
         <div class="section-label mt-16">Thu 15 May</div>
-        <div class="casual-row" onclick="openCasualModal('Practice Time','Thu 15 May - 8:00pm','Open studio',false)">
+        <div class="casual-row" onclick="openCasualModal('Practice Time','Thu 15 May - 8:00pm','Open studio',false,'$20')">
           <div class="casual-date"><div class="casual-date-day">THU</div><div class="casual-date-num">15</div></div>
           <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
           <div class="casual-info">
@@ -1621,7 +1621,7 @@
 
     <div class="modal-actions">
       <button class="btn btn-lav" style="flex:1" onclick="closeModal('casual-modal')">Book with credit</button>
-      <button class="btn btn-outline" onclick="closeModal('casual-modal')">Pay $40</button>
+      <button class="btn btn-outline" id="casual-pay-btn" onclick="closeModal('casual-modal')">Pay $40</button>
     </div>
   </div>
 </div>
@@ -2080,10 +2080,12 @@
     document.getElementById('markaway-after').style.display  = markAwayBeforeCutoff ? 'none'  : 'block';
   }
 
-  function openCasualModal(name, meta, instructor, hasCredit) {
+  function openCasualModal(name, meta, instructor, hasCredit, price) {
+    price = price || '$40';
     document.getElementById('casual-modal-title').textContent = name;
     document.getElementById('casual-modal-meta').textContent  = meta + ' - ' + instructor;
     document.getElementById('casual-credit-option').style.display = hasCredit ? 'block' : 'none';
+    document.getElementById('casual-pay-btn').textContent = 'Pay ' + price;
     document.getElementById('casual-modal').classList.add('open');
   }
 
