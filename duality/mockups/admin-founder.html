@@ -248,6 +248,18 @@ tr.clickable-row:hover td { background: #141414; }
 .notif-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #1a1a1a; }
 .notif-row:last-child { border-bottom: none; }
 
+/* NOTE FLAGS */
+.note-flag-fire { border-left: 3px solid #ff4444; background: #1a0000; padding-left: 10px; }
+.note-flag-red { border-left: 3px solid #ff6b6b; padding-left: 10px; }
+.note-flag-yellow { border-left: 3px solid var(--amber); padding-left: 10px; }
+.note-flag-green { border-left: 3px solid #4ade80; padding-left: 10px; }
+.note-urgent-tab { display:inline-block; background:#1a0000; border:1px solid #ff4444; border-radius:6px; padding:6px 12px; font-size:12px; color:#ff4444; cursor:pointer; margin-bottom:12px; }
+
+/* STUDENT FILTER TAGS */
+.filter-tag { background:#1a1a1a; border:1px solid var(--border); border-radius:20px; padding:4px 12px; font-size:12px; cursor:pointer; transition:all 0.15s; }
+.filter-tag:hover { border-color:#555; color:var(--white); }
+.filter-tag.active-tag { background:#0a1800; border-color:var(--lime); color:var(--lime); }
+
 /* BACK LINK */
 .back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--grey); font-size: 13px; cursor: pointer; margin-bottom: 20px; transition: color 0.15s; user-select: none; }
 .back-link:hover { color: var(--white); }
@@ -356,7 +368,7 @@ tr.clickable-row:hover td { background: #141414; }
   <div class="sidebar-footer">
     <div class="user-badge">
       <div class="avatar">A</div>
-      <div><div class="user-name">Allysha</div><div class="user-role">Founder</div></div>
+      <div><div class="user-name">Mimi</div><div class="user-role">Founder</div></div>
     </div>
   </div>
 </aside>
@@ -369,7 +381,7 @@ tr.clickable-row:hover td { background: #141414; }
       <button class="kiosk-btn" onclick="openModal('modal-kiosk')">📱 Check-in Kiosk</button>
       <div class="topbar-user">
         <div class="avatar">A</div>
-        <span style="font-size:13px;">Allysha <span style="color:var(--lime);font-family:'Archivo Black',sans-serif;font-size:11px;">FOUNDER</span></span>
+        <span style="font-size:13px;">Mimi <span style="color:var(--lime);font-family:'Archivo Black',sans-serif;font-size:11px;">FOUNDER</span></span>
       </div>
     </div>
   </div>
@@ -393,14 +405,14 @@ tr.clickable-row:hover td { background: #141414; }
           <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:14px;">Today's Classes</div>
           <div class="tbl-section">
             <table>
-              <thead><tr><th>Class</th><th>Time</th><th>Instructor</th><th>Studio</th><th>Enrolled</th><th>Status</th></tr></thead>
+              <thead><tr><th>Class</th><th>Time</th><th>Instructor</th><th>Studio</th><th>Enrolled</th><th>Status</th><th>Action</th></tr></thead>
               <tbody>
-                <tr class="clickable-row" onclick="openAttendanceRegister('Level 1','5:30pm','Chloe','The Box')"><td><b>Level 1</b> <span style="color:var(--grey);font-size:11px;">→</span></td><td style="color:var(--grey)">5:30pm</td><td>Chloe</td><td>The Box</td><td>10/12</td><td><span class="tag tag-lime">Active</span></td></tr>
-                <tr class="clickable-row" onclick="openAttendanceRegister('Sensual Flow','6:00pm','Mia','Rhapsody')"><td><b>Sensual Flow</b> <span style="color:var(--grey);font-size:11px;">→</span></td><td style="color:var(--grey)">6:00pm</td><td>Mia</td><td>Rhapsody</td><td>8/10</td><td><span class="tag tag-lime">Active</span></td></tr>
-                <tr class="clickable-row" onclick="openAttendanceRegister('Level 2','6:30pm','Chloe','The Box')"><td><b>Level 2</b> <span style="color:var(--grey);font-size:11px;">→</span></td><td style="color:var(--grey)">6:30pm</td><td>Chloe</td><td>The Box</td><td>15/15</td><td><span class="tag tag-amber">Full</span></td></tr>
-                <tr class="clickable-row" onclick="openAttendanceRegister('High Tricks','7:30pm','Allysha','The Box')"><td><b>High Tricks</b> <span style="color:var(--grey);font-size:11px;">→</span></td><td style="color:var(--grey)">7:30pm</td><td>Allysha</td><td>The Box</td><td>8/10</td><td><span class="tag tag-lime">Active</span></td></tr>
-                <tr class="clickable-row" onclick="openAttendanceRegister('Exotic Floor','8:00pm','Mia','Rhapsody')"><td><b>Exotic Floor</b> <span style="color:var(--grey);font-size:11px;">→</span></td><td style="color:var(--grey)">8:00pm</td><td>Mia</td><td>Rhapsody</td><td>6/10</td><td><span class="tag tag-lime">Active</span></td></tr>
-                <tr><td><b>Flexi &amp; Conditioning</b></td><td style="color:var(--grey)">8:30pm</td><td>Jade</td><td>The Box</td><td>0/12</td><td><span class="tag tag-red">Cancelled</span></td></tr>
+                <tr class="clickable-row" onclick="openAttendanceRegister('Level 1','5:30pm','Chloe','The Box')"><td><b>Level 1</b> <span style="color:var(--grey);font-size:11px;">→</span></td><td style="color:var(--grey)">5:30pm</td><td>Chloe</td><td>The Box</td><td>10/12</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openCancelClass('Level 1','Mon 5:30pm','The Box',10)">Cancel</button></td></tr>
+                <tr class="clickable-row" onclick="openAttendanceRegister('Sensual Flow','6:00pm','Mia','Rhapsody')"><td><b>Sensual Flow</b> <span style="color:var(--grey);font-size:11px;">→</span></td><td style="color:var(--grey)">6:00pm</td><td>Mia</td><td>Rhapsody</td><td>8/10</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openCancelClass('Sensual Flow','Mon 6:00pm','Rhapsody',8)">Cancel</button></td></tr>
+                <tr class="clickable-row" onclick="openAttendanceRegister('Level 2','6:30pm','Chloe','The Box')"><td><b>Level 2</b> <span style="color:var(--grey);font-size:11px;">→</span></td><td style="color:var(--grey)">6:30pm</td><td>Chloe</td><td>The Box</td><td>15/15</td><td><span class="tag tag-amber">Full</span></td><td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openCancelClass('Level 2','Mon 6:30pm','The Box',15)">Cancel</button></td></tr>
+                <tr class="clickable-row" onclick="openAttendanceRegister('High Tricks','7:30pm','Mimi','The Box')"><td><b>High Tricks</b> <span style="color:var(--grey);font-size:11px;">→</span></td><td style="color:var(--grey)">7:30pm</td><td>Mimi</td><td>The Box</td><td>8/10</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openCancelClass('High Tricks','Mon 7:30pm','The Box',8)">Cancel</button></td></tr>
+                <tr class="clickable-row" onclick="openAttendanceRegister('Exotic Floor','8:00pm','Mia','Rhapsody')"><td><b>Exotic Floor</b> <span style="color:var(--grey);font-size:11px;">→</span></td><td style="color:var(--grey)">8:00pm</td><td>Mia</td><td>Rhapsody</td><td>6/10</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openCancelClass('Exotic Floor','Mon 8:00pm','Rhapsody',6)">Cancel</button></td></tr>
+                <tr><td><b>Flexi &amp; Conditioning</b></td><td style="color:var(--grey)">8:30pm</td><td>Jade</td><td>The Box</td><td>0/12</td><td><span class="tag tag-red">Cancelled</span></td><td>—</td></tr>
               </tbody>
             </table>
           </div>
@@ -415,7 +427,7 @@ tr.clickable-row:hover td { background: #141414; }
             <div class="feed-item"><div class="feed-dot feed-dot-amber"></div><div><div class="feed-text">Tara B. moved to <b>waitlist</b> for Level 2</div><div class="feed-time">3 hrs ago</div></div></div>
             <div class="feed-item"><div class="feed-dot feed-dot-red"></div><div><div class="feed-text">Kylie R. account <b>blocked</b> — balance $95 owing</div><div class="feed-time">5 hrs ago</div></div></div>
             <div class="feed-item"><div class="feed-dot"></div><div><div class="feed-text">Hannah W. waiver signed for <b>Season 4</b></div><div class="feed-time">Yesterday</div></div></div>
-            <div class="feed-item"><div class="feed-dot feed-dot-lav"></div><div><div class="feed-text">Seasonal pricing updated by <b>Allysha</b></div><div class="feed-time">Yesterday</div></div></div>
+            <div class="feed-item"><div class="feed-dot feed-dot-lav"></div><div><div class="feed-text">Seasonal pricing updated by <b>Mimi</b></div><div class="feed-time">Yesterday</div></div></div>
           </div>
         </div>
       </div>
@@ -443,7 +455,7 @@ tr.clickable-row:hover td { background: #141414; }
         <input class="search-input" id="students-search" type="text" placeholder="Search name, email…" oninput="filterStudentsTable(this.value)" />
         <select class="select-input" onchange="filterStudentsTable()"><option>All Levels</option><option>Level 1</option><option>Level 2</option><option>Level 3</option><option>High Tricks</option></select>
         <select class="select-input" onchange="filterStudentsTable()"><option>All Statuses</option><option>Active</option><option>Owing</option><option>Blocked</option><option>Frozen</option></select>
-        <select class="select-input"><option>All Instructors</option><option>Chloe</option><option>Mia</option><option>Allysha</option><option>Jade</option></select>
+        <select class="select-input"><option>All Instructors</option><option>Chloe</option><option>Mia</option><option>Mimi</option><option>Jade</option></select>
       </div>
       <div class="tbl-section">
         <table>
@@ -795,7 +807,7 @@ tr.clickable-row:hover td { background: #141414; }
             <div class="note-item">
               <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
                 <div class="s-avatar" style="background:var(--lime);width:28px;height:28px;font-size:11px;">A</div>
-                <div class="note-meta" style="margin:0;">Allysha Carter · 2 Apr 2025, 8:30pm</div>
+                <div class="note-meta" style="margin:0;">Mimi Carter · 2 Apr 2025, 8:30pm</div>
               </div>
               <div class="note-text">Attended showcase workshop — great engagement and attitude.</div>
               <div style="display:flex;gap:6px;margin-top:8px;"><button class="btn btn-ghost btn-xs">Edit</button><button class="btn btn-ghost btn-xs">Delete</button></div>
@@ -964,7 +976,7 @@ tr.clickable-row:hover td { background: #141414; }
         <div class="tt-cell"><div class="tt-class-card type-level" onclick="openModal('modal-class')"><div class="tt-class-name">Level 1</div><div class="tt-class-meta">Jade · Rhapsody</div><div class="tt-class-cap" style="color:var(--lime)">9/12</div></div></div>
         <div class="tt-cell"></div>
         <div class="tt-cell"><div class="tt-class-card type-dance" onclick="openModal('modal-class')"><div class="tt-class-name">Sensual Flow</div><div class="tt-class-meta">Mia · Rhapsody</div><div class="tt-class-cap" style="color:var(--lav)">8/10</div></div></div>
-        <div class="tt-cell"><div class="tt-class-card type-workshop" onclick="openModal('modal-class')"><div class="tt-class-name">Choreo Intensive</div><div class="tt-class-meta">Allysha · The Box</div><div class="tt-class-cap" style="color:var(--amber)">7/10</div></div></div>
+        <div class="tt-cell"><div class="tt-class-card type-workshop" onclick="openModal('modal-class')"><div class="tt-class-name">Choreo Intensive</div><div class="tt-class-meta">Mimi · The Box</div><div class="tt-class-cap" style="color:var(--amber)">7/10</div></div></div>
         <div class="tt-cell"></div>
         <div class="tt-time">6:30</div>
         <div class="tt-cell"><div class="tt-class-card type-level" onclick="openAttendanceRegister('Level 2','6:30pm','Chloe','The Box')"><div class="tt-class-name">Level 2</div><div class="tt-class-meta">Chloe · The Box</div><div class="tt-class-cap" style="color:#ff6b6b">15/15 FULL</div></div></div>
@@ -975,9 +987,9 @@ tr.clickable-row:hover td { background: #141414; }
         <div class="tt-cell"></div>
         <div class="tt-cell"></div>
         <div class="tt-time">7:30</div>
-        <div class="tt-cell"><div class="tt-class-card type-level" onclick="openAttendanceRegister('High Tricks','7:30pm','Allysha','The Box')"><div class="tt-class-name">High Tricks</div><div class="tt-class-meta">Allysha · The Box</div><div class="tt-class-cap" style="color:var(--lime)">8/10</div></div></div>
+        <div class="tt-cell"><div class="tt-class-card type-level" onclick="openAttendanceRegister('High Tricks','7:30pm','Mimi','The Box')"><div class="tt-class-name">High Tricks</div><div class="tt-class-meta">Mimi · The Box</div><div class="tt-class-cap" style="color:var(--lime)">8/10</div></div></div>
         <div class="tt-cell"></div>
-        <div class="tt-cell"><div class="tt-class-card type-level" onclick="openModal('modal-class')"><div class="tt-class-name">Level 3</div><div class="tt-class-meta">Allysha · The Box</div><div class="tt-class-cap" style="color:var(--lime)">7/10</div></div></div>
+        <div class="tt-cell"><div class="tt-class-card type-level" onclick="openModal('modal-class')"><div class="tt-class-name">Level 3</div><div class="tt-class-meta">Mimi · The Box</div><div class="tt-class-cap" style="color:var(--lime)">7/10</div></div></div>
         <div class="tt-cell"><div class="tt-class-card type-dance" onclick="openModal('modal-class')"><div class="tt-class-name">Heels</div><div class="tt-class-meta">Mia · Rhapsody</div><div class="tt-class-cap" style="color:var(--lav)">9/12</div></div></div>
         <div class="tt-cell"></div>
         <div class="tt-cell"></div>
@@ -1182,11 +1194,11 @@ tr.clickable-row:hover td { background: #141414; }
         <table>
           <thead><tr><th>Code</th><th>Recipient</th><th>Issued By</th><th>Original Value</th><th>Remaining</th><th>Expiry</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>
-            <tr><td><b style="font-family:monospace;letter-spacing:1px;">GC-4821</b></td><td>Jess Malone<div style="font-size:11px;color:var(--grey)">jess@email.com</div></td><td>Allysha</td><td>$100</td><td class="bal-pos">$100</td><td style="color:var(--grey)">11 May 2026</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs">View</button> <button class="btn btn-ghost btn-xs" onclick="alert('Copied!')">Copy Code</button></td></tr>
-            <tr><td><b style="font-family:monospace;letter-spacing:1px;">GC-3377</b></td><td>Ruby Kim<div style="font-size:11px;color:var(--grey)">ruby@email.com</div></td><td>Allysha</td><td>$50</td><td class="bal-pos">$25</td><td style="color:var(--grey)">3 Mar 2026</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs">View</button> <button class="btn btn-ghost btn-xs" onclick="alert('Copied!')">Copy Code</button></td></tr>
+            <tr><td><b style="font-family:monospace;letter-spacing:1px;">GC-4821</b></td><td>Jess Malone<div style="font-size:11px;color:var(--grey)">jess@email.com</div></td><td>Mimi</td><td>$100</td><td class="bal-pos">$100</td><td style="color:var(--grey)">11 May 2026</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs">View</button> <button class="btn btn-ghost btn-xs" onclick="alert('Copied!')">Copy Code</button></td></tr>
+            <tr><td><b style="font-family:monospace;letter-spacing:1px;">GC-3377</b></td><td>Ruby Kim<div style="font-size:11px;color:var(--grey)">ruby@email.com</div></td><td>Mimi</td><td>$50</td><td class="bal-pos">$25</td><td style="color:var(--grey)">3 Mar 2026</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs">View</button> <button class="btn btn-ghost btn-xs" onclick="alert('Copied!')">Copy Code</button></td></tr>
             <tr><td><b style="font-family:monospace;letter-spacing:1px;">GC-2950</b></td><td>Sophie Lawson<div style="font-size:11px;color:var(--grey)">sophie@email.com</div></td><td>Chloe</td><td>$150</td><td style="color:var(--grey)">$0</td><td style="color:var(--grey)">28 Feb 2026</td><td><span class="tag tag-grey">Redeemed</span></td><td><button class="btn btn-ghost btn-xs">View</button></td></tr>
-            <tr><td><b style="font-family:monospace;letter-spacing:1px;">GC-1084</b></td><td>Hannah Webb<div style="font-size:11px;color:var(--grey)">hannah@email.com</div></td><td>Allysha</td><td>$200</td><td style="color:var(--grey)">$0</td><td style="color:var(--grey)">1 Jan 2026</td><td><span class="tag tag-grey">Redeemed</span></td><td><button class="btn btn-ghost btn-xs">View</button></td></tr>
-            <tr><td><b style="font-family:monospace;letter-spacing:1px;">GC-0762</b></td><td>Dana Park<div style="font-size:11px;color:var(--grey)">dana@email.com</div></td><td>Allysha</td><td>$100</td><td class="bal-pos">$75</td><td style="color:var(--grey)">15 Apr 2026</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs">View</button> <button class="btn btn-ghost btn-xs" onclick="alert('Copied!')">Copy Code</button></td></tr>
+            <tr><td><b style="font-family:monospace;letter-spacing:1px;">GC-1084</b></td><td>Hannah Webb<div style="font-size:11px;color:var(--grey)">hannah@email.com</div></td><td>Mimi</td><td>$200</td><td style="color:var(--grey)">$0</td><td style="color:var(--grey)">1 Jan 2026</td><td><span class="tag tag-grey">Redeemed</span></td><td><button class="btn btn-ghost btn-xs">View</button></td></tr>
+            <tr><td><b style="font-family:monospace;letter-spacing:1px;">GC-0762</b></td><td>Dana Park<div style="font-size:11px;color:var(--grey)">dana@email.com</div></td><td>Mimi</td><td>$100</td><td class="bal-pos">$75</td><td style="color:var(--grey)">15 Apr 2026</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs">View</button> <button class="btn btn-ghost btn-xs" onclick="alert('Copied!')">Copy Code</button></td></tr>
             <tr><td><b style="font-family:monospace;letter-spacing:1px;">GC-0541</b></td><td>Amber Cole<div style="font-size:11px;color:var(--grey)">amber@email.com</div></td><td>Chloe</td><td>$50</td><td class="bal-pos">$50</td><td style="color:#ff6b6b">Expired</td><td><span class="tag tag-red">Expired</span></td><td><button class="btn btn-ghost btn-xs">View</button></td></tr>
           </tbody>
         </table>
@@ -1329,7 +1341,7 @@ tr.clickable-row:hover td { background: #141414; }
         <table>
           <thead><tr><th></th><th>Name</th><th>Role</th><th>Classes Assigned</th><th>Pay Rate</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>
-            <tr><td><div class="staff-photo" style="background:var(--lime);">A</div></td><td><b>Allysha Carter</b><div style="font-size:11px;color:var(--grey)">allysha@dualitypole.com.au</div></td><td><span class="tag tag-lime">Founder</span></td><td>High Tricks, Level 3, Choreo</td><td>—</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-staff')">Edit</button></td></tr>
+            <tr><td><div class="staff-photo" style="background:var(--lime);">A</div></td><td><b>Mimi Carter</b><div style="font-size:11px;color:var(--grey)">mimi@dualitypole.com.au</div></td><td><span class="tag tag-lime">Founder</span></td><td>High Tricks, Level 3, Choreo</td><td>—</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-staff')">Edit</button></td></tr>
             <tr><td><div class="staff-photo" style="background:var(--lav);">C</div></td><td><b>Chloe Nguyen</b><div style="font-size:11px;color:var(--grey)">chloe@dualitypole.com.au</div></td><td><span class="tag tag-lav">Instructor</span></td><td>Level 1, Level 2, Level 1 Int.</td><td>$65/class</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-staff')">Edit</button></td></tr>
             <tr><td><div class="staff-photo" style="background:#ffb3de;">M</div></td><td><b>Mia Santos</b><div style="font-size:11px;color:var(--grey)">mia@dualitypole.com.au</div></td><td><span class="tag tag-lav">Instructor</span></td><td>Sensual Flow, Exotic Floor, Heels</td><td>$65/class</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-staff')">Edit</button></td></tr>
             <tr><td><div class="staff-photo" style="background:#9ac4ff;">J</div></td><td><b>Jade Wu</b><div style="font-size:11px;color:var(--grey)">jade@dualitypole.com.au</div></td><td><span class="tag tag-grey">Casual</span></td><td>Level 1 (cover), Level 2 Thu</td><td>$55/class</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-staff')">Edit</button></td></tr>
@@ -1394,9 +1406,9 @@ tr.clickable-row:hover td { background: #141414; }
                 <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
                 <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-availability')">Edit Availability</button></td>
               </tr>
-              <!-- Allysha — available all days -->
+              <!-- Mimi — available all days -->
               <tr>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:var(--lime);width:28px;height:28px;font-size:11px;">A</div> Allysha (Founder)</div></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:var(--lime);width:28px;height:28px;font-size:11px;">A</div> Mimi (Founder)</div></td>
                 <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
                 <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
                 <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
@@ -1593,7 +1605,7 @@ tr.clickable-row:hover td { background: #141414; }
           <div class="kpi kpi-amber"><div class="kpi-label">Full Season</div><div class="kpi-value">68</div></div>
           <div class="kpi"><div class="kpi-label">Drop-ins</div><div class="kpi-value">14</div></div>
         </div>
-        <div class="tbl-section"><table><thead><tr><th>Class</th><th>Instructor</th><th>Capacity</th><th style="color:var(--lav)">Trials</th><th style="color:var(--lime)">Full</th><th style="color:var(--amber)">Drop-ins</th><th>Total</th><th>Fill %</th></tr></thead><tbody><tr><td>Level 1 — Mon 5:30pm</td><td>Chloe</td><td>12</td><td style="color:var(--lav)">3</td><td style="color:var(--lime)">8</td><td style="color:var(--amber)">1</td><td>12</td><td><span class="tag tag-red">100%</span></td></tr><tr><td>Level 2 — Mon 6:30pm</td><td>Chloe</td><td>10</td><td style="color:var(--lav)">2</td><td style="color:var(--lime)">7</td><td style="color:var(--amber)">0</td><td>9</td><td><span class="tag tag-lime">90%</span></td></tr><tr><td>High Tricks — Mon 7:30pm</td><td>Allysha</td><td>10</td><td style="color:var(--lav)">0</td><td style="color:var(--lime)">8</td><td style="color:var(--amber)">0</td><td>8</td><td><span class="tag tag-lime">80%</span></td></tr></tbody></table></div>
+        <div class="tbl-section"><table><thead><tr><th>Class</th><th>Instructor</th><th>Capacity</th><th style="color:var(--lav)">Trials</th><th style="color:var(--lime)">Full</th><th style="color:var(--amber)">Drop-ins</th><th>Total</th><th>Fill %</th></tr></thead><tbody><tr><td>Level 1 — Mon 5:30pm</td><td>Chloe</td><td>12</td><td style="color:var(--lav)">3</td><td style="color:var(--lime)">8</td><td style="color:var(--amber)">1</td><td>12</td><td><span class="tag tag-red">100%</span></td></tr><tr><td>Level 2 — Mon 6:30pm</td><td>Chloe</td><td>10</td><td style="color:var(--lav)">2</td><td style="color:var(--lime)">7</td><td style="color:var(--amber)">0</td><td>9</td><td><span class="tag tag-lime">90%</span></td></tr><tr><td>High Tricks — Mon 7:30pm</td><td>Mimi</td><td>10</td><td style="color:var(--lav)">0</td><td style="color:var(--lime)">8</td><td style="color:var(--amber)">0</td><td>8</td><td><span class="tag tag-lime">80%</span></td></tr></tbody></table></div>
       </div>
       <div id="rep-financial" class="subscreen">
         <div class="kpi-grid" style="margin-bottom:24px;">
@@ -1628,12 +1640,12 @@ tr.clickable-row:hover td { background: #141414; }
         <table>
           <thead><tr><th>Name</th><th>Email</th><th>Source</th><th>Enquiry Date</th><th>Status</th><th>Last Contact</th><th>Assigned To</th><th>Actions</th></tr></thead>
           <tbody id="leads-tbody">
-            <tr data-status="new"><td>Zoe Clarke</td><td style="color:var(--grey)">zoe@email.com</td><td>Instagram</td><td style="color:var(--grey)">10 May</td><td><span class="tag tag-lav">New Enquiry</span></td><td>—</td><td>Allysha</td><td><button class="btn btn-ghost btn-xs" onclick="openLeadModal('Zoe Clarke')">View</button> <button class="btn btn-lime btn-xs" onclick="openModal('modal-send-followup')">Follow Up</button></td></tr>
+            <tr data-status="new"><td>Zoe Clarke</td><td style="color:var(--grey)">zoe@email.com</td><td>Instagram</td><td style="color:var(--grey)">10 May</td><td><span class="tag tag-lav">New Enquiry</span></td><td>—</td><td>Mimi</td><td><button class="btn btn-ghost btn-xs" onclick="openLeadModal('Zoe Clarke')">View</button> <button class="btn btn-lime btn-xs" onclick="openModal('modal-send-followup')">Follow Up</button></td></tr>
             <tr data-status="trial"><td>Emma Davis</td><td style="color:var(--grey)">emma@email.com</td><td>Google</td><td style="color:var(--grey)">8 May</td><td><span class="tag tag-amber">Trial Booked</span></td><td>8 May</td><td>Chloe</td><td><button class="btn btn-ghost btn-xs" onclick="openLeadModal('Emma Davis')">View</button> <button class="btn btn-lime btn-xs">Enroll</button></td></tr>
-            <tr data-status="followup"><td>Priya Nair</td><td style="color:var(--grey)">priya@email.com</td><td>Referral</td><td style="color:var(--grey)">5 May</td><td><span class="tag tag-red">Follow-up Needed</span></td><td>5 May</td><td>Allysha</td><td><button class="btn btn-ghost btn-xs">View</button> <button class="btn btn-lime btn-xs" onclick="openModal('modal-send-followup')">Follow Up</button></td></tr>
-            <tr data-status="followup"><td>Lena Wu</td><td style="color:var(--grey)">lena@email.com</td><td>Website</td><td style="color:var(--grey)">3 May</td><td><span class="tag tag-red">Follow-up Needed</span></td><td>3 May</td><td>Allysha</td><td><button class="btn btn-ghost btn-xs">View</button> <button class="btn btn-lime btn-xs" onclick="openModal('modal-send-followup')">Follow Up</button></td></tr>
+            <tr data-status="followup"><td>Priya Nair</td><td style="color:var(--grey)">priya@email.com</td><td>Referral</td><td style="color:var(--grey)">5 May</td><td><span class="tag tag-red">Follow-up Needed</span></td><td>5 May</td><td>Mimi</td><td><button class="btn btn-ghost btn-xs">View</button> <button class="btn btn-lime btn-xs" onclick="openModal('modal-send-followup')">Follow Up</button></td></tr>
+            <tr data-status="followup"><td>Lena Wu</td><td style="color:var(--grey)">lena@email.com</td><td>Website</td><td style="color:var(--grey)">3 May</td><td><span class="tag tag-red">Follow-up Needed</span></td><td>3 May</td><td>Mimi</td><td><button class="btn btn-ghost btn-xs">View</button> <button class="btn btn-lime btn-xs" onclick="openModal('modal-send-followup')">Follow Up</button></td></tr>
             <tr data-status="trial"><td>Bianca Ross</td><td style="color:var(--grey)">bianca@email.com</td><td>Instagram</td><td style="color:var(--grey)">1 May</td><td><span class="tag tag-amber">Trial Completed</span></td><td>1 May</td><td>Mia</td><td><button class="btn btn-ghost btn-xs">View</button> <button class="btn btn-lime btn-xs">Enroll</button></td></tr>
-            <tr data-status="cold"><td>Tara Lin</td><td style="color:var(--grey)">tara@email.com</td><td>Facebook</td><td style="color:var(--grey)">15 Apr</td><td><span class="tag tag-grey">Cold</span></td><td>22 Apr</td><td>Allysha</td><td><button class="btn btn-ghost btn-xs">View</button> <button class="btn btn-ghost btn-xs">Re-engage</button></td></tr>
+            <tr data-status="cold"><td>Tara Lin</td><td style="color:var(--grey)">tara@email.com</td><td>Facebook</td><td style="color:var(--grey)">15 Apr</td><td><span class="tag tag-grey">Cold</span></td><td>22 Apr</td><td>Mimi</td><td><button class="btn btn-ghost btn-xs">View</button> <button class="btn btn-ghost btn-xs">Re-engage</button></td></tr>
           </tbody>
         </table>
       </div>
@@ -1708,7 +1720,7 @@ tr.clickable-row:hover td { background: #141414; }
       <div id="mkt-mailchimp" class="subscreen active">
         <div class="section" style="padding:18px 20px;margin-bottom:16px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;"><div style="font-family:'Archivo Black',sans-serif;font-size:14px;">Mailchimp Connection</div><span class="tag tag-lime">Connected ✓</span></div>
-          <div class="info-row"><div class="info-label">Account</div><div class="info-val">Duality Pole — allysha@dualitypole.com.au</div></div>
+          <div class="info-row"><div class="info-label">Account</div><div class="info-val">Duality Pole — mimi@dualitypole.com.au</div></div>
           <div class="info-row"><div class="info-label">Audience</div><div class="info-val">Duality Pole Students (94 contacts)</div></div>
           <div class="info-row"><div class="info-label">Last Sync</div><div class="info-val" style="color:var(--grey)">11 May 2026, 9:02am</div></div>
           <div style="display:flex;gap:8px;margin-top:14px;"><button class="btn btn-lime btn-sm" onclick="alert('Syncing…')">Sync Now</button><button class="btn btn-ghost btn-sm">Reconnect</button></div>
@@ -1762,7 +1774,7 @@ tr.clickable-row:hover td { background: #141414; }
     <div class="field"><label>Class Name</label><input type="text" value="Level 2" /></div>
     <div class="field-row"><div class="field"><label>Type</label><select><option>Level</option><option>Dance Style</option><option>Workshop</option></select></div><div class="field"><label>Studio</label><select><option>The Box</option><option>Rhapsody</option></select></div></div>
     <div class="field-row"><div class="field"><label>Day</label><select><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select></div><div class="field"><label>Time</label><input type="time" value="18:30" /></div></div>
-    <div class="field-row"><div class="field"><label>Instructor</label><select><option>Chloe</option><option>Mia</option><option>Allysha</option><option>Jade</option></select></div><div class="field"><label>Capacity</label><input type="number" value="15" /></div></div>
+    <div class="field-row"><div class="field"><label>Instructor</label><select><option>Chloe</option><option>Mia</option><option>Mimi</option><option>Jade</option></select></div><div class="field"><label>Capacity</label><input type="number" value="15" /></div></div>
     <div class="field"><label>Notes</label><textarea>Advanced spinning pole techniques.</textarea></div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-class')">Cancel</button><button class="btn btn-lime">Save Class</button></div>
   </div>
@@ -2080,7 +2092,7 @@ const _searchData = [
   {type:'student', name:'Dana Park', sub:'she/her · High Tricks · Owing', action:()=>alert('Dana Park profile')},
   {type:'class', name:'Level 1 · Mon 5:30pm', sub:'Chloe · The Box · 10/12', action:()=>openAttendanceRegister('Level 1','5:30pm','Chloe','The Box')},
   {type:'class', name:'Level 2 · Mon 6:30pm', sub:'Chloe · The Box · 15/15 FULL', action:()=>openAttendanceRegister('Level 2','6:30pm','Chloe','The Box')},
-  {type:'class', name:'High Tricks · Mon 7:30pm', sub:'Allysha · The Box · 8/10', action:()=>openAttendanceRegister('High Tricks','7:30pm','Allysha','The Box')},
+  {type:'class', name:'High Tricks · Mon 7:30pm', sub:'Mimi · The Box · 8/10', action:()=>openAttendanceRegister('High Tricks','7:30pm','Mimi','The Box')},
   {type:'class', name:'Sensual Flow · Fri 6:00pm', sub:'Mia · Rhapsody · 8/10', action:()=>openAttendanceRegister('Sensual Flow','6:00pm','Mia','Rhapsody')},
   {type:'invoice', name:'Jess Malone — $120 owing', sub:'Season 3 Level 2 · Due 15 May', action:()=>showScreen('billing')},
   {type:'invoice', name:'Kylie Rhodes — $95 owing', sub:'Season 3 + no-show fees · Overdue', action:()=>showScreen('billing')},
