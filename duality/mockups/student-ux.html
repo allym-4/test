@@ -3,473 +3,529 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Duality — Student App Mockup</title>
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@300;400;500&display=swap" rel="stylesheet" />
+<title>Duality - Student App Mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --black:   #000000;
-    --white:   #FFFFFF;
-    --lime:    #DBFF00;
-    --lav:     #CDA5FF;
-    --lilac:   #E9BAFF;
-    --grey:    #949494;
-    --dark:    #111111;
-    --mid:     #1A1A1A;
-    --card:    #141414;
+    --black:  #000000;
+    --white:  #FFFFFF;
+    --lime:   #DBFF00;
+    --lav:    #CDA5FF;
+    --lilac:  #E9BAFF;
+    --grey:   #949494;
+    --dark:   #111111;
+    --mid:    #1A1A1A;
+    --card:   #141414;
+    --border: #1f1f1f;
   }
 
   body {
     background: var(--black);
     color: var(--white);
     font-family: 'Archivo', sans-serif;
-    font-weight: 300;
+    font-weight: 400;
+    font-size: 15px;
     min-height: 100vh;
     overflow-x: hidden;
   }
 
   h1, h2, h3, .black { font-family: 'Archivo Black', sans-serif; font-weight: 900; }
 
-  /* ── SHELL ── */
-  .shell {
-    display: flex;
-    height: 100vh;
-    max-width: 1280px;
-    margin: 0 auto;
-  }
+  /* SHELL */
+  .shell { display: flex; height: 100vh; max-width: 1360px; margin: 0 auto; }
 
-  /* ── SIDEBAR NAV ── */
+  /* SIDEBAR */
   .sidebar {
-    width: 220px;
-    min-width: 220px;
+    width: 230px; min-width: 230px;
     background: var(--dark);
-    border-right: 1px solid #1f1f1f;
-    display: flex;
-    flex-direction: column;
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
     padding: 32px 0;
-    position: fixed;
-    top: 0; left: 0;
-    height: 100vh;
-    z-index: 100;
+    position: fixed; top: 0; left: 0;
+    height: 100vh; z-index: 100;
   }
-
   .sidebar-logo {
     font-family: 'Archivo Black', sans-serif;
-    font-size: 22px;
-    letter-spacing: 2px;
-    color: var(--lime);
-    padding: 0 28px 36px;
+    font-size: 23px; letter-spacing: 2px;
+    color: var(--lime); padding: 0 28px 36px;
     text-transform: uppercase;
   }
   .sidebar-logo span { color: var(--white); }
-
   .nav-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 13px 28px;
-    color: var(--grey);
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 400;
-    letter-spacing: 0.3px;
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 28px; color: var(--grey);
+    cursor: pointer; font-size: 15px; font-weight: 400;
     transition: all 0.15s;
-    border-left: 3px solid transparent;
-    user-select: none;
+    border-left: 3px solid transparent; user-select: none;
   }
   .nav-item:hover { color: var(--white); background: #1a1a1a; }
   .nav-item.active { color: var(--lime); border-left-color: var(--lime); background: #0f1600; }
-  .nav-icon { font-size: 17px; width: 20px; text-align: center; }
-
-  .nav-divider { height: 1px; background: #1f1f1f; margin: 16px 28px; }
-
+  .nav-icon { font-size: 17px; width: 22px; text-align: center; }
+  .nav-badge {
+    margin-left: auto; background: var(--lime); color: var(--black);
+    font-family: 'Archivo Black', sans-serif; font-size: 11px;
+    padding: 2px 7px; border-radius: 10px; min-width: 20px; text-align: center;
+  }
+  .nav-divider { height: 1px; background: var(--border); margin: 16px 28px; }
   .sidebar-user {
-    margin-top: auto;
-    padding: 20px 28px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    border-top: 1px solid #1f1f1f;
+    margin-top: auto; padding: 20px 28px;
+    display: flex; align-items: center; gap: 12px;
+    border-top: 1px solid var(--border);
   }
   .avatar {
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    background: var(--lav);
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Archivo Black', sans-serif;
-    font-size: 14px;
-    color: var(--black);
-    flex-shrink: 0;
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--lav); display: flex; align-items: center; justify-content: center;
+    font-family: 'Archivo Black', sans-serif; font-size: 15px;
+    color: var(--black); flex-shrink: 0;
   }
-  .avatar-info { flex: 1; min-width: 0; }
-  .avatar-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .avatar-level { font-size: 11px; color: var(--lav); }
+  .avatar-name { font-size: 14px; font-weight: 500; }
+  .avatar-level { font-size: 12px; color: var(--lav); margin-top: 2px; }
 
-  /* ── MAIN ── */
-  .main {
-    margin-left: 220px;
-    flex: 1;
-    overflow-y: auto;
-    padding: 40px 44px;
-  }
-
+  /* MAIN */
+  .main { margin-left: 230px; flex: 1; overflow-y: auto; padding: 44px 48px; }
   .screen { display: none; }
   .screen.active { display: block; }
 
-  /* ── PAGE HEADER ── */
+  /* PAGE HEADER */
   .page-header { margin-bottom: 36px; }
-  .page-title { font-family: 'Archivo Black', sans-serif; font-size: 32px; line-height: 1.1; }
-  .page-subtitle { color: var(--grey); margin-top: 6px; font-size: 14px; }
+  .page-title { font-family: 'Archivo Black', sans-serif; font-size: 34px; line-height: 1.1; }
+  .page-subtitle { color: var(--grey); margin-top: 8px; font-size: 15px; }
 
-  /* ── CARDS ── */
-  .card {
-    background: var(--card);
-    border: 1px solid #1f1f1f;
-    border-radius: 12px;
-    padding: 24px;
+  /* ENROLLED SUMMARY */
+  .enrolled-summary {
+    font-size: 15px; color: var(--grey); margin-top: 10px; line-height: 1.7;
   }
-  .card-sm { padding: 16px 20px; }
+  .enrolled-summary strong { color: var(--white); font-weight: 500; }
 
-  /* ── TAGS ── */
+  /* CARDS */
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+
+  /* TAGS */
   .tag {
     display: inline-flex; align-items: center;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.3px;
-    text-transform: uppercase;
+    padding: 4px 11px; border-radius: 20px;
+    font-size: 12px; font-weight: 500;
+    letter-spacing: 0.2px; text-transform: uppercase;
   }
-  .tag-lime { background: #0f1600; color: var(--lime); border: 1px solid var(--lime); }
-  .tag-lav  { background: #1a1028; color: var(--lav);  border: 1px solid var(--lav); }
-  .tag-grey { background: #1a1a1a; color: var(--grey); border: 1px solid #333; }
+  .tag-lime  { background: #0f1600; color: var(--lime);  border: 1px solid var(--lime); }
+  .tag-lav   { background: #1a1028; color: var(--lav);   border: 1px solid var(--lav); }
+  .tag-grey  { background: #1a1a1a; color: var(--grey);  border: 1px solid #333; }
   .tag-white { background: #1a1a1a; color: var(--white); border: 1px solid #333; }
+  .tag-red   { background: #1a0000; color: #ff6b6b;      border: 1px solid #ff6b6b; }
+  .tag-amber { background: #1a0f00; color: #ffaa44;      border: 1px solid #ffaa44; }
 
-  /* ── BUTTONS ── */
+  /* BUTTONS */
   .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    padding: 12px 24px;
-    border-radius: 8px;
+    padding: 13px 26px; border-radius: 8px;
     font-family: 'Archivo Black', sans-serif;
-    font-size: 13px;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    cursor: pointer;
-    border: none;
-    transition: all 0.15s;
-    user-select: none;
+    font-size: 13px; letter-spacing: 0.5px;
+    text-transform: uppercase; cursor: pointer;
+    border: none; transition: all 0.15s; user-select: none;
   }
-  .btn-lime { background: var(--lime); color: var(--black); }
+  .btn-lime    { background: var(--lime); color: var(--black); }
   .btn-lime:hover { background: #c8f000; }
   .btn-outline { background: transparent; color: var(--white); border: 1px solid #333; }
   .btn-outline:hover { border-color: var(--white); }
-  .btn-lav { background: var(--lav); color: var(--black); }
-  .btn-sm { padding: 8px 16px; font-size: 11px; }
-  .btn-ghost { background: transparent; color: var(--grey); border: 1px solid #222; }
+  .btn-lav     { background: var(--lav); color: var(--black); }
+  .btn-red     { background: #ff6b6b; color: var(--black); }
+  .btn-sm      { padding: 9px 18px; font-size: 12px; }
+  .btn-ghost   { background: transparent; color: var(--grey); border: 1px solid #222; }
   .btn-ghost:hover { color: var(--white); border-color: #444; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-  /* ── TABS ── */
+  /* TABS */
   .tabs { display: flex; gap: 4px; background: var(--dark); border-radius: 10px; padding: 4px; margin-bottom: 32px; }
   .tab {
-    flex: 1; padding: 10px 16px; border-radius: 7px;
-    font-size: 13px; font-weight: 500; text-align: center;
-    cursor: pointer; color: var(--grey); transition: all 0.15s;
-    user-select: none;
+    flex: 1; padding: 11px 16px; border-radius: 7px;
+    font-size: 14px; font-weight: 500; text-align: center;
+    cursor: pointer; color: var(--grey); transition: all 0.15s; user-select: none;
   }
   .tab.active { background: var(--black); color: var(--white); }
   .tab:hover:not(.active) { color: var(--white); }
 
-  /* ── GRID ── */
+  /* GRID */
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
 
-  /* ── STAT CARDS ── */
-  .stat { background: var(--card); border: 1px solid #1f1f1f; border-radius: 12px; padding: 20px 24px; }
-  .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--grey); margin-bottom: 8px; }
-  .stat-value { font-family: 'Archivo Black', sans-serif; font-size: 28px; }
-  .stat-sub { font-size: 12px; color: var(--grey); margin-top: 4px; }
+  /* STAT CARDS */
+  .stat { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 22px 26px; }
+  .stat-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--grey); margin-bottom: 10px; }
+  .stat-value { font-family: 'Archivo Black', sans-serif; font-size: 30px; }
+  .stat-sub { font-size: 13px; color: var(--grey); margin-top: 5px; }
   .stat-lime .stat-value { color: var(--lime); }
-  .stat-lav .stat-value { color: var(--lav); }
+  .stat-lav  .stat-value { color: var(--lav); }
 
-  /* ── CLASS CARD ── */
+  /* CLASS CARDS (season browser) */
   .class-card {
-    background: var(--card);
-    border: 1px solid #1f1f1f;
-    border-radius: 12px;
-    padding: 20px;
-    cursor: pointer;
-    transition: all 0.15s;
-    position: relative;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px; cursor: pointer;
+    transition: all 0.15s; position: relative;
   }
   .class-card:hover { border-color: #333; background: #1a1a1a; }
   .class-card.selected { border-color: var(--lime); background: #0d1200; }
-  .class-card.selected .check { opacity: 1; }
+  .class-card.locked { opacity: 0.35; cursor: not-allowed; }
+  .class-card.locked:hover { border-color: var(--border); background: var(--card); }
   .check {
     position: absolute; top: 16px; right: 16px;
-    width: 24px; height: 24px; border-radius: 50%;
+    width: 26px; height: 26px; border-radius: 50%;
     background: var(--lime); color: var(--black);
     display: flex; align-items: center; justify-content: center;
     font-size: 13px; opacity: 0; transition: opacity 0.15s;
   }
-  .class-day { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--grey); margin-bottom: 6px; }
-  .class-name { font-family: 'Archivo Black', sans-serif; font-size: 17px; margin-bottom: 8px; }
-  .class-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
-  .class-instructor { font-size: 12px; color: var(--grey); margin-top: 8px; }
-  .class-spots { font-size: 12px; color: var(--grey); }
-  .spots-low { color: #ff9500; }
+  .class-card.selected .check { opacity: 1; }
+  .class-day  { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--grey); margin-bottom: 7px; }
+  .class-name { font-family: 'Archivo Black', sans-serif; font-size: 18px; margin-bottom: 10px; }
+  .class-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .class-instructor { font-size: 13px; color: var(--grey); }
 
-  /* ── FILTERS ── */
-  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+  /* FILTERS */
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 26px; }
   .filter-btn {
-    padding: 7px 14px; border-radius: 20px;
-    font-size: 12px; cursor: pointer; border: 1px solid #2a2a2a;
-    background: transparent; color: var(--grey); transition: all 0.15s;
-    user-select: none;
+    padding: 8px 16px; border-radius: 20px;
+    font-size: 13px; cursor: pointer; border: 1px solid #2a2a2a;
+    background: transparent; color: var(--grey); transition: all 0.15s; user-select: none;
   }
   .filter-btn:hover { border-color: #444; color: var(--white); }
   .filter-btn.active { border-color: var(--lime); color: var(--lime); background: #0f1600; }
 
-  /* ── CART SIDEBAR ── */
-  .booking-layout { display: grid; grid-template-columns: 1fr 320px; gap: 28px; align-items: start; }
+  /* CART */
+  .booking-layout { display: grid; grid-template-columns: 1fr 340px; gap: 28px; align-items: start; }
   .cart {
-    background: var(--dark);
-    border: 1px solid #1f1f1f;
-    border-radius: 14px;
-    padding: 24px;
-    position: sticky;
-    top: 0;
+    background: var(--dark); border: 1px solid var(--border);
+    border-radius: 14px; padding: 26px;
+    position: sticky; top: 0;
   }
-  .cart-title { font-family: 'Archivo Black', sans-serif; font-size: 16px; margin-bottom: 20px; }
-  .cart-empty { color: var(--grey); font-size: 13px; text-align: center; padding: 24px 0; }
-  .cart-item { padding: 12px 0; border-bottom: 1px solid #1f1f1f; }
+  .cart-title { font-family: 'Archivo Black', sans-serif; font-size: 17px; margin-bottom: 22px; }
+  .cart-empty { color: var(--grey); font-size: 14px; text-align: center; padding: 24px 0; line-height: 1.6; }
+  .cart-item { padding: 13px 0; border-bottom: 1px solid var(--border); }
   .cart-item:last-child { border-bottom: none; }
-  .cart-item-name { font-size: 14px; font-weight: 500; }
-  .cart-item-meta { font-size: 12px; color: var(--grey); margin-top: 3px; }
-  .cart-item-remove { font-size: 11px; color: var(--grey); cursor: pointer; margin-top: 4px; display: inline-block; }
-  .cart-item-remove:hover { color: #ff5555; }
-
+  .cart-item-name { font-size: 15px; font-weight: 500; }
+  .cart-item-meta { font-size: 13px; color: var(--grey); margin-top: 3px; }
+  .cart-item-remove { font-size: 12px; color: var(--grey); cursor: pointer; margin-top: 5px; display: inline-block; }
+  .cart-item-remove:hover { color: #ff6b6b; }
   .cart-discount {
-    margin: 16px 0;
-    background: #0f1600;
-    border: 1px solid var(--lime);
-    border-radius: 8px;
-    padding: 12px 14px;
+    margin: 18px 0; background: #0f1600;
+    border: 1px solid var(--lime); border-radius: 8px; padding: 14px 16px;
   }
-  .cart-discount-label { font-size: 11px; color: var(--lime); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-  .cart-discount-value { font-family: 'Archivo Black', sans-serif; font-size: 20px; color: var(--lime); }
-  .cart-discount-sub { font-size: 11px; color: var(--grey); margin-top: 2px; }
-
+  .cart-discount-label { font-size: 12px; color: var(--lime); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+  .cart-discount-value { font-family: 'Archivo Black', sans-serif; font-size: 22px; color: var(--lime); }
+  .cart-discount-sub { font-size: 12px; color: var(--grey); margin-top: 3px; }
   .cart-perks { margin: 14px 0; }
-  .perk { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--grey); padding: 4px 0; }
+  .perk { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--grey); padding: 5px 0; }
   .perk-icon { color: var(--lime); }
+  .cart-total { border-top: 1px solid var(--border); padding-top: 18px; margin-top: 10px; }
+  .cart-total-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--grey); margin-bottom: 7px; }
+  .cart-total-row.main { color: var(--white); font-family: 'Archivo Black', sans-serif; font-size: 20px; margin-top: 10px; }
 
-  .cart-total { border-top: 1px solid #1f1f1f; padding-top: 16px; margin-top: 8px; }
-  .cart-total-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--grey); margin-bottom: 6px; }
-  .cart-total-row.main { color: var(--white); font-family: 'Archivo Black', sans-serif; font-size: 18px; margin-top: 8px; }
-
-  /* ── UPCOMING CLASS ROW ── */
+  /* CLASS ROWS */
   .class-row {
     display: flex; align-items: center; gap: 16px;
-    padding: 16px 20px;
-    background: var(--card);
-    border: 1px solid #1f1f1f;
-    border-radius: 10px;
-    margin-bottom: 10px;
-    transition: border-color 0.15s;
+    padding: 17px 22px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 10px;
+    margin-bottom: 10px; transition: border-color 0.15s;
   }
   .class-row:hover { border-color: #2a2a2a; }
-  .class-row-date { text-align: center; min-width: 44px; }
-  .class-row-day { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--grey); }
-  .class-row-num { font-family: 'Archivo Black', sans-serif; font-size: 22px; color: var(--lime); line-height: 1; }
-  .class-row-divider { width: 1px; height: 40px; background: #222; }
+  .class-row-date { text-align: center; min-width: 46px; }
+  .class-row-day { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--grey); }
+  .class-row-num { font-family: 'Archivo Black', sans-serif; font-size: 24px; color: var(--lime); line-height: 1; }
+  .class-row-divider { width: 1px; height: 42px; background: #222; flex-shrink: 0; }
   .class-row-info { flex: 1; }
   .class-row-name { font-weight: 500; font-size: 15px; }
-  .class-row-meta { font-size: 12px; color: var(--grey); margin-top: 3px; }
-  .class-row-actions { display: flex; gap: 8px; }
+  .class-row-meta { font-size: 13px; color: var(--grey); margin-top: 4px; }
+  .class-row-actions { display: flex; gap: 8px; flex-shrink: 0; }
 
-  /* ── PROGRESS / TRICKS ── */
-  .level-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 16px;
-  }
-  .level-title { font-family: 'Archivo Black', sans-serif; font-size: 18px; }
-  .progress-bar-wrap { background: #1a1a1a; border-radius: 4px; height: 6px; margin-bottom: 20px; overflow: hidden; }
-  .progress-bar-fill { height: 100%; border-radius: 4px; background: var(--lime); transition: width 0.4s; }
-
-  .trick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 28px; }
+  /* PROGRESS */
+  .progress-bar-wrap { background: #1a1a1a; border-radius: 4px; height: 7px; margin-bottom: 22px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; border-radius: 4px; background: var(--lime); }
+  .trick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 10px; margin-bottom: 30px; }
   .trick {
-    background: var(--card);
-    border: 1px solid #1f1f1f;
-    border-radius: 10px;
-    padding: 14px;
-    text-align: center;
-    transition: all 0.15s;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px; text-align: center; transition: all 0.15s;
   }
   .trick.unlocked { border-color: var(--lime); background: #0d1200; }
-  .trick.locked { opacity: 0.45; }
-  .trick-icon { font-size: 24px; margin-bottom: 8px; }
-  .trick-name { font-size: 12px; font-weight: 500; }
-  .trick-status { font-size: 10px; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .trick.in-progress { border-color: var(--lav); background: #130e1e; }
+  .trick.locked { opacity: 0.4; }
+  .trick-icon { font-size: 26px; margin-bottom: 9px; }
+  .trick-name { font-size: 13px; font-weight: 500; line-height: 1.3; }
+  .trick-status { font-size: 11px; margin-top: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
   .trick.unlocked .trick-status { color: var(--lime); }
+  .trick.in-progress .trick-status { color: var(--lav); }
   .trick.locked .trick-status { color: var(--grey); }
 
-  /* ── CREDIT BADGE ── */
+  /* CREDIT BADGE */
   .credit-badge {
-    background: #1a1028;
-    border: 1px solid var(--lav);
-    border-radius: 10px;
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 20px;
+    background: #1a1028; border: 1px solid var(--lav);
+    border-radius: 10px; padding: 18px 22px;
+    display: flex; align-items: center; gap: 16px; margin-bottom: 22px;
   }
-  .credit-count { font-family: 'Archivo Black', sans-serif; font-size: 32px; color: var(--lav); }
-  .credit-label { font-size: 13px; color: var(--white); }
-  .credit-sub { font-size: 11px; color: var(--grey); margin-top: 2px; }
+  .credit-count { font-family: 'Archivo Black', sans-serif; font-size: 34px; color: var(--lav); }
+  .credit-label { font-size: 14px; color: var(--white); }
+  .credit-sub { font-size: 12px; color: var(--grey); margin-top: 3px; }
 
-  /* ── CASUAL CLASS ROW ── */
+  /* CASUAL ROWS */
   .casual-row {
     display: flex; align-items: center;
-    background: var(--card); border: 1px solid #1f1f1f;
-    border-radius: 10px; padding: 16px 20px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 17px 22px;
     margin-bottom: 10px; gap: 16px;
-    transition: border-color 0.15s;
-    cursor: pointer;
+    transition: border-color 0.15s; cursor: pointer;
   }
   .casual-row:hover { border-color: #333; }
-  .casual-row.has-credit { border-color: #2a1f3d; }
-  .casual-date { min-width: 50px; text-align: center; }
-  .casual-date-day { font-size: 10px; text-transform: uppercase; color: var(--grey); }
-  .casual-date-num { font-family: 'Archivo Black', sans-serif; font-size: 22px; color: var(--white); line-height: 1.1; }
+  .casual-row.has-credit { border-left: 3px solid var(--lav); }
+  .casual-row.ineligible { opacity: 0.3; cursor: not-allowed; }
+  .casual-row.ineligible:hover { border-color: var(--border); }
+  .casual-date { min-width: 52px; text-align: center; }
+  .casual-date-day { font-size: 11px; text-transform: uppercase; color: var(--grey); }
+  .casual-date-num { font-family: 'Archivo Black', sans-serif; font-size: 24px; color: var(--white); line-height: 1.1; }
   .casual-info { flex: 1; }
   .casual-name { font-size: 15px; font-weight: 500; }
-  .casual-meta { font-size: 12px; color: var(--grey); margin-top: 3px; }
-  .casual-price { text-align: right; }
-  .casual-price-main { font-family: 'Archivo Black', sans-serif; font-size: 16px; }
-  .casual-price-credit { font-size: 11px; color: var(--lav); }
-  .casual-price-full { font-size: 11px; color: var(--grey); text-decoration: line-through; }
+  .casual-meta { font-size: 13px; color: var(--grey); margin-top: 4px; }
+  .casual-price { text-align: right; flex-shrink: 0; }
+  .casual-price-main { font-family: 'Archivo Black', sans-serif; font-size: 17px; }
+  .casual-price-credit { font-size: 12px; color: var(--lav); }
+  .casual-price-full { font-size: 12px; color: var(--grey); text-decoration: line-through; }
 
-  /* ── NOTIFICATION DOT ── */
-  .notif-dot { width: 7px; height: 7px; background: var(--lime); border-radius: 50%; display: inline-block; }
+  /* NOTIFICATION ITEMS */
+  .notif-item {
+    display: flex; gap: 16px; align-items: flex-start;
+    padding: 18px 22px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px;
+  }
+  .notif-item.unread { border-left: 3px solid var(--lime); }
+  .notif-item.unread-lav { border-left: 3px solid var(--lav); }
+  .notif-dot-circle {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0; margin-top: 2px;
+  }
+  .notif-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+  .notif-body { font-size: 13px; color: var(--grey); line-height: 1.6; }
+  .notif-time { font-size: 11px; color: var(--grey); margin-top: 6px; }
 
-  /* ── SECTION LABEL ── */
-  .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--grey); margin-bottom: 14px; }
+  /* FORMS */
+  .form-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 22px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px;
+  }
+  .form-item.urgent { border-left: 3px solid var(--lime); }
+  .form-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+  .form-meta { font-size: 13px; color: var(--grey); }
 
-  /* ── DIVIDER ── */
-  .divider { height: 1px; background: #1a1a1a; margin: 28px 0; }
+  /* RESOURCE ITEMS */
+  .resource-item {
+    display: flex; align-items: center; gap: 16px;
+    padding: 18px 22px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px;
+    cursor: pointer; transition: border-color 0.15s;
+  }
+  .resource-item:hover { border-color: #333; }
+  .resource-item.locked-res { opacity: 0.4; cursor: not-allowed; }
+  .resource-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
 
-  /* ── MODAL OVERLAY ── */
+  /* ACCOUNT */
+  .account-field { margin-bottom: 22px; }
+  .account-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--grey); margin-bottom: 8px; }
+  .account-value {
+    background: #0a0a0a; border: 1px solid #2a2a2a;
+    border-radius: 8px; padding: 13px 16px; font-size: 15px; color: var(--white);
+  }
+  .account-value input {
+    width: 100%; background: transparent; border: none;
+    color: var(--white); font-family: 'Archivo', sans-serif; font-size: 15px; outline: none;
+  }
+
+  /* MODAL */
   .modal-overlay {
-    display: none;
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.85);
-    z-index: 200;
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.88); z-index: 200;
     align-items: center; justify-content: center;
   }
   .modal-overlay.open { display: flex; }
   .modal {
-    background: var(--dark);
-    border: 1px solid #2a2a2a;
-    border-radius: 16px;
-    padding: 36px;
-    max-width: 480px;
-    width: 90%;
+    background: var(--dark); border: 1px solid #2a2a2a;
+    border-radius: 16px; padding: 38px;
+    max-width: 500px; width: 92%; max-height: 90vh; overflow-y: auto;
   }
-  .modal-title { font-family: 'Archivo Black', sans-serif; font-size: 22px; margin-bottom: 8px; }
-  .modal-sub { color: var(--grey); font-size: 14px; margin-bottom: 24px; }
+  .modal-title { font-family: 'Archivo Black', sans-serif; font-size: 24px; margin-bottom: 8px; }
+  .modal-sub { color: var(--grey); font-size: 15px; margin-bottom: 26px; line-height: 1.6; }
   .modal-actions { display: flex; gap: 12px; margin-top: 28px; }
 
-  /* ── STRIPE MOCK ── */
-  .stripe-field { margin-bottom: 16px; }
-  .stripe-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--grey); margin-bottom: 6px; }
+  /* PAYMENT OPTIONS */
+  .pay-option {
+    border: 2px solid var(--border); border-radius: 12px;
+    padding: 18px 20px; margin-bottom: 12px; cursor: pointer;
+    transition: all 0.15s; position: relative;
+  }
+  .pay-option:hover { border-color: #444; }
+  .pay-option.selected { border-color: var(--lime); background: #0d1200; }
+  .pay-option-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+  .pay-option-title { font-size: 15px; font-weight: 600; }
+  .pay-option-price { font-family: 'Archivo Black', sans-serif; font-size: 18px; color: var(--lime); }
+  .pay-option-desc { font-size: 13px; color: var(--grey); line-height: 1.5; }
+  .pay-radio {
+    position: absolute; top: 18px; right: 20px;
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 2px solid #444; background: transparent;
+    transition: all 0.15s;
+  }
+  .pay-option.selected .pay-radio { border-color: var(--lime); background: var(--lime); }
+
+  /* STRIPE FIELDS */
+  .stripe-field { margin-bottom: 18px; }
+  .stripe-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--grey); margin-bottom: 8px; }
   .stripe-input {
     width: 100%; background: #0a0a0a; border: 1px solid #2a2a2a;
-    border-radius: 8px; padding: 12px 14px; color: var(--white);
-    font-family: 'Archivo', sans-serif; font-size: 14px;
+    border-radius: 8px; padding: 13px 16px; color: var(--white);
+    font-family: 'Archivo', sans-serif; font-size: 15px;
   }
   .stripe-input:focus { outline: none; border-color: var(--lime); }
   .stripe-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-  /* ── HELPER ── */
+  /* SECTION LABEL */
+  .section-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--grey); margin-bottom: 14px; }
+
+  /* DIVIDER */
+  .divider { height: 1px; background: #1a1a1a; margin: 30px 0; }
+
+  /* BANNER */
+  .banner {
+    border-radius: 10px; padding: 14px 18px;
+    font-size: 14px; margin-bottom: 22px; line-height: 1.6;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .banner-lime { background: #0f1600; border: 1px solid var(--lime); color: var(--lime); }
+  .banner-amber { background: #1a0f00; border: 1px solid #ffaa44; color: #ffaa44; }
+  .banner-lav { background: #1a1028; border: 1px solid var(--lav); color: var(--lav); }
+
+  /* HELPERS */
   .mt-8  { margin-top: 8px; }
   .mt-16 { margin-top: 16px; }
   .mt-24 { margin-top: 24px; }
+  .mt-32 { margin-top: 32px; }
   .mb-8  { margin-bottom: 8px; }
   .mb-16 { margin-bottom: 16px; }
   .mb-24 { margin-bottom: 24px; }
   .flex  { display: flex; }
   .items-center { align-items: center; }
   .justify-between { justify-content: space-between; }
-  .gap-8 { gap: 8px; }
+  .gap-8  { gap: 8px; }
   .gap-12 { gap: 12px; }
   .text-grey { color: var(--grey); }
   .text-lime { color: var(--lime); }
   .text-lav  { color: var(--lav); }
-  .text-sm { font-size: 13px; }
-  .text-xs { font-size: 11px; }
-
+  .text-sm   { font-size: 13px; }
+  .text-xs   { font-size: 12px; }
 </style>
 </head>
 <body>
 
 <div class="shell">
 
-  <!-- ── SIDEBAR ── -->
+  <!-- SIDEBAR -->
   <nav class="sidebar">
     <div class="sidebar-logo">Duality<span>.</span></div>
 
     <div class="nav-item active" onclick="showScreen('dashboard')">
-      <span class="nav-icon">◈</span> Dashboard
+      <span class="nav-icon">&#9670;</span> Dashboard
     </div>
     <div class="nav-item" onclick="showScreen('book'); showBookTab('season')">
-      <span class="nav-icon">＋</span> Book a Class
+      <span class="nav-icon">+</span> Book a Class
     </div>
     <div class="nav-item" onclick="showScreen('myclasses')">
-      <span class="nav-icon">◻</span> My Classes
+      <span class="nav-icon">&#9633;</span> My Classes
     </div>
     <div class="nav-item" onclick="showScreen('progress')">
-      <span class="nav-icon">◈</span> Progress
+      <span class="nav-icon">&#9651;</span> Progress
+    </div>
+    <div class="nav-item" onclick="showScreen('notifications')">
+      <span class="nav-icon">&#9711;</span> Notifications
+      <span class="nav-badge">3</span>
+    </div>
+    <div class="nav-item" onclick="showScreen('forms')">
+      <span class="nav-icon">&#9635;</span> Forms
+      <span class="nav-badge">1</span>
     </div>
 
     <div class="nav-divider"></div>
 
     <div class="nav-item" onclick="showScreen('chat')">
-      <span class="nav-icon">◯</span> Chat
-      <span class="notif-dot" style="margin-left:auto"></span>
+      <span class="nav-icon">&#9675;</span> Chat
     </div>
-    <div class="nav-item" onclick="">
-      <span class="nav-icon">◻</span> Account
+    <div class="nav-item" onclick="showScreen('account')">
+      <span class="nav-icon">&#9632;</span> Account
     </div>
 
     <div class="sidebar-user">
       <div class="avatar">J</div>
-      <div class="avatar-info">
+      <div>
         <div class="avatar-name">Jess M.</div>
         <div class="avatar-level">Level 2</div>
       </div>
     </div>
   </nav>
 
-  <!-- ── MAIN ── -->
   <main class="main">
 
-    <!-- ════════════════════════════════════════
-         DASHBOARD
-    ═════════════════════════════════════════ -->
+    <!-- ===================================================
+         DASHBOARD — toggle demo states at bottom of screen
+    =================================================== -->
     <div class="screen active" id="screen-dashboard">
-      <div class="page-header">
-        <div class="page-title">Hey Jess 👋</div>
-        <div class="page-subtitle">Season 3 is underway — Week 4 of 8</div>
+
+      <!-- Demo toggle (remove in real build) -->
+      <div style="background:#111;border:1px solid #222;border-radius:8px;padding:10px 16px;margin-bottom:28px;display:flex;align-items:center;gap:12px;font-size:13px;color:var(--grey)">
+        <span>Demo state:</span>
+        <button class="btn btn-ghost btn-sm" onclick="setDashState('enrolled-no-new-season')" style="font-size:11px">Enrolled, no new season yet</button>
+        <button class="btn btn-ghost btn-sm" onclick="setDashState('enrolled-new-season-open')" style="font-size:11px">Enrolled + Season 4 open</button>
+        <button class="btn btn-ghost btn-sm" onclick="setDashState('not-enrolled')" style="font-size:11px">Not enrolled</button>
       </div>
 
-      <!-- Stats row -->
-      <div class="grid-3 mb-24">
+      <!-- STATE: Season open CTA (shown when new season is open and student not yet booked) -->
+      <div id="dash-season-cta" style="display:none;background:var(--lime);border-radius:14px;padding:28px 32px;margin-bottom:32px;display:none">
+        <div style="font-family:'Archivo Black',sans-serif;font-size:26px;color:var(--black);margin-bottom:8px">Season 4 is now open for bookings</div>
+        <div style="font-size:15px;color:rgba(0,0,0,0.65);margin-bottom:22px;line-height:1.6">Season 4 runs 2 Jun - 25 Jul. Secure your spot before classes fill up - bookings close end of Week 3.</div>
+        <button class="btn" style="background:var(--black);color:var(--lime);font-size:14px" onclick="showScreen('book');showBookTab('season')">Book Season 4 now</button>
+      </div>
+
+      <!-- STATE: Not enrolled at all -->
+      <div id="dash-not-enrolled" style="display:none">
+        <div style="background:var(--dark);border:1px solid var(--border);border-radius:14px;padding:40px;text-align:center;margin-bottom:32px">
+          <div style="font-size:32px;margin-bottom:16px">&#9670;</div>
+          <div style="font-family:'Archivo Black',sans-serif;font-size:24px;margin-bottom:10px">You're not booked in yet</div>
+          <div style="font-size:15px;color:var(--grey);margin-bottom:26px;line-height:1.6;max-width:400px;margin-left:auto;margin-right:auto">
+            Ready to start your pole journey? Book a season, grab a trial class, or drop in casually.
+          </div>
+          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+            <button class="btn btn-lime" onclick="showScreen('book');showBookTab('season')">Book a season</button>
+            <button class="btn btn-outline" onclick="showScreen('book');showBookTab('casual')">Trial or casual class</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STATE: Enrolled view (normal dashboard) -->
+      <div id="dash-enrolled">
+
+      <div class="page-header">
+        <div class="page-title">Hey Jess</div>
+        <div class="enrolled-summary">
+          You're enrolled in <strong>Level 2, 6:30pm Mondays with Chloe</strong> and <strong>Dance, 6:30pm Fridays with Mimi.</strong>
+          Season 3 is underway - Week 4 of 8.
+        </div>
+      </div>
+
+      <div class="grid-4 mb-24">
         <div class="stat stat-lime">
           <div class="stat-label">Classes this season</div>
           <div class="stat-value">2</div>
-          <div class="stat-sub">Wed 6:30pm · Fri 7pm</div>
+          <div class="stat-sub">Mon + Fri</div>
         </div>
         <div class="stat stat-lav">
           <div class="stat-label">Catch-up credits</div>
@@ -481,22 +537,27 @@
           <div class="stat-value">14</div>
           <div class="stat-sub">of 22 in Level 2</div>
         </div>
+        <div class="stat">
+          <div class="stat-label">Weeks remaining</div>
+          <div class="stat-value">4</div>
+          <div class="stat-sub">Season ends 6 Jun</div>
+        </div>
       </div>
 
-      <!-- Upcoming -->
+      <!-- Classes this week -->
       <div class="section-label">This week</div>
       <div class="class-row">
         <div class="class-row-date">
-          <div class="class-row-day">Wed</div>
-          <div class="class-row-num">14</div>
+          <div class="class-row-day">Mon</div>
+          <div class="class-row-num">12</div>
         </div>
         <div class="class-row-divider"></div>
         <div class="class-row-info">
-          <div class="class-row-name">Level 2 — Studio A</div>
-          <div class="class-row-meta">6:30 pm · Mimi · 3 spots left</div>
+          <div class="class-row-name">Level 2 - Studio A</div>
+          <div class="class-row-meta">6:30pm - Chloe - 3 spots left</div>
         </div>
         <div class="class-row-actions">
-          <button class="btn btn-ghost btn-sm">Mark Away</button>
+          <button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Level 2','Mon 12 May, 6:30pm', true)">Mark Away</button>
         </div>
       </div>
       <div class="class-row">
@@ -506,40 +567,95 @@
         </div>
         <div class="class-row-divider"></div>
         <div class="class-row-info">
-          <div class="class-row-name">Kiki — Studio B</div>
-          <div class="class-row-meta">7:00 pm · Chloe · 8 spots left</div>
+          <div class="class-row-name">Dance - Studio B</div>
+          <div class="class-row-meta">6:30pm - Mimi - 8 spots left</div>
         </div>
         <div class="class-row-actions">
-          <button class="btn btn-ghost btn-sm">Mark Away</button>
+          <button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Dance','Fri 16 May, 6:30pm', true)">Mark Away</button>
         </div>
       </div>
 
       <div class="divider"></div>
 
-      <!-- Quick actions -->
-      <div class="section-label">Quick actions</div>
-      <div class="flex gap-12">
-        <button class="btn btn-lime" onclick="showScreen('book'); showBookTab('season')">Book a Season Class</button>
-        <button class="btn btn-outline" onclick="showScreen('book'); showBookTab('casual')">Use Catch-up Credit</button>
-        <button class="btn btn-ghost" onclick="showScreen('progress')">View Progress</button>
+      <!-- Full season schedule -->
+      <div class="flex items-center justify-between mb-16">
+        <div class="section-label" style="margin-bottom:0">Classes for the season</div>
+        <span class="text-xs text-grey">Mark away in advance for any future class</span>
+      </div>
+
+      <div class="class-row" style="opacity:0.45">
+        <div class="class-row-date"><div class="class-row-day">Mon</div><div class="class-row-num" style="color:var(--grey)">5</div></div>
+        <div class="class-row-divider"></div>
+        <div class="class-row-info"><div class="class-row-name">Level 2</div><div class="class-row-meta">6:30pm - Chloe - Week 3</div></div>
+        <span class="tag tag-grey">Attended</span>
+      </div>
+      <div class="class-row" style="opacity:0.45">
+        <div class="class-row-date"><div class="class-row-day">Fri</div><div class="class-row-num" style="color:var(--grey)">9</div></div>
+        <div class="class-row-divider"></div>
+        <div class="class-row-info"><div class="class-row-name">Dance</div><div class="class-row-meta">6:30pm - Mimi - Week 3</div></div>
+        <div class="class-row-actions"><span class="tag tag-lav">Credit issued</span></div>
+      </div>
+      <div class="class-row" style="border-color:#333">
+        <div class="class-row-date"><div class="class-row-day">Mon</div><div class="class-row-num">12</div></div>
+        <div class="class-row-divider"></div>
+        <div class="class-row-info"><div class="class-row-name">Level 2</div><div class="class-row-meta">6:30pm - Chloe - Week 4</div></div>
+        <div class="class-row-actions"><span class="tag tag-lime" style="font-size:11px">This week</span></div>
+      </div>
+      <div class="class-row">
+        <div class="class-row-date"><div class="class-row-day">Fri</div><div class="class-row-num">16</div></div>
+        <div class="class-row-divider"></div>
+        <div class="class-row-info"><div class="class-row-name">Dance</div><div class="class-row-meta">6:30pm - Mimi - Week 4</div></div>
+        <div class="class-row-actions"><button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Dance','Fri 16 May, 6:30pm', true)">Mark Away</button></div>
+      </div>
+      <div class="class-row">
+        <div class="class-row-date"><div class="class-row-day">Mon</div><div class="class-row-num">19</div></div>
+        <div class="class-row-divider"></div>
+        <div class="class-row-info"><div class="class-row-name">Level 2</div><div class="class-row-meta">6:30pm - Chloe - Week 5</div></div>
+        <div class="class-row-actions"><button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Level 2','Mon 19 May, 6:30pm', true)">Mark Away</button></div>
+      </div>
+      <div class="class-row">
+        <div class="class-row-date"><div class="class-row-day">Fri</div><div class="class-row-num">23</div></div>
+        <div class="class-row-divider"></div>
+        <div class="class-row-info"><div class="class-row-name">Dance</div><div class="class-row-meta">6:30pm - Mimi - Week 5</div></div>
+        <div class="class-row-actions"><button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Dance','Fri 23 May, 6:30pm', true)">Mark Away</button></div>
+      </div>
+      <div class="class-row">
+        <div class="class-row-date"><div class="class-row-day">Mon</div><div class="class-row-num">26</div></div>
+        <div class="class-row-divider"></div>
+        <div class="class-row-info"><div class="class-row-name">Level 2</div><div class="class-row-meta">6:30pm - Chloe - Week 6</div></div>
+        <div class="class-row-actions"><button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Level 2','Mon 26 May, 6:30pm', true)">Mark Away</button></div>
+      </div>
+      <div class="class-row">
+        <div class="class-row-date"><div class="class-row-day">Mon</div><div class="class-row-num">2</div></div>
+        <div class="class-row-divider"></div>
+        <div class="class-row-info"><div class="class-row-name">Level 2</div><div class="class-row-meta">6:30pm - Chloe - Week 7</div></div>
+        <div class="class-row-actions"><button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Level 2','Mon 2 Jun, 6:30pm', true)">Mark Away</button></div>
+      </div>
+      <div class="class-row">
+        <div class="class-row-date"><div class="class-row-day">Fri</div><div class="class-row-num">6</div></div>
+        <div class="class-row-divider"></div>
+        <div class="class-row-info"><div class="class-row-name">Dance</div><div class="class-row-meta">6:30pm - Mimi - Week 8 (Last class)</div></div>
+        <div class="class-row-actions"><button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Dance','Fri 6 Jun, 6:30pm', true)">Mark Away</button></div>
       </div>
 
       <div class="divider"></div>
 
-      <!-- Entitlement banner -->
-      <div style="background:#0d0d0d;border:1px solid #1f1f1f;border-radius:12px;padding:20px 24px;display:flex;align-items:center;justify-content:space-between">
+      <!-- Upsell -->
+      <div style="background:#0d0d0d;border:1px solid var(--border);border-radius:12px;padding:22px 26px;display:flex;align-items:center;justify-content:space-between;gap:20px">
         <div>
-          <div style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:4px">You're on 2 classes/week</div>
-          <div style="font-size:13px;color:var(--grey)">Add a 3rd class to unlock <span style="color:var(--lime)">1 free practice session/week</span></div>
+          <div style="font-family:'Archivo Black',sans-serif;font-size:16px;margin-bottom:6px">You're on 2 classes per week</div>
+          <div style="font-size:14px;color:var(--grey)">Add a 3rd class to unlock <span style="color:var(--lime)">1 free practice session per week</span> from Season 4.</div>
         </div>
-        <button class="btn btn-outline btn-sm" onclick="showScreen('book'); showBookTab('season')">Add a class</button>
+        <button class="btn btn-outline btn-sm" style="white-space:nowrap" onclick="showScreen('book'); showBookTab('season')">Add a class</button>
       </div>
+
+      </div> <!-- end dash-enrolled -->
     </div>
 
 
-    <!-- ════════════════════════════════════════
+    <!-- ===================================================
          BOOK A CLASS
-    ═════════════════════════════════════════ -->
+    =================================================== -->
     <div class="screen" id="screen-book">
       <div class="page-header">
         <div class="page-title">Book a Class</div>
@@ -547,20 +663,25 @@
 
       <div class="tabs" id="book-tabs">
         <div class="tab active" id="tab-season" onclick="showBookTab('season')">Book a Season</div>
-        <div class="tab" id="tab-casual" onclick="showBookTab('casual')">Casual &amp; Catch-ups</div>
+        <div class="tab" id="tab-casual" onclick="showBookTab('casual')">Casual and Catch-ups</div>
       </div>
 
-      <!-- ── SEASON TAB ── -->
+      <!-- SEASON TAB -->
       <div id="panel-season">
+        <div class="banner banner-lime" style="margin-bottom:22px">
+          <span style="font-size:18px">&#9651;</span>
+          <div><strong>Season 4 bookings are open.</strong> Season 4 runs 2 Jun - 25 Jul. Bookings close end of Week 3.</div>
+        </div>
+
         <div class="booking-layout">
-          <!-- Left: class browser -->
           <div>
-            <div style="font-size:13px;color:var(--grey);margin-bottom:20px;line-height:1.6">
-              Season 4 runs <strong style="color:var(--white)">2 Jun – 25 Jul</strong>. Pick your classes below — discounts apply automatically as you add more.
+            <div style="font-size:15px;color:var(--grey);margin-bottom:22px;line-height:1.7">
+              Select your classes below - your pricing updates automatically as you add more.
+              Only classes you are eligible for based on your current level are available.
             </div>
 
-            <div class="filters mb-16">
-              <button class="filter-btn active">All</button>
+            <div class="filters">
+              <button class="filter-btn active" onclick="toggleFilter(this)">All</button>
               <button class="filter-btn" onclick="toggleFilter(this)">Levelled</button>
               <button class="filter-btn" onclick="toggleFilter(this)">Specialty</button>
               <button class="filter-btn" onclick="toggleFilter(this)">Conditioning</button>
@@ -570,157 +691,128 @@
               <button class="filter-btn" onclick="toggleFilter(this)">Thursday</button>
             </div>
 
-            <div class="section-label">Levelled classes</div>
+            <div class="section-label">Your level</div>
             <div class="grid-2 mb-24">
-              <div class="class-card" id="cc-l2-wed" onclick="toggleClass('l2-wed','Level 2','Wed 6:30pm','$27.50/class',this)">
-                <div class="check">✓</div>
-                <div class="class-day">Wednesday · 6:30pm</div>
+              <div class="class-card" onclick="toggleClass('l2-mon','Level 2','Mon 6:30pm',this)">
+                <div class="check">+</div>
+                <div class="class-day">Monday - 6:30pm</div>
                 <div class="class-name">Level 2</div>
-                <div class="class-meta">
-                  <span class="tag tag-lav">Your level</span>
-                  <span class="tag tag-grey">Studio A</span>
-                </div>
-                <div class="class-instructor">Mimi · 12 spots left</div>
+                <div class="class-meta"><span class="tag tag-lav">Your level</span><span class="tag tag-grey">Studio A</span></div>
+                <div class="class-instructor">Chloe - 12 spots left</div>
               </div>
-              <div class="class-card" onclick="toggleClass('l2-fri','Level 2','Fri 6:30pm','$27.50/class',this)">
-                <div class="check">✓</div>
-                <div class="class-day">Friday · 6:30pm</div>
+              <div class="class-card" onclick="toggleClass('l2-wed','Level 2','Wed 7:30pm',this)">
+                <div class="check">+</div>
+                <div class="class-day">Wednesday - 7:30pm</div>
                 <div class="class-name">Level 2</div>
-                <div class="class-meta">
-                  <span class="tag tag-lav">Your level</span>
-                  <span class="tag tag-grey">Studio B</span>
-                </div>
-                <div class="class-instructor">Chloe · 8 spots left</div>
-              </div>
-              <div class="class-card" onclick="toggleClass('l3-tue','Level 3','Tue 7pm','$27.50/class',this)">
-                <div class="check">✓</div>
-                <div class="class-day">Tuesday · 7:00pm</div>
-                <div class="class-name">Level 3</div>
-                <div class="class-meta">
-                  <span class="tag tag-grey">Studio A</span>
-                </div>
-                <div class="class-instructor">Mimi · 5 spots left <span class="spots-low">⚡ filling fast</span></div>
-              </div>
-              <div class="class-card" onclick="toggleClass('l1-sat','Level 1','Sat 10am','$27.50/class',this)">
-                <div class="check">✓</div>
-                <div class="class-day">Saturday · 10:00am</div>
-                <div class="class-name">Level 1</div>
-                <div class="class-meta">
-                  <span class="tag tag-grey">Studio A</span>
-                </div>
-                <div class="class-instructor">Chloe · 14 spots left</div>
+                <div class="class-meta"><span class="tag tag-lav">Your level</span><span class="tag tag-grey">Studio B</span></div>
+                <div class="class-instructor">Mimi - 5 spots left <span style="color:#ffaa44">filling fast</span></div>
               </div>
             </div>
 
-            <div class="section-label">Conditioning</div>
+            <div class="section-label">Conditioning - eligible for you</div>
             <div class="grid-2 mb-24">
-              <div class="class-card" onclick="toggleClass('kiki-fri','Kiki','Fri 7pm','+ Kiki bundle',this)">
-                <div class="check">✓</div>
-                <div class="class-day">Friday · 7:00pm</div>
+              <div class="class-card" onclick="toggleClass('kiki-fri','Kiki','Fri 7pm',this)">
+                <div class="check">+</div>
+                <div class="class-day">Friday - 7:00pm</div>
                 <div class="class-name">Kiki</div>
-                <div class="class-meta">
-                  <span class="tag tag-lime">Bundle discount</span>
-                </div>
-                <div class="class-instructor">Chloe · 10 spots left</div>
+                <div class="class-meta"><span class="tag tag-lime">Bundle discount</span></div>
+                <div class="class-instructor">Chloe - 10 spots left</div>
               </div>
-              <div class="class-card" onclick="toggleClass('unravel-thu','Unravel','Thu 6pm','+ Kiki bundle',this)">
-                <div class="check">✓</div>
-                <div class="class-day">Thursday · 6:00pm</div>
-                <div class="class-name">Unravel</div>
-                <div class="class-meta">
-                  <span class="tag tag-lime">Bundle discount</span>
-                </div>
-                <div class="class-instructor">Mimi · 6 spots left</div>
-              </div>
-              <div class="class-card" onclick="toggleClass('invert-mon','Invert Tech','Mon 7pm','$27.50/class',this)">
-                <div class="check">✓</div>
-                <div class="class-day">Monday · 7:00pm</div>
+              <div class="class-card" onclick="toggleClass('invert-thu','Invert Tech','Thu 7pm',this)">
+                <div class="check">+</div>
+                <div class="class-day">Thursday - 7:00pm</div>
                 <div class="class-name">Invert Tech</div>
-                <div class="class-meta">
-                  <span class="tag tag-grey">Level 2+</span>
-                </div>
-                <div class="class-instructor">Mimi · 9 spots left</div>
+                <div class="class-meta"><span class="tag tag-grey">Level 2+</span></div>
+                <div class="class-instructor">Mimi - 9 spots left</div>
+              </div>
+              <div class="class-card" onclick="toggleClass('spin-sat','Spin Virgin','Sat 10am',this)">
+                <div class="check">+</div>
+                <div class="class-day">Saturday - 10:00am</div>
+                <div class="class-name">Spin Virgin</div>
+                <div class="class-meta"><span class="tag tag-grey">Beginner</span></div>
+                <div class="class-instructor">Chloe - 14 spots left</div>
               </div>
             </div>
 
-            <div class="section-label">Specialty</div>
-            <div class="grid-2">
-              <div class="class-card" onclick="toggleClass('strip-tue','Strip Virgin','Tue 8:30pm','$27.50/class',this)">
-                <div class="check">✓</div>
-                <div class="class-day">Tuesday · 8:30pm</div>
-                <div class="class-name">Strip Virgin</div>
-                <div class="class-meta">
-                  <span class="tag tag-grey">Beginner–Level 3</span>
-                </div>
-                <div class="class-instructor">Chloe · 7 spots left</div>
+            <div class="section-label">Specialty - eligible for you</div>
+            <div class="grid-2 mb-24">
+              <div class="class-card" onclick="toggleClass('dance-fri','Dance','Fri 6:30pm',this)">
+                <div class="check">+</div>
+                <div class="class-day">Friday - 6:30pm</div>
+                <div class="class-name">Dance</div>
+                <div class="class-meta"><span class="tag tag-grey">Level 2+</span></div>
+                <div class="class-instructor">Mimi - 11 spots left</div>
               </div>
-              <div class="class-card" onclick="toggleClass('chair-thu','Chair Virgin','Thu 7:30pm','$27.50/class',this)">
-                <div class="check">✓</div>
-                <div class="class-day">Thursday · 7:30pm</div>
-                <div class="class-name">Chair Virgin</div>
-                <div class="class-meta">
-                  <span class="tag tag-grey">Under Level 3</span>
-                </div>
-                <div class="class-instructor">Mimi · 11 spots left</div>
+              <div class="class-card" onclick="toggleClass('strip-tue','Strip Virgin','Tue 8pm',this)">
+                <div class="check">+</div>
+                <div class="class-day">Tuesday - 8:00pm</div>
+                <div class="class-name">Strip Virgin</div>
+                <div class="class-meta"><span class="tag tag-grey">Beginner - Level 3</span></div>
+                <div class="class-instructor">Chloe - 7 spots left</div>
+              </div>
+            </div>
+
+            <div class="section-label" style="color:#444">Not available at your level</div>
+            <div class="grid-2">
+              <div class="class-card locked">
+                <div class="class-day">Monday - 8:00pm</div>
+                <div class="class-name">Level 4</div>
+                <div class="class-meta"><span class="tag tag-grey">Level 4 required</span></div>
+                <div class="class-instructor">Mimi - 6 spots left</div>
+              </div>
+              <div class="class-card locked">
+                <div class="class-day">Thursday - 8:30pm</div>
+                <div class="class-name">High Tricks</div>
+                <div class="class-meta"><span class="tag tag-grey">Level 6 required</span></div>
+                <div class="class-instructor">Chloe - 4 spots left</div>
               </div>
             </div>
           </div>
 
-          <!-- Right: cart -->
+          <!-- CART -->
           <div class="cart" id="season-cart">
-            <div class="cart-title">Your Season</div>
+            <div class="cart-title">Your Season 4</div>
             <div id="cart-items">
-              <div class="cart-empty" id="cart-empty">Select classes to start building your season</div>
+              <div class="cart-empty" id="cart-empty">Select classes above to start building your season.</div>
             </div>
-
             <div id="cart-discount" style="display:none" class="cart-discount">
               <div class="cart-discount-label">Season pricing</div>
               <div class="cart-discount-value" id="cart-discount-value">$270</div>
-              <div class="cart-discount-sub" id="cart-discount-sub">1 class · $33.75/class</div>
+              <div class="cart-discount-sub" id="cart-discount-sub">1 class</div>
             </div>
-
-            <div id="cart-perks" class="cart-perks" style="display:none">
-            </div>
-
+            <div id="cart-perks" class="cart-perks" style="display:none"></div>
             <div id="cart-total" class="cart-total" style="display:none">
-              <div class="cart-total-row">
-                <span>50% deposit due now</span>
-                <span id="cart-deposit">—</span>
-              </div>
-              <div class="cart-total-row">
-                <span>Balance due Week 1</span>
-                <span id="cart-balance">—</span>
-              </div>
               <div class="cart-total-row main">
                 <span>Total</span>
-                <span id="cart-total-val">—</span>
+                <span id="cart-total-val">-</span>
               </div>
             </div>
-
             <button class="btn btn-lime" style="width:100%;margin-top:20px" id="cart-cta" onclick="openCheckout()" disabled>
-              Proceed to checkout
+              Choose payment option
             </button>
-            <div style="font-size:11px;color:var(--grey);text-align:center;margin-top:10px">
-              Secure payment via Stripe
-            </div>
+            <div style="font-size:12px;color:var(--grey);text-align:center;margin-top:10px">Secure payment via Stripe</div>
           </div>
         </div>
       </div>
 
-      <!-- ── CASUAL & CATCH-UPS TAB ── -->
+      <!-- CASUAL AND CATCH-UPS TAB -->
       <div id="panel-casual" style="display:none">
-
         <div class="credit-badge">
           <div class="credit-count">1</div>
           <div>
             <div class="credit-label">Catch-up credit available</div>
-            <div class="credit-sub">Expires end of Season 3 · Use it to book any eligible class free</div>
+            <div class="credit-sub">Expires end of Season 3 - use it to attend any eligible class for free</div>
           </div>
         </div>
 
+        <div class="banner banner-lav" style="margin-bottom:22px">
+          <span>&#9670;</span>
+          <div>Showing classes eligible for Level 2. Classes outside your level are hidden.</div>
+        </div>
+
         <div class="filters mb-16">
-          <button class="filter-btn active">All classes</button>
-          <button class="filter-btn" onclick="toggleFilter(this)">Eligible catch-ups</button>
+          <button class="filter-btn active" onclick="toggleFilter(this)">All eligible</button>
+          <button class="filter-btn" onclick="toggleFilter(this)">Use my credit</button>
           <button class="filter-btn" onclick="toggleFilter(this)">Casual ($40)</button>
           <button class="filter-btn" onclick="toggleFilter(this)">Practice time</button>
           <button class="filter-btn" onclick="toggleFilter(this)">This week</button>
@@ -728,375 +820,539 @@
         </div>
 
         <div class="section-label">Wed 14 May</div>
-
-        <div class="casual-row has-credit" onclick="openCasualModal('Kiki','Wed 14 May · 7pm','Chloe',true)">
-          <div class="casual-date">
-            <div class="casual-date-day">WED</div>
-            <div class="casual-date-num">14</div>
-          </div>
-          <div style="width:1px;height:40px;background:#222;flex-shrink:0"></div>
+        <div class="casual-row has-credit" onclick="openCasualModal('Kiki','Wed 14 May - 7:00pm','Chloe',true)">
+          <div class="casual-date"><div class="casual-date-day">WED</div><div class="casual-date-num">14</div></div>
+          <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
           <div class="casual-info">
             <div class="casual-name">Kiki</div>
-            <div class="casual-meta">7:00pm · Chloe · Studio B · 8 spots left</div>
-            <div style="margin-top:5px"><span class="tag tag-lav" style="font-size:10px">✓ Catch-up eligible</span></div>
+            <div class="casual-meta">7:00pm - Chloe - Studio B - 8 spots left</div>
+            <div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div>
           </div>
-          <div class="casual-price">
-            <div class="casual-price-credit">Use credit</div>
-            <div class="casual-price-full">$40</div>
-          </div>
+          <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
         </div>
 
-        <div class="casual-row" onclick="openCasualModal('Level 1','Wed 14 May · 8pm','Mimi',false)">
-          <div class="casual-date">
-            <div class="casual-date-day">WED</div>
-            <div class="casual-date-num">14</div>
-          </div>
-          <div style="width:1px;height:40px;background:#222;flex-shrink:0"></div>
+        <div class="casual-row has-credit" onclick="openCasualModal('Spin Virgin','Wed 14 May - 8:00pm','Mimi',true)">
+          <div class="casual-date"><div class="casual-date-day">WED</div><div class="casual-date-num">14</div></div>
+          <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
           <div class="casual-info">
-            <div class="casual-name">Level 1</div>
-            <div class="casual-meta">8:00pm · Mimi · Studio A · 12 spots left</div>
-            <div style="margin-top:5px"><span class="tag tag-grey" style="font-size:10px">Casual only</span></div>
+            <div class="casual-name">Spin Virgin</div>
+            <div class="casual-meta">8:00pm - Mimi - Studio A - 6 spots left</div>
+            <div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div>
           </div>
-          <div class="casual-price">
-            <div class="casual-price-main">$40</div>
-          </div>
+          <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
         </div>
 
         <div class="section-label mt-16">Thu 15 May</div>
-
-        <div class="casual-row has-credit" onclick="openCasualModal('Dance Virgin','Thu 15 May · 6:30pm','Mimi',true)">
-          <div class="casual-date">
-            <div class="casual-date-day">THU</div>
-            <div class="casual-date-num">15</div>
-          </div>
-          <div style="width:1px;height:40px;background:#222;flex-shrink:0"></div>
-          <div class="casual-info">
-            <div class="casual-name">Dance Virgin</div>
-            <div class="casual-meta">6:30pm · Mimi · Studio B · 5 spots left</div>
-            <div style="margin-top:5px"><span class="tag tag-lav" style="font-size:10px">✓ Catch-up eligible</span></div>
-          </div>
-          <div class="casual-price">
-            <div class="casual-price-credit">Use credit</div>
-            <div class="casual-price-full">$40</div>
-          </div>
-        </div>
-
-        <div class="casual-row" onclick="openCasualModal('Practice Time','Thu 15 May · 8pm','Open',false)">
-          <div class="casual-date">
-            <div class="casual-date-day">THU</div>
-            <div class="casual-date-num">15</div>
-          </div>
-          <div style="width:1px;height:40px;background:#222;flex-shrink:0"></div>
+        <div class="casual-row" onclick="openCasualModal('Practice Time','Thu 15 May - 8:00pm','Open studio',false)">
+          <div class="casual-date"><div class="casual-date-day">THU</div><div class="casual-date-num">15</div></div>
+          <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
           <div class="casual-info">
             <div class="casual-name">Practice Time</div>
-            <div class="casual-meta">8:00pm – 9:30pm · Open studio · 15 spots left</div>
-            <div style="margin-top:5px"><span class="tag tag-lime" style="font-size:10px">$20 enrolled discount</span></div>
+            <div class="casual-meta">8:00pm - 9:30pm - Open studio - 15 spots left</div>
+            <div style="margin-top:6px"><span class="tag tag-lime" style="font-size:11px">$20 enrolled rate</span></div>
           </div>
-          <div class="casual-price">
-            <div class="casual-price-main">$20</div>
-            <div class="casual-price-full">$30</div>
+          <div class="casual-price"><div class="casual-price-main">$20</div><div class="casual-price-full">$30</div></div>
+        </div>
+
+        <div class="casual-row has-credit" onclick="openCasualModal('Invert Tech','Thu 15 May - 7:00pm','Mimi',true)">
+          <div class="casual-date"><div class="casual-date-day">THU</div><div class="casual-date-num">15</div></div>
+          <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
+          <div class="casual-info">
+            <div class="casual-name">Invert Tech</div>
+            <div class="casual-meta">7:00pm - Mimi - Studio A - 7 spots left</div>
+            <div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div>
           </div>
+          <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
         </div>
 
         <div class="section-label mt-16">Fri 16 May</div>
-
-        <div class="casual-row has-credit" onclick="openCasualModal('Spin Virgin','Fri 16 May · 6pm','Chloe',true)">
-          <div class="casual-date">
-            <div class="casual-date-day">FRI</div>
-            <div class="casual-date-num">16</div>
-          </div>
-          <div style="width:1px;height:40px;background:#222;flex-shrink:0"></div>
+        <div class="casual-row has-credit" onclick="openCasualModal('Dance','Fri 16 May - 6:30pm','Mimi',true)">
+          <div class="casual-date"><div class="casual-date-day">FRI</div><div class="casual-date-num">16</div></div>
+          <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
           <div class="casual-info">
-            <div class="casual-name">Spin Virgin</div>
-            <div class="casual-meta">6:00pm · Chloe · Studio A · 7 spots left</div>
-            <div style="margin-top:5px"><span class="tag tag-lav" style="font-size:10px">✓ Catch-up eligible</span></div>
+            <div class="casual-name">Dance</div>
+            <div class="casual-meta">6:30pm - Mimi - Studio B - 11 spots left</div>
+            <div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div>
           </div>
-          <div class="casual-price">
-            <div class="casual-price-credit">Use credit</div>
-            <div class="casual-price-full">$40</div>
-          </div>
+          <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
         </div>
-
       </div>
     </div>
 
 
-    <!-- ════════════════════════════════════════
+    <!-- ===================================================
          MY CLASSES
-    ═════════════════════════════════════════ -->
+    =================================================== -->
     <div class="screen" id="screen-myclasses">
       <div class="page-header">
         <div class="page-title">My Classes</div>
-        <div class="page-subtitle">Season 3 · Week 4 of 8 · ends 6 Jun</div>
+        <div class="page-subtitle">Season 3 - Week 4 of 8 - ends 6 Jun</div>
       </div>
 
       <div class="section-label">Enrolled this season</div>
-
       <div class="class-row mb-8">
-        <div class="class-row-date">
-          <div class="class-row-day">WED</div>
-          <div class="class-row-num" style="color:var(--white)">6:30</div>
-        </div>
+        <div class="class-row-date"><div class="class-row-day">MON</div><div class="class-row-num" style="color:var(--white);font-size:18px">6:30</div></div>
         <div class="class-row-divider"></div>
-        <div class="class-row-info">
-          <div class="class-row-name">Level 2</div>
-          <div class="class-row-meta">Studio A · Mimi · Weeks 1–8</div>
-        </div>
-        <div class="class-row-actions">
-          <span class="tag tag-lime">Active</span>
-        </div>
+        <div class="class-row-info"><div class="class-row-name">Level 2</div><div class="class-row-meta">Studio A - Chloe - Weeks 1-8</div></div>
+        <span class="tag tag-lime">Active</span>
       </div>
-
       <div class="class-row mb-8">
-        <div class="class-row-date">
-          <div class="class-row-day">FRI</div>
-          <div class="class-row-num" style="color:var(--white)">7:00</div>
-        </div>
+        <div class="class-row-date"><div class="class-row-day">FRI</div><div class="class-row-num" style="color:var(--white);font-size:18px">6:30</div></div>
         <div class="class-row-divider"></div>
-        <div class="class-row-info">
-          <div class="class-row-name">Kiki</div>
-          <div class="class-row-meta">Studio B · Chloe · Weeks 1–8</div>
-        </div>
-        <div class="class-row-actions">
-          <span class="tag tag-lime">Active</span>
-        </div>
+        <div class="class-row-info"><div class="class-row-name">Dance</div><div class="class-row-meta">Studio B - Mimi - Weeks 1-8</div></div>
+        <span class="tag tag-lime">Active</span>
       </div>
 
       <div class="divider"></div>
 
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div class="flex items-center justify-between mb-16">
         <div class="section-label" style="margin-bottom:0">Catch-up credits</div>
         <button class="btn btn-lav btn-sm" onclick="showScreen('book');showBookTab('casual')">Use a credit</button>
       </div>
-
       <div class="credit-badge">
         <div class="credit-count">1</div>
         <div>
           <div class="credit-label">Credit available</div>
-          <div class="credit-sub">Missed Level 2 · Wed 7 May · Expires end of Season 3</div>
+          <div class="credit-sub">Missed Level 2 - Mon 7 May - Expires end of Season 3</div>
         </div>
       </div>
 
       <div class="divider"></div>
 
       <div class="section-label">Upcoming schedule</div>
-
       <div class="class-row">
-        <div class="class-row-date">
-          <div class="class-row-day">Wed</div>
-          <div class="class-row-num">14</div>
-        </div>
+        <div class="class-row-date"><div class="class-row-day">Mon</div><div class="class-row-num">12</div></div>
         <div class="class-row-divider"></div>
-        <div class="class-row-info">
-          <div class="class-row-name">Level 2 — Studio A</div>
-          <div class="class-row-meta">6:30pm · Mimi</div>
-        </div>
-        <button class="btn btn-ghost btn-sm">Mark Away</button>
+        <div class="class-row-info"><div class="class-row-name">Level 2 - Studio A</div><div class="class-row-meta">6:30pm - Chloe - Week 4</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Level 2','Mon 12 May, 6:30pm', true)">Mark Away</button>
       </div>
       <div class="class-row">
-        <div class="class-row-date">
-          <div class="class-row-day">Fri</div>
-          <div class="class-row-num">16</div>
-        </div>
+        <div class="class-row-date"><div class="class-row-day">Fri</div><div class="class-row-num">16</div></div>
         <div class="class-row-divider"></div>
-        <div class="class-row-info">
-          <div class="class-row-name">Kiki — Studio B</div>
-          <div class="class-row-meta">7:00pm · Chloe</div>
-        </div>
-        <button class="btn btn-ghost btn-sm">Mark Away</button>
+        <div class="class-row-info"><div class="class-row-name">Dance - Studio B</div><div class="class-row-meta">6:30pm - Mimi - Week 4</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Dance','Fri 16 May, 6:30pm', true)">Mark Away</button>
       </div>
-      <div class="class-row" style="opacity:0.5">
-        <div class="class-row-date">
-          <div class="class-row-day">Wed</div>
-          <div class="class-row-num">21</div>
-        </div>
+      <div class="class-row">
+        <div class="class-row-date"><div class="class-row-day">Mon</div><div class="class-row-num">19</div></div>
         <div class="class-row-divider"></div>
-        <div class="class-row-info">
-          <div class="class-row-name">Level 2 — Studio A</div>
-          <div class="class-row-meta">6:30pm · Mimi</div>
-        </div>
-        <button class="btn btn-ghost btn-sm">Mark Away</button>
+        <div class="class-row-info"><div class="class-row-name">Level 2 - Studio A</div><div class="class-row-meta">6:30pm - Chloe - Week 5</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Level 2','Mon 19 May, 6:30pm', false)">Mark Away</button>
       </div>
     </div>
 
 
-    <!-- ════════════════════════════════════════
+    <!-- ===================================================
          PROGRESS
-    ═════════════════════════════════════════ -->
+    =================================================== -->
     <div class="screen" id="screen-progress">
       <div class="page-header">
-        <div class="page-title">Your Progress</div>
-        <div class="page-subtitle">Level 2 — Season 3</div>
+        <div class="page-title">Progress</div>
+        <div class="page-subtitle">Level 2 - Season 3</div>
       </div>
 
-      <!-- Level progress -->
-      <div class="card mb-24">
-        <div class="level-header">
+      <div class="tabs">
+        <div class="tab active" id="tab-tricks" onclick="showProgressTab('tricks')">Tricks</div>
+        <div class="tab" id="tab-resources" onclick="showProgressTab('resources')">Class Resources</div>
+      </div>
+
+      <!-- TRICKS TAB -->
+      <div id="panel-tricks">
+        <div class="card mb-24">
+          <div class="flex items-center justify-between mb-16">
+            <div>
+              <div style="font-family:'Archivo Black',sans-serif;font-size:20px">Level 2</div>
+              <div style="font-size:14px;color:var(--grey);margin-top:4px">14 of 22 tricks unlocked</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-family:'Archivo Black',sans-serif;font-size:32px;color:var(--lime)">64%</div>
+            </div>
+          </div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" style="width:64%"></div>
+          </div>
+          <div style="font-size:13px;color:var(--grey);line-height:1.7">
+            Prerequisites for Level 3: Front Hook Spin, Back Hook Spin, Kate Moss, Climb, Jamilla, Sit -
+            <span style="color:var(--lime)">all complete</span>
+          </div>
+        </div>
+
+        <div class="trick-grid">
+          <div class="trick unlocked"><div class="trick-icon">&#127744;</div><div class="trick-name">Back Hook Spin</div><div class="trick-status">Unlocked</div></div>
+          <div class="trick unlocked"><div class="trick-icon">&#127744;</div><div class="trick-name">Front Hook Spin</div><div class="trick-status">Unlocked</div></div>
+          <div class="trick unlocked"><div class="trick-icon">&#8593;</div><div class="trick-name">Climb</div><div class="trick-status">Unlocked</div></div>
+          <div class="trick unlocked"><div class="trick-icon">&#128260;</div><div class="trick-name">Jamilla</div><div class="trick-status">Unlocked</div></div>
+          <div class="trick unlocked"><div class="trick-icon">&#10024;</div><div class="trick-name">Invert</div><div class="trick-status">Unlocked</div></div>
+          <div class="trick unlocked"><div class="trick-icon">&#128064;</div><div class="trick-name">Bat</div><div class="trick-status">Unlocked</div></div>
+          <div class="trick unlocked"><div class="trick-icon">&#128131;</div><div class="trick-name">Sit</div><div class="trick-status">Unlocked</div></div>
+          <div class="trick unlocked"><div class="trick-icon">&#128131;</div><div class="trick-name">Kate Moss</div><div class="trick-status">Unlocked</div></div>
+          <div class="trick in-progress"><div class="trick-icon">&#128256;</div><div class="trick-name">Fireman Spin</div><div class="trick-status">In progress</div></div>
+          <div class="trick locked"><div class="trick-icon">&#129438;</div><div class="trick-name">Inside Leg Hang</div><div class="trick-status">Locked</div></div>
+          <div class="trick locked"><div class="trick-icon">&#129438;</div><div class="trick-name">Outside Leg Hang</div><div class="trick-status">Locked</div></div>
+          <div class="trick locked"><div class="trick-icon">&#127774;</div><div class="trick-name">Layback</div><div class="trick-status">Locked</div></div>
+          <div class="trick locked"><div class="trick-icon">&#11088;</div><div class="trick-name">Superman</div><div class="trick-status">Locked</div></div>
+          <div class="trick locked"><div class="trick-icon">&#127775;</div><div class="trick-name">Starfish</div><div class="trick-status">Locked</div></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Homework -->
+        <div class="flex items-center justify-between mb-20">
           <div>
-            <div class="level-title">Level 2</div>
-            <div style="font-size:13px;color:var(--grey);margin-top:4px">14 of 22 tricks unlocked</div>
+            <div style="font-family:'Archivo Black',sans-serif;font-size:20px">Homework</div>
+            <div style="font-size:14px;color:var(--grey);margin-top:4px">Set by Chloe</div>
           </div>
-          <div style="text-align:right">
-            <div style="font-family:'Archivo Black',sans-serif;font-size:28px;color:var(--lime)">64%</div>
+          <span class="tag tag-lav">1 new</span>
+        </div>
+        <div class="card" style="border-color:#2a1f3d">
+          <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--lav);margin-bottom:8px">New - assigned 12 May</div>
+          <div style="font-family:'Archivo Black',sans-serif;font-size:17px;margin-bottom:10px">Invert conditioning drill - 3 sets daily</div>
+          <div style="font-size:14px;color:var(--grey);line-height:1.7">Focus on squeezing your core before initiating the invert. Practice from the floor first, then attempt from climb. Film yourself so you can see your hip positioning.</div>
+          <div style="margin-top:18px;padding-top:18px;border-top:1px solid #222;display:flex;gap:10px">
+            <button class="btn btn-lav btn-sm">Submit notes</button>
+            <button class="btn btn-ghost btn-sm">Watch reference video</button>
           </div>
-        </div>
-        <div class="progress-bar-wrap">
-          <div class="progress-bar-fill" style="width:64%"></div>
-        </div>
-        <div style="font-size:12px;color:var(--grey)">
-          Prerequisites for Level 3: Front Hook Spin · Back Hook Spin · Kate Moss · Climb · Jamilla · Sit — <span style="color:var(--lime)">all complete ✓</span>
         </div>
       </div>
 
-      <div class="section-label">Tricks — Level 2</div>
+      <!-- CLASS RESOURCES TAB -->
+      <div id="panel-resources" style="display:none">
+        <div style="font-size:15px;color:var(--grey);margin-bottom:26px;line-height:1.7">
+          Routine videos are released in Week 5 of each season. Other resources like warm-up guides and music playlists are available year-round.
+        </div>
 
-      <div class="trick-grid">
-        <div class="trick unlocked">
-          <div class="trick-icon">🌀</div>
-          <div class="trick-name">Back Hook Spin</div>
-          <div class="trick-status">Unlocked</div>
+        <div class="section-label">Level 2 - Season 3</div>
+
+        <div class="resource-item locked-res">
+          <div class="resource-icon" style="background:#1a1600">&#127909;</div>
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:500;margin-bottom:4px">Season 3 Routine Video</div>
+            <div style="font-size:13px;color:var(--grey)">Available from Week 5 (Mon 19 May)</div>
+          </div>
+          <span class="tag tag-grey">Locked</span>
         </div>
-        <div class="trick unlocked">
-          <div class="trick-icon">🌀</div>
-          <div class="trick-name">Front Hook Spin</div>
-          <div class="trick-status">Unlocked</div>
+
+        <div class="resource-item">
+          <div class="resource-icon" style="background:#0f1600">&#9835;</div>
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:500;margin-bottom:4px">Season 3 Music Playlist</div>
+            <div style="font-size:13px;color:var(--grey)">This season's choreo tracks</div>
+          </div>
+          <button class="btn btn-ghost btn-sm">Open</button>
         </div>
-        <div class="trick unlocked">
-          <div class="trick-icon">⬆️</div>
-          <div class="trick-name">Climb</div>
-          <div class="trick-status">Unlocked</div>
+
+        <div class="resource-item">
+          <div class="resource-icon" style="background:#0f1600">&#127939;</div>
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:500;margin-bottom:4px">Warm-up Guide</div>
+            <div style="font-size:13px;color:var(--grey)">Recommended pre-class warm-up routine</div>
+          </div>
+          <button class="btn btn-ghost btn-sm">Open</button>
         </div>
-        <div class="trick unlocked">
-          <div class="trick-icon">🔄</div>
-          <div class="trick-name">Jamilla</div>
-          <div class="trick-status">Unlocked</div>
+
+        <div class="divider"></div>
+
+        <div class="section-label">Dance - Season 3</div>
+
+        <div class="resource-item locked-res">
+          <div class="resource-icon" style="background:#1a1600">&#127909;</div>
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:500;margin-bottom:4px">Season 3 Routine Video</div>
+            <div style="font-size:13px;color:var(--grey)">Available from Week 5 (Mon 19 May)</div>
+          </div>
+          <span class="tag tag-grey">Locked</span>
         </div>
-        <div class="trick unlocked">
-          <div class="trick-icon">💫</div>
-          <div class="trick-name">Invert</div>
-          <div class="trick-status">Unlocked</div>
+
+        <div class="resource-item">
+          <div class="resource-icon" style="background:#0f1600">&#9835;</div>
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:500;margin-bottom:4px">Season 3 Music Playlist</div>
+            <div style="font-size:13px;color:var(--grey)">This season's dance tracks</div>
+          </div>
+          <button class="btn btn-ghost btn-sm">Open</button>
         </div>
-        <div class="trick unlocked">
-          <div class="trick-icon">🦇</div>
-          <div class="trick-name">Bat</div>
-          <div class="trick-status">Unlocked</div>
+
+        <div class="divider"></div>
+
+        <div class="section-label">Previous seasons</div>
+
+        <div class="resource-item">
+          <div class="resource-icon" style="background:#0a0a0a">&#127909;</div>
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:500;margin-bottom:4px">Level 2 - Season 2 Routine Video</div>
+            <div style="font-size:13px;color:var(--grey)">Password: markthesheet</div>
+          </div>
+          <button class="btn btn-ghost btn-sm">Watch</button>
         </div>
-        <div class="trick unlocked">
-          <div class="trick-icon">🧍</div>
-          <div class="trick-name">Sit</div>
-          <div class="trick-status">Unlocked</div>
+      </div>
+    </div>
+
+
+    <!-- ===================================================
+         NOTIFICATIONS
+    =================================================== -->
+    <div class="screen" id="screen-notifications">
+      <div class="page-header">
+        <div class="page-title">Notifications</div>
+        <div class="page-subtitle">3 unread</div>
+      </div>
+
+      <div class="notif-item unread">
+        <div class="notif-dot-circle" style="background:#0f1600">&#9651;</div>
+        <div>
+          <div class="notif-title">Season 4 bookings are now open</div>
+          <div class="notif-body">Season 4 runs 2 Jun - 25 Jul. Book your classes now - spots fill fast. Bookings close end of Week 3.</div>
+          <div style="margin-top:10px"><button class="btn btn-lime btn-sm" onclick="showScreen('book');showBookTab('season')">Book now</button></div>
+          <div class="notif-time">Today, 9:00am</div>
         </div>
-        <div class="trick unlocked">
-          <div class="trick-icon">💃</div>
-          <div class="trick-name">Kate Moss</div>
-          <div class="trick-status">Unlocked</div>
+      </div>
+
+      <div class="notif-item unread-lav">
+        <div class="notif-dot-circle" style="background:#1a1028">&#9674;</div>
+        <div>
+          <div class="notif-title">Catch-up credit issued</div>
+          <div class="notif-body">You marked away from Dance on Fri 9 May. A catch-up credit has been added to your account - use it before end of Season 3.</div>
+          <div class="notif-time">Fri 9 May, 3:15pm</div>
         </div>
-        <div class="trick">
-          <div class="trick-icon">🔀</div>
-          <div class="trick-name">Fireman Spin</div>
-          <div class="trick-status" style="color:var(--lav)">In progress</div>
+      </div>
+
+      <div class="notif-item unread">
+        <div class="notif-dot-circle" style="background:#0f1600">&#128203;</div>
+        <div>
+          <div class="notif-title">New form: Are you coming to Category Is?</div>
+          <div class="notif-body">Duality is attending Category Is this season. Let us know if you're keen to come along and support!</div>
+          <div style="margin-top:10px"><button class="btn btn-outline btn-sm" onclick="showScreen('forms')">View form</button></div>
+          <div class="notif-time">Thu 8 May, 11:00am</div>
         </div>
-        <div class="trick locked">
-          <div class="trick-icon">🦵</div>
-          <div class="trick-name">Inside Leg Hang</div>
-          <div class="trick-status">Locked</div>
+      </div>
+
+      <div class="notif-item">
+        <div class="notif-dot-circle" style="background:#0a0a0a">&#9675;</div>
+        <div>
+          <div class="notif-title">Class reminder - Level 2 tomorrow</div>
+          <div class="notif-body">Don't forget - Level 2 with Chloe is tomorrow, Monday 5 May at 6:30pm. Studio A. Remember bare legs and grip!</div>
+          <div class="notif-time">Sun 4 May, 6:00pm</div>
         </div>
-        <div class="trick locked">
-          <div class="trick-icon">🦵</div>
-          <div class="trick-name">Outside Leg Hang</div>
-          <div class="trick-status">Locked</div>
+      </div>
+
+      <div class="notif-item">
+        <div class="notif-dot-circle" style="background:#0a0a0a">&#9651;</div>
+        <div>
+          <div class="notif-title">Welcome to Season 3, Jess!</div>
+          <div class="notif-body">Your enrolment in Level 2 (Mon 6:30pm) and Dance (Fri 6:30pm) is confirmed. Your deposit has been processed. Balance will be charged on 30 Apr.</div>
+          <div class="notif-time">Mon 28 Apr, 9:00am</div>
         </div>
-        <div class="trick locked">
-          <div class="trick-icon">🤸</div>
-          <div class="trick-name">Layback</div>
-          <div class="trick-status">Locked</div>
+      </div>
+    </div>
+
+
+    <!-- ===================================================
+         FORMS
+    =================================================== -->
+    <div class="screen" id="screen-forms">
+      <div class="page-header">
+        <div class="page-title">Forms</div>
+        <div class="page-subtitle">Surveys and requests from the studio</div>
+      </div>
+
+      <div class="section-label">Action required</div>
+
+      <div class="form-item urgent">
+        <div>
+          <div class="form-title">Are you coming to Category Is?</div>
+          <div class="form-meta">Duality is attending - let us know if you're keen - due Fri 16 May</div>
         </div>
-        <div class="trick locked">
-          <div class="trick-icon">⭐</div>
-          <div class="trick-name">Superman</div>
-          <div class="trick-status">Locked</div>
-        </div>
-        <div class="trick locked">
-          <div class="trick-icon">🌟</div>
-          <div class="trick-name">Starfish</div>
-          <div class="trick-status">Locked</div>
-        </div>
+        <button class="btn btn-lime btn-sm" onclick="openFormModal()">Open form</button>
       </div>
 
       <div class="divider"></div>
 
-      <!-- Homework section -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div class="section-label">Completed</div>
+
+      <div class="form-item">
         <div>
-          <div style="font-family:'Archivo Black',sans-serif;font-size:20px">Homework</div>
-          <div style="font-size:13px;color:var(--grey);margin-top:4px">Set by Mimi</div>
+          <div class="form-title">Season 3 Feedback</div>
+          <div class="form-meta">Submitted Mon 5 May</div>
         </div>
-        <span class="tag tag-lav">1 new</span>
+        <span class="tag tag-grey">Done</span>
       </div>
 
-      <div class="card" style="border-color:#2a1f3d">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
-          <div>
-            <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--lav);margin-bottom:6px">New · assigned 12 May</div>
-            <div style="font-family:'Archivo Black',sans-serif;font-size:16px;margin-bottom:8px">Invert conditioning drill — 3 sets daily</div>
-            <div style="font-size:13px;color:var(--grey);line-height:1.6">Focus on squeezing your core before initiating the invert. Practice from the floor first, then attempt from climb. Film yourself so you can see your hip positioning.</div>
+      <div class="form-item">
+        <div>
+          <div class="form-title">New student welcome survey</div>
+          <div class="form-meta">Submitted Mon 28 Apr</div>
+        </div>
+        <span class="tag tag-grey">Done</span>
+      </div>
+    </div>
+
+
+    <!-- ===================================================
+         CHAT
+    =================================================== -->
+    <div class="screen" id="screen-chat">
+      <div class="page-header">
+        <div class="page-title">Chat</div>
+      </div>
+      <div style="display:grid;grid-template-columns:250px 1fr;gap:0;height:72vh;border:1px solid var(--border);border-radius:12px;overflow:hidden">
+        <div style="border-right:1px solid var(--border);background:var(--dark)">
+          <div style="padding:17px 22px;border-bottom:1px solid var(--border);font-family:'Archivo Black',sans-serif;font-size:15px">Messages</div>
+          <div style="padding:15px 22px;background:#0f1600;border-left:3px solid var(--lime);cursor:pointer">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div style="font-size:15px;font-weight:500">Duality Studio</div>
+              <div style="width:8px;height:8px;background:var(--lime);border-radius:50%"></div>
+            </div>
+            <div style="font-size:13px;color:var(--grey);margin-top:4px">Hey Jess! Just checking in...</div>
           </div>
         </div>
-        <div style="margin-top:16px;padding-top:16px;border-top:1px solid #222;display:flex;gap:10px">
-          <button class="btn btn-lav btn-sm">Submit notes</button>
-          <button class="btn btn-ghost btn-sm">Watch reference video</button>
+        <div style="display:flex;flex-direction:column;background:var(--black)">
+          <div style="padding:17px 26px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px">
+            <div class="avatar" style="background:var(--lime);color:var(--black);font-size:14px">D</div>
+            <div>
+              <div style="font-size:15px;font-weight:500">Duality Studio</div>
+              <div style="font-size:12px;color:var(--grey)">Mimi and Chloe</div>
+            </div>
+          </div>
+          <div style="flex:1;padding:26px;display:flex;flex-direction:column;gap:15px;overflow-y:auto">
+            <div style="display:flex;gap:12px;max-width:72%">
+              <div class="avatar" style="background:var(--lime);color:var(--black);font-size:13px;width:32px;height:32px;flex-shrink:0">D</div>
+              <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;border-top-left-radius:3px;padding:14px 16px">
+                <div style="font-size:14px;line-height:1.7">Hey Jess! Just checking in - saw you marked away for last Wednesday. How's the invert practice going? Mimi mentioned you're so close!</div>
+                <div style="font-size:11px;color:var(--grey);margin-top:7px">Wed 9:12am</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;max-width:72%;align-self:flex-end;flex-direction:row-reverse">
+              <div class="avatar" style="width:32px;height:32px;font-size:13px;flex-shrink:0">J</div>
+              <div style="background:#0f1600;border:1px solid var(--lime);border-radius:12px;border-top-right-radius:3px;padding:14px 16px">
+                <div style="font-size:14px;line-height:1.7">Thank you!! Yeah I was travelling for work. So close to getting it consistently - I'll be back this week for sure!</div>
+                <div style="font-size:11px;color:var(--grey);margin-top:7px">Thu 11:34am</div>
+              </div>
+            </div>
+          </div>
+          <div style="padding:17px 22px;border-top:1px solid var(--border);display:flex;gap:10px">
+            <input style="flex:1;background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:11px 16px;color:var(--white);font-family:'Archivo',sans-serif;font-size:14px" placeholder="Type a message..." />
+            <button class="btn btn-lime btn-sm">Send</button>
+          </div>
         </div>
       </div>
     </div>
 
 
-    <!-- ════════════════════════════════════════
-         CHAT
-    ═════════════════════════════════════════ -->
-    <div class="screen" id="screen-chat">
+    <!-- ===================================================
+         ACCOUNT
+    =================================================== -->
+    <div class="screen" id="screen-account">
       <div class="page-header">
-        <div class="page-title">Chat</div>
+        <div class="page-title">Account</div>
       </div>
-      <div style="display:grid;grid-template-columns:240px 1fr;gap:0;height:70vh;border:1px solid #1f1f1f;border-radius:12px;overflow:hidden">
-        <!-- Thread list -->
-        <div style="border-right:1px solid #1f1f1f;background:var(--dark)">
-          <div style="padding:16px 20px;border-bottom:1px solid #1f1f1f;font-family:'Archivo Black',sans-serif;font-size:14px">Messages</div>
-          <div style="padding:14px 20px;background:#0f1600;border-left:3px solid var(--lime);cursor:pointer">
-            <div style="display:flex;align-items:center;justify-content:space-between">
-              <div style="font-size:14px;font-weight:500">Duality Studio</div>
-              <div class="notif-dot"></div>
-            </div>
-            <div style="font-size:12px;color:var(--grey);margin-top:3px">Hey Jess! Just checking in...</div>
+
+      <div class="grid-2">
+        <div>
+          <div class="section-label">Profile</div>
+          <div style="display:flex;align-items:center;gap:18px;margin-bottom:26px">
+            <div class="avatar" style="width:64px;height:64px;font-size:24px;background:var(--lav)">J</div>
+            <button class="btn btn-ghost btn-sm">Change photo</button>
           </div>
+          <div class="account-field">
+            <div class="account-label">First name</div>
+            <div class="account-value"><input value="Jess" /></div>
+          </div>
+          <div class="account-field">
+            <div class="account-label">Last name</div>
+            <div class="account-value"><input value="Mitchell" /></div>
+          </div>
+          <div class="account-field">
+            <div class="account-label">Email</div>
+            <div class="account-value"><input value="jess@email.com" /></div>
+          </div>
+          <div class="account-field">
+            <div class="account-label">Phone</div>
+            <div class="account-value"><input value="0412 345 678" /></div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="section-label">Emergency Contact</div>
+          <div class="account-field">
+            <div class="account-label">Name</div>
+            <div class="account-value"><input value="Sarah Mitchell" /></div>
+          </div>
+          <div class="account-field">
+            <div class="account-label">Relationship</div>
+            <div class="account-value"><input value="Sister" /></div>
+          </div>
+          <div class="account-field">
+            <div class="account-label">Phone</div>
+            <div class="account-value"><input value="0412 999 888" /></div>
+          </div>
+
+          <button class="btn btn-lime btn-sm mt-8">Save changes</button>
         </div>
-        <!-- Chat window -->
-        <div style="display:flex;flex-direction:column;background:var(--black)">
-          <div style="padding:16px 24px;border-bottom:1px solid #1f1f1f;display:flex;align-items:center;gap:12px">
-            <div class="avatar" style="background:var(--lime);color:var(--black);font-size:13px">D</div>
+
+        <div>
+          <div class="section-label">Payment methods</div>
+          <div class="card mb-12" style="display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:14px">
+              <div style="background:#1a1a1a;border-radius:6px;padding:8px 12px;font-size:13px;font-weight:600">VISA</div>
+              <div>
+                <div style="font-size:15px;font-weight:500">ending in 4242</div>
+                <div style="font-size:13px;color:var(--grey)">Expires 09/27</div>
+              </div>
+            </div>
+            <span class="tag tag-lime">Default</span>
+          </div>
+          <button class="btn btn-ghost btn-sm mb-24">Add payment method</button>
+
+          <div class="divider"></div>
+
+          <div class="section-label">Notifications</div>
+          <div style="display:flex;flex-direction:column;gap:0">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--border)">
+              <div>
+                <div style="font-size:15px;font-weight:500">Class reminders</div>
+                <div style="font-size:13px;color:var(--grey)">Day before each class</div>
+              </div>
+              <div style="width:44px;height:24px;background:var(--lime);border-radius:12px;cursor:pointer;position:relative">
+                <div style="width:20px;height:20px;background:var(--black);border-radius:50%;position:absolute;top:2px;right:2px"></div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--border)">
+              <div>
+                <div style="font-size:15px;font-weight:500">Waitlist alerts</div>
+                <div style="font-size:13px;color:var(--grey)">When a spot opens in a class you're waiting for</div>
+              </div>
+              <div style="width:44px;height:24px;background:var(--lime);border-radius:12px;cursor:pointer;position:relative">
+                <div style="width:20px;height:20px;background:var(--black);border-radius:50%;position:absolute;top:2px;right:2px"></div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--border)">
+              <div>
+                <div style="font-size:15px;font-weight:500">Studio updates</div>
+                <div style="font-size:13px;color:var(--grey)">Announcements and important info</div>
+              </div>
+              <div style="width:44px;height:24px;background:var(--lime);border-radius:12px;cursor:pointer;position:relative">
+                <div style="width:20px;height:20px;background:var(--black);border-radius:50%;position:absolute;top:2px;right:2px"></div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:15px 0">
+              <div>
+                <div style="font-size:15px;font-weight:500">Homework and resources</div>
+                <div style="font-size:13px;color:var(--grey)">When your instructor assigns new homework</div>
+              </div>
+              <div style="width:44px;height:24px;background:#333;border-radius:12px;cursor:pointer;position:relative">
+                <div style="width:20px;height:20px;background:#666;border-radius:50%;position:absolute;top:2px;left:2px"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="section-label">Waiver and terms</div>
+          <div class="card" style="display:flex;align-items:center;justify-content:space-between">
             <div>
-              <div style="font-size:14px;font-weight:500">Duality Studio</div>
-              <div style="font-size:11px;color:var(--grey)">Mimi & Chloe</div>
+              <div style="font-size:15px;font-weight:500">Waiver accepted</div>
+              <div style="font-size:13px;color:var(--grey)">Signed Mon 28 Apr 2025</div>
             </div>
-          </div>
-          <div style="flex:1;padding:24px;display:flex;flex-direction:column;gap:14px;overflow-y:auto">
-            <div style="display:flex;gap:10px;max-width:70%">
-              <div class="avatar" style="background:var(--lime);color:var(--black);font-size:12px;width:30px;height:30px;flex-shrink:0">D</div>
-              <div style="background:var(--card);border:1px solid #1f1f1f;border-radius:12px;border-top-left-radius:3px;padding:12px 14px">
-                <div style="font-size:13px;line-height:1.6">Hey Jess! Just checking in — saw you marked away for last Wednesday. How's the invert practice going? Mimi mentioned you're super close 🌟</div>
-                <div style="font-size:10px;color:var(--grey);margin-top:6px">Wed 9:12am</div>
-              </div>
-            </div>
-            <div style="display:flex;gap:10px;max-width:70%;align-self:flex-end;flex-direction:row-reverse">
-              <div class="avatar" style="width:30px;height:30px;font-size:12px;flex-shrink:0">J</div>
-              <div style="background:#0f1600;border:1px solid var(--lime);border-radius:12px;border-top-right-radius:3px;padding:12px 14px">
-                <div style="font-size:13px;line-height:1.6">Thank you!! Yeah I was travelling for work. So close to getting it consistently — I'll be back this week for sure 💪</div>
-                <div style="font-size:10px;color:var(--grey);margin-top:6px">Thu 11:34am</div>
-              </div>
-            </div>
-          </div>
-          <div style="padding:16px 20px;border-top:1px solid #1f1f1f;display:flex;gap:10px">
-            <input style="flex:1;background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:10px 14px;color:var(--white);font-family:'Archivo',sans-serif;font-size:13px" placeholder="Type a message…" />
-            <button class="btn btn-lime btn-sm">Send</button>
+            <span class="tag tag-lime">Active</span>
           </div>
         </div>
       </div>
@@ -1106,79 +1362,151 @@
 </div>
 
 
-<!-- ════════════════════════════════════════
-     CHECKOUT MODAL
-═════════════════════════════════════════ -->
+<!-- CHECKOUT MODAL -->
 <div class="modal-overlay" id="checkout-modal">
   <div class="modal">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
-      <div class="modal-title">Checkout</div>
-      <button class="btn btn-ghost btn-sm" onclick="closeModal('checkout-modal')">✕</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:26px">
+      <div class="modal-title">Payment options</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('checkout-modal')">Close</button>
     </div>
 
-    <div style="background:#0a0a0a;border:1px solid #1f1f1f;border-radius:10px;padding:16px 18px;margin-bottom:24px">
+    <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:17px 20px;margin-bottom:26px">
       <div style="font-size:12px;color:var(--grey);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">Order summary</div>
-      <div id="checkout-summary" style="font-size:14px;line-height:2;color:var(--grey)"></div>
-      <div style="border-top:1px solid #1f1f1f;margin-top:12px;padding-top:12px;display:flex;justify-content:space-between">
-        <span style="font-family:'Archivo Black',sans-serif">Deposit due today (50%)</span>
-        <span style="font-family:'Archivo Black',sans-serif;color:var(--lime)" id="checkout-deposit-val"></span>
+      <div id="checkout-summary" style="font-size:15px;line-height:2;color:var(--grey)"></div>
+      <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:14px;display:flex;justify-content:space-between">
+        <span style="font-family:'Archivo Black',sans-serif;font-size:16px">Season total</span>
+        <span style="font-family:'Archivo Black',sans-serif;font-size:18px" id="checkout-total-val"></span>
       </div>
     </div>
 
-    <div class="stripe-field">
-      <div class="stripe-label">Card number</div>
-      <input class="stripe-input" placeholder="1234 5678 9012 3456" />
-    </div>
-    <div class="stripe-row">
-      <div class="stripe-field">
-        <div class="stripe-label">Expiry</div>
-        <input class="stripe-input" placeholder="MM / YY" />
+    <div style="font-size:15px;font-weight:500;margin-bottom:14px">How would you like to pay?</div>
+
+    <div class="pay-option selected" onclick="selectPayOption(this,'full')" id="pay-full">
+      <div class="pay-radio"></div>
+      <div class="pay-option-top">
+        <div class="pay-option-title">Pay in full today</div>
+        <div class="pay-option-price" id="pay-full-price">$270</div>
       </div>
+      <div class="pay-option-desc">One payment. Done. No balance to think about.</div>
+    </div>
+
+    <div class="pay-option" onclick="selectPayOption(this,'deposit')" id="pay-deposit">
+      <div class="pay-radio"></div>
+      <div class="pay-option-top">
+        <div class="pay-option-title">Pay 50% deposit today</div>
+        <div class="pay-option-price" id="pay-deposit-price">$135</div>
+      </div>
+      <div class="pay-option-desc" id="pay-deposit-desc">Balance of $135 charged automatically on Sunday of Week 1 (1 Jun).</div>
+    </div>
+
+    <div class="pay-option" onclick="selectPayOption(this,'plan')">
+      <div class="pay-radio"></div>
+      <div class="pay-option-top">
+        <div class="pay-option-title">Request a payment plan</div>
+        <div class="pay-option-price" style="font-size:14px;color:var(--grey)">Custom</div>
+      </div>
+      <div class="pay-option-desc">Contact us to arrange a payment plan before or right after booking. We'll sort it out together.</div>
+    </div>
+
+    <div id="card-fields" style="margin-top:24px">
       <div class="stripe-field">
-        <div class="stripe-label">CVC</div>
-        <input class="stripe-input" placeholder="•••" />
+        <div class="stripe-label">Card number</div>
+        <input class="stripe-input" placeholder="1234 5678 9012 3456" />
+      </div>
+      <div class="stripe-row">
+        <div class="stripe-field">
+          <div class="stripe-label">Expiry</div>
+          <input class="stripe-input" placeholder="MM / YY" />
+        </div>
+        <div class="stripe-field">
+          <div class="stripe-label">CVC</div>
+          <input class="stripe-input" placeholder="..." />
+        </div>
+      </div>
+    </div>
+
+    <div id="plan-fields" style="display:none;margin-top:24px">
+      <div class="banner banner-lav">
+        <span>&#9674;</span>
+        <div>Once you complete booking, email <strong>intrigued@dualitypole.com</strong> to arrange your payment plan before your balance is due.</div>
       </div>
     </div>
 
     <div class="modal-actions">
-      <button class="btn btn-lime" style="flex:1" onclick="closeModal('checkout-modal')">Pay deposit — <span id="checkout-btn-val"></span></button>
+      <button class="btn btn-lime" style="flex:1" id="pay-btn" onclick="closeModal('checkout-modal')">Confirm and pay - <span id="checkout-btn-val"></span></button>
       <button class="btn btn-ghost" onclick="closeModal('checkout-modal')">Cancel</button>
     </div>
-    <div style="font-size:11px;color:var(--grey);text-align:center;margin-top:12px">
-      🔒 Secured by Stripe · Balance charged 48hrs before Season 4 starts
+    <div style="font-size:12px;color:var(--grey);text-align:center;margin-top:12px">Secured by Stripe</div>
+  </div>
+</div>
+
+
+<!-- MARK AWAY MODAL -->
+<div class="modal-overlay" id="markaway-modal">
+  <div class="modal" style="max-width:440px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div class="modal-title" id="markaway-title">Mark Away</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('markaway-modal')">Close</button>
+    </div>
+    <div style="font-size:14px;color:var(--grey);margin-bottom:24px" id="markaway-class-info"></div>
+
+    <!-- Before cutoff state -->
+    <div id="markaway-before">
+      <div style="background:#0f1600;border:1px solid var(--lime);border-radius:10px;padding:18px 20px;margin-bottom:20px">
+        <div style="font-family:'Archivo Black',sans-serif;font-size:15px;color:var(--lime);margin-bottom:6px">You'll receive a catch-up credit</div>
+        <div style="font-size:14px;color:var(--grey);line-height:1.6">This is more than 4 hours before your class - you're within the cancellation window. A catch-up credit will be added to your account to use within this season.</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-lime" style="flex:1" onclick="closeModal('markaway-modal')">Confirm - mark me away</button>
+        <button class="btn btn-ghost" onclick="closeModal('markaway-modal')">Cancel</button>
+      </div>
+    </div>
+
+    <!-- After cutoff state (toggle for demo) -->
+    <div id="markaway-after" style="display:none">
+      <div style="background:#1a0900;border:1px solid #ffaa44;border-radius:10px;padding:18px 20px;margin-bottom:20px">
+        <div style="font-family:'Archivo Black',sans-serif;font-size:15px;color:#ffaa44;margin-bottom:6px">No catch-up credit for this one</div>
+        <div style="font-size:14px;color:var(--grey);line-height:1.6">This is within 4 hours of your class - the cancellation window has passed. You can still mark away so we know you're not coming, but no credit will be issued.</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" style="flex:1" onclick="closeModal('markaway-modal')">Mark away anyway</button>
+        <button class="btn btn-ghost" onclick="closeModal('markaway-modal')">Cancel</button>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:16px">
+      <span style="font-size:12px;color:var(--grey);cursor:pointer;text-decoration:underline" onclick="toggleMarkAwayState()">Demo: toggle before / after cutoff</span>
     </div>
   </div>
 </div>
 
 
-<!-- ════════════════════════════════════════
-     CASUAL BOOKING MODAL
-═════════════════════════════════════════ -->
+<!-- CASUAL BOOKING MODAL -->
 <div class="modal-overlay" id="casual-modal">
-  <div class="modal">
+  <div class="modal" style="max-width:440px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
       <div class="modal-title" id="casual-modal-title">Kiki</div>
-      <button class="btn btn-ghost btn-sm" onclick="closeModal('casual-modal')">✕</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('casual-modal')">Close</button>
     </div>
-    <div style="font-size:14px;color:var(--grey);margin-bottom:20px" id="casual-modal-meta"></div>
+    <div style="font-size:14px;color:var(--grey);margin-bottom:24px" id="casual-modal-meta"></div>
 
-    <div id="casual-credit-option" style="background:#1a1028;border:1px solid var(--lav);border-radius:10px;padding:16px 18px;margin-bottom:16px">
+    <div id="casual-credit-option" style="background:#1a1028;border:1px solid var(--lav);border-radius:10px;padding:18px 20px;margin-bottom:14px;cursor:pointer">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div>
-          <div style="font-weight:500;margin-bottom:4px">Use catch-up credit</div>
-          <div style="font-size:12px;color:var(--grey)">You have 1 credit available · no charge</div>
+          <div style="font-weight:500;font-size:15px;margin-bottom:5px">Use catch-up credit</div>
+          <div style="font-size:13px;color:var(--grey)">You have 1 credit - no charge</div>
         </div>
-        <span style="font-family:'Archivo Black',sans-serif;font-size:18px;color:var(--lav)">FREE</span>
+        <span style="font-family:'Archivo Black',sans-serif;font-size:20px;color:var(--lav)">FREE</span>
       </div>
     </div>
 
-    <div style="background:#0a0a0a;border:1px solid #2a2a2a;border-radius:10px;padding:16px 18px;margin-bottom:20px">
+    <div style="background:#0a0a0a;border:1px solid #2a2a2a;border-radius:10px;padding:18px 20px;margin-bottom:22px;cursor:pointer">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div>
-          <div style="font-weight:500;margin-bottom:4px">Pay casual rate</div>
-          <div style="font-size:12px;color:var(--grey)">Charged to your saved card</div>
+          <div style="font-weight:500;font-size:15px;margin-bottom:5px">Pay casual rate</div>
+          <div style="font-size:13px;color:var(--grey)">Charged to your saved Visa ending 4242</div>
         </div>
-        <span style="font-family:'Archivo Black',sans-serif;font-size:18px">$40</span>
+        <span style="font-family:'Archivo Black',sans-serif;font-size:20px">$40</span>
       </div>
     </div>
 
@@ -1190,18 +1518,68 @@
 </div>
 
 
+<!-- FORM MODAL -->
+<div class="modal-overlay" id="form-modal">
+  <div class="modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="modal-title">Are you coming to Category Is?</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('form-modal')">Close</button>
+    </div>
+    <div style="font-size:14px;color:var(--grey);margin-bottom:26px;line-height:1.7">Duality is attending Category Is this season and we'd love to know who's coming to support. Let us know below!</div>
+
+    <div style="margin-bottom:20px">
+      <div style="font-size:15px;font-weight:500;margin-bottom:14px">Are you planning to attend?</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;background:#0f1600;border:2px solid var(--lime);border-radius:10px;cursor:pointer">
+          <div style="width:20px;height:20px;border-radius:50%;border:2px solid var(--lime);background:var(--lime);flex-shrink:0"></div>
+          <span style="font-size:15px">Yes, I'll be there!</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--card);border:2px solid var(--border);border-radius:10px;cursor:pointer">
+          <div style="width:20px;height:20px;border-radius:50%;border:2px solid #444;flex-shrink:0"></div>
+          <span style="font-size:15px">Can't make it this time</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--card);border:2px solid var(--border);border-radius:10px;cursor:pointer">
+          <div style="width:20px;height:20px;border-radius:50%;border:2px solid #444;flex-shrink:0"></div>
+          <span style="font-size:15px">Not sure yet</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:22px">
+      <div style="font-size:15px;font-weight:500;margin-bottom:10px">Any comments or questions?</div>
+      <textarea style="width:100%;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:8px;padding:13px 16px;color:var(--white);font-family:'Archivo',sans-serif;font-size:14px;resize:vertical;min-height:90px" placeholder="Optional..."></textarea>
+    </div>
+
+    <button class="btn btn-lime" style="width:100%" onclick="closeModal('form-modal')">Submit response</button>
+  </div>
+</div>
+
+
 <script>
-  // ── Screen navigation ──
+  const PRICING   = [0, 270, 440, 580, 700, 800, 900];
+  const PER_CLASS = [0, 33.75, 27.50, 24.15, 21.80, 20.00, 18.75];
+  const PERKS     = [
+    [], [],
+    [],
+    ['1 free practice session per week'],
+    ['Unlimited free practice sessions', 'Free locker hire for the season'],
+    ['Unlimited free practice sessions', 'Free locker hire for the season'],
+    ['Unlimited free practice sessions', 'Free locker hire for the season'],
+  ];
+
+  let cart = {};
+  let markAwayBeforeCutoff = true;
+  let selectedPayMode = 'full';
+
   function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('screen-' + id).classList.add('active');
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    const map = { dashboard: 0, book: 1, myclasses: 2, progress: 3, chat: 4 };
-    const items = document.querySelectorAll('.nav-item');
-    if (map[id] !== undefined) items[map[id]].classList.add('active');
+    const ids = ['dashboard','book','myclasses','progress','notifications','forms','chat','account'];
+    const idx = ids.indexOf(id);
+    if (idx !== -1) document.querySelectorAll('.nav-item')[idx].classList.add('active');
   }
 
-  // ── Book tabs ──
   function showBookTab(tab) {
     document.getElementById('panel-season').style.display = tab === 'season' ? 'block' : 'none';
     document.getElementById('panel-casual').style.display = tab === 'casual' ? 'block' : 'none';
@@ -1209,33 +1587,25 @@
     document.getElementById('tab-casual').classList.toggle('active', tab === 'casual');
   }
 
-  // ── Filters ──
+  function showProgressTab(tab) {
+    document.getElementById('panel-tricks').style.display    = tab === 'tricks'    ? 'block' : 'none';
+    document.getElementById('panel-resources').style.display = tab === 'resources' ? 'block' : 'none';
+    document.getElementById('tab-tricks').classList.toggle('active',    tab === 'tricks');
+    document.getElementById('tab-resources').classList.toggle('active', tab === 'resources');
+  }
+
   function toggleFilter(el) {
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    el.closest('.filters').querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     el.classList.add('active');
   }
 
-  // ── Cart logic ──
-  const PRICING = [0, 270, 440, 580, 700, 800, 900];
-  const PERKS = [
-    [],
-    [],
-    [],
-    ['1 free practice session/week'],
-    ['Unlimited free practice', 'Free locker hire'],
-    ['Unlimited free practice', 'Free locker hire'],
-    ['Unlimited free practice', 'Free locker hire'],
-  ];
-  const PER_CLASS = [0, 33.75, 27.50, 24.15, 21.80, 20.00, 18.75];
-
-  let cart = {};
-
-  function toggleClass(id, name, time, priceLabel, el) {
+  function toggleClass(id, name, time, el) {
+    if (el.classList.contains('locked')) return;
     if (cart[id]) {
       delete cart[id];
       el.classList.remove('selected');
     } else {
-      cart[id] = { name, time, priceLabel };
+      cart[id] = { name, time };
       el.classList.add('selected');
     }
     renderCart();
@@ -1243,35 +1613,30 @@
 
   function removeFromCart(id) {
     delete cart[id];
-    document.querySelectorAll('.class-card').forEach(c => {
-      if (c.getAttribute('id') === 'cc-' + id) c.classList.remove('selected');
+    document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
+    Object.keys(cart).forEach(k => {
+      // re-select remaining
     });
     renderCart();
   }
 
   function renderCart() {
-    const count = Object.keys(cart).length;
+    const count   = Object.keys(cart).length;
     const itemsEl = document.getElementById('cart-items');
     const emptyEl = document.getElementById('cart-empty');
-    const discountEl = document.getElementById('cart-discount');
-    const perksEl = document.getElementById('cart-perks');
-    const totalEl = document.getElementById('cart-total');
-    const ctaBtn = document.getElementById('cart-cta');
 
-    // Remove old dynamic items
     itemsEl.querySelectorAll('.cart-item').forEach(e => e.remove());
 
     if (count === 0) {
       emptyEl.style.display = 'block';
-      discountEl.style.display = 'none';
-      perksEl.style.display = 'none';
-      totalEl.style.display = 'none';
-      ctaBtn.disabled = true;
+      document.getElementById('cart-discount').style.display = 'none';
+      document.getElementById('cart-perks').style.display    = 'none';
+      document.getElementById('cart-total').style.display    = 'none';
+      document.getElementById('cart-cta').disabled = true;
       return;
     }
 
     emptyEl.style.display = 'none';
-
     Object.entries(cart).forEach(([id, cls]) => {
       const div = document.createElement('div');
       div.className = 'cart-item';
@@ -1283,55 +1648,127 @@
       itemsEl.appendChild(div);
     });
 
-    const price = PRICING[Math.min(count, 6)];
-    const perClass = PER_CLASS[Math.min(count, 6)];
-    const perks = PERKS[Math.min(count, 6)];
+    const idx    = Math.min(count, 6);
+    const price  = PRICING[idx];
+    const perCls = PER_CLASS[idx];
+    const perks  = PERKS[idx];
 
-    discountEl.style.display = 'block';
+    document.getElementById('cart-discount').style.display = 'block';
     document.getElementById('cart-discount-value').textContent = '$' + price;
-    document.getElementById('cart-discount-sub').textContent = `${count} class${count > 1 ? 'es' : ''} · $${perClass.toFixed(2)}/class`;
+    document.getElementById('cart-discount-sub').textContent   = count + ' class' + (count > 1 ? 'es' : '') + ' - $' + perCls.toFixed(2) + '/class';
 
-    if (perks.length > 0) {
+    const perksEl = document.getElementById('cart-perks');
+    if (perks.length) {
       perksEl.style.display = 'block';
-      perksEl.innerHTML = perks.map(p => `<div class="perk"><span class="perk-icon">✓</span>${p}</div>`).join('');
+      perksEl.innerHTML = perks.map(p => `<div class="perk"><span class="perk-icon">+</span>${p}</div>`).join('');
     } else {
       perksEl.style.display = 'none';
     }
 
-    const deposit = price / 2;
-    totalEl.style.display = 'block';
-    document.getElementById('cart-deposit').textContent = '$' + deposit.toFixed(2);
-    document.getElementById('cart-balance').textContent = '$' + deposit.toFixed(2);
+    document.getElementById('cart-total').style.display = 'block';
     document.getElementById('cart-total-val').textContent = '$' + price;
-    ctaBtn.disabled = false;
+    document.getElementById('cart-cta').disabled = false;
   }
 
   function openCheckout() {
-    const count = Object.keys(cart).length;
-    const price = PRICING[Math.min(count, 6)];
+    const count   = Object.keys(cart).length;
+    const price   = PRICING[Math.min(count, 6)];
     const deposit = price / 2;
-    const summary = Object.values(cart).map(c => `<div style="display:flex;justify-content:space-between"><span>${c.name}</span><span>${c.time}</span></div>`).join('');
-    document.getElementById('checkout-summary').innerHTML = summary;
-    document.getElementById('checkout-deposit-val').textContent = '$' + deposit.toFixed(2);
-    document.getElementById('checkout-btn-val').textContent = '$' + deposit.toFixed(2);
+
+    document.getElementById('checkout-summary').innerHTML =
+      Object.values(cart).map(c =>
+        `<div style="display:flex;justify-content:space-between"><span>${c.name}</span><span>${c.time}</span></div>`
+      ).join('');
+
+    document.getElementById('checkout-total-val').textContent = '$' + price;
+    document.getElementById('pay-full-price').textContent     = '$' + price;
+    document.getElementById('pay-deposit-price').textContent  = '$' + deposit;
+    document.getElementById('pay-deposit-desc').textContent   = 'Balance of $' + deposit + ' charged automatically on Sunday of Week 1 (1 Jun).';
+    document.getElementById('checkout-btn-val').textContent   = '$' + price;
+
+    selectedPayMode = 'full';
     document.getElementById('checkout-modal').classList.add('open');
+  }
+
+  function selectPayOption(el, mode) {
+    document.querySelectorAll('.pay-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedPayMode = mode;
+
+    const count   = Object.keys(cart).length;
+    const price   = PRICING[Math.min(count, 6)];
+    const deposit = price / 2;
+
+    const cardFields = document.getElementById('card-fields');
+    const planFields = document.getElementById('plan-fields');
+    const payBtn     = document.getElementById('pay-btn');
+    const btnVal     = document.getElementById('checkout-btn-val');
+
+    if (mode === 'plan') {
+      cardFields.style.display = 'none';
+      planFields.style.display = 'block';
+      payBtn.textContent = 'Confirm booking - arrange payment separately';
+    } else {
+      cardFields.style.display = 'block';
+      planFields.style.display = 'none';
+      const amt = mode === 'full' ? price : deposit;
+      btnVal.textContent = '$' + amt;
+      payBtn.innerHTML = 'Confirm and pay - <span id="checkout-btn-val">$' + amt + '</span>';
+    }
+  }
+
+  function openMarkAwayModal(className, classInfo, beforeCutoff) {
+    markAwayBeforeCutoff = beforeCutoff;
+    document.getElementById('markaway-title').textContent     = 'Mark Away - ' + className;
+    document.getElementById('markaway-class-info').textContent = classInfo;
+    document.getElementById('markaway-before').style.display  = beforeCutoff ? 'block' : 'none';
+    document.getElementById('markaway-after').style.display   = beforeCutoff ? 'none'  : 'block';
+    document.getElementById('markaway-modal').classList.add('open');
+  }
+
+  function toggleMarkAwayState() {
+    markAwayBeforeCutoff = !markAwayBeforeCutoff;
+    document.getElementById('markaway-before').style.display = markAwayBeforeCutoff ? 'block' : 'none';
+    document.getElementById('markaway-after').style.display  = markAwayBeforeCutoff ? 'none'  : 'block';
   }
 
   function openCasualModal(name, meta, instructor, hasCredit) {
     document.getElementById('casual-modal-title').textContent = name;
-    document.getElementById('casual-modal-meta').textContent = meta + ' · ' + instructor;
+    document.getElementById('casual-modal-meta').textContent  = meta + ' - ' + instructor;
     document.getElementById('casual-credit-option').style.display = hasCredit ? 'block' : 'none';
     document.getElementById('casual-modal').classList.add('open');
+  }
+
+  function openFormModal() {
+    document.getElementById('form-modal').classList.add('open');
   }
 
   function closeModal(id) {
     document.getElementById(id).classList.remove('open');
   }
 
-  // Close modals on overlay click
   document.querySelectorAll('.modal-overlay').forEach(o => {
     o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
   });
+
+  function setDashState(state) {
+    const seasonCta   = document.getElementById('dash-season-cta');
+    const notEnrolled = document.getElementById('dash-not-enrolled');
+    const enrolled    = document.getElementById('dash-enrolled');
+
+    seasonCta.style.display   = 'none';
+    notEnrolled.style.display = 'none';
+    enrolled.style.display    = 'none';
+
+    if (state === 'not-enrolled') {
+      notEnrolled.style.display = 'block';
+    } else if (state === 'enrolled-new-season-open') {
+      seasonCta.style.display = 'block';
+      enrolled.style.display  = 'block';
+    } else {
+      enrolled.style.display = 'block';
+    }
+  }
 </script>
 </body>
 </html>
