@@ -2674,55 +2674,56 @@
       : 0;
     const remaining = total - deposit;
 
-    // How many instalments and days between each
+    const SEASON_START = new Date(2026, 5, 2);  // 2 Jun 2026
+    const SEASON_END   = new Date(2026, 6, 25); // 25 Jul 2026
     const freqDays = { weekly: 7, fortnightly: 14, monthly: 30 };
     const days = freqDays[planFreq];
-
-    // Number of instalments: spread remaining over 4 (or fewer if monthly fits in season)
-    const numPayments = planFreq === 'monthly' ? 3 : planFreq === 'fortnightly' ? 4 : 8;
-    const instalment  = (remaining / numPayments).toFixed(2);
-
-    // Start date
-    const SEASON_START = new Date(2026, 5, 2); // 2 Jun 2026
     const startDate = planStart === 'season' ? new Date(SEASON_START) : new Date();
+
+    // Calculate how many instalments fit before season end
+    let numPayments = 0;
+    const testDate = new Date(startDate);
+    while (testDate <= SEASON_END) {
+      numPayments++;
+      testDate.setDate(testDate.getDate() + days);
+    }
+    numPayments = Math.max(1, numPayments);
+    const instalment = (remaining / numPayments).toFixed(2);
 
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const fmt = d => `${d.getDate()} ${months[d.getMonth()]}`;
 
     const rows = [];
-
-    // Deposit row if season start
     if (deposit > 0) {
-      rows.push({ label: 'Deposit (today)', amount: '$' + deposit, note: 'Charged now to hold your spot', lime: true });
+      rows.push({ label: 'Deposit (today)', amount: '$' + deposit, note: 'Charged now to hold your spot', lav: true });
     }
-
-    // Instalment rows
     for (let i = 0; i < numPayments; i++) {
       const d = new Date(startDate);
       d.setDate(startDate.getDate() + i * days);
-      const isFirst = i === 0;
       rows.push({
         label: fmt(d),
         amount: '$' + instalment,
-        note: isFirst && planStart === 'today' ? 'First payment' : '',
-        lime: false
+        note: i === 0 && planStart === 'today' ? 'First payment' : (i === numPayments - 1 ? 'Final payment' : ''),
+        lav: false
       });
     }
 
     const el = document.getElementById('plan-schedule');
-    el.innerHTML = rows.map((r, i) =>
-      `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#0a0a0a;border:1px solid ${r.lime ? 'var(--lav)' : 'var(--border)'};border-radius:8px;gap:12px">
+    el.innerHTML = rows.map(r =>
+      `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#0a0a0a;border:1px solid ${r.lav ? 'var(--lav)' : 'var(--border)'};border-radius:8px;gap:12px">
         <div>
-          <div style="font-size:13px;font-weight:500;color:${r.lime ? 'var(--lav)' : 'var(--white)'}">${r.label}</div>
+          <div style="font-size:13px;font-weight:500;color:${r.lav ? 'var(--lav)' : 'var(--white)'}">${r.label}</div>
           ${r.note ? `<div style="font-size:11px;color:var(--grey);margin-top:2px">${r.note}</div>` : ''}
         </div>
-        <div style="font-family:'Archivo Black',sans-serif;font-size:15px;white-space:nowrap;color:${r.lime ? 'var(--lav)' : 'var(--lime)'}">${r.amount}</div>
+        <div style="font-family:'Archivo Black',sans-serif;font-size:15px;white-space:nowrap;color:${r.lav ? 'var(--lav)' : 'var(--lime)'}">${r.amount}</div>
       </div>`
-    ).join('');
+    ).join('') +
+    `<div style="font-size:12px;color:var(--grey);margin-top:8px;line-height:1.5">
+      All payments must be completed by <strong style="color:var(--white)">${fmt(SEASON_END)}</strong> (season end).
+      ${numPayments} x $${instalment} = $${(numPayments * parseFloat(instalment)).toFixed(2)}${deposit > 0 ? ' + $' + deposit + ' deposit' : ''}.
+    </div>`;
 
-    // Also update deposit input listener so schedule recalcs when amount changes
-    const depInput = document.getElementById('plan-deposit-input');
-    depInput.oninput = buildPlanSchedule;
+    document.getElementById('plan-deposit-input').oninput = buildPlanSchedule;
   }
 
   function buildCashCalendar() {
