@@ -1,0 +1,213 @@
+<!--
+  Duality Pole — Embeddable Chat Widget
+  ======================================
+  Paste the <script> tag at the bottom of this file into your website's HTML,
+  just before </body>. Change HELPDESK_URL to your deployed server address.
+
+  The widget automatically renders a floating chat bubble in the bottom-right
+  corner of any page it's included on.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Duality Pole Chat Widget — Preview</title>
+  <style>body { font-family: sans-serif; background: #1a1a1a; color: #fff; padding: 2rem; }</style>
+</head>
+<body>
+  <h2>Chat Widget Preview</h2>
+  <p>The floating chat bubble appears in the bottom-right corner.</p>
+  <p>Copy the &lt;script&gt; tag below into your website to embed it.</p>
+
+<!-- =====================================================================
+     COPY EVERYTHING FROM HERE DOWN INTO YOUR WEBSITE
+     ===================================================================== -->
+<script>
+(function () {
+  // -----------------------------------------------------------------------
+  // CONFIG — update this to your deployed server URL
+  // -----------------------------------------------------------------------
+  var HELPDESK_URL = "https://your-helpdesk-server.com";
+  var BRAND_COLOR  = "#c9a96e";   // gold — change to match your site
+  var BOT_NAME     = "Duality Help Desk";
+
+  // -----------------------------------------------------------------------
+  // Inject styles
+  // -----------------------------------------------------------------------
+  var style = document.createElement("style");
+  style.textContent = `
+    #dp-chat-bubble {
+      position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+      width: 56px; height: 56px; border-radius: 50%;
+      background: ${BRAND_COLOR}; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      font-size: 26px; border: none; outline: none;
+      transition: transform 0.2s;
+    }
+    #dp-chat-bubble:hover { transform: scale(1.08); }
+    #dp-chat-window {
+      position: fixed; bottom: 90px; right: 24px; z-index: 9999;
+      width: 340px; max-height: 480px;
+      background: #fff; border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+      display: none; flex-direction: column; overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    #dp-chat-window.open { display: flex; }
+    #dp-chat-header {
+      background: ${BRAND_COLOR}; color: #fff;
+      padding: 14px 16px; font-weight: 600; font-size: 15px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    #dp-chat-header span { font-size: 12px; opacity: 0.85; display: block; font-weight: 400; }
+    #dp-close-btn { background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; line-height: 1; }
+    #dp-messages {
+      flex: 1; overflow-y: auto; padding: 14px;
+      display: flex; flex-direction: column; gap: 10px;
+      background: #f8f5f0;
+    }
+    .dp-msg {
+      max-width: 82%; padding: 10px 13px; border-radius: 14px;
+      font-size: 14px; line-height: 1.45; white-space: pre-wrap; word-break: break-word;
+    }
+    .dp-msg.bot {
+      background: #fff; color: #222; align-self: flex-start;
+      border-bottom-left-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .dp-msg.user {
+      background: ${BRAND_COLOR}; color: #fff; align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+    .dp-msg.typing { opacity: 0.6; font-style: italic; }
+    #dp-input-row {
+      display: flex; gap: 8px; padding: 10px 12px;
+      border-top: 1px solid #eee; background: #fff;
+    }
+    #dp-input {
+      flex: 1; border: 1px solid #ddd; border-radius: 20px;
+      padding: 8px 14px; font-size: 14px; outline: none;
+    }
+    #dp-input:focus { border-color: ${BRAND_COLOR}; }
+    #dp-send-btn {
+      background: ${BRAND_COLOR}; color: #fff; border: none;
+      border-radius: 50%; width: 36px; height: 36px;
+      cursor: pointer; font-size: 16px; display: flex;
+      align-items: center; justify-content: center;
+    }
+    #dp-send-btn:disabled { opacity: 0.5; cursor: default; }
+  `;
+  document.head.appendChild(style);
+
+  // -----------------------------------------------------------------------
+  // Build DOM
+  // -----------------------------------------------------------------------
+  var bubble = document.createElement("button");
+  bubble.id = "dp-chat-bubble";
+  bubble.setAttribute("aria-label", "Open help chat");
+  bubble.innerHTML = "💬";
+
+  var win = document.createElement("div");
+  win.id = "dp-chat-window";
+  win.setAttribute("role", "dialog");
+  win.setAttribute("aria-label", BOT_NAME);
+  win.innerHTML = `
+    <div id="dp-chat-header">
+      <div>
+        ${BOT_NAME}
+        <span>Ask us anything about classes, bookings &amp; more</span>
+      </div>
+      <button id="dp-close-btn" aria-label="Close chat">✕</button>
+    </div>
+    <div id="dp-messages"></div>
+    <div id="dp-input-row">
+      <input id="dp-input" type="text" placeholder="Type your question…" autocomplete="off" />
+      <button id="dp-send-btn" aria-label="Send">➤</button>
+    </div>
+  `;
+
+  document.body.appendChild(bubble);
+  document.body.appendChild(win);
+
+  // -----------------------------------------------------------------------
+  // Logic
+  // -----------------------------------------------------------------------
+  var messages = document.getElementById("dp-messages");
+  var input    = document.getElementById("dp-input");
+  var sendBtn  = document.getElementById("dp-send-btn");
+
+  function addMsg(text, role) {
+    var el = document.createElement("div");
+    el.className = "dp-msg " + role;
+    el.textContent = text;
+    messages.appendChild(el);
+    messages.scrollTop = messages.scrollHeight;
+    return el;
+  }
+
+  function greet() {
+    addMsg(
+      "Hi! 👋 I'm the Duality help desk bot. Ask me about classes, bookings, " +
+      "what to wear, cancellations, or anything else — I'm here to help!",
+      "bot"
+    );
+  }
+
+  function openChat() {
+    win.classList.add("open");
+    bubble.innerHTML = "✕";
+    if (!messages.hasChildNodes()) greet();
+    input.focus();
+  }
+
+  function closeChat() {
+    win.classList.remove("open");
+    bubble.innerHTML = "💬";
+  }
+
+  bubble.addEventListener("click", function () {
+    win.classList.contains("open") ? closeChat() : openChat();
+  });
+  document.getElementById("dp-close-btn").addEventListener("click", closeChat);
+
+  async function sendMessage() {
+    var text = input.value.trim();
+    if (!text) return;
+
+    input.value = "";
+    sendBtn.disabled = true;
+    addMsg(text, "user");
+    var typing = addMsg("Thinking…", "bot typing");
+
+    try {
+      var res = await fetch(HELPDESK_URL + "/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text }),
+      });
+      var data = await res.json();
+      typing.remove();
+      addMsg(data.answer, "bot");
+    } catch (e) {
+      typing.remove();
+      addMsg(
+        "Sorry, I couldn't connect right now. Please email intrigued@dualitypole.com or DM us on Instagram @dualitypole.",
+        "bot"
+      );
+    } finally {
+      sendBtn.disabled = false;
+      input.focus();
+    }
+  }
+
+  sendBtn.addEventListener("click", sendMessage);
+  input.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+})();
+</script>
+<!-- =====================================================================
+     END OF EMBED CODE
+     ===================================================================== -->
+</body>
+</html>
