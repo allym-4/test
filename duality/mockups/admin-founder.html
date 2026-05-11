@@ -2534,13 +2534,187 @@ tr.clickable-row:hover td { background: #141414; }
 
     <!-- ===== MARKETING ===== -->
     <div id="screen-marketing" class="screen">
-      <div class="page-header"><div><div class="page-title">Marketing</div><div class="page-sub">Email campaigns, Mailchimp sync and email designer</div></div></div>
-      <div class="subtabs" style="margin-bottom:24px;">
-        <div class="subtab active" onclick="switchSubTab(this,'mkt-mailchimp')">Mailchimp</div>
-        <div class="subtab" onclick="switchSubTab(this,'mkt-templates')">Email Templates</div>
-        <div class="subtab" onclick="switchSubTab(this,'mkt-campaign')">Send Campaign</div>
+      <div class="page-header">
+        <div><div class="page-title">Marketing</div><div class="page-sub">Campaigns, customer lists, automations and Mailchimp sync</div></div>
+        <button class="btn btn-lime" onclick="openModal('modal-new-campaign')">+ New Campaign</button>
       </div>
-      <div id="mkt-mailchimp" class="subscreen active">
+      <div class="subtabs" style="margin-bottom:20px;">
+        <div class="subtab active" onclick="switchSubTab(this,'mkt-campaigns')">Campaigns</div>
+        <div class="subtab" onclick="switchSubTab(this,'mkt-lists')">Customer Lists</div>
+        <div class="subtab" onclick="switchSubTab(this,'mkt-automations')">Automations</div>
+        <div class="subtab" onclick="switchSubTab(this,'mkt-mailchimp')">Mailchimp</div>
+      </div>
+
+      <!-- CAMPAIGNS TAB -->
+      <div id="mkt-campaigns" class="subscreen active">
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;">
+          <input type="text" id="campaign-search" placeholder="Search by customer list or title…" oninput="filterCampaigns(this.value)" style="flex:1;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:9px 14px;" />
+          <select id="campaign-type-filter" onchange="filterCampaigns(document.getElementById('campaign-search').value)" style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:9px 12px;cursor:pointer;">
+            <option value="all">All types</option>
+            <option value="notification">Notification</option>
+            <option value="email">Email</option>
+          </select>
+          <select id="campaign-status-filter" onchange="filterCampaigns(document.getElementById('campaign-search').value)" style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:9px 12px;cursor:pointer;">
+            <option value="all">All statuses</option>
+            <option value="Sent">Sent</option>
+            <option value="Draft">Draft</option>
+            <option value="Scheduled">Scheduled</option>
+          </select>
+        </div>
+        <div class="tbl-section">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:44px;"></th>
+                <th>Notification Type</th>
+                <th>Customer List</th>
+                <th>Title</th>
+                <th>Date Created</th>
+                <th>Status</th>
+                <th>Scheduled</th>
+              </tr>
+            </thead>
+            <tbody id="campaigns-tbody">
+              <tr data-type="notification" data-status="Sent">
+                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View">👁</button></td>
+                <td><span class="tag tag-lav">notification</span></td>
+                <td style="color:var(--grey);">All Connected Students</td>
+                <td style="font-weight:500;">Your final notice — opt in for Season 4!</td>
+                <td style="color:var(--grey);">3 May 2026</td>
+                <td><span class="tag tag-lime">Sent</span></td>
+                <td style="color:var(--grey);">—</td>
+              </tr>
+              <tr data-type="notification" data-status="Sent">
+                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View">👁</button></td>
+                <td><span class="tag tag-lav">notification</span></td>
+                <td style="color:var(--grey);">All Connected Students</td>
+                <td style="font-weight:500;">We want your thoughts + sign up for Season 4!</td>
+                <td style="color:var(--grey);">30 Apr 2026</td>
+                <td><span class="tag tag-lime">Sent</span></td>
+                <td style="color:var(--grey);">—</td>
+              </tr>
+              <tr data-type="notification" data-status="Sent">
+                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View">👁</button></td>
+                <td><span class="tag tag-lav">notification</span></td>
+                <td style="color:var(--grey);">All Connected Students</td>
+                <td style="font-weight:500;">Season 3 Routines are LIVE!</td>
+                <td style="color:var(--grey);">16 Apr 2026</td>
+                <td><span class="tag tag-lime">Sent</span></td>
+                <td style="color:var(--grey);">—</td>
+              </tr>
+              <tr data-type="notification" data-status="Sent">
+                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View">👁</button></td>
+                <td><span class="tag tag-lav">notification</span></td>
+                <td style="color:var(--grey);">All Connected Students</td>
+                <td style="font-weight:500;">LAST DAY TO ORDER SHOES!</td>
+                <td style="color:var(--grey);">2 Apr 2026</td>
+                <td><span class="tag tag-lime">Sent</span></td>
+                <td style="color:var(--grey);">—</td>
+              </tr>
+              <tr data-type="notification" data-status="Sent">
+                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View">👁</button></td>
+                <td><span class="tag tag-lav">notification</span></td>
+                <td style="color:var(--grey);">All Connected Students</td>
+                <td style="font-weight:500;">Are you coming to the showcase this weekend?</td>
+                <td style="color:var(--grey);">26 Feb 2026</td>
+                <td><span class="tag tag-lime">Sent</span></td>
+                <td style="color:var(--grey);">—</td>
+              </tr>
+              <tr data-type="notification" data-status="Sent">
+                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View">👁</button></td>
+                <td><span class="tag tag-lav">notification</span></td>
+                <td style="color:var(--grey);">All Connected Students</td>
+                <td style="font-weight:500;">Season 2 Routines Released!</td>
+                <td style="color:var(--grey);">11 Feb 2026</td>
+                <td><span class="tag tag-lime">Sent</span></td>
+                <td style="color:var(--grey);">—</td>
+              </tr>
+              <tr data-type="email" data-status="Sent">
+                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View">👁</button></td>
+                <td><span class="tag tag-amber">email</span></td>
+                <td style="color:var(--grey);">Pole Icon Waitlist</td>
+                <td style="font-weight:500;">Secret workshop release: Estefania at Duality</td>
+                <td style="color:var(--grey);">20 Jan 2026</td>
+                <td><span class="tag tag-lime">Sent</span></td>
+                <td style="color:var(--grey);">—</td>
+              </tr>
+              <tr data-type="notification" data-status="Sent">
+                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View">👁</button></td>
+                <td><span class="tag tag-lav">notification</span></td>
+                <td style="color:var(--grey);">All Connected Students</td>
+                <td style="font-weight:500;">Are you coming to the showcase tomorrow?</td>
+                <td style="color:var(--grey);">17 Dec 2025</td>
+                <td><span class="tag tag-lime">Sent</span></td>
+                <td style="color:var(--grey);">—</td>
+              </tr>
+              <tr data-type="email" data-status="Draft">
+                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View">👁</button></td>
+                <td><span class="tag tag-amber">email</span></td>
+                <td style="color:var(--grey);">Leads — Not Enrolled</td>
+                <td style="font-weight:500;">Come try Duality Pole — your first class is $20</td>
+                <td style="color:var(--grey);">10 May 2026</td>
+                <td><span class="tag" style="background:rgba(255,255,255,0.1);color:var(--grey);">Draft</span></td>
+                <td style="color:var(--grey);">—</td>
+              </tr>
+              <tr data-type="notification" data-status="Scheduled">
+                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View">👁</button></td>
+                <td><span class="tag tag-lav">notification</span></td>
+                <td style="color:var(--grey);">All Connected Students</td>
+                <td style="font-weight:500;">Season 4 enrolments are now OPEN 🎉</td>
+                <td style="color:var(--grey);">11 May 2026</td>
+                <td><span class="tag tag-lav">Scheduled</span></td>
+                <td style="color:var(--grey);">15 May 9:00am</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CUSTOMER LISTS TAB -->
+      <div id="mkt-lists" class="subscreen">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div style="font-size:13px;color:var(--grey);">Segment your students into targeted lists for campaigns</div>
+          <button class="btn btn-lime btn-sm" onclick="alert('Create list')">+ New List</button>
+        </div>
+        <div class="tbl-section">
+          <table>
+            <thead><tr><th>List Name</th><th>Members</th><th>Auto-updated</th><th>Last Campaign</th><th></th></tr></thead>
+            <tbody>
+              <tr><td style="font-weight:500;">All Connected Students</td><td>94</td><td><span class="tag tag-lime">Yes</span></td><td style="color:var(--grey);">3 May 2026</td><td><button class="btn btn-ghost btn-xs">View</button></td></tr>
+              <tr><td style="font-weight:500;">Pole Icon Waitlist</td><td>38</td><td><span class="tag tag-lime">Yes</span></td><td style="color:var(--grey);">20 Jan 2026</td><td><button class="btn btn-ghost btn-xs">View</button></td></tr>
+              <tr><td style="font-weight:500;">Leads — Not Enrolled</td><td>18</td><td><span class="tag tag-lime">Yes</span></td><td style="color:var(--grey);">—</td><td><button class="btn btn-ghost btn-xs">View</button></td></tr>
+              <tr><td style="font-weight:500;">Upcoming Renewals</td><td>22</td><td><span class="tag tag-lime">Yes</span></td><td style="color:var(--grey);">—</td><td><button class="btn btn-ghost btn-xs">View</button></td></tr>
+              <tr><td style="font-weight:500;">VIP Students</td><td>12</td><td><span class="tag tag-lime">Yes</span></td><td style="color:var(--grey);">—</td><td><button class="btn btn-ghost btn-xs">View</button></td></tr>
+              <tr><td style="font-weight:500;">At-risk (haven't booked in 3+ weeks)</td><td>7</td><td><span class="tag tag-lime">Yes</span></td><td style="color:var(--grey);">—</td><td><button class="btn btn-ghost btn-xs">View</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- AUTOMATIONS TAB -->
+      <div id="mkt-automations" class="subscreen">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div style="font-size:13px;color:var(--grey);">Automated messages sent based on triggers</div>
+          <button class="btn btn-lime btn-sm" onclick="alert('Create automation')">+ New Automation</button>
+        </div>
+        <div class="tbl-section">
+          <table>
+            <thead><tr><th>Automation</th><th>Trigger</th><th>Send Via</th><th>Delay</th><th>Active</th></tr></thead>
+            <tbody>
+              <tr><td style="font-weight:500;">Welcome Message</td><td style="color:var(--grey);">New student signs up</td><td>Email + Notification</td><td>Immediately</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td></tr>
+              <tr><td style="font-weight:500;">Trial Follow-up</td><td style="color:var(--grey);">Trial class completed</td><td>Email</td><td>24 hours after</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td></tr>
+              <tr><td style="font-weight:500;">Birthday Message</td><td style="color:var(--grey);">Student's birthday</td><td>Notification</td><td>Morning of birthday</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td></tr>
+              <tr><td style="font-weight:500;">Re-engagement (3 weeks inactive)</td><td style="color:var(--grey);">No booking in 21 days</td><td>Email</td><td>Day 21</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td></tr>
+              <tr><td style="font-weight:500;">Enrolment Reminder</td><td style="color:var(--grey);">Season opens</td><td>Email + Notification</td><td>Immediately</td><td><label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label></td></tr>
+              <tr><td style="font-weight:500;">No-show Fee Notice</td><td style="color:var(--grey);">No-show marked</td><td>Email</td><td>1 hour after</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td></tr>
+              <tr><td style="font-weight:500;">Payment Plan Reminder</td><td style="color:var(--grey);">Instalment due in 3 days</td><td>Email + Notification</td><td>3 days before</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- MAILCHIMP TAB -->
+      <div id="mkt-mailchimp" class="subscreen">
         <div class="section" style="padding:18px 20px;margin-bottom:16px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;"><div style="font-family:'Archivo Black',sans-serif;font-size:14px;">Mailchimp Connection</div><span class="tag tag-lime">Connected ✓</span></div>
           <div class="info-row"><div class="info-label">Account</div><div class="info-val">Duality Pole — mimi@dualitypole.com.au</div></div>
@@ -2548,17 +2722,11 @@ tr.clickable-row:hover td { background: #141414; }
           <div class="info-row"><div class="info-label">Last Sync</div><div class="info-val" style="color:var(--grey)">11 May 2026, 9:02am</div></div>
           <div style="display:flex;gap:8px;margin-top:14px;"><button class="btn btn-lime btn-sm" onclick="alert('Syncing…')">Sync Now</button><button class="btn btn-ghost btn-sm">Reconnect</button></div>
         </div>
-      </div>
-      <div id="mkt-templates" class="subscreen">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;"><div style="font-size:13px;color:var(--grey)">Design branded emails</div><div style="display:flex;gap:8px;"><button class="btn btn-ghost btn-sm" onclick="openModal('modal-canva-import')">↓ Import from Canva</button><button class="btn btn-lime btn-sm" onclick="openModal('modal-email-designer')">+ New Template</button></div></div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;"><div style="background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;"><div style="height:120px;background:#0a1800;display:flex;align-items:center;justify-content:center;font-family:'Archivo Black',sans-serif;font-size:18px;color:var(--lime);letter-spacing:2px;">DUALITY POLE</div><div style="padding:14px 16px;"><div style="font-weight:600;margin-bottom:4px;">Booking Confirmation</div><div style="font-size:11px;color:var(--grey)">Last edited 8 May</div><div style="display:flex;gap:6px;margin-top:10px;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-email-designer')">Edit</button><button class="btn btn-ghost btn-xs">Preview</button></div></div></div></div>
-      </div>
-      <div id="mkt-campaign" class="subscreen">
         <div class="section" style="padding:18px 20px;">
-          <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:16px;">Send Email Campaign</div>
-          <div class="field"><label>Subject Line</label><input type="text" placeholder="e.g. Season 4 is open — enrol now!" /></div>
-          <div class="field"><label>Send To</label><select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;"><option>All Students (94)</option><option>Leads — Not Enrolled (18)</option><option>Upcoming Renewals (22)</option></select></div>
-          <div style="display:flex;gap:8px;margin-top:8px;"><button class="btn btn-lime" onclick="alert('Campaign sent!')">Send Campaign</button><button class="btn btn-ghost">Send Test to Me</button></div>
+          <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:12px;">Sync Settings</div>
+          <div class="notif-row"><div><div style="font-weight:500;font-size:13px;">Auto-sync new students to Mailchimp</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">New sign-ups are added to your Mailchimp audience automatically</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+          <div class="notif-row"><div><div style="font-weight:500;font-size:13px;">Sync tags (VIP, At Risk, Level)</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Student tags are pushed as Mailchimp audience tags</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+          <div class="notif-row" style="border-bottom:none;"><div><div style="font-weight:500;font-size:13px;">Remove unsubscribes from studio system</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">If a student unsubscribes in Mailchimp, suppress marketing in studio too</div></div><label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label></div>
         </div>
       </div>
     </div>
@@ -2719,6 +2887,46 @@ tr.clickable-row:hover td { background: #141414; }
 </div>
 
 <!-- Email Designer Modal -->
+<!-- New Campaign Modal -->
+<div class="modal-overlay" id="modal-new-campaign">
+  <div class="modal">
+    <div class="modal-title">New Campaign <button class="modal-close" onclick="closeModal('modal-new-campaign')">✕</button></div>
+    <div class="field"><label>Campaign Title</label><input type="text" placeholder="e.g. Season 4 enrolments are OPEN!" /></div>
+    <div class="field"><label>Type</label>
+      <select style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 10px;">
+        <option>Notification (push)</option>
+        <option>Email</option>
+        <option>Email + Notification</option>
+      </select>
+    </div>
+    <div class="field"><label>Send To</label>
+      <select style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 10px;">
+        <option>All Connected Students (94)</option>
+        <option>Pole Icon Waitlist (38)</option>
+        <option>Leads — Not Enrolled (18)</option>
+        <option>Upcoming Renewals (22)</option>
+        <option>VIP Students (12)</option>
+        <option>At-risk Students (7)</option>
+      </select>
+    </div>
+    <div class="field"><label>Message / Body</label><textarea rows="4" placeholder="Write your message here…"></textarea></div>
+    <div class="field"><label>Schedule</label>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <select id="nc-schedule" style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 10px;">
+          <option value="now">Send immediately</option>
+          <option value="later">Schedule for later</option>
+        </select>
+        <input type="datetime-local" style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 10px;" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-new-campaign')">Cancel</button>
+      <button class="btn btn-ghost" onclick="alert('Saved as draft');closeModal('modal-new-campaign')">Save Draft</button>
+      <button class="btn btn-lime" onclick="alert('Campaign sent!');closeModal('modal-new-campaign')">Send Campaign</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-email-designer">
   <div class="modal" style="max-width:700px;width:90vw;">
     <div class="modal-title">Email Designer <button class="modal-close" onclick="closeModal('modal-email-designer')">✕</button></div>
@@ -3537,6 +3745,19 @@ function filterStudentsTable(val) {
   document.querySelectorAll('#students-tbody .student-row').forEach(row => {
     const name = (row.dataset.name || '').toLowerCase();
     row.style.display = (!q || name.includes(q)) ? '' : 'none';
+  });
+}
+
+// ===== CAMPAIGNS =====
+function filterCampaigns(search) {
+  const type = (document.getElementById('campaign-type-filter')||{}).value || 'all';
+  const status = (document.getElementById('campaign-status-filter')||{}).value || 'all';
+  const q = (search || '').toLowerCase();
+  document.querySelectorAll('#campaigns-tbody tr').forEach(row => {
+    const matchType = type === 'all' || row.dataset.type === type;
+    const matchStatus = status === 'all' || row.dataset.status === status;
+    const matchSearch = !q || row.textContent.toLowerCase().includes(q);
+    row.style.display = (matchType && matchStatus && matchSearch) ? '' : 'none';
   });
 }
 
