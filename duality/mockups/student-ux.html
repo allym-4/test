@@ -372,18 +372,18 @@
   /* PAYMENT OPTIONS */
   .pay-option {
     border: 2px solid var(--border); border-radius: 12px;
-    padding: 18px 20px; margin-bottom: 12px; cursor: pointer;
-    transition: all 0.15s; position: relative;
+    padding: 16px 18px; margin-bottom: 12px; cursor: pointer;
+    transition: all 0.15s; display: flex; align-items: flex-start; gap: 14px;
   }
   .pay-option:hover { border-color: #444; }
   .pay-option.selected { border-color: var(--lime); background: #0d1200; }
-  .pay-option-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+  .pay-option-body { flex: 1; min-width: 0; }
+  .pay-option-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 5px; }
   .pay-option-title { font-size: 15px; font-weight: 600; }
-  .pay-option-price { font-family: 'Archivo Black', sans-serif; font-size: 18px; color: var(--lime); }
+  .pay-option-price { font-family: 'Archivo Black', sans-serif; font-size: 18px; color: var(--lime); white-space: nowrap; flex-shrink: 0; }
   .pay-option-desc { font-size: 13px; color: var(--grey); line-height: 1.5; }
   .pay-radio {
-    position: absolute; top: 18px; right: 20px;
-    width: 20px; height: 20px; border-radius: 50%;
+    width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; margin-top: 2px;
     border: 2px solid #444; background: transparent;
     transition: all 0.15s;
   }
@@ -1683,20 +1683,24 @@
 
       <div class="pay-option selected" onclick="selectPayOption(this,'full')" id="pay-full">
         <div class="pay-radio"></div>
-        <div class="pay-option-top">
-          <div class="pay-option-title">Pay in full today</div>
-          <div class="pay-option-price" id="pay-full-price">$270</div>
+        <div class="pay-option-body">
+          <div class="pay-option-top">
+            <div class="pay-option-title">Pay in full today</div>
+            <div class="pay-option-price" id="pay-full-price">$270</div>
+          </div>
+          <div class="pay-option-desc">One payment, nothing more to think about.</div>
         </div>
-        <div class="pay-option-desc">One payment, nothing more to think about.</div>
       </div>
 
       <div class="pay-option" onclick="selectPayOption(this,'deposit')" id="pay-deposit">
         <div class="pay-radio"></div>
-        <div class="pay-option-top">
-          <div class="pay-option-title">Pay 50% deposit today</div>
-          <div class="pay-option-price" id="pay-deposit-price">$135</div>
+        <div class="pay-option-body">
+          <div class="pay-option-top">
+            <div class="pay-option-title">Pay 50% deposit today</div>
+            <div class="pay-option-price" id="pay-deposit-price">$135</div>
+          </div>
+          <div class="pay-option-desc" id="pay-deposit-desc">Balance charged automatically 4 hours prior to your first class, Week 1.</div>
         </div>
-        <div class="pay-option-desc" id="pay-deposit-desc">Balance charged automatically 4 hours prior to your first class, Week 1.</div>
       </div>
 
       <div id="co-card-fields" style="margin-top:20px">
