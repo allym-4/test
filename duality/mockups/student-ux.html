@@ -4925,12 +4925,15 @@
   let _ftPending = null;
 
   function _maybeFirstTimerGate(name, datetime, instructor, hasCredit) {
+    // Read live catchup state from the row element (may have changed via setDashState)
+    const el = event ? event.currentTarget : null;
+    const actualCredit = el ? (el.dataset.catchup === 'true') : hasCredit;
     if (!isFirstTimer || _isBeginnerSafe(name)) {
-      openCasualModal(name, datetime, instructor, hasCredit);
+      openCasualModal(name, datetime, instructor, actualCredit);
       return;
     }
     // Show first-timer warning
-    _ftPending = { name, datetime, instructor, hasCredit };
+    _ftPending = { name, datetime, instructor, hasCredit: actualCredit };
     document.getElementById('first-timer-class-meta').textContent = [name, datetime, instructor].filter(Boolean).join(' · ');
     document.getElementById('first-timer-ack').checked = false;
     document.getElementById('first-timer-modal').classList.add('open');
@@ -5821,7 +5824,7 @@
   let _casualHasCredit = false; // tracks whether current modal has a catch-up credit
   const ENROLLED_CASUAL_RATE = 30;
   const STANDARD_CASUAL_RATE = 40;
-  const casualIsEnrolled = true; // Jess is enrolled in Season 3
+  let casualIsEnrolled = true; // updated by setDashState
 
   function openCasualModal(name, meta, instructor, hasCredit, price) {
     document.getElementById('casual-modal-title').textContent = name;
@@ -6135,6 +6138,7 @@
 
     // Restore casual rows to enrolled/catch-up state by default
     if (state !== 'not-enrolled') {
+      casualIsEnrolled = true;
       classPassCredits = 0;
       const badge = document.getElementById('casual-credit-badge');
       if (badge) {
@@ -6153,6 +6157,7 @@
 
     if (state === 'not-enrolled') {
       notEnrolled.style.display = 'block';
+      casualIsEnrolled = false;
       // Credit badge: show class pass credits, not catch-up
       classPassCredits = 2;
       const badge = document.getElementById('casual-credit-badge');
