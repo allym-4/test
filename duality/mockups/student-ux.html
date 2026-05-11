@@ -554,7 +554,7 @@
         <div class="class-row-divider"></div>
         <div class="class-row-info">
           <div class="class-row-name">Level 2 - Studio A</div>
-          <div class="class-row-meta">6:30pm - Chloe - 3 spots left</div>
+          <div class="class-row-meta">6:30pm - Chloe - <span style="color:#ffaa44">Almost full</span></div>
         </div>
         <div class="class-row-actions">
           <button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Level 2','Mon 12 May, 6:30pm', true)">Mark Away</button>
@@ -568,7 +568,7 @@
         <div class="class-row-divider"></div>
         <div class="class-row-info">
           <div class="class-row-name">Dance - Studio B</div>
-          <div class="class-row-meta">6:30pm - Mimi - 8 spots left</div>
+          <div class="class-row-meta">6:30pm - Mimi - Studio B</div>
         </div>
         <div class="class-row-actions">
           <button class="btn btn-ghost btn-sm" onclick="openMarkAwayModal('Dance','Fri 16 May, 6:30pm', true)">Mark Away</button>
@@ -640,6 +640,27 @@
 
       <div class="divider"></div>
 
+      <!-- Quick links -->
+      <div class="divider"></div>
+      <div class="section-label">Quick links</div>
+      <div class="grid-3 mb-24">
+        <div class="card" style="cursor:pointer;border-color:#2a2a2a;text-align:center;padding:22px 16px" onclick="showScreen('book');showBookTab('casual')" onmouseover="this.style.borderColor='#444'" onmouseout="this.style.borderColor='#2a2a2a'">
+          <div style="font-size:26px;margin-bottom:10px">&#9675;</div>
+          <div style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:5px">Book a casual class</div>
+          <div style="font-size:13px;color:var(--grey)">Drop into any eligible class</div>
+        </div>
+        <div class="card" style="cursor:pointer;border-color:#2a2a2a;text-align:center;padding:22px 16px" onclick="openTrialInfo()" onmouseover="this.style.borderColor='#444'" onmouseout="this.style.borderColor='#2a2a2a'">
+          <div style="font-size:26px;margin-bottom:10px">&#9651;</div>
+          <div style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:5px">Book a trial class</div>
+          <div style="font-size:13px;color:var(--grey)">First time? Start here - $35</div>
+        </div>
+        <div class="card" style="cursor:pointer;border-color:#2a2a2a;text-align:center;padding:22px 16px" onclick="showScreen('book');showBookTab('workshops')" onmouseover="this.style.borderColor='#444'" onmouseout="this.style.borderColor='#2a2a2a'">
+          <div style="font-size:26px;margin-bottom:10px">&#9670;</div>
+          <div style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:5px">Workshops and events</div>
+          <div style="font-size:13px;color:var(--grey)">Intensives, showcases and more</div>
+        </div>
+      </div>
+
       <!-- Upsell -->
       <div style="background:#0d0d0d;border:1px solid var(--border);border-radius:12px;padding:22px 26px;display:flex;align-items:center;justify-content:space-between;gap:20px">
         <div>
@@ -664,6 +685,7 @@
       <div class="tabs" id="book-tabs">
         <div class="tab active" id="tab-season" onclick="showBookTab('season')">Book a Season</div>
         <div class="tab" id="tab-casual" onclick="showBookTab('casual')">Casual and Catch-ups</div>
+        <div class="tab" id="tab-workshops" onclick="showBookTab('workshops')">Workshops and Events</div>
       </div>
 
       <!-- SEASON TAB -->
@@ -698,14 +720,14 @@
                 <div class="class-day">Monday - 6:30pm</div>
                 <div class="class-name">Level 2</div>
                 <div class="class-meta"><span class="tag tag-lav">Your level</span><span class="tag tag-grey">Studio A</span></div>
-                <div class="class-instructor">Chloe - 12 spots left</div>
+                <div class="class-instructor">Chloe</div>
               </div>
               <div class="class-card" onclick="toggleClass('l2-wed','Level 2','Wed 7:30pm',this)">
                 <div class="check">+</div>
                 <div class="class-day">Wednesday - 7:30pm</div>
                 <div class="class-name">Level 2</div>
                 <div class="class-meta"><span class="tag tag-lav">Your level</span><span class="tag tag-grey">Studio B</span></div>
-                <div class="class-instructor">Mimi - 5 spots left <span style="color:#ffaa44">filling fast</span></div>
+                <div class="class-instructor">Mimi - <span style="color:#ffaa44">Almost full</span></div>
               </div>
             </div>
 
@@ -716,21 +738,21 @@
                 <div class="class-day">Friday - 7:00pm</div>
                 <div class="class-name">Kiki</div>
                 <div class="class-meta"><span class="tag tag-lime">Bundle discount</span></div>
-                <div class="class-instructor">Chloe - 10 spots left</div>
+                <div class="class-instructor">Chloe</div>
               </div>
               <div class="class-card" onclick="toggleClass('invert-thu','Invert Tech','Thu 7pm',this)">
                 <div class="check">+</div>
                 <div class="class-day">Thursday - 7:00pm</div>
                 <div class="class-name">Invert Tech</div>
                 <div class="class-meta"><span class="tag tag-grey">Level 2+</span></div>
-                <div class="class-instructor">Mimi - 9 spots left</div>
+                <div class="class-instructor">Mimi</div>
               </div>
               <div class="class-card" onclick="toggleClass('spin-sat','Spin Virgin','Sat 10am',this)">
                 <div class="check">+</div>
                 <div class="class-day">Saturday - 10:00am</div>
                 <div class="class-name">Spin Virgin</div>
                 <div class="class-meta"><span class="tag tag-grey">Beginner</span></div>
-                <div class="class-instructor">Chloe - 14 spots left</div>
+                <div class="class-instructor">Chloe</div>
               </div>
             </div>
 
@@ -741,14 +763,14 @@
                 <div class="class-day">Friday - 6:30pm</div>
                 <div class="class-name">Dance</div>
                 <div class="class-meta"><span class="tag tag-grey">Level 2+</span></div>
-                <div class="class-instructor">Mimi - 11 spots left</div>
+                <div class="class-instructor">Mimi - Studio B</div>
               </div>
               <div class="class-card" onclick="toggleClass('strip-tue','Strip Virgin','Tue 8pm',this)">
                 <div class="check">+</div>
                 <div class="class-day">Tuesday - 8:00pm</div>
                 <div class="class-name">Strip Virgin</div>
                 <div class="class-meta"><span class="tag tag-grey">Beginner - Level 3</span></div>
-                <div class="class-instructor">Chloe - 7 spots left</div>
+                <div class="class-instructor">Chloe - Studio A</div>
               </div>
             </div>
 
@@ -758,13 +780,13 @@
                 <div class="class-day">Monday - 8:00pm</div>
                 <div class="class-name">Level 4</div>
                 <div class="class-meta"><span class="tag tag-grey">Level 4 required</span></div>
-                <div class="class-instructor">Mimi - 6 spots left</div>
+                <div class="class-instructor">Mimi - Studio A</div>
               </div>
               <div class="class-card locked">
                 <div class="class-day">Thursday - 8:30pm</div>
                 <div class="class-name">High Tricks</div>
                 <div class="class-meta"><span class="tag tag-grey">Level 6 required</span></div>
-                <div class="class-instructor">Chloe - 4 spots left</div>
+                <div class="class-instructor">Chloe - <span style="color:#ff6b6b">Fully booked</span></div>
               </div>
             </div>
           </div>
@@ -825,7 +847,7 @@
           <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
           <div class="casual-info">
             <div class="casual-name">Kiki</div>
-            <div class="casual-meta">7:00pm - Chloe - Studio B - 8 spots left</div>
+            <div class="casual-meta">7:00pm - Chloe - Studio B - Studio B</div>
             <div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div>
           </div>
           <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
@@ -836,7 +858,7 @@
           <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
           <div class="casual-info">
             <div class="casual-name">Spin Virgin</div>
-            <div class="casual-meta">8:00pm - Mimi - Studio A - 6 spots left</div>
+            <div class="casual-meta">8:00pm - Mimi - Studio A - Studio A</div>
             <div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div>
           </div>
           <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
@@ -848,7 +870,7 @@
           <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
           <div class="casual-info">
             <div class="casual-name">Practice Time</div>
-            <div class="casual-meta">8:00pm - 9:30pm - Open studio - 15 spots left</div>
+            <div class="casual-meta">8:00pm - 9:30pm - Open studio </div>
             <div style="margin-top:6px"><span class="tag tag-lime" style="font-size:11px">$20 enrolled rate</span></div>
           </div>
           <div class="casual-price"><div class="casual-price-main">$20</div><div class="casual-price-full">$30</div></div>
@@ -859,7 +881,7 @@
           <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
           <div class="casual-info">
             <div class="casual-name">Invert Tech</div>
-            <div class="casual-meta">7:00pm - Mimi - Studio A - 7 spots left</div>
+            <div class="casual-meta">7:00pm - Mimi - Studio A - Studio A</div>
             <div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div>
           </div>
           <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
@@ -871,12 +893,100 @@
           <div style="width:1px;height:42px;background:#222;flex-shrink:0"></div>
           <div class="casual-info">
             <div class="casual-name">Dance</div>
-            <div class="casual-meta">6:30pm - Mimi - Studio B - 11 spots left</div>
+            <div class="casual-meta">6:30pm - Mimi - Studio B - Studio B</div>
             <div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Catch-up eligible</span></div>
           </div>
           <div class="casual-price"><div class="casual-price-credit">Use credit</div><div class="casual-price-full">$40</div></div>
         </div>
       </div>
+
+      <!-- WORKSHOPS AND EVENTS TAB -->
+      <div id="panel-workshops" style="display:none">
+        <div style="font-size:15px;color:var(--grey);margin-bottom:26px;line-height:1.7">
+          One-off workshops, intensives, showcases and special events. These book separately from your season classes.
+        </div>
+
+        <div class="section-label">Coming up</div>
+
+        <!-- Workshop card - available -->
+        <div class="card mb-12" style="cursor:pointer;border-color:#2a2a2a;transition:border-color 0.15s" onmouseover="this.style.borderColor='#444'" onmouseout="this.style.borderColor='#2a2a2a'" onclick="openWorkshopModal('Flexi Intensive with Mimi','Sat 31 May, 10am - 1pm','Mimi','$75','All levels welcome. Bring a mat and water. Wear comfortable activewear.',false)">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px">
+            <div style="flex:1">
+              <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--lime);margin-bottom:8px">Workshop - Sat 31 May</div>
+              <div style="font-family:'Archivo Black',sans-serif;font-size:20px;margin-bottom:8px">Flexi Intensive with Mimi</div>
+              <div style="font-size:14px;color:var(--grey);line-height:1.6;margin-bottom:14px">3-hour deep dive into flexibility and conditioning. Suitable for all levels. A great add-on alongside your regular classes.</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <span class="tag tag-lime">All levels</span>
+                <span class="tag tag-grey">Studio A</span>
+                <span class="tag tag-grey">3 hours</span>
+              </div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-family:'Archivo Black',sans-serif;font-size:24px;color:var(--lime)">$75</div>
+              <div style="font-size:12px;color:var(--grey);margin-top:4px">per person</div>
+            </div>
+          </div>
+          <div style="margin-top:18px;padding-top:18px;border-top:1px solid var(--border)">
+            <button class="btn btn-lime btn-sm" onclick="event.stopPropagation();openWorkshopModal('Flexi Intensive with Mimi','Sat 31 May, 10am - 1pm','Mimi','$75','All levels welcome. Bring a mat and water. Wear comfortable activewear.',false)">Book now - $75</button>
+          </div>
+        </div>
+
+        <!-- Workshop card - almost full -->
+        <div class="card mb-12" style="cursor:pointer;border-color:#2a2a2a;transition:border-color 0.15s" onmouseover="this.style.borderColor='#444'" onmouseout="this.style.borderColor='#2a2a2a'" onclick="openWorkshopModal('Showcase Prep - Season 3','Sun 1 Jun, 2pm - 5pm','Chloe','$60','For enrolled Season 3 students only. Bring full costume and shoes.',false)">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px">
+            <div style="flex:1">
+              <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--lav);margin-bottom:8px">Showcase prep - Sun 1 Jun</div>
+              <div style="font-family:'Archivo Black',sans-serif;font-size:20px;margin-bottom:8px">Showcase Prep - Season 3</div>
+              <div style="font-size:14px;color:var(--grey);line-height:1.6;margin-bottom:14px">Final run-through before the Season 3 showcase. All enrolled students welcome. Costume and shoes required.</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <span class="tag tag-lav">Enrolled students</span>
+                <span class="tag tag-grey">Studio A + B</span>
+                <span class="tag tag-amber">Almost full</span>
+              </div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-family:'Archivo Black',sans-serif;font-size:24px;color:var(--white)">$60</div>
+              <div style="font-size:12px;color:var(--grey);margin-top:4px">per person</div>
+            </div>
+          </div>
+          <div style="margin-top:18px;padding-top:18px;border-top:1px solid var(--border)">
+            <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openWorkshopModal('Showcase Prep - Season 3','Sun 1 Jun, 2pm - 5pm','Chloe','$60','For enrolled Season 3 students only. Bring full costume and shoes.',false)">Book now - $60</button>
+          </div>
+        </div>
+
+        <!-- Workshop card - fully booked -->
+        <div class="card mb-12" style="opacity:0.6">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px">
+            <div style="flex:1">
+              <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px">Masterclass - Sat 17 May</div>
+              <div style="font-family:'Archivo Black',sans-serif;font-size:20px;margin-bottom:8px">Guest Masterclass - Kristy Sellars</div>
+              <div style="font-size:14px;color:var(--grey);line-height:1.6;margin-bottom:14px">2-hour masterclass with Kristy. Level 3 and above.</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <span class="tag tag-grey">Level 3+</span>
+                <span class="tag tag-red">Fully booked</span>
+              </div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-family:'Archivo Black',sans-serif;font-size:24px;color:var(--grey)">$90</div>
+            </div>
+          </div>
+          <div style="margin-top:18px;padding-top:18px;border-top:1px solid var(--border)">
+            <button class="btn btn-ghost btn-sm" onclick="openWaitlist('Guest Masterclass - Kristy Sellars','Sat 17 May')">Join waitlist</button>
+          </div>
+        </div>
+
+        <div class="section-label mt-24">Past events</div>
+        <div class="card" style="opacity:0.5">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:14px;font-weight:500">Beginner Bootcamp - Season 2</div>
+              <div style="font-size:13px;color:var(--grey);margin-top:3px">Sat 12 Apr - attended</div>
+            </div>
+            <span class="tag tag-grey">Done</span>
+          </div>
+        </div>
+      </div>
+
     </div>
 
 
@@ -1402,10 +1512,10 @@
     <div class="pay-option" onclick="selectPayOption(this,'plan')">
       <div class="pay-radio"></div>
       <div class="pay-option-top">
-        <div class="pay-option-title">Request a payment plan</div>
-        <div class="pay-option-price" style="font-size:14px;color:var(--grey)">Custom</div>
+        <div class="pay-option-title">Payment plan</div>
+        <div class="pay-option-price" style="font-size:14px;color:var(--lav)" id="pay-plan-price">4 x $67.50</div>
       </div>
-      <div class="pay-option-desc">Contact us to arrange a payment plan before or right after booking. We'll sort it out together.</div>
+      <div class="pay-option-desc">Split your season into 4 fortnightly payments. First payment charged today, remainder automatically on the following fortnights.</div>
     </div>
 
     <div id="card-fields" style="margin-top:24px">
@@ -1426,9 +1536,8 @@
     </div>
 
     <div id="plan-fields" style="display:none;margin-top:24px">
-      <div class="banner banner-lav">
-        <span>&#9674;</span>
-        <div>Once you complete booking, email <strong>intrigued@dualitypole.com</strong> to arrange your payment plan before your balance is due.</div>
+      <div style="background:#1a1028;border:1px solid var(--lav);border-radius:10px;padding:14px 18px;margin-bottom:18px;font-size:14px;color:var(--grey);line-height:1.6">
+        <span style="color:var(--lav);font-weight:500">4 fortnightly payments.</span> First payment today, then automatically on the following 3 fortnights. Card details saved securely via Stripe.
       </div>
     </div>
 
@@ -1555,6 +1664,131 @@
 </div>
 
 
+<!-- ONBOARDING MODAL -->
+<div class="modal-overlay open" id="onboarding-modal">
+  <div class="modal" style="max-width:520px">
+    <div id="onboard-step-1">
+      <div style="font-size:32px;text-align:center;margin-bottom:18px">&#9670;</div>
+      <div class="modal-title" style="text-align:center">Welcome to Duality</div>
+      <div class="modal-sub" style="text-align:center">Is this your first time pole dancing?</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;gap:14px;padding:18px 20px;background:var(--card);border:2px solid var(--border);border-radius:12px;cursor:pointer;transition:border-color 0.15s" onmouseover="this.style.borderColor='#444'" onmouseout="this.style.borderColor='var(--border)'" onclick="showOnboardStep(2)">
+          <div style="width:22px;height:22px;border-radius:50%;border:2px solid var(--lime);background:var(--lime);flex-shrink:0"></div>
+          <div>
+            <div style="font-size:15px;font-weight:500;margin-bottom:3px">Yes - completely new to pole</div>
+            <div style="font-size:13px;color:var(--grey)">I'll show you where to start</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;padding:18px 20px;background:var(--card);border:2px solid var(--border);border-radius:12px;cursor:pointer;transition:border-color 0.15s" onmouseover="this.style.borderColor='#444'" onmouseout="this.style.borderColor='var(--border)'" onclick="showOnboardStep(3)">
+          <div style="width:22px;height:22px;border-radius:50%;border:2px solid #444;flex-shrink:0"></div>
+          <div>
+            <div style="font-size:15px;font-weight:500;margin-bottom:3px">I've done some pole before</div>
+            <div style="font-size:13px;color:var(--grey)">I'll help you find the right level</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;padding:18px 20px;background:var(--card);border:2px solid var(--border);border-radius:12px;cursor:pointer;transition:border-color 0.15s" onmouseover="this.style.borderColor='#444'" onmouseout="this.style.borderColor='var(--border)'" onclick="closeModal('onboarding-modal')">
+          <div style="width:22px;height:22px;border-radius:50%;border:2px solid #444;flex-shrink:0"></div>
+          <div>
+            <div style="font-size:15px;font-weight:500;margin-bottom:3px">I'm already a Duality student</div>
+            <div style="font-size:13px;color:var(--grey)">Take me straight to my dashboard</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="onboard-step-2" style="display:none">
+      <div style="font-size:32px;text-align:center;margin-bottom:18px">&#9651;</div>
+      <div class="modal-title" style="text-align:center">Perfect - you're in the right place</div>
+      <div class="modal-sub" style="text-align:center">Here's how new students get started at Duality</div>
+      <div style="background:#0f1600;border:1px solid var(--lime);border-radius:12px;padding:20px;margin-bottom:20px">
+        <div style="font-family:'Archivo Black',sans-serif;font-size:16px;color:var(--lime);margin-bottom:10px">Trial class - $35</div>
+        <div style="font-size:14px;color:var(--grey);line-height:1.7">Try before you commit. Available in Week 1 and 2 of each season. If you love it and sign up for the full season, the $35 comes off your invoice.</div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:22px">
+        <div style="font-family:'Archivo Black',sans-serif;font-size:16px;margin-bottom:10px">Season enrollment</div>
+        <div style="font-size:14px;color:var(--grey);line-height:1.7">Our classes run in 8-week seasons. You'll attend the same class each week, build strength progressively, and leave with a full routine you've learned from scratch. Starting at $270.</div>
+      </div>
+      <div style="font-size:14px;color:var(--grey);margin-bottom:22px;line-height:1.7">Not sure which class to start with? <strong style="color:var(--white)">Level 1</strong> is designed for complete beginners - no experience or flexibility needed.</div>
+      <div style="display:flex;gap:12px">
+        <button class="btn btn-lime" style="flex:1" onclick="closeModal('onboarding-modal');showScreen('book');showBookTab('casual')">Book a trial class</button>
+        <button class="btn btn-outline" onclick="closeModal('onboarding-modal');showScreen('book');showBookTab('season')">Book the full season</button>
+      </div>
+    </div>
+
+    <div id="onboard-step-3" style="display:none">
+      <div style="font-size:32px;text-align:center;margin-bottom:18px">&#9670;</div>
+      <div class="modal-title" style="text-align:center">Welcome back to pole</div>
+      <div class="modal-sub" style="text-align:center">If you're new to Duality, the best place to start is Level 1 so your instructor can assess your level and move you up from there. Already know your level? Jump straight to booking.</div>
+      <div style="display:flex;gap:12px;margin-top:8px">
+        <button class="btn btn-lime" style="flex:1" onclick="closeModal('onboarding-modal');showScreen('book');showBookTab('season')">Browse classes</button>
+        <button class="btn btn-ghost" onclick="closeModal('onboarding-modal')">Skip to dashboard</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TRIAL INFO MODAL -->
+<div class="modal-overlay" id="trial-modal">
+  <div class="modal" style="max-width:460px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div class="modal-title">Trial class</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('trial-modal')">Close</button>
+    </div>
+    <div style="background:#0f1600;border:1px solid var(--lime);border-radius:12px;padding:20px;margin-bottom:20px">
+      <div style="font-family:'Archivo Black',sans-serif;font-size:22px;color:var(--lime);margin-bottom:6px">$35</div>
+      <div style="font-size:14px;color:var(--grey);line-height:1.7">Available in Week 1 and 2 of the current season. If you go on to enrol in the full season, this $35 is deducted from your invoice.</div>
+    </div>
+    <div style="font-size:15px;font-weight:500;margin-bottom:12px">Trial classes are available for</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:22px">
+      <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--grey)"><span style="color:var(--lime)">+</span> Level 1 - perfect if you've never touched a pole before</div>
+      <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--grey)"><span style="color:var(--lime)">+</span> Kiki or Unravel - flexibility and conditioning</div>
+      <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--grey)"><span style="color:var(--lime)">+</span> Dance Virgin, Floor Virgin, Chair Virgin</div>
+    </div>
+    <div style="font-size:14px;color:var(--grey);margin-bottom:22px;line-height:1.6">Trial classes are only available for people attending Duality for the first time. One trial per person.</div>
+    <button class="btn btn-lime" style="width:100%" onclick="closeModal('trial-modal');showScreen('book');showBookTab('casual')">Browse and book a trial</button>
+  </div>
+</div>
+
+<!-- WORKSHOP BOOKING MODAL -->
+<div class="modal-overlay" id="workshop-modal">
+  <div class="modal" style="max-width:460px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div class="modal-title" id="ws-modal-title">Workshop</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('workshop-modal')">Close</button>
+    </div>
+    <div style="font-size:14px;color:var(--grey);margin-bottom:6px" id="ws-modal-date"></div>
+    <div style="font-size:14px;color:var(--grey);margin-bottom:20px" id="ws-modal-desc"></div>
+    <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:15px;font-weight:500;margin-bottom:4px">Total</div>
+        <div style="font-size:13px;color:var(--grey)">Charged to your Visa ending 4242</div>
+      </div>
+      <div style="font-family:'Archivo Black',sans-serif;font-size:22px;color:var(--lime)" id="ws-modal-price"></div>
+    </div>
+    <button class="btn btn-lime" style="width:100%" onclick="closeModal('workshop-modal')">Confirm booking</button>
+    <div style="font-size:12px;color:var(--grey);text-align:center;margin-top:10px">Workshops are non-refundable per our terms and conditions</div>
+  </div>
+</div>
+
+<!-- WAITLIST MODAL -->
+<div class="modal-overlay" id="waitlist-modal">
+  <div class="modal" style="max-width:420px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="modal-title">Join waitlist</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('waitlist-modal')">Close</button>
+    </div>
+    <div style="font-size:15px;font-weight:500;margin-bottom:6px" id="waitlist-class-name"></div>
+    <div style="font-size:14px;color:var(--grey);margin-bottom:22px" id="waitlist-class-date"></div>
+    <div style="background:#1a1028;border:1px solid var(--lav);border-radius:10px;padding:16px 18px;margin-bottom:22px;font-size:14px;color:var(--grey);line-height:1.6">
+      We'll notify you by push notification and email the moment a spot opens up. You'll have 2 hours to confirm your booking before the next person on the list is offered the spot.
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-lav" style="flex:1" onclick="closeModal('waitlist-modal')">Add me to the waitlist</button>
+      <button class="btn btn-ghost" onclick="closeModal('waitlist-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const PRICING   = [0, 270, 440, 580, 700, 800, 900];
   const PER_CLASS = [0, 33.75, 27.50, 24.15, 21.80, 20.00, 18.75];
@@ -1578,13 +1812,6 @@
     const ids = ['dashboard','book','myclasses','progress','notifications','forms','chat','account'];
     const idx = ids.indexOf(id);
     if (idx !== -1) document.querySelectorAll('.nav-item')[idx].classList.add('active');
-  }
-
-  function showBookTab(tab) {
-    document.getElementById('panel-season').style.display = tab === 'season' ? 'block' : 'none';
-    document.getElementById('panel-casual').style.display = tab === 'casual' ? 'block' : 'none';
-    document.getElementById('tab-season').classList.toggle('active', tab === 'season');
-    document.getElementById('tab-casual').classList.toggle('active', tab === 'casual');
   }
 
   function showProgressTab(tab) {
@@ -1680,10 +1907,12 @@
         `<div style="display:flex;justify-content:space-between"><span>${c.name}</span><span>${c.time}</span></div>`
       ).join('');
 
+    const installment = (price / 4).toFixed(2);
     document.getElementById('checkout-total-val').textContent = '$' + price;
     document.getElementById('pay-full-price').textContent     = '$' + price;
     document.getElementById('pay-deposit-price').textContent  = '$' + deposit;
     document.getElementById('pay-deposit-desc').textContent   = 'Balance of $' + deposit + ' charged automatically on Sunday of Week 1 (1 Jun).';
+    document.getElementById('pay-plan-price').textContent     = '4 x $' + installment;
     document.getElementById('checkout-btn-val').textContent   = '$' + price;
 
     selectedPayMode = 'full';
@@ -1695,25 +1924,23 @@
     el.classList.add('selected');
     selectedPayMode = mode;
 
-    const count   = Object.keys(cart).length;
-    const price   = PRICING[Math.min(count, 6)];
-    const deposit = price / 2;
-
-    const cardFields = document.getElementById('card-fields');
-    const planFields = document.getElementById('plan-fields');
-    const payBtn     = document.getElementById('pay-btn');
-    const btnVal     = document.getElementById('checkout-btn-val');
+    const count       = Object.keys(cart).length;
+    const price       = PRICING[Math.min(count, 6)];
+    const deposit     = price / 2;
+    const installment = (price / 4).toFixed(2);
+    const cardFields  = document.getElementById('card-fields');
+    const planFields  = document.getElementById('plan-fields');
+    const payBtn      = document.getElementById('pay-btn');
 
     if (mode === 'plan') {
-      cardFields.style.display = 'none';
+      cardFields.style.display = 'block';
       planFields.style.display = 'block';
-      payBtn.textContent = 'Confirm booking - arrange payment separately';
+      payBtn.innerHTML = 'Confirm - first payment $' + installment;
     } else {
       cardFields.style.display = 'block';
       planFields.style.display = 'none';
       const amt = mode === 'full' ? price : deposit;
-      btnVal.textContent = '$' + amt;
-      payBtn.innerHTML = 'Confirm and pay - <span id="checkout-btn-val">$' + amt + '</span>';
+      payBtn.innerHTML = 'Confirm and pay - $' + amt;
     }
   }
 
@@ -1750,6 +1977,38 @@
   document.querySelectorAll('.modal-overlay').forEach(o => {
     o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
   });
+
+  function showBookTab(tab) {
+    document.getElementById('panel-season').style.display    = tab === 'season'    ? 'block' : 'none';
+    document.getElementById('panel-casual').style.display    = tab === 'casual'    ? 'block' : 'none';
+    document.getElementById('panel-workshops').style.display = tab === 'workshops' ? 'block' : 'none';
+    ['season','casual','workshops'].forEach(t => {
+      document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+    });
+  }
+
+  function showOnboardStep(n) {
+    [1,2,3].forEach(i => document.getElementById('onboard-step-' + i).style.display = 'none');
+    document.getElementById('onboard-step-' + n).style.display = 'block';
+  }
+
+  function openTrialInfo() {
+    document.getElementById('trial-modal').classList.add('open');
+  }
+
+  function openWorkshopModal(title, date, instructor, price, desc, soldOut) {
+    document.getElementById('ws-modal-title').textContent = title;
+    document.getElementById('ws-modal-date').textContent  = date + ' - ' + instructor;
+    document.getElementById('ws-modal-desc').textContent  = desc;
+    document.getElementById('ws-modal-price').textContent = price;
+    document.getElementById('workshop-modal').classList.add('open');
+  }
+
+  function openWaitlist(name, date) {
+    document.getElementById('waitlist-class-name').textContent = name;
+    document.getElementById('waitlist-class-date').textContent = date;
+    document.getElementById('waitlist-modal').classList.add('open');
+  }
 
   function setDashState(state) {
     const seasonCta   = document.getElementById('dash-season-cta');
