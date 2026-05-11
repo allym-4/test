@@ -749,6 +749,7 @@
 
     /* Cards and grids */
     .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
     .card { padding: 16px; }
 
     /* Booking layout: stack cart below class list */
@@ -811,7 +812,7 @@
     .pay-option-price { font-size: 16px; }
 
     /* Stripe fields */
-    .stripe-row { flex-direction: column; }
+    .stripe-row { grid-template-columns: 1fr; }
 
     /* Notifications */
     .notif-item { gap: 10px; padding: 14px 0; }
@@ -822,14 +823,14 @@
     /* Post-trial star questions */
     .pt-star-q { flex-direction: column; align-items: flex-start; gap: 8px; }
 
-    /* Billing history: hide Date column */
+    /* Billing history: hide Date column, reflow grid */
     .billing-col-date { display: none; }
+    .billing-row { grid-template-columns: 1fr 120px 90px !important; }
 
     /* Profile / waiver modal */
     .profile-step { display: none; }
     .profile-step.active { display: block; }
     #sig-canvas { width: 100%; touch-action: none; }
-    .profile-steps-nav { flex-direction: column; gap: 6px; }
   }
 
   /* PROFILE FORM */
@@ -2999,24 +3000,24 @@
       <div class="page-header">
         <div class="page-title">Billing history</div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:12px;overflow:hidden;max-width:820px">
-        <div style="display:grid;grid-template-columns:1fr 140px 120px 90px;gap:12px;padding:10px 16px;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--grey);border-bottom:1px solid var(--border)">
-          <span>Description</span><span>Date</span><span>Type</span><span style="text-align:right">Amount</span>
+      <div class="billing-table" style="display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:12px;overflow:hidden;max-width:820px">
+        <div class="billing-row" style="display:grid;grid-template-columns:1fr 140px 120px 90px;gap:12px;padding:10px 16px;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--grey);border-bottom:1px solid var(--border)">
+          <span>Description</span><span class="billing-col-date">Date</span><span>Type</span><span style="text-align:right">Amount</span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 140px 120px 90px;gap:12px;padding:15px 16px;font-size:14px;border-bottom:1px solid var(--border);align-items:center">
-          <span style="font-weight:500">Season 3 - Level 2 + Dance</span><span style="color:var(--grey)">7 Apr 2026</span><span><span class="tag tag-lime" style="font-size:11px">Season</span></span><span style="text-align:right;font-weight:600">$440.00</span>
+        <div class="billing-row" style="display:grid;grid-template-columns:1fr 140px 120px 90px;gap:12px;padding:15px 16px;font-size:14px;border-bottom:1px solid var(--border);align-items:center">
+          <span style="font-weight:500">Season 3 - Level 2 + Dance</span><span class="billing-col-date" style="color:var(--grey)">7 Apr 2026</span><span><span class="tag tag-lime" style="font-size:11px">Season</span></span><span style="text-align:right;font-weight:600">$440.00</span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 140px 120px 90px;gap:12px;padding:15px 16px;font-size:14px;border-bottom:1px solid var(--border);align-items:center">
-          <span style="font-weight:500">Catch-up · Kiki (Fri 4 Apr)</span><span style="color:var(--grey)">2 Apr 2026</span><span><span class="tag" style="font-size:11px;background:#1a0d2e;color:var(--lav);border:1px solid #3a1a5a">Catch-up</span></span><span style="text-align:right;font-weight:600">$0.00</span>
+        <div class="billing-row" style="display:grid;grid-template-columns:1fr 140px 120px 90px;gap:12px;padding:15px 16px;font-size:14px;border-bottom:1px solid var(--border);align-items:center">
+          <span style="font-weight:500">Catch-up · Kiki (Fri 4 Apr)</span><span class="billing-col-date" style="color:var(--grey)">2 Apr 2026</span><span><span class="tag" style="font-size:11px;background:#1a0d2e;color:var(--lav);border:1px solid #3a1a5a">Catch-up</span></span><span style="text-align:right;font-weight:600">$0.00</span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 140px 120px 90px;gap:12px;padding:15px 16px;font-size:14px;border-bottom:1px solid var(--border);align-items:center">
-          <span style="font-weight:500">Season 2 - Level 2</span><span style="color:var(--grey)">10 Feb 2026</span><span><span class="tag tag-lime" style="font-size:11px">Season</span></span><span style="text-align:right;font-weight:600">$270.00</span>
+        <div class="billing-row" style="display:grid;grid-template-columns:1fr 140px 120px 90px;gap:12px;padding:15px 16px;font-size:14px;border-bottom:1px solid var(--border);align-items:center">
+          <span style="font-weight:500">Season 2 - Level 2</span><span class="billing-col-date" style="color:var(--grey)">10 Feb 2026</span><span><span class="tag tag-lime" style="font-size:11px">Season</span></span><span style="text-align:right;font-weight:600">$270.00</span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 140px 120px 90px;gap:12px;padding:15px 16px;font-size:14px;border-bottom:1px solid var(--border);align-items:center">
-          <span style="font-weight:500">Casual · Level 1 (Wed 5 Feb)</span><span style="color:var(--grey)">3 Feb 2026</span><span><span class="tag" style="font-size:11px;background:#0d1800;color:var(--lime);border:1px solid #1a3000">Casual</span></span><span style="text-align:right;font-weight:600">$40.00</span>
+        <div class="billing-row" style="display:grid;grid-template-columns:1fr 140px 120px 90px;gap:12px;padding:15px 16px;font-size:14px;border-bottom:1px solid var(--border);align-items:center">
+          <span style="font-weight:500">Casual · Level 1 (Wed 5 Feb)</span><span class="billing-col-date" style="color:var(--grey)">3 Feb 2026</span><span><span class="tag" style="font-size:11px;background:#0d1800;color:var(--lime);border:1px solid #1a3000">Casual</span></span><span style="text-align:right;font-weight:600">$40.00</span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 140px 120px 90px;gap:12px;padding:15px 16px;font-size:14px;align-items:center">
-          <span style="font-weight:500">Season 1 - Level 1</span><span style="color:var(--grey)">15 Nov 2025</span><span><span class="tag tag-lime" style="font-size:11px">Season</span></span><span style="text-align:right;font-weight:600">$270.00</span>
+        <div class="billing-row" style="display:grid;grid-template-columns:1fr 140px 120px 90px;gap:12px;padding:15px 16px;font-size:14px;align-items:center">
+          <span style="font-weight:500">Season 1 - Level 1</span><span class="billing-col-date" style="color:var(--grey)">15 Nov 2025</span><span><span class="tag tag-lime" style="font-size:11px">Season</span></span><span style="text-align:right;font-weight:600">$270.00</span>
         </div>
       </div>
       <button class="btn btn-ghost btn-sm" style="margin-top:14px">Download all invoices</button>
