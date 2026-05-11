@@ -359,6 +359,7 @@ tr.clickable-row:hover td { background: #141414; }
     <div class="nav-item" onclick="showScreen('surveys')">📋 Surveys</div>
     <div class="nav-item" onclick="showScreen('staff')"><span class="nav-icon">🧑‍🏫</span> Staff</div>
     <div class="nav-item" onclick="showScreen('reporting')"><span class="nav-icon">📊</span> Reporting</div>
+    <div class="nav-item" onclick="showScreen('activity-log')"><span class="nav-icon">📋</span> Activity Log</div>
     <div class="nav-item" onclick="showScreen('leads')"><span class="nav-icon">🎯</span> Leads</div>
     <div class="nav-item" onclick="showScreen('kisi')"><span class="nav-icon">🔑</span> Kisi Access</div>
     <div class="nav-item" onclick="showScreen('notifications')"><span class="nav-icon">🔔</span> Automations</div>
@@ -1923,7 +1924,19 @@ tr.clickable-row:hover td { background: #141414; }
           <div class="field"><label>Studio Name</label><input type="text" value="Duality Pole" /></div>
           <div class="field"><label>Email</label><input type="text" value="hello@dualitypole.com.au" /></div>
           <div class="field"><label>Phone</label><input type="text" value="0400 000 000" /></div>
-          <div class="field"><label>Address</label><input type="text" value="123 Studio Lane, Melbourne VIC 3000" /></div>
+          <div class="field"><label>Website</label><input type="text" value="www.dualitypole.com.au" /></div>
+          <div class="field"><label>Instagram</label><input type="text" value="@dualitypole" /></div>
+          <div class="field"><label>Timezone</label><select style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 10px;width:100%;"><option selected>Australia/Sydney (GMT+1100)</option><option>Australia/Melbourne (GMT+1100)</option><option>Australia/Brisbane (GMT+1000)</option><option>Australia/Perth (GMT+0800)</option></select></div>
+          <div style="margin-bottom:16px;"><div style="font-family:'Archivo Black',sans-serif;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;color:var(--grey);">Studio Locations</div>
+            <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;">
+              <div style="font-weight:600;font-size:13px;margin-bottom:6px;">The Box</div>
+              <input type="text" value="42 Smith St, Fitzroy VIC 3065" style="width:100%;background:#111;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:6px 10px;box-sizing:border-box;" placeholder="Street address" />
+            </div>
+            <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:12px;">
+              <div style="font-weight:600;font-size:13px;margin-bottom:6px;">Rhapsody</div>
+              <input type="text" value="18 Chapel St, Windsor VIC 3181" style="width:100%;background:#111;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:6px 10px;box-sizing:border-box;" placeholder="Street address" />
+            </div>
+          </div>
           <button class="btn btn-lime btn-sm">Save Changes</button>
         </div>
         <div class="section">
@@ -2036,6 +2049,85 @@ tr.clickable-row:hover td { background: #141414; }
         -->
       </div>
 
+      <!-- Cancellation Settings -->
+      <div class="section" style="margin-top:20px;">
+        <div class="section-title">Cancellation Settings</div>
+        <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;">
+          <div>
+            <p style="font-size:12px;color:var(--grey);margin-bottom:16px;">Set per-class-type cancellation windows and policies. Students who cancel within this window will be subject to the fees set on the right.</p>
+            <!-- Courses -->
+            <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px;">
+              <div style="font-family:'Archivo Black',sans-serif;font-size:13px;margin-bottom:12px;">Courses <span style="font-family:Archivo,sans-serif;font-size:11px;color:var(--grey);font-weight:400;">(season enrolments)</span></div>
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+                <label style="font-size:12px;color:var(--grey);white-space:nowrap;">No refund if cancelled within</label>
+                <input type="number" value="24" style="width:64px;background:#111;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:13px;padding:6px 8px;text-align:center;" />
+                <span style="font-size:12px;color:var(--grey);">hours of class start</span>
+              </div>
+              <textarea rows="2" style="width:100%;background:#111;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:8px 10px;box-sizing:border-box;resize:vertical;">Cancellations must be made at least 24 hours before class. No refunds or credits for late cancellations on course enrolments.</textarea>
+            </div>
+            <!-- Drop Ins -->
+            <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px;">
+              <div style="font-family:'Archivo Black',sans-serif;font-size:13px;margin-bottom:12px;">Drop Ins <span style="font-family:Archivo,sans-serif;font-size:11px;color:var(--grey);font-weight:400;">(casuals, practice, trials)</span></div>
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+                <label style="font-size:12px;color:var(--grey);white-space:nowrap;">No refund if cancelled within</label>
+                <input type="number" value="4" style="width:64px;background:#111;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:13px;padding:6px 8px;text-align:center;" />
+                <span style="font-size:12px;color:var(--grey);">hours of class start</span>
+              </div>
+              <textarea rows="2" style="width:100%;background:#111;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:8px 10px;box-sizing:border-box;resize:vertical;">Drop-in bookings must be cancelled at least 4 hours before class to receive a credit. Late cancellations may incur a fee.</textarea>
+            </div>
+            <!-- Services -->
+            <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:16px;">
+              <div style="font-family:'Archivo Black',sans-serif;font-size:13px;margin-bottom:12px;">Services <span style="font-family:Archivo,sans-serif;font-size:11px;color:var(--grey);font-weight:400;">(private sessions, workshops)</span></div>
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+                <label style="font-size:12px;color:var(--grey);white-space:nowrap;">No refund if cancelled within</label>
+                <input type="number" value="48" style="width:64px;background:#111;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:13px;padding:6px 8px;text-align:center;" />
+                <span style="font-size:12px;color:var(--grey);">hours of class start</span>
+              </div>
+              <textarea rows="2" style="width:100%;background:#111;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:8px 10px;box-sizing:border-box;resize:vertical;">Private sessions must be cancelled 48 hours in advance. Late cancellations forfeit the session fee.</textarea>
+            </div>
+          </div>
+          <!-- Right: Fee toggles -->
+          <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:18px;height:fit-content;">
+            <div style="font-family:'Archivo Black',sans-serif;font-size:13px;margin-bottom:6px;">Cancellation Fees</div>
+            <div style="font-size:11px;color:var(--amber);background:rgba(255,170,68,0.1);border:1px solid rgba(255,170,68,0.3);border-radius:6px;padding:8px 10px;margin-bottom:16px;line-height:1.4;">TURN THESE TOGGLES ON to charge Student when studio marks attendance</div>
+            <div class="notif-row">
+              <div>
+                <div style="font-weight:600;font-size:13px;">Late Cancellation Fee</div>
+                <div style="font-size:11px;color:var(--grey);margin-top:2px;">Charged when cancelled inside the window</div>
+              </div>
+              <label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding-left:0;">
+              <span style="font-size:13px;color:var(--grey);">$</span>
+              <input type="number" value="15" style="width:80px;background:#111;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:13px;padding:6px 8px;text-align:center;" />
+            </div>
+            <div class="notif-row">
+              <div>
+                <div style="font-weight:600;font-size:13px;">No-show Fee</div>
+                <div style="font-size:11px;color:var(--grey);margin-top:2px;">Charged for unexcused no-shows</div>
+              </div>
+              <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+              <span style="font-size:13px;color:var(--grey);">$</span>
+              <input type="number" value="20" style="width:80px;background:#111;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:13px;padding:6px 8px;text-align:center;" />
+            </div>
+            <div class="notif-row" style="border-bottom:none;">
+              <div>
+                <div style="font-weight:600;font-size:13px;">Combined Late Cancel + No-show</div>
+                <div style="font-size:11px;color:var(--grey);margin-top:2px;">Apply a single combined fee instead</div>
+              </div>
+              <label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;">
+              <span style="font-size:13px;color:var(--grey);">$</span>
+              <input type="number" value="25" style="width:80px;background:#111;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:13px;padding:6px 8px;text-align:center;" />
+            </div>
+            <button class="btn btn-lime btn-sm" style="width:100%;" onclick="alert('Cancellation policies saved!')">Save &amp; update cancellation policies</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Forms & Documents -->
       <div class="section" style="margin-top:20px;">
         <div class="section-title">Forms &amp; Documents
@@ -2060,40 +2152,285 @@ tr.clickable-row:hover td { background: #141414; }
       </div>
     </div>
 
+    <!-- ===== ACTIVITY LOG ===== -->
+    <div id="screen-activity-log" class="screen">
+      <div class="page-header">
+        <div><div class="page-title">Activity Log</div><div class="page-sub">All studio transactions and events in real time</div></div>
+        <button class="btn btn-ghost" onclick="alert('Exporting CSV…')">↓ Export</button>
+      </div>
+      <!-- Filters -->
+      <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:flex-end;">
+        <div style="flex:1;min-width:180px;">
+          <div style="font-size:11px;color:var(--grey);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Activity Type</div>
+          <select id="al-type" onchange="filterActivityLog()" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:9px 12px;cursor:pointer;">
+            <option value="all">All</option>
+            <option value="attendance">Attendance</option>
+            <option value="class">Class</option>
+            <option value="membership">Membership</option>
+            <option value="package">Package</option>
+            <option value="payment">Payment</option>
+            <option value="refund">Refund</option>
+            <option value="profile">Profile Change</option>
+          </select>
+        </div>
+        <div style="flex:1;min-width:160px;">
+          <div style="font-size:11px;color:var(--grey);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Payment Status</div>
+          <select id="al-status" onchange="filterActivityLog()" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:9px 12px;cursor:pointer;">
+            <option value="all">All</option>
+            <option value="success">Success</option>
+            <option value="refunded">Refunded</option>
+            <option value="pending">Pending</option>
+            <option value="failed">Failed</option>
+          </select>
+        </div>
+        <div style="flex:1;min-width:160px;">
+          <div style="font-size:11px;color:var(--grey);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Payment Method</div>
+          <select id="al-method" onchange="filterActivityLog()" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:9px 12px;cursor:pointer;">
+            <option value="all">All</option>
+            <option value="card">Card</option>
+            <option value="cash">Cash</option>
+            <option value="membership">Membership</option>
+            <option value="package">Package</option>
+          </select>
+        </div>
+        <div style="flex:1;min-width:160px;">
+          <div style="font-size:11px;color:var(--grey);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Search student</div>
+          <input type="text" placeholder="Name or email…" oninput="filterActivityLog()" id="al-search" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:9px 12px;box-sizing:border-box;" />
+        </div>
+      </div>
+      <!-- Log list -->
+      <div class="section" style="padding:0;">
+        <div id="activity-log-list">
+          <!-- entries rendered by JS -->
+        </div>
+      </div>
+    </div>
+
     <!-- ===== REPORTING ===== -->
     <div id="screen-reporting" class="screen">
       <div class="page-header">
-        <div><div class="page-title">Reporting</div><div class="page-sub">Enrolments, financials, attendance and access logs</div></div>
-        <button class="btn btn-ghost" onclick="alert('Export CSV')">↓ Export CSV</button>
-      </div>
-      <div class="subtabs" style="margin-bottom:24px;">
-        <div class="subtab active" onclick="switchSubTab(this,'rep-enrolments')">Enrolments</div>
-        <div class="subtab" onclick="switchSubTab(this,'rep-financial')">Financial</div>
-        <div class="subtab" onclick="switchSubTab(this,'rep-attendance')">Attendance</div>
-        <div class="subtab" onclick="switchSubTab(this,'rep-kisi')">Kisi Logs</div>
-      </div>
-      <div id="rep-enrolments" class="subscreen active">
-        <div class="kpi-grid" style="margin-bottom:24px;">
-          <div class="kpi kpi-lime"><div class="kpi-label">Total Enrolments</div><div class="kpi-value">94</div></div>
-          <div class="kpi kpi-lav"><div class="kpi-label">Trial Enrolments</div><div class="kpi-value">12</div></div>
-          <div class="kpi kpi-amber"><div class="kpi-label">Full Season</div><div class="kpi-value">68</div></div>
-          <div class="kpi"><div class="kpi-label">Drop-ins</div><div class="kpi-value">14</div></div>
-        </div>
-        <div class="tbl-section"><table><thead><tr><th>Class</th><th>Instructor</th><th>Capacity</th><th style="color:var(--lav)">Trials</th><th style="color:var(--lime)">Full</th><th style="color:var(--amber)">Drop-ins</th><th>Total</th><th>Fill %</th></tr></thead><tbody><tr><td>Level 1 — Mon 5:30pm</td><td>Chloe</td><td>12</td><td style="color:var(--lav)">3</td><td style="color:var(--lime)">8</td><td style="color:var(--amber)">1</td><td>12</td><td><span class="tag tag-red">100%</span></td></tr><tr><td>Level 2 — Mon 6:30pm</td><td>Chloe</td><td>10</td><td style="color:var(--lav)">2</td><td style="color:var(--lime)">7</td><td style="color:var(--amber)">0</td><td>9</td><td><span class="tag tag-lime">90%</span></td></tr><tr><td>High Tricks — Mon 7:30pm</td><td>Mimi</td><td>10</td><td style="color:var(--lav)">0</td><td style="color:var(--lime)">8</td><td style="color:var(--amber)">0</td><td>8</td><td><span class="tag tag-lime">80%</span></td></tr></tbody></table></div>
-      </div>
-      <div id="rep-financial" class="subscreen">
-        <div class="kpi-grid" style="margin-bottom:24px;">
-          <div class="kpi kpi-lime"><div class="kpi-label">Total Revenue (Season 3)</div><div class="kpi-value">$14,820</div></div>
-          <div class="kpi kpi-amber"><div class="kpi-label">Outstanding</div><div class="kpi-value">$860</div></div>
-          <div class="kpi kpi-lav"><div class="kpi-label">Payment Plans</div><div class="kpi-value">$355 owing</div></div>
-          <div class="kpi kpi-red"><div class="kpi-label">Overdue</div><div class="kpi-value">$255</div></div>
+        <div><div class="page-title">Analytics</div><div class="page-sub">Revenue, enrolments and capacity insights</div></div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <input type="date" value="2026-05-01" style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:6px 10px;" />
+          <input type="date" value="2026-05-11" style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:6px 10px;" />
+          <button class="btn btn-lime btn-sm">Filter</button>
         </div>
       </div>
-      <div id="rep-attendance" class="subscreen">
-        <div class="tbl-section"><table><thead><tr><th>Class</th><th>Instructor</th><th>Classes Run</th><th>Avg Attendance</th><th>No-shows</th><th>No-show Rate</th></tr></thead><tbody><tr><td>Level 1 — Mon 5:30pm</td><td>Chloe</td><td>8</td><td>10.5/12</td><td>6</td><td><span class="tag tag-amber">7.5%</span></td></tr><tr><td>Level 2 — Mon 6:30pm</td><td>Chloe</td><td>8</td><td>8.8/9</td><td>3</td><td><span class="tag tag-lime">4.2%</span></td></tr><tr><td>Sensual Flow — Fri 6:00pm</td><td>Mia</td><td>8</td><td>11.2/14</td><td>10</td><td><span class="tag tag-red">11.2%</span></td></tr></tbody></table></div>
+      <!-- Period summary bar -->
+      <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;">
+        <div style="font-size:11px;color:var(--grey);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-right:4px;">Period Summary</div>
+        <span style="font-size:12px;color:#5ecc7b;">↑ Revenue up 22%</span>
+        <span style="font-size:12px;color:#5ecc7b;">↑ Classes up 24%</span>
+        <span style="font-size:12px;color:#5ecc7b;">↑ Memberships up 156%</span>
+        <span style="font-size:12px;color:var(--amber);">↓ Students down 27%</span>
+        <span style="font-size:12px;color:var(--amber);">↓ Attendance down 8%</span>
+        <div style="margin-left:auto;display:flex;gap:6px;">
+          <button class="btn btn-lime btn-sm" style="font-size:11px;">Previous Period</button>
+          <button class="btn btn-ghost btn-sm" style="font-size:11px;">Same Period Last Year</button>
+        </div>
       </div>
-      <div id="rep-kisi" class="subscreen">
-        <div class="tbl-section"><table><thead><tr><th>Student</th><th>Space</th><th>Access Granted</th><th>Valid From</th><th>Valid Until</th><th>Unlocked At</th><th>Status</th></tr></thead><tbody><tr><td>Jess Malone</td><td>Rhapsody</td><td style="color:var(--grey)">10 May 9:02am</td><td>11 May 10:00am</td><td>11 May 12:00pm</td><td>11 May 10:04am</td><td><span class="tag tag-lime">Used</span></td></tr><tr><td>Sophie Lawson</td><td>The Box</td><td style="color:var(--grey)">11 May 8:45am</td><td>11 May 2:00pm</td><td>11 May 4:00pm</td><td>—</td><td><span class="tag tag-amber">Pending</span></td></tr></tbody></table></div>
+      <!-- Main layout: left stats + right reports panel -->
+      <div style="display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start;">
+        <div>
+          <!-- Total Revenue -->
+          <div style="background:linear-gradient(135deg,#1a1a1a 0%,#1e1a2e 100%);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px;">
+            <div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Total Revenue</div>
+            <div style="font-family:'Archivo Black',sans-serif;font-size:36px;color:var(--lav);margin-bottom:4px;">$14,820.00</div>
+            <div style="font-size:12px;color:var(--grey);">Avg. Transaction: $31.86</div>
+            <!-- Revenue circles -->
+            <div style="display:flex;gap:16px;margin-top:20px;flex-wrap:wrap;">
+              <div style="text-align:center;">
+                <div style="width:64px;height:64px;border-radius:50%;border:3px solid var(--lav);display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-family:'Archivo Black',sans-serif;font-size:14px;color:var(--lav);">8,400</div>
+                <div style="font-size:10px;color:var(--grey);">Classes</div>
+              </div>
+              <div style="text-align:center;">
+                <div style="width:64px;height:64px;border-radius:50%;border:3px solid #555;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-family:'Archivo Black',sans-serif;font-size:14px;color:var(--grey);">0</div>
+                <div style="font-size:10px;color:var(--grey);">Services</div>
+              </div>
+              <div style="text-align:center;">
+                <div style="width:64px;height:64px;border-radius:50%;border:3px solid #5ecc7b;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-family:'Archivo Black',sans-serif;font-size:14px;color:#5ecc7b;">505</div>
+                <div style="font-size:10px;color:var(--grey);">Packages</div>
+              </div>
+              <div style="text-align:center;">
+                <div style="width:64px;height:64px;border-radius:50%;border:3px solid #555;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-family:'Archivo Black',sans-serif;font-size:14px;color:var(--grey);">0</div>
+                <div style="font-size:10px;color:var(--grey);">Memberships</div>
+              </div>
+              <div style="text-align:center;">
+                <div style="width:64px;height:64px;border-radius:50%;border:3px solid var(--amber);display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-family:'Archivo Black',sans-serif;font-size:13px;color:var(--amber);">925</div>
+                <div style="font-size:10px;color:var(--grey);">Wallet</div>
+              </div>
+              <div style="text-align:center;">
+                <div style="width:64px;height:64px;border-radius:50%;border:3px solid #e05555;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-family:'Archivo Black',sans-serif;font-size:14px;color:#e05555;">1,260</div>
+                <div style="font-size:10px;color:var(--grey);">Refunds</div>
+              </div>
+            </div>
+          </div>
+          <!-- KPI grid -->
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+            <div class="section" style="padding:14px 16px;">
+              <div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">New Packages</div>
+              <div style="font-family:'Archivo Black',sans-serif;font-size:24px;">141</div>
+              <div style="font-size:11px;color:var(--amber);margin-top:2px;">↓ 9.6%</div>
+            </div>
+            <div class="section" style="padding:14px 16px;">
+              <div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">New Memberships</div>
+              <div style="font-family:'Archivo Black',sans-serif;font-size:24px;">46</div>
+              <div style="font-size:11px;color:#5ecc7b;margin-top:2px;">↑ 155.6%</div>
+            </div>
+            <div class="section" style="padding:14px 16px;">
+              <div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Active Memberships</div>
+              <div style="font-family:'Archivo Black',sans-serif;font-size:24px;">239</div>
+              <div style="font-size:11px;color:var(--lav);margin-top:2px;cursor:pointer;" onclick="showScreen('billing')">View →</div>
+            </div>
+            <div class="section" style="padding:14px 16px;">
+              <div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Active Packages</div>
+              <div style="font-family:'Archivo Black',sans-serif;font-size:24px;">63</div>
+              <div style="font-size:11px;color:var(--lav);margin-top:2px;cursor:pointer;" onclick="showScreen('billing')">View →</div>
+            </div>
+            <div class="section" style="padding:14px 16px;">
+              <div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Membership Cancels</div>
+              <div style="font-family:'Archivo Black',sans-serif;font-size:24px;">1</div>
+            </div>
+            <div class="section" style="padding:14px 16px;">
+              <div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">New Students</div>
+              <div style="font-family:'Archivo Black',sans-serif;font-size:24px;">11</div>
+            </div>
+            <div class="section" style="padding:14px 16px;">
+              <div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Active Students</div>
+              <div style="font-family:'Archivo Black',sans-serif;font-size:24px;">119</div>
+            </div>
+            <div class="section" style="padding:14px 16px;cursor:pointer;" onclick="showScreen('billing-outstanding')">
+              <div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Students Owing</div>
+              <div style="font-family:'Archivo Black',sans-serif;font-size:24px;color:var(--amber);">29</div>
+              <div style="font-size:11px;color:var(--lav);margin-top:2px;">View →</div>
+            </div>
+            <div class="section" style="padding:14px 16px;">
+              <div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Capacity Utilisation</div>
+              <div style="font-family:'Archivo Black',sans-serif;font-size:24px;color:var(--lime);">111%</div>
+            </div>
+          </div>
+          <!-- Attendance row -->
+          <div class="section" style="padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;gap:24px;">
+            <div>
+              <div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Attendance</div>
+              <div style="font-family:'Archivo Black',sans-serif;font-size:28px;">232</div>
+              <div style="font-size:11px;color:#5ecc7b;margin-top:2px;">↑ 7.6%</div>
+            </div>
+            <div style="flex:1;height:4px;background:var(--border);border-radius:2px;">
+              <div style="width:76%;height:100%;background:var(--lime);border-radius:2px;"></div>
+            </div>
+            <div style="font-size:12px;color:var(--grey);">vs 215 last period</div>
+          </div>
+          <!-- Monthly Revenue chart -->
+          <div class="section" style="padding:20px;margin-bottom:20px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+              <div style="font-family:'Archivo Black',sans-serif;font-size:14px;">Monthly Revenue</div>
+              <select style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:4px 8px;"><option>2026</option><option>2025</option></select>
+            </div>
+            <!-- CSS bar chart -->
+            <div style="display:flex;align-items:flex-end;gap:6px;height:120px;">
+              <div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:4px;"><div style="width:100%;background:var(--lav);border-radius:3px 3px 0 0;height:65%;"></div><div style="font-size:9px;color:var(--grey);">Jan</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:4px;"><div style="width:100%;background:var(--lav);border-radius:3px 3px 0 0;height:82%;"></div><div style="font-size:9px;color:var(--grey);">Feb</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:4px;"><div style="width:100%;background:var(--lav);border-radius:3px 3px 0 0;height:90%;"></div><div style="font-size:9px;color:var(--grey);">Mar</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:4px;"><div style="width:100%;background:var(--lav);border-radius:3px 3px 0 0;height:88%;"></div><div style="font-size:9px;color:var(--grey);">Apr</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:4px;"><div style="width:100%;background:var(--lime);border-radius:3px 3px 0 0;height:30%;"></div><div style="font-size:9px;color:var(--lime);">May</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:4px;"><div style="width:100%;background:#333;border-radius:3px 3px 0 0;height:5%;"></div><div style="font-size:9px;color:var(--grey);">Jun</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:4px;"><div style="width:100%;background:#333;border-radius:3px 3px 0 0;height:5%;"></div><div style="font-size:9px;color:var(--grey);">Jul</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:4px;"><div style="width:100%;background:#333;border-radius:3px 3px 0 0;height:5%;"></div><div style="font-size:9px;color:var(--grey);">Aug</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:4px;"><div style="width:100%;background:#333;border-radius:3px 3px 0 0;height:5%;"></div><div style="font-size:9px;color:var(--grey);">Sep</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:4px;"><div style="width:100%;background:#333;border-radius:3px 3px 0 0;height:5%;"></div><div style="font-size:9px;color:var(--grey);">Oct</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:4px;"><div style="width:100%;background:#333;border-radius:3px 3px 0 0;height:5%;"></div><div style="font-size:9px;color:var(--grey);">Nov</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:4px;"><div style="width:100%;background:#333;border-radius:3px 3px 0 0;height:5%;"></div><div style="font-size:9px;color:var(--grey);">Dec</div></div>
+            </div>
+          </div>
+          <!-- Bottom row: Sales + Capacity -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+            <div class="section" style="padding:20px;">
+              <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:16px;">Sales Breakdown</div>
+              <!-- Donut-style chart using conic-gradient -->
+              <div style="display:flex;align-items:center;gap:20px;">
+                <div style="width:90px;height:90px;border-radius:50%;background:conic-gradient(var(--lav) 0% 57%,var(--lime) 57% 70%,#5ecc7b 70% 80%,var(--amber) 80% 95%,#555 95% 100%);flex-shrink:0;"></div>
+                <div style="font-size:11px;display:flex;flex-direction:column;gap:5px;">
+                  <div><span style="display:inline-block;width:10px;height:10px;background:var(--lav);border-radius:2px;margin-right:6px;"></span>Classes 57%</div>
+                  <div><span style="display:inline-block;width:10px;height:10px;background:var(--lime);border-radius:2px;margin-right:6px;"></span>Packages 13%</div>
+                  <div><span style="display:inline-block;width:10px;height:10px;background:#5ecc7b;border-radius:2px;margin-right:6px;"></span>Memberships 10%</div>
+                  <div><span style="display:inline-block;width:10px;height:10px;background:var(--amber);border-radius:2px;margin-right:6px;"></span>Wallet 15%</div>
+                  <div><span style="display:inline-block;width:10px;height:10px;background:#555;border-radius:2px;margin-right:6px;"></span>Other 5%</div>
+                </div>
+              </div>
+            </div>
+            <div class="section" style="padding:20px;text-align:center;">
+              <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:16px;">Capacity Utilisation</div>
+              <div style="position:relative;width:100px;height:100px;margin:0 auto 12px;">
+                <svg viewBox="0 0 100 100" style="transform:rotate(-90deg);">
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#333" stroke-width="10"/>
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="var(--lav)" stroke-width="10" stroke-dasharray="251.3 251.3" stroke-dashoffset="0" style="stroke-dashoffset:calc(251.3 - 251.3 * 1.11);"/>
+                </svg>
+                <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                  <div style="font-family:'Archivo Black',sans-serif;font-size:18px;color:var(--lav);">111%</div>
+                </div>
+              </div>
+              <div style="font-size:12px;color:var(--grey);">Spots Filled</div>
+              <div style="font-family:'Archivo Black',sans-serif;font-size:16px;margin-top:4px;">739 / 666</div>
+            </div>
+          </div>
+          <!-- Detailed sub-tabs -->
+          <div class="subtabs" style="margin-top:28px;margin-bottom:20px;">
+            <div class="subtab active" onclick="switchSubTab(this,'rep-enrolments')">Enrolments</div>
+            <div class="subtab" onclick="switchSubTab(this,'rep-financial')">Financial</div>
+            <div class="subtab" onclick="switchSubTab(this,'rep-attendance')">Attendance</div>
+            <div class="subtab" onclick="switchSubTab(this,'rep-kisi')">Kisi Logs</div>
+          </div>
+          <div id="rep-enrolments" class="subscreen active">
+            <div class="tbl-section"><table><thead><tr><th>Class</th><th>Instructor</th><th>Capacity</th><th style="color:var(--lav)">Trials</th><th style="color:var(--lime)">Full</th><th style="color:var(--amber)">Drop-ins</th><th>Total</th><th>Fill %</th></tr></thead><tbody><tr><td>Level 1 — Mon 5:30pm</td><td>Chloe</td><td>12</td><td style="color:var(--lav)">3</td><td style="color:var(--lime)">8</td><td style="color:var(--amber)">1</td><td>12</td><td><span class="tag tag-red">100%</span></td></tr><tr><td>Level 2 — Mon 6:30pm</td><td>Chloe</td><td>10</td><td style="color:var(--lav)">2</td><td style="color:var(--lime)">7</td><td style="color:var(--amber)">0</td><td>9</td><td><span class="tag tag-lime">90%</span></td></tr><tr><td>High Tricks — Mon 7:30pm</td><td>Mimi</td><td>10</td><td style="color:var(--lav)">0</td><td style="color:var(--lime)">8</td><td style="color:var(--amber)">0</td><td>8</td><td><span class="tag tag-lime">80%</span></td></tr><tr><td>Sensual Flow — Fri 6:00pm</td><td>Bambi</td><td>14</td><td style="color:var(--lav)">4</td><td style="color:var(--lime)">9</td><td style="color:var(--amber)">2</td><td>15</td><td><span class="tag tag-red">107%</span></td></tr></tbody></table></div>
+          </div>
+          <div id="rep-financial" class="subscreen">
+            <div class="kpi-grid" style="margin-bottom:16px;">
+              <div class="kpi kpi-lime"><div class="kpi-label">Total Revenue</div><div class="kpi-value">$14,820</div></div>
+              <div class="kpi kpi-amber"><div class="kpi-label">Outstanding</div><div class="kpi-value">$860</div></div>
+              <div class="kpi kpi-lav"><div class="kpi-label">Payment Plans</div><div class="kpi-value">$355 owing</div></div>
+              <div class="kpi kpi-red"><div class="kpi-label">Overdue</div><div class="kpi-value">$255</div></div>
+            </div>
+          </div>
+          <div id="rep-attendance" class="subscreen">
+            <div class="tbl-section"><table><thead><tr><th>Class</th><th>Instructor</th><th>Classes Run</th><th>Avg Attendance</th><th>No-shows</th><th>No-show Rate</th></tr></thead><tbody><tr><td>Level 1 — Mon 5:30pm</td><td>Chloe</td><td>8</td><td>10.5/12</td><td>6</td><td><span class="tag tag-amber">7.5%</span></td></tr><tr><td>Level 2 — Mon 6:30pm</td><td>Chloe</td><td>8</td><td>8.8/9</td><td>3</td><td><span class="tag tag-lime">4.2%</span></td></tr><tr><td>Sensual Flow — Fri 6:00pm</td><td>Bambi</td><td>8</td><td>11.2/14</td><td>10</td><td><span class="tag tag-red">11.2%</span></td></tr></tbody></table></div>
+          </div>
+          <div id="rep-kisi" class="subscreen">
+            <div class="tbl-section"><table><thead><tr><th>Student</th><th>Space</th><th>Access Granted</th><th>Valid From</th><th>Valid Until</th><th>Unlocked At</th><th>Status</th></tr></thead><tbody><tr><td>Jess Malone</td><td>Rhapsody</td><td style="color:var(--grey)">10 May 9:02am</td><td>11 May 10:00am</td><td>11 May 12:00pm</td><td>11 May 10:04am</td><td><span class="tag tag-lime">Used</span></td></tr><tr><td>Sophie Lawson</td><td>The Box</td><td style="color:var(--grey)">11 May 8:45am</td><td>11 May 2:00pm</td><td>11 May 4:00pm</td><td>—</td><td><span class="tag tag-amber">Pending</span></td></tr></tbody></table></div>
+          </div>
+        </div>
+        <!-- Right: report generator panel -->
+        <div>
+          <div class="section" style="padding:18px;position:sticky;top:80px;">
+            <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:14px;">Reports</div>
+            <div class="field"><label>Report Type</label>
+              <select style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 10px;width:100%;">
+                <option>Select Report type</option>
+                <option>Revenue Summary</option>
+                <option>Enrolment Report</option>
+                <option>Attendance Report</option>
+                <option>No-show Report</option>
+                <option>Student Retention</option>
+                <option>Instructor Hours</option>
+                <option>Capacity Report</option>
+                <option>Discount Usage</option>
+              </select>
+            </div>
+            <div class="field"><label>Location</label>
+              <select style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 10px;width:100%;">
+                <option>Select Location (Optional)</option>
+                <option>The Box</option>
+                <option>Rhapsody</option>
+              </select>
+            </div>
+            <div class="field"><label>Start Date</label><input type="date" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 10px;box-sizing:border-box;" /></div>
+            <div class="field"><label>End Date</label><input type="date" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 10px;box-sizing:border-box;" /></div>
+            <div style="display:flex;gap:8px;margin-top:4px;">
+              <button class="btn btn-lime" style="flex:1;" onclick="alert('Generating report…')">👁 View Report</button>
+              <button class="btn btn-ghost" onclick="alert('Exporting…')">⚡ Quick Export</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -2935,7 +3272,7 @@ const screenTitles = {
   seasons:'Seasons', bookings:'Bookings', billing:'Billing',
   discounts:'Discounts', giftcards:'Gift Cards', community:'Community',
   surveys:'Surveys', staff:'Staff', settings:'Settings',
-  reporting:'Reporting', leads:'Leads', kisi:'Kisi Access',
+  reporting:'Reporting', 'activity-log':'Activity Log', leads:'Leads', kisi:'Kisi Access',
   notifications:'Automations', marketing:'Marketing',
   'student-detail':'Student Profile', attendance:'Attendance Register',
   'season-edit':'Edit Season',
@@ -2954,6 +3291,7 @@ function showScreen(id) {
   });
   document.getElementById('topbar-title').textContent = screenTitles[id] || id;
   window.scrollTo(0,0);
+  if (id === 'activity-log') renderActivityLog(ACTIVITY_LOG);
 }
 
 // ===== MODALS =====
@@ -3191,6 +3529,65 @@ function filterStudentsTable(val) {
 }
 
 // ===== LEADS FILTER =====
+// ===== ACTIVITY LOG =====
+const ACTIVITY_LOG = [
+  { type:'payment', status:'success', method:'card', student:'Mia Santos', desc:'purchased class High Tricks for $160.00', time:'11 May 2026 9:14 AM', tags:['Success','Student','Online','Card','The Box'], txn:'TxnA1' },
+  { type:'refund', status:'refunded', method:'card', student:'Jess Malone', desc:'refund for class Level 2 for $160.00', time:'11 May 2026 8:58 AM', tags:['Refunded','Student','Makeup Package','Rhapsody'], txn:'TxnB2' },
+  { type:'payment', status:'success', method:'card', student:'Ruby Kim', desc:'purchased class Sensual Flow for $85.85', time:'11 May 2026 8:51 AM', tags:['Success','Student','Online','Card','The Box'], txn:'TxnC3' },
+  { type:'membership', status:'success', method:'membership', student:'Sophie Lawson', desc:'purchased class Practice Time for $0.00', time:'11 May 2026 8:09 AM', tags:['Success','Student','Membership','Rhapsody'], txn:'TxnD4' },
+  { type:'attendance', status:'success', method:'membership', student:'Kylie Rhodes', desc:'attended Level 1 — Mon 5:30pm, marked attended', time:'11 May 2026 7:47 AM', tags:['Success','Attendance','The Box'] },
+  { type:'payment', status:'success', method:'card', student:'Ruby Kim', desc:'enrolled in Level 2 Season 4 for $272.70', time:'11 May 2026 7:30 AM', tags:['Success','Student','Online','Card','Rhapsody'], txn:'TxnE5' },
+  { type:'profile', status:'', method:'', student:'Mia Santos', desc:'updated emergency contact and health notes', time:'10 May 2026 4:22 PM', tags:['Profile Change','Student'] },
+  { type:'attendance', status:'refunded', method:'', student:'Jess Malone', desc:'no-show fee issued for Level 2 — Mon 6:30pm', time:'10 May 2026 9:00 AM', tags:['Refunded','No-show','Rhapsody'] },
+  { type:'package', status:'success', method:'cash', student:'Sophie Lawson', desc:'purchased Class Pass 5× for $150.00', time:'9 May 2026 2:15 PM', tags:['Success','Student','Cash','The Box'], txn:'TxnF6' },
+  { type:'payment', status:'pending', method:'card', student:'Kylie Rhodes', desc:'payment plan instalment due $55.00', time:'9 May 2026 10:00 AM', tags:['Pending','Payment Plan','Student'] },
+  { type:'refund', status:'refunded', method:'card', student:'Ruby Kim', desc:'refund for cancelled trial — Sensual Flow for $25.00', time:'8 May 2026 3:40 PM', tags:['Refunded','Student','Card','The Box'], txn:'TxnG7' },
+  { type:'class', status:'', method:'', student:'', desc:'Level 1 — Mon 5:30pm cancelled by Mimi (room conflict)', time:'8 May 2026 11:00 AM', tags:['Class','Cancelled','The Box'] },
+];
+
+function renderActivityLog(entries) {
+  const el = document.getElementById('activity-log-list');
+  if (!el) return;
+  if (!entries.length) { el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--grey);">No activity matching filters.</div>'; return; }
+  el.innerHTML = entries.map(e => {
+    const dotColor = e.status === 'success' ? '#5ecc7b' : e.status === 'refunded' ? 'var(--amber)' : e.status === 'pending' ? 'var(--lav)' : '#555';
+    const tags = e.tags.map(t => {
+      let cls = 'background:#1a1a1a;color:var(--grey);';
+      if (t === 'Success') cls = 'background:rgba(94,204,123,0.15);color:#5ecc7b;';
+      if (t === 'Refunded') cls = 'background:rgba(255,170,68,0.15);color:var(--amber);';
+      if (t === 'Pending') cls = 'background:rgba(205,165,255,0.15);color:var(--lav);';
+      if (t === 'Student') cls = 'background:rgba(205,165,255,0.2);color:var(--lav);';
+      if (t === 'No-show' || t === 'Cancelled') cls = 'background:rgba(224,85,85,0.15);color:#e05555;';
+      return `<span style="display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;${cls}">${t}</span>`;
+    }).join(' ');
+    const txn = e.txn ? `<span style="font-size:11px;color:var(--grey);font-family:monospace;">Txn: ${e.txn}</span>` : '';
+    return `<div style="display:flex;align-items:flex-start;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border);">
+      <div style="margin-top:5px;width:8px;height:8px;border-radius:50%;background:${dotColor};flex-shrink:0;"></div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;margin-bottom:5px;">${e.student ? `<strong>${e.student}</strong> ` : ''}${e.desc}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">${tags} ${txn}</div>
+      </div>
+      <div style="font-size:11px;color:var(--grey);white-space:nowrap;margin-top:2px;">${e.time}</div>
+      <button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;padding:0 4px;" title="View detail">👁</button>
+    </div>`;
+  }).join('');
+}
+
+function filterActivityLog() {
+  const type = (document.getElementById('al-type')||{}).value || 'all';
+  const status = (document.getElementById('al-status')||{}).value || 'all';
+  const method = (document.getElementById('al-method')||{}).value || 'all';
+  const search = ((document.getElementById('al-search')||{}).value || '').toLowerCase();
+  const filtered = ACTIVITY_LOG.filter(e => {
+    if (type !== 'all' && e.type !== type) return false;
+    if (status !== 'all' && e.status !== status) return false;
+    if (method !== 'all' && e.method !== method) return false;
+    if (search && !e.student.toLowerCase().includes(search) && !e.desc.toLowerCase().includes(search)) return false;
+    return true;
+  });
+  renderActivityLog(filtered);
+}
+
 function filterLeads(status) {
   document.querySelectorAll('#leads-tbody tr').forEach(row => {
     row.style.display = (status === 'all' || row.dataset.status === status) ? '' : 'none';
