@@ -849,7 +849,7 @@ tr.clickable-row:hover td { background: #141414; }
             <thead><tr><th>Student</th><th>Type</th><th>Contact</th><th>Status</th><th>Fee</th><th>Notes</th></tr></thead>
             <tbody>
               <tr id="att-row-0">
-                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#ffaa44;">J</div><div><div style="font-weight:500;">Jess Malone</div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
+                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#ffaa44;">J</div><div><div style="font-weight:500;">Jess Malone 🎂 <span style="display:inline-block;background:#0f1600;color:var(--lime);border:1px solid var(--lime);border-radius:12px;font-size:10px;font-weight:600;padding:1px 8px;letter-spacing:0.3px;margin-left:2px;">Birthday this week!</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
                 <td><span class="tag tag-lav">Enrolled</span></td>
                 <td style="color:var(--grey);font-size:12px;">0412 345 678</td>
                 <td><select class="att-status-select" onchange="updateAttRow(0,this.value)"><option value="">Select…</option><option value="present">Present</option><option value="noshow-fee">No-show + $25 fee</option><option value="noshow-waived">No-show — fee waived</option><option value="late">Late</option><option value="excused">Excused</option></select></td>
@@ -881,7 +881,7 @@ tr.clickable-row:hover td { background: #141414; }
                 <td><input type="text" placeholder="Note…" style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:4px 8px;width:100px;" /></td>
               </tr>
               <tr id="att-row-4">
-                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#ffb3de;">A</div><div><div style="font-weight:500;">Amber Cole <span class="flag-badge">3 no-shows</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
+                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#ffb3de;">A</div><div><div style="font-weight:500;">Amber Cole 🎂 <span style="display:inline-block;background:#0f1600;color:var(--lime);border:1px solid var(--lime);border-radius:12px;font-size:10px;font-weight:600;padding:1px 8px;letter-spacing:0.3px;margin-left:2px;">Birthday this week!</span> <span class="flag-badge">3 no-shows</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
                 <td><span class="tag tag-lav">Enrolled</span></td>
                 <td style="color:var(--grey);font-size:12px;">0445 678 901</td>
                 <td><select class="att-status-select" onchange="updateAttRow(4,this.value)"><option value="">Select…</option><option value="present">Present</option><option value="noshow-fee">No-show + $25 fee</option><option value="noshow-waived">No-show — fee waived</option><option value="late">Late</option><option value="excused">Excused</option></select></td>
@@ -1115,6 +1115,41 @@ tr.clickable-row:hover td { background: #141414; }
           </tbody>
         </table>
       </div>
+
+      <!-- Referral Program -->
+      <div class="section" style="margin-top:28px;">
+        <div class="section-title">Referral Program
+          <div class="toggle-wrap"><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label><span style="font-size:13px;color:var(--grey);">Enabled</span></div>
+        </div>
+        <p style="font-size:13px;color:var(--grey);line-height:1.6;margin-bottom:20px;">Each student gets a unique referral code. When a friend uses it at checkout, they get $50 off their first season. The referring student receives $50 account credit once the friend's first payment clears.</p>
+        <div class="kpi-grid" style="margin-bottom:20px;">
+          <div class="kpi kpi-lime"><div class="kpi-label">Total Referrals</div><div class="kpi-value">23</div></div>
+          <div class="kpi kpi-amber"><div class="kpi-label">Pending Credits</div><div class="kpi-value">$350</div><div class="kpi-sub">7 awaiting clearance</div></div>
+          <div class="kpi kpi-lav"><div class="kpi-label">Paid Out Credits</div><div class="kpi-value">$800</div><div class="kpi-sub">16 credited</div></div>
+          <div class="kpi"><div class="kpi-label">Conversion Rate</div><div class="kpi-value">68%</div><div class="kpi-sub">↑ 5% vs last season</div></div>
+        </div>
+        <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:12px;">Recent Referrals</div>
+        <div class="tbl-section" style="margin-bottom:20px;">
+          <table>
+            <thead><tr><th>Referrer</th><th>Referee</th><th>Code Used</th><th>Date</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Jess Malone</td><td>Emma Davis</td><td style="font-family:monospace;">REF-JESS01</td><td style="color:var(--grey)">8 May 2025</td><td><span class="tag tag-amber">Pending</span></td></tr>
+              <tr><td>Ruby Kim</td><td>Bianca Ross</td><td style="font-family:monospace;">REF-RUBY02</td><td style="color:var(--grey)">1 May 2025</td><td><span class="tag tag-lime">Credited</span></td></tr>
+              <tr><td>Sophie Lawson</td><td>Priya Nair</td><td style="font-family:monospace;">REF-SOPH03</td><td style="color:var(--grey)">5 May 2025</td><td><span class="tag tag-amber">Pending</span></td></tr>
+              <tr><td>Tara Bell</td><td>Zoe Clarke</td><td style="font-family:monospace;">REF-TARA04</td><td style="color:var(--grey)">10 May 2025</td><td><span class="tag tag-lime">Credited</span></td></tr>
+              <tr><td>Nina Torres</td><td>Lena Wu</td><td style="font-family:monospace;">REF-NINA05</td><td style="color:var(--grey)">3 Apr 2025</td><td><span class="tag tag-lav">Paid Out</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:12px;">Referral Settings</div>
+        <div class="grid-2" style="gap:16px;margin-bottom:12px;">
+          <div class="field"><label>Discount for Referee ($)</label><input type="number" value="50" /></div>
+          <div class="field"><label>Credit for Referrer ($)</label><input type="number" value="50" /></div>
+          <div class="field"><label>Min Spend to Qualify ($)</label><input type="number" value="100" /></div>
+          <div class="field"><label>Credit Valid For (days)</label><input type="number" value="365" /></div>
+        </div>
+        <button class="btn btn-lime btn-sm" onclick="alert('Referral settings saved!')">Save Settings</button>
+      </div>
     </div>
 
     <!-- ===== GIFT CARDS ===== -->
@@ -1179,6 +1214,100 @@ tr.clickable-row:hover td { background: #141414; }
       </div>
     </div>
 
+    <!-- ===== SURVEYS ===== -->
+    <div id="screen-surveys" class="screen">
+      <div class="page-header">
+        <div><div class="page-title">Surveys</div><div class="page-sub">Collect feedback from students</div></div>
+        <button class="btn btn-lime" onclick="openModal('modal-create-survey')">+ Create Survey</button>
+      </div>
+      <div class="subtabs" id="survey-tabs">
+        <div class="subtab active" onclick="switchSubTab(this,'srv-active')">Active</div>
+        <div class="subtab" onclick="switchSubTab(this,'srv-scheduled')">Scheduled</div>
+        <div class="subtab" onclick="switchSubTab(this,'srv-completed')">Completed</div>
+        <div class="subtab" onclick="switchSubTab(this,'srv-templates')">Templates</div>
+      </div>
+
+      <div id="srv-active" class="subscreen active">
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="section" style="margin-bottom:0;">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+              <div>
+                <div style="font-family:'Archivo Black',sans-serif;font-size:17px;margin-bottom:4px;">Season 3 Feedback</div>
+                <div style="font-size:13px;color:var(--grey);margin-bottom:8px;">General satisfaction survey — favourite moments, suggestions for improvement</div>
+                <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--grey);">
+                  <span>🎯 All Students</span>
+                  <span>📅 Sent 1 May 2025</span>
+                  <span>🔒 Closes 25 May 2025</span>
+                </div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-family:'Archivo Black',sans-serif;font-size:22px;color:var(--lime);">14<span style="font-size:14px;color:var(--grey);font-family:'Archivo',sans-serif;font-weight:400;">/32 responded</span></div>
+                <div style="font-size:11px;color:var(--grey);margin-top:2px;">44% response rate</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:16px;">
+              <button class="btn btn-lime btn-sm" onclick="alert('Survey results coming soon')">View Results</button>
+              <button class="btn btn-ghost btn-sm" onclick="alert('Reminder sent to 18 non-respondents')">Send Reminder</button>
+            </div>
+          </div>
+          <div class="section" style="margin-bottom:0;">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+              <div>
+                <div style="font-family:'Archivo Black',sans-serif;font-size:17px;margin-bottom:4px;">New Student Experience</div>
+                <div style="font-size:13px;color:var(--grey);margin-bottom:8px;">Sent after first class — how did you hear about us, would you recommend Duality?</div>
+                <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--grey);">
+                  <span>🎯 Trial Students</span>
+                  <span>📅 Sent automatically after first class</span>
+                  <span>🔒 Ongoing</span>
+                </div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-family:'Archivo Black',sans-serif;font-size:22px;color:var(--lav);">8<span style="font-size:14px;color:var(--grey);font-family:'Archivo',sans-serif;font-weight:400;">/11 responded</span></div>
+                <div style="font-size:11px;color:var(--grey);margin-top:2px;">73% response rate</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:16px;">
+              <button class="btn btn-lime btn-sm" onclick="alert('Survey results coming soon')">View Results</button>
+              <button class="btn btn-ghost btn-sm" onclick="alert('Reminder sent to 3 non-respondents')">Send Reminder</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="srv-scheduled" class="subscreen">
+        <div style="color:var(--grey);font-size:13px;padding:20px 0;">No scheduled surveys. <button class="btn btn-ghost btn-sm" onclick="openModal('modal-create-survey')">Create one</button></div>
+      </div>
+
+      <div id="srv-completed" class="subscreen">
+        <div style="color:var(--grey);font-size:13px;padding:20px 0;">Past surveys will appear here once closed.</div>
+      </div>
+
+      <div id="srv-templates" class="subscreen">
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
+          <div class="section" style="margin-bottom:0;">
+            <div style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:6px;">Post-Season Feedback</div>
+            <div style="font-size:12px;color:var(--grey);margin-bottom:14px;">General satisfaction, favourite moments, suggestions — sent at end of each season</div>
+            <button class="btn btn-outline btn-sm" onclick="alert('Template loaded')">Use Template</button>
+          </div>
+          <div class="section" style="margin-bottom:0;">
+            <div style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:6px;">New Student Experience</div>
+            <div style="font-size:12px;color:var(--grey);margin-bottom:14px;">How did you hear about us, first impressions, would you recommend — sent after first class</div>
+            <button class="btn btn-outline btn-sm" onclick="alert('Template loaded')">Use Template</button>
+          </div>
+          <div class="section" style="margin-bottom:0;">
+            <div style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:6px;">Teacher Feedback</div>
+            <div style="font-size:12px;color:var(--grey);margin-bottom:14px;">Anonymous instructor feedback — sent mid-season to enrolled students</div>
+            <button class="btn btn-outline btn-sm" onclick="alert('Template loaded')">Use Template</button>
+          </div>
+          <div class="section" style="margin-bottom:0;">
+            <div style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:6px;">General NPS</div>
+            <div style="font-size:12px;color:var(--grey);margin-bottom:14px;">Net Promoter Score — "How likely are you to recommend Duality Pole?" plus open text</div>
+            <button class="btn btn-outline btn-sm" onclick="alert('Template loaded')">Use Template</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ===== STAFF ===== -->
     <div id="screen-staff" class="screen">
       <div class="page-header">
@@ -1196,6 +1325,95 @@ tr.clickable-row:hover td { background: #141414; }
             <tr><td><div class="staff-photo" style="background:#44ff99;">Z</div></td><td><b>Zara Blake</b><div style="font-size:11px;color:var(--grey)">zara@dualitypole.com.au</div></td><td><span class="tag tag-grey">Casual</span></td><td>Weekend cover</td><td>$55/class</td><td><span class="tag tag-amber">On Leave</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-staff')">Edit</button></td></tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Instructor Availability -->
+      <div class="section" style="margin-top:28px;">
+        <div class="section-title">Instructor Availability</div>
+        <p style="font-size:13px;color:var(--grey);margin-bottom:20px;line-height:1.5;">Instructors can mark days they're unavailable. This is used to prevent scheduling conflicts.</p>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr>
+                <th style="text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);border-bottom:1px solid var(--border);min-width:140px;">Instructor</th>
+                <th style="padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);border-bottom:1px solid var(--border);text-align:center;">Mon</th>
+                <th style="padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);border-bottom:1px solid var(--border);text-align:center;">Tue</th>
+                <th style="padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);border-bottom:1px solid var(--border);text-align:center;">Wed</th>
+                <th style="padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);border-bottom:1px solid var(--border);text-align:center;">Thu</th>
+                <th style="padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);border-bottom:1px solid var(--border);text-align:center;">Fri</th>
+                <th style="padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);border-bottom:1px solid var(--border);text-align:center;">Sat</th>
+                <th style="padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);border-bottom:1px solid var(--border);text-align:center;">Sun</th>
+                <th style="padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);border-bottom:1px solid var(--border);">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Chloe Nguyen — available all days -->
+              <tr>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:var(--lav);width:28px;height:28px;font-size:11px;">C</div> Chloe Nguyen</div></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-availability')">Edit Availability</button></td>
+              </tr>
+              <!-- Mimi Park — N/A Mon, Sun -->
+              <tr>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:#ffb3de;width:28px;height:28px;font-size:11px;">M</div> Mimi Park</div></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#444;font-size:13px;text-decoration:line-through;">N/A</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#444;font-size:13px;text-decoration:line-through;">N/A</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-availability')">Edit Availability</button></td>
+              </tr>
+              <!-- Jade Torres — N/A Tue, Sat -->
+              <tr>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:#9ac4ff;width:28px;height:28px;font-size:11px;">J</div> Jade Torres</div></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#444;font-size:13px;text-decoration:line-through;">N/A</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#444;font-size:13px;text-decoration:line-through;">N/A</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-availability')">Edit Availability</button></td>
+              </tr>
+              <!-- Allysha — available all days -->
+              <tr>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:var(--lime);width:28px;height:28px;font-size:11px;">A</div> Allysha (Founder)</div></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-availability')">Edit Availability</button></td>
+              </tr>
+              <!-- Zara Chen — N/A Wed -->
+              <tr>
+                <td style="padding:10px 12px;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:#44ff99;width:28px;height:28px;font-size:11px;">Z</div> Zara Chen</div></td>
+                <td style="padding:10px 12px;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;text-align:center;"><span style="color:#444;font-size:13px;text-decoration:line-through;">N/A</span></td>
+                <td style="padding:10px 12px;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
+                <td style="padding:10px 12px;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-availability')">Edit Availability</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:16px;font-size:12px;color:var(--grey);">
+          <span><span style="color:#44ff99;">●</span> Available</span>
+          <span><span style="color:#444;text-decoration:line-through;">N/A</span> Unavailable</span>
+        </div>
       </div>
     </div>
 
@@ -1389,6 +1607,14 @@ tr.clickable-row:hover td { background: #141414; }
         <div class="notif-row"><div><div style="font-size:13px;font-weight:500;">No-show Fee Notification</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Sent when a no-show fee is added to a student's account</div></div><div style="display:flex;align-items:center;gap:10px;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-email')">Edit</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div></div>
         <div class="notif-row"><div><div style="font-size:13px;font-weight:500;">Overdue Balance Reminder</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Sent 7 and 14 days after a balance becomes overdue</div></div><div style="display:flex;align-items:center;gap:10px;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-email')">Edit</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div></div>
         <div class="notif-row"><div><div style="font-size:13px;font-weight:500;">Season Re-enrolment Reminder</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Sent 2 weeks before a new season opens</div></div><div style="display:flex;align-items:center;gap:10px;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-email')">Edit</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div></div>
+      </div>
+      <div class="section" style="padding:18px 20px;">
+        <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:16px;">Re-engagement</div>
+        <div class="notif-row"><div><div style="font-size:13px;font-weight:500;">Lapsed Student — 3 weeks no booking</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Sent after 3 weeks of inactivity — "We miss you at Duality Pole — here's what's coming up"</div></div><div style="display:flex;align-items:center;gap:10px;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-email')">Edit</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div></div>
+        <div class="notif-row"><div><div style="font-size:13px;font-weight:500;">Lapsed Student — 6 weeks no booking</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Second nudge — offers a discounted trial-back class to re-engage</div></div><div style="display:flex;align-items:center;gap:10px;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-email')">Edit</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div></div>
+        <div class="notif-row"><div><div style="font-size:13px;font-weight:500;">Lapsed Student — 12 weeks</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Final re-engagement — asks if they'd like to be removed from the list</div></div><div style="display:flex;align-items:center;gap:10px;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-email')">Edit</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div></div>
+        <div class="notif-row"><div><div style="font-size:13px;font-weight:500;">Post-season check-in</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Sent 1 week after a season ends to students who didn't re-enrol</div></div><div style="display:flex;align-items:center;gap:10px;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-email')">Edit</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div></div>
+        <div class="notif-row" style="border-bottom:none;"><div><div style="font-size:13px;font-weight:500;">Referral reminder</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Sent to active students who haven't used their referral code yet, 4 weeks into a season</div></div><div style="display:flex;align-items:center;gap:10px;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-email')">Edit</button><label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label></div></div>
       </div>
     </div>
 
@@ -1623,6 +1849,62 @@ tr.clickable-row:hover td { background: #141414; }
   </div>
 </div>
 
+<!-- Instructor Availability Modal -->
+<div class="modal-overlay" id="modal-availability">
+  <div class="modal">
+    <div class="modal-title">Edit Availability <button class="modal-close" onclick="closeModal('modal-availability')">✕</button></div>
+    <p style="font-size:13px;color:var(--grey);margin-bottom:16px;">Check the days this instructor is available to teach.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="checkbox-row"><input type="checkbox" checked id="avail-mon" /><label for="avail-mon" style="font-size:13px;">Monday</label></div>
+      <div class="checkbox-row"><input type="checkbox" checked id="avail-tue" /><label for="avail-tue" style="font-size:13px;">Tuesday</label></div>
+      <div class="checkbox-row"><input type="checkbox" checked id="avail-wed" /><label for="avail-wed" style="font-size:13px;">Wednesday</label></div>
+      <div class="checkbox-row"><input type="checkbox" checked id="avail-thu" /><label for="avail-thu" style="font-size:13px;">Thursday</label></div>
+      <div class="checkbox-row"><input type="checkbox" checked id="avail-fri" /><label for="avail-fri" style="font-size:13px;">Friday</label></div>
+      <div class="checkbox-row"><input type="checkbox" checked id="avail-sat" /><label for="avail-sat" style="font-size:13px;">Saturday</label></div>
+      <div class="checkbox-row"><input type="checkbox" checked id="avail-sun" /><label for="avail-sun" style="font-size:13px;">Sunday</label></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-availability')">Cancel</button><button class="btn btn-lime" onclick="alert('Availability saved!');closeModal('modal-availability')">Save Availability</button></div>
+  </div>
+</div>
+
+<!-- Create Survey Modal -->
+<div class="modal-overlay" id="modal-create-survey">
+  <div class="modal modal-lg">
+    <div class="modal-title">Create Survey <button class="modal-close" onclick="closeModal('modal-create-survey')">✕</button></div>
+    <div class="field"><label>Survey Name</label><input type="text" placeholder="e.g. Season 3 Feedback" /></div>
+    <div class="field"><label>Description</label><textarea placeholder="What is this survey about?"></textarea></div>
+    <div class="field-row">
+      <div class="field"><label>Target Audience</label><select><option>All Students</option><option>Specific Class</option><option>Specific Level</option><option>Trial Students</option><option>Lapsed Students</option></select></div>
+      <div class="field"><label>Trigger</label><select><option>Manual Send</option><option>After First Class</option><option>After Season Ends</option><option>Scheduled Date</option></select></div>
+    </div>
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:10px;">Questions</div>
+    <div id="survey-questions" style="display:flex;flex-direction:column;gap:8px;">
+      <div class="field-row" style="align-items:center;gap:8px;">
+        <div class="field" style="flex:1;margin-bottom:0;"><input type="text" value="How satisfied are you with this season overall?" /></div>
+        <div class="field" style="width:160px;margin-bottom:0;"><select><option>Star Rating</option><option>Multiple Choice</option><option>Free Text</option><option>Yes/No</option></select></div>
+      </div>
+      <div class="field-row" style="align-items:center;gap:8px;">
+        <div class="field" style="flex:1;margin-bottom:0;"><input type="text" value="What was your favourite part of the season?" /></div>
+        <div class="field" style="width:160px;margin-bottom:0;"><select><option>Free Text</option><option>Star Rating</option><option>Multiple Choice</option><option>Yes/No</option></select></div>
+      </div>
+    </div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="(function(){const c=document.getElementById('survey-questions');const row=document.createElement('div');row.className='field-row';row.style.cssText='align-items:center;gap:8px;';row.innerHTML='<div class=\'field\' style=\'flex:1;margin-bottom:0;\'><input type=\'text\' placeholder=\'Enter question…\' /></div><div class=\'field\' style=\'width:160px;margin-bottom:0;\'><select><option>Star Rating</option><option>Multiple Choice</option><option>Free Text</option><option>Yes/No</option></select></div>';c.appendChild(row);})()">+ Add Question</button>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-create-survey')">Cancel</button><button class="btn btn-lime" onclick="alert('Survey saved and scheduled!');closeModal('modal-create-survey')">Save &amp; Schedule</button></div>
+  </div>
+</div>
+
+<!-- Create Gift Card Modal -->
+<div class="modal-overlay" id="modal-create-giftcard">
+  <div class="modal">
+    <div class="modal-title">Issue Gift Card <button class="modal-close" onclick="closeModal('modal-create-giftcard')">✕</button></div>
+    <div class="field-row"><div class="field"><label>Recipient Name</label><input type="text" placeholder="e.g. Jess Malone" /></div><div class="field"><label>Recipient Email</label><input type="email" placeholder="jess@email.com" /></div></div>
+    <div class="field"><label>Value</label><select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;"><option>$50</option><option>$100</option><option>$150</option><option>$200</option><option>Custom amount…</option></select></div>
+    <div class="field"><label>Personal Message</label><textarea placeholder="e.g. Happy birthday! Enjoy your first class at Duality Pole 🎉"></textarea></div>
+    <div class="field-row"><div class="field"><label>Expiry</label><input type="date" /></div><div class="field"><label>Delivery</label><select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;"><option>Email Now</option><option>Schedule Date</option><option>Print / PDF</option></select></div></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-create-giftcard')">Cancel</button><button class="btn btn-lime" onclick="alert('Gift card sent!');closeModal('modal-create-giftcard')">Issue Gift Card</button></div>
+  </div>
+</div>
+
 <!-- Add to Class Modal -->
 <div class="modal-overlay" id="modal-add-to-class">
   <div class="modal">
@@ -1656,6 +1938,27 @@ tr.clickable-row:hover td { background: #141414; }
 </div>
 
 <script>
+// ===== BIRTHDAY DATA =====
+const _studentBirthdays = {
+  'Jess Malone': '05-11',   // May 11 — today
+  'Amber Cole': '05-14',    // this week
+  'Sophie Lawson': '03-22',
+  'Ruby Kim': '07-22',
+};
+
+// Fixed "today" = May 11 for mockup purposes
+function isBirthdayWeek(name) {
+  const bday = _studentBirthdays[name];
+  if (!bday) return false;
+  const [bMonth, bDay] = bday.split('-').map(Number);
+  const today = new Date(2025, 4, 11); // May 11
+  const thisYear = today.getFullYear();
+  const bdayDate = new Date(thisYear, bMonth - 1, bDay);
+  const diffMs = bdayDate - today;
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+  return diffDays >= 0 && diffDays <= 3;
+}
+
 // ===== DATA =====
 const STUDENTS = [
   { id:'jess', name:'Jess Malone', pronouns:'she/her', email:'jess@email.com', phone:'0412 345 678', dob:'14 Mar 1998', level:'Level 2', status:'Owing', balance:-120, memberSince:'3 Feb 2025', avatar:'J', avatarColor:'#ffaa44', emergency:'Kate Malone — 0411 222 333', health:'Right shoulder impingement — avoid overhead loading', waiver:'3 Feb 2025', source:'Instagram', tags:['At Risk'] },
