@@ -393,6 +393,7 @@ tr.clickable-row:hover td { background: #141414; }
     <div class="nav-item" onclick="showScreen('leads')"><span class="nav-icon">🎯</span> Leads</div>
     <div class="nav-item" onclick="showScreen('kisi')"><span class="nav-icon">🔑</span> Kisi Access</div>
     <div class="nav-item" onclick="showScreen('marketing')"><span class="nav-icon">📧</span> Marketing</div>
+    <div class="nav-item" onclick="showScreen('notifications')"><span class="nav-icon">🔔</span> Automations</div>
     <div class="nav-item" onclick="showScreen('settings')"><span class="nav-icon">⚙️</span> Settings</div>
   </nav>
   <div class="sidebar-footer">
@@ -1838,31 +1839,170 @@ tr.clickable-row:hover td { background: #141414; }
     <!-- ===== STAFF ===== -->
     <div id="screen-staff" class="screen">
       <div class="page-header">
-        <div><div class="page-title">Staff</div><div class="page-sub">Instructors and team members</div></div>
+        <div><div class="page-title">Staff</div><div class="page-sub">Instructors, team members and access permissions</div></div>
         <button class="btn btn-lime" onclick="openModal('modal-staff')">+ Add Staff</button>
       </div>
-      <div class="tbl-section">
-        <table>
-          <thead><tr><th></th><th>Name</th><th>Role</th><th>Classes Assigned</th><th>Pay Rate</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody>
-            <tr><td><div class="staff-photo" style="background:var(--lime);">A</div></td><td><b>Mimi Carter</b><div style="font-size:11px;color:var(--grey)">mimi@dualitypole.com.au</div></td><td><span class="tag tag-lime">Founder</span></td><td>High Tricks, Level 3, Choreo</td><td>—</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-staff-detail')">Edit</button></td></tr>
-            <tr><td><div class="staff-photo" style="background:var(--lav);">C</div></td><td><b>Chloe Nguyen</b><div style="font-size:11px;color:var(--grey)">chloe@dualitypole.com.au</div></td><td><span class="tag tag-lav">Instructor</span></td><td>Level 1, Level 2, Level 1 Int.</td><td>$65/class</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-staff-detail')">Edit</button></td></tr>
-            <tr><td><div class="staff-photo" style="background:#ffb3de;">M</div></td><td><b>Mia Santos</b><div style="font-size:11px;color:var(--grey)">mia@dualitypole.com.au</div></td><td><span class="tag tag-lav">Instructor</span></td><td>Sensual Flow, Exotic Floor, Heels</td><td>$65/class</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-staff-detail')">Edit</button></td></tr>
-            <tr><td><div class="staff-photo" style="background:#9ac4ff;">J</div></td><td><b>Jade Wu</b><div style="font-size:11px;color:var(--grey)">jade@dualitypole.com.au</div></td><td><span class="tag tag-grey">Casual</span></td><td>Level 1 (cover), Level 2 Thu</td><td>$55/class</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-staff-detail')">Edit</button></td></tr>
-            <tr><td><div class="staff-photo" style="background:#44ff99;">Z</div></td><td><b>Zara Blake</b><div style="font-size:11px;color:var(--grey)">zara@dualitypole.com.au</div></td><td><span class="tag tag-grey">Casual</span></td><td>Weekend cover</td><td>$55/class</td><td><span class="tag tag-amber">On Leave</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-staff-detail')">Edit</button></td></tr>
-          </tbody>
-        </table>
+      <div class="subtabs" style="margin-bottom:20px;">
+        <div class="subtab active" onclick="switchSubTab(this,'staff-people')">Team</div>
+        <div class="subtab" onclick="switchSubTab(this,'staff-permissions')">Permissions</div>
+        <div class="subtab" onclick="switchSubTab(this,'staff-availability')">Availability</div>
       </div>
 
-      <!-- Instructor Availability -->
-      <div class="section" style="margin-top:28px;">
-        <div class="section-title">Instructor Availability</div>
-        <p style="font-size:13px;color:var(--grey);margin-bottom:20px;line-height:1.5;">Instructors can mark days they're unavailable. This is used to prevent scheduling conflicts.</p>
+      <!-- TEAM TAB -->
+      <div id="staff-people" class="subscreen active">
+        <div class="tbl-section">
+          <table>
+            <thead><tr><th></th><th>Name</th><th>Role</th><th>Classes</th><th>Pay Rate</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              <tr><td><div class="staff-photo" style="background:var(--lime);">M</div></td><td><b>Mimi</b><div style="font-size:11px;color:var(--grey)">mimi@dualitypole.com.au</div></td><td><span class="tag tag-lime">Founder</span></td><td>High Tricks, Level 3, Choreo</td><td>—</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-staff-detail')">Edit</button></td></tr>
+              <tr><td><div class="staff-photo" style="background:var(--lav);">C</div></td><td><b>Chloe</b><div style="font-size:11px;color:var(--grey)">chloe@dualitypole.com.au</div></td><td><span class="tag tag-lav">Senior Instructor</span></td><td>Level 1, Level 2</td><td>$75/class</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-staff-detail')">Edit</button></td></tr>
+              <tr><td><div class="staff-photo" style="background:#ffb3de;">A</div></td><td><b>Amy</b><div style="font-size:11px;color:var(--grey)">amy@dualitypole.com.au</div></td><td><span class="tag tag-lav">Senior Instructor</span></td><td>Level 2, Level 3</td><td>$75/class</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-staff-detail')">Edit</button></td></tr>
+              <tr><td><div class="staff-photo" style="background:#ff9ecb;">B</div></td><td><b>Bambi</b><div style="font-size:11px;color:var(--grey)">bambi@dualitypole.com.au</div></td><td><span class="tag tag-lav">Instructor</span></td><td>Sensual Flow, Level 1</td><td>$65/class</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-staff-detail')">Edit</button></td></tr>
+              <tr><td><div class="staff-photo" style="background:#c9aaff;">V</div></td><td><b>Violet</b><div style="font-size:11px;color:var(--grey)">violet@dualitypole.com.au</div></td><td><span class="tag tag-lav">Instructor</span></td><td>Exotic Floor, Heels</td><td>$65/class</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-staff-detail')">Edit</button></td></tr>
+              <tr><td><div class="staff-photo" style="background:#a8d8ea;">V</div></td><td><b>Viv</b><div style="font-size:11px;color:var(--grey)">viv@dualitypole.com.au</div></td><td><span class="tag tag-lav">Instructor</span></td><td>Level 1, Level 2 Wed</td><td>$65/class</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-staff-detail')">Edit</button></td></tr>
+              <tr><td><div class="staff-photo" style="background:#ffd6a5;">P</div></td><td><b>Peaches</b><div style="font-size:11px;color:var(--grey)">peaches@dualitypole.com.au</div></td><td><span class="tag tag-lav">Instructor</span></td><td>Sensual Flow, Level 1 Sat</td><td>$65/class</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-staff-detail')">Edit</button></td></tr>
+              <tr><td><div class="staff-photo" style="background:#b5ead7;">M</div></td><td><b>Maz</b><div style="font-size:11px;color:var(--grey)">maz@dualitypole.com.au</div></td><td><span class="tag tag-grey">Cover</span></td><td>Level 1 (cover)</td><td>$55/class</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-staff-detail')">Edit</button></td></tr>
+              <tr><td><div class="staff-photo" style="background:#ffc8dd;">J</div></td><td><b>Jaz</b><div style="font-size:11px;color:var(--grey)">jaz@dualitypole.com.au</div></td><td><span class="tag tag-grey">Cover</span></td><td>Level 1, Level 2 (cover)</td><td>$55/class</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-staff-detail')">Edit</button></td></tr>
+              <tr><td><div class="staff-photo" style="background:#e8c1ff;">A</div></td><td><b>Avalon</b><div style="font-size:11px;color:var(--grey)">avalon@dualitypole.com.au</div></td><td><span class="tag tag-grey">Cover</span></td><td>Weekend cover</td><td>$55/class</td><td><span class="tag tag-amber">On Leave</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-staff-detail')">Edit</button></td></tr>
+              <tr><td><div class="staff-photo" style="background:#caffbf;">Z</div></td><td><b>Zara</b><div style="font-size:11px;color:var(--grey)">zara@dualitypole.com.au</div></td><td><span class="tag tag-grey">Cover</span></td><td>Level 1 (cover)</td><td>$55/class</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-staff-detail')">Edit</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PERMISSIONS TAB -->
+      <div id="staff-permissions" class="subscreen">
+        <p style="font-size:13px;color:var(--grey);margin-bottom:20px;line-height:1.5;">Each staff member is assigned a role. Roles define what they can see and do in the system. You can edit role capabilities below, or assign individuals to a different role.</p>
+        <!-- Role cards -->
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:28px;">
+          <!-- Founder -->
+          <div style="background:#0f1600;border:2px solid var(--lime);border-radius:12px;padding:20px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+              <span style="font-family:'Archivo Black',sans-serif;font-size:15px;color:var(--lime);">Founder</span>
+              <span style="font-size:11px;color:var(--grey);">1 person</span>
+            </div>
+            <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
+              <div class="staff-photo" style="background:var(--lime);width:28px;height:28px;font-size:11px;" title="Mimi">M</div>
+            </div>
+            <div style="font-size:11px;color:var(--grey);display:flex;flex-direction:column;gap:5px;margin-bottom:14px;">
+              <div style="color:var(--lime);">✓ Full access — all screens and actions</div>
+              <div style="color:var(--lime);">✓ Edit billing, refunds, payment plans</div>
+              <div style="color:var(--lime);">✓ Manage staff, roles and settings</div>
+              <div style="color:var(--lime);">✓ View all reporting and financials</div>
+              <div style="color:var(--lime);">✓ Send marketing campaigns</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" style="opacity:0.4;cursor:not-allowed;" disabled>Cannot edit Founder role</button>
+          </div>
+          <!-- Senior Instructor -->
+          <div style="background:#1a1a1a;border:1px solid var(--lav);border-radius:12px;padding:20px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+              <span style="font-family:'Archivo Black',sans-serif;font-size:15px;color:var(--lav);">Senior Instructor</span>
+              <span style="font-size:11px;color:var(--grey);">2 people</span>
+            </div>
+            <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
+              <div class="staff-photo" style="background:var(--lav);width:28px;height:28px;font-size:11px;" title="Chloe">C</div>
+              <div class="staff-photo" style="background:#ffb3de;width:28px;height:28px;font-size:11px;" title="Amy">A</div>
+            </div>
+            <div style="font-size:12px;display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">View all student profiles</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">Mark attendance + add notes</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">View billing / owing status</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">Take payments</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">Issue refunds / credits</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" /><span class="toggle-slider"></span></label></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">Manage enrolments</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">Send comms to students</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">Edit timetable / seasons</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" /><span class="toggle-slider"></span></label></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">View reporting</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">Access staff / settings</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" /><span class="toggle-slider"></span></label></div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="alert('Save Senior Instructor permissions')">Save changes</button>
+          </div>
+          <!-- Instructor -->
+          <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:12px;padding:20px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+              <span style="font-family:'Archivo Black',sans-serif;font-size:15px;">Instructor</span>
+              <span style="font-size:11px;color:var(--grey);">4 people</span>
+            </div>
+            <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
+              <div class="staff-photo" style="background:#ff9ecb;width:28px;height:28px;font-size:11px;" title="Bambi">B</div>
+              <div class="staff-photo" style="background:#c9aaff;width:28px;height:28px;font-size:11px;" title="Violet">V</div>
+              <div class="staff-photo" style="background:#a8d8ea;width:28px;height:28px;font-size:11px;" title="Viv">V</div>
+              <div class="staff-photo" style="background:#ffd6a5;width:28px;height:28px;font-size:11px;" title="Peaches">P</div>
+            </div>
+            <div style="font-size:12px;display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">View students in own classes only</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">Mark attendance + add notes</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">View owing status (own classes)</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">Take payments</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">Issue refunds / credits</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" /><span class="toggle-slider"></span></label></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">Manage enrolments</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" /><span class="toggle-slider"></span></label></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">Send comms to students</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" /><span class="toggle-slider"></span></label></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">View reporting</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" /><span class="toggle-slider"></span></label></div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="alert('Save Instructor permissions')">Save changes</button>
+          </div>
+          <!-- Cover -->
+          <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:12px;padding:20px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+              <span style="font-family:'Archivo Black',sans-serif;font-size:15px;">Cover</span>
+              <span style="font-size:11px;color:var(--grey);">4 people</span>
+            </div>
+            <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
+              <div class="staff-photo" style="background:#b5ead7;width:28px;height:28px;font-size:11px;" title="Maz">M</div>
+              <div class="staff-photo" style="background:#ffc8dd;width:28px;height:28px;font-size:11px;" title="Jaz">J</div>
+              <div class="staff-photo" style="background:#e8c1ff;width:28px;height:28px;font-size:11px;" title="Avalon">A</div>
+              <div class="staff-photo" style="background:#caffbf;width:28px;height:28px;font-size:11px;" title="Zara">Z</div>
+            </div>
+            <div style="font-size:12px;display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">View students in assigned class only</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">Mark attendance</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">Add class notes</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">View owing status</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" /><span class="toggle-slider"></span></label></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">Take payments</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" /><span class="toggle-slider"></span></label></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--grey);">Send comms to students</span><label class="toggle" style="transform:scale(0.8);"><input type="checkbox" /><span class="toggle-slider"></span></label></div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="alert('Save Cover permissions')">Save changes</button>
+          </div>
+        </div>
+        <!-- Individual overrides -->
+        <div class="section" style="padding:18px 20px;">
+          <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:6px;">Individual Role Assignment</div>
+          <p style="font-size:12px;color:var(--grey);margin-bottom:16px;">Change a staff member's role here to adjust their access instantly.</p>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            ${[
+              {name:'Mimi',color:'var(--lime)',role:'Founder',locked:true},
+              {name:'Chloe',color:'var(--lav)',role:'Senior Instructor'},
+              {name:'Amy',color:'#ffb3de',role:'Senior Instructor'},
+              {name:'Bambi',color:'#ff9ecb',role:'Instructor'},
+              {name:'Violet',color:'#c9aaff',role:'Instructor'},
+              {name:'Viv',color:'#a8d8ea',role:'Instructor'},
+              {name:'Peaches',color:'#ffd6a5',role:'Instructor'},
+              {name:'Maz',color:'#b5ead7',role:'Cover'},
+              {name:'Jaz',color:'#ffc8dd',role:'Cover'},
+              {name:'Avalon',color:'#e8c1ff',role:'Cover'},
+              {name:'Zara',color:'#caffbf',role:'Cover'},
+            ].map(p=>`<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);">
+              <div class="staff-photo" style="background:${p.color};width:30px;height:30px;font-size:12px;flex-shrink:0;">${p.name[0]}</div>
+              <div style="flex:1;font-size:13px;font-weight:500;">${p.name}</div>
+              <select style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:5px 8px;${p.locked?'opacity:0.5;cursor:not-allowed;':''}" ${p.locked?'disabled':''}>
+                <option ${p.role==='Founder'?'selected':''}>Founder</option>
+                <option ${p.role==='Senior Instructor'?'selected':''}>Senior Instructor</option>
+                <option ${p.role==='Instructor'?'selected':''}>Instructor</option>
+                <option ${p.role==='Cover'?'selected':''}>Cover</option>
+              </select>
+            </div>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- AVAILABILITY TAB -->
+      <div id="staff-availability" class="subscreen">
+        <p style="font-size:13px;color:var(--grey);margin-bottom:20px;line-height:1.5;">Instructors mark days they're unavailable. Used to flag scheduling conflicts in the timetable.</p>
         <div style="overflow-x:auto;">
           <table style="width:100%;border-collapse:collapse;">
             <thead>
               <tr>
-                <th style="text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);border-bottom:1px solid var(--border);min-width:140px;">Instructor</th>
+                <th style="text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);border-bottom:1px solid var(--border);min-width:120px;">Instructor</th>
                 <th style="padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);border-bottom:1px solid var(--border);text-align:center;">Mon</th>
                 <th style="padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);border-bottom:1px solid var(--border);text-align:center;">Tue</th>
                 <th style="padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);border-bottom:1px solid var(--border);text-align:center;">Wed</th>
@@ -1870,76 +2010,33 @@ tr.clickable-row:hover td { background: #141414; }
                 <th style="padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);border-bottom:1px solid var(--border);text-align:center;">Fri</th>
                 <th style="padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);border-bottom:1px solid var(--border);text-align:center;">Sat</th>
                 <th style="padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);border-bottom:1px solid var(--border);text-align:center;">Sun</th>
-                <th style="padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);border-bottom:1px solid var(--border);">Actions</th>
+                <th style="padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);border-bottom:1px solid var(--border);"></th>
               </tr>
             </thead>
             <tbody>
-              <!-- Chloe Nguyen — available all days -->
-              <tr>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:var(--lav);width:28px;height:28px;font-size:11px;">C</div> Chloe Nguyen</div></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-availability')">Edit Availability</button></td>
-              </tr>
-              <!-- Mimi Park — N/A Mon, Sun -->
-              <tr>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:#ffb3de;width:28px;height:28px;font-size:11px;">M</div> Mimi Park</div></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#444;font-size:13px;text-decoration:line-through;">N/A</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#444;font-size:13px;text-decoration:line-through;">N/A</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-availability')">Edit Availability</button></td>
-              </tr>
-              <!-- Jade Torres — N/A Tue, Sat -->
-              <tr>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:#9ac4ff;width:28px;height:28px;font-size:11px;">J</div> Jade Torres</div></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#444;font-size:13px;text-decoration:line-through;">N/A</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#444;font-size:13px;text-decoration:line-through;">N/A</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-availability')">Edit Availability</button></td>
-              </tr>
-              <!-- Mimi — available all days -->
-              <tr>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:var(--lime);width:28px;height:28px;font-size:11px;">A</div> Mimi (Founder)</div></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;border-bottom:1px solid #1a1a1a;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-availability')">Edit Availability</button></td>
-              </tr>
-              <!-- Zara Chen — N/A Wed -->
-              <tr>
-                <td style="padding:10px 12px;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:#44ff99;width:28px;height:28px;font-size:11px;">Z</div> Zara Chen</div></td>
-                <td style="padding:10px 12px;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;text-align:center;"><span style="color:#444;font-size:13px;text-decoration:line-through;">N/A</span></td>
-                <td style="padding:10px 12px;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;text-align:center;"><span style="color:#44ff99;font-size:16px;">●</span></td>
-                <td style="padding:10px 12px;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-availability')">Edit Availability</button></td>
-              </tr>
+              ${[
+                {name:'Mimi',color:'var(--lime)',na:[0,6]},
+                {name:'Chloe',color:'var(--lav)',na:[]},
+                {name:'Amy',color:'#ffb3de',na:[5,6]},
+                {name:'Bambi',color:'#ff9ecb',na:[1]},
+                {name:'Violet',color:'#c9aaff',na:[0,6]},
+                {name:'Viv',color:'#a8d8ea',na:[5]},
+                {name:'Peaches',color:'#ffd6a5',na:[1,2]},
+                {name:'Maz',color:'#b5ead7',na:[0,1,2,3,4]},
+                {name:'Jaz',color:'#ffc8dd',na:[0,1,2,3,4]},
+                {name:'Avalon',color:'#e8c1ff',na:[0,1,2,3,4,5,6]},
+                {name:'Zara',color:'#caffbf',na:[2]},
+              ].map(p=>`<tr>
+                <td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:${p.color};width:26px;height:26px;font-size:11px;">${p.name[0]}</div>${p.name}</div></td>
+                ${[0,1,2,3,4,5,6].map(d=>`<td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;">${p.na.includes(d)?'<span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span>':'<span style="color:#44ff99;font-size:14px;">●</span>'}</td>`).join('')}
+                <td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><button class="btn btn-ghost btn-xs" onclick="openModal(\'modal-availability\')">Edit</button></td>
+              </tr>`).join('')}
             </tbody>
           </table>
         </div>
         <div style="margin-top:12px;display:flex;gap:16px;font-size:12px;color:var(--grey);">
           <span><span style="color:#44ff99;">●</span> Available</span>
-          <span><span style="color:#444;text-decoration:line-through;">N/A</span> Unavailable</span>
+          <span><span style="color:#555;text-decoration:line-through;">N/A</span> Unavailable</span>
         </div>
       </div>
     </div>
