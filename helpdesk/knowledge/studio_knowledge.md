@@ -2,13 +2,13 @@
 
 ## Current Season
 
-**Season 3**
+**Season 4**
 - Book in from: 15 April
 - Season runs: 11 May – 5 July
 
 ---
 
-## Current Timetable — Season 3
+## Current Timetable — Season 4
 
 ### Weekday Classes
 
@@ -629,8 +629,8 @@ Explore artistry beyond the level system — chair, strip, floorwork, dance, and
 | **Chair Virgin** | Absolute beginners / under Level 3 | Art of chair and lap dancing; confidence and tease focus |
 | **Chair** | Level 3+ | Playful, powerful routines; more sensuality and dance technique |
 | **Floor Virgin** | Absolute beginners | Fundamental rolls and transitions; 8-week routine |
-| **Intermediate Floor** | Floor Virgin graduates | Harder holds, rolls, and transitions |
-| **Advanced Floor** | Intermediate Floor graduates | No limits — advanced floorwork |
+| **Inter Floor** | Floor Virgin graduates | Harder holds, rolls, and transitions |
+| **Advanced Floor** | Inter Floor graduates | No limits — advanced floorwork |
 | **Chole** | Level 3 repeaters+ | Chair + pole hybrid; sensual routine using both apparatus |
 | **Dance Tech** | Absolute beginners | Transitions between tricks, turns, and fluidity — no routine, technique-only |
 
@@ -673,8 +673,8 @@ Specialty classes are where you explore the artistry of movement beyond the leve
 **Chair Virgin** — New to chair or under Level 3? The art of chair and lap dancing — with a focus on confidence and tease. Join us and discover your inner seductress.
 **Chair** — For Level 3+ students ready to dial up the sensuality and dance technique. Expect playful, powerful routines that make real divas feel like a stage.
 **Floor Virgin** — New to floorwork? Come in and leave in good hands. A 4-way routine you build over 8 weeks and perfect — a great foundation class.
-**Intermediate Floor** — Completed Floor Virgin? Levelling up your floorwork — harder holds, rolls, and transitions.
-**Advanced Floor** — Are you comfy with everything in Intermediate Floor? It's time to go further. Get ready to work. While there are no limits here, there are goals you're gonna smash.
+**Inter Floor** — Completed Floor Virgin? Levelling up your floorwork — harder holds, rolls, and transitions.
+**Advanced Floor** — Are you comfy with everything in Inter Floor? It's time to go further. Get ready to work. While there are no limits here, there are goals you're gonna smash.
 **Chole** — What do you get when chair and pole have a little bash? Not to be confused with the person teaching the class, Chloe. A hybrid class with super-sensual choreography using both apparatus. A class for those not ready for one over the other.
 **Dance Tech** — Learn how to move between tricks with fluidity, perfect turns and magnetism so every moment looks amazing for anyone lucky enough to watch. The perfect addition to any levelled class — because good technique never goes out of style. For absolute beginners.
 
