@@ -45,6 +45,58 @@
 
 ---
 
+## Our Story & Brand
+
+At first glance, Duality is a pole, floorwork and chair dance studio, but at its core it's a place for self-expression and discovery through movement. We believe that a duality exists within everyone — a sensual side, worthy of exploring. This is your safe space to reveal and reclaim that part of you, on your own terms.
+
+Our classes will challenge you physically, as you probably expected, but it's the unexpected mental transformations that make our classes like no other workout you've experienced. You'll build strength and connection to your body that will build more than just muscle — your confidence and sense of self will flourish.
+
+We take pride in what we do and we take it seriously, because we see the immense benefits, but all rewards aside, we are here to have FUN. We'll laugh, sweat, play and celebrate together. Because exercise isn't punishment, at Duality it's a joy. Let us be your refuge, your playground and your reminder that you determine who you are and what defines you.
+
+### Why Duality?
+
+Duality was born from two different journeys that crossed at the same point: a love for movement, creativity, and community.
+
+Mimi had been in the pole world for over a decade and Chloe five years, shaping not just their own artistry but also mentoring others — alongside a sharp eye for design, marketing, and retail. Together, they noticed something missing in the industry.
+
+Pole was often taught as fitness or performance. But where was the experience? The escape? The place that felt like stepping out of the everyday and into a world that was clean, luxe, and fully immersive? That's where Duality began.
+
+From day one, Mimi and Chloe committed to building more than a studio. They train every instructor from within the community so students feel safe, understood, and inspired the moment they walk through the door. This isn't just about teaching spins and tricks — it's about creating a culture of empowerment, laughter, artistry, and care.
+
+At Duality, it's not just about what you learn on the pole. It's about what you carry out the door: inspiration, empathy, curiosity, and being more open to people and experiences you might never have crossed paths with otherwise.
+
+Duality is a reflection of the founders' belief that movement can be transformative. It's a space to awaken your hidden side, claim your power, and celebrate every step of the journey.
+
+### Our Difference
+
+- **World-class facilities** — at least 2m between poles, mirror-lined studios with all poles in view of the teacher, cooling and heating, gender-neutral bathroom and change room facilities, state-of-the-art lighting.
+- **In-depth instructor training** spanning different ways of learning, teaching for different body types and feedback.
+- **We champion everyone** — no gender, age, body type or experience is required for pole. There are no clicky groups at Duality. We'll introduce you to new friends and ensure you feel seen and valued whether it's your first or five-hundredth class.
+- **A well-rounded approach** — classes challenge your body and brain, but are some of the most fun you'll ever have.
+
+---
+
+## Our Instructors
+
+Behind every great spin is an even greater instructor. Our instructors blend artistry, style, athleticism, and encouragement to create a space where growth feels exciting, not intimidating.
+
+| Instructor | Title | Notes |
+|---|---|---|
+| **Mimi** | Co-Founder & Ultimate Host | In the pole world for over a decade. Created Kiki. |
+| **Chloe** | Co-Founder & Gentle Powerhouse | Co-founded Duality with Mimi after five years in pole. |
+| **Avalon** | The Playful Heart | |
+| **Maz** | The Technical Trickster | |
+| **Jaz** | The Cheeky Catalyst | |
+| **Peaches** | The Electric Performer | |
+| **Viv** | The Spicy Charmer | |
+| **Violet** | The Precision Driver | |
+| **Bambi** | The Tiny Dynamo | |
+| **Amy** | The Evolving Muse | |
+
+All instructors are trained from within the community at Duality.
+
+---
+
 ## The Studio Space
 
 Welcome to Duality, our purpose-built playground for all things pole. Tucked high in the trees on vibrant Gadigal Land in Surry Hills, our dreamy studio is designed for one thing: the ultimate pole experience.
