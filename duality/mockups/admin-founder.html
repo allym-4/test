@@ -391,6 +391,8 @@ tr.clickable-row:hover td { background: #141414; }
     <div class="nav-item" onclick="showScreen('community')"><span class="nav-icon">💬</span> Community</div>
     <div class="nav-item" onclick="showScreen('surveys')">📋 Surveys</div>
     <div class="nav-divider"></div>
+    <div class="nav-item" onclick="showScreen('recommendations')"><span class="nav-icon">💡</span> Recommendations</div>
+    <div class="nav-item" onclick="showScreen('assistant')"><span class="nav-icon">🤖</span> Assistant</div>
     <div class="nav-item" onclick="showScreen('reporting')"><span class="nav-icon">📊</span> Analytics</div>
     <div class="nav-item" onclick="showScreen('activity-log')"><span class="nav-icon">📋</span> Activity Log</div>
     <div class="nav-item" onclick="showScreen('leads')"><span class="nav-icon">🎯</span> Leads</div>
@@ -5792,6 +5794,7 @@ const screenTitles = {
   'manage-tags':'Tags', 'skill-lists':'Skill Lists', rooms:'Rooms', categories:'Categories',
   'manage-packages':'Packages', 'manage-memberships':'Memberships',
   'studio-notes':'Studio Notes', 'media-library':'Media Library',
+  recommendations:'Recommendations', assistant:'Assistant',
   notifications:'Automations', marketing:'Marketing',
   'student-detail':'Student Profile', attendance:'Attendance Register',
   'season-edit':'Edit Season', classes:'Classes',
@@ -6466,6 +6469,318 @@ window.openModal = function(id) {
     toggleAddToClassType();
   }
 };
+
+
+// ===== RECOMMENDATIONS =====
+(function buildRecommendationsTable() {
+  const demandData = [
+    {cls:'Level 2',      n:24, sessions:2, cap:24, rec:'Add 3rd session (Wed or Fri 6:30pm)'},
+    {cls:'Level 5',      n:23, sessions:1, cap:12, rec:'Add 2nd session (Tue or Sat 10am)'},
+    {cls:'Level 3',      n:23, sessions:2, cap:24, rec:'Add 3rd session (Thu 7:30pm)'},
+    {cls:'Strip Virgin', n:21, sessions:2, cap:24, rec:'Add weekend session'},
+    {cls:'Strip',        n:16, sessions:2, cap:24, rec:'Monitor — add Sunday if needed'},
+    {cls:'Level 4',      n:15, sessions:1, cap:12, rec:'Add 2nd session'},
+    {cls:'Advanced Floor',n:12,sessions:1, cap:10, rec:'Add Saturday session'},
+    {cls:'Chair',        n:11, sessions:1, cap:12, rec:'Healthy — watch for growth'},
+    {cls:'Level 6',      n:11, sessions:1, cap:10, rec:'Add 2nd session'},
+    {cls:'Dance Virgin', n:11, sessions:1, cap:12, rec:'Healthy'},
+    {cls:'Invert Tech',  n:10, sessions:1, cap:12, rec:'Healthy'},
+    {cls:'Inter Floor',  n:9,  sessions:1, cap:12, rec:'Healthy'},
+    {cls:'Dance Tech',   n:8,  sessions:1, cap:12, rec:'Healthy'},
+    {cls:'High Tricks',  n:8,  sessions:1, cap:10, rec:'Nearly full — add 2nd session'},
+    {cls:'Level 1',      n:7,  sessions:2, cap:24, rec:'⚠ Low intake — run beginner campaign'},
+    {cls:'Chole',        n:7,  sessions:1, cap:10, rec:'Healthy'},
+    {cls:'Kiki',         n:7,  sessions:1, cap:12, rec:'Healthy'},
+    {cls:'4 Tricks',     n:6,  sessions:1, cap:10, rec:'Healthy'},
+    {cls:'Floor Virgin', n:6,  sessions:2, cap:24, rec:'Low — combine into 1 session?'},
+    {cls:'Unravel',      n:5,  sessions:1, cap:12, rec:'Low — promote to Kiki students'},
+    {cls:'Dirty Dance',  n:4,  sessions:1, cap:12, rec:'Low'},
+    {cls:'5 Foundations',n:4,  sessions:1, cap:10, rec:'Healthy for specialist class'},
+    {cls:'6 Virgin',     n:3,  sessions:1, cap:10, rec:'Low — check if running this season'},
+    {cls:'Dance',        n:3,  sessions:1, cap:12, rec:'Low — promote to Level 2+ students'},
+    {cls:'Spin Virgin',  n:1,  sessions:1, cap:12, rec:'⚠ Very low — consider cancelling'},
+  ];
+
+  function renderTable() {
+    const tbody = document.getElementById('rec-demand-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = demandData.map(d => {
+      const pct = Math.min(100, Math.round((d.n / d.cap) * 100));
+      const overflow = d.n > d.cap;
+      const barColor = overflow ? '#ff6b6b' : pct > 80 ? 'var(--amber)' : 'var(--lime)';
+      const statusTag = overflow
+        ? '<span class="tag tag-red">Full +' + (d.n - d.cap) + '</span>'
+        : pct > 80
+          ? '<span class="tag tag-amber">' + d.n + '/' + d.cap + '</span>'
+          : '<span class="tag tag-lime">' + d.n + '/' + d.cap + '</span>';
+      return '<tr>' +
+        '<td><b>' + d.cls + '</b></td>' +
+        '<td>' + statusTag + '</td>' +
+        '<td><div style="width:140px;background:#222;border-radius:4px;height:8px;overflow:hidden;">' +
+          '<div style="width:' + Math.min(100,pct) + '%;height:100%;background:' + barColor + ';border-radius:4px;"></div>' +
+        '</div></td>' +
+        '<td style="color:var(--grey);font-size:12px;">' + d.sessions + '</td>' +
+        '<td style="font-size:12px;color:var(--grey);">' + d.rec + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  // Re-render whenever screen becomes visible
+  const origShowScreen = window.showScreen;
+  window.showScreen = function(id) {
+    origShowScreen(id);
+    if (id === 'recommendations') renderTable();
+  };
+})();
+
+// ===== ASSISTANT =====
+// Season 3 simulation: random 94 students from current list are "returning", rest are "new"
+const _s3Ids = new Set();
+(function seedS3() {
+  const shuffled = [...STUDENTS].sort(() => Math.random() - 0.5).slice(0, 94);
+  shuffled.forEach(s => _s3Ids.add(s.id));
+})();
+
+function _classMatch(student, cls) {
+  const needle = cls.toLowerCase().trim();
+  return student.classes.some(c => c.toLowerCase().includes(needle));
+}
+
+function _parseAndRun(query) {
+  const q = query.toLowerCase().trim();
+
+  // ── Enrolment summary ──
+  if (/summary|overview|breakdown|report/.test(q) && !/who|list|email/.test(q)) {
+    const counts = {};
+    STUDENTS.forEach(s => s.classes.forEach(c => { counts[c] = (counts[c]||0)+1; }));
+    const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+    const rows = sorted.map(([c,n]) =>
+      '<tr><td>' + c + '</td><td>' + n + '</td>' +
+      '<td><div style="width:' + Math.round(n/24*100) + '%;height:6px;background:var(--lime);border-radius:3px;display:inline-block;"></div></td></tr>'
+    ).join('');
+    return {
+      summary: 'Season 4 enrolment breakdown — <b>138 students, 260 total class enrolments</b>:',
+      table: '<table style="width:100%;font-size:12px;border-collapse:collapse;">' +
+        '<thead><tr><th style="text-align:left;padding:4px 8px;color:var(--grey);">Class</th>' +
+        '<th style="text-align:left;padding:4px 8px;color:var(--grey);">Students</th>' +
+        '<th style="text-align:left;padding:4px 8px;color:var(--grey);">Demand</th></tr></thead>' +
+        '<tbody>' + rows + '</tbody></table>',
+    };
+  }
+
+  // ── Last season but not this season ──
+  if (/last season|not re.enroll|didn.t re.enroll|dropped off|not (this|enrolled this)/.test(q)) {
+    const gone = STUDENTS.filter(s => _s3Ids.has(s.id) && !s.tags.includes('new'));
+    const lapsed = STUDENTS.filter(s => _s3Ids.has(s.id)).slice(0, 18);
+    const notBack = lapsed.filter((_, i) => i % 3 === 0).slice(0, 12);
+    if (!notBack.length) {
+      return { summary: 'No Season 3 data loaded yet — upload Season 3 export to enable this comparison.', table: '' };
+    }
+    const rows = notBack.map(s =>
+      '<tr><td>' + s.name + '</td><td style="color:var(--grey);font-size:11px;">' + s.email + '</td>' +
+      '<td>' + (s.classes[0]||'') + '</td>' +
+      '<td><button class="btn btn-ghost btn-xs" onclick="alert(\'Follow-up sent to ' + s.name.replace(/'/g,"\\'") + '\')">Follow Up</button></td></tr>'
+    ).join('');
+    return {
+      summary: 'Found <b>' + notBack.length + ' students</b> who were enrolled in Season 3 but haven\'t booked Season 4 yet (simulated — upload Season 3 data for exact results):',
+      table: '<table style="width:100%;font-size:12px;border-collapse:collapse;">' +
+        '<thead><tr><th style="text-align:left;padding:4px 8px;color:var(--grey);">Name</th>' +
+        '<th style="text-align:left;padding:4px 8px;color:var(--grey);">Email</th>' +
+        '<th style="text-align:left;padding:4px 8px;color:var(--grey);">Last Class</th>' +
+        '<th></th></tr></thead><tbody>' + rows + '</tbody></table>' +
+        '<div style="margin-top:10px;display:flex;gap:8px;">' +
+        '<button class="btn btn-lime btn-sm" onclick="alert(\'Win-back email sent to all ' + notBack.length + ' students!\')">Send Win-Back Email to All</button>' +
+        '<button class="btn btn-ghost btn-sm" onclick="alert(\'Tag created: Not Re-enrolled S4\')">Create Tag: Not Re-enrolled</button></div>',
+    };
+  }
+
+  // ── New students ──
+  if (/new student|first.time|first season|brand new/.test(q)) {
+    const newOnes = STUDENTS.filter(s => !_s3Ids.has(s.id));
+    const rows = newOnes.slice(0, 30).map(s =>
+      '<tr><td>' + s.name + '</td><td style="color:var(--grey);font-size:11px;">' + s.email + '</td>' +
+      '<td>' + s.classes.join(', ') + '</td></tr>'
+    ).join('');
+    return {
+      summary: '<b>' + newOnes.length + ' new students</b> this season (first time at Duality):',
+      table: '<table style="width:100%;font-size:12px;">' +
+        '<thead><tr><th style="text-align:left;padding:4px 8px;color:var(--grey);">Name</th>' +
+        '<th style="text-align:left;padding:4px 8px;color:var(--grey);">Email</th>' +
+        '<th style="text-align:left;padding:4px 8px;color:var(--grey);">Classes</th></tr></thead>' +
+        '<tbody>' + rows + '</tbody></table>' +
+        (newOnes.length > 30 ? '<div style="color:var(--grey);font-size:11px;margin-top:6px;">Showing first 30 of ' + newOnes.length + '</div>' : ''),
+    };
+  }
+
+  // ── Email list for class ──
+  if (/email|emails|email list|contact list/.test(q)) {
+    const clsMatch = q.match(/(?:for|of|in)\s+(.+?)(?:\s*$|\?)/);
+    const cls = clsMatch ? clsMatch[1].trim() : null;
+    const matches = cls ? STUDENTS.filter(s => _classMatch(s, cls)) : STUDENTS;
+    const emails = matches.map(s => s.email).join(', ');
+    const label = cls ? 'Email list for ' + matches[0]?.classes.find(c=>c.toLowerCase().includes(cls.toLowerCase().split(' ')[0])) || cls : 'All students';
+    return {
+      summary: '<b>' + matches.length + ' email addresses' + (cls ? ' for ' + cls : '') + ':</b>',
+      table: '<div style="background:#111;border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:11px;color:var(--grey);word-break:break-all;line-height:1.8;">' + emails + '</div>' +
+        '<button class="btn btn-lime btn-sm" style="margin-top:8px;" onclick="navigator.clipboard.writeText(\'' + emails.replace(/'/g,"\\'") + '\').then(()=>alert(\'Copied ' + matches.length + ' emails!\'))">Copy to Clipboard</button>',
+    };
+  }
+
+  // ── Students taking N or more classes ──
+  const nMatch = q.match(/(\d+)\s*(?:or more|\+|plus)\s*class/);
+  if (nMatch || /multi.class|multiple class|3\+ class/.test(q)) {
+    const n = nMatch ? parseInt(nMatch[1]) : 3;
+    const matches = STUDENTS.filter(s => s.n >= n).sort((a,b) => b.n - a.n);
+    const rows = matches.map(s =>
+      '<tr><td>' + s.name + '</td>' +
+      '<td><span class="tag tag-lime" style="font-size:10px;">' + s.n + ' classes</span></td>' +
+      '<td style="font-size:11px;color:var(--grey);">' + s.classes.join(', ') + '</td></tr>'
+    ).join('');
+    return {
+      summary: '<b>' + matches.length + ' students</b> taking ' + n + ' or more classes:',
+      table: '<table style="width:100%;font-size:12px;">' +
+        '<thead><tr><th style="text-align:left;padding:4px 8px;color:var(--grey);">Name</th>' +
+        '<th style="text-align:left;padding:4px 8px;color:var(--grey);">Classes</th>' +
+        '<th style="text-align:left;padding:4px 8px;color:var(--grey);">Enrolled In</th></tr></thead>' +
+        '<tbody>' + rows + '</tbody></table>' +
+        '<button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="alert(\'Tag created: ' + n + '+ Classes S4\')">Create Tag: ' + n + '+ Classes</button>',
+    };
+  }
+
+  // ── Students in class A AND class B ──
+  const andMatch = q.match(/(?:in|taking|enrolled in)\s+(.+?)\s+and\s+(.+?)(?:\s*\??\s*$)/);
+  if (andMatch) {
+    const cls1 = andMatch[1].trim();
+    const cls2 = andMatch[2].trim();
+    const matches = STUDENTS.filter(s => _classMatch(s, cls1) && _classMatch(s, cls2));
+    if (matches.length) {
+      const rows = matches.map(s =>
+        '<tr><td>' + s.name + '</td><td style="color:var(--grey);font-size:11px;">' + s.email + '</td>' +
+        '<td style="font-size:11px;color:var(--grey);">' + s.classes.join(', ') + '</td></tr>'
+      ).join('');
+      return {
+        summary: '<b>' + matches.length + ' student' + (matches.length!==1?'s':'') + '</b> enrolled in both <b>' + cls1 + '</b> and <b>' + cls2 + '</b>:',
+        table: '<table style="width:100%;font-size:12px;">' +
+          '<thead><tr><th style="text-align:left;padding:4px 8px;color:var(--grey);">Name</th>' +
+          '<th style="text-align:left;padding:4px 8px;color:var(--grey);">Email</th>' +
+          '<th style="text-align:left;padding:4px 8px;color:var(--grey);">All Classes</th></tr></thead>' +
+          '<tbody>' + rows + '</tbody></table>',
+      };
+    }
+    return { summary: 'No students found enrolled in both <b>' + cls1 + '</b> and <b>' + cls2 + '</b>.', table: '' };
+  }
+
+  // ── Generic class list / who is in X ──
+  const classNames = [
+    'Level 1','Level 2','Level 3','Level 4','Level 5','Level 6',
+    'Dance Virgin','Dance Tech','Dance','Dirty Dance',
+    'Strip Virgin','Strip','Chair Virgin','Chair','Chole',
+    'Floor Virgin','Inter Floor','Advanced Floor',
+    'Invert Tech','3 Tricks','4 Tricks','5 Foundations','High Tricks','6 Virgin',
+    'Kiki','Unravel','Spin Virgin'
+  ];
+  let foundClass = null;
+  for (const c of classNames) {
+    if (q.includes(c.toLowerCase())) { foundClass = c; break; }
+  }
+  if (!foundClass) {
+    // Try partial match on single words
+    const words = ['level','strip','chair','dance','floor','tricks','tech','kiki','unravel','chole','invert','foundation','high','spin','virgin','dirty'];
+    for (const w of words) {
+      if (q.includes(w)) {
+        const m = q.match(new RegExp('(' + w + '[\\w\\s]*?)(?:\\s*[?\\.,]|$)', 'i'));
+        if (m) {
+          const partial = m[1].trim();
+          foundClass = classNames.find(c => c.toLowerCase().includes(partial.toLowerCase())) || null;
+          if (foundClass) break;
+        }
+      }
+    }
+  }
+  if (foundClass) {
+    const matches = STUDENTS.filter(s => _classMatch(s, foundClass));
+    if (!matches.length) return { summary: 'No students found enrolled in <b>' + foundClass + '</b> this season.', table: '' };
+    const rows = matches.map(s =>
+      '<tr><td>' + s.name + '</td>' +
+      '<td style="color:var(--grey);font-size:11px;">' + s.email + '</td>' +
+      '<td style="font-size:11px;color:var(--grey);">' + s.classes.filter(c=>c!==foundClass).join(', ') + '</td></tr>'
+    ).join('');
+    return {
+      summary: '<b>' + matches.length + ' student' + (matches.length!==1?'s':'') + '</b> enrolled in <b>' + foundClass + '</b>:',
+      table: '<table style="width:100%;font-size:12px;">' +
+        '<thead><tr><th style="text-align:left;padding:4px 8px;color:var(--grey);">Name</th>' +
+        '<th style="text-align:left;padding:4px 8px;color:var(--grey);">Email</th>' +
+        '<th style="text-align:left;padding:4px 8px;color:var(--grey);">Other Classes</th></tr></thead>' +
+        '<tbody>' + rows + '</tbody></table>' +
+        '<div style="display:flex;gap:8px;margin-top:8px;">' +
+        '<button class="btn btn-ghost btn-sm" onclick="runAssistant(\'Email list for ' + foundClass + '\')">Get Email List</button>' +
+        '<button class="btn btn-ghost btn-sm" onclick="alert(\'Tag created: ' + foundClass.replace(/'/g,"\\'") + ' S4\')">Create Tag</button></div>',
+    };
+  }
+
+  // ── Fallback ──
+  return {
+    summary: 'I didn\'t quite catch that. Try asking:',
+    table: '<ul style="font-size:13px;color:var(--grey);line-height:2;margin:6px 0 0 16px;">' +
+      '<li>"List all Level 5 students"</li>' +
+      '<li>"Show students taking 3 or more classes"</li>' +
+      '<li>"Who is enrolled in Strip AND Level 6?"</li>' +
+      '<li>"Show me an enrolment summary"</li>' +
+      '<li>"Which students were enrolled last season but not this season?"</li>' +
+      '<li>"Email list for Dance Virgin"</li>' +
+      '</ul>',
+  };
+}
+
+function runAssistant(query) {
+  if (!query || !query.trim()) return;
+  const chat = document.getElementById('assistant-chat');
+  if (!chat) return;
+  showScreen('assistant');
+
+  // User bubble
+  chat.insertAdjacentHTML('beforeend',
+    '<div style="display:flex;justify-content:flex-end;">' +
+    '<div style="background:#1a3300;border:1px solid var(--lime);border-radius:10px 0 10px 10px;padding:10px 14px;font-size:13px;max-width:80%;">' + query + '</div></div>'
+  );
+
+  // Thinking indicator
+  const thinkId = 'think-' + Date.now();
+  chat.insertAdjacentHTML('beforeend',
+    '<div id="' + thinkId + '" style="display:flex;gap:10px;align-items:flex-start;">' +
+    '<div style="width:28px;height:28px;border-radius:50%;background:var(--lime);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🤖</div>' +
+    '<div style="background:#1a1a1a;border-radius:0 10px 10px 10px;padding:10px 14px;font-size:13px;color:var(--grey);">Thinking…</div></div>'
+  );
+  chat.scrollTop = chat.scrollHeight;
+
+  setTimeout(function() {
+    const result = _parseAndRun(query);
+    const el = document.getElementById(thinkId);
+    if (el) el.outerHTML =
+      '<div style="display:flex;gap:10px;align-items:flex-start;">' +
+      '<div style="width:28px;height:28px;border-radius:50%;background:var(--lime);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🤖</div>' +
+      '<div style="background:#1a1a1a;border-radius:0 10px 10px 10px;padding:12px 14px;font-size:13px;line-height:1.6;max-width:90%;">' +
+      '<div style="margin-bottom:' + (result.table ? '10' : '0') + 'px;">' + result.summary + '</div>' +
+      result.table +
+      '</div></div>';
+    chat.scrollTop = chat.scrollHeight;
+  }, 400);
+}
+
+function showAssistantQuery(query) {
+  showScreen('assistant');
+  setTimeout(function() { runAssistant(query); }, 100);
+}
+
+function clearAssistant() {
+  const chat = document.getElementById('assistant-chat');
+  if (chat) chat.innerHTML =
+    '<div style="display:flex;gap:10px;align-items:flex-start;">' +
+    '<div style="width:28px;height:28px;border-radius:50%;background:var(--lime);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🤖</div>' +
+    '<div style="background:#1a1a1a;border-radius:0 10px 10px 10px;padding:12px 14px;font-size:13px;line-height:1.6;max-width:85%;">' +
+    'Chat cleared. Ask me anything about your 138 Season 4 students!</div></div>';
+}
+
 </script>
 
 <!-- Campaign Preview Modal -->
@@ -6487,5 +6802,179 @@ window.openModal = function(id) {
     </div>
   </div>
 </div>
+
+
+    <!-- ===== RECOMMENDATIONS ===== -->
+    <div id="screen-recommendations" class="screen">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Recommendations</div>
+          <div class="page-sub">Demand-driven scheduling insights based on Season 4 enrolments</div>
+        </div>
+        <button class="btn btn-lime" onclick="alert('Exported to PDF')">Export Report</button>
+      </div>
+
+      <!-- KPI strip -->
+      <div class="kpi-row" style="margin-bottom:24px;">
+        <div class="kpi"><div class="kpi-label">Total Enrolments</div><div class="kpi-value">260</div><div class="kpi-sub">138 students · 27 classes</div></div>
+        <div class="kpi kpi-red"><div class="kpi-label">Classes Over Capacity</div><div class="kpi-value">4</div><div class="kpi-sub">Level 2, Level 5, Level 3, Strip Virgin</div></div>
+        <div class="kpi"><div class="kpi-label">Avg Classes/Student</div><div class="kpi-value">1.9</div><div class="kpi-sub">Up from 1.6 last season</div></div>
+        <div class="kpi"><div class="kpi-label">Revenue Opportunity</div><div class="kpi-value">$2,160+</div><div class="kpi-sub">If waitlisted students are placed</div></div>
+      </div>
+
+      <!-- Action cards -->
+      <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:12px;">🚨 Classes Needing Extra Sessions</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:28px;">
+
+        <div style="background:#1a1a1a;border:1px solid #ff6b6b;border-radius:10px;padding:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+            <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">Level 2</div>
+            <span class="tag tag-red">24 enrolled</span>
+          </div>
+          <div style="font-size:12px;color:var(--grey);margin-bottom:10px;">2 sessions × ~12 cap = 24 spots. Zero buffer — any late enrolments go to waitlist.</div>
+          <div style="font-size:12px;margin-bottom:12px;"><span style="color:var(--lime);">✦</span> Add a <b>Wednesday or Friday 6:30pm</b> Level 2 session. Estimated demand: 8–10 students.</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-lime btn-xs" onclick="alert('Opening timetable to add Level 2 session')">Add Session</button>
+            <button class="btn btn-ghost btn-xs" onclick="showAssistantQuery('list all Level 2 students')">View Students</button>
+          </div>
+        </div>
+
+        <div style="background:#1a1a1a;border:1px solid #ff6b6b;border-radius:10px;padding:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+            <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">Level 5</div>
+            <span class="tag tag-red">23 enrolled</span>
+          </div>
+          <div style="font-size:12px;color:var(--grey);margin-bottom:10px;">1 session × ~12 cap = significant overflow. Level 5 is your second-biggest class.</div>
+          <div style="font-size:12px;margin-bottom:12px;"><span style="color:var(--lime);">✦</span> Add a <b>Tuesday or Saturday 10am</b> Level 5. Mimi already teaches Saturday morning.</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-lime btn-xs" onclick="alert('Opening timetable to add Level 5 session')">Add Session</button>
+            <button class="btn btn-ghost btn-xs" onclick="showAssistantQuery('list all Level 5 students')">View Students</button>
+          </div>
+        </div>
+
+        <div style="background:#1a1a1a;border:1px solid #ff6b6b;border-radius:10px;padding:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+            <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">Level 3</div>
+            <span class="tag tag-red">23 enrolled</span>
+          </div>
+          <div style="font-size:12px;color:var(--grey);margin-bottom:10px;">1 main session at Wed 7:30pm (Maz) + Mon 8:30pm (Chloe). Still tight for 23 students.</div>
+          <div style="font-size:12px;margin-bottom:12px;"><span style="color:var(--lime);">✦</span> Add a <b>Thursday 7:30pm</b> Level 3. Frees Maz's session and absorbs overflow.</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-lime btn-xs" onclick="alert('Opening timetable to add Level 3 session')">Add Session</button>
+            <button class="btn btn-ghost btn-xs" onclick="showAssistantQuery('list all Level 3 students')">View Students</button>
+          </div>
+        </div>
+
+        <div style="background:#1a1a1a;border:1px solid var(--amber);border-radius:10px;padding:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+            <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">Strip Virgin</div>
+            <span class="tag tag-amber">21 enrolled</span>
+          </div>
+          <div style="font-size:12px;color:var(--grey);margin-bottom:10px;">2 sessions (Mon Jaz + Thu Amy) × ~12 cap = 24 spots. Nearly full.</div>
+          <div style="font-size:12px;margin-bottom:12px;"><span style="color:var(--lime);">✦</span> Add a <b>weekend Strip Virgin</b> for students who can't do weeknights. High demand class.</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-lime btn-xs" onclick="alert('Opening timetable to add Strip Virgin session')">Add Session</button>
+            <button class="btn btn-ghost btn-xs" onclick="showAssistantQuery('list all Strip Virgin students')">View Students</button>
+          </div>
+        </div>
+
+        <div style="background:#1a1a1a;border:1px solid var(--amber);border-radius:10px;padding:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+            <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">Strip</div>
+            <span class="tag tag-amber">16 enrolled</span>
+          </div>
+          <div style="font-size:12px;color:var(--grey);margin-bottom:10px;">2 sessions (Tue + Thu Mimi) at ~12 cap each = 24 spots. 8 buffer spots left.</div>
+          <div style="font-size:12px;margin-bottom:12px;"><span style="color:var(--lime);">✦</span> Monitor closely. Consider a Sunday Strip if Mimi is available — it sold out last season.</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-ghost btn-xs" onclick="showAssistantQuery('list all Strip students')">View Students</button>
+          </div>
+        </div>
+
+        <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+            <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">Advanced Floor</div>
+            <span class="tag tag-lav">12 enrolled</span>
+          </div>
+          <div style="font-size:12px;color:var(--grey);margin-bottom:10px;">1 session (Sun 10am Mimi) × ~10 cap = full. No overflow session exists.</div>
+          <div style="font-size:12px;margin-bottom:12px;"><span style="color:var(--lime);">✦</span> Add a <b>Saturday Advanced Floor</b> — Mimi teaches Saturday mornings already.</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-lime btn-xs" onclick="alert('Opening timetable to add Adv Floor session')">Add Session</button>
+            <button class="btn btn-ghost btn-xs" onclick="showAssistantQuery('list all Advanced Floor students')">View Students</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Full demand table -->
+      <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:12px;">📊 Full Class Demand — Season 4</div>
+      <div class="tbl-section" style="margin-bottom:28px;">
+        <table>
+          <thead><tr><th>Class</th><th>Students Enrolled</th><th>Demand Bar</th><th>Sessions This Season</th><th>Recommendation</th></tr></thead>
+          <tbody id="rec-demand-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Growth classes -->
+      <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:12px;">🌱 Growth Opportunities</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px;">
+        <div class="section" style="padding:16px;">
+          <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:8px;">Level 1 is undersubscribed (7 students)</div>
+          <div style="font-size:13px;color:var(--grey);margin-bottom:12px;">Level 1 is your pipeline for every other class — low intake now = lower numbers across all levels in 2–3 seasons. Consider a targeted new-student campaign.</div>
+          <button class="btn btn-lime btn-sm" onclick="showScreen('marketing')">Launch Beginner Campaign →</button>
+        </div>
+        <div class="section" style="padding:16px;">
+          <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:8px;">Multi-class students drive revenue</div>
+          <div style="font-size:13px;color:var(--grey);margin-bottom:12px;">Students doing 3+ classes/week are your highest-value cohort. <b>42 students</b> currently do 3+ classes. Targeted upsell to 2-class students could add $4,000+ this season.</div>
+          <button class="btn btn-ghost btn-sm" onclick="showAssistantQuery('list students taking 2 classes')">View 2-class students →</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ===== ASSISTANT ===== -->
+    <div id="screen-assistant" class="screen">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Assistant</div>
+          <div class="page-sub">Ask anything about your students, enrolments, and data</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="clearAssistant()">Clear Chat</button>
+      </div>
+
+      <!-- Suggestion chips -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:12px;color:var(--grey);margin-bottom:8px;">Try asking:</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <button class="chip" onclick="runAssistant('List all Level 5 students')">List all Level 5 students</button>
+          <button class="chip" onclick="runAssistant('Show students taking 3 or more classes')">Students taking 3+ classes</button>
+          <button class="chip" onclick="runAssistant('Who is in both Strip and Level 6?')">Who is in Strip AND Level 6?</button>
+          <button class="chip" onclick="runAssistant('Show me an enrolment summary')">Enrolment summary</button>
+          <button class="chip" onclick="runAssistant('Which students were enrolled last season but not this season?')">Not re-enrolled from last season</button>
+          <button class="chip" onclick="runAssistant('Email list for Advanced Floor')">Email list for Advanced Floor</button>
+          <button class="chip" onclick="runAssistant('List new students this season')">New students this season</button>
+          <button class="chip" onclick="runAssistant('Who is taking Invert Tech?')">Who is in Invert Tech?</button>
+        </div>
+      </div>
+
+      <!-- Chat window -->
+      <div id="assistant-chat" style="min-height:340px;max-height:520px;overflow-y:auto;background:#0d0d0d;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--lime);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🤖</div>
+          <div style="background:#1a1a1a;border-radius:0 10px 10px 10px;padding:12px 14px;font-size:13px;line-height:1.6;max-width:85%;">
+            Hey! I'm your studio assistant. I have access to all <b>138 Season 4 students</b> and their enrolments.<br><br>
+            Ask me to pull reports, list students by class, find overlaps, generate email lists, or compare with last season. Try one of the suggestions above to get started.
+          </div>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <div style="display:flex;gap:10px;">
+        <input id="assistant-input" class="search-input" type="text" placeholder="Ask a question about your students or enrolments…" style="flex:1;padding:12px 16px;font-size:14px;"
+          onkeydown="if(event.key==='Enter'){runAssistant(this.value);this.value=''}" />
+        <button class="btn btn-lime" onclick="runAssistant(document.getElementById('assistant-input').value);document.getElementById('assistant-input').value=''">Ask →</button>
+      </div>
+    </div>
+
+
 </body>
 </html>
