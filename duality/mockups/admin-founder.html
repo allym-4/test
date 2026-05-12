@@ -532,7 +532,7 @@ tr.clickable-row:hover td { background: #141414; }
     <div id="screen-students" class="screen">
       <div class="page-header">
         <div><div class="page-title">Students</div><div class="page-sub">94 active students</div></div>
-        <button class="btn btn-lime" onclick="openModal('modal-add-student')">+ Add Student</button>
+        <div style="display:flex;gap:8px;"><button class="btn btn-ghost" onclick="openModal('modal-bulk-tag')">Bulk Tag</button><button class="btn btn-lime" onclick="openModal('modal-add-student')">+ Add Student</button></div>
       </div>
       <div class="filter-bar">
         <input class="search-input" id="students-search" type="text" placeholder="Search name, email…" oninput="filterStudentsTable(this.value)" />
@@ -1035,6 +1035,23 @@ tr.clickable-row:hover td { background: #141414; }
                 <td id="att-fee-7">—</td>
                 <td><input type="text" placeholder="Note…" style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:4px 8px;width:100px;" /></td>
               </tr>
+              <!-- Waitlist pending rows -->
+              <tr style="opacity:0.6;">
+                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#44ff99;">T</div><div><div style="font-weight:500;">⏳ Tara Bell</div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
+                <td><span class="tag tag-amber">Waitlist</span></td>
+                <td style="color:var(--grey);font-size:12px;">0412 999 000</td>
+                <td><span style="font-size:11px;color:var(--amber);background:#1a0f00;border:1px solid var(--amber);border-radius:6px;padding:4px 8px;">Pending — awaiting acceptance</span></td>
+                <td>—</td>
+                <td><span style="font-size:11px;color:var(--grey);">Spot offered — 18h remaining</span></td>
+              </tr>
+              <tr style="opacity:0.6;">
+                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#ff9966;">Z</div><div><div style="font-weight:500;">⏳ Zoe Clarke</div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
+                <td><span class="tag tag-amber">Waitlist</span></td>
+                <td style="color:var(--grey);font-size:12px;">0412 000 111</td>
+                <td><span style="font-size:11px;color:var(--amber);background:#1a0f00;border:1px solid var(--amber);border-radius:6px;padding:4px 8px;">Pending — awaiting acceptance</span></td>
+                <td>—</td>
+                <td><span style="font-size:11px;color:var(--grey);">Spot offered — 18h remaining</span></td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -1047,6 +1064,17 @@ tr.clickable-row:hover td { background: #141414; }
             <tbody>
               <tr><td style="color:var(--grey);">1</td><td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#44ff99;">T</div><div><div style="font-weight:500;">Tara Bell</div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td><td style="color:var(--grey);font-size:12px;">0412 999 000</td><td style="color:var(--grey);">10 May 2025</td><td><button class="btn btn-lime btn-xs" onclick="alert('Tara Bell promoted from waitlist — notification sent')">Promote</button></td></tr>
               <tr><td style="color:var(--grey);">2</td><td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#ff9966;">Z</div><div><div style="font-weight:500;">Zoe Clarke</div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td><td style="color:var(--grey);font-size:12px;">0412 000 111</td><td style="color:var(--grey);">11 May 2025</td><td><button class="btn btn-lime btn-xs" onclick="alert('Zoe Clarke promoted from waitlist — notification sent')">Promote</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="att-cancelled" class="subscreen">
+        <div class="tbl-section">
+          <table>
+            <thead><tr><th>Student</th><th>Cancellation Time</th><th>Notice Given</th><th>Fee Applied</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#b0f0b0;">N</div><div><div style="font-weight:500;">Nina Torres</div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td><td style="color:var(--grey);">Today, 3:30pm</td><td><span class="tag tag-red">2h before class</span></td><td><span class="fee-badge">LATE FEE</span> $25</td><td style="color:var(--grey);font-size:12px;">Cancelled 2h before class — late cancel fee applied</td></tr>
             </tbody>
           </table>
         </div>
@@ -1302,7 +1330,10 @@ tr.clickable-row:hover td { background: #141414; }
     <div id="screen-bookings" class="screen">
       <div class="page-header">
         <div><div class="page-title">Bookings</div><div class="page-sub">All class bookings</div></div>
-        <button class="btn btn-outline btn-sm">Bulk Actions ▾</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select id="bulk-action-select" class="select-input"><option value="">Bulk Actions</option><option value="Send reminder">Send reminder</option><option value="Export selected">Export selected</option><option value="Cancel selected">Cancel selected</option><option value="Add to waitlist">Add to waitlist</option></select>
+          <button class="btn btn-ghost btn-sm" onclick="(function(){var a=document.getElementById('bulk-action-select').value;if(!a){alert('Please select a bulk action');return;}alert('Bulk action: '+a+' applied to selected bookings');document.getElementById('bulk-action-select').value='';})()">Apply</button>
+        </div>
       </div>
       <div class="filter-bar">
         <select class="select-input"><option>Season 3 (Active)</option><option>Season 2</option><option>Season 1</option><option>All Seasons</option><option>Casual</option></select>
@@ -1311,13 +1342,10 @@ tr.clickable-row:hover td { background: #141414; }
         <input class="search-input" type="text" placeholder="Search student…" style="min-width:160px;" />
       </div>
       <div style="display:flex;gap:8px;margin-bottom:14px;">
-        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--grey);cursor:pointer;"><input type="checkbox" style="accent-color:var(--lime);" /> Select all</label>
-        <button class="btn btn-ghost btn-xs">Send Reminder</button>
-        <button class="btn btn-ghost btn-xs">Mark No-show</button>
-        <button class="btn btn-ghost btn-xs">Cancel Selected</button>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--grey);cursor:pointer;"><input type="checkbox" style="accent-color:var(--lime);" id="select-all-bookings" onchange="document.querySelectorAll('#bookings-table input[type=checkbox]').forEach(cb=>cb.checked=this.checked)" /> Select all</label>
       </div>
       <div class="tbl-section">
-        <table>
+        <table id="bookings-table">
           <thead><tr><th></th><th>Student</th><th>Class</th><th>Season/Date</th><th>Type</th><th>Status</th><th>Amount</th><th>Actions</th></tr></thead>
           <tbody>
             <tr><td><input type="checkbox" style="accent-color:var(--lime);"/></td><td>Jess Malone</td><td>Level 2 · Mon 6:30pm</td><td>Season 3</td><td><span class="tag tag-lav">Season</span></td><td><span class="tag tag-lime">Confirmed</span></td><td>$180</td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-transfer')">Transfer</button> <button class="btn btn-ghost btn-xs">Cancel</button></td></tr>
@@ -1683,12 +1711,12 @@ tr.clickable-row:hover td { background: #141414; }
           <table>
             <thead><tr><th>Group</th><th>Members</th><th>Last Message</th><th>Last Active</th><th>Season</th><th>Actions</th></tr></thead>
             <tbody>
-              <tr><td><b>Headstand Honeys</b></td><td>12</td><td style="font-size:12px;color:var(--grey);">"Mimi: Great work tonight everyone!"</td><td style="color:var(--grey)">2h ago</td><td>Season 3</td><td><button class="btn btn-ghost btn-xs">View</button> <button class="btn btn-ghost btn-xs">Archive</button></td></tr>
-              <tr><td><b>Handstand Rockstars</b></td><td>8</td><td style="font-size:12px;color:var(--grey);">"Ruby: Anyone free Saturday?"</td><td style="color:var(--grey)">5h ago</td><td>Season 3</td><td><button class="btn btn-ghost btn-xs">View</button> <button class="btn btn-ghost btn-xs">Archive</button></td></tr>
-              <tr><td><b>Kiki Challenge</b></td><td>15</td><td style="font-size:12px;color:var(--grey);">"Chloe: video uploaded!"</td><td style="color:var(--grey)">1d ago</td><td>Season 3</td><td><button class="btn btn-ghost btn-xs">View</button> <button class="btn btn-ghost btn-xs">Archive</button></td></tr>
-              <tr><td><b>Level 2 Mon 6:30pm</b></td><td>15</td><td style="font-size:12px;color:var(--grey);">"Jess: see you all Monday!"</td><td style="color:var(--grey)">2d ago</td><td>Season 3</td><td><button class="btn btn-ghost btn-xs">View</button> <button class="btn btn-ghost btn-xs">Archive</button></td></tr>
-              <tr><td><b>Level 1 Practice Group</b></td><td>10</td><td style="font-size:12px;color:var(--grey);">[No messages yet]</td><td style="color:var(--grey)">—</td><td>Season 3</td><td><button class="btn btn-ghost btn-xs">View</button> <button class="btn btn-ghost btn-xs">Archive</button></td></tr>
-              <tr style="opacity:0.6;"><td><b>Level 2 Season 2</b> <span class="tag tag-grey" style="font-size:10px;margin-left:4px;">archived</span></td><td>12</td><td style="font-size:12px;color:var(--grey);">[Archived]</td><td style="color:var(--grey)">—</td><td style="color:var(--grey)">Season 2</td><td><button class="btn btn-ghost btn-xs">View Archive</button></td></tr>
+              <tr><td><b>Headstand Honeys</b></td><td>12</td><td style="font-size:12px;color:var(--grey);">"Mimi: Great work tonight everyone!"</td><td style="color:var(--grey)">2h ago</td><td>Season 3</td><td><button class="btn btn-ghost btn-xs" onclick="openGroupChat('Headstand Honeys',12)">View</button> <button class="btn btn-ghost btn-xs">Archive</button></td></tr>
+              <tr><td><b>Handstand Rockstars</b></td><td>8</td><td style="font-size:12px;color:var(--grey);">"Ruby: Anyone free Saturday?"</td><td style="color:var(--grey)">5h ago</td><td>Season 3</td><td><button class="btn btn-ghost btn-xs" onclick="openGroupChat('Handstand Rockstars',8)">View</button> <button class="btn btn-ghost btn-xs">Archive</button></td></tr>
+              <tr><td><b>Kiki Challenge</b></td><td>15</td><td style="font-size:12px;color:var(--grey);">"Chloe: video uploaded!"</td><td style="color:var(--grey)">1d ago</td><td>Season 3</td><td><button class="btn btn-ghost btn-xs" onclick="openGroupChat('Kiki Challenge',15)">View</button> <button class="btn btn-ghost btn-xs">Archive</button></td></tr>
+              <tr><td><b>Level 2 Mon 6:30pm</b></td><td>15</td><td style="font-size:12px;color:var(--grey);">"Jess: see you all Monday!"</td><td style="color:var(--grey)">2d ago</td><td>Season 3</td><td><button class="btn btn-ghost btn-xs" onclick="openGroupChat('Level 2 Mon 6:30pm',15)">View</button> <button class="btn btn-ghost btn-xs">Archive</button></td></tr>
+              <tr><td><b>Level 1 Practice Group</b></td><td>10</td><td style="font-size:12px;color:var(--grey);">[No messages yet]</td><td style="color:var(--grey)">—</td><td>Season 3</td><td><button class="btn btn-ghost btn-xs" onclick="openGroupChat('Level 1 Practice Group',10)">View</button> <button class="btn btn-ghost btn-xs">Archive</button></td></tr>
+              <tr style="opacity:0.6;"><td><b>Level 2 Season 2</b> <span class="tag tag-grey" style="font-size:10px;margin-left:4px;">archived</span></td><td>12</td><td style="font-size:12px;color:var(--grey);">[Archived]</td><td style="color:var(--grey)">—</td><td style="color:var(--grey)">Season 2</td><td><button class="btn btn-ghost btn-xs" onclick="openGroupChat('Level 2 Season 2',12)">View Archive</button></td></tr>
             </tbody>
           </table>
         </div>
@@ -1972,28 +2000,17 @@ tr.clickable-row:hover td { background: #141414; }
           <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:6px;">Individual Role Assignment</div>
           <p style="font-size:12px;color:var(--grey);margin-bottom:16px;">Change a staff member's role here to adjust their access instantly.</p>
           <div style="display:flex;flex-direction:column;gap:10px;">
-            ${[
-              {name:'Mimi',color:'var(--lime)',role:'Founder',locked:true},
-              {name:'Chloe',color:'var(--lav)',role:'Senior Instructor'},
-              {name:'Amy',color:'#ffb3de',role:'Senior Instructor'},
-              {name:'Bambi',color:'#ff9ecb',role:'Instructor'},
-              {name:'Violet',color:'#c9aaff',role:'Instructor'},
-              {name:'Viv',color:'#a8d8ea',role:'Instructor'},
-              {name:'Peaches',color:'#ffd6a5',role:'Instructor'},
-              {name:'Maz',color:'#b5ead7',role:'Cover'},
-              {name:'Jaz',color:'#ffc8dd',role:'Cover'},
-              {name:'Avalon',color:'#e8c1ff',role:'Cover'},
-              {name:'Zara',color:'#caffbf',role:'Cover'},
-            ].map(p=>`<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);">
-              <div class="staff-photo" style="background:${p.color};width:30px;height:30px;font-size:12px;flex-shrink:0;">${p.name[0]}</div>
-              <div style="flex:1;font-size:13px;font-weight:500;">${p.name}</div>
-              <select style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:5px 8px;${p.locked?'opacity:0.5;cursor:not-allowed;':''}" ${p.locked?'disabled':''}>
-                <option ${p.role==='Founder'?'selected':''}>Founder</option>
-                <option ${p.role==='Senior Instructor'?'selected':''}>Senior Instructor</option>
-                <option ${p.role==='Instructor'?'selected':''}>Instructor</option>
-                <option ${p.role==='Cover'?'selected':''}>Cover</option>
-              </select>
-            </div>`).join('')}
+            <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);"><div class="staff-photo" style="background:var(--lime);width:30px;height:30px;font-size:12px;flex-shrink:0;">M</div><div style="flex:1;font-size:13px;font-weight:500;">Mimi</div><select style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:5px 8px;opacity:0.5;cursor:not-allowed;" disabled><option selected>Founder</option><option>Senior Instructor</option><option>Instructor</option><option>Cover</option></select></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);"><div class="staff-photo" style="background:var(--lav);width:30px;height:30px;font-size:12px;flex-shrink:0;">C</div><div style="flex:1;font-size:13px;font-weight:500;">Chloe</div><select style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:5px 8px;"><option>Founder</option><option selected>Senior Instructor</option><option>Instructor</option><option>Cover</option></select></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);"><div class="staff-photo" style="background:#ffb3de;width:30px;height:30px;font-size:12px;flex-shrink:0;">A</div><div style="flex:1;font-size:13px;font-weight:500;">Amy</div><select style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:5px 8px;"><option>Founder</option><option selected>Senior Instructor</option><option>Instructor</option><option>Cover</option></select></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);"><div class="staff-photo" style="background:#ff9ecb;width:30px;height:30px;font-size:12px;flex-shrink:0;">B</div><div style="flex:1;font-size:13px;font-weight:500;">Bambi</div><select style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:5px 8px;"><option>Founder</option><option>Senior Instructor</option><option selected>Instructor</option><option>Cover</option></select></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);"><div class="staff-photo" style="background:#c9aaff;width:30px;height:30px;font-size:12px;flex-shrink:0;">V</div><div style="flex:1;font-size:13px;font-weight:500;">Violet</div><select style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:5px 8px;"><option>Founder</option><option>Senior Instructor</option><option selected>Instructor</option><option>Cover</option></select></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);"><div class="staff-photo" style="background:#a8d8ea;width:30px;height:30px;font-size:12px;flex-shrink:0;">V</div><div style="flex:1;font-size:13px;font-weight:500;">Viv</div><select style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:5px 8px;"><option>Founder</option><option>Senior Instructor</option><option selected>Instructor</option><option>Cover</option></select></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);"><div class="staff-photo" style="background:#ffd6a5;width:30px;height:30px;font-size:12px;flex-shrink:0;">P</div><div style="flex:1;font-size:13px;font-weight:500;">Peaches</div><select style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:5px 8px;"><option>Founder</option><option>Senior Instructor</option><option selected>Instructor</option><option>Cover</option></select></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);"><div class="staff-photo" style="background:#b5ead7;width:30px;height:30px;font-size:12px;flex-shrink:0;">M</div><div style="flex:1;font-size:13px;font-weight:500;">Maz</div><select style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:5px 8px;"><option>Founder</option><option>Senior Instructor</option><option>Instructor</option><option selected>Cover</option></select></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);"><div class="staff-photo" style="background:#ffc8dd;width:30px;height:30px;font-size:12px;flex-shrink:0;">J</div><div style="flex:1;font-size:13px;font-weight:500;">Jaz</div><select style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:5px 8px;"><option>Founder</option><option>Senior Instructor</option><option>Instructor</option><option selected>Cover</option></select></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);"><div class="staff-photo" style="background:#e8c1ff;width:30px;height:30px;font-size:12px;flex-shrink:0;">A</div><div style="flex:1;font-size:13px;font-weight:500;">Avalon</div><select style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:5px 8px;"><option>Founder</option><option>Senior Instructor</option><option>Instructor</option><option selected>Cover</option></select></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);"><div class="staff-photo" style="background:#caffbf;width:30px;height:30px;font-size:12px;flex-shrink:0;">Z</div><div style="flex:1;font-size:13px;font-weight:500;">Zara</div><select style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:5px 8px;"><option>Founder</option><option>Senior Instructor</option><option>Instructor</option><option selected>Cover</option></select></div>
           </div>
         </div>
       </div>
@@ -2017,23 +2034,17 @@ tr.clickable-row:hover td { background: #141414; }
               </tr>
             </thead>
             <tbody>
-              ${[
-                {name:'Mimi',color:'var(--lime)',na:[0,6]},
-                {name:'Chloe',color:'var(--lav)',na:[]},
-                {name:'Amy',color:'#ffb3de',na:[5,6]},
-                {name:'Bambi',color:'#ff9ecb',na:[1]},
-                {name:'Violet',color:'#c9aaff',na:[0,6]},
-                {name:'Viv',color:'#a8d8ea',na:[5]},
-                {name:'Peaches',color:'#ffd6a5',na:[1,2]},
-                {name:'Maz',color:'#b5ead7',na:[0,1,2,3,4]},
-                {name:'Jaz',color:'#ffc8dd',na:[0,1,2,3,4]},
-                {name:'Avalon',color:'#e8c1ff',na:[0,1,2,3,4,5,6]},
-                {name:'Zara',color:'#caffbf',na:[2]},
-              ].map(p=>`<tr>
-                <td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:${p.color};width:26px;height:26px;font-size:11px;">${p.name[0]}</div>${p.name}</div></td>
-                ${[0,1,2,3,4,5,6].map(d=>`<td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;">${p.na.includes(d)?'<span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span>':'<span style="color:#44ff99;font-size:14px;">●</span>'}</td>`).join('')}
-                <td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><button class="btn btn-ghost btn-xs" onclick="openModal(\'modal-availability\')">Edit</button></td>
-              </tr>`).join('')}
+              <tr><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:var(--lime);width:26px;height:26px;font-size:11px;">M</div>Mimi</div></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-availability')">Edit</button></td></tr>
+              <tr><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:var(--lav);width:26px;height:26px;font-size:11px;">C</div>Chloe</div></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-availability')">Edit</button></td></tr>
+              <tr><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:#ffb3de;width:26px;height:26px;font-size:11px;">A</div>Amy</div></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-availability')">Edit</button></td></tr>
+              <tr><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:#ff9ecb;width:26px;height:26px;font-size:11px;">B</div>Bambi</div></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-availability')">Edit</button></td></tr>
+              <tr><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:#c9aaff;width:26px;height:26px;font-size:11px;">V</div>Violet</div></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-availability')">Edit</button></td></tr>
+              <tr><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:#a8d8ea;width:26px;height:26px;font-size:11px;">V</div>Viv</div></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-availability')">Edit</button></td></tr>
+              <tr><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:#ffd6a5;width:26px;height:26px;font-size:11px;">P</div>Peaches</div></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-availability')">Edit</button></td></tr>
+              <tr><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:#b5ead7;width:26px;height:26px;font-size:11px;">M</div>Maz</div></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-availability')">Edit</button></td></tr>
+              <tr><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:#ffc8dd;width:26px;height:26px;font-size:11px;">J</div>Jaz</div></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-availability')">Edit</button></td></tr>
+              <tr><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:#e8c1ff;width:26px;height:26px;font-size:11px;">A</div>Avalon <span style="font-size:10px;color:var(--amber);margin-left:4px;">On Leave</span></div></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-availability')">Edit</button></td></tr>
+              <tr><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><div style="display:flex;align-items:center;gap:8px;"><div class="staff-photo" style="background:#caffbf;width:26px;height:26px;font-size:11px;">Z</div>Zara</div></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#555;font-size:12px;text-decoration:line-through;">N/A</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;text-align:center;"><span style="color:#44ff99;font-size:14px;">●</span></td><td style="padding:9px 12px;border-bottom:1px solid #1a1a1a;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-availability')">Edit</button></td></tr>
             </tbody>
           </table>
         </div>
@@ -2637,13 +2648,13 @@ tr.clickable-row:hover td { background: #141414; }
 
     <!-- ===== AUTOMATIONS ===== -->
     <div id="screen-notifications" class="screen">
-      <div class="page-header"><div><div class="page-title">Automations</div><div class="page-sub">Email, SMS and push notification triggers</div></div></div>
+      <div class="page-header"><div><div class="page-title">Automations</div><div class="page-sub">Email, SMS and push notification triggers</div></div><button class="btn btn-lime" onclick="openModal('modal-edit-automation')">+ Add Automation</button></div>
       <div class="section" style="margin-bottom:20px;padding:18px 20px;">
         <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:16px;">Booking &amp; Class Emails</div>
-        <div class="notif-row"><div><div style="font-size:13px;font-weight:500;">Booking Confirmation</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Sent immediately when a student completes checkout</div></div><div style="display:flex;align-items:center;gap:10px;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-email')">Edit Template</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div></div>
-        <div class="notif-row"><div><div style="font-size:13px;font-weight:500;">Class Reminder — 24h before</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Sent 24 hours before each class</div></div><div style="display:flex;align-items:center;gap:10px;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-email')">Edit Template</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div></div>
-        <div class="notif-row"><div><div style="font-size:13px;font-weight:500;">First Class Welcome Email</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Sent the night before a student's very first class</div></div><div style="display:flex;align-items:center;gap:10px;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-email')">Edit Template</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div></div>
-        <div class="notif-row"><div><div style="font-size:13px;font-weight:500;">Waitlist Promotion</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Sent when a spot opens up for a class they're waitlisted in</div></div><div style="display:flex;align-items:center;gap:10px;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-email')">Edit Template</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div></div>
+        <div class="notif-row"><div><div style="font-size:13px;font-weight:500;">Booking Confirmation</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Sent immediately when a student completes checkout</div></div><div style="display:flex;align-items:center;gap:10px;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-automation')">Edit</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-email')">Template</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div></div>
+        <div class="notif-row"><div><div style="font-size:13px;font-weight:500;">Class Reminder — 24h before</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Sent 24 hours before each class</div></div><div style="display:flex;align-items:center;gap:10px;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-automation')">Edit</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-email')">Template</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div></div>
+        <div class="notif-row"><div><div style="font-size:13px;font-weight:500;">First Class Welcome Email</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Sent the night before a student's very first class</div></div><div style="display:flex;align-items:center;gap:10px;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-automation')">Edit</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-email')">Template</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div></div>
+        <div class="notif-row"><div><div style="font-size:13px;font-weight:500;">Waitlist Promotion</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Sent when a spot opens up for a class they're waitlisted in</div></div><div style="display:flex;align-items:center;gap:10px;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-automation')">Edit</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-email')">Template</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div></div>
       </div>
       <div class="section" style="padding:18px 20px;">
         <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:16px;">Billing &amp; Fees</div>
@@ -2890,7 +2901,7 @@ tr.clickable-row:hover td { background: #141414; }
     <div id="screen-skill-lists" class="screen">
       <div class="page-header">
         <div><div class="page-title">Skill Lists</div><div class="page-sub">Track student progress through level checklists</div></div>
-        <button class="btn btn-lime" onclick="alert('Add skill')">+ Add Skill</button>
+        <div style="display:flex;gap:8px;"><button class="btn btn-ghost" onclick="openModal('modal-add-skill-list')">+ Add Skill List</button><button class="btn btn-lime" onclick="openModal('modal-add-skill')">+ Add Skill</button></div>
       </div>
       <div class="subtabs" style="margin-bottom:20px;">
         <div class="subtab active" onclick="switchSubTab(this,'sl-l1')">Level 1</div>
@@ -2903,7 +2914,15 @@ tr.clickable-row:hover td { background: #141414; }
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
           <div class="section" style="padding:18px 20px;">
             <div style="font-family:'Archivo Black',sans-serif;font-size:13px;margin-bottom:14px;">Foundation Skills</div>
-            ${['Fireman spin', 'Pole hold — front', 'Pole hold — back', 'Cradle spin', 'Chair spin', 'Pole sit', 'Layback', 'Pencil spin', 'Cross-ankle release'].map(s=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">${s}</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with ${s}')">Students</button><button class="btn btn-ghost btn-xs" onclick="alert('Edit skill')">Edit</button></div></div>`).join('')}
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Fireman spin</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Fireman spin')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Pole hold — front</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Pole hold — front')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Pole hold — back</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Pole hold — back')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Cradle spin</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Cradle spin')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Chair spin</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Chair spin')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Pole sit</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Pole sit')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Layback</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Layback')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Pencil spin</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Pencil spin')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Cross-ankle release</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Cross-ankle release')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
           </div>
           <div class="section" style="padding:18px 20px;">
             <div style="font-family:'Archivo Black',sans-serif;font-size:13px;margin-bottom:14px;">Student Progress</div>
@@ -2925,19 +2944,43 @@ tr.clickable-row:hover td { background: #141414; }
       <div id="sl-l2" class="subscreen">
         <div class="section" style="padding:18px 20px;">
           <div style="font-family:'Archivo Black',sans-serif;font-size:13px;margin-bottom:14px;">Level 2 Skills</div>
-          ${['Inside leg hang', 'Outside leg hang', 'Gemini', 'Brass monkey', 'Shoulder mount attempt', 'Ayesha prep', 'Basic invert', 'Batman', 'Crucifix'].map(s=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">${s}</span><button class="btn btn-ghost btn-xs">Students</button></div>`).join('')}
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Inside leg hang</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Inside leg hang')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Outside leg hang</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Outside leg hang')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Gemini</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Gemini')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Brass monkey</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Brass monkey')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Shoulder mount attempt</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Shoulder mount attempt')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Ayesha prep</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Ayesha prep')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Basic invert</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Basic invert')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Batman</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Batman')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Crucifix</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Crucifix')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
         </div>
       </div>
       <div id="sl-l3" class="subscreen">
         <div class="section" style="padding:18px 20px;">
           <div style="font-family:'Archivo Black',sans-serif;font-size:13px;margin-bottom:14px;">Level 3 Skills</div>
-          ${['Shoulder mount', 'Handspring prep', 'Iron X prep', 'Cocoon', 'Dragon tail', 'Jade split', 'Flag', 'Straddle invert', 'Pike invert'].map(s=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">${s}</span><button class="btn btn-ghost btn-xs">Students</button></div>`).join('')}
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Shoulder mount</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Shoulder mount')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Handspring prep</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Handspring prep')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Iron X prep</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Iron X prep')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Cocoon</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Cocoon')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Dragon tail</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Dragon tail')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Jade split</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Jade split')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Flag</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Flag')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Straddle invert</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Straddle invert')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Pike invert</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Pike invert')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
         </div>
       </div>
       <div id="sl-ht" class="subscreen">
         <div class="section" style="padding:18px 20px;">
           <div style="font-family:'Archivo Black',sans-serif;font-size:13px;margin-bottom:14px;">High Tricks Skills</div>
-          ${['Handspring', 'Iron X', 'Allegra', 'Titanic', 'Superman', 'Ballerina', 'Russian layback', 'Ayesha', 'Deadlift invert'].map(s=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">${s}</span><button class="btn btn-ghost btn-xs">Students</button></div>`).join('')}
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Handspring</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Handspring')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Iron X</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Iron X')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Allegra</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Allegra')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Titanic</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Titanic')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Superman</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Superman')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Ballerina</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Ballerina')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Russian layback</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Russian layback')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Ayesha</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Ayesha')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;">Deadlift invert</span><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="alert('View students with Deadlift invert')">Students</button><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-skill')">Edit</button></div></div>
         </div>
       </div>
     </div>
@@ -2959,7 +3002,8 @@ tr.clickable-row:hover td { background: #141414; }
           <div class="info-row"><div class="info-label">Poles</div><div class="info-val">7 × 45mm chrome</div></div>
           <div class="info-row"><div class="info-label">Features</div><div class="info-val">Crash mats, mirrors, sound system, AC</div></div>
           <div class="info-row"><div class="info-label">Kisi Access</div><div class="info-val" style="color:var(--lime);">Connected ✓</div></div>
-          <div style="display:flex;gap:8px;margin-top:16px;"><button class="btn btn-ghost btn-sm">Edit</button><button class="btn btn-ghost btn-sm" onclick="showScreen('kisi')">Kisi Settings</button></div>
+          <div style="margin-top:12px;"><div style="height:140px;background:#0a0a0a;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--grey);font-size:12px;cursor:pointer;" onclick="alert('Upload photo')">📷 Add photos</div></div>
+          <div style="display:flex;gap:8px;margin-top:16px;"><button class="btn btn-ghost btn-sm" onclick="openModal('modal-edit-room')">Edit</button><button class="btn btn-ghost btn-sm" onclick="showScreen('kisi')">Kisi Settings</button></div>
         </div>
         <div class="section" style="padding:22px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
@@ -2971,7 +3015,8 @@ tr.clickable-row:hover td { background: #141414; }
           <div class="info-row"><div class="info-label">Poles</div><div class="info-val">5 × 45mm chrome + 1 × brass</div></div>
           <div class="info-row"><div class="info-label">Features</div><div class="info-val">Crash mats, mirrors, mood lighting, AC</div></div>
           <div class="info-row"><div class="info-label">Kisi Access</div><div class="info-val" style="color:var(--lime);">Connected ✓</div></div>
-          <div style="display:flex;gap:8px;margin-top:16px;"><button class="btn btn-ghost btn-sm">Edit</button><button class="btn btn-ghost btn-sm" onclick="showScreen('kisi')">Kisi Settings</button></div>
+          <div style="margin-top:12px;"><div style="height:140px;background:#0a0a0a;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--grey);font-size:12px;cursor:pointer;" onclick="alert('Upload photo')">📷 Add photos</div></div>
+          <div style="display:flex;gap:8px;margin-top:16px;"><button class="btn btn-ghost btn-sm" onclick="openModal('modal-edit-room')">Edit</button><button class="btn btn-ghost btn-sm" onclick="showScreen('kisi')">Kisi Settings</button></div>
         </div>
       </div>
     </div>
@@ -2980,17 +3025,17 @@ tr.clickable-row:hover td { background: #141414; }
     <div id="screen-categories" class="screen">
       <div class="page-header">
         <div><div class="page-title">Categories</div><div class="page-sub">Organise your class types and offerings</div></div>
-        <button class="btn btn-lime" onclick="alert('Add category')">+ Add Category</button>
+        <button class="btn btn-lime" onclick="openModal('modal-add-category')">+ Add Category</button>
       </div>
       <div class="tbl-section">
         <table>
           <thead><tr><th>Category</th><th>Colour</th><th>Classes</th><th>Visible to Students</th><th></th></tr></thead>
           <tbody>
-            <tr><td style="font-weight:600;">Pole</td><td><span style="display:inline-block;width:16px;height:16px;background:var(--lav);border-radius:3px;"></span></td><td>Level 1, Level 2, Level 3, High Tricks</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs">Edit</button></td></tr>
-            <tr><td style="font-weight:600;">Sensual / Exotic</td><td><span style="display:inline-block;width:16px;height:16px;background:var(--amber);border-radius:3px;"></span></td><td>Sensual Flow, Heels</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs">Edit</button></td></tr>
-            <tr><td style="font-weight:600;">Practice</td><td><span style="display:inline-block;width:16px;height:16px;background:var(--lime);border-radius:3px;"></span></td><td>Practice Time, Open Studio</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs">Edit</button></td></tr>
-            <tr><td style="font-weight:600;">Workshop</td><td><span style="display:inline-block;width:16px;height:16px;background:#5ecc7b;border-radius:3px;"></span></td><td>Guest workshops, Intensives</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs">Edit</button></td></tr>
-            <tr><td style="font-weight:600;">Aerial</td><td><span style="display:inline-block;width:16px;height:16px;background:#e05555;border-radius:3px;"></span></td><td>(none yet)</td><td><label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs">Edit</button></td></tr>
+            <tr><td style="font-weight:600;">Pole</td><td><span style="display:inline-block;width:16px;height:16px;background:var(--lav);border-radius:3px;"></span></td><td>Level 1, Level 2, Level 3, High Tricks</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-category')">Edit</button></td></tr>
+            <tr><td style="font-weight:600;">Sensual / Exotic</td><td><span style="display:inline-block;width:16px;height:16px;background:var(--amber);border-radius:3px;"></span></td><td>Sensual Flow, Heels</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-category')">Edit</button></td></tr>
+            <tr><td style="font-weight:600;">Practice</td><td><span style="display:inline-block;width:16px;height:16px;background:var(--lime);border-radius:3px;"></span></td><td>Practice Time, Open Studio</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-category')">Edit</button></td></tr>
+            <tr><td style="font-weight:600;">Workshop</td><td><span style="display:inline-block;width:16px;height:16px;background:#5ecc7b;border-radius:3px;"></span></td><td>Guest workshops, Intensives</td><td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-category')">Edit</button></td></tr>
+            <tr><td style="font-weight:600;">Aerial</td><td><span style="display:inline-block;width:16px;height:16px;background:#e05555;border-radius:3px;"></span></td><td>(none yet)</td><td><label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-edit-category')">Edit</button></td></tr>
           </tbody>
         </table>
       </div>
@@ -3000,7 +3045,7 @@ tr.clickable-row:hover td { background: #141414; }
     <div id="screen-manage-packages" class="screen">
       <div class="page-header">
         <div><div class="page-title">Packages</div><div class="page-sub">Class packs, punch cards and multi-session bundles</div></div>
-        <button class="btn btn-lime" onclick="alert('Add package')">+ Add Package</button>
+        <button class="btn btn-lime" onclick="openModal('modal-add-package')">+ Add Package</button>
       </div>
       <div class="tbl-section">
         <table>
@@ -3020,7 +3065,7 @@ tr.clickable-row:hover td { background: #141414; }
     <div id="screen-manage-memberships" class="screen">
       <div class="page-header">
         <div><div class="page-title">Memberships</div><div class="page-sub">Season enrolments, recurring and drop-in pricing</div></div>
-        <button class="btn btn-lime" onclick="alert('Add membership type')">+ Add Type</button>
+        <div style="display:flex;gap:8px;"><button class="btn btn-ghost" onclick="openModal('modal-bulk-assign-membership')">Bulk Assign</button><button class="btn btn-lime" onclick="openModal('modal-add-membership')">+ Add Type</button></div>
       </div>
       <div class="tbl-section">
         <table>
@@ -3040,9 +3085,16 @@ tr.clickable-row:hover td { background: #141414; }
     <!-- ===== STUDIO NOTES ===== -->
     <div id="screen-studio-notes" class="screen">
       <div class="page-header">
-        <div><div class="page-title">Studio Notes</div><div class="page-sub">Noticeboard for staff — reminders, announcements, important info</div></div>
-        <button class="btn btn-lime" onclick="openModal('modal-add-studio-note')">+ Pin Note</button>
+        <div><div class="page-title">Studio Notes</div><div class="page-sub">Noticeboard for staff and students</div></div>
+        <div style="display:flex;gap:8px;" id="studio-notes-actions">
+          <button class="btn btn-lime" onclick="openModal('modal-add-studio-note')">+ Pin Note</button>
+        </div>
       </div>
+      <div class="subtabs" id="notes-subtabs">
+        <div class="subtab active" onclick="switchSubTab(this,'notes-staff');setNotesAction('staff')">Staff Notes</div>
+        <div class="subtab" onclick="switchSubTab(this,'notes-student');setNotesAction('student')">Student Announcements</div>
+      </div>
+      <div id="notes-staff" class="subscreen active">
       <div style="display:flex;flex-direction:column;gap:16px;">
         <!-- Pinned -->
         <div style="background:#1a1a1a;border:2px solid var(--lime);border-radius:12px;padding:20px;">
@@ -3079,6 +3131,40 @@ tr.clickable-row:hover td { background: #141414; }
           <div style="font-size:13px;color:var(--grey);line-height:1.6;">Temporary fix with gaffer tape for now. Don't place directly under the spinning pole. Quote requested from supplier.</div>
         </div>
       </div>
+      </div><!-- end notes-staff -->
+
+      <div id="notes-student" class="subscreen">
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div style="background:#1a1a1a;border:1px solid var(--lime);border-radius:12px;padding:20px;">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                <span style="font-size:10px;font-weight:800;background:var(--lime);color:#000;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:0.5px;">📌 Pinned</span>
+                <span style="font-size:11px;color:var(--grey);">Posted by Mimi · 10 May 2026</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:11px;color:var(--grey);">Visible to students</span>
+                <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+            <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Studio closed public holiday 9 June</div>
+            <div style="font-size:13px;color:var(--grey);line-height:1.6;">The studio will be closed on Monday 9 June for the Queen's Birthday public holiday. No classes will run that day.</div>
+          </div>
+          <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:12px;padding:20px;">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                <span style="font-size:10px;font-weight:800;background:#1a1a1a;color:var(--grey);border:1px solid var(--border);padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:0.5px;">ℹ️ General</span>
+                <span style="font-size:11px;color:var(--grey);">Posted by Mimi · 8 May 2026</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:11px;color:var(--grey);">Visible to students</span>
+                <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+            <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Please remove all jewellery before class</div>
+            <div style="font-size:13px;color:var(--grey);line-height:1.6;">For safety during pole work, please ensure all rings, bracelets, necklaces and earrings are removed before class. This helps protect both you and the poles.</div>
+          </div>
+        </div>
+      </div><!-- end notes-student -->
     </div>
 
     <!-- ===== MEDIA LIBRARY ===== -->
@@ -3100,28 +3186,88 @@ tr.clickable-row:hover td { background: #141414; }
         </select>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;">
-        ${[
-          {icon:'🎬',name:'Fireman Spin Tutorial',type:'Video',level:'Level 1',size:'42 MB'},
-          {icon:'🎬',name:'Inside Leg Hang Breakdown',type:'Video',level:'Level 2',size:'68 MB'},
-          {icon:'🎬',name:'Shoulder Mount Prep',type:'Video',level:'Level 3',size:'55 MB'},
-          {icon:'🎬',name:'Sensual Flow Routine S3',type:'Video',level:'Sensual',size:'120 MB'},
-          {icon:'🖼',name:'Level 1 Skills Poster',type:'Image',level:'Level 1',size:'2 MB'},
-          {icon:'📄',name:'Pole Care & Safety Guide',type:'PDF',level:'All',size:'1.2 MB'},
-          {icon:'🎬',name:'Jade Split Entry',type:'Video',level:'Level 3',size:'38 MB'},
-          {icon:'🎬',name:'Aerial Invert Technique',type:'Video',level:'High Tricks',size:'95 MB'},
-        ].map(m=>`<div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;" onclick="alert('Preview: ${m.name}')">
-          <div style="height:100px;background:#0a0a0a;display:flex;align-items:center;justify-content:center;font-size:36px;">${m.icon}</div>
-          <div style="padding:10px 12px;">
-            <div style="font-size:12px;font-weight:600;margin-bottom:4px;line-height:1.3;">${m.name}</div>
-            <div style="font-size:10px;color:var(--grey);">${m.type} · ${m.level} · ${m.size}</div>
-            <div style="display:flex;gap:4px;margin-top:8px;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Edit')">Edit</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Assign to homework')">Assign</button></div>
+        <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;" onclick="alert('Preview: Fireman Spin Tutorial')"><div style="height:100px;background:#0a0a0a;display:flex;align-items:center;justify-content:center;font-size:36px;">🎬</div><div style="padding:10px 12px;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;line-height:1.3;">Fireman Spin Tutorial</div><div style="font-size:10px;color:var(--grey);">Video · Level 1 · 42 MB</div><div style="display:flex;gap:4px;margin-top:8px;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Edit')">Edit</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Assign to homework')">Assign</button></div></div></div>
+        <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;" onclick="alert('Preview: Inside Leg Hang Breakdown')"><div style="height:100px;background:#0a0a0a;display:flex;align-items:center;justify-content:center;font-size:36px;">🎬</div><div style="padding:10px 12px;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;line-height:1.3;">Inside Leg Hang Breakdown</div><div style="font-size:10px;color:var(--grey);">Video · Level 2 · 68 MB</div><div style="display:flex;gap:4px;margin-top:8px;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Edit')">Edit</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Assign to homework')">Assign</button></div></div></div>
+        <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;" onclick="alert('Preview: Shoulder Mount Prep')"><div style="height:100px;background:#0a0a0a;display:flex;align-items:center;justify-content:center;font-size:36px;">🎬</div><div style="padding:10px 12px;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;line-height:1.3;">Shoulder Mount Prep</div><div style="font-size:10px;color:var(--grey);">Video · Level 3 · 55 MB</div><div style="display:flex;gap:4px;margin-top:8px;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Edit')">Edit</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Assign to homework')">Assign</button></div></div></div>
+        <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;" onclick="alert('Preview: Sensual Flow Routine S3')"><div style="height:100px;background:#0a0a0a;display:flex;align-items:center;justify-content:center;font-size:36px;">🎬</div><div style="padding:10px 12px;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;line-height:1.3;">Sensual Flow Routine S3</div><div style="font-size:10px;color:var(--grey);">Video · Sensual · 120 MB</div><div style="display:flex;gap:4px;margin-top:8px;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Edit')">Edit</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Assign to homework')">Assign</button></div></div></div>
+        <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;" onclick="alert('Preview: Level 1 Skills Poster')"><div style="height:100px;background:#0a0a0a;display:flex;align-items:center;justify-content:center;font-size:36px;">🖼</div><div style="padding:10px 12px;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;line-height:1.3;">Level 1 Skills Poster</div><div style="font-size:10px;color:var(--grey);">Image · Level 1 · 2 MB</div><div style="display:flex;gap:4px;margin-top:8px;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Edit')">Edit</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Assign to homework')">Assign</button></div></div></div>
+        <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;" onclick="alert('Preview: Pole Care &amp; Safety Guide')"><div style="height:100px;background:#0a0a0a;display:flex;align-items:center;justify-content:center;font-size:36px;">📄</div><div style="padding:10px 12px;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;line-height:1.3;">Pole Care &amp; Safety Guide</div><div style="font-size:10px;color:var(--grey);">PDF · All · 1.2 MB</div><div style="display:flex;gap:4px;margin-top:8px;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Edit')">Edit</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Assign to homework')">Assign</button></div></div></div>
+        <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;" onclick="alert('Preview: Jade Split Entry')"><div style="height:100px;background:#0a0a0a;display:flex;align-items:center;justify-content:center;font-size:36px;">🎬</div><div style="padding:10px 12px;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;line-height:1.3;">Jade Split Entry</div><div style="font-size:10px;color:var(--grey);">Video · Level 3 · 38 MB</div><div style="display:flex;gap:4px;margin-top:8px;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Edit')">Edit</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Assign to homework')">Assign</button></div></div></div>
+        <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;" onclick="alert('Preview: Aerial Invert Technique')"><div style="height:100px;background:#0a0a0a;display:flex;align-items:center;justify-content:center;font-size:36px;">🎬</div><div style="padding:10px 12px;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;line-height:1.3;">Aerial Invert Technique</div><div style="font-size:10px;color:var(--grey);">Video · High Tricks · 95 MB</div><div style="display:flex;gap:4px;margin-top:8px;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Edit')">Edit</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Assign to homework')">Assign</button></div></div></div>
+      </div>
+    </div>
+
+    <!-- ===== CLASSES ===== -->
+    <div id="screen-classes" class="screen">
+      <div class="page-header">
+        <div><div class="page-title">Classes</div><div class="page-sub">Manage all class types available in your studio</div></div>
+        <div style="position:relative;display:inline-block;" id="create-class-dropdown-wrap">
+          <button class="btn btn-lime" onclick="document.getElementById('create-class-menu').style.display=document.getElementById('create-class-menu').style.display==='block'?'none':'block'">+ Create New Class ▾</button>
+          <div id="create-class-menu" style="display:none;position:absolute;right:0;top:44px;background:var(--dark);border:1px solid var(--border);border-radius:8px;min-width:200px;z-index:200;overflow:hidden;">
+            <div style="padding:10px 16px;font-size:13px;cursor:pointer;hover:background:#1a1a1a;" onmouseenter="this.style.background='#1a1a1a'" onmouseleave="this.style.background=''" onclick="document.getElementById('create-class-menu').style.display='none';document.getElementById('modal-create-class-type').textContent='Course Class';openModal('modal-create-class')">Create Course Class</div>
+            <div style="padding:10px 16px;font-size:13px;cursor:pointer;" onmouseenter="this.style.background='#1a1a1a'" onmouseleave="this.style.background=''" onclick="document.getElementById('create-class-menu').style.display='none';document.getElementById('modal-create-class-type').textContent='Drop-In Class';openModal('modal-create-class')">Create Drop-In Class</div>
           </div>
-        </div>`).join('')}
+        </div>
+      </div>
+      <div class="filter-bar">
+        <input class="search-input" type="text" placeholder="Search by class name" style="min-width:240px;" />
+        <select class="select-input"><option>All Types</option><option>Course</option><option>Drop-In</option></select>
+      </div>
+      <div class="tbl-section">
+        <table>
+          <thead><tr><th>Action</th><th>Name of Class</th><th>Cost</th><th>Type</th><th>Date Created</th><th>Seq / No.</th></tr></thead>
+          <tbody>
+            <tr><td style="white-space:nowrap;"><button class="btn btn-ghost btn-xs" onclick="alert('View Level 1')">👁</button> <button class="btn btn-ghost btn-xs" onclick="alert('Edit Level 1')">✏</button> <button class="btn btn-ghost btn-xs" onclick="alert('Duplicate Level 1')">⧉</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;" onclick="alert('Delete Level 1')">🗑</button></td><td style="font-weight:600;">Level 1</td><td>$160</td><td><span class="tag tag-lav">Course</span></td><td style="color:var(--grey);">1 Jan 2026</td><td style="color:var(--grey);">#1</td></tr>
+            <tr><td style="white-space:nowrap;"><button class="btn btn-ghost btn-xs" onclick="alert('View Level 2')">👁</button> <button class="btn btn-ghost btn-xs" onclick="alert('Edit Level 2')">✏</button> <button class="btn btn-ghost btn-xs" onclick="alert('Duplicate Level 2')">⧉</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;" onclick="alert('Delete Level 2')">🗑</button></td><td style="font-weight:600;">Level 2</td><td>$160</td><td><span class="tag tag-lav">Course</span></td><td style="color:var(--grey);">1 Jan 2026</td><td style="color:var(--grey);">#2</td></tr>
+            <tr><td style="white-space:nowrap;"><button class="btn btn-ghost btn-xs" onclick="alert('View Level 3')">👁</button> <button class="btn btn-ghost btn-xs" onclick="alert('Edit Level 3')">✏</button> <button class="btn btn-ghost btn-xs" onclick="alert('Duplicate Level 3')">⧉</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;" onclick="alert('Delete Level 3')">🗑</button></td><td style="font-weight:600;">Level 3</td><td>$160</td><td><span class="tag tag-lav">Course</span></td><td style="color:var(--grey);">1 Jan 2026</td><td style="color:var(--grey);">#3</td></tr>
+            <tr><td style="white-space:nowrap;"><button class="btn btn-ghost btn-xs" onclick="alert('View High Tricks')">👁</button> <button class="btn btn-ghost btn-xs" onclick="alert('Edit High Tricks')">✏</button> <button class="btn btn-ghost btn-xs" onclick="alert('Duplicate High Tricks')">⧉</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;" onclick="alert('Delete High Tricks')">🗑</button></td><td style="font-weight:600;">High Tricks</td><td>$160</td><td><span class="tag tag-lav">Course</span></td><td style="color:var(--grey);">1 Jan 2026</td><td style="color:var(--grey);">#4</td></tr>
+            <tr><td style="white-space:nowrap;"><button class="btn btn-ghost btn-xs" onclick="alert('View Sensual Flow')">👁</button> <button class="btn btn-ghost btn-xs" onclick="alert('Edit Sensual Flow')">✏</button> <button class="btn btn-ghost btn-xs" onclick="alert('Duplicate Sensual Flow')">⧉</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;" onclick="alert('Delete Sensual Flow')">🗑</button></td><td style="font-weight:600;">Sensual Flow</td><td>$160</td><td><span class="tag tag-lav">Course</span></td><td style="color:var(--grey);">1 Jan 2026</td><td style="color:var(--grey);">#5</td></tr>
+            <tr><td style="white-space:nowrap;"><button class="btn btn-ghost btn-xs" onclick="alert('View Exotic Floor')">👁</button> <button class="btn btn-ghost btn-xs" onclick="alert('Edit Exotic Floor')">✏</button> <button class="btn btn-ghost btn-xs" onclick="alert('Duplicate Exotic Floor')">⧉</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;" onclick="alert('Delete Exotic Floor')">🗑</button></td><td style="font-weight:600;">Exotic Floor</td><td>$160</td><td><span class="tag tag-lav">Course</span></td><td style="color:var(--grey);">15 Jan 2026</td><td style="color:var(--grey);">#6</td></tr>
+            <tr><td style="white-space:nowrap;"><button class="btn btn-ghost btn-xs" onclick="alert('View Heels')">👁</button> <button class="btn btn-ghost btn-xs" onclick="alert('Edit Heels')">✏</button> <button class="btn btn-ghost btn-xs" onclick="alert('Duplicate Heels')">⧉</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;" onclick="alert('Delete Heels')">🗑</button></td><td style="font-weight:600;">Heels</td><td>$110</td><td><span class="tag tag-lav">Course</span></td><td style="color:var(--grey);">15 Jan 2026</td><td style="color:var(--grey);">#7</td></tr>
+            <tr><td style="white-space:nowrap;"><button class="btn btn-ghost btn-xs" onclick="alert('View Practice Time')">👁</button> <button class="btn btn-ghost btn-xs" onclick="alert('Edit Practice Time')">✏</button> <button class="btn btn-ghost btn-xs" onclick="alert('Duplicate Practice Time')">⧉</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;" onclick="alert('Delete Practice Time')">🗑</button></td><td style="font-weight:600;">Practice Time</td><td>$20</td><td><span class="tag tag-grey">Drop-In</span></td><td style="color:var(--grey);">1 Jan 2026</td><td style="color:var(--grey);">#8</td></tr>
+            <tr><td style="white-space:nowrap;"><button class="btn btn-ghost btn-xs" onclick="alert('View Trial Class')">👁</button> <button class="btn btn-ghost btn-xs" onclick="alert('Edit Trial Class')">✏</button> <button class="btn btn-ghost btn-xs" onclick="alert('Duplicate Trial Class')">⧉</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;" onclick="alert('Delete Trial Class')">🗑</button></td><td style="font-weight:600;">Trial Class</td><td>$25</td><td><span class="tag tag-grey">Drop-In</span></td><td style="color:var(--grey);">1 Jan 2026</td><td style="color:var(--grey);">#9</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
   </div><!-- end .content -->
 </div><!-- end .main -->
+
+<!-- Create Class Modal -->
+<div class="modal-overlay" id="modal-create-class">
+  <div class="modal modal-lg" style="max-width:640px;">
+    <div class="modal-title">Create <span id="modal-create-class-type">Course Class</span> <button class="modal-close" onclick="closeModal('modal-create-class')">✕</button></div>
+    <div class="field"><label>Name</label><input type="text" placeholder="e.g. Level 1 Foundation" /></div>
+    <div class="field"><label>Cost of entire course (A$)</label><input type="number" placeholder="160" /><div style="font-size:11px;color:var(--grey);margin-top:4px;">This price is separate to any memberships or packages</div></div>
+    <div class="field"><label>Duration of each class (minutes)</label><input type="number" placeholder="60" /></div>
+    <div class="field"><label>Description</label><textarea placeholder="Describe this class…" style="min-height:80px;" maxlength="3500"></textarea><div style="font-size:11px;color:var(--grey);margin-top:2px;">Max 3500 characters</div></div>
+    <div class="field"><label>Important Information <span style="color:var(--grey);font-weight:normal;">(optional)</span></label><textarea placeholder="Safety notes, prerequisites, what to bring…" style="min-height:60px;" maxlength="10000"></textarea><div style="font-size:11px;color:var(--grey);margin-top:2px;">Max 10000 characters</div></div>
+    <div class="field-row">
+      <div class="field"><label>Categories</label><select><option>Pole</option><option>Sensual</option><option>Practice</option><option>Workshop</option></select></div>
+      <div class="field"><label>Tags</label><select><option>— None —</option><option>VIP</option><option>New Student</option><option>At Risk</option></select></div>
+    </div>
+    <div class="field"><label>Colour Code</label><input type="color" value="#000000" style="height:38px;padding:2px 4px;" /></div>
+    <div class="section" style="padding:16px 18px;margin-bottom:0;">
+      <div style="font-family:'Archivo Black',sans-serif;font-size:13px;margin-bottom:12px;">Waitlist Management</div>
+      <div class="notif-row"><div><div style="font-size:13px;font-weight:500;">Enable Waitlist</div><div style="font-size:11px;color:var(--grey);">Allow students to join a waitlist when class is full</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+      <div class="notif-row" style="border-bottom:none;"><div><div style="font-size:13px;font-weight:500;">Enable Waitpool</div><div style="font-size:11px;color:var(--grey);">Pool multiple waitlisted students and offer spots randomly</div></div><label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label></div>
+    </div>
+    <div class="section" style="padding:16px 18px;margin-top:12px;margin-bottom:0;">
+      <div style="font-family:'Archivo Black',sans-serif;font-size:13px;margin-bottom:12px;">Payment Terms</div>
+      <div class="checkbox-row"><input type="checkbox" checked id="pt-full" /><label for="pt-full">Full payment required at enrolment</label></div>
+    </div>
+    <div class="section" style="padding:16px 18px;margin-top:12px;margin-bottom:0;">
+      <div style="font-family:'Archivo Black',sans-serif;font-size:13px;margin-bottom:12px;">Images / Video</div>
+      <div style="border:2px dashed var(--border);border-radius:8px;padding:24px;text-align:center;cursor:pointer;" onclick="alert('File picker (not functional in mockup)')">
+        <div style="font-size:24px;margin-bottom:6px;">📎</div>
+        <div style="font-size:13px;color:var(--grey);">Drag and drop or click to upload</div>
+        <div style="font-size:11px;color:var(--grey);margin-top:4px;">Supported: JPG, PNG, GIF, MP4, MOV (max 200MB)</div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-create-class')">Cancel</button><button class="btn btn-lime" onclick="alert('Class created!');closeModal('modal-create-class')">Save &amp; Create</button></div>
+  </div>
+</div>
 
 <!-- ===== SEARCH OVERLAY ===== -->
 <div id="search-overlay">
@@ -3150,6 +3296,17 @@ tr.clickable-row:hover td { background: #141414; }
     </div>
     <div class="field"><label>Auto-rule (optional)</label><input type="text" placeholder="e.g. No booking in 21 days — leave blank for manual" /></div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-add-tag')">Cancel</button><button class="btn btn-lime" onclick="alert('Tag created!');closeModal('modal-add-tag')">Create Tag</button></div>
+  </div>
+</div>
+
+<!-- Add Announcement Modal -->
+<div class="modal-overlay" id="modal-add-announcement">
+  <div class="modal">
+    <div class="modal-title">Post Student Announcement <button class="modal-close" onclick="closeModal('modal-add-announcement')">✕</button></div>
+    <div class="field"><label>Title</label><input type="text" placeholder="Short headline…" /></div>
+    <div class="field"><label>Body</label><textarea rows="4" placeholder="Details for students…"></textarea></div>
+    <div class="notif-row" style="padding:12px 0;"><div><div style="font-size:13px;font-weight:500;">Visible to Students</div><div style="font-size:11px;color:var(--grey);">Show this announcement in the student app</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-add-announcement')">Cancel</button><button class="btn btn-lime" onclick="alert('Announcement posted!');closeModal('modal-add-announcement')">Post Announcement</button></div>
   </div>
 </div>
 
@@ -3297,6 +3454,29 @@ tr.clickable-row:hover td { background: #141414; }
   </div>
 </div>
 
+<!-- Group Chat Modal -->
+<div class="modal-overlay" id="modal-group-chat">
+  <div class="modal" style="max-width:520px;display:flex;flex-direction:column;height:80vh;padding:0;overflow:hidden;">
+    <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-family:'Archivo Black',sans-serif;font-size:18px;" id="gchat-name">Group Chat</div>
+        <div style="font-size:12px;color:var(--grey);margin-top:2px;" id="gchat-members">12 members</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-group-chat')">✕</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px;" id="gchat-messages">
+      <div style="display:flex;gap:10px;align-items:flex-start;"><div class="s-avatar" style="background:var(--lime);font-size:11px;flex-shrink:0;">M</div><div><div style="font-size:11px;color:var(--grey);margin-bottom:3px;">Mimi · 2h ago</div><div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;border-top-left-radius:3px;padding:10px 13px;font-size:13px;max-width:320px;">Great work tonight everyone! Really proud of how far you've all come this season 🔥</div></div></div>
+      <div style="display:flex;gap:10px;align-items:flex-start;"><div class="s-avatar" style="background:var(--lav);font-size:11px;flex-shrink:0;">J</div><div><div style="font-size:11px;color:var(--grey);margin-bottom:3px;">Jess · 1h ago</div><div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;border-top-left-radius:3px;padding:10px 13px;font-size:13px;max-width:320px;">Thank you Mimi!! That class was so fun 😭✨</div></div></div>
+      <div style="display:flex;gap:10px;align-items:flex-start;"><div class="s-avatar" style="background:#44ff99;font-size:11px;flex-shrink:0;">T</div><div><div style="font-size:11px;color:var(--grey);margin-bottom:3px;">Tara · 45m ago</div><div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;border-top-left-radius:3px;padding:10px 13px;font-size:13px;max-width:320px;">Can't believe I finally got my jade split!! See you all next week 🎉</div></div></div>
+      <div style="display:flex;gap:10px;align-items:flex-start;flex-direction:row-reverse;"><div class="s-avatar" style="background:var(--lime);font-size:11px;flex-shrink:0;">M</div><div><div style="font-size:11px;color:var(--grey);margin-bottom:3px;text-align:right;">You · 30m ago</div><div style="background:#0f1600;border:1px solid var(--lime);border-radius:10px;border-top-right-radius:3px;padding:10px 13px;font-size:13px;max-width:320px;color:var(--lime);">Amazing work Tara!! Keep it up everyone — see you next week 💪</div></div></div>
+    </div>
+    <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;">
+      <input type="text" placeholder="Type a message…" style="flex:1;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:10px 12px;" onkeypress="if(event.key==='Enter')alert('Message sent!')" />
+      <button class="btn btn-lime btn-sm" onclick="alert('Message sent!')">Send</button>
+    </div>
+  </div>
+</div>
+
 <!-- Staff Modal -->
 <div class="modal-overlay" id="modal-staff">
   <div class="modal">
@@ -3398,11 +3578,217 @@ tr.clickable-row:hover td { background: #141414; }
 <div class="modal-overlay" id="modal-email-designer">
   <div class="modal" style="max-width:700px;width:90vw;">
     <div class="modal-title">Email Designer <button class="modal-close" onclick="closeModal('modal-email-designer')">✕</button></div>
-    <div style="display:grid;grid-template-columns:180px 1fr;gap:16px;min-height:300px;">
-      <div style="border-right:1px solid var(--border);padding-right:14px;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:0.7px;color:var(--grey);margin-bottom:10px;">Blocks</div><div style="display:flex;flex-direction:column;gap:6px;"><div style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;padding:8px 10px;cursor:grab;font-size:12px;">🖼 Header / Logo</div><div style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;padding:8px 10px;cursor:grab;font-size:12px;">📝 Text Block</div><div style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;padding:8px 10px;cursor:grab;font-size:12px;">🔲 Button</div></div></div>
-      <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:8px;padding:20px;"><div style="background:#0a1800;padding:16px;text-align:center;border-radius:6px;margin-bottom:12px;font-family:'Archivo Black',sans-serif;font-size:20px;color:var(--lime);letter-spacing:3px;">DUALITY POLE</div><div contenteditable="true" style="font-size:14px;line-height:1.6;color:#ccc;">Hi [First Name],<br><br>We have exciting news — Season 4 is open!</div></div>
+    <div class="field"><label>Subject Line</label><input type="text" placeholder="e.g. Season 4 is open — enrol now!" /></div>
+    <div class="field"><label>To</label><select><option>All Students (94)</option><option>Level 1 Students (28)</option><option>Level 2 Students (32)</option><option>Level 3 Students (18)</option><option>Lapsed Students</option><option>Trial Students</option></select></div>
+    <div style="display:grid;grid-template-columns:180px 1fr;gap:16px;min-height:380px;margin-bottom:16px;">
+      <div style="border-right:1px solid var(--border);padding-right:14px;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.7px;color:var(--grey);margin-bottom:10px;">Blocks</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;padding:8px 10px;cursor:pointer;font-size:12px;" onclick="alert('Logo block added')">🖼 Logo Block</div>
+          <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;padding:8px 10px;cursor:pointer;font-size:12px;" onclick="alert('Heading block added')">📋 Heading Block</div>
+          <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;padding:8px 10px;cursor:pointer;font-size:12px;" onclick="alert('Body text block added')">📝 Body Text Block</div>
+          <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;padding:8px 10px;cursor:pointer;font-size:12px;" onclick="alert('Button block added')">🔲 Button Block</div>
+          <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;padding:8px 10px;cursor:pointer;font-size:12px;" onclick="alert('Footer block added')">📄 Footer Block</div>
+        </div>
+      </div>
+      <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:8px;padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
+        <div style="background:#0a1800;padding:14px;text-align:center;border-radius:6px;cursor:pointer;" onclick="alert('Edit logo block')" title="Click to edit">
+          <div style="font-family:'Archivo Black',sans-serif;font-size:20px;color:var(--lime);letter-spacing:3px;">DUALITY POLE</div>
+          <div style="font-size:10px;color:var(--grey);margin-top:4px;">Logo Block — click to edit</div>
+        </div>
+        <div style="background:#1a1a1a;border:1px solid var(--border);padding:12px;border-radius:6px;cursor:pointer;" onclick="alert('Edit heading block')" title="Click to edit">
+          <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">Season 4 is open!</div>
+          <div style="font-size:10px;color:var(--grey);margin-top:4px;">Heading Block — click to edit</div>
+        </div>
+        <div style="background:#1a1a1a;border:1px solid var(--border);padding:12px;border-radius:6px;cursor:pointer;" onclick="alert('Edit body text block')" title="Click to edit">
+          <div contenteditable="true" style="font-size:13px;line-height:1.6;color:#ccc;">Hi [First Name],<br><br>We have exciting news — Season 4 enrolments are now open! Secure your spot before classes fill up.</div>
+          <div style="font-size:10px;color:var(--grey);margin-top:4px;">Body Text Block — click to edit</div>
+        </div>
+        <div style="background:#1a1a1a;border:1px solid var(--border);padding:12px;border-radius:6px;cursor:pointer;text-align:center;" onclick="alert('Edit button block')" title="Click to edit">
+          <div style="display:inline-block;background:var(--lime);color:#000;padding:10px 24px;border-radius:6px;font-family:'Archivo Black',sans-serif;font-size:13px;">Enrol Now</div>
+          <div style="font-size:10px;color:var(--grey);margin-top:6px;">Button Block — click to edit</div>
+        </div>
+        <div style="background:#0a0a0a;border:1px solid var(--border);padding:10px;border-radius:6px;cursor:pointer;text-align:center;" onclick="alert('Edit footer block')" title="Click to edit">
+          <div style="font-size:11px;color:var(--grey);">Duality Pole Studio · 42 Smith St, Fitzroy VIC 3065 · Unsubscribe</div>
+          <div style="font-size:10px;color:var(--grey);margin-top:4px;">Footer Block — click to edit</div>
+        </div>
+      </div>
     </div>
-    <div style="display:flex;gap:8px;margin-top:14px;"><button class="btn btn-lime" onclick="alert('Template saved!');closeModal('modal-email-designer')">Save Template</button><button class="btn btn-ghost" onclick="closeModal('modal-email-designer')">Cancel</button></div>
+    <div style="display:flex;gap:8px;"><button class="btn btn-ghost" onclick="alert('Test email sent to mimi@dualitypole.com.au')">Send Test</button><button class="btn btn-lime" onclick="alert('Template saved!');closeModal('modal-email-designer')">Save Template</button><button class="btn btn-ghost" onclick="closeModal('modal-email-designer')">Cancel</button></div>
+  </div>
+</div>
+
+<!-- Add Package Modal -->
+<div class="modal-overlay" id="modal-add-package">
+  <div class="modal">
+    <div class="modal-title">Add Package <button class="modal-close" onclick="closeModal('modal-add-package')">✕</button></div>
+    <div class="field"><label>Package Name</label><input type="text" placeholder="e.g. Class Pass 5×" /></div>
+    <div class="field-row">
+      <div class="field"><label>Number of Classes</label><input type="number" placeholder="5" /></div>
+      <div class="field"><label>Price (A$)</label><input type="number" placeholder="150" /></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Expiry (days)</label><input type="number" placeholder="90" /></div>
+      <div class="field"><label>Valid For</label><select><option>All classes</option><option>Pole</option><option>Sensual / Exotic</option><option>Practice</option><option>Workshop</option></select></div>
+    </div>
+    <div class="notif-row" style="padding:12px 0;"><div><div style="font-size:13px;font-weight:500;">Visible to Students</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-add-package')">Cancel</button><button class="btn btn-lime" onclick="alert('Package created!');closeModal('modal-add-package')">Save Package</button></div>
+  </div>
+</div>
+
+<!-- Add Membership Modal -->
+<div class="modal-overlay" id="modal-add-membership">
+  <div class="modal">
+    <div class="modal-title">Add Membership Type <button class="modal-close" onclick="closeModal('modal-add-membership')">✕</button></div>
+    <div class="field"><label>Type Name</label><input type="text" placeholder="e.g. Season — 1 class/wk" /></div>
+    <div class="field-row">
+      <div class="field"><label>Price (A$)</label><input type="number" placeholder="160" /></div>
+      <div class="field"><label>Duration</label><select><option>8 weeks</option><option>10 weeks</option><option>Single class</option></select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Classes per Week</label><input type="number" placeholder="1" /></div>
+      <div class="field"><label>Valid For</label><select><option>All classes</option><option>Pole</option><option>Sensual / Exotic</option><option>Practice</option></select></div>
+    </div>
+    <div class="notif-row" style="padding:12px 0;"><div><div style="font-size:13px;font-weight:500;">Visible to Students</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-add-membership')">Cancel</button><button class="btn btn-lime" onclick="alert('Membership type created!');closeModal('modal-add-membership')">Save Membership</button></div>
+  </div>
+</div>
+
+<!-- Bulk Assign Membership Modal -->
+<div class="modal-overlay" id="modal-bulk-assign-membership">
+  <div class="modal">
+    <div class="modal-title">Bulk Assign Membership <button class="modal-close" onclick="closeModal('modal-bulk-assign-membership')">✕</button></div>
+    <div class="field"><label>Membership Type</label><select><option>Season — 1 class/wk ($160)</option><option>Season — 2 classes/wk ($290)</option><option>Season — 3 classes/wk ($390)</option><option>Trial Class ($25)</option><option>Drop-in ($35)</option></select></div>
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:8px;">Select Students</div>
+    <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:12px;max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+      <div class="checkbox-row"><input type="checkbox" /><label>Jess Malone</label></div>
+      <div class="checkbox-row"><input type="checkbox" /><label>Ruby Kim</label></div>
+      <div class="checkbox-row"><input type="checkbox" /><label>Sophie Lawson</label></div>
+      <div class="checkbox-row"><input type="checkbox" /><label>Kylie Rhodes</label></div>
+      <div class="checkbox-row"><input type="checkbox" /><label>Mia Santos</label></div>
+      <div class="checkbox-row"><input type="checkbox" /><label>Tara Bell</label></div>
+      <div class="checkbox-row"><input type="checkbox" /><label>Hannah Webb</label></div>
+      <div class="checkbox-row"><input type="checkbox" /><label>Dana Park</label></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-bulk-assign-membership')">Cancel</button><button class="btn btn-lime" onclick="alert('Membership assigned!');closeModal('modal-bulk-assign-membership')">Assign</button></div>
+  </div>
+</div>
+
+<!-- Bulk Tag Modal -->
+<div class="modal-overlay" id="modal-bulk-tag">
+  <div class="modal">
+    <div class="modal-title">Bulk Tag Students <button class="modal-close" onclick="closeModal('modal-bulk-tag')">✕</button></div>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:8px;">Apply To</div>
+      <div class="checkbox-row"><input type="radio" name="bulk-apply-to" id="bat-all" checked /><label for="bat-all">All students (94)</label></div>
+      <div class="checkbox-row"><input type="radio" name="bulk-apply-to" id="bat-filtered" /><label for="bat-filtered">Filtered students (current filter)</label></div>
+      <div class="checkbox-row"><input type="radio" name="bulk-apply-to" id="bat-selected" /><label for="bat-selected">Selected students only</label></div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:8px;">Select Tags</div>
+      <div class="checkbox-row"><input type="checkbox" id="btag-vip" /><label for="btag-vip">VIP</label></div>
+      <div class="checkbox-row"><input type="checkbox" id="btag-risk" /><label for="btag-risk">At Risk</label></div>
+      <div class="checkbox-row"><input type="checkbox" id="btag-blocked" /><label for="btag-blocked">Blocked</label></div>
+      <div class="checkbox-row"><input type="checkbox" id="btag-new" /><label for="btag-new">New Student</label></div>
+      <div class="checkbox-row"><input type="checkbox" id="btag-owing" /><label for="btag-owing">Owing</label></div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:8px;">Action</div>
+      <div class="checkbox-row"><input type="radio" name="bulk-tag-action" id="bta-add" checked /><label for="bta-add">Add tag</label></div>
+      <div class="checkbox-row"><input type="radio" name="bulk-tag-action" id="bta-remove" /><label for="bta-remove">Remove tag</label></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-bulk-tag')">Cancel</button><button class="btn btn-lime" onclick="alert('Bulk tag applied!');closeModal('modal-bulk-tag')">Apply</button></div>
+  </div>
+</div>
+
+<!-- Edit Room Modal -->
+<div class="modal-overlay" id="modal-edit-room">
+  <div class="modal modal-lg">
+    <div class="modal-title">Edit Room <button class="modal-close" onclick="closeModal('modal-edit-room')">✕</button></div>
+    <div class="field"><label>Room Name</label><input type="text" value="The Box" /></div>
+    <div class="field"><label>Address</label><input type="text" value="42 Smith St, Fitzroy VIC 3065" /></div>
+    <div class="field-row">
+      <div class="field"><label>Capacity (students)</label><input type="number" value="14" /></div>
+      <div class="field"><label>Poles Description</label><input type="text" value="7 × 45mm chrome" /></div>
+    </div>
+    <div class="field"><label>Features / Equipment</label><textarea>Crash mats, mirrors, sound system, AC</textarea></div>
+    <div class="field"><label>Photos</label>
+      <div style="border:2px dashed var(--border);border-radius:8px;padding:24px;text-align:center;cursor:pointer;" onclick="alert('File picker (not functional in mockup)')">
+        <div style="font-size:24px;margin-bottom:6px;">📷</div>
+        <div style="font-size:13px;color:var(--grey);">Drag and drop or click to upload room photos</div>
+        <div style="font-size:11px;color:var(--grey);margin-top:4px;">Supported: JPG, PNG (max 10MB each)</div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-edit-room')">Cancel</button><button class="btn btn-lime" onclick="alert('Room saved!');closeModal('modal-edit-room')">Save Room</button></div>
+  </div>
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal-overlay" id="modal-add-category">
+  <div class="modal">
+    <div class="modal-title">Add Category <button class="modal-close" onclick="closeModal('modal-add-category')">✕</button></div>
+    <div class="field"><label>Name</label><input type="text" placeholder="e.g. Aerial" /></div>
+    <div class="field"><label>Colour</label><input type="color" value="#CDA5FF" style="height:38px;padding:2px 4px;" /></div>
+    <div class="notif-row" style="padding:12px 0;"><div><div style="font-size:13px;font-weight:500;">Visible to Students</div><div style="font-size:11px;color:var(--grey);">Show this category on the student app</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-add-category')">Cancel</button><button class="btn btn-lime" onclick="alert('Category created!');closeModal('modal-add-category')">Save Category</button></div>
+  </div>
+</div>
+
+<!-- Edit Category Modal -->
+<div class="modal-overlay" id="modal-edit-category">
+  <div class="modal">
+    <div class="modal-title">Edit Category <button class="modal-close" onclick="closeModal('modal-edit-category')">✕</button></div>
+    <div class="field"><label>Name</label><input type="text" value="Pole" /></div>
+    <div class="field"><label>Colour</label><input type="color" value="#CDA5FF" style="height:38px;padding:2px 4px;" /></div>
+    <div class="notif-row" style="padding:12px 0;"><div><div style="font-size:13px;font-weight:500;">Visible to Students</div><div style="font-size:11px;color:var(--grey);">Show this category on the student app</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-edit-category')">Cancel</button><button class="btn btn-lime" onclick="alert('Category saved!');closeModal('modal-edit-category')">Save Changes</button></div>
+  </div>
+</div>
+
+<!-- Add Skill Modal -->
+<div class="modal-overlay" id="modal-add-skill">
+  <div class="modal">
+    <div class="modal-title">Add Skill <button class="modal-close" onclick="closeModal('modal-add-skill')">✕</button></div>
+    <div class="field"><label>Skill Name</label><input type="text" placeholder="e.g. Fireman Spin" /></div>
+    <div class="field"><label>Level</label><select><option>Level 1</option><option>Level 2</option><option>Level 3</option><option>High Tricks</option></select></div>
+    <div class="field"><label>Description</label><textarea placeholder="Brief description of this skill…"></textarea></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-add-skill')">Cancel</button><button class="btn btn-lime" onclick="alert('Skill added!');closeModal('modal-add-skill')">Save Skill</button></div>
+  </div>
+</div>
+
+<!-- Edit Skill Modal -->
+<div class="modal-overlay" id="modal-edit-skill">
+  <div class="modal">
+    <div class="modal-title">Edit Skill <button class="modal-close" onclick="closeModal('modal-edit-skill')">✕</button></div>
+    <div class="field"><label>Skill Name</label><input type="text" value="Fireman Spin" /></div>
+    <div class="field"><label>Level</label><select><option selected>Level 1</option><option>Level 2</option><option>Level 3</option><option>High Tricks</option></select></div>
+    <div class="field"><label>Description</label><textarea>A foundational spinning move using the fireman grip.</textarea></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-edit-skill')">Cancel</button><button class="btn btn-lime" onclick="alert('Skill saved!');closeModal('modal-edit-skill')">Save Changes</button></div>
+  </div>
+</div>
+
+<!-- Add Skill List Modal -->
+<div class="modal-overlay" id="modal-add-skill-list">
+  <div class="modal">
+    <div class="modal-title">Add Skill List <button class="modal-close" onclick="closeModal('modal-add-skill-list')">✕</button></div>
+    <div class="field"><label>List Name</label><input type="text" placeholder="e.g. Level 1 Foundation" /></div>
+    <div class="field"><label>Linked Class</label><select><option>— Select class —</option><option>Level 1</option><option>Level 2</option><option>Level 3</option><option>High Tricks</option><option>Sensual Flow</option><option>Exotic Floor</option><option>Heels</option></select></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-add-skill-list')">Cancel</button><button class="btn btn-lime" onclick="alert('Skill list created!');closeModal('modal-add-skill-list')">Save Skill List</button></div>
+  </div>
+</div>
+
+<!-- Edit Automation Modal -->
+<div class="modal-overlay" id="modal-edit-automation">
+  <div class="modal">
+    <div class="modal-title">Edit Automation <button class="modal-close" onclick="closeModal('modal-edit-automation')">✕</button></div>
+    <div class="field"><label>Trigger</label><select><option>New student signs up</option><option>Trial completed</option><option>No booking in X days</option><option>Birthday</option><option>Booking confirmed</option><option>Class reminder (24h)</option><option>Waitlist promoted</option><option>Season starts</option><option>Balance overdue</option></select></div>
+    <div class="field-row">
+      <div class="field"><label>Delay</label><select><option>Immediately</option><option>1 hour after</option><option>24 hours after</option><option>3 days after</option><option>7 days after</option><option>14 days after</option></select></div>
+      <div class="field"><label>Channel</label><select><option>Email</option><option>Push notification</option><option>Both</option></select></div>
+    </div>
+    <div class="field"><label>Template</label><select><option>Booking Confirmation</option><option>Welcome Email</option><option>Class Reminder</option><option>Waitlist Offer</option><option>Season Re-enrolment</option><option>Overdue Balance Reminder</option><option>Custom…</option></select></div>
+    <div class="notif-row" style="padding:12px 0;"><div><div style="font-size:13px;font-weight:500;">Active</div><div style="font-size:11px;color:var(--grey);">Enable or disable this automation</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-edit-automation')">Cancel</button><button class="btn btn-lime" onclick="alert('Automation saved!');closeModal('modal-edit-automation')">Save Automation</button></div>
   </div>
 </div>
 
@@ -3966,7 +4352,7 @@ const screenTitles = {
   'studio-notes':'Studio Notes', 'media-library':'Media Library',
   notifications:'Automations', marketing:'Marketing',
   'student-detail':'Student Profile', attendance:'Attendance Register',
-  'season-edit':'Edit Season',
+  'season-edit':'Edit Season', classes:'Classes',
   'billing-outstanding':'All Outstanding',
   'billing-history':'Payment History',
   'billing-noshows':'No-show Fees'
@@ -4413,6 +4799,22 @@ function openCancelClass(name, time, studio, enrolled) {
   if (confirm('Cancel ' + name + ' on ' + time + ' at ' + studio + '? ' + enrolled + ' students will be notified.')) {
     alert('Class cancelled. ' + enrolled + ' students notified.');
   }
+}
+
+function setNotesAction(tab) {
+  var el = document.getElementById('studio-notes-actions');
+  if (!el) return;
+  if (tab === 'staff') {
+    el.innerHTML = '<button class="btn btn-lime" onclick="openModal(\'modal-add-studio-note\')">+ Pin Note</button>';
+  } else {
+    el.innerHTML = '<button class="btn btn-lime" onclick="openModal(\'modal-add-announcement\')">+ Post Announcement</button>';
+  }
+}
+
+function openGroupChat(name, members) {
+  document.getElementById('gchat-name').textContent = name;
+  document.getElementById('gchat-members').textContent = members + ' members';
+  openModal('modal-group-chat');
 }
 
 // ===== KIOSK =====
