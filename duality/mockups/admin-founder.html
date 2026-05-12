@@ -1074,7 +1074,8 @@ tr.clickable-row:hover td { background: #141414; }
           <table>
             <thead><tr><th>Student</th><th>Cancellation Time</th><th>Notice Given</th><th>Fee Applied</th><th>Notes</th></tr></thead>
             <tbody>
-              <tr><td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#b0f0b0;">N</div><div><div style="font-weight:500;">Nina Torres</div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td><td style="color:var(--grey);">Today, 3:30pm</td><td><span class="tag tag-red">2h before class</span></td><td style="color:var(--grey);">—</td><td style="color:var(--grey);font-size:12px;">Cancelled 2h before class — within cancellation window</td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#b0f0b0;">N</div><div><div style="font-weight:500;">Nina Torres</div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td><td style="color:var(--grey);">Today, 3:30pm</td><td><span class="tag tag-red">2h before class</span></td><td><span class="tag tag-amber">Late cancel</span></td><td style="color:var(--grey);font-size:12px;">Cancelled inside the 4h window — no make up issued</td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#c9aaff;">L</div><div><div style="font-weight:500;">Lena Wu</div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td><td style="color:var(--grey);">Today, 6:30pm</td><td><span class="tag tag-grey">8h before class</span></td><td><span class="tag tag-lime">Make up issued</span></td><td style="color:var(--grey);font-size:12px;">Cancelled with notice — make up credit added to account</td></tr>
             </tbody>
           </table>
         </div>
