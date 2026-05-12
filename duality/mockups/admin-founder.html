@@ -372,7 +372,8 @@ tr.clickable-row:hover td { background: #141414; }
       <div class="nav-item sub" onclick="showScreen('skill-lists')"><span class="nav-icon">✅</span> Skill Lists</div>
       <div class="nav-item sub" onclick="showScreen('rooms')"><span class="nav-icon">🏢</span> Rooms</div>
       <div class="nav-item sub" onclick="showScreen('categories')"><span class="nav-icon">📂</span> Categories</div>
-      <div class="nav-item sub" onclick="showScreen('timetable')"><span class="nav-icon">📅</span> Classes</div>
+      <div class="nav-item sub" onclick="showScreen('timetable')"><span class="nav-icon">📅</span> Timetable</div>
+      <div class="nav-item sub" onclick="showScreen('classes')"><span class="nav-icon">📚</span> Classes</div>
       <div class="nav-item sub" onclick="showScreen('seasons')"><span class="nav-icon">🌀</span> Terms</div>
       <div class="nav-item sub" onclick="showScreen('manage-packages')"><span class="nav-icon">📦</span> Packages</div>
       <div class="nav-item sub" onclick="showScreen('manage-memberships')"><span class="nav-icon">🪪</span> Memberships</div>
@@ -956,11 +957,13 @@ tr.clickable-row:hover td { background: #141414; }
         <button class="btn btn-lime btn-sm" onclick="markAllPresent()">Mark All Present</button>
         <button class="btn btn-ghost btn-sm" onclick="alert('Register saved!')">Save Register</button>
         <button class="btn btn-ghost btn-sm" onclick="alert('Class summary email sent to instructor')">Send Class Summary Email</button>
+        <button class="btn btn-ghost btn-sm" style="color:#e05555;border-color:#e05555;" onclick="openCancelClass(document.getElementById('att-class-name').textContent, document.getElementById('att-time').textContent+' '+document.getElementById('att-studio').textContent, document.getElementById('att-studio').textContent, 8)">Cancel Class</button>
       </div>
 
       <div class="subtabs">
         <div class="subtab active" onclick="switchSubTab(this,'att-register')">Register</div>
-        <div class="subtab" onclick="switchSubTab(this,'att-waitlist')">Waitlist</div>
+        <div class="subtab" onclick="switchSubTab(this,'att-waitlist')">Waitlist (2)</div>
+        <div class="subtab" onclick="switchSubTab(this,'att-cancelled')">Cancelled (1)</div>
       </div>
 
       <div id="att-register" class="subscreen active">
@@ -969,7 +972,7 @@ tr.clickable-row:hover td { background: #141414; }
             <thead><tr><th>Student</th><th>Type</th><th>Contact</th><th>Status</th><th>Fee</th><th>Notes</th></tr></thead>
             <tbody>
               <tr id="att-row-0">
-                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#ffaa44;">J</div><div><div style="font-weight:500;">Jess Malone 🎂 <span style="display:inline-block;background:#0f1600;color:var(--lime);border:1px solid var(--lime);border-radius:12px;font-size:10px;font-weight:600;padding:1px 8px;letter-spacing:0.3px;margin-left:2px;">Birthday this week!</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
+                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#ffaa44;">J</div><div><div style="font-weight:500;"><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='jess'))">Jess Malone</span> 🎂 <span style="display:inline-block;background:#0f1600;color:var(--lime);border:1px solid var(--lime);border-radius:12px;font-size:10px;font-weight:600;padding:1px 8px;letter-spacing:0.3px;margin-left:2px;">Birthday this week!</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
                 <td><span class="tag tag-lav">Enrolled</span></td>
                 <td style="color:var(--grey);font-size:12px;">0412 345 678</td>
                 <td><select class="att-status-select" onchange="updateAttRow(0,this.value)"><option value="">Select…</option><option value="present">Present</option><option value="noshow-fee">No-show + $25 fee</option><option value="noshow-waived">No-show — fee waived</option><option value="late">Late</option><option value="excused">Excused</option></select></td>
@@ -977,7 +980,7 @@ tr.clickable-row:hover td { background: #141414; }
                 <td><input type="text" placeholder="Note…" style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:4px 8px;width:100px;" /></td>
               </tr>
               <tr id="att-row-1">
-                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:var(--lime);">S</div><div><div style="font-weight:500;">Sophie Lawson</div><div style="font-size:11px;color:var(--grey);">they/them</div></div></div></td>
+                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:var(--lime);">S</div><div><div style="font-weight:500;"><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='sophie'))">Sophie Lawson</span></div><div style="font-size:11px;color:var(--grey);">they/them</div></div></div></td>
                 <td><span class="tag tag-lav">Enrolled</span></td>
                 <td style="color:var(--grey);font-size:12px;">0434 567 890</td>
                 <td><select class="att-status-select" onchange="updateAttRow(1,this.value)"><option value="">Select…</option><option value="present">Present</option><option value="noshow-fee">No-show + $25 fee</option><option value="noshow-waived">No-show — fee waived</option><option value="late">Late</option><option value="excused">Excused</option></select></td>
@@ -985,7 +988,7 @@ tr.clickable-row:hover td { background: #141414; }
                 <td><input type="text" placeholder="Note…" style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:4px 8px;width:100px;" /></td>
               </tr>
               <tr id="att-row-2">
-                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:var(--lav);">R</div><div><div style="font-weight:500;">Ruby Kim</div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
+                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:var(--lav);">R</div><div><div style="font-weight:500;"><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='ruby'))">Ruby Kim</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
                 <td><span class="tag tag-lav">Enrolled</span></td>
                 <td style="color:var(--grey);font-size:12px;">0423 456 789</td>
                 <td><select class="att-status-select" onchange="updateAttRow(2,this.value)"><option value="">Select…</option><option value="present">Present</option><option value="noshow-fee">No-show + $25 fee</option><option value="noshow-waived">No-show — fee waived</option><option value="late">Late</option><option value="excused">Excused</option></select></td>
@@ -993,7 +996,7 @@ tr.clickable-row:hover td { background: #141414; }
                 <td><input type="text" placeholder="Note…" style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:4px 8px;width:100px;" /></td>
               </tr>
               <tr id="att-row-3">
-                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#9ac4ff;">H</div><div><div style="font-weight:500;">Hannah Webb</div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
+                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#9ac4ff;">H</div><div><div style="font-weight:500;"><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="alert('Open Hannah Webb profile')">Hannah Webb</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
                 <td><span class="tag tag-lav">Enrolled</span></td>
                 <td style="color:var(--grey);font-size:12px;">0445 000 111</td>
                 <td><select class="att-status-select" onchange="updateAttRow(3,this.value)"><option value="">Select…</option><option value="present">Present</option><option value="noshow-fee">No-show + $25 fee</option><option value="noshow-waived">No-show — fee waived</option><option value="late">Late</option><option value="excused">Excused</option></select></td>
@@ -1001,7 +1004,7 @@ tr.clickable-row:hover td { background: #141414; }
                 <td><input type="text" placeholder="Note…" style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:4px 8px;width:100px;" /></td>
               </tr>
               <tr id="att-row-4">
-                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#ffb3de;">A</div><div><div style="font-weight:500;">Amber Cole 🎂 <span style="display:inline-block;background:#0f1600;color:var(--lime);border:1px solid var(--lime);border-radius:12px;font-size:10px;font-weight:600;padding:1px 8px;letter-spacing:0.3px;margin-left:2px;">Birthday this week!</span> <span class="flag-badge">3 no-shows</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
+                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#ffb3de;">A</div><div><div style="font-weight:500;"><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="alert('Open Amber Cole profile')">Amber Cole</span> 🎂 <span style="display:inline-block;background:#0f1600;color:var(--lime);border:1px solid var(--lime);border-radius:12px;font-size:10px;font-weight:600;padding:1px 8px;letter-spacing:0.3px;margin-left:2px;">Birthday this week!</span> <span class="flag-badge">3 no-shows</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
                 <td><span class="tag tag-lav">Enrolled</span></td>
                 <td style="color:var(--grey);font-size:12px;">0445 678 901</td>
                 <td><select class="att-status-select" onchange="updateAttRow(4,this.value)"><option value="">Select…</option><option value="present">Present</option><option value="noshow-fee">No-show + $25 fee</option><option value="noshow-waived">No-show — fee waived</option><option value="late">Late</option><option value="excused">Excused</option></select></td>
@@ -1009,7 +1012,7 @@ tr.clickable-row:hover td { background: #141414; }
                 <td><input type="text" placeholder="Note…" style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:4px 8px;width:100px;" /></td>
               </tr>
               <tr id="att-row-5">
-                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#ffcc88;">P</div><div><div style="font-weight:500;">Priya Nair</div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
+                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#ffcc88;">P</div><div><div style="font-weight:500;"><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="alert('Open Priya Nair profile')">Priya Nair</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
                 <td><span class="tag tag-amber">Trial</span></td>
                 <td style="color:var(--grey);font-size:12px;">0456 111 222</td>
                 <td><select class="att-status-select" onchange="updateAttRow(5,this.value)"><option value="">Select…</option><option value="present">Present</option><option value="noshow-fee">No-show + $25 fee</option><option value="noshow-waived">No-show — fee waived</option><option value="late">Late</option><option value="excused">Excused</option></select></td>
@@ -1017,7 +1020,7 @@ tr.clickable-row:hover td { background: #141414; }
                 <td><input type="text" placeholder="Note…" style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:4px 8px;width:100px;" /></td>
               </tr>
               <tr id="att-row-6">
-                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#b0f0b0;">E</div><div><div style="font-weight:500;">Emma Davis</div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
+                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#b0f0b0;">E</div><div><div style="font-weight:500;"><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="alert('Open Emma Davis profile')">Emma Davis</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
                 <td><span class="tag tag-amber">Trial</span></td>
                 <td style="color:var(--grey);font-size:12px;">0456 333 444</td>
                 <td><select class="att-status-select" onchange="updateAttRow(6,this.value)"><option value="">Select…</option><option value="present">Present</option><option value="noshow-fee">No-show + $25 fee</option><option value="noshow-waived">No-show — fee waived</option><option value="late">Late</option><option value="excused">Excused</option></select></td>
@@ -1025,7 +1028,7 @@ tr.clickable-row:hover td { background: #141414; }
                 <td><input type="text" placeholder="Note…" style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:4px 8px;width:100px;" /></td>
               </tr>
               <tr id="att-row-7">
-                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#66dddd;">L</div><div><div style="font-weight:500;">Lena Wu</div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
+                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#66dddd;">L</div><div><div style="font-weight:500;"><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="alert('Open Lena Wu profile')">Lena Wu</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
                 <td><span class="tag tag-lav">Enrolled</span></td>
                 <td style="color:var(--grey);font-size:12px;">0456 789 012</td>
                 <td><select class="att-status-select" onchange="updateAttRow(7,this.value)"><option value="">Select…</option><option value="present">Present</option><option value="noshow-fee">No-show + $25 fee</option><option value="noshow-waived">No-show — fee waived</option><option value="late">Late</option><option value="excused">Excused</option></select></td>
