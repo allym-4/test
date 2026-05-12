@@ -1633,6 +1633,12 @@
                 <div class="class-row-check">✓</div>
               </div>
               <!-- FRIDAY -->
+              <div class="class-row full-booked" data-day="fri" data-instr="avalon" data-level="2" data-locked="false" data-full="true" onclick="openJoinWaitlistModal('Level 2 — Fri 5:30pm · Avalon · Rhapsody')">
+                <div class="class-row-time-block"><div class="class-row-day-label">Fri</div><div class="class-row-time-label" style="color:var(--grey)">5:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Level 2</div><div class="class-row-instr">Avalon — <span style="color:#ff6b6b">Fully booked</span> · Rhapsody</div></div>
+                <div class="class-row-tags"><span class="tag tag-lav">Your level</span><span class="tag tag-red" style="margin-left:4px">Full</span></div>
+                <button class="btn btn-outline btn-sm" style="font-size:11px;white-space:nowrap" onclick="event.stopPropagation();openJoinWaitlistModal('Level 2 — Fri 5:30pm · Avalon · Rhapsody')">Join Waitlist</button>
+              </div>
               <div class="class-row" data-day="fri" data-instr="mimi" data-level="0" data-locked="false" onclick="toggleClass('kiki-fri530','Kiki','Fri 5:30pm',this)">
                 <div class="class-row-time-block"><div class="class-row-day-label">Fri</div><div class="class-row-time-label">5:30pm</div></div>
                 <div class="class-row-body"><div class="class-row-name">Kiki</div><div class="class-row-instr">Mimi</div></div>
@@ -1709,6 +1715,17 @@
 
       <!-- CASUAL AND CATCH-UPS TAB -->
       <div id="panel-casual" style="display:none">
+
+        <!-- Trial banner -->
+        <div style="background:linear-gradient(135deg,#0a1200 0%,#141400 100%);border:1px solid var(--lime);border-radius:14px;padding:18px 22px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+          <div>
+            <div style="font-family:'Archivo Black',sans-serif;font-size:16px;color:var(--lime);margin-bottom:4px">First time? 🔥</div>
+            <div style="font-size:14px;color:var(--white);line-height:1.6">Book a trial class for just <strong style="color:var(--lime)">$25</strong> and see if pole is for you.</div>
+            <div style="font-size:12px;color:var(--grey);margin-top:3px">No experience needed — beginner-friendly intro</div>
+          </div>
+          <button class="btn btn-lime btn-sm" style="white-space:nowrap;flex-shrink:0" onclick="openModal('modal-book-trial')">Book Trial →</button>
+        </div>
+
         <div class="credit-badge" id="casual-credit-badge">
           <div class="credit-count" id="casual-credit-badge-count">1</div>
           <div>
@@ -2444,7 +2461,7 @@
           <div class="class-row-info"><div class="class-row-name">Level 2</div><div class="class-row-meta">The Box · Chloe · Weeks 1–8</div></div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
             <span class="tag tag-lime">Active</span>
-            <button class="btn btn-ghost btn-sm" style="font-size:11px;color:#666;padding:3px 8px" onclick="openCancelBookingModal('Level 2 – Mon 6:30pm')">Cancel</button>
+            <button class="btn btn-ghost btn-sm" style="font-size:11px;color:#666;padding:3px 8px" onclick="openCancelBookingFull('Level 2 – Mon 6:30pm')">Cancel</button>
           </div>
         </div>
         <div class="class-row mb-8">
@@ -2453,7 +2470,7 @@
           <div class="class-row-info"><div class="class-row-name">Dance</div><div class="class-row-meta">Rhapsody · Mimi · Weeks 1–8</div></div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
             <span class="tag tag-lime">Active</span>
-            <button class="btn btn-ghost btn-sm" style="font-size:11px;color:#666;padding:3px 8px" onclick="openCancelBookingModal('Dance – Fri 6:30pm')">Cancel</button>
+            <button class="btn btn-ghost btn-sm" style="font-size:11px;color:#666;padding:3px 8px" onclick="openCancelBookingFull('Dance – Fri 6:30pm')">Cancel</button>
           </div>
         </div>
         <!-- Pricing + add another -->
@@ -2465,6 +2482,22 @@
           <div style="font-size:12px;color:#666;margin-bottom:12px">$220/class · 8 weeks</div>
           <div style="font-size:13px;color:var(--grey);margin-bottom:10px">Add a 3rd class → just <strong style="color:var(--lime)">$17.50/session</strong> + 1 free practice session/week</div>
           <button class="btn btn-outline btn-sm" style="font-size:12px" onclick="showScreen('book');showBookTab('season')">Browse classes to add</button>
+        </div>
+
+        <!-- Waitlisted classes -->
+        <div class="section-label" style="margin-top:24px">On waitlist</div>
+        <div class="class-row mb-8" style="border-color:#2a1a44">
+          <div class="class-row-date"><div class="class-row-day">FRI</div><div class="class-row-num" style="color:var(--lav);font-size:18px">5:30</div></div>
+          <div class="class-row-divider"></div>
+          <div class="class-row-info">
+            <div class="class-row-name">Level 2</div>
+            <div class="class-row-meta">Rhapsody · Avalon · Fri 5:30pm</div>
+            <div style="margin-top:6px"><span class="tag tag-lav" style="font-size:11px">Waitlist position: #2</span></div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+            <span class="tag tag-grey" style="font-size:11px">Waitlisted</span>
+            <button class="btn btn-ghost btn-sm" style="font-size:11px;color:#666;padding:3px 8px" onclick="if(confirm('Leave the waitlist for Level 2 — Fri 5:30pm?')) alert('Removed from waitlist.')">Leave Waitlist</button>
+          </div>
         </div>
 
         </div> <!-- end mc-subpanel-enrolled -->
@@ -2565,7 +2598,7 @@
           <div class="class-row-info"><div class="class-row-name">Level 2</div><div class="class-row-meta">Chloe · Weeks 1–8</div></div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
             <span class="tag tag-lime">Booked</span>
-            <button class="btn btn-ghost btn-sm" style="font-size:11px;color:#666;padding:3px 8px" onclick="openCancelBookingModal('Level 2 – Mon 6:30pm (Season 4)')">Cancel</button>
+            <button class="btn btn-ghost btn-sm" style="font-size:11px;color:#666;padding:3px 8px" onclick="openCancelBookingFull('Level 2 – Mon 6:30pm (Season 4)')">Cancel</button>
           </div>
         </div>
         <div class="class-row mb-8">
@@ -2574,7 +2607,7 @@
           <div class="class-row-info"><div class="class-row-name">Dance</div><div class="class-row-meta">Mimi · Weeks 1–8</div></div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
             <span class="tag tag-lime">Booked</span>
-            <button class="btn btn-ghost btn-sm" style="font-size:11px;color:#666;padding:3px 8px" onclick="openCancelBookingModal('Dance – Fri 6:30pm (Season 4)')">Cancel</button>
+            <button class="btn btn-ghost btn-sm" style="font-size:11px;color:#666;padding:3px 8px" onclick="openCancelBookingFull('Dance – Fri 6:30pm (Season 4)')">Cancel</button>
           </div>
         </div>
 
@@ -3586,6 +3619,35 @@
         <div class="page-title">Billing</div>
       </div>
 
+      <!-- Make-up Credits card -->
+      <div style="background:#1a1028;border:1px solid var(--lav);border-radius:14px;padding:20px 26px;margin-bottom:20px;max-width:820px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">
+          <div>
+            <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--lav);margin-bottom:8px">Make-up Credits</div>
+            <div style="font-family:'Archivo Black',sans-serif;font-size:32px;color:var(--lav)">2 <span style="font-size:16px;font-weight:normal;font-family:'Archivo',sans-serif;color:var(--grey)">credits available</span></div>
+            <div style="font-size:12px;color:var(--grey);margin-top:4px">Credits expire 60 days from issue &nbsp;·&nbsp; <span style="color:var(--lav)">Use when booking a casual or catch-up class</span></div>
+          </div>
+        </div>
+        <!-- Credit list -->
+        <div style="margin-top:18px;border-top:1px solid #2a1a44;padding-top:14px">
+          <div style="display:grid;grid-template-columns:110px 1fr 130px 70px;gap:10px;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--grey);margin-bottom:8px">
+            <span>Issued</span><span>For</span><span>Expires</span><span>Status</span>
+          </div>
+          <div style="display:grid;grid-template-columns:110px 1fr 130px 70px;gap:10px;font-size:13px;padding:8px 0;border-bottom:1px solid #1a1028">
+            <span style="color:var(--grey)">7 May 2026</span>
+            <span>Level 2 – Mon 7 May</span>
+            <span style="color:var(--grey)">5 Jul 2026</span>
+            <span class="tag tag-lav" style="font-size:10px;padding:2px 8px">Active</span>
+          </div>
+          <div style="display:grid;grid-template-columns:110px 1fr 130px 70px;gap:10px;font-size:13px;padding:8px 0">
+            <span style="color:var(--grey)">30 Apr 2026</span>
+            <span>Dance – Fri 30 Apr</span>
+            <span style="color:var(--grey)">28 Jun 2026</span>
+            <span class="tag tag-lav" style="font-size:10px;padding:2px 8px">Active</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Outstanding balance card -->
       <div style="background:#0d0d0d;border:1px solid #333;border-radius:14px;padding:22px 26px;margin-bottom:28px;max-width:820px">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap">
@@ -3604,26 +3666,29 @@
 
       <div style="font-family:'Archivo Black',sans-serif;font-size:16px;margin-bottom:14px">Payment history</div>
       <div class="billing-table" style="display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:12px;overflow:hidden;max-width:820px">
-        <div class="billing-row" style="display:grid;grid-template-columns:1fr 140px 120px 90px;gap:12px;padding:10px 16px;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--grey);border-bottom:1px solid var(--border)">
-          <span>Description</span><span class="billing-col-date">Date</span><span>Type</span><span style="text-align:right">Amount</span>
+        <div class="billing-row" style="display:grid;grid-template-columns:1fr 140px 120px 90px 100px;gap:12px;padding:10px 16px;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--grey);border-bottom:1px solid var(--border)">
+          <span>Description</span><span class="billing-col-date">Date</span><span>Type</span><span style="text-align:right">Amount</span><span></span>
         </div>
-        <div class="billing-row" style="display:grid;grid-template-columns:1fr 140px 120px 90px;gap:12px;padding:15px 16px;font-size:14px;border-bottom:1px solid var(--border);align-items:center">
-          <span style="font-weight:500">Season 3 - Level 2 + Dance</span><span class="billing-col-date" style="color:var(--grey)">7 Apr 2026</span><span><span class="tag tag-lime" style="font-size:11px">Season</span></span><span style="text-align:right;font-weight:600">$440.00</span>
+        <div class="billing-row" style="display:grid;grid-template-columns:1fr 140px 120px 90px 100px;gap:12px;padding:15px 16px;font-size:14px;border-bottom:1px solid var(--border);align-items:center">
+          <span style="font-weight:500">Season 3 - Level 2 + Dance</span><span class="billing-col-date" style="color:var(--grey)">7 Apr 2026</span><span><span class="tag tag-lime" style="font-size:11px">Season</span></span><span style="text-align:right;font-weight:600">$440.00</span><span><button class="btn btn-ghost btn-sm" style="font-size:11px;padding:5px 10px;white-space:nowrap" onclick="openModal('modal-invoice-detail')">View Invoice</button></span>
         </div>
-        <div class="billing-row" style="display:grid;grid-template-columns:1fr 140px 120px 90px;gap:12px;padding:15px 16px;font-size:14px;border-bottom:1px solid var(--border);align-items:center">
-          <span style="font-weight:500">Catch-up · Kiki (Fri 4 Apr)</span><span class="billing-col-date" style="color:var(--grey)">2 Apr 2026</span><span><span class="tag" style="font-size:11px;background:#1a0d2e;color:var(--lav);border:1px solid #3a1a5a">Catch-up</span></span><span style="text-align:right;font-weight:600">$0.00</span>
+        <div class="billing-row" style="display:grid;grid-template-columns:1fr 140px 120px 90px 100px;gap:12px;padding:15px 16px;font-size:14px;border-bottom:1px solid var(--border);align-items:center">
+          <span style="font-weight:500">Catch-up · Kiki (Fri 4 Apr)</span><span class="billing-col-date" style="color:var(--grey)">2 Apr 2026</span><span><span class="tag" style="font-size:11px;background:#1a0d2e;color:var(--lav);border:1px solid #3a1a5a">Catch-up</span></span><span style="text-align:right;font-weight:600">$0.00</span><span><button class="btn btn-ghost btn-sm" style="font-size:11px;padding:5px 10px;white-space:nowrap" onclick="openModal('modal-invoice-detail')">View Invoice</button></span>
         </div>
-        <div class="billing-row" style="display:grid;grid-template-columns:1fr 140px 120px 90px;gap:12px;padding:15px 16px;font-size:14px;border-bottom:1px solid var(--border);align-items:center">
-          <span style="font-weight:500">Season 2 - Level 2</span><span class="billing-col-date" style="color:var(--grey)">10 Feb 2026</span><span><span class="tag tag-lime" style="font-size:11px">Season</span></span><span style="text-align:right;font-weight:600">$270.00</span>
+        <div class="billing-row" style="display:grid;grid-template-columns:1fr 140px 120px 90px 100px;gap:12px;padding:15px 16px;font-size:14px;border-bottom:1px solid var(--border);align-items:center">
+          <span style="font-weight:500">Season 2 - Level 2</span><span class="billing-col-date" style="color:var(--grey)">10 Feb 2026</span><span><span class="tag tag-lime" style="font-size:11px">Season</span></span><span style="text-align:right;font-weight:600">$270.00</span><span><button class="btn btn-ghost btn-sm" style="font-size:11px;padding:5px 10px;white-space:nowrap" onclick="openModal('modal-invoice-detail')">View Invoice</button></span>
         </div>
-        <div class="billing-row" style="display:grid;grid-template-columns:1fr 140px 120px 90px;gap:12px;padding:15px 16px;font-size:14px;border-bottom:1px solid var(--border);align-items:center">
-          <span style="font-weight:500">Casual · Level 1 (Wed 5 Feb)</span><span class="billing-col-date" style="color:var(--grey)">3 Feb 2026</span><span><span class="tag" style="font-size:11px;background:#0d1800;color:var(--lime);border:1px solid #1a3000">Casual</span></span><span style="text-align:right;font-weight:600">$40.00</span>
+        <div class="billing-row" style="display:grid;grid-template-columns:1fr 140px 120px 90px 100px;gap:12px;padding:15px 16px;font-size:14px;border-bottom:1px solid var(--border);align-items:center">
+          <span style="font-weight:500">Casual · Level 1 (Wed 5 Feb)</span><span class="billing-col-date" style="color:var(--grey)">3 Feb 2026</span><span><span class="tag" style="font-size:11px;background:#0d1800;color:var(--lime);border:1px solid #1a3000">Casual</span></span><span style="text-align:right;font-weight:600">$40.00</span><span><button class="btn btn-ghost btn-sm" style="font-size:11px;padding:5px 10px;white-space:nowrap" onclick="openModal('modal-invoice-detail')">View Invoice</button></span>
         </div>
-        <div class="billing-row" style="display:grid;grid-template-columns:1fr 140px 120px 90px;gap:12px;padding:15px 16px;font-size:14px;align-items:center">
-          <span style="font-weight:500">Season 1 - Level 1</span><span class="billing-col-date" style="color:var(--grey)">15 Nov 2025</span><span><span class="tag tag-lime" style="font-size:11px">Season</span></span><span style="text-align:right;font-weight:600">$270.00</span>
+        <div class="billing-row" style="display:grid;grid-template-columns:1fr 140px 120px 90px 100px;gap:12px;padding:15px 16px;font-size:14px;align-items:center">
+          <span style="font-weight:500">Season 1 - Level 1</span><span class="billing-col-date" style="color:var(--grey)">15 Nov 2025</span><span><span class="tag tag-lime" style="font-size:11px">Season</span></span><span style="text-align:right;font-weight:600">$270.00</span><span><button class="btn btn-ghost btn-sm" style="font-size:11px;padding:5px 10px;white-space:nowrap" onclick="openModal('modal-invoice-detail')">View Invoice</button></span>
         </div>
       </div>
-      <button class="btn btn-ghost btn-sm" style="margin-top:14px">Download all invoices</button>
+      <div style="display:flex;gap:12px;margin-top:14px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm">Download all invoices</button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--lav);border-color:var(--lav)" onclick="openModal('modal-refund-request')">Request a refund or credit →</button>
+      </div>
     </div>
 
   <!-- MOBILE FLOATING PROCEED BUTTON (season booking) -->
@@ -7523,6 +7588,19 @@
     showAuthPanel('signin');
   }
 
+  // ── WAITLIST NOTIF TOGGLE ─────────────────────────────────
+  function toggleWaitlistNotif() {
+    const track = document.getElementById('waitlist-notif-track');
+    const thumb = document.getElementById('waitlist-notif-thumb');
+    const label = document.getElementById('waitlist-notif-label');
+    const on = label.textContent === 'On';
+    track.style.background = on ? '#333' : 'var(--lime)';
+    thumb.style.right = on ? 'auto' : '3px';
+    thumb.style.left  = on ? '3px' : 'auto';
+    thumb.style.background = on ? '#666' : '#000';
+    label.textContent = on ? 'Off' : 'On';
+  }
+
   // ── OPEN MODAL HELPER ──────────────────────────────────────
   function openModal(id) {
     const el = document.getElementById(id);
@@ -7559,6 +7637,262 @@
     result.style.display = '';
     result.textContent = '🎁 Gift card applied — $50 discount will be applied at checkout';
   }
+
+  // ── MODAL-CANCEL-BOOKING ──────────────────────────────────
+  function openCancelBookingFull(className) {
+    const nameEl = document.getElementById('modal-cancel-booking-name');
+    if (nameEl) nameEl.textContent = className || 'Level 2 — Mon 6:30pm';
+    openModal('modal-cancel-booking');
+  }
+
+  // ── MODAL-JOIN-WAITLIST ───────────────────────────────────
+  function openJoinWaitlistModal(className) {
+    const nameEl = document.getElementById('modal-join-waitlist-class');
+    if (nameEl) nameEl.textContent = className || 'Level 2 — Mon 6:30pm · Chloe · The Box';
+    openModal('modal-join-waitlist');
+  }
 </script>
+
+<!-- CANCEL BOOKING MODAL (full cancel flow) -->
+<div class="modal-overlay" id="modal-cancel-booking">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-title">Cancel Booking <button class="btn btn-ghost btn-sm" style="float:right;margin-top:-4px" onclick="closeModal('modal-cancel-booking')">✕</button></div>
+    <div style="font-size:15px;font-weight:500;color:var(--lav);margin:10px 0 20px" id="modal-cancel-booking-name">Level 2 — Mon 6:30pm</div>
+
+    <!-- Policy notice -->
+    <div style="background:#1a0f00;border:1px solid #ffaa44;border-radius:10px;padding:14px 16px;margin-bottom:22px;font-size:13px;color:#ffaa44;line-height:1.7">
+      ⚠ Cancellations made less than 4 hours before class time will be marked as a Late Cancel — no make-up credit will be issued.
+    </div>
+
+    <!-- Options -->
+    <div style="font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:12px">Cancellation type</div>
+    <label style="display:flex;align-items:flex-start;gap:14px;padding:14px 16px;border:2px solid var(--lime);border-radius:12px;cursor:pointer;background:#0a1200;margin-bottom:10px">
+      <input type="radio" name="cancel-type" value="notice" checked style="margin-top:3px;accent-color:var(--lime)">
+      <div>
+        <div style="font-size:14px;font-weight:500;color:var(--white)">Cancel with notice <span style="font-size:12px;color:var(--grey);font-weight:400">(more than 4 hours before)</span></div>
+        <div style="font-size:13px;color:var(--grey);margin-top:3px">A make-up credit will be added to your account</div>
+      </div>
+    </label>
+    <label style="display:flex;align-items:flex-start;gap:14px;padding:14px 16px;border:2px solid #333;border-radius:12px;cursor:pointer;margin-bottom:22px">
+      <input type="radio" name="cancel-type" value="late" style="margin-top:3px;accent-color:#ffaa44">
+      <div>
+        <div style="font-size:14px;font-weight:500;color:var(--white)">Late cancel <span style="font-size:12px;color:var(--grey);font-weight:400">(less than 4 hours before)</span></div>
+        <div style="font-size:13px;color:var(--grey);margin-top:3px">No make-up credit — you were notified of the policy</div>
+      </div>
+    </label>
+
+    <!-- Reason dropdown -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px">Reason</div>
+      <select style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:14px;font-family:inherit">
+        <option>Can't make it</option>
+        <option>Injury / illness</option>
+        <option>Work conflict</option>
+        <option>Other</option>
+      </select>
+    </div>
+
+    <!-- Optional note -->
+    <div style="margin-bottom:6px">
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px">Note (optional)</div>
+      <textarea rows="3" placeholder="Anything you'd like to let the studio know..." style="width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:14px;font-family:inherit;resize:vertical;line-height:1.5"></textarea>
+    </div>
+
+    <div class="modal-actions" style="margin-top:22px">
+      <button class="btn btn-ghost" onclick="closeModal('modal-cancel-booking')">Cancel</button>
+      <button class="btn btn-lime" style="flex:1" onclick="alert('Booking cancelled. Make-up credit added to your account.');closeModal('modal-cancel-booking')">Confirm Cancellation</button>
+    </div>
+  </div>
+</div>
+
+<!-- JOIN WAITLIST MODAL -->
+<div class="modal-overlay" id="modal-join-waitlist">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title">Join Waitlist <button class="btn btn-ghost btn-sm" style="float:right;margin-top:-4px" onclick="closeModal('modal-join-waitlist')">✕</button></div>
+    <div style="font-size:15px;font-weight:500;color:var(--lav);margin:10px 0 6px" id="modal-join-waitlist-class">Level 2 — Mon 6:30pm · Chloe · The Box</div>
+    <div style="font-size:13px;color:var(--grey);margin-bottom:20px">You'll be <strong style="color:var(--white)">#3 on the waitlist</strong> for this class.</div>
+
+    <div style="background:#1a1028;border:1px solid var(--lav);border-radius:10px;padding:14px 16px;margin-bottom:22px;font-size:13px;color:var(--grey);line-height:1.7">
+      You'll receive a push notification and email if a spot opens. You'll have <strong style="color:var(--white)">2 hours to accept</strong> before the next person is offered the spot.
+    </div>
+
+    <!-- Notification toggle -->
+    <div style="display:flex;align-items:center;justify-content:space-between;background:#0d0d0d;border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:6px">
+      <div style="font-size:14px">Notify me when a spot opens</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:13px;color:var(--grey)" id="waitlist-notif-label">On</span>
+        <div id="waitlist-notif-track" onclick="toggleWaitlistNotif()" style="width:40px;height:22px;background:var(--lime);border-radius:11px;cursor:pointer;position:relative;transition:background 0.2s">
+          <div id="waitlist-notif-thumb" style="position:absolute;top:3px;right:3px;width:16px;height:16px;background:#000;border-radius:50%;transition:right 0.2s,left 0.2s"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:22px">
+      <button class="btn btn-ghost" onclick="closeModal('modal-join-waitlist')">Cancel</button>
+      <button class="btn btn-lime" style="flex:1" onclick="alert('You\'re on the waitlist! We\'ll notify you if a spot opens.');closeModal('modal-join-waitlist')">Join Waitlist</button>
+    </div>
+  </div>
+</div>
+
+<!-- BOOK TRIAL MODAL -->
+<div class="modal-overlay" id="modal-book-trial">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-title">Book a Trial Class <button class="btn btn-ghost btn-sm" style="float:right;margin-top:-4px" onclick="closeModal('modal-book-trial')">✕</button></div>
+    <div style="font-size:14px;color:var(--grey);line-height:1.7;margin:12px 0 22px">Trial classes are a relaxed, beginner-friendly introduction to pole dance. No experience needed — just bring yourself!</div>
+
+    <!-- Class picker -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px">Choose a class</div>
+      <select style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:14px;font-family:inherit">
+        <option>Level 1 — Mon 5:30pm · Chloe · The Box</option>
+        <option>Level 1 — Wed 5:30pm · Jaz · Rhapsody</option>
+        <option>Level 1 Sat — 10:00am · Amy · The Box</option>
+      </select>
+    </div>
+
+    <!-- Experience level -->
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px">Your experience level</div>
+      <select style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:14px;font-family:inherit">
+        <option>Complete beginner</option>
+        <option>Some fitness background</option>
+        <option>Danced before</option>
+        <option>Tried pole before</option>
+      </select>
+    </div>
+
+    <!-- Pricing -->
+    <div style="background:#0a1200;border:1px solid #1a3000;border-radius:10px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:14px;font-weight:500">Trial class</div>
+        <div style="font-size:12px;color:var(--grey);margin-top:2px">Intro offer — pay just $25</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:'Archivo Black',sans-serif;font-size:22px;color:var(--lime)">$25</div>
+        <div style="font-size:12px;color:var(--grey);text-decoration:line-through">$35</div>
+      </div>
+    </div>
+
+    <!-- Health note -->
+    <div style="background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:12px 14px;font-size:13px;color:var(--grey);line-height:1.6;margin-bottom:6px">
+      📋 You'll complete a quick health questionnaire when you arrive.
+    </div>
+
+    <div class="modal-actions" style="margin-top:22px">
+      <button class="btn btn-ghost" onclick="closeModal('modal-book-trial')">Cancel</button>
+      <button class="btn btn-lime" style="flex:1" onclick="alert('Trial booked! Check your email for confirmation and what to bring.');closeModal('modal-book-trial')">Book Trial ($25)</button>
+    </div>
+  </div>
+</div>
+
+<!-- INVOICE DETAIL MODAL -->
+<div class="modal-overlay" id="modal-invoice-detail">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-title">Invoice <button class="btn btn-ghost btn-sm" style="float:right;margin-top:-4px" onclick="closeModal('modal-invoice-detail')">✕</button></div>
+
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin:16px 0 20px;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="font-size:13px;color:var(--grey)">Invoice number</div>
+        <div style="font-size:15px;font-weight:500;margin-top:2px" id="modal-invoice-number">INV-2026-047</div>
+      </div>
+      <div>
+        <div style="font-size:13px;color:var(--grey)">Date</div>
+        <div style="font-size:15px;font-weight:500;margin-top:2px" id="modal-invoice-date">7 Apr 2026</div>
+      </div>
+      <div>
+        <div style="font-size:13px;color:var(--grey)">Student</div>
+        <div style="font-size:15px;font-weight:500;margin-top:2px">Jess Mitchell</div>
+      </div>
+    </div>
+
+    <!-- Line items table -->
+    <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px">
+      <div style="display:grid;grid-template-columns:1fr 90px;gap:12px;padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--grey);border-bottom:1px solid var(--border)">
+        <span>Description</span><span style="text-align:right">Amount</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 90px;gap:12px;padding:14px;font-size:14px;border-bottom:1px solid var(--border)" id="modal-invoice-items">
+        <span>Level 2 — Season 3 enrolment · 8 classes</span><span style="text-align:right;font-weight:600">$220.00</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 90px;gap:12px;padding:14px;font-size:14px;border-bottom:1px solid var(--border)">
+        <span>Dance — Season 3 enrolment · 8 classes</span><span style="text-align:right;font-weight:600">$220.00</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 90px;gap:12px;padding:14px;font-size:15px">
+        <span style="font-family:'Archivo Black',sans-serif">Total</span><span style="text-align:right;font-family:'Archivo Black',sans-serif;color:var(--lime)">$440.00</span>
+      </div>
+    </div>
+
+    <!-- Payment info -->
+    <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:20px">
+      <div>
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:4px">Payment method</div>
+        <div style="font-size:14px">Card ending 4242</div>
+      </div>
+      <div>
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:4px">Status</div>
+        <div><span class="tag tag-lime" style="font-size:11px">Paid</span></div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="alert('Invoice downloaded!')">Download PDF</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-invoice-detail')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- REFUND / CREDIT REQUEST MODAL -->
+<div class="modal-overlay" id="modal-refund-request">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-title">Request a Refund or Credit <button class="btn btn-ghost btn-sm" style="float:right;margin-top:-4px" onclick="closeModal('modal-refund-request')">✕</button></div>
+    <div style="font-size:14px;color:var(--grey);line-height:1.7;margin:12px 0 22px">Refunds and credits are processed by the studio. We aim to respond within 2 business days.</div>
+
+    <!-- Which payment -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px">Which payment?</div>
+      <select style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:14px;font-family:inherit">
+        <option>Season 3 - Level 2 + Dance · $440 · 7 Apr 2026</option>
+        <option>Season 2 - Level 2 · $270 · 10 Feb 2026</option>
+        <option>Casual · Level 1 (Wed 5 Feb) · $40 · 3 Feb 2026</option>
+        <option>Season 1 - Level 1 · $270 · 15 Nov 2025</option>
+      </select>
+    </div>
+
+    <!-- Reason -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px">Reason</div>
+      <select style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:14px;font-family:inherit">
+        <option>Medical / injury</option>
+        <option>Couldn't attend — gave notice</option>
+        <option>Duplicate charge</option>
+        <option>Other</option>
+      </select>
+    </div>
+
+    <!-- Note -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px">Note / details</div>
+      <textarea rows="3" placeholder="Please describe your situation..." style="width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:14px;font-family:inherit;resize:vertical;line-height:1.5"></textarea>
+    </div>
+
+    <!-- Preferred resolution -->
+    <div style="margin-bottom:6px">
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:12px">Preferred resolution</div>
+      <label style="display:flex;align-items:center;gap:12px;cursor:pointer;margin-bottom:10px;font-size:14px">
+        <input type="radio" name="refund-resolution" value="credit" checked style="accent-color:var(--lime)">
+        Account credit
+      </label>
+      <label style="display:flex;align-items:center;gap:12px;cursor:pointer;font-size:14px">
+        <input type="radio" name="refund-resolution" value="refund" style="accent-color:var(--lime)">
+        Bank refund
+      </label>
+    </div>
+
+    <div class="modal-actions" style="margin-top:22px">
+      <button class="btn btn-ghost" onclick="closeModal('modal-refund-request')">Cancel</button>
+      <button class="btn btn-lime" style="flex:1" onclick="alert('Request submitted! Mimi will be in touch within 2 business days.');closeModal('modal-refund-request')">Submit Request</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
