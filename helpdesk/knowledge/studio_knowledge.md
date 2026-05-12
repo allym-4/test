@@ -1,5 +1,50 @@
 # Duality Pole — Student Handbook & Studio Knowledge Base
 
+## Current Season
+
+**Season 3**
+- Book in from: 15 April
+- Season runs: 11 May – 5 July
+
+---
+
+## Current Timetable — Season 3
+
+### Weekday Classes
+
+| Time | Monday | Tuesday | Wednesday | Thursday | Friday |
+|---|---|---|---|---|---|
+| **5:30 PM** | Dance Tech — Chloe | — | Level 1 — Chloe | Inter Floor — Mimi | Kiki — Mimi |
+| **5:30 PM** | Floor Virgin — Jaz | Level 2 — Avalon | Practice Time (4:30 & 6:20 PM) | Strip Virgin — Amy | Practice Time |
+| **6:30 PM** | Level 2 — Chloe | Strip — Mimi | Chair — Chloe | Level 5 — Mimi | Dance — Mimi |
+| **6:30 PM** | Level 1 — Jaz | 3 Tricks — Avalon | Invert Tech — Maz | — | Practice Time |
+| **7:30 PM** | Level 4 — Chloe | Level 6 — Mimi | Dance Virgin — Chloe | Strip — Mimi | — |
+| **7:30 PM** | Strip Virgin — Jaz | Level 5 — Chloe | Level 3 — Maz | Practice Time | — |
+| **8:30 PM** | Level 3 — Chloe | High Tricks — Mimi | 4 Tricks — Chloe | Dirty Dance — Mimi | — |
+| **8:30 PM** | — | — | Level 2 — Bambi | Practice Time | — |
+
+### Weekend Classes
+
+| Time | Saturday | Sunday |
+|---|---|---|
+| **9 AM** | Unravel — Chloe | — |
+| **10 AM** | Level 4 — Chloe | Advanced Floor — Mimi |
+| **10 AM** | Practice Time | Practice Time |
+| **11 AM** | Chole — Chloe | 5–6 Tricks — Mimi |
+| **11 AM** | Practice Time | Practice Time |
+| **12 PM** | Floor Virgin — Chloe | — |
+
+### Instructors This Season
+- **Mimi** — Co-founder; teaches Level 5, Level 6, Strip, Dance, High Tricks, Dirty Dance, Kiki, Chole, 5–6 Tricks, Advanced Floor
+- **Chloe** — Teaches Level 1, Level 2, Level 3, Level 4, Dance Tech, Chair, Dance Virgin, 4 Tricks, Unravel, Floor Virgin, Chole (Saturday)
+- **Jaz** — Teaches Level 1 (Monday 6:30 PM), Floor Virgin (Monday 5:30 PM), Strip Virgin (Monday 7:30 PM)
+- **Avalon** — Teaches Level 2 (Tuesday 5:30 PM), 3 Tricks (Tuesday 6:30 PM)
+- **Maz** — Teaches Invert Tech (Wednesday 6:30 PM), Level 3 (Wednesday 7:30 PM)
+- **Amy** — Teaches Strip Virgin (Thursday 5:30 PM)
+- **Bambi** — Teaches Level 2 (Wednesday 8:30 PM)
+
+---
+
 ## About the Studio
 
 **Name:** Duality Pole
@@ -503,3 +548,45 @@ Focused strength, mobility, and technique training. No routines — pure trainin
 | **High Tricks** | Level 6+ | Advanced tricks: deadlifts, Bird of Paradise, Eagles, Satellite, Janero, Hunter Press, Blenix, Phoenix, handstands |
 | **Kiki** | Absolute beginners | Conditioning + full-body flexibility stretching. Created by co-founder Mimi. |
 | **Unravel** | Absolute beginners | Gentler version of Kiki — conditioning + slow stretching, recovery focus |
+
+---
+
+## Class Styles & Vibes
+
+### Levelled Classes — What to Expect
+Levelled classes are Duality's core offering. They take you from absolute beginner (Level 1) all the way to advanced powerhouse (Level 6). Every class follows the same format: warm-up with conditioning and safe practice, then skills and tricks, then choreography. Over the 8 weeks you build a full routine you can perform at the optional end-of-season showcase. You can repeat a level as many times as you like — progression is cleared by your instructor when you're ready.
+
+**Level 1** — Your pole adventure starts here. Learn basic grips, spins, floorwork, and strength. Shorts are fine for Level 1 if you're feeling shy, but bear legs help with grip. No experience or flexibility needed.
+**Level 2** — Building on your Level 1 foundations. You'll work toward your first invert (going upside down) — a huge milestone!
+**Level 3** — Single-limb hangs, trickier spins, and longer, more expressive routines.
+**Level 4** — Long chained combos, fluid inversions, seamless transitions, and real stamina work. This is where it all starts flowing together.
+**Level 5** — Fancy combos, dynamic transitions, and full Duality-style choreography. You're amazing!
+**Level 6** — The wild, wild world of pole. Expect handstands everywhere, elite tricks back-to-back, and artistry that'll have you completely before you can say "Miss Pole Dancer." Until Heaven set her.
+
+### Specialty Classes — What to Expect
+Specialty classes are where you explore the artistry of movement beyond the level system — chair, strip, floorwork, dance, and more. Each is designed to build confidence, flow, and style. Some classes work toward a routine; others change weekly. Every class is about trying something fresh and having fun with it. There's something for wherever you are in your pole journey.
+
+**Dance Virgin** — For first-time dancers. Slower pace; fresh routine each week with funky grips and transitions. Perfect if you want to find your groove while you grow.
+**Dance** — For Level 2 repeaters and beyond. A brand new pole-based routine every week — fun, sweaty, nostalgic, and a little cheeky. No two weeks the same.
+**Dirty Dance** — Advanced dance for experienced movers. High-energy and unapologetically expressive.
+**Strip Virgin** — From brand new through Level 3. Flow around the floor and pole with choreography, stunning reveals and transitions at a slower pace. A confidence-building class focused on feeling yourself.
+**Strip** — For Level 3+ or experienced dancers. A spicier class with ever-deeper reveals, confidence-forward floorwork, and clever choreography.
+**Chair Virgin** — New to chair or under Level 3? The art of chair and lap dancing — with a focus on confidence and tease. Join us and discover your inner seductress.
+**Chair** — For Level 3+ students ready to dial up the sensuality and dance technique. Expect playful, powerful routines that make real divas feel like a stage.
+**Floor Virgin** — New to floorwork? Come in and leave in good hands. A 4-way routine you build over 8 weeks and perfect — a great foundation class.
+**Intermediate Floor** — Completed Floor Virgin? Levelling up your floorwork — harder holds, rolls, and transitions.
+**Advanced Floor** — Are you comfy with everything in Intermediate Floor? It's time to go further. Get ready to work. While there are no limits here, there are goals you're gonna smash.
+**Chole** — What do you get when chair and pole have a little bash? Not to be confused with the person teaching the class, Chloe. A hybrid class with super-sensual choreography using both apparatus. A class for those not ready for one over the other.
+**Dance Tech** — Learn how to move between tricks with fluidity, perfect turns and magnetism so every moment looks amazing for anyone lucky enough to watch. The perfect addition to any levelled class — because good technique never goes out of style. For absolute beginners.
+
+### Conditioning Classes — What to Expect
+If specialty is for play, conditioning is for power. These classes are all about building the strength, mobility, and control behind your pole journey — skills, holds, and technique that set you up to nail tricks safely and cleanly. No routines here, just focused training that makes everything else feel stronger, smoother, and more effortless. The better your conditioning, the better everything else flows. Not the most glamorous — but this is where the magic is made.
+
+**Spin Virgin** — Beginner and loving the spin? This class is your extra practice time. It drills us on tricks and combos using the spinning pole for Levels 1–2. No inverts. Super welcoming, super supportive. Suitable for those who have finished or are nearing Level 1 or 2 and beyond.
+**Invert Tech** — Needs a Level 2 head down. This class drills up on conditioning and focused technique to prevent, repeat, and master the "yes I can go upside down" moment. Suitable for those who have finished or are almost Level 2 or beyond.
+**3–4 Tech** — Leg hangs giving you attitude? Let's fix that. This session breaks down inside/outside leg hangs and transition tricks so you can flow into combos like a pro. For repeat Level 3 students only.
+**5 Foundations** — Every advanced pro once needed a strong foundation. In Level 5 Foundations you'll refine your technique (a.k.a. Layback, or similar), your progressions, and transitions. But sit us on all this: Slowly, incredible and smooth. Master the essentials and every big thing equals feet natural state. For Level 4 repeaters+.
+**Adv Tech** — Level 5 or 6 and starting to feel technique slip? This class drills skills from Level 5 to 6 — extended butterflies from Jamilla, shoulder mounts, inside leg transitions, static V's. For smooth, seamless transitions. Heads up — this is a foundations class too, and it happens only when you are already virtually ready for Level 6 and wanting more.
+**High Tricks** — For the advanced pole dancer who needs to expand their repertoire. This instructor-led class focuses on skills: deadlifts, Bird of Paradise, Pluma, Posa, Janero, Hunter Press, Blenis, Phoenix, handstands. Each session you'll get the space to practise and expand your repertoire. For Level 6+ students only.
+**Kiki** — Future in 2010: you're sweaty, electric, and laying over the dance floor of your dreams. That's the vibe of Kiki — a class created by co-founder Mimi. See if this magic program is our conditioning, flow, met into stretches that build full body flexibility for all levels.
+**Unravel** — Need something a little softer? Unravel is Kiki's more chilled-out cousin. You'll self conditioning and slow stretching and guided stretching, but at a lower pace with a focus on release and recovery. A class to sweat less and rest more. For absolute beginners.
