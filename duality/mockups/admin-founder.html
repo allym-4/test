@@ -2860,7 +2860,14 @@ tr.clickable-row:hover td { background: #141414; }
           <div class="info-row"><div class="info-label">Account</div><div class="info-val">Duality Pole — mimi@dualitypole.com.au</div></div>
           <div class="info-row"><div class="info-label">Audience</div><div class="info-val">Duality Pole Students (94 contacts)</div></div>
           <div class="info-row"><div class="info-label">Last Sync</div><div class="info-val" style="color:var(--grey)">11 May 2026, 9:02am</div></div>
-          <div style="display:flex;gap:8px;margin-top:14px;"><button class="btn btn-lime btn-sm" onclick="alert('Syncing…')">Sync Now</button><button class="btn btn-ghost btn-sm">Reconnect</button></div>
+          <div style="display:flex;gap:8px;margin-top:14px;">
+            <button class="btn btn-lime btn-sm" onclick="alert('Opening Mailchimp…')">Open Mailchimp →</button>
+            <button class="btn btn-ghost btn-sm" onclick="alert('Syncing contacts…')">Sync Now</button>
+            <button class="btn btn-ghost btn-sm">Reconnect</button>
+          </div>
+          <div style="margin-top:14px;padding:10px 12px;background:#0f1600;border:1px solid var(--lime);border-radius:8px;font-size:12px;color:var(--grey);line-height:1.5;">
+            💡 All email campaign design happens in <strong style="color:var(--white);">Mailchimp</strong>. Contacts and tags sync automatically — just click <strong style="color:var(--lime);">Open Mailchimp</strong> to build and send campaigns.
+          </div>
         </div>
         <div class="section" style="padding:18px 20px;">
           <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:12px;">Sync Settings</div>
@@ -3576,45 +3583,22 @@ tr.clickable-row:hover td { background: #141414; }
 </div>
 
 <div class="modal-overlay" id="modal-email-designer">
-  <div class="modal" style="max-width:700px;width:90vw;">
-    <div class="modal-title">Email Designer <button class="modal-close" onclick="closeModal('modal-email-designer')">✕</button></div>
-    <div class="field"><label>Subject Line</label><input type="text" placeholder="e.g. Season 4 is open — enrol now!" /></div>
-    <div class="field"><label>To</label><select><option>All Students (94)</option><option>Level 1 Students (28)</option><option>Level 2 Students (32)</option><option>Level 3 Students (18)</option><option>Lapsed Students</option><option>Trial Students</option></select></div>
-    <div style="display:grid;grid-template-columns:180px 1fr;gap:16px;min-height:380px;margin-bottom:16px;">
-      <div style="border-right:1px solid var(--border);padding-right:14px;">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.7px;color:var(--grey);margin-bottom:10px;">Blocks</div>
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;padding:8px 10px;cursor:pointer;font-size:12px;" onclick="alert('Logo block added')">🖼 Logo Block</div>
-          <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;padding:8px 10px;cursor:pointer;font-size:12px;" onclick="alert('Heading block added')">📋 Heading Block</div>
-          <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;padding:8px 10px;cursor:pointer;font-size:12px;" onclick="alert('Body text block added')">📝 Body Text Block</div>
-          <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;padding:8px 10px;cursor:pointer;font-size:12px;" onclick="alert('Button block added')">🔲 Button Block</div>
-          <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;padding:8px 10px;cursor:pointer;font-size:12px;" onclick="alert('Footer block added')">📄 Footer Block</div>
-        </div>
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-title">Design Email in Mailchimp <button class="modal-close" onclick="closeModal('modal-email-designer')">✕</button></div>
+    <div style="text-align:center;padding:28px 20px;">
+      <div style="font-size:48px;margin-bottom:16px;">✉️</div>
+      <div style="font-family:'Archivo Black',sans-serif;font-size:18px;margin-bottom:10px;">Email design lives in Mailchimp</div>
+      <p style="font-size:13px;color:var(--grey);line-height:1.6;margin-bottom:24px;">Your email campaigns are built and sent directly from Mailchimp, where you have full template design, audience segmentation and analytics. Contacts sync automatically from Duality Pole.</p>
+      <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px;text-align:left;">
+        <div class="info-row"><div class="info-label">Account</div><div class="info-val">Duality Pole — mimi@dualitypole.com.au</div></div>
+        <div class="info-row"><div class="info-label">Audience</div><div class="info-val">Duality Pole Students (94 contacts)</div></div>
+        <div class="info-row" style="border:none;"><div class="info-label">Last Sync</div><div class="info-val" style="color:var(--grey);">11 May 2026, 9:02am</div></div>
       </div>
-      <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:8px;padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
-        <div style="background:#0a1800;padding:14px;text-align:center;border-radius:6px;cursor:pointer;" onclick="alert('Edit logo block')" title="Click to edit">
-          <div style="font-family:'Archivo Black',sans-serif;font-size:20px;color:var(--lime);letter-spacing:3px;">DUALITY POLE</div>
-          <div style="font-size:10px;color:var(--grey);margin-top:4px;">Logo Block — click to edit</div>
-        </div>
-        <div style="background:#1a1a1a;border:1px solid var(--border);padding:12px;border-radius:6px;cursor:pointer;" onclick="alert('Edit heading block')" title="Click to edit">
-          <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">Season 4 is open!</div>
-          <div style="font-size:10px;color:var(--grey);margin-top:4px;">Heading Block — click to edit</div>
-        </div>
-        <div style="background:#1a1a1a;border:1px solid var(--border);padding:12px;border-radius:6px;cursor:pointer;" onclick="alert('Edit body text block')" title="Click to edit">
-          <div contenteditable="true" style="font-size:13px;line-height:1.6;color:#ccc;">Hi [First Name],<br><br>We have exciting news — Season 4 enrolments are now open! Secure your spot before classes fill up.</div>
-          <div style="font-size:10px;color:var(--grey);margin-top:4px;">Body Text Block — click to edit</div>
-        </div>
-        <div style="background:#1a1a1a;border:1px solid var(--border);padding:12px;border-radius:6px;cursor:pointer;text-align:center;" onclick="alert('Edit button block')" title="Click to edit">
-          <div style="display:inline-block;background:var(--lime);color:#000;padding:10px 24px;border-radius:6px;font-family:'Archivo Black',sans-serif;font-size:13px;">Enrol Now</div>
-          <div style="font-size:10px;color:var(--grey);margin-top:6px;">Button Block — click to edit</div>
-        </div>
-        <div style="background:#0a0a0a;border:1px solid var(--border);padding:10px;border-radius:6px;cursor:pointer;text-align:center;" onclick="alert('Edit footer block')" title="Click to edit">
-          <div style="font-size:11px;color:var(--grey);">Duality Pole Studio · 42 Smith St, Fitzroy VIC 3065 · Unsubscribe</div>
-          <div style="font-size:10px;color:var(--grey);margin-top:4px;">Footer Block — click to edit</div>
-        </div>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button class="btn btn-lime" onclick="alert('Opening Mailchimp…')">Open Mailchimp →</button>
+        <button class="btn btn-ghost" onclick="closeModal('modal-email-designer')">Close</button>
       </div>
     </div>
-    <div style="display:flex;gap:8px;"><button class="btn btn-ghost" onclick="alert('Test email sent to mimi@dualitypole.com.au')">Send Test</button><button class="btn btn-lime" onclick="alert('Template saved!');closeModal('modal-email-designer')">Save Template</button><button class="btn btn-ghost" onclick="closeModal('modal-email-designer')">Cancel</button></div>
   </div>
 </div>
 
