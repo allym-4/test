@@ -438,12 +438,12 @@ tr.clickable-row:hover td { background: #141414; }
             <table>
               <thead><tr><th>Class</th><th>Time</th><th>Instructor</th><th>Studio</th><th>Enrolled</th><th>Status</th><th>Action</th></tr></thead>
               <tbody>
-                <tr class="clickable-row" onclick="openAttendanceRegister('Level 1','5:30pm','Chloe','The Box')"><td><b>Level 1</b> <span style="color:var(--grey);font-size:11px;">→</span></td><td style="color:var(--grey)">5:30pm</td><td>Chloe</td><td>The Box</td><td>10/12</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openCancelClass('Level 1','Mon 5:30pm','The Box',10)">Cancel</button></td></tr>
-                <tr class="clickable-row" onclick="openAttendanceRegister('Sensual Flow','6:00pm','Mia','Rhapsody')"><td><b>Sensual Flow</b> <span style="color:var(--grey);font-size:11px;">→</span></td><td style="color:var(--grey)">6:00pm</td><td>Mia</td><td>Rhapsody</td><td>8/10</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openCancelClass('Sensual Flow','Mon 6:00pm','Rhapsody',8)">Cancel</button></td></tr>
-                <tr class="clickable-row" onclick="openAttendanceRegister('Level 2','6:30pm','Chloe','The Box')"><td><b>Level 2</b> <span style="color:var(--grey);font-size:11px;">→</span></td><td style="color:var(--grey)">6:30pm</td><td>Chloe</td><td>The Box</td><td>15/15</td><td><span class="tag tag-amber">Full</span></td><td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openCancelClass('Level 2','Mon 6:30pm','The Box',15)">Cancel</button></td></tr>
-                <tr class="clickable-row" onclick="openAttendanceRegister('High Tricks','7:30pm','Mimi','The Box')"><td><b>High Tricks</b> <span style="color:var(--grey);font-size:11px;">→</span></td><td style="color:var(--grey)">7:30pm</td><td>Mimi</td><td>The Box</td><td>8/10</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openCancelClass('High Tricks','Mon 7:30pm','The Box',8)">Cancel</button></td></tr>
-                <tr class="clickable-row" onclick="openAttendanceRegister('Exotic Floor','8:00pm','Mia','Rhapsody')"><td><b>Exotic Floor</b> <span style="color:var(--grey);font-size:11px;">→</span></td><td style="color:var(--grey)">8:00pm</td><td>Mia</td><td>Rhapsody</td><td>6/10</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openCancelClass('Exotic Floor','Mon 8:00pm','Rhapsody',6)">Cancel</button></td></tr>
-                <tr><td><b>Flexi &amp; Conditioning</b></td><td style="color:var(--grey)">8:30pm</td><td>Jade</td><td>The Box</td><td>0/12</td><td><span class="tag tag-red">Cancelled</span></td><td>—</td></tr>
+                <tr class="clickable-row" onclick="openAttendanceRegister('Level 1','5:30pm','Chloe','The Box')"><td><b>Level 1</b> <span style="color:var(--grey);font-size:11px;">→</span></td><td style="color:var(--grey)">5:30pm</td><td id="tt-instructor-l1">Chloe</td><td>The Box</td><td>10/12</td><td><span class="tag tag-lime">Active</span></td><td style="white-space:nowrap;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openAssignCover('Level 1','Mon 5:30pm','Chloe','tt-instructor-l1')">Cover</button> <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openCancelClass('Level 1','Mon 5:30pm','The Box',10)">Cancel</button></td></tr>
+                <tr class="clickable-row" onclick="openAttendanceRegister('Sensual Flow','6:00pm','Mia','Rhapsody')"><td><b>Sensual Flow</b> <span style="color:var(--grey);font-size:11px;">→</span></td><td style="color:var(--grey)">6:00pm</td><td id="tt-instructor-sf">Bambi</td><td>Rhapsody</td><td>8/10</td><td><span class="tag tag-lime">Active</span></td><td style="white-space:nowrap;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openAssignCover('Sensual Flow','Mon 6:00pm','Bambi','tt-instructor-sf')">Cover</button> <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openCancelClass('Sensual Flow','Mon 6:00pm','Rhapsody',8)">Cancel</button></td></tr>
+                <tr class="clickable-row" onclick="openAttendanceRegister('Level 2','6:30pm','Chloe','The Box')"><td><b>Level 2</b> <span style="color:var(--grey);font-size:11px;">→</span></td><td style="color:var(--grey)">6:30pm</td><td id="tt-instructor-l2">Chloe</td><td>The Box</td><td>15/15</td><td><span class="tag tag-amber">Full</span></td><td style="white-space:nowrap;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openAssignCover('Level 2','Mon 6:30pm','Chloe','tt-instructor-l2')">Cover</button> <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openCancelClass('Level 2','Mon 6:30pm','The Box',15)">Cancel</button></td></tr>
+                <tr class="clickable-row" onclick="openAttendanceRegister('High Tricks','7:30pm','Mimi','The Box')"><td><b>High Tricks</b> <span style="color:var(--grey);font-size:11px;">→</span></td><td style="color:var(--grey)">7:30pm</td><td id="tt-instructor-ht">Mimi</td><td>The Box</td><td>8/10</td><td><span class="tag tag-lime">Active</span></td><td style="white-space:nowrap;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openAssignCover('High Tricks','Mon 7:30pm','Mimi','tt-instructor-ht')">Cover</button> <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openCancelClass('High Tricks','Mon 7:30pm','The Box',8)">Cancel</button></td></tr>
+                <tr class="clickable-row" onclick="openAttendanceRegister('Exotic Floor','8:00pm','Mia','Rhapsody')"><td><b>Exotic Floor</b> <span style="color:var(--grey);font-size:11px;">→</span></td><td style="color:var(--grey)">8:00pm</td><td id="tt-instructor-ef">Violet</td><td>Rhapsody</td><td>6/10</td><td><span class="tag tag-lime">Active</span></td><td style="white-space:nowrap;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openAssignCover('Exotic Floor','Mon 8:00pm','Violet','tt-instructor-ef')">Cover</button> <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openCancelClass('Exotic Floor','Mon 8:00pm','Rhapsody',6)">Cancel</button></td></tr>
+                <tr><td><b>Flexi &amp; Conditioning</b></td><td style="color:var(--grey)">8:30pm</td><td>Viv</td><td>The Box</td><td>0/12</td><td><span class="tag tag-red">Cancelled</span></td><td>—</td></tr>
               </tbody>
             </table>
           </div>
@@ -3167,6 +3167,48 @@ tr.clickable-row:hover td { background: #141414; }
   </div>
 </div>
 
+<!-- Assign Cover Modal -->
+<div class="modal-overlay" id="modal-assign-cover">
+  <div class="modal">
+    <div class="modal-title">Assign Cover — Tonight Only <button class="modal-close" onclick="closeModal('modal-assign-cover')">✕</button></div>
+    <input type="hidden" id="cover-cell-id" />
+    <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:16px;">
+      <div style="font-size:11px;color:var(--grey);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Class</div>
+      <div style="font-weight:600;font-size:14px;" id="cover-class-name"></div>
+      <div style="font-size:12px;color:var(--grey);margin-top:4px;">Currently assigned: <span id="cover-current" style="color:var(--white);"></span></div>
+    </div>
+    <div class="field">
+      <label>Assign cover instructor</label>
+      <select id="cover-instructor-select" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:13px;padding:9px 10px;">
+        <option value="Mimi">Mimi</option>
+        <option value="Chloe">Chloe</option>
+        <option value="Amy">Amy</option>
+        <option value="Bambi">Bambi</option>
+        <option value="Violet">Violet</option>
+        <option value="Viv">Viv</option>
+        <option value="Peaches">Peaches</option>
+        <option value="Maz">Maz</option>
+        <option value="Jaz">Jaz</option>
+        <option value="Avalon">Avalon</option>
+        <option value="Zara">Zara</option>
+      </select>
+    </div>
+    <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:var(--amber);">⚠️ This is a one-off change for tonight only. The timetable is not permanently updated.</div>
+    <div class="notif-row" style="border:none;padding:0;margin-bottom:20px;">
+      <div><div style="font-weight:500;font-size:13px;">Notify cover instructor</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Send them a push notification and email with class details</div></div>
+      <label class="toggle"><input type="checkbox" id="cover-notify" checked /><span class="toggle-slider"></span></label>
+    </div>
+    <div class="notif-row" style="border:none;padding:0;margin-bottom:20px;">
+      <div><div style="font-weight:500;font-size:13px;">Notify students of instructor change</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Let enrolled students know who's teaching tonight</div></div>
+      <label class="toggle"><input type="checkbox" id="cover-notify-students" /><span class="toggle-slider"></span></label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-assign-cover')">Cancel</button>
+      <button class="btn btn-lime" onclick="confirmCover()">Confirm Cover</button>
+    </div>
+  </div>
+</div>
+
 <!-- Add Student Modal -->
 <div class="modal-overlay" id="modal-add-student">
   <div class="modal">
@@ -4338,6 +4380,32 @@ function setTTMode(mode) {
 }
 
 // ===== CANCEL CLASS HELPER (used by dashboard) =====
+function openAssignCover(className, time, currentInstructor, cellId) {
+  document.getElementById('cover-class-name').textContent = className + ' — ' + time;
+  document.getElementById('cover-current').textContent = currentInstructor;
+  document.getElementById('cover-cell-id').value = cellId;
+  // pre-select current instructor in dropdown
+  const sel = document.getElementById('cover-instructor-select');
+  for (let i = 0; i < sel.options.length; i++) {
+    sel.options[i].selected = sel.options[i].value === currentInstructor;
+  }
+  openModal('modal-assign-cover');
+}
+
+function confirmCover() {
+  const sel = document.getElementById('cover-instructor-select');
+  const chosen = sel.value;
+  const notify = document.getElementById('cover-notify').checked;
+  const cellId = document.getElementById('cover-cell-id').value;
+  const cell = document.getElementById(cellId);
+  if (cell && chosen) {
+    const wasCover = cell.textContent !== chosen;
+    cell.innerHTML = chosen + (wasCover ? ' <span style="font-size:10px;background:var(--amber);color:#000;border-radius:3px;padding:1px 5px;font-weight:700;margin-left:4px;">COVER</span>' : '');
+  }
+  if (notify) alert('Notification sent to ' + chosen + ' for this class.');
+  closeModal('modal-assign-cover');
+}
+
 function openCancelClass(name, time, studio, enrolled) {
   if (confirm('Cancel ' + name + ' on ' + time + ' at ' + studio + '? ' + enrolled + ' students will be notified.')) {
     alert('Class cancelled. ' + enrolled + ' students notified.');
