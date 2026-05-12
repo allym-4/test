@@ -45,6 +45,53 @@
 
 ---
 
+## The Studio Space
+
+Welcome to Duality, our purpose-built playground for all things pole. Tucked high in the trees on vibrant Gadigal Land in Surry Hills, our dreamy studio is designed for one thing: the ultimate pole experience.
+
+Inside you will find not one, not two, but three stunning pole studios ready to set the stage for your spins, flips and hair flicks. The reception is spacious and luxe, perfect for a pre-class catch-up or post-class debrief. We have change rooms to slip into your duality with ease, gender-neutral bathrooms with two stalls and a shower, and even a Dyson tap-and-dryer because we love looking good while staying sustainable. You can also grab a locker for the season to stash your grip, shoes or secret snacks.
+
+Every corner of Duality is designed to feel otherworldly. From the moment you step inside you leave the everyday behind. The lights, the mirrors, the music, the energy — it is dreamy, a little cheeky and completely transportive. Think of it as stepping into another dimension, one where you are powerful, playful and free to move however you want.
+
+### Studio Rooms
+
+**Rhapsody**
+- 14 x 38mm brass 3.4m spin/static poles
+- Every pole in view of a mirror and teacher
+- 2.6m high mirrors
+- Cushioned, shock-absorbing specialist tarquet flooring
+- Custom, colour-controlled lighting
+- Holographic windows
+- Super spacious — at least 2.4m between each pole
+- Ducted air conditioning
+- State-of-the-art speakers for crisp audio
+- Branded Duality mats and blocks provided
+
+**The Box**
+- 11 x 38mm brass 3.4m spin/static poles
+- Every pole in view of a mirror and teacher
+- 2.6m high mirrors
+- Cushioned, shock-absorbing specialist hybrid flooring
+- Custom, colour-controlled lighting
+- Complete blackout allowing full lighting control
+- Super spacious — at least 2.1m between each pole
+- Ducted air conditioning
+- State-of-the-art speakers for crisp audio
+- Branded Duality mats and blocks provided
+
+**Janitor's Closet**
+- 3 x 38mm brass 3.4m spin/static poles
+- Perfect for private lessons and competition practice
+- 2.6m high mirrors
+- Cushioned, shock-absorbing specialist hybrid flooring
+- Custom, colour-controlled lighting
+- Holographic windows
+- Super spacious — at least 2.1m between each pole
+- Ducted air conditioning
+- Branded Duality mats and blocks provided
+
+---
+
 ## About the Studio
 
 **Name:** Duality Pole
