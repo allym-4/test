@@ -558,95 +558,1247 @@ tr.clickable-row:hover td { background: #141414; }
         <table>
           <thead><tr><th></th><th>Name</th><th>Level</th><th>Classes</th><th>Balance</th><th>Status</th><th>Last Seen</th><th>Actions</th></tr></thead>
           <tbody id="students-tbody">
-            <tr class="clickable-row student-row" data-name="jess malone jess@email.com" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='jess'))">
-              <td><div class="s-avatar" style="background:#ffaa44;">J</div></td>
-              <td><b>Jess Malone</b><div style="font-size:11px;color:var(--grey)">she/her · jess@email.com</div></td>
-              <td>Level 2</td><td>3</td>
-              <td class="bal-neg">−$120</td>
-              <td><span class="tag tag-amber">Owing</span></td>
-              <td style="color:var(--grey)">Today</td>
-              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(s=>s.id==='jess'))">View</button></td>
-            </tr>
-            <tr class="clickable-row student-row" data-name="ruby kim ruby@email.com" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='ruby'))">
-              <td><div class="s-avatar" style="background:var(--lav);">R</div></td>
-              <td><b>Ruby Kim</b><div style="font-size:11px;color:var(--grey)">she/her · ruby@email.com</div></td>
-              <td>Level 3</td><td>4</td>
-              <td class="bal-pos">+$20 credit</td>
-              <td><span class="tag tag-lime">Active</span></td>
-              <td style="color:var(--grey)">Today</td>
-              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(s=>s.id==='ruby'))">View</button></td>
-            </tr>
-            <tr class="clickable-row student-row" data-name="sophie lawson sophie@email.com" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='sophie'))">
-              <td><div class="s-avatar" style="background:var(--lime);">S</div></td>
-              <td><b>Sophie Lawson</b><div style="font-size:11px;color:var(--grey)">they/them · sophie@email.com</div></td>
-              <td>Level 1</td><td>2</td>
+            <tr class="clickable-row student-row" data-name="aishu kripa aishukripa33@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='aishukripa';}))">
+              <td><div class="s-avatar" style="background:#ffaa44;">A</div></td>
+              <td><b>Aishu Kripa</b><div style="font-size:11px;color:var(--grey)">aishukripa33@gmail.com</div></td>
+              <td>Dirty Dance</td><td>2</td>
               <td class="bal-pos">$0</td>
               <td><span class="tag tag-lime">Active</span></td>
-              <td style="color:var(--grey)">9 May</td>
-              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(s=>s.id==='sophie'))">View</button></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='aishukripa';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="kylie rhodes kylie@email.com" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='kylie'))">
-              <td><div class="s-avatar" style="background:#ff6b6b;">K</div></td>
-              <td><b>Kylie Rhodes</b><div style="font-size:11px;color:var(--grey)">she/her · kylie@email.com</div></td>
-              <td>Level 2</td><td>2</td>
-              <td class="bal-neg">−$95</td>
-              <td><span class="tag tag-red">Blocked</span></td>
-              <td style="color:var(--grey)">2 May</td>
-              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(s=>s.id==='kylie'))">View</button></td>
-            </tr>
-            <tr class="clickable-row student-row" data-name="mia santos mia@email.com" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='mia'))">
-              <td><div class="s-avatar" style="background:#4ade80;">M</div></td>
-              <td><b>Mia Santos</b><div style="font-size:11px;color:var(--grey)">she/they · mia@email.com</div></td>
-              <td>High Tricks</td><td>5</td>
-              <td class="bal-pos">+$40 credit</td>
-              <td><span class="tag tag-lime">Active</span></td>
-              <td style="color:var(--grey)">12 May</td>
-              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(s=>s.id==='mia'))">View</button></td>
-            </tr>
-            <tr class="clickable-row student-row" data-name="tara bell tara@email.com">
-              <td><div class="s-avatar" style="background:#44ff99;">T</div></td>
-              <td><b>Tara Bell</b><div style="font-size:11px;color:var(--grey)">she/her · tara@email.com</div></td>
-              <td>Level 2</td><td>3</td>
+            <tr class="clickable-row student-row" data-name="alana jones jonezalana@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='alanajones';}))">
+              <td><div class="s-avatar" style="background:#CDA5FF;">A</div></td>
+              <td><b>Alana Jones</b><div style="font-size:11px;color:var(--grey)">jonezalana@gmail.com</div></td>
+              <td>Dance Virgin</td><td>2</td>
               <td class="bal-pos">$0</td>
               <td><span class="tag tag-lime">Active</span></td>
-              <td style="color:var(--grey)">11 May</td>
-              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation()">View</button></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='alanajones';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="hannah webb hannah@email.com">
-              <td><div class="s-avatar" style="background:#9ac4ff;">H</div></td>
-              <td><b>Hannah Webb</b><div style="font-size:11px;color:var(--grey)">she/her · hannah@email.com</div></td>
+            <tr class="clickable-row student-row" data-name="alex fleming alexfleming440@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='alexfleming';}))">
+              <td><div class="s-avatar" style="background:#DBFF00;">A</div></td>
+              <td><b>Alex Fleming</b><div style="font-size:11px;color:var(--grey)">alexfleming440@gmail.com</div></td>
+              <td>Level 5</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='alexfleming';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="alexa winterstein adwinterstein@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='alexawinterstein';}))">
+              <td><div class="s-avatar" style="background:#ff6b6b;">A</div></td>
+              <td><b>Alexa Winterstein</b><div style="font-size:11px;color:var(--grey)">adwinterstein@gmail.com</div></td>
               <td>Level 1</td><td>1</td>
               <td class="bal-pos">$0</td>
               <td><span class="tag tag-lime">Active</span></td>
-              <td style="color:var(--grey)">10 May</td>
-              <td><button class="btn btn-ghost btn-xs">View</button></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='alexawinterstein';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="dana park dana@email.com">
-              <td><div class="s-avatar" style="background:#ffcc88;">D</div></td>
-              <td><b>Dana Park</b><div style="font-size:11px;color:var(--grey)">she/her · dana@email.com</div></td>
-              <td>High Tricks</td><td>4</td>
-              <td class="bal-neg">−$75</td>
-              <td><span class="tag tag-amber">Owing</span></td>
-              <td style="color:var(--grey)">8 May</td>
-              <td><button class="btn btn-ghost btn-xs">View</button></td>
-            </tr>
-            <tr class="clickable-row student-row" data-name="nina torres nina@email.com">
-              <td><div class="s-avatar" style="background:#b0f0b0;">N</div></td>
-              <td><b>Nina Torres</b><div style="font-size:11px;color:var(--grey)">she/her · nina@email.com</div></td>
-              <td>Level 3</td><td>5</td>
-              <td class="bal-pos">+$40 credit</td>
+            <tr class="clickable-row student-row" data-name="alexandra dickie alexrdickie@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='alexandradickie';}))">
+              <td><div class="s-avatar" style="background:#4ade80;">A</div></td>
+              <td><b>Alexandra Dickie</b><div style="font-size:11px;color:var(--grey)">alexrdickie@gmail.com</div></td>
+              <td>Chair</td><td>4</td>
+              <td class="bal-pos">$0</td>
               <td><span class="tag tag-lime">Active</span></td>
-              <td style="color:var(--grey)">12 May</td>
-              <td><button class="btn btn-ghost btn-xs">View</button></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='alexandradickie';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="amber cole amber@email.com">
+            <tr class="clickable-row student-row" data-name="alice foglino alice.foglino@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='alicefoglino';}))">
+              <td><div class="s-avatar" style="background:#9ac4ff;">A</div></td>
+              <td><b>Alice Foglino</b><div style="font-size:11px;color:var(--grey)">alice.foglino@gmail.com</div></td>
+              <td>Dance Tech</td><td>3</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='alicefoglino';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="alice steele alicesteele99@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='alicesteele';}))">
               <td><div class="s-avatar" style="background:#ffb3de;">A</div></td>
-              <td><b>Amber Cole</b><div style="font-size:11px;color:var(--grey)">she/her · amber@email.com</div></td>
+              <td><b>Alice Steele</b><div style="font-size:11px;color:var(--grey)">alicesteele99@gmail.com</div></td>
+              <td>6 Virgin</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='alicesteele';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="ally la spina allylaspina@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='allylaspina';}))">
+              <td><div class="s-avatar" style="background:#44ff99;">A</div></td>
+              <td><b>Ally La Spina</b><div style="font-size:11px;color:var(--grey)">Allylaspina@gmail.com</div></td>
+              <td>Chole</td><td>3</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='allylaspina';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="amy reed aemyjosephine+1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='amyreed';}))">
+              <td><div class="s-avatar" style="background:#66dddd;">A</div></td>
+              <td><b>Amy Reed</b><div style="font-size:11px;color:var(--grey)">aemyjosephine+1@gmail.com</div></td>
+              <td>Advanced Floor</td><td>4</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='amyreed';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="angela yang chilin0619@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='angelayang';}))">
+              <td><div class="s-avatar" style="background:#b0f0b0;">A</div></td>
+              <td><b>Angela Yang</b><div style="font-size:11px;color:var(--grey)">chilin0619@gmail.com</div></td>
+              <td>Dance Tech</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='angelayang';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="anna wong annablisswong+1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='annawong';}))">
+              <td><div class="s-avatar" style="background:#ffcc88;">A</div></td>
+              <td><b>Anna Wong</b><div style="font-size:11px;color:var(--grey)">Annablisswong+1@gmail.com</div></td>
+              <td>High Tricks</td><td>3</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='annawong';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="annika rees annikarees@outlook.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='annikarees';}))">
+              <td><div class="s-avatar" style="background:#ff9ecb;">A</div></td>
+              <td><b>Annika Rees</b><div style="font-size:11px;color:var(--grey)">Annikarees@outlook.com</div></td>
+              <td>Level 3</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='annikarees';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="ariel tjeuw arielchewy@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='arieltjeuw';}))">
+              <td><div class="s-avatar" style="background:#c9aaff;">A</div></td>
+              <td><b>Ariel Tjeuw</b><div style="font-size:11px;color:var(--grey)">arielchewy@hotmail.com</div></td>
+              <td>Level 5</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='arieltjeuw';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="arielle carver-o’neill arcarvero@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='ariellecarveroneil';}))">
+              <td><div class="s-avatar" style="background:#ffd6a5;">A</div></td>
+              <td><b>Arielle Carver-O’Neill</b><div style="font-size:11px;color:var(--grey)">Arcarvero@gmail.com</div></td>
+              <td>Level 3</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='ariellecarveroneil';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="ashley lamont ashley@ashl.dev" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='ashleylamont';}))">
+              <td><div class="s-avatar" style="background:#b5ead7;">A</div></td>
+              <td><b>Ashley Lamont</b><div style="font-size:11px;color:var(--grey)">ashley@ashl.dev</div></td>
+              <td>Level 2</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='ashleylamont';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="avalon carnall avalon.carnall+1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='avaloncarnall';}))">
+              <td><div class="s-avatar" style="background:#ffc8dd;">A</div></td>
+              <td><b>Avalon Carnall</b><div style="font-size:11px;color:var(--grey)">Avalon.carnall+1@gmail.com</div></td>
+              <td>Advanced Floor</td><td>3</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='avaloncarnall';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="bella bushby bellabushby@live.com.au" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='bellabushby';}))">
+              <td><div class="s-avatar" style="background:#e8c1ff;">B</div></td>
+              <td><b>Bella Bushby</b><div style="font-size:11px;color:var(--grey)">bellabushby@live.com.au</div></td>
+              <td>Level 2</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='bellabushby';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="belle currie issycurrie18@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='bellecurrie';}))">
+              <td><div class="s-avatar" style="background:#caffbf;">B</div></td>
+              <td><b>Belle Currie</b><div style="font-size:11px;color:var(--grey)">issycurrie18@gmail.com</div></td>
+              <td>Chair Virgin</td><td>5</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='bellecurrie';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="beth horsburgh bhorsburgh@ozemail.com.au" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='bethhorsburgh';}))">
+              <td><div class="s-avatar" style="background:#a8d8ea;">B</div></td>
+              <td><b>Beth Horsburgh</b><div style="font-size:11px;color:var(--grey)">Bhorsburgh@ozemail.com.au</div></td>
+              <td>Dance Virgin</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='bethhorsburgh';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="bettina tang bettinatang25@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='bettinatang';}))">
+              <td><div class="s-avatar" style="background:#ffadad;">B</div></td>
+              <td><b>Bettina Tang</b><div style="font-size:11px;color:var(--grey)">bettinatang25@gmail.com</div></td>
+              <td>Strip</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='bettinatang';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="bronte osborne bronte.osborne@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='bronteosborne';}))">
+              <td><div class="s-avatar" style="background:#fdffb6;">B</div></td>
+              <td><b>Bronte Osborne</b><div style="font-size:11px;color:var(--grey)">bronte.osborne@hotmail.com</div></td>
+              <td>High Tricks</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='bronteosborne';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="bruce tsai pepsishill@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='brucetsai';}))">
+              <td><div class="s-avatar" style="background:#9bf6ff;">B</div></td>
+              <td><b>Bruce Tsai</b><div style="font-size:11px;color:var(--grey)">Pepsishill@gmail.com</div></td>
+              <td>Level 3</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='brucetsai';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="caitlin williams cewilliams0105@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='caitlinwilliams';}))">
+              <td><div class="s-avatar" style="background:#bde0fe;">C</div></td>
+              <td><b>Caitlin Williams</b><div style="font-size:11px;color:var(--grey)">cewilliams0105@gmail.com</div></td>
+              <td>Kiki</td><td>3</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='caitlinwilliams';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="cassandra chakouch cassiechakouch@live.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='cassandrachakouch';}))">
+              <td><div class="s-avatar" style="background:#ffaa44;">C</div></td>
+              <td><b>Cassandra Chakouch</b><div style="font-size:11px;color:var(--grey)">cassiechakouch@live.com</div></td>
+              <td>Level 5</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='cassandrachakouch';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="cat reynolds catreynolds45@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='catreynolds';}))">
+              <td><div class="s-avatar" style="background:#CDA5FF;">C</div></td>
+              <td><b>Cat Reynolds</b><div style="font-size:11px;color:var(--grey)">Catreynolds45@gmail.com</div></td>
+              <td>Advanced Floor</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='catreynolds';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="cat thompson catt9194@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='catthompson';}))">
+              <td><div class="s-avatar" style="background:#DBFF00;">C</div></td>
+              <td><b>Cat Thompson</b><div style="font-size:11px;color:var(--grey)">Catt9194@hotmail.com</div></td>
+              <td>Dance Tech</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='catthompson';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="catherine adams cath.m.adams@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='catherineadams';}))">
+              <td><div class="s-avatar" style="background:#ff6b6b;">C</div></td>
+              <td><b>Catherine Adams</b><div style="font-size:11px;color:var(--grey)">cath.m.adams@gmail.com</div></td>
+              <td>Dance Virgin</td><td>3</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='catherineadams';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="celeste mather celestemather6@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='celestemather';}))">
+              <td><div class="s-avatar" style="background:#4ade80;">C</div></td>
+              <td><b>Celeste Mather</b><div style="font-size:11px;color:var(--grey)">Celestemather6@gmail.com</div></td>
+              <td>Dance Virgin</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='celestemather';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="celina andrew celina.r.andrew@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='celinaandrew';}))">
+              <td><div class="s-avatar" style="background:#9ac4ff;">C</div></td>
+              <td><b>Celina Andrew</b><div style="font-size:11px;color:var(--grey)">Celina.r.andrew@gmail.com</div></td>
               <td>Level 1</td><td>2</td>
               <td class="bal-pos">$0</td>
               <td><span class="tag tag-lime">Active</span></td>
-              <td style="color:var(--grey)">7 May</td>
-              <td><button class="btn btn-ghost btn-xs">View</button></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='celinaandrew';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="chalida mckelvie chalida-mckelvie@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='chalidamckelvie';}))">
+              <td><div class="s-avatar" style="background:#ffb3de;">C</div></td>
+              <td><b>Chalida Mckelvie</b><div style="font-size:11px;color:var(--grey)">chalida-mckelvie@hotmail.com</div></td>
+              <td>Chole</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='chalidamckelvie';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="charlee campbell charleebcampbell99@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='charleecampbell';}))">
+              <td><div class="s-avatar" style="background:#44ff99;">C</div></td>
+              <td><b>Charlee Campbell</b><div style="font-size:11px;color:var(--grey)">charleebcampbell99@gmail.com</div></td>
+              <td>Level 1</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='charleecampbell';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="charlotte norman charlottenorman@yahoo.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='charlottenorman';}))">
+              <td><div class="s-avatar" style="background:#66dddd;">C</div></td>
+              <td><b>Charlotte Norman</b><div style="font-size:11px;color:var(--grey)">Charlottenorman@yahoo.com</div></td>
+              <td>Dance Virgin</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='charlottenorman';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="chenda viriyan mak nayirivm@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='chendaviriyanmak';}))">
+              <td><div class="s-avatar" style="background:#b0f0b0;">C</div></td>
+              <td><b>Chenda Viriyan Mak</b><div style="font-size:11px;color:var(--grey)">nayirivm@gmail.com</div></td>
+              <td>Level 2</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='chendaviriyanmak';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="cherry liu cherry_chang_liu@icloud.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='cherryliu';}))">
+              <td><div class="s-avatar" style="background:#ffcc88;">C</div></td>
+              <td><b>Cherry liu</b><div style="font-size:11px;color:var(--grey)">cherry_chang_liu@icloud.com</div></td>
+              <td>Advanced Floor</td><td>3</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='cherryliu';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="chloe seow chloechloe.seow@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='chloeseow';}))">
+              <td><div class="s-avatar" style="background:#ff9ecb;">C</div></td>
+              <td><b>Chloe Seow</b><div style="font-size:11px;color:var(--grey)">chloechloe.seow@gmail.com</div></td>
+              <td>Advanced Floor</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='chloeseow';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="clancy greening clancy.greening@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='clancygreening';}))">
+              <td><div class="s-avatar" style="background:#c9aaff;">C</div></td>
+              <td><b>Clancy Greening</b><div style="font-size:11px;color:var(--grey)">clancy.greening@gmail.com</div></td>
+              <td>Level 2</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='clancygreening';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="danae beatie danaebeatie@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='danaebeatie';}))">
+              <td><div class="s-avatar" style="background:#ffd6a5;">D</div></td>
+              <td><b>Danae Beatie</b><div style="font-size:11px;color:var(--grey)">danaebeatie@gmail.com</div></td>
+              <td>Chair</td><td>3</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='danaebeatie';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="dasha maiorova dash_m12@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='dashamaiorova';}))">
+              <td><div class="s-avatar" style="background:#b5ead7;">D</div></td>
+              <td><b>Dasha Maiorova</b><div style="font-size:11px;color:var(--grey)">Dash_m12@hotmail.com</div></td>
+              <td>Chair</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='dashamaiorova';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="dunia goh dunia.goh@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='duniagoh';}))">
+              <td><div class="s-avatar" style="background:#ffc8dd;">D</div></td>
+              <td><b>Dunia Goh</b><div style="font-size:11px;color:var(--grey)">dunia.goh@gmail.com</div></td>
+              <td>Strip Virgin</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='duniagoh';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="eleesheva mayo-ray eleeshevamayo@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='eleeshevamayoray';}))">
+              <td><div class="s-avatar" style="background:#e8c1ff;">E</div></td>
+              <td><b>Eleesheva Mayo-Ray</b><div style="font-size:11px;color:var(--grey)">Eleeshevamayo@gmail.com</div></td>
+              <td>Level 4</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='eleeshevamayoray';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="elli-jane mielcarz ellijane.mielcarz+1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='ellijanemielcarz';}))">
+              <td><div class="s-avatar" style="background:#caffbf;">E</div></td>
+              <td><b>Elli-Jane Mielcarz</b><div style="font-size:11px;color:var(--grey)">ellijane.mielcarz+1@gmail.com</div></td>
+              <td>Level 6</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='ellijanemielcarz';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="eloise green eloisegg@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='eloisegreen';}))">
+              <td><div class="s-avatar" style="background:#a8d8ea;">E</div></td>
+              <td><b>Eloise Green</b><div style="font-size:11px;color:var(--grey)">eloisegg@gmail.com</div></td>
+              <td>Level 2</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='eloisegreen';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="emily wooden woodenemily94@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='emilywooden';}))">
+              <td><div class="s-avatar" style="background:#ffadad;">E</div></td>
+              <td><b>Emily Wooden</b><div style="font-size:11px;color:var(--grey)">Woodenemily94@gmail.com</div></td>
+              <td>Advanced Floor</td><td>4</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='emilywooden';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="emma chegwidden-hart emmacheg@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='emmachegwiddenhart';}))">
+              <td><div class="s-avatar" style="background:#fdffb6;">E</div></td>
+              <td><b>Emma Chegwidden-Hart</b><div style="font-size:11px;color:var(--grey)">emmacheg@gmail.com</div></td>
+              <td>4 Tricks</td><td>3</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='emmachegwiddenhart';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="emma donovic emmadonovic@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='emmadonovic';}))">
+              <td><div class="s-avatar" style="background:#9bf6ff;">E</div></td>
+              <td><b>Emma Donovic</b><div style="font-size:11px;color:var(--grey)">emmadonovic@gmail.com</div></td>
+              <td>5 Foundations</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='emmadonovic';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="emma fitzgerald emmakfitzy@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='emmafitzgerald';}))">
+              <td><div class="s-avatar" style="background:#bde0fe;">E</div></td>
+              <td><b>Emma Fitzgerald</b><div style="font-size:11px;color:var(--grey)">emmakfitzy@hotmail.com</div></td>
+              <td>Dance Virgin</td><td>4</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='emmafitzgerald';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="emma scott-stevenson emma.ss1234@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='emmascottstevenson';}))">
+              <td><div class="s-avatar" style="background:#ffaa44;">E</div></td>
+              <td><b>Emma Scott-Stevenson</b><div style="font-size:11px;color:var(--grey)">emma.ss1234@hotmail.com</div></td>
+              <td>Level 2</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='emmascottstevenson';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="eric nguyen nhatnmt7+duality@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='ericnguyen';}))">
+              <td><div class="s-avatar" style="background:#CDA5FF;">E</div></td>
+              <td><b>Eric Nguyen</b><div style="font-size:11px;color:var(--grey)">nhatnmt7+duality@gmail.com</div></td>
+              <td>Level 2</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='ericnguyen';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="essie gregory gregoryessie@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='essiegregory';}))">
+              <td><div class="s-avatar" style="background:#DBFF00;">E</div></td>
+              <td><b>Essie Gregory</b><div style="font-size:11px;color:var(--grey)">gregoryessie@gmail.com</div></td>
+              <td>Level 5</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='essiegregory';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="faith chiang dongqiangsyd@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='faithchiang';}))">
+              <td><div class="s-avatar" style="background:#ff6b6b;">F</div></td>
+              <td><b>Faith Chiang</b><div style="font-size:11px;color:var(--grey)">dongqiangsyd@gmail.com</div></td>
+              <td>Level 5</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='faithchiang';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="fleur glover fleur.glover@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='fleurglover';}))">
+              <td><div class="s-avatar" style="background:#4ade80;">F</div></td>
+              <td><b>Fleur Glover</b><div style="font-size:11px;color:var(--grey)">Fleur.glover@gmail.com</div></td>
+              <td>Level 4</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='fleurglover';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="franky ferrer francescaferrerbest@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='frankyferrer';}))">
+              <td><div class="s-avatar" style="background:#9ac4ff;">F</div></td>
+              <td><b>Franky Ferrer</b><div style="font-size:11px;color:var(--grey)">francescaferrerbest@gmail.com</div></td>
+              <td>5 Foundations</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='frankyferrer';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="freya noble freyanoble1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='freyanoble';}))">
+              <td><div class="s-avatar" style="background:#ffb3de;">F</div></td>
+              <td><b>Freya Noble</b><div style="font-size:11px;color:var(--grey)">freyanoble1@gmail.com</div></td>
+              <td>Level 4</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='freyanoble';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="gabriella shone gabriella.shone@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='gabriellashone';}))">
+              <td><div class="s-avatar" style="background:#44ff99;">G</div></td>
+              <td><b>Gabriella Shone</b><div style="font-size:11px;color:var(--grey)">Gabriella.shone@gmail.com</div></td>
+              <td>Strip Virgin</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='gabriellashone';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="gabrielle darcy gabriellegenedarcy@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='gabrielledarcy';}))">
+              <td><div class="s-avatar" style="background:#66dddd;">G</div></td>
+              <td><b>Gabrielle D'Arcy</b><div style="font-size:11px;color:var(--grey)">gabriellegenedarcy@gmail.com</div></td>
+              <td>4 Tricks</td><td>3</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='gabrielledarcy';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="gee chan princess.gigi.totally.rulez@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='geechan';}))">
+              <td><div class="s-avatar" style="background:#b0f0b0;">G</div></td>
+              <td><b>Gee Chan</b><div style="font-size:11px;color:var(--grey)">Princess.gigi.totally.rulez@gmail.com</div></td>
+              <td>Level 5</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='geechan';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="georgia britt georgiabritt17@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='georgiabritt';}))">
+              <td><div class="s-avatar" style="background:#ffcc88;">G</div></td>
+              <td><b>Georgia Britt</b><div style="font-size:11px;color:var(--grey)">georgiabritt17@gmail.com</div></td>
+              <td>Chair</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='georgiabritt';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="gigi welsby gracewelsby123@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='gigiwelsby';}))">
+              <td><div class="s-avatar" style="background:#ff9ecb;">G</div></td>
+              <td><b>Gigi Welsby</b><div style="font-size:11px;color:var(--grey)">gracewelsby123@gmail.com</div></td>
+              <td>Floor Virgin</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='gigiwelsby';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="giselle bueti gisellebueti@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='gisellebueti';}))">
+              <td><div class="s-avatar" style="background:#c9aaff;">G</div></td>
+              <td><b>Giselle Bueti</b><div style="font-size:11px;color:var(--grey)">gisellebueti@hotmail.com</div></td>
+              <td>Level 1</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='gisellebueti';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="hannah zywczak hannah.zywczak@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='hannahzywczak';}))">
+              <td><div class="s-avatar" style="background:#ffd6a5;">H</div></td>
+              <td><b>Hannah Zywczak</b><div style="font-size:11px;color:var(--grey)">Hannah.zywczak@gmail.com</div></td>
+              <td>Inter Floor</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='hannahzywczak';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="haylie griffis haylie_griffis@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='hayliegriffis';}))">
+              <td><div class="s-avatar" style="background:#b5ead7;">H</div></td>
+              <td><b>Haylie Griffis</b><div style="font-size:11px;color:var(--grey)">haylie_griffis@hotmail.com</div></td>
+              <td>Level 5</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='hayliegriffis';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="holly fung starryeyedblunder@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='hollyfung';}))">
+              <td><div class="s-avatar" style="background:#ffc8dd;">H</div></td>
+              <td><b>Holly Fung</b><div style="font-size:11px;color:var(--grey)">starryeyedblunder@gmail.com</div></td>
+              <td>Level 2</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='hollyfung';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="irena lysiuk irena.lysiuk@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='irenalysiuk';}))">
+              <td><div class="s-avatar" style="background:#e8c1ff;">I</div></td>
+              <td><b>Irena Lysiuk</b><div style="font-size:11px;color:var(--grey)">irena.lysiuk@gmail.com</div></td>
+              <td>Level 2</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='irenalysiuk';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="jasmin pitts jpitts2468+1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='jasminpitts';}))">
+              <td><div class="s-avatar" style="background:#caffbf;">J</div></td>
+              <td><b>Jasmin Pitts</b><div style="font-size:11px;color:var(--grey)">jpitts2468+1@gmail.com</div></td>
+              <td>Advanced Floor</td><td>4</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='jasminpitts';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="jenny leech jennylleech@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='jennyleech';}))">
+              <td><div class="s-avatar" style="background:#a8d8ea;">J</div></td>
+              <td><b>Jenny Leech</b><div style="font-size:11px;color:var(--grey)">jennylleech@gmail.com</div></td>
+              <td>Level 3</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='jennyleech';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="jessica coffey jlcoffey93@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='jessicacoffey';}))">
+              <td><div class="s-avatar" style="background:#ffadad;">J</div></td>
+              <td><b>Jessica Coffey</b><div style="font-size:11px;color:var(--grey)">jlcoffey93@gmail.com</div></td>
+              <td>Level 4</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='jessicacoffey';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="jessica neary jessicalneary@outlook.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='jessicaneary';}))">
+              <td><div class="s-avatar" style="background:#fdffb6;">J</div></td>
+              <td><b>Jessica Neary</b><div style="font-size:11px;color:var(--grey)">jessicalneary@outlook.com</div></td>
+              <td>Inter Floor</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='jessicaneary';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="jo tanus joeyjojojnr@outlook.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='jotanus';}))">
+              <td><div class="s-avatar" style="background:#9bf6ff;">J</div></td>
+              <td><b>Jo Tanus</b><div style="font-size:11px;color:var(--grey)">Joeyjojojnr@outlook.com</div></td>
+              <td>Strip Virgin</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='jotanus';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="julie kha julie.kha@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='juliekha';}))">
+              <td><div class="s-avatar" style="background:#bde0fe;">J</div></td>
+              <td><b>Julie Kha</b><div style="font-size:11px;color:var(--grey)">julie.kha@hotmail.com</div></td>
+              <td>Chair</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='juliekha';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="kasvi luthra kasviluthra@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='kasviluthra';}))">
+              <td><div class="s-avatar" style="background:#ffaa44;">K</div></td>
+              <td><b>Kasvi Luthra</b><div style="font-size:11px;color:var(--grey)">kasviluthra@gmail.com</div></td>
+              <td>Level 5</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='kasviluthra';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="kathleen parkes kat.parkes@outlook.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='kathleenparkes';}))">
+              <td><div class="s-avatar" style="background:#CDA5FF;">K</div></td>
+              <td><b>Kathleen Parkes</b><div style="font-size:11px;color:var(--grey)">kat.parkes@outlook.com</div></td>
+              <td>Level 2</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='kathleenparkes';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="katrina burns burns.nolan@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='katrinaburns';}))">
+              <td><div class="s-avatar" style="background:#DBFF00;">K</div></td>
+              <td><b>Katrina Burns</b><div style="font-size:11px;color:var(--grey)">Burns.nolan@gmail.com</div></td>
+              <td>Chole</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='katrinaburns';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="kerri chow kerriann@fastmail.fm" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='kerrichow';}))">
+              <td><div class="s-avatar" style="background:#ff6b6b;">K</div></td>
+              <td><b>Kerri Chow</b><div style="font-size:11px;color:var(--grey)">Kerriann@fastmail.fm</div></td>
+              <td>Advanced Floor</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='kerrichow';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="krys kapsimallis kkryskaps@icloud.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='kryskapsimallis';}))">
+              <td><div class="s-avatar" style="background:#4ade80;">K</div></td>
+              <td><b>Krys Kapsimallis</b><div style="font-size:11px;color:var(--grey)">kkryskaps@icloud.com</div></td>
+              <td>Kiki</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='kryskapsimallis';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="kylie daisog prettykylied@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='kyliedaisog';}))">
+              <td><div class="s-avatar" style="background:#9ac4ff;">K</div></td>
+              <td><b>Kylie Daisog</b><div style="font-size:11px;color:var(--grey)">prettykylied@gmail.com</div></td>
+              <td>Level 4</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='kyliedaisog';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="laura keenan laurakeenan2496@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='laurakeenan';}))">
+              <td><div class="s-avatar" style="background:#ffb3de;">L</div></td>
+              <td><b>Laura Keenan</b><div style="font-size:11px;color:var(--grey)">laurakeenan2496@gmail.com</div></td>
+              <td>Dance Virgin</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='laurakeenan';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="laura murphy lauraclare98@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='lauramurphy';}))">
+              <td><div class="s-avatar" style="background:#44ff99;">L</div></td>
+              <td><b>Laura Murphy</b><div style="font-size:11px;color:var(--grey)">Lauraclare98@gmail.com</div></td>
+              <td>4 Tricks</td><td>3</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='lauramurphy';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="leane chew leane.chew@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='leanechew';}))">
+              <td><div class="s-avatar" style="background:#66dddd;">L</div></td>
+              <td><b>Leane Chew</b><div style="font-size:11px;color:var(--grey)">Leane.chew@gmail.com</div></td>
+              <td>Chole</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='leanechew';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="lena l lena202302@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='lenal';}))">
+              <td><div class="s-avatar" style="background:#b0f0b0;">L</div></td>
+              <td><b>Lena L</b><div style="font-size:11px;color:var(--grey)">Lena202302@gmail.com</div></td>
+              <td>Level 2</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='lenal';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="leonardo shaw-voysey leoshaw161@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='leonardoshawvoysey';}))">
+              <td><div class="s-avatar" style="background:#ffcc88;">L</div></td>
+              <td><b>Leonardo Shaw-Voysey</b><div style="font-size:11px;color:var(--grey)">leoshaw161@gmail.com</div></td>
+              <td>Level 3</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='leonardoshawvoysey';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="lisa young lisay194@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='lisayoung';}))">
+              <td><div class="s-avatar" style="background:#ff9ecb;">L</div></td>
+              <td><b>Lisa Young</b><div style="font-size:11px;color:var(--grey)">lisay194@gmail.com</div></td>
+              <td>Inter Floor</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='lisayoung';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="liz brown elizabeth.brown623@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='lizbrown';}))">
+              <td><div class="s-avatar" style="background:#c9aaff;">L</div></td>
+              <td><b>Liz Brown</b><div style="font-size:11px;color:var(--grey)">Elizabeth.brown623@gmail.com</div></td>
+              <td>Level 3</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='lizbrown';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="lucy davies lucyalicedavies@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='lucydavies';}))">
+              <td><div class="s-avatar" style="background:#ffd6a5;">L</div></td>
+              <td><b>Lucy Davies</b><div style="font-size:11px;color:var(--grey)">Lucyalicedavies@gmail.com</div></td>
+              <td>Dance</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='lucydavies';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="lucy hargreaves lucy.a.hargreaves@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='lucyhargreaves';}))">
+              <td><div class="s-avatar" style="background:#b5ead7;">L</div></td>
+              <td><b>Lucy Hargreaves</b><div style="font-size:11px;color:var(--grey)">Lucy.a.hargreaves@gmail.com</div></td>
+              <td>Dirty Dance</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='lucyhargreaves';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="maddie hurst maddiehurst1996@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='maddiehurst';}))">
+              <td><div class="s-avatar" style="background:#ffc8dd;">M</div></td>
+              <td><b>Maddie Hurst</b><div style="font-size:11px;color:var(--grey)">maddiehurst1996@gmail.com</div></td>
+              <td>Chair</td><td>5</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='maddiehurst';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="maddison bates-willis mbateswillis@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='maddisonbateswilli';}))">
+              <td><div class="s-avatar" style="background:#e8c1ff;">M</div></td>
+              <td><b>Maddison Bates-Willis</b><div style="font-size:11px;color:var(--grey)">mbateswillis@gmail.com</div></td>
+              <td>Level 2</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='maddisonbateswilli';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="mary nguyen mary.nguyen93@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='marynguyen';}))">
+              <td><div class="s-avatar" style="background:#caffbf;">M</div></td>
+              <td><b>Mary Nguyen</b><div style="font-size:11px;color:var(--grey)">mary.nguyen93@hotmail.com</div></td>
+              <td>High Tricks</td><td>3</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='marynguyen';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="matilda brown matildab94@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='matildabrown';}))">
+              <td><div class="s-avatar" style="background:#a8d8ea;">M</div></td>
+              <td><b>Matilda Brown</b><div style="font-size:11px;color:var(--grey)">matildab94@gmail.com</div></td>
+              <td>Level 3</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='matildabrown';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="meg dortmans megad103@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='megdortmans';}))">
+              <td><div class="s-avatar" style="background:#ffadad;">M</div></td>
+              <td><b>Meg Dortmans</b><div style="font-size:11px;color:var(--grey)">Megad103@gmail.com</div></td>
+              <td>Level 1</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='megdortmans';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="megan liang meganliang7@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='meganliang';}))">
+              <td><div class="s-avatar" style="background:#fdffb6;">M</div></td>
+              <td><b>Megan Liang</b><div style="font-size:11px;color:var(--grey)">meganliang7@gmail.com</div></td>
+              <td>Level 5</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='meganliang';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="melanie devonshire melanie.devonshire@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='melaniedevonshire';}))">
+              <td><div class="s-avatar" style="background:#9bf6ff;">M</div></td>
+              <td><b>Melanie Devonshire</b><div style="font-size:11px;color:var(--grey)">melanie.devonshire@hotmail.com</div></td>
+              <td>Level 3</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='melaniedevonshire';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="mia mcfarlane mia.mcfarlane12@icloud.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='miamcfarlane';}))">
+              <td><div class="s-avatar" style="background:#bde0fe;">M</div></td>
+              <td><b>Mia McFarlane</b><div style="font-size:11px;color:var(--grey)">Mia.mcfarlane12@icloud.com</div></td>
+              <td>4 Tricks</td><td>4</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='miamcfarlane';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="michelle ridge mridge.aus@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='michelleridge';}))">
+              <td><div class="s-avatar" style="background:#ffaa44;">M</div></td>
+              <td><b>Michelle Ridge</b><div style="font-size:11px;color:var(--grey)">mridge.aus@gmail.com</div></td>
+              <td>Chair</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='michelleridge';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="minyu vandenberg minnievee14@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='minyuvandenberg';}))">
+              <td><div class="s-avatar" style="background:#CDA5FF;">M</div></td>
+              <td><b>Minyu Vandenberg</b><div style="font-size:11px;color:var(--grey)">minnievee14@gmail.com</div></td>
+              <td>Advanced Floor</td><td>4</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='minyuvandenberg';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="monica jones monicadj101@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='monicajones';}))">
+              <td><div class="s-avatar" style="background:#DBFF00;">M</div></td>
+              <td><b>Monica Jones</b><div style="font-size:11px;color:var(--grey)">monicadj101@gmail.com</div></td>
+              <td>Level 5</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='monicajones';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="myles kuah kuahmyles@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='myleskuah';}))">
+              <td><div class="s-avatar" style="background:#ff6b6b;">M</div></td>
+              <td><b>Myles Kuah</b><div style="font-size:11px;color:var(--grey)">kuahmyles@gmail.com</div></td>
+              <td>Level 5</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='myleskuah';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="nellie camp nellie.camp@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='nelliecamp';}))">
+              <td><div class="s-avatar" style="background:#4ade80;">N</div></td>
+              <td><b>Nellie Camp</b><div style="font-size:11px;color:var(--grey)">Nellie.camp@gmail.com</div></td>
+              <td>Level 6</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='nelliecamp';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="nicole gal nicole.galhardi@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='nicolegal';}))">
+              <td><div class="s-avatar" style="background:#9ac4ff;">N</div></td>
+              <td><b>Nicole Gal</b><div style="font-size:11px;color:var(--grey)">nicole.galhardi@gmail.com</div></td>
+              <td>Level 2</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='nicolegal';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="nicole renvoize nicolerenvoize@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='nicolerenvoize';}))">
+              <td><div class="s-avatar" style="background:#ffb3de;">N</div></td>
+              <td><b>Nicole Renvoize</b><div style="font-size:11px;color:var(--grey)">nicolerenvoize@hotmail.com</div></td>
+              <td>Level 4</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='nicolerenvoize';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="olivia gengos oliviagengos@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='oliviagengos';}))">
+              <td><div class="s-avatar" style="background:#44ff99;">O</div></td>
+              <td><b>Olivia Gengos</b><div style="font-size:11px;color:var(--grey)">oliviagengos@gmail.com</div></td>
+              <td>Level 2</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='oliviagengos';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="priscila alexandre priscilasalex81@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='priscilaalexandre';}))">
+              <td><div class="s-avatar" style="background:#66dddd;">P</div></td>
+              <td><b>Priscila Alexandre</b><div style="font-size:11px;color:var(--grey)">priscilasalex81@gmail.com</div></td>
+              <td>Dirty Dance</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='priscilaalexandre';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="raechel carlsen raechel-carlsen@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='raechelcarlsen';}))">
+              <td><div class="s-avatar" style="background:#b0f0b0;">R</div></td>
+              <td><b>Raechel Carlsen</b><div style="font-size:11px;color:var(--grey)">raechel-carlsen@hotmail.com</div></td>
+              <td>Dance</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='raechelcarlsen';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="rebecca clare rebeccaeclare@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='rebeccaclare';}))">
+              <td><div class="s-avatar" style="background:#ffcc88;">R</div></td>
+              <td><b>Rebecca Clare</b><div style="font-size:11px;color:var(--grey)">Rebeccaeclare@gmail.com</div></td>
+              <td>Chair</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='rebeccaclare';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="rebecca lumbroso beckinoz@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='rebeccalumbroso';}))">
+              <td><div class="s-avatar" style="background:#ff9ecb;">R</div></td>
+              <td><b>Rebecca Lumbroso</b><div style="font-size:11px;color:var(--grey)">Beckinoz@gmail.com</div></td>
+              <td>Inter Floor</td><td>4</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='rebeccalumbroso';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="ren raine laurenraine1@outlook.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='renraine';}))">
+              <td><div class="s-avatar" style="background:#c9aaff;">R</div></td>
+              <td><b>Ren Raine</b><div style="font-size:11px;color:var(--grey)">laurenraine1@outlook.com</div></td>
+              <td>Level 1</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='renraine';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="rika tyebally rika.tyebally@outlook.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='rikatyebally';}))">
+              <td><div class="s-avatar" style="background:#ffd6a5;">R</div></td>
+              <td><b>Rika Tyebally</b><div style="font-size:11px;color:var(--grey)">Rika.tyebally@outlook.com</div></td>
+              <td>Chair Virgin</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='rikatyebally';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="roberta pia piaroberta1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='robertapia';}))">
+              <td><div class="s-avatar" style="background:#b5ead7;">R</div></td>
+              <td><b>Roberta Pia</b><div style="font-size:11px;color:var(--grey)">piaroberta1@gmail.com</div></td>
+              <td>Floor Virgin</td><td>3</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='robertapia';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="rosemary power choccaramelpie@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='rosemarypower';}))">
+              <td><div class="s-avatar" style="background:#ffc8dd;">R</div></td>
+              <td><b>Rosemary Power</b><div style="font-size:11px;color:var(--grey)">choccaramelpie@gmail.com</div></td>
+              <td>Level 3</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='rosemarypower';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="rosie meiroian rosiem92@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='rosiemeiroian';}))">
+              <td><div class="s-avatar" style="background:#e8c1ff;">R</div></td>
+              <td><b>Rosie Meiroian</b><div style="font-size:11px;color:var(--grey)">rosiem92@hotmail.com</div></td>
+              <td>5 Foundations</td><td>3</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='rosiemeiroian';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="samantha yan samanthayan22@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='samanthayan';}))">
+              <td><div class="s-avatar" style="background:#caffbf;">S</div></td>
+              <td><b>Samantha Yan</b><div style="font-size:11px;color:var(--grey)">Samanthayan22@gmail.com</div></td>
+              <td>Level 4</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='samanthayan';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="sarah jones sarjj84@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sarahjones';}))">
+              <td><div class="s-avatar" style="background:#a8d8ea;">S</div></td>
+              <td><b>Sarah Jones</b><div style="font-size:11px;color:var(--grey)">sarjj84@gmail.com</div></td>
+              <td>Inter Floor</td><td>3</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='sarahjones';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="sarah magnell sarah.magnell@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sarahmagnell';}))">
+              <td><div class="s-avatar" style="background:#ffadad;">S</div></td>
+              <td><b>Sarah Magnell</b><div style="font-size:11px;color:var(--grey)">Sarah.magnell@gmail.com</div></td>
+              <td>Chole</td><td>4</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='sarahmagnell';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="sasha dyer sashagracedyer@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sashadyer';}))">
+              <td><div class="s-avatar" style="background:#fdffb6;">S</div></td>
+              <td><b>Sasha Dyer</b><div style="font-size:11px;color:var(--grey)">sashagracedyer@gmail.com</div></td>
+              <td>Chole</td><td>3</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='sashadyer';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="schielle harch schielle-paig@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='schielleharch';}))">
+              <td><div class="s-avatar" style="background:#9bf6ff;">S</div></td>
+              <td><b>Schielle Harch</b><div style="font-size:11px;color:var(--grey)">Schielle-paig@hotmail.com</div></td>
+              <td>4 Tricks</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='schielleharch';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="sean pudebat sean.pud@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='seanpudebat';}))">
+              <td><div class="s-avatar" style="background:#bde0fe;">S</div></td>
+              <td><b>Sean Pudebat</b><div style="font-size:11px;color:var(--grey)">Sean.pud@gmail.com</div></td>
+              <td>Strip</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='seanpudebat';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="sharmonie cockayne sharmonie@sharmonie.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sharmoniecockayne';}))">
+              <td><div class="s-avatar" style="background:#ffaa44;">S</div></td>
+              <td><b>Sharmonie Cockayne</b><div style="font-size:11px;color:var(--grey)">sharmonie@sharmonie.com</div></td>
+              <td>Level 2</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='sharmoniecockayne';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="sharon ye sharon.ye@live.com.au" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sharonye';}))">
+              <td><div class="s-avatar" style="background:#CDA5FF;">S</div></td>
+              <td><b>Sharon Ye</b><div style="font-size:11px;color:var(--grey)">Sharon.ye@live.com.au</div></td>
+              <td>Level 4</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='sharonye';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="shirley tran shirleyanne.tran@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='shirleytran';}))">
+              <td><div class="s-avatar" style="background:#DBFF00;">S</div></td>
+              <td><b>Shirley Tran</b><div style="font-size:11px;color:var(--grey)">shirleyanne.tran@gmail.com</div></td>
+              <td>Level 2</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='shirleytran';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="sienna blake siennacharlotteblake@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='siennablake';}))">
+              <td><div class="s-avatar" style="background:#ff6b6b;">S</div></td>
+              <td><b>Sienna Blake</b><div style="font-size:11px;color:var(--grey)">siennacharlotteblake@gmail.com</div></td>
+              <td>Level 2</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='siennablake';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="sofia (ai) rubio ailoveai0719@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sofiaairubio';}))">
+              <td><div class="s-avatar" style="background:#4ade80;">S</div></td>
+              <td><b>Sofia (Ai) Rubio</b><div style="font-size:11px;color:var(--grey)">ailoveai0719@gmail.com</div></td>
+              <td>Dance</td><td>4</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='sofiaairubio';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="sophie brown sophiebrown820@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sophiebrown';}))">
+              <td><div class="s-avatar" style="background:#9ac4ff;">S</div></td>
+              <td><b>Sophie Brown</b><div style="font-size:11px;color:var(--grey)">sophiebrown820@gmail.com</div></td>
+              <td>Dance Tech</td><td>3</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='sophiebrown';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="stephanie smith stephielsmith@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='stephaniesmith';}))">
+              <td><div class="s-avatar" style="background:#ffb3de;">S</div></td>
+              <td><b>Stephanie Smith</b><div style="font-size:11px;color:var(--grey)">stephielsmith@gmail.com</div></td>
+              <td>Dance</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='stephaniesmith';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="sybil ho sybilckho26@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sybilho';}))">
+              <td><div class="s-avatar" style="background:#44ff99;">S</div></td>
+              <td><b>Sybil Ho</b><div style="font-size:11px;color:var(--grey)">sybilckho26@gmail.com</div></td>
+              <td>Level 4</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='sybilho';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="tahnee wyllie tahneewyllie@outlook.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='tahneewyllie';}))">
+              <td><div class="s-avatar" style="background:#66dddd;">T</div></td>
+              <td><b>Tahnee Wyllie</b><div style="font-size:11px;color:var(--grey)">tahneewyllie@outlook.com</div></td>
+              <td>Floor Virgin</td><td>3</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='tahneewyllie';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="tania costa taniateresacosta@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='taniacosta';}))">
+              <td><div class="s-avatar" style="background:#b0f0b0;">T</div></td>
+              <td><b>Tania Costa</b><div style="font-size:11px;color:var(--grey)">taniateresacosta@gmail.com</div></td>
+              <td>Chair</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='taniacosta';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="tania vukicevic taniavukicevic@live.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='taniavukicevic';}))">
+              <td><div class="s-avatar" style="background:#ffcc88;">T</div></td>
+              <td><b>Tania Vukicevic</b><div style="font-size:11px;color:var(--grey)">taniavukicevic@live.com</div></td>
+              <td>Strip Virgin</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='taniavukicevic';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="tara frawley tarafrawls@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='tarafrawley';}))">
+              <td><div class="s-avatar" style="background:#ff9ecb;">T</div></td>
+              <td><b>Tara Frawley</b><div style="font-size:11px;color:var(--grey)">Tarafrawls@gmail.com</div></td>
+              <td>4 Tricks</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='tarafrawley';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="thanh hoang thanh.hoang1612@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='thanhhoang';}))">
+              <td><div class="s-avatar" style="background:#c9aaff;">T</div></td>
+              <td><b>Thanh Hoang</b><div style="font-size:11px;color:var(--grey)">thanh.hoang1612@gmail.com</div></td>
+              <td>Invert Tech</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='thanhhoang';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="valeriia mustafina valeri.mustafina@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='valeriiamustafina';}))">
+              <td><div class="s-avatar" style="background:#ffd6a5;">V</div></td>
+              <td><b>Valeriia Mustafina</b><div style="font-size:11px;color:var(--grey)">valeri.mustafina@gmail.com</div></td>
+              <td>Level 1</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='valeriiamustafina';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="van dang dangngoctuongvan@yahoo.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='vandang';}))">
+              <td><div class="s-avatar" style="background:#b5ead7;">V</div></td>
+              <td><b>Van Dang</b><div style="font-size:11px;color:var(--grey)">dangngoctuongvan@yahoo.com</div></td>
+              <td>Advanced Floor</td><td>3</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='vandang';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="vani srivastava fabulusvani@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='vanisrivastava';}))">
+              <td><div class="s-avatar" style="background:#ffc8dd;">V</div></td>
+              <td><b>Vani Srivastava</b><div style="font-size:11px;color:var(--grey)">fabulusvani@gmail.com</div></td>
+              <td>Level 2</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='vanisrivastava';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="victoria luo vluo27@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='victorialuo';}))">
+              <td><div class="s-avatar" style="background:#e8c1ff;">V</div></td>
+              <td><b>Victoria Luo</b><div style="font-size:11px;color:var(--grey)">Vluo27@hotmail.com</div></td>
+              <td>Level 5</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='victorialuo';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="violet wang violetwang.vw+1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='violetwang';}))">
+              <td><div class="s-avatar" style="background:#caffbf;">V</div></td>
+              <td><b>Violet Wang</b><div style="font-size:11px;color:var(--grey)">Violetwang.vw+1@gmail.com</div></td>
+              <td>5 Foundations</td><td>4</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='violetwang';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="vivian tse vivtse22+1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='viviantse';}))">
+              <td><div class="s-avatar" style="background:#a8d8ea;">V</div></td>
+              <td><b>Vivian Tse</b><div style="font-size:11px;color:var(--grey)">vivtse22+1@gmail.com</div></td>
+              <td>High Tricks</td><td>2</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='viviantse';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="yolanda li yolandayutianli@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='yolandali';}))">
+              <td><div class="s-avatar" style="background:#ffadad;">Y</div></td>
+              <td><b>Yolanda Li</b><div style="font-size:11px;color:var(--grey)">yolandayutianli@hotmail.com</div></td>
+              <td>Inter Floor</td><td>3</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='yolandali';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="yulia bogatov bogatov.yulia@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='yuliabogatov';}))">
+              <td><div class="s-avatar" style="background:#fdffb6;">Y</div></td>
+              <td><b>Yulia Bogatov</b><div style="font-size:11px;color:var(--grey)">Bogatov.yulia@gmail.com</div></td>
+              <td>Invert Tech</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='yuliabogatov';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="zoe mcfarlane zmcfarlane24@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='zoemcfarlane';}))">
+              <td><div class="s-avatar" style="background:#9bf6ff;">Z</div></td>
+              <td><b>Zoe McFarlane</b><div style="font-size:11px;color:var(--grey)">zmcfarlane24@gmail.com</div></td>
+              <td>Dance Tech</td><td>3</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='zoemcfarlane';}))">View</button></td>
+            </tr>
+            <tr class="clickable-row student-row" data-name="timbrucejones timbrucejones@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='timbrucejones';}))">
+              <td><div class="s-avatar" style="background:#bde0fe;">T</div></td>
+              <td><b>timbrucejones</b><div style="font-size:11px;color:var(--grey)">timbrucejones@gmail.com</div></td>
+              <td>Level 2</td><td>1</td>
+              <td class="bal-pos">$0</td>
+              <td><span class="tag tag-lime">Active</span></td>
+              <td style="color:var(--grey)">—</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='timbrucejones';}))">View</button></td>
             </tr>
           </tbody>
         </table>
@@ -1236,8 +2388,8 @@ tr.clickable-row:hover td { background: #141414; }
       <div class="season-grid">
         <div class="season-card"><div class="season-card-header"><div class="season-name">Season 1</div><span class="tag tag-grey">Completed</span></div><div class="season-dates">📅 3 Feb – 25 Mar 2025</div><div class="season-stats"><div class="season-stat"><div class="season-stat-val">72</div><div class="season-stat-lbl">Enrolled</div></div><div class="season-stat"><div class="season-stat-val" style="color:var(--lime)">$8,640</div><div class="season-stat-lbl">Revenue</div></div><div class="season-stat"><div class="season-stat-val">18</div><div class="season-stat-lbl">Classes</div></div></div><button class="btn btn-ghost btn-sm" onclick="openSeasonEdit('Season 1')">Edit Season</button></div>
         <div class="season-card"><div class="season-card-header"><div class="season-name">Season 2</div><span class="tag tag-grey">Completed</span></div><div class="season-dates">📅 7 Apr – 26 May 2025</div><div class="season-stats"><div class="season-stat"><div class="season-stat-val">80</div><div class="season-stat-lbl">Enrolled</div></div><div class="season-stat"><div class="season-stat-val" style="color:var(--lime)">$9,200</div><div class="season-stat-lbl">Revenue</div></div><div class="season-stat"><div class="season-stat-val">20</div><div class="season-stat-lbl">Classes</div></div></div><button class="btn btn-ghost btn-sm" onclick="openSeasonEdit('Season 2')">Edit Season</button></div>
-        <div class="season-card" style="border-color:var(--lime);"><div class="season-card-header"><div class="season-name">Season 3</div><span class="tag tag-lime">Active</span></div><div class="season-dates">📅 9 Jun – 28 Jul 2025</div><div class="season-stats"><div class="season-stat"><div class="season-stat-val">94</div><div class="season-stat-lbl">Enrolled</div></div><div class="season-stat"><div class="season-stat-val" style="color:var(--lime)">$4,320</div><div class="season-stat-lbl">So Far</div></div><div class="season-stat"><div class="season-stat-val">22</div><div class="season-stat-lbl">Classes</div></div></div><button class="btn btn-lime btn-sm" onclick="openSeasonEdit('Season 3')">Edit Season</button></div>
-        <div class="season-card"><div class="season-card-header"><div class="season-name">Season 4</div><span class="tag tag-lav">Upcoming</span></div><div class="season-dates">📅 11 Aug – 29 Sep 2025</div><div class="season-stats"><div class="season-stat"><div class="season-stat-val">14</div><div class="season-stat-lbl">Pre-enrolments</div></div><div class="season-stat"><div class="season-stat-val" style="color:var(--grey)">—</div><div class="season-stat-lbl">Revenue</div></div><div class="season-stat"><div class="season-stat-val">22</div><div class="season-stat-lbl">Classes</div></div></div><button class="btn btn-ghost btn-sm" onclick="openSeasonEdit('Season 4')">Edit Season</button></div>
+        <div class="season-card" style="border-color:var(--lime);"><div class="season-card-header"><div class="season-name">Season 3</div><span class="tag tag-lime">Active</span></div><div class="season-dates">📅 11 May – 5 Jul 2026</div><div class="season-stats"><div class="season-stat"><div class="season-stat-val">94</div><div class="season-stat-lbl">Enrolled</div></div><div class="season-stat"><div class="season-stat-val" style="color:var(--lime)">$4,320</div><div class="season-stat-lbl">So Far</div></div><div class="season-stat"><div class="season-stat-val">22</div><div class="season-stat-lbl">Classes</div></div></div><button class="btn btn-lime btn-sm" onclick="openSeasonEdit('Season 3')">Edit Season</button></div>
+        <div class="season-card"><div class="season-card-header"><div class="season-name">Season 4</div><span class="tag tag-lav">Upcoming</span></div><div class="season-dates">📅 11 Aug – 26 Sep 2026</div><div class="season-stats"><div class="season-stat"><div class="season-stat-val">138</div><div class="season-stat-lbl">Enrolled</div></div><div class="season-stat"><div class="season-stat-val" style="color:var(--grey)">—</div><div class="season-stat-lbl">Revenue</div></div><div class="season-stat"><div class="season-stat-val">22</div><div class="season-stat-lbl">Classes</div></div></div><button class="btn btn-ghost btn-sm" onclick="openSeasonEdit('Season 4')">Edit Season</button></div>
       </div>
     </div>
 
@@ -3790,7 +4942,7 @@ tr.clickable-row:hover td { background: #141414; }
       <div class="checkbox-row bam-row" data-freq="2"><input type="checkbox" style="accent-color:var(--lime);" /><label style="display:flex;justify-content:space-between;width:100%;"><span>Nina Torres</span><span style="color:var(--grey);font-size:11px;">Level 2 + Strip Virgin</span></label></div>
       <!-- 3 classes/wk -->
       <div class="checkbox-row bam-row" data-freq="3"><input type="checkbox" style="accent-color:var(--lime);" /><label style="display:flex;justify-content:space-between;width:100%;"><span>Kylie Rhodes</span><span style="color:var(--grey);font-size:11px;">Level 2 + Inter Floor + Dance</span></label></div>
-      <div class="checkbox-row bam-row" data-freq="3"><input type="checkbox" style="accent-color:var(--lime);" /><label style="display:flex;justify-content:space-between;width:100%;"><span>Mia Santos</span><span style="color:var(--grey);font-size:11px;">High Tricks + Inter Floor + Heels</span></label></div>
+      <div class="checkbox-row bam-row" data-freq="3"><input type="checkbox" style="accent-color:var(--lime);" /><label style="display:flex;justify-content:space-between;width:100%;"><span>Mia Santos</span><span style="color:var(--grey);font-size:11px;">High Tricks + Inter Floor + Strip Virgin</span></label></div>
       <!-- 4+ classes/wk -->
       <div class="checkbox-row bam-row" data-freq="4"><input type="checkbox" style="accent-color:var(--lime);" /><label style="display:flex;justify-content:space-between;width:100%;"><span>Dana Park</span><span style="color:var(--grey);font-size:11px;">Level 2 + High Tricks + Dance + Inter Floor</span></label></div>
     </div>
@@ -4472,19 +5624,144 @@ function isBirthdayWeek(name) {
 
 // ===== DATA =====
 const STUDENTS = [
-  { id:'jess', name:'Jess Malone', pronouns:'she/her', email:'jess@email.com', phone:'0412 345 678', dob:'14 Mar 1998', level:'Level 2', status:'Owing', balance:-120, memberSince:'3 Feb 2025', avatar:'J', avatarColor:'#ffaa44', emergency:'Kate Malone — 0411 222 333', health:'Right shoulder impingement — avoid overhead loading', waiver:'3 Feb 2025', source:'Instagram', tags:['At Risk'] },
-  { id:'ruby', name:'Ruby Kim', pronouns:'she/her', email:'ruby@email.com', phone:'0423 456 789', dob:'22 Jul 2000', level:'Level 3', status:'Active', balance:20, memberSince:'15 Jan 2025', avatar:'R', avatarColor:'#CDA5FF', emergency:'Sarah Kim — 0422 333 444', health:'', waiver:'15 Jan 2025', source:'Google', tags:['VIP'] },
-  { id:'sophie', name:'Sophie Lawson', pronouns:'they/them', email:'sophie@email.com', phone:'0434 567 890', dob:'5 Nov 1996', level:'Level 1', status:'Active', balance:0, memberSince:'10 Mar 2025', avatar:'S', avatarColor:'#DBFF00', emergency:'Mark Lawson — 0433 555 666', health:'', waiver:'10 Mar 2025', source:'Referral', tags:[] },
-  { id:'kylie', name:'Kylie Rhodes', pronouns:'she/her', email:'kylie@email.com', phone:'0445 678 901', dob:'30 Aug 1994', level:'Level 2', status:'Blocked', balance:-95, memberSince:'20 Nov 2024', avatar:'K', avatarColor:'#ff6b6b', emergency:'Tom Rhodes — 0444 777 888', health:'Knee injury history', waiver:'20 Nov 2024', source:'Walk-in', tags:['Blocked'] },
-  { id:'mia', name:'Mia Santos', pronouns:'she/they', email:'mia@email.com', phone:'0456 789 012', dob:'12 Apr 2001', level:'High Tricks', status:'Active', balance:40, memberSince:'5 Sep 2024', avatar:'M', avatarColor:'#4ade80', emergency:'Carlos Santos — 0455 888 999', health:'', waiver:'5 Sep 2024', source:'Instagram', tags:['VIP'] },
-  { id:'hannah', name:'Hannah Webb', pronouns:'she/her', email:'hannah@email.com', phone:'0445 000 111', dob:'8 Jun 1997', level:'Level 1', status:'Active', balance:0, memberSince:'20 Feb 2025', avatar:'H', avatarColor:'#9ac4ff', emergency:'', health:'', waiver:'20 Feb 2025', source:'Instagram', tags:[] },
-  { id:'amber', name:'Amber Cole', pronouns:'she/her', email:'amber@email.com', phone:'0445 678 901', dob:'14 May 1999', level:'Level 1', status:'Active', balance:0, memberSince:'10 Jan 2025', avatar:'A', avatarColor:'#ffb3de', emergency:'', health:'', waiver:'10 Jan 2025', source:'Google', tags:[] },
-  { id:'priya', name:'Priya Nair', pronouns:'she/her', email:'priya@email.com', phone:'0456 111 222', dob:'2 Sep 2000', level:'Trial', status:'Active', balance:0, memberSince:'12 May 2025', avatar:'P', avatarColor:'#ffcc88', emergency:'', health:'', waiver:'', source:'Referral', tags:[] },
-  { id:'emma', name:'Emma Davis', pronouns:'she/her', email:'emma@email.com', phone:'0456 333 444', dob:'19 Nov 1995', level:'Trial', status:'Active', balance:0, memberSince:'12 May 2025', avatar:'E', avatarColor:'#b0f0b0', emergency:'', health:'', waiver:'', source:'Website', tags:[] },
-  { id:'nina', name:'Nina Torres', pronouns:'she/her', email:'nina@email.com', phone:'0467 222 333', dob:'3 Mar 1993', level:'Level 2', status:'Active', balance:0, memberSince:'1 Mar 2025', avatar:'N', avatarColor:'#b0f0b0', emergency:'', health:'', waiver:'1 Mar 2025', source:'Instagram', tags:[] },
-  { id:'lena', name:'Lena Wu', pronouns:'she/her', email:'lena@email.com', phone:'0467 444 555', dob:'27 Jul 1998', level:'Level 1', status:'Active', balance:0, memberSince:'5 May 2025', avatar:'L', avatarColor:'#66dddd', emergency:'', health:'', waiver:'5 May 2025', source:'Website', tags:[] },
-  { id:'dana', name:'Dana Park', pronouns:'she/her', email:'dana@email.com', phone:'0467 555 666', dob:'15 Feb 1997', level:'High Tricks', status:'Owing', balance:-75, memberSince:'10 Oct 2024', avatar:'D', avatarColor:'#ff9999', emergency:'', health:'', waiver:'10 Oct 2024', source:'Instagram', tags:[] },
-  { id:'tara', name:'Tara Bell', pronouns:'she/her', email:'tara@email.com', phone:'0412 999 000', dob:'20 Sep 2001', level:'Level 2', status:'Active', balance:-30, memberSince:'15 Jan 2025', avatar:'T', avatarColor:'#44ff99', emergency:'', health:'', waiver:'15 Jan 2025', source:'Google', tags:[] },
+  { id:"aishukripa", name:"Aishu Kripa", pronouns:'', email:"aishukripa33@gmail.com", phone:'', dob:'', level:"Dirty Dance", classes:["Dirty Dance", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#ffaa44', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"alanajones", name:"Alana Jones", pronouns:'', email:"jonezalana@gmail.com", phone:'', dob:'', level:"Dance Virgin", classes:["Dance Virgin", "Level 2"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#CDA5FF', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"alexfleming", name:"Alex Fleming", pronouns:'', email:"alexfleming440@gmail.com", phone:'', dob:'', level:"Level 5", classes:["Level 5"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#DBFF00', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"alexawinterstein", name:"Alexa Winterstein", pronouns:'', email:"adwinterstein@gmail.com", phone:'', dob:'', level:"Level 1", classes:["Level 1"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#ff6b6b', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"alexandradickie", name:"Alexandra Dickie", pronouns:'', email:"alexrdickie@gmail.com", phone:'', dob:'', level:"Chair", classes:["Chair", "Level 5", "6 Virgin", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#4ade80', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"alicefoglino", name:"Alice Foglino", pronouns:'', email:"alice.foglino@gmail.com", phone:'', dob:'', level:"Dance Tech", classes:["Dance Tech", "Dance Virgin", "Invert Tech"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#9ac4ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"alicesteele", name:"Alice Steele", pronouns:'', email:"alicesteele99@gmail.com", phone:'', dob:'', level:"6 Virgin", classes:["6 Virgin"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#ffb3de', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"allylaspina", name:"Ally La Spina", pronouns:'', email:"Allylaspina@gmail.com", phone:'', dob:'', level:"Chole", classes:["Chole", "Dirty Dance", "Level 5"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#44ff99', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"amyreed", name:"Amy Reed", pronouns:'', email:"aemyjosephine+1@gmail.com", phone:'', dob:'', level:"Advanced Floor", classes:["Advanced Floor", "Chair", "Level 6", "Strip"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#66dddd', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"angelayang", name:"Angela Yang", pronouns:'', email:"chilin0619@gmail.com", phone:'', dob:'', level:"Dance Tech", classes:["Dance Tech", "Level 4"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#b0f0b0', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"annawong", name:"Anna Wong", pronouns:'', email:"Annablisswong+1@gmail.com", phone:'', dob:'', level:"High Tricks", classes:["High Tricks", "Kiki", "Level 6"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#ffcc88', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"annikarees", name:"Annika Rees", pronouns:'', email:"Annikarees@outlook.com", phone:'', dob:'', level:"Level 3", classes:["Level 3"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#ff9ecb', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"arieltjeuw", name:"Ariel Tjeuw", pronouns:'', email:"arielchewy@hotmail.com", phone:'', dob:'', level:"Level 5", classes:["Level 5"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#c9aaff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"ariellecarveroneil", name:"Arielle Carver-O\u2019Neill", pronouns:'', email:"Arcarvero@gmail.com", phone:'', dob:'', level:"Level 3", classes:["Level 3"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#ffd6a5', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"ashleylamont", name:"Ashley Lamont", pronouns:'', email:"ashley@ashl.dev", phone:'', dob:'', level:"Level 2", classes:["Level 2"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#b5ead7', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"avaloncarnall", name:"Avalon Carnall", pronouns:'', email:"Avalon.carnall+1@gmail.com", phone:'', dob:'', level:"Advanced Floor", classes:["Advanced Floor", "High Tricks", "Level 6"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#ffc8dd', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"bellabushby", name:"Bella Bushby", pronouns:'', email:"bellabushby@live.com.au", phone:'', dob:'', level:"Level 2", classes:["Level 2"], status:'Active', balance:0, memberSince:'', avatar:'B', avatarColor:'#e8c1ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"bellecurrie", name:"Belle Currie", pronouns:'', email:"issycurrie18@gmail.com", phone:'', dob:'', level:"Chair Virgin", classes:["Chair Virgin", "Dance Tech", "Inter Floor", "Level 5", "6 Virgin"], status:'Active', balance:0, memberSince:'', avatar:'B', avatarColor:'#caffbf', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"bethhorsburgh", name:"Beth Horsburgh", pronouns:'', email:"Bhorsburgh@ozemail.com.au", phone:'', dob:'', level:"Dance Virgin", classes:["Dance Virgin"], status:'Active', balance:0, memberSince:'', avatar:'B', avatarColor:'#a8d8ea', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"bettinatang", name:"Bettina Tang", pronouns:'', email:"bettinatang25@gmail.com", phone:'', dob:'', level:"Strip", classes:["Strip"], status:'Active', balance:0, memberSince:'', avatar:'B', avatarColor:'#ffadad', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"bronteosborne", name:"Bronte Osborne", pronouns:'', email:"bronte.osborne@hotmail.com", phone:'', dob:'', level:"High Tricks", classes:["High Tricks", "Level 6"], status:'Active', balance:0, memberSince:'', avatar:'B', avatarColor:'#fdffb6', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"brucetsai", name:"Bruce Tsai", pronouns:'', email:"Pepsishill@gmail.com", phone:'', dob:'', level:"Level 3", classes:["Level 3"], status:'Active', balance:0, memberSince:'', avatar:'B', avatarColor:'#9bf6ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"caitlinwilliams", name:"Caitlin Williams", pronouns:'', email:"cewilliams0105@gmail.com", phone:'', dob:'', level:"Kiki", classes:["Kiki", "Level 3", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'C', avatarColor:'#bde0fe', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"cassandrachakouch", name:"Cassandra Chakouch", pronouns:'', email:"cassiechakouch@live.com", phone:'', dob:'', level:"Level 5", classes:["Level 5"], status:'Active', balance:0, memberSince:'', avatar:'C', avatarColor:'#ffaa44', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"catreynolds", name:"Cat Reynolds", pronouns:'', email:"Catreynolds45@gmail.com", phone:'', dob:'', level:"Advanced Floor", classes:["Advanced Floor"], status:'Active', balance:0, memberSince:'', avatar:'C', avatarColor:'#CDA5FF', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"catthompson", name:"Cat Thompson", pronouns:'', email:"Catt9194@hotmail.com", phone:'', dob:'', level:"Dance Tech", classes:["Dance Tech", "Level 2"], status:'Active', balance:0, memberSince:'', avatar:'C', avatarColor:'#DBFF00', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"catherineadams", name:"Catherine Adams", pronouns:'', email:"cath.m.adams@gmail.com", phone:'', dob:'', level:"Dance Virgin", classes:["Dance Virgin", "Level 2", "Unravel"], status:'Active', balance:0, memberSince:'', avatar:'C', avatarColor:'#ff6b6b', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"celestemather", name:"Celeste Mather", pronouns:'', email:"Celestemather6@gmail.com", phone:'', dob:'', level:"Dance Virgin", classes:["Dance Virgin"], status:'Active', balance:0, memberSince:'', avatar:'C', avatarColor:'#4ade80', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"celinaandrew", name:"Celina Andrew", pronouns:'', email:"Celina.r.andrew@gmail.com", phone:'', dob:'', level:"Level 1", classes:["Level 1", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'C', avatarColor:'#9ac4ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"chalidamckelvie", name:"Chalida Mckelvie", pronouns:'', email:"chalida-mckelvie@hotmail.com", phone:'', dob:'', level:"Chole", classes:["Chole", "Level 5"], status:'Active', balance:0, memberSince:'', avatar:'C', avatarColor:'#ffb3de', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"charleecampbell", name:"Charlee Campbell", pronouns:'', email:"charleebcampbell99@gmail.com", phone:'', dob:'', level:"Level 1", classes:["Level 1"], status:'Active', balance:0, memberSince:'', avatar:'C', avatarColor:'#44ff99', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"charlottenorman", name:"Charlotte Norman", pronouns:'', email:"Charlottenorman@yahoo.com", phone:'', dob:'', level:"Dance Virgin", classes:["Dance Virgin", "Invert Tech"], status:'Active', balance:0, memberSince:'', avatar:'C', avatarColor:'#66dddd', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"chendaviriyanmak", name:"Chenda Viriyan Mak", pronouns:'', email:"nayirivm@gmail.com", phone:'', dob:'', level:"Level 2", classes:["Level 2", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'C', avatarColor:'#b0f0b0', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"cherryliu", name:"Cherry liu", pronouns:'', email:"cherry_chang_liu@icloud.com", phone:'', dob:'', level:"Advanced Floor", classes:["Advanced Floor", "Level 5", "Strip"], status:'Active', balance:0, memberSince:'', avatar:'C', avatarColor:'#ffcc88', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"chloeseow", name:"Chloe Seow", pronouns:'', email:"chloechloe.seow@gmail.com", phone:'', dob:'', level:"Advanced Floor", classes:["Advanced Floor", "Level 6"], status:'Active', balance:0, memberSince:'', avatar:'C', avatarColor:'#ff9ecb', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"clancygreening", name:"Clancy Greening", pronouns:'', email:"clancy.greening@gmail.com", phone:'', dob:'', level:"Level 2", classes:["Level 2"], status:'Active', balance:0, memberSince:'', avatar:'C', avatarColor:'#c9aaff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"danaebeatie", name:"Danae Beatie", pronouns:'', email:"danaebeatie@gmail.com", phone:'', dob:'', level:"Chair", classes:["Chair", "Level 3", "Strip"], status:'Active', balance:0, memberSince:'', avatar:'D', avatarColor:'#ffd6a5', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"dashamaiorova", name:"Dasha Maiorova", pronouns:'', email:"Dash_m12@hotmail.com", phone:'', dob:'', level:"Chair", classes:["Chair", "Level 3"], status:'Active', balance:0, memberSince:'', avatar:'D', avatarColor:'#b5ead7', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"duniagoh", name:"Dunia Goh", pronouns:'', email:"dunia.goh@gmail.com", phone:'', dob:'', level:"Strip Virgin", classes:["Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'D', avatarColor:'#ffc8dd', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"eleeshevamayoray", name:"Eleesheva Mayo-Ray", pronouns:'', email:"Eleeshevamayo@gmail.com", phone:'', dob:'', level:"Level 4", classes:["Level 4"], status:'Active', balance:0, memberSince:'', avatar:'E', avatarColor:'#e8c1ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"ellijanemielcarz", name:"Elli-Jane Mielcarz", pronouns:'', email:"ellijane.mielcarz+1@gmail.com", phone:'', dob:'', level:"Level 6", classes:["Level 6"], status:'Active', balance:0, memberSince:'', avatar:'E', avatarColor:'#caffbf', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"eloisegreen", name:"Eloise Green", pronouns:'', email:"eloisegg@gmail.com", phone:'', dob:'', level:"Level 2", classes:["Level 2"], status:'Active', balance:0, memberSince:'', avatar:'E', avatarColor:'#a8d8ea', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"emilywooden", name:"Emily Wooden", pronouns:'', email:"Woodenemily94@gmail.com", phone:'', dob:'', level:"Advanced Floor", classes:["Advanced Floor", "Dance Tech", "Inter Floor", "Kiki"], status:'Active', balance:0, memberSince:'', avatar:'E', avatarColor:'#ffadad', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"emmachegwiddenhart", name:"Emma Chegwidden-Hart", pronouns:'', email:"emmacheg@gmail.com", phone:'', dob:'', level:"4 Tricks", classes:["4 Tricks", "Chole", "Level 3"], status:'Active', balance:0, memberSince:'', avatar:'E', avatarColor:'#fdffb6', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"emmadonovic", name:"Emma Donovic", pronouns:'', email:"emmadonovic@gmail.com", phone:'', dob:'', level:"5 Foundations", classes:["5 Foundations", "Level 5"], status:'Active', balance:0, memberSince:'', avatar:'E', avatarColor:'#9bf6ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"emmafitzgerald", name:"Emma Fitzgerald", pronouns:'', email:"emmakfitzy@hotmail.com", phone:'', dob:'', level:"Dance Virgin", classes:["Dance Virgin", "Floor Virgin", "Invert Tech", "Unravel"], status:'Active', balance:0, memberSince:'', avatar:'E', avatarColor:'#bde0fe', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"emmascottstevenson", name:"Emma Scott-Stevenson", pronouns:'', email:"emma.ss1234@hotmail.com", phone:'', dob:'', level:"Level 2", classes:["Level 2", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'E', avatarColor:'#ffaa44', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"ericnguyen", name:"Eric Nguyen", pronouns:'', email:"nhatnmt7+duality@gmail.com", phone:'', dob:'', level:"Level 2", classes:["Level 2"], status:'Active', balance:0, memberSince:'', avatar:'E', avatarColor:'#CDA5FF', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"essiegregory", name:"Essie Gregory", pronouns:'', email:"gregoryessie@gmail.com", phone:'', dob:'', level:"Level 5", classes:["Level 5", "Strip"], status:'Active', balance:0, memberSince:'', avatar:'E', avatarColor:'#DBFF00', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"faithchiang", name:"Faith Chiang", pronouns:'', email:"dongqiangsyd@gmail.com", phone:'', dob:'', level:"Level 5", classes:["Level 5"], status:'Active', balance:0, memberSince:'', avatar:'F', avatarColor:'#ff6b6b', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"fleurglover", name:"Fleur Glover", pronouns:'', email:"Fleur.glover@gmail.com", phone:'', dob:'', level:"Level 4", classes:["Level 4"], status:'Active', balance:0, memberSince:'', avatar:'F', avatarColor:'#4ade80', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"frankyferrer", name:"Franky Ferrer", pronouns:'', email:"francescaferrerbest@gmail.com", phone:'', dob:'', level:"5 Foundations", classes:["5 Foundations", "Advanced Floor"], status:'Active', balance:0, memberSince:'', avatar:'F', avatarColor:'#9ac4ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"freyanoble", name:"Freya Noble", pronouns:'', email:"freyanoble1@gmail.com", phone:'', dob:'', level:"Level 4", classes:["Level 4"], status:'Active', balance:0, memberSince:'', avatar:'F', avatarColor:'#ffb3de', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"gabriellashone", name:"Gabriella Shone", pronouns:'', email:"Gabriella.shone@gmail.com", phone:'', dob:'', level:"Strip Virgin", classes:["Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'G', avatarColor:'#44ff99', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"gabrielledarcy", name:"Gabrielle D'Arcy", pronouns:'', email:"gabriellegenedarcy@gmail.com", phone:'', dob:'', level:"4 Tricks", classes:["4 Tricks", "Dance Virgin", "Level 3"], status:'Active', balance:0, memberSince:'', avatar:'G', avatarColor:'#66dddd', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"geechan", name:"Gee Chan", pronouns:'', email:"Princess.gigi.totally.rulez@gmail.com", phone:'', dob:'', level:"Level 5", classes:["Level 5"], status:'Active', balance:0, memberSince:'', avatar:'G', avatarColor:'#b0f0b0', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"georgiabritt", name:"Georgia Britt", pronouns:'', email:"georgiabritt17@gmail.com", phone:'', dob:'', level:"Chair", classes:["Chair", "Level 3"], status:'Active', balance:0, memberSince:'', avatar:'G', avatarColor:'#ffcc88', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"gigiwelsby", name:"Gigi Welsby", pronouns:'', email:"gracewelsby123@gmail.com", phone:'', dob:'', level:"Floor Virgin", classes:["Floor Virgin", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'G', avatarColor:'#ff9ecb', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"gisellebueti", name:"Giselle Bueti", pronouns:'', email:"gisellebueti@hotmail.com", phone:'', dob:'', level:"Level 1", classes:["Level 1"], status:'Active', balance:0, memberSince:'', avatar:'G', avatarColor:'#c9aaff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"hannahzywczak", name:"Hannah Zywczak", pronouns:'', email:"Hannah.zywczak@gmail.com", phone:'', dob:'', level:"Inter Floor", classes:["Inter Floor"], status:'Active', balance:0, memberSince:'', avatar:'H', avatarColor:'#ffd6a5', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"hayliegriffis", name:"Haylie Griffis", pronouns:'', email:"haylie_griffis@hotmail.com", phone:'', dob:'', level:"Level 5", classes:["Level 5"], status:'Active', balance:0, memberSince:'', avatar:'H', avatarColor:'#b5ead7', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"hollyfung", name:"Holly Fung", pronouns:'', email:"starryeyedblunder@gmail.com", phone:'', dob:'', level:"Level 2", classes:["Level 2"], status:'Active', balance:0, memberSince:'', avatar:'H', avatarColor:'#ffc8dd', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"irenalysiuk", name:"Irena Lysiuk", pronouns:'', email:"irena.lysiuk@gmail.com", phone:'', dob:'', level:"Level 2", classes:["Level 2"], status:'Active', balance:0, memberSince:'', avatar:'I', avatarColor:'#e8c1ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"jasminpitts", name:"Jasmin Pitts", pronouns:'', email:"jpitts2468+1@gmail.com", phone:'', dob:'', level:"Advanced Floor", classes:["Advanced Floor", "High Tricks", "Level 6", "Strip"], status:'Active', balance:0, memberSince:'', avatar:'J', avatarColor:'#caffbf', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"jennyleech", name:"Jenny Leech", pronouns:'', email:"jennylleech@gmail.com", phone:'', dob:'', level:"Level 3", classes:["Level 3"], status:'Active', balance:0, memberSince:'', avatar:'J', avatarColor:'#a8d8ea', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"jessicacoffey", name:"Jessica Coffey", pronouns:'', email:"jlcoffey93@gmail.com", phone:'', dob:'', level:"Level 4", classes:["Level 4"], status:'Active', balance:0, memberSince:'', avatar:'J', avatarColor:'#ffadad', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"jessicaneary", name:"Jessica Neary", pronouns:'', email:"jessicalneary@outlook.com", phone:'', dob:'', level:"Inter Floor", classes:["Inter Floor", "Level 5"], status:'Active', balance:0, memberSince:'', avatar:'J', avatarColor:'#fdffb6', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"jotanus", name:"Jo Tanus", pronouns:'', email:"Joeyjojojnr@outlook.com", phone:'', dob:'', level:"Strip Virgin", classes:["Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'J', avatarColor:'#9bf6ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"juliekha", name:"Julie Kha", pronouns:'', email:"julie.kha@hotmail.com", phone:'', dob:'', level:"Chair", classes:["Chair"], status:'Active', balance:0, memberSince:'', avatar:'J', avatarColor:'#bde0fe', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"kasviluthra", name:"Kasvi Luthra", pronouns:'', email:"kasviluthra@gmail.com", phone:'', dob:'', level:"Level 5", classes:["Level 5"], status:'Active', balance:0, memberSince:'', avatar:'K', avatarColor:'#ffaa44', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"kathleenparkes", name:"Kathleen Parkes", pronouns:'', email:"kat.parkes@outlook.com", phone:'', dob:'', level:"Level 2", classes:["Level 2"], status:'Active', balance:0, memberSince:'', avatar:'K', avatarColor:'#CDA5FF', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"katrinaburns", name:"Katrina Burns", pronouns:'', email:"Burns.nolan@gmail.com", phone:'', dob:'', level:"Chole", classes:["Chole", "Level 4"], status:'Active', balance:0, memberSince:'', avatar:'K', avatarColor:'#DBFF00', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"kerrichow", name:"Kerri Chow", pronouns:'', email:"Kerriann@fastmail.fm", phone:'', dob:'', level:"Advanced Floor", classes:["Advanced Floor"], status:'Active', balance:0, memberSince:'', avatar:'K', avatarColor:'#ff6b6b', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"kryskapsimallis", name:"Krys Kapsimallis", pronouns:'', email:"kkryskaps@icloud.com", phone:'', dob:'', level:"Kiki", classes:["Kiki"], status:'Active', balance:0, memberSince:'', avatar:'K', avatarColor:'#4ade80', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"kyliedaisog", name:"Kylie Daisog", pronouns:'', email:"prettykylied@gmail.com", phone:'', dob:'', level:"Level 4", classes:["Level 4"], status:'Active', balance:0, memberSince:'', avatar:'K', avatarColor:'#9ac4ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"laurakeenan", name:"Laura Keenan", pronouns:'', email:"laurakeenan2496@gmail.com", phone:'', dob:'', level:"Dance Virgin", classes:["Dance Virgin"], status:'Active', balance:0, memberSince:'', avatar:'L', avatarColor:'#ffb3de', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"lauramurphy", name:"Laura Murphy", pronouns:'', email:"Lauraclare98@gmail.com", phone:'', dob:'', level:"4 Tricks", classes:["4 Tricks", "Dance Virgin", "Level 4"], status:'Active', balance:0, memberSince:'', avatar:'L', avatarColor:'#44ff99', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"leanechew", name:"Leane Chew", pronouns:'', email:"Leane.chew@gmail.com", phone:'', dob:'', level:"Chole", classes:["Chole", "Level 5"], status:'Active', balance:0, memberSince:'', avatar:'L', avatarColor:'#66dddd', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"lenal", name:"Lena L", pronouns:'', email:"Lena202302@gmail.com", phone:'', dob:'', level:"Level 2", classes:["Level 2"], status:'Active', balance:0, memberSince:'', avatar:'L', avatarColor:'#b0f0b0', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"leonardoshawvoysey", name:"Leonardo Shaw-Voysey", pronouns:'', email:"leoshaw161@gmail.com", phone:'', dob:'', level:"Level 3", classes:["Level 3"], status:'Active', balance:0, memberSince:'', avatar:'L', avatarColor:'#ffcc88', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"lisayoung", name:"Lisa Young", pronouns:'', email:"lisay194@gmail.com", phone:'', dob:'', level:"Inter Floor", classes:["Inter Floor"], status:'Active', balance:0, memberSince:'', avatar:'L', avatarColor:'#ff9ecb', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"lizbrown", name:"Liz Brown", pronouns:'', email:"Elizabeth.brown623@gmail.com", phone:'', dob:'', level:"Level 3", classes:["Level 3", "Level 4"], status:'Active', balance:0, memberSince:'', avatar:'L', avatarColor:'#c9aaff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"lucydavies", name:"Lucy Davies", pronouns:'', email:"Lucyalicedavies@gmail.com", phone:'', dob:'', level:"Dance", classes:["Dance"], status:'Active', balance:0, memberSince:'', avatar:'L', avatarColor:'#ffd6a5', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"lucyhargreaves", name:"Lucy Hargreaves", pronouns:'', email:"Lucy.a.hargreaves@gmail.com", phone:'', dob:'', level:"Dirty Dance", classes:["Dirty Dance"], status:'Active', balance:0, memberSince:'', avatar:'L', avatarColor:'#b5ead7', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"maddiehurst", name:"Maddie Hurst", pronouns:'', email:"maddiehurst1996@gmail.com", phone:'', dob:'', level:"Chair", classes:["Chair", "Dance Virgin", "Inter Floor", "Level 5", "Strip"], status:'Active', balance:0, memberSince:'', avatar:'M', avatarColor:'#ffc8dd', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"maddisonbateswilli", name:"Maddison Bates-Willis", pronouns:'', email:"mbateswillis@gmail.com", phone:'', dob:'', level:"Level 2", classes:["Level 2"], status:'Active', balance:0, memberSince:'', avatar:'M', avatarColor:'#e8c1ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"marynguyen", name:"Mary Nguyen", pronouns:'', email:"mary.nguyen93@hotmail.com", phone:'', dob:'', level:"High Tricks", classes:["High Tricks", "Level 6", "Strip"], status:'Active', balance:0, memberSince:'', avatar:'M', avatarColor:'#caffbf', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"matildabrown", name:"Matilda Brown", pronouns:'', email:"matildab94@gmail.com", phone:'', dob:'', level:"Level 3", classes:["Level 3", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'M', avatarColor:'#a8d8ea', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"megdortmans", name:"Meg Dortmans", pronouns:'', email:"Megad103@gmail.com", phone:'', dob:'', level:"Level 1", classes:["Level 1", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'M', avatarColor:'#ffadad', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"meganliang", name:"Megan Liang", pronouns:'', email:"meganliang7@gmail.com", phone:'', dob:'', level:"Level 5", classes:["Level 5"], status:'Active', balance:0, memberSince:'', avatar:'M', avatarColor:'#fdffb6', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"melaniedevonshire", name:"Melanie Devonshire", pronouns:'', email:"melanie.devonshire@hotmail.com", phone:'', dob:'', level:"Level 3", classes:["Level 3", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'M', avatarColor:'#9bf6ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"miamcfarlane", name:"Mia McFarlane", pronouns:'', email:"Mia.mcfarlane12@icloud.com", phone:'', dob:'', level:"4 Tricks", classes:["4 Tricks", "Dance Tech", "Floor Virgin", "Level 4"], status:'Active', balance:0, memberSince:'', avatar:'M', avatarColor:'#bde0fe', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"michelleridge", name:"Michelle Ridge", pronouns:'', email:"mridge.aus@gmail.com", phone:'', dob:'', level:"Chair", classes:["Chair", "Level 3"], status:'Active', balance:0, memberSince:'', avatar:'M', avatarColor:'#ffaa44', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"minyuvandenberg", name:"Minyu Vandenberg", pronouns:'', email:"minnievee14@gmail.com", phone:'', dob:'', level:"Advanced Floor", classes:["Advanced Floor", "High Tricks", "Level 6", "Strip"], status:'Active', balance:0, memberSince:'', avatar:'M', avatarColor:'#CDA5FF', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"monicajones", name:"Monica Jones", pronouns:'', email:"monicadj101@gmail.com", phone:'', dob:'', level:"Level 5", classes:["Level 5"], status:'Active', balance:0, memberSince:'', avatar:'M', avatarColor:'#DBFF00', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"myleskuah", name:"Myles Kuah", pronouns:'', email:"kuahmyles@gmail.com", phone:'', dob:'', level:"Level 5", classes:["Level 5", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'M', avatarColor:'#ff6b6b', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"nelliecamp", name:"Nellie Camp", pronouns:'', email:"Nellie.camp@gmail.com", phone:'', dob:'', level:"Level 6", classes:["Level 6"], status:'Active', balance:0, memberSince:'', avatar:'N', avatarColor:'#4ade80', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"nicolegal", name:"Nicole Gal", pronouns:'', email:"nicole.galhardi@gmail.com", phone:'', dob:'', level:"Level 2", classes:["Level 2"], status:'Active', balance:0, memberSince:'', avatar:'N', avatarColor:'#9ac4ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"nicolerenvoize", name:"Nicole Renvoize", pronouns:'', email:"nicolerenvoize@hotmail.com", phone:'', dob:'', level:"Level 4", classes:["Level 4"], status:'Active', balance:0, memberSince:'', avatar:'N', avatarColor:'#ffb3de', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"oliviagengos", name:"Olivia Gengos", pronouns:'', email:"oliviagengos@gmail.com", phone:'', dob:'', level:"Level 2", classes:["Level 2"], status:'Active', balance:0, memberSince:'', avatar:'O', avatarColor:'#44ff99', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"priscilaalexandre", name:"Priscila Alexandre", pronouns:'', email:"priscilasalex81@gmail.com", phone:'', dob:'', level:"Dirty Dance", classes:["Dirty Dance", "Level 3"], status:'Active', balance:0, memberSince:'', avatar:'P', avatarColor:'#66dddd', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"raechelcarlsen", name:"Raechel Carlsen", pronouns:'', email:"raechel-carlsen@hotmail.com", phone:'', dob:'', level:"Dance", classes:["Dance"], status:'Active', balance:0, memberSince:'', avatar:'R', avatarColor:'#b0f0b0', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"rebeccaclare", name:"Rebecca Clare", pronouns:'', email:"Rebeccaeclare@gmail.com", phone:'', dob:'', level:"Chair", classes:["Chair"], status:'Active', balance:0, memberSince:'', avatar:'R', avatarColor:'#ffcc88', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"rebeccalumbroso", name:"Rebecca Lumbroso", pronouns:'', email:"Beckinoz@gmail.com", phone:'', dob:'', level:"Inter Floor", classes:["Inter Floor", "Invert Tech", "Strip Virgin", "Unravel"], status:'Active', balance:0, memberSince:'', avatar:'R', avatarColor:'#ff9ecb', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"renraine", name:"Ren Raine", pronouns:'', email:"laurenraine1@outlook.com", phone:'', dob:'', level:"Level 1", classes:["Level 1"], status:'Active', balance:0, memberSince:'', avatar:'R', avatarColor:'#c9aaff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"rikatyebally", name:"Rika Tyebally", pronouns:'', email:"Rika.tyebally@outlook.com", phone:'', dob:'', level:"Chair Virgin", classes:["Chair Virgin", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'R', avatarColor:'#ffd6a5', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"robertapia", name:"Roberta Pia", pronouns:'', email:"piaroberta1@gmail.com", phone:'', dob:'', level:"Floor Virgin", classes:["Floor Virgin", "Level 2", "Unravel"], status:'Active', balance:0, memberSince:'', avatar:'R', avatarColor:'#b5ead7', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"rosemarypower", name:"Rosemary Power", pronouns:'', email:"choccaramelpie@gmail.com", phone:'', dob:'', level:"Level 3", classes:["Level 3"], status:'Active', balance:0, memberSince:'', avatar:'R', avatarColor:'#ffc8dd', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"rosiemeiroian", name:"Rosie Meiroian", pronouns:'', email:"rosiem92@hotmail.com", phone:'', dob:'', level:"5 Foundations", classes:["5 Foundations", "Invert Tech", "Level 5"], status:'Active', balance:0, memberSince:'', avatar:'R', avatarColor:'#e8c1ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"samanthayan", name:"Samantha Yan", pronouns:'', email:"Samanthayan22@gmail.com", phone:'', dob:'', level:"Level 4", classes:["Level 4", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'S', avatarColor:'#caffbf', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"sarahjones", name:"Sarah Jones", pronouns:'', email:"sarjj84@gmail.com", phone:'', dob:'', level:"Inter Floor", classes:["Inter Floor", "6 Virgin", "Strip"], status:'Active', balance:0, memberSince:'', avatar:'S', avatarColor:'#a8d8ea', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"sarahmagnell", name:"Sarah Magnell", pronouns:'', email:"Sarah.magnell@gmail.com", phone:'', dob:'', level:"Chole", classes:["Chole", "Level 5", "Strip", "Unravel"], status:'Active', balance:0, memberSince:'', avatar:'S', avatarColor:'#ffadad', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"sashadyer", name:"Sasha Dyer", pronouns:'', email:"sashagracedyer@gmail.com", phone:'', dob:'', level:"Chole", classes:["Chole", "Floor Virgin", "Level 3"], status:'Active', balance:0, memberSince:'', avatar:'S', avatarColor:'#fdffb6', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"schielleharch", name:"Schielle Harch", pronouns:'', email:"Schielle-paig@hotmail.com", phone:'', dob:'', level:"4 Tricks", classes:["4 Tricks", "Level 4"], status:'Active', balance:0, memberSince:'', avatar:'S', avatarColor:'#9bf6ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"seanpudebat", name:"Sean Pudebat", pronouns:'', email:"Sean.pud@gmail.com", phone:'', dob:'', level:"Strip", classes:["Strip"], status:'Active', balance:0, memberSince:'', avatar:'S', avatarColor:'#bde0fe', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"sharmoniecockayne", name:"Sharmonie Cockayne", pronouns:'', email:"sharmonie@sharmonie.com", phone:'', dob:'', level:"Level 2", classes:["Level 2", "Spin Virgin"], status:'Active', balance:0, memberSince:'', avatar:'S', avatarColor:'#ffaa44', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"sharonye", name:"Sharon Ye", pronouns:'', email:"Sharon.ye@live.com.au", phone:'', dob:'', level:"Level 4", classes:["Level 4", "Strip"], status:'Active', balance:0, memberSince:'', avatar:'S', avatarColor:'#CDA5FF', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"shirleytran", name:"Shirley Tran", pronouns:'', email:"shirleyanne.tran@gmail.com", phone:'', dob:'', level:"Level 2", classes:["Level 2", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'S', avatarColor:'#DBFF00', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"siennablake", name:"Sienna Blake", pronouns:'', email:"siennacharlotteblake@gmail.com", phone:'', dob:'', level:"Level 2", classes:["Level 2", "Level 3"], status:'Active', balance:0, memberSince:'', avatar:'S', avatarColor:'#ff6b6b', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"sofiaairubio", name:"Sofia (Ai) Rubio", pronouns:'', email:"ailoveai0719@gmail.com", phone:'', dob:'', level:"Dance", classes:["Dance", "Invert Tech", "Level 3", "Strip"], status:'Active', balance:0, memberSince:'', avatar:'S', avatarColor:'#4ade80', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"sophiebrown", name:"Sophie Brown", pronouns:'', email:"sophiebrown820@gmail.com", phone:'', dob:'', level:"Dance Tech", classes:["Dance Tech", "Invert Tech", "Level 3"], status:'Active', balance:0, memberSince:'', avatar:'S', avatarColor:'#9ac4ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"stephaniesmith", name:"Stephanie Smith", pronouns:'', email:"stephielsmith@gmail.com", phone:'', dob:'', level:"Dance", classes:["Dance", "Strip"], status:'Active', balance:0, memberSince:'', avatar:'S', avatarColor:'#ffb3de', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"sybilho", name:"Sybil Ho", pronouns:'', email:"sybilckho26@gmail.com", phone:'', dob:'', level:"Level 4", classes:["Level 4"], status:'Active', balance:0, memberSince:'', avatar:'S', avatarColor:'#44ff99', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"tahneewyllie", name:"Tahnee Wyllie", pronouns:'', email:"tahneewyllie@outlook.com", phone:'', dob:'', level:"Floor Virgin", classes:["Floor Virgin", "Level 3", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'T', avatarColor:'#66dddd', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"taniacosta", name:"Tania Costa", pronouns:'', email:"taniateresacosta@gmail.com", phone:'', dob:'', level:"Chair", classes:["Chair"], status:'Active', balance:0, memberSince:'', avatar:'T', avatarColor:'#b0f0b0', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"taniavukicevic", name:"Tania Vukicevic", pronouns:'', email:"taniavukicevic@live.com", phone:'', dob:'', level:"Strip Virgin", classes:["Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'T', avatarColor:'#ffcc88', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"tarafrawley", name:"Tara Frawley", pronouns:'', email:"Tarafrawls@gmail.com", phone:'', dob:'', level:"4 Tricks", classes:["4 Tricks", "Chair"], status:'Active', balance:0, memberSince:'', avatar:'T', avatarColor:'#ff9ecb', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"thanhhoang", name:"Thanh Hoang", pronouns:'', email:"thanh.hoang1612@gmail.com", phone:'', dob:'', level:"Invert Tech", classes:["Invert Tech"], status:'Active', balance:0, memberSince:'', avatar:'T', avatarColor:'#c9aaff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"valeriiamustafina", name:"Valeriia Mustafina", pronouns:'', email:"valeri.mustafina@gmail.com", phone:'', dob:'', level:"Level 1", classes:["Level 1", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'V', avatarColor:'#ffd6a5', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"vandang", name:"Van Dang", pronouns:'', email:"dangngoctuongvan@yahoo.com", phone:'', dob:'', level:"Advanced Floor", classes:["Advanced Floor", "High Tricks", "Kiki"], status:'Active', balance:0, memberSince:'', avatar:'V', avatarColor:'#b5ead7', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"vanisrivastava", name:"Vani Srivastava", pronouns:'', email:"fabulusvani@gmail.com", phone:'', dob:'', level:"Level 2", classes:["Level 2"], status:'Active', balance:0, memberSince:'', avatar:'V', avatarColor:'#ffc8dd', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"victorialuo", name:"Victoria Luo", pronouns:'', email:"Vluo27@hotmail.com", phone:'', dob:'', level:"Level 5", classes:["Level 5", "Strip"], status:'Active', balance:0, memberSince:'', avatar:'V', avatarColor:'#e8c1ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"violetwang", name:"Violet Wang", pronouns:'', email:"Violetwang.vw+1@gmail.com", phone:'', dob:'', level:"5 Foundations", classes:["5 Foundations", "Advanced Floor", "Dance", "Kiki"], status:'Active', balance:0, memberSince:'', avatar:'V', avatarColor:'#caffbf', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"viviantse", name:"Vivian Tse", pronouns:'', email:"vivtse22+1@gmail.com", phone:'', dob:'', level:"High Tricks", classes:["High Tricks", "Level 6"], status:'Active', balance:0, memberSince:'', avatar:'V', avatarColor:'#a8d8ea', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"yolandali", name:"Yolanda Li", pronouns:'', email:"yolandayutianli@hotmail.com", phone:'', dob:'', level:"Inter Floor", classes:["Inter Floor", "Invert Tech", "Level 2"], status:'Active', balance:0, memberSince:'', avatar:'Y', avatarColor:'#ffadad', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"yuliabogatov", name:"Yulia Bogatov", pronouns:'', email:"Bogatov.yulia@gmail.com", phone:'', dob:'', level:"Invert Tech", classes:["Invert Tech"], status:'Active', balance:0, memberSince:'', avatar:'Y', avatarColor:'#fdffb6', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"zoemcfarlane", name:"Zoe McFarlane", pronouns:'', email:"zmcfarlane24@gmail.com", phone:'', dob:'', level:"Dance Tech", classes:["Dance Tech", "Kiki", "Level 3"], status:'Active', balance:0, memberSince:'', avatar:'Z', avatarColor:'#9bf6ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"timbrucejones", name:"timbrucejones", pronouns:'', email:"timbrucejones@gmail.com", phone:'', dob:'', level:"Level 2", classes:["Level 2"], status:'Active', balance:0, memberSince:'', avatar:'T', avatarColor:'#bde0fe', emergency:'', health:'', waiver:'', source:'', tags:[] }
 ];
 
 const _searchData = [
