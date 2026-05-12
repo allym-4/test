@@ -748,16 +748,31 @@ tr.clickable-row:hover td { background: #141414; }
       <div id="sd-enrolments" class="subscreen">
         <div style="display:flex;justify-content:flex-end;margin-bottom:12px;"><button class="btn btn-lime btn-sm" onclick="openModal('modal-add-to-class')">+ Add to Class</button></div>
         <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:10px;">Current Season</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:24px;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:24px;">
           <div class="section" style="margin-bottom:0;padding:16px;">
-            <div style="font-weight:600;margin-bottom:4px;">Level 2</div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+              <div style="font-weight:600;">Level 2</div>
+              <div style="font-size:12px;color:var(--grey);font-weight:500;">$180</div>
+            </div>
             <div style="font-size:12px;color:var(--grey);">Mon 6:30pm · Chloe · The Box</div>
-            <div style="margin-top:8px;"><span class="tag tag-lime">Enrolled</span></div>
+            <div style="margin-top:8px;margin-bottom:12px;"><span class="tag tag-lime">Enrolled</span></div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-ghost btn-xs" onclick="openTransferModal('Level 2 · Mon 6:30pm',180)">Transfer</button>
+              <button class="btn btn-ghost btn-xs" onclick="openModal('modal-add-credit')">Add Credit</button>
+              <button class="btn btn-ghost btn-xs" style="color:#ff6b6b;" onclick="alert('Enrolment cancelled')">Cancel</button>
+            </div>
           </div>
           <div class="section" style="margin-bottom:0;padding:16px;">
-            <div style="font-weight:600;margin-bottom:4px;">Sensual Flow</div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+              <div style="font-weight:600;">Sensual Flow</div>
+              <div style="font-size:12px;color:var(--grey);font-weight:500;">$0</div>
+            </div>
             <div style="font-size:12px;color:var(--grey);">Fri 6:00pm · Mia · Rhapsody</div>
-            <div style="margin-top:8px;"><span class="tag tag-amber">Waitlisted</span></div>
+            <div style="margin-top:8px;margin-bottom:12px;"><span class="tag tag-amber">Waitlisted</span></div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-ghost btn-xs" onclick="openTransferModal('Sensual Flow · Fri 6:00pm',0)">Transfer</button>
+              <button class="btn btn-ghost btn-xs" onclick="alert('Removed from waitlist')">Remove</button>
+            </div>
           </div>
         </div>
         <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:10px;">Past Seasons</div>
@@ -3432,13 +3447,91 @@ tr.clickable-row:hover td { background: #141414; }
 
 <!-- Transfer Booking Modal -->
 <div class="modal-overlay" id="modal-transfer">
-  <div class="modal">
-    <div class="modal-title">Transfer Booking <button class="modal-close" onclick="closeModal('modal-transfer')">✕</button></div>
-    <div class="field"><label>Student</label><select><option>Jess Malone</option><option>Ruby Kim</option><option>Sophie Lawson</option></select></div>
-    <div class="field"><label>Current Class</label><input type="text" value="Level 2 · Mon 6:30pm · Season 3" readonly style="color:var(--grey);" /></div>
-    <div class="field"><label>Transfer To</label><select><option>Level 2 · Thu 6:30pm</option><option>Level 2 · Wed 6:30pm</option></select></div>
-    <div class="field"><label>Reason</label><textarea placeholder="Optional note…"></textarea></div>
-    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-transfer')">Cancel</button><button class="btn btn-lime">Confirm Transfer</button></div>
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-title">Transfer Class <button class="modal-close" onclick="closeModal('modal-transfer')">✕</button></div>
+
+    <div class="field">
+      <label>Current Class</label>
+      <input type="text" id="transfer-current-class" readonly style="color:var(--grey);background:#111;border:1px solid var(--border);width:100%;padding:9px 12px;border-radius:8px;font-family:inherit;font-size:13px;color:var(--grey);" />
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div class="field" style="margin-bottom:0;">
+        <label>Transfer To</label>
+        <select id="transfer-to-class" onchange="calcTransferDiff()" style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;font-size:13px;">
+          <option value="180">Level 2 · Thu 6:30pm</option>
+          <option value="180">Level 2 · Wed 7:00pm</option>
+          <option value="160">Level 1 · Mon 5:30pm</option>
+          <option value="200">Level 3 · Wed 7:30pm</option>
+          <option value="175">Sensual Flow · Fri 6:00pm</option>
+          <option value="165">High Tricks · Mon 7:30pm</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Season</label>
+        <select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;font-size:13px;">
+          <option>Season 3 (current)</option>
+          <option>Season 4 (upcoming)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Price diff summary -->
+    <div id="transfer-price-summary" style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;">
+        <span style="color:var(--grey);">Current class price</span>
+        <span id="transfer-from-price">$180</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;">
+        <span style="color:var(--grey);">New class price</span>
+        <span id="transfer-to-price">$180</span>
+      </div>
+      <div style="border-top:1px solid var(--border);margin:8px 0;"></div>
+      <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:600;">
+        <span>Difference</span>
+        <span id="transfer-diff-amount" style="color:var(--lime);">$0</span>
+      </div>
+    </div>
+
+    <!-- Resolution -->
+    <div class="field">
+      <label>Price Adjustment</label>
+      <div id="transfer-adjustment-opts" style="display:flex;flex-direction:column;gap:8px;">
+        <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;">
+          <input type="radio" name="transfer-adj" value="charge" onchange="toggleTransferPayment()" style="accent-color:var(--lime);" />
+          <span id="transfer-charge-label">Charge difference ($0)</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;">
+          <input type="radio" name="transfer-adj" value="credit" onchange="toggleTransferPayment()" style="accent-color:var(--lime);" />
+          <span id="transfer-credit-label">Issue account credit ($0)</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;">
+          <input type="radio" name="transfer-adj" value="none" checked onchange="toggleTransferPayment()" style="accent-color:var(--lime);" />
+          <span>No price adjustment</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Payment method (shown only when charging) -->
+    <div id="transfer-payment-row" style="display:none;" class="field">
+      <label>Payment Method</label>
+      <select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;font-size:13px;">
+        <option>Square (card reader)</option>
+        <option>Cash</option>
+        <option>Bank Transfer</option>
+        <option>Add to outstanding balance</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Reason / Note</label>
+      <textarea placeholder="Optional note for this transfer…" style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;font-size:13px;resize:vertical;min-height:70px;"></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-transfer')">Cancel</button>
+      <button class="btn btn-lime" onclick="alert('Transfer confirmed.');closeModal('modal-transfer')">Confirm Transfer</button>
+    </div>
   </div>
 </div>
 
@@ -4447,6 +4540,37 @@ function showScreen(id) {
 // ===== MODALS =====
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ===== TRANSFER MODAL =====
+var _transferFromPrice = 180;
+function openTransferModal(className, price) {
+  _transferFromPrice = price || 0;
+  document.getElementById('transfer-current-class').value = className + ' · Season 3';
+  document.querySelectorAll('input[name="transfer-adj"]').forEach(r => { if(r.value==='none') r.checked=true; });
+  document.getElementById('transfer-payment-row').style.display = 'none';
+  calcTransferDiff();
+  openModal('modal-transfer');
+}
+function calcTransferDiff() {
+  var sel = document.getElementById('transfer-to-class');
+  var toPrice = parseInt(sel.options[sel.selectedIndex].value) || 0;
+  var diff = toPrice - _transferFromPrice;
+  document.getElementById('transfer-from-price').textContent = '$' + _transferFromPrice;
+  document.getElementById('transfer-to-price').textContent = '$' + toPrice;
+  var diffEl = document.getElementById('transfer-diff-amount');
+  if(diff > 0) { diffEl.textContent = '+$' + diff; diffEl.style.color = '#ff6b6b'; }
+  else if(diff < 0) { diffEl.textContent = '-$' + Math.abs(diff); diffEl.style.color = 'var(--lime)'; }
+  else { diffEl.textContent = '$0'; diffEl.style.color = 'var(--grey)'; }
+  var absStr = '$' + Math.abs(diff);
+  var chargeLabel = document.getElementById('transfer-charge-label');
+  var creditLabel = document.getElementById('transfer-credit-label');
+  if(chargeLabel) chargeLabel.textContent = diff > 0 ? 'Charge difference (' + absStr + ')' : 'Charge difference ($0)';
+  if(creditLabel) creditLabel.textContent = diff < 0 ? 'Issue account credit (' + absStr + ')' : 'Issue account credit ($0)';
+}
+function toggleTransferPayment() {
+  var sel = document.querySelector('input[name="transfer-adj"]:checked');
+  document.getElementById('transfer-payment-row').style.display = (sel && sel.value === 'charge') ? 'block' : 'none';
+}
 document.querySelectorAll('.modal-overlay').forEach(m => {
   m.addEventListener('click', e => { if(e.target === m) m.classList.remove('open'); });
 });
