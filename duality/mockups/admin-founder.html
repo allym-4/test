@@ -768,11 +768,21 @@ tr.clickable-row:hover td { background: #141414; }
           </table>
         </div>
         <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:10px;">Trial Classes</div>
-        <div class="tbl-section">
+        <div class="tbl-section" style="margin-bottom:20px;">
           <table>
             <thead><tr><th>Date</th><th>Class</th><th>Instructor</th><th>Outcome</th></tr></thead>
             <tbody>
               <tr><td style="color:var(--grey)">3 Feb 2025</td><td>Level 1 · 5:30pm</td><td>Chloe</td><td><span class="tag tag-lime">Converted</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:10px;">Casual & Make-up Classes</div>
+        <div class="tbl-section">
+          <table>
+            <thead><tr><th>Date</th><th>Class</th><th>Instructor</th><th>Type</th><th>Paid</th></tr></thead>
+            <tbody>
+              <tr><td style="color:var(--grey)">21 Apr 2025</td><td>Practice · Rhapsody</td><td>Bambi</td><td><span class="tag tag-grey">Casual</span></td><td class="bal-pos">$20</td></tr>
+              <tr><td style="color:var(--grey)">7 Apr 2025</td><td>Level 2 · Mon 6:30pm</td><td>Chloe</td><td><span class="tag tag-lav">Make-up</span></td><td style="color:var(--grey);">Credit used</td></tr>
             </tbody>
           </table>
         </div>
@@ -793,8 +803,9 @@ tr.clickable-row:hover td { background: #141414; }
               <tr><td style="color:var(--grey)">12 May</td><td>Level 2</td><td>Chloe</td><td><span class="tag tag-lime">Present</span></td><td>—</td><td>—</td></tr>
               <tr><td style="color:var(--grey)">5 May</td><td>Level 2</td><td>Chloe</td><td><span class="tag tag-lime">Present</span></td><td>—</td><td>—</td></tr>
               <tr><td style="color:var(--grey)">28 Apr</td><td>Sensual Flow</td><td>Mia</td><td><span class="tag tag-red">No-show</span></td><td class="bal-neg">$25</td><td>Not notified</td></tr>
-              <tr><td style="color:var(--grey)">21 Apr</td><td>Level 2</td><td>Chloe</td><td><span class="tag tag-lime">Present</span></td><td>—</td><td>—</td></tr>
+              <tr><td style="color:var(--grey)">21 Apr</td><td>Practice · Rhapsody <span class="tag tag-grey" style="font-size:10px;margin-left:4px;">Casual</span></td><td>Bambi</td><td><span class="tag tag-lime">Present</span></td><td class="bal-pos">$20</td><td>—</td></tr>
               <tr><td style="color:var(--grey)">14 Apr</td><td>Level 2</td><td>Chloe</td><td><span class="tag tag-lav">Late</span></td><td>—</td><td>10 min late</td></tr>
+              <tr><td style="color:var(--grey)">7 Apr</td><td>Level 2 <span class="tag tag-lav" style="font-size:10px;margin-left:4px;">Make-up</span></td><td>Chloe</td><td><span class="tag tag-lime">Present</span></td><td style="color:var(--grey);font-size:12px;">Credit used</td><td>—</td></tr>
             </tbody>
           </table>
         </div>
@@ -996,7 +1007,7 @@ tr.clickable-row:hover td { background: #141414; }
                 <td><input type="text" placeholder="Note…" style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:4px 8px;width:100px;" /></td>
               </tr>
               <tr id="att-row-3">
-                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#9ac4ff;">H</div><div><div style="font-weight:500;"><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="alert('Open Hannah Webb profile')">Hannah Webb</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
+                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#9ac4ff;">H</div><div><div style="font-weight:500;"><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='hannah'))">Hannah Webb</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
                 <td><span class="tag tag-lav">Enrolled</span></td>
                 <td style="color:var(--grey);font-size:12px;">0445 000 111</td>
                 <td><select class="att-status-select" onchange="updateAttRow(3,this.value)"><option value="">Select…</option><option value="present">Present</option><option value="noshow-fee">No-show + $25 fee</option><option value="noshow-waived">No-show — fee waived</option><option value="late">Late</option><option value="excused">Excused</option></select></td>
@@ -1004,7 +1015,7 @@ tr.clickable-row:hover td { background: #141414; }
                 <td><input type="text" placeholder="Note…" style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:4px 8px;width:100px;" /></td>
               </tr>
               <tr id="att-row-4">
-                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#ffb3de;">A</div><div><div style="font-weight:500;"><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="alert('Open Amber Cole profile')">Amber Cole</span> 🎂 <span style="display:inline-block;background:#0f1600;color:var(--lime);border:1px solid var(--lime);border-radius:12px;font-size:10px;font-weight:600;padding:1px 8px;letter-spacing:0.3px;margin-left:2px;">Birthday this week!</span> <span class="flag-badge">3 no-shows</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
+                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#ffb3de;">A</div><div><div style="font-weight:500;"><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='amber'))">Amber Cole</span> 🎂 <span style="display:inline-block;background:#0f1600;color:var(--lime);border:1px solid var(--lime);border-radius:12px;font-size:10px;font-weight:600;padding:1px 8px;letter-spacing:0.3px;margin-left:2px;">Birthday this week!</span> <span class="flag-badge">3 no-shows</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
                 <td><span class="tag tag-lav">Enrolled</span></td>
                 <td style="color:var(--grey);font-size:12px;">0445 678 901</td>
                 <td><select class="att-status-select" onchange="updateAttRow(4,this.value)"><option value="">Select…</option><option value="present">Present</option><option value="noshow-fee">No-show + $25 fee</option><option value="noshow-waived">No-show — fee waived</option><option value="late">Late</option><option value="excused">Excused</option></select></td>
@@ -1012,7 +1023,7 @@ tr.clickable-row:hover td { background: #141414; }
                 <td><input type="text" placeholder="Note…" style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:4px 8px;width:100px;" /></td>
               </tr>
               <tr id="att-row-5">
-                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#ffcc88;">P</div><div><div style="font-weight:500;"><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="alert('Open Priya Nair profile')">Priya Nair</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
+                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#ffcc88;">P</div><div><div style="font-weight:500;"><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='priya'))">Priya Nair</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
                 <td><span class="tag tag-amber">Trial</span></td>
                 <td style="color:var(--grey);font-size:12px;">0456 111 222</td>
                 <td><select class="att-status-select" onchange="updateAttRow(5,this.value)"><option value="">Select…</option><option value="present">Present</option><option value="noshow-fee">No-show + $25 fee</option><option value="noshow-waived">No-show — fee waived</option><option value="late">Late</option><option value="excused">Excused</option></select></td>
@@ -1020,7 +1031,7 @@ tr.clickable-row:hover td { background: #141414; }
                 <td><input type="text" placeholder="Note…" style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:4px 8px;width:100px;" /></td>
               </tr>
               <tr id="att-row-6">
-                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#b0f0b0;">E</div><div><div style="font-weight:500;"><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="alert('Open Emma Davis profile')">Emma Davis</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
+                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#b0f0b0;">E</div><div><div style="font-weight:500;"><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='emma'))">Emma Davis</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
                 <td><span class="tag tag-amber">Trial</span></td>
                 <td style="color:var(--grey);font-size:12px;">0456 333 444</td>
                 <td><select class="att-status-select" onchange="updateAttRow(6,this.value)"><option value="">Select…</option><option value="present">Present</option><option value="noshow-fee">No-show + $25 fee</option><option value="noshow-waived">No-show — fee waived</option><option value="late">Late</option><option value="excused">Excused</option></select></td>
@@ -1028,7 +1039,7 @@ tr.clickable-row:hover td { background: #141414; }
                 <td><input type="text" placeholder="Note…" style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:4px 8px;width:100px;" /></td>
               </tr>
               <tr id="att-row-7">
-                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#66dddd;">L</div><div><div style="font-weight:500;"><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="alert('Open Lena Wu profile')">Lena Wu</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
+                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#66dddd;">L</div><div><div style="font-weight:500;"><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='lena'))">Lena Wu</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
                 <td><span class="tag tag-lav">Enrolled</span></td>
                 <td style="color:var(--grey);font-size:12px;">0456 789 012</td>
                 <td><select class="att-status-select" onchange="updateAttRow(7,this.value)"><option value="">Select…</option><option value="present">Present</option><option value="noshow-fee">No-show + $25 fee</option><option value="noshow-waived">No-show — fee waived</option><option value="late">Late</option><option value="excused">Excused</option></select></td>
@@ -1074,8 +1085,8 @@ tr.clickable-row:hover td { background: #141414; }
           <table>
             <thead><tr><th>Student</th><th>Cancellation Time</th><th>Notice Given</th><th>Fee Applied</th><th>Notes</th></tr></thead>
             <tbody>
-              <tr><td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#b0f0b0;">N</div><div><div style="font-weight:500;">Nina Torres</div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td><td style="color:var(--grey);">Today, 3:30pm</td><td><span class="tag tag-red">2h before class</span></td><td><span class="tag tag-amber">Late cancel</span></td><td style="color:var(--grey);font-size:12px;">Cancelled inside the 4h window — no make up issued</td></tr>
-              <tr><td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#c9aaff;">L</div><div><div style="font-weight:500;">Lena Wu</div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td><td style="color:var(--grey);">Today, 6:30pm</td><td><span class="tag tag-grey">8h before class</span></td><td><span class="tag tag-lime">Make up issued</span></td><td style="color:var(--grey);font-size:12px;">Cancelled with notice — make up credit added to account</td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#b0f0b0;">N</div><div><div style="font-weight:500;"><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='nina'))">Nina Torres</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td><td style="color:var(--grey);">Today, 3:30pm</td><td><span class="tag tag-red">2h before class</span></td><td><span class="tag tag-amber">Late cancel</span></td><td style="color:var(--grey);font-size:12px;">Cancelled inside the 4h window — no make up issued</td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#c9aaff;">L</div><div><div style="font-weight:500;"><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='lena'))">Lena Wu</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td><td style="color:var(--grey);">Today, 6:30pm</td><td><span class="tag tag-grey">8h before class</span></td><td><span class="tag tag-lime">Make up issued</span></td><td style="color:var(--grey);font-size:12px;">Cancelled with notice — make up credit added to account</td></tr>
             </tbody>
           </table>
         </div>
@@ -4305,6 +4316,12 @@ const STUDENTS = [
   { id:'sophie', name:'Sophie Lawson', pronouns:'they/them', email:'sophie@email.com', phone:'0434 567 890', dob:'5 Nov 1996', level:'Level 1', status:'Active', balance:0, memberSince:'10 Mar 2025', avatar:'S', avatarColor:'#DBFF00', emergency:'Mark Lawson — 0433 555 666', health:'', waiver:'10 Mar 2025', source:'Referral', tags:[] },
   { id:'kylie', name:'Kylie Rhodes', pronouns:'she/her', email:'kylie@email.com', phone:'0445 678 901', dob:'30 Aug 1994', level:'Level 2', status:'Blocked', balance:-95, memberSince:'20 Nov 2024', avatar:'K', avatarColor:'#ff6b6b', emergency:'Tom Rhodes — 0444 777 888', health:'Knee injury history', waiver:'20 Nov 2024', source:'Walk-in', tags:['Blocked'] },
   { id:'mia', name:'Mia Santos', pronouns:'she/they', email:'mia@email.com', phone:'0456 789 012', dob:'12 Apr 2001', level:'High Tricks', status:'Active', balance:40, memberSince:'5 Sep 2024', avatar:'M', avatarColor:'#4ade80', emergency:'Carlos Santos — 0455 888 999', health:'', waiver:'5 Sep 2024', source:'Instagram', tags:['VIP'] },
+  { id:'hannah', name:'Hannah Webb', pronouns:'she/her', email:'hannah@email.com', phone:'0445 000 111', dob:'8 Jun 1997', level:'Level 1', status:'Active', balance:0, memberSince:'20 Feb 2025', avatar:'H', avatarColor:'#9ac4ff', emergency:'', health:'', waiver:'20 Feb 2025', source:'Instagram', tags:[] },
+  { id:'amber', name:'Amber Cole', pronouns:'she/her', email:'amber@email.com', phone:'0445 678 901', dob:'14 May 1999', level:'Level 1', status:'Active', balance:0, memberSince:'10 Jan 2025', avatar:'A', avatarColor:'#ffb3de', emergency:'', health:'', waiver:'10 Jan 2025', source:'Google', tags:[] },
+  { id:'priya', name:'Priya Nair', pronouns:'she/her', email:'priya@email.com', phone:'0456 111 222', dob:'2 Sep 2000', level:'Trial', status:'Active', balance:0, memberSince:'12 May 2025', avatar:'P', avatarColor:'#ffcc88', emergency:'', health:'', waiver:'', source:'Referral', tags:[] },
+  { id:'emma', name:'Emma Davis', pronouns:'she/her', email:'emma@email.com', phone:'0456 333 444', dob:'19 Nov 1995', level:'Trial', status:'Active', balance:0, memberSince:'12 May 2025', avatar:'E', avatarColor:'#b0f0b0', emergency:'', health:'', waiver:'', source:'Website', tags:[] },
+  { id:'nina', name:'Nina Torres', pronouns:'she/her', email:'nina@email.com', phone:'0467 222 333', dob:'3 Mar 1993', level:'Level 2', status:'Active', balance:0, memberSince:'1 Mar 2025', avatar:'N', avatarColor:'#b0f0b0', emergency:'', health:'', waiver:'1 Mar 2025', source:'Instagram', tags:[] },
+  { id:'lena', name:'Lena Wu', pronouns:'she/her', email:'lena@email.com', phone:'0467 444 555', dob:'27 Jul 1998', level:'Level 1', status:'Active', balance:0, memberSince:'5 May 2025', avatar:'L', avatarColor:'#66dddd', emergency:'', health:'', waiver:'5 May 2025', source:'Website', tags:[] },
 ];
 
 const _searchData = [
