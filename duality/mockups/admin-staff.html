@@ -264,6 +264,9 @@ tr:hover td { background: #0d0d0d; }
     <div class="nav-item" onclick="showScreen('students')"><span class="nav-icon">👤</span> Students</div>
     <div class="nav-item" onclick="showScreen('homework')"><span class="nav-icon">📝</span> Homework <span class="nav-badge">3</span></div>
     <div class="nav-item" onclick="showScreen('messages')"><span class="nav-icon">💬</span> Messages <span class="nav-badge">2</span></div>
+    <div class="nav-item" onclick="showScreen('pay')"><span class="nav-icon">💰</span> Pay &amp; Earnings</div>
+    <div class="nav-item" onclick="showScreen('availability')"><span class="nav-icon">📆</span> Availability &amp; Cover</div>
+    <div class="nav-item" onclick="showScreen('profile')"><span class="nav-icon">👤</span> My Profile</div>
   </nav>
   <div class="sidebar-footer">
     <div class="user-badge">
@@ -377,31 +380,31 @@ tr:hover td { background: #0d0d0d; }
               <td><b>Mon 6:30pm</b><div style="font-size:11px;color:var(--grey)">12 May</div></td>
               <td>Level 2</td><td>The Box</td><td>15/15</td>
               <td><span class="tag tag-amber">Not saved</span></td>
-              <td><button class="btn btn-lime btn-xs" onclick="showScreen('attendance')">Take Register</button></td>
+              <td><button class="btn btn-lime btn-xs" onclick="showScreen('attendance')">Take Register</button> <button class="btn btn-ghost btn-xs" onclick="openModal('modal-request-cover')">Request Cover</button></td>
             </tr>
             <tr>
               <td><b>Mon 8:30pm</b><div style="font-size:11px;color:var(--grey)">12 May</div></td>
               <td>Level 1 Int.</td><td>Rhapsody</td><td>10/12</td>
               <td><span class="tag tag-amber">Not saved</span></td>
-              <td><button class="btn btn-lime btn-xs" onclick="showScreen('attendance')">Take Register</button></td>
+              <td><button class="btn btn-lime btn-xs" onclick="showScreen('attendance')">Take Register</button> <button class="btn btn-ghost btn-xs" onclick="openModal('modal-request-cover')">Request Cover</button></td>
             </tr>
             <tr>
               <td><b>Tue 8:30pm</b><div style="font-size:11px;color:var(--grey)">13 May</div></td>
               <td>Level 1 Int.</td><td>Rhapsody</td><td>8/12</td>
               <td><span class="tag tag-grey">Upcoming</span></td>
-              <td><button class="btn btn-ghost btn-xs">View Roster</button></td>
+              <td><button class="btn btn-ghost btn-xs">View Roster</button> <button class="btn btn-ghost btn-xs" onclick="openModal('modal-request-cover')">Request Cover</button></td>
             </tr>
             <tr>
               <td><b>Thu 6:30pm</b><div style="font-size:11px;color:var(--grey)">15 May</div></td>
               <td>Level 2</td><td>Rhapsody</td><td>11/12</td>
               <td><span class="tag tag-grey">Upcoming</span></td>
-              <td><button class="btn btn-ghost btn-xs">View Roster</button></td>
+              <td><button class="btn btn-ghost btn-xs">View Roster</button> <button class="btn btn-ghost btn-xs" onclick="openModal('modal-request-cover')">Request Cover</button></td>
             </tr>
             <tr>
               <td><b>Sat 10:00am</b><div style="font-size:11px;color:var(--grey)">17 May</div></td>
               <td>Level 1</td><td>The Box</td><td>9/12</td>
               <td><span class="tag tag-grey">Upcoming</span></td>
-              <td><button class="btn btn-ghost btn-xs">View Roster</button></td>
+              <td><button class="btn btn-ghost btn-xs">View Roster</button> <button class="btn btn-ghost btn-xs" onclick="openModal('modal-request-cover')">Request Cover</button></td>
             </tr>
           </tbody>
         </table>
