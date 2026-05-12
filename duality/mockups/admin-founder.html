@@ -275,6 +275,8 @@ tr.clickable-row:hover td { background: #141414; }
 /* BACK LINK */
 .back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--grey); font-size: 13px; cursor: pointer; margin-bottom: 20px; transition: color 0.15s; user-select: none; }
 .back-link:hover { color: var(--white); }
+.student-link { cursor: pointer; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 2px; }
+.student-link:hover { color: var(--lime); }
 
 /* STUDENT DETAIL */
 .sd-hero { display: flex; align-items: flex-start; gap: 24px; margin-bottom: 28px; flex-wrap: wrap; }
@@ -1151,33 +1153,33 @@ tr.clickable-row:hover td { background: #141414; }
         <div class="tt-time">5:30</div>
         <div class="tt-cell"><div class="tt-class-card type-level" onclick="openAttendanceRegister('Level 1','5:30pm','Chloe','The Box')"><div class="tt-class-name">Level 1</div><div class="tt-class-meta">Chloe · The Box</div><div class="tt-class-cap" style="color:var(--lime)">10/12</div></div></div>
         <div class="tt-cell"></div>
-        <div class="tt-cell"><div class="tt-class-card type-level" onclick="openModal('modal-class')"><div class="tt-class-name">Level 1</div><div class="tt-class-meta">Jade · Rhapsody</div><div class="tt-class-cap" style="color:var(--lime)">9/12</div></div></div>
+        <div class="tt-cell"><div class="tt-class-card type-level" onclick="openAttendanceRegister('Level 1','5:30pm','Jaz','Rhapsody')"><div class="tt-class-name">Level 1</div><div class="tt-class-meta">Jaz · Rhapsody</div><div class="tt-class-cap" style="color:var(--lime)">9/12</div></div></div>
         <div class="tt-cell"></div>
-        <div class="tt-cell"><div class="tt-class-card type-dance" onclick="openModal('modal-class')"><div class="tt-class-name">Sensual Flow</div><div class="tt-class-meta">Mia · Rhapsody</div><div class="tt-class-cap" style="color:var(--lav)">8/10</div></div></div>
-        <div class="tt-cell"><div class="tt-class-card type-workshop" onclick="openModal('modal-class')"><div class="tt-class-name">Choreo Intensive</div><div class="tt-class-meta">Mimi · The Box</div><div class="tt-class-cap" style="color:var(--amber)">7/10</div></div></div>
+        <div class="tt-cell"><div class="tt-class-card type-dance" onclick="openAttendanceRegister('Sensual Flow','6:00pm','Mia','Rhapsody')"><div class="tt-class-name">Sensual Flow</div><div class="tt-class-meta">Mia · Rhapsody</div><div class="tt-class-cap" style="color:var(--lav)">8/10</div></div></div>
+        <div class="tt-cell"><div class="tt-class-card type-workshop" onclick="openAttendanceRegister('Choreo Intensive','11:00am','Mimi','The Box')"><div class="tt-class-name">Choreo Intensive</div><div class="tt-class-meta">Mimi · The Box</div><div class="tt-class-cap" style="color:var(--amber)">7/10</div></div></div>
         <div class="tt-cell"></div>
         <div class="tt-time">6:30</div>
         <div class="tt-cell"><div class="tt-class-card type-level" onclick="openAttendanceRegister('Level 2','6:30pm','Chloe','The Box')"><div class="tt-class-name">Level 2</div><div class="tt-class-meta">Chloe · The Box</div><div class="tt-class-cap" style="color:#ff6b6b">15/15 FULL</div></div></div>
-        <div class="tt-cell"><div class="tt-class-card type-dance" onclick="openModal('modal-class')"><div class="tt-class-name">Exotic Floor</div><div class="tt-class-meta">Mia · Rhapsody</div><div class="tt-class-cap" style="color:var(--lav)">6/10</div></div></div>
+        <div class="tt-cell"><div class="tt-class-card type-dance" onclick="openAttendanceRegister('Exotic Floor','6:30pm','Mia','Rhapsody')"><div class="tt-class-name">Exotic Floor</div><div class="tt-class-meta">Mia · Rhapsody</div><div class="tt-class-cap" style="color:var(--lav)">6/10</div></div></div>
         <div class="tt-cell"></div>
-        <div class="tt-cell"><div class="tt-class-card type-level" onclick="openModal('modal-class')"><div class="tt-class-name">Level 2</div><div class="tt-class-meta">Jade · Rhapsody</div><div class="tt-class-cap" style="color:var(--lime)">11/12</div></div></div>
+        <div class="tt-cell"><div class="tt-class-card type-level" onclick="openAttendanceRegister('Level 2','6:30pm','Jaz','Rhapsody')"><div class="tt-class-name">Level 2</div><div class="tt-class-meta">Jaz · Rhapsody</div><div class="tt-class-cap" style="color:var(--lime)">11/12</div></div></div>
         <div class="tt-cell"></div>
         <div class="tt-cell"></div>
         <div class="tt-cell"></div>
         <div class="tt-time">7:30</div>
         <div class="tt-cell"><div class="tt-class-card type-level" onclick="openAttendanceRegister('High Tricks','7:30pm','Mimi','The Box')"><div class="tt-class-name">High Tricks</div><div class="tt-class-meta">Mimi · The Box</div><div class="tt-class-cap" style="color:var(--lime)">8/10</div></div></div>
         <div class="tt-cell"></div>
-        <div class="tt-cell"><div class="tt-class-card type-level" onclick="openModal('modal-class')"><div class="tt-class-name">Level 3</div><div class="tt-class-meta">Mimi · The Box</div><div class="tt-class-cap" style="color:var(--lime)">7/10</div></div></div>
-        <div class="tt-cell"><div class="tt-class-card type-dance" onclick="openModal('modal-class')"><div class="tt-class-name">Heels</div><div class="tt-class-meta">Mia · Rhapsody</div><div class="tt-class-cap" style="color:var(--lav)">9/12</div></div></div>
+        <div class="tt-cell"><div class="tt-class-card type-level" onclick="openAttendanceRegister('Level 3','7:30pm','Mimi','The Box')"><div class="tt-class-name">Level 3</div><div class="tt-class-meta">Mimi · The Box</div><div class="tt-class-cap" style="color:var(--lime)">7/10</div></div></div>
+        <div class="tt-cell"><div class="tt-class-card type-dance" onclick="openAttendanceRegister('Heels','7:30pm','Mia','Rhapsody')"><div class="tt-class-name">Heels</div><div class="tt-class-meta">Mia · Rhapsody</div><div class="tt-class-cap" style="color:var(--lav)">9/12</div></div></div>
         <div class="tt-cell"></div>
         <div class="tt-cell"></div>
         <div class="tt-cell"></div>
         <div class="tt-time tt-last">8:30</div>
         <div class="tt-cell tt-last"></div>
-        <div class="tt-cell tt-last"><div class="tt-class-card type-level" onclick="openModal('modal-class')"><div class="tt-class-name">Level 1 Int.</div><div class="tt-class-meta">Chloe · Rhapsody</div><div class="tt-class-cap" style="color:var(--lime)">5/12</div></div></div>
+        <div class="tt-cell tt-last"><div class="tt-class-card type-level" onclick="openAttendanceRegister('Level 1 Int.','8:30pm','Chloe','Rhapsody')"><div class="tt-class-name">Level 1 Int.</div><div class="tt-class-meta">Chloe · Rhapsody</div><div class="tt-class-cap" style="color:var(--lime)">5/12</div></div></div>
         <div class="tt-cell tt-last"></div>
         <div class="tt-cell tt-last"></div>
-        <div class="tt-cell tt-last"><div class="tt-class-card type-dance" onclick="openModal('modal-class')"><div class="tt-class-name">Exotic Floor</div><div class="tt-class-meta">Mia · Rhapsody</div><div class="tt-class-cap" style="color:var(--lav)">4/10</div></div></div>
+        <div class="tt-cell tt-last"><div class="tt-class-card type-dance" onclick="openAttendanceRegister('Exotic Floor','8:30pm','Mia','Rhapsody')"><div class="tt-class-name">Exotic Floor</div><div class="tt-class-meta">Mia · Rhapsody</div><div class="tt-class-cap" style="color:var(--lav)">4/10</div></div></div>
         <div class="tt-cell tt-last"></div>
         <div class="tt-cell tt-last"></div>
       </div>
@@ -1262,7 +1264,7 @@ tr.clickable-row:hover td { background: #141414; }
                 </tbody>
               </table>
             </div>
-            <button class="btn btn-ghost btn-xs" style="margin-top:10px;" onclick="(function(){const tb=document.querySelector('#season-pricing-table tbody');const tr=document.createElement('tr');tr.innerHTML='<td><input type=\"text\" placeholder=\"e.g. 5+\" style=\"background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:5px 8px;width:90px;\"/></td><td><input type=\"number\" style=\"background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--lime);font-family:inherit;font-size:12px;padding:5px 8px;width:80px;\"/></td><td style=\"color:var(--grey);font-size:12px;\">—</td><td style=\"color:var(--grey);font-size:12px;\">—</td><td><button class=\"btn btn-ghost btn-xs\" onclick=\"this.closest(\\'tr\\').remove()\">×</button></td>';tb.appendChild(tr);})()">+ Add tier</button>
+            <button class="btn btn-ghost btn-xs" style="margin-top:10px;" onclick="addPricingTier()">+ Add tier</button>
           </div>
 
           <!-- Policies -->
@@ -1287,7 +1289,7 @@ tr.clickable-row:hover td { background: #141414; }
             <div class="section-title">Classes <button class="btn btn-lime btn-xs" onclick="openModal('modal-season-class-edit')">+ Add Class</button></div>
             <!-- Class cards -->
             <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
-              <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
+              <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;" onclick="openModal('modal-season-class-edit')">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
                   <div>
                     <div style="font-weight:600;font-size:13px;margin-bottom:2px;">Level 2</div>
@@ -1295,10 +1297,10 @@ tr.clickable-row:hover td { background: #141414; }
                     <div style="font-size:11px;color:var(--grey);margin-top:2px;">15/15 enrolled</div>
                     <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;"><span class="tag tag-lav" style="font-size:10px;">Level 2</span><span class="tag tag-lime" style="font-size:10px;">Spinning</span></div>
                   </div>
-                  <div style="display:flex;gap:6px;flex-shrink:0;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-season-class-edit')">Edit</button><button class="btn btn-ghost btn-xs" onclick="alert('Class removed from season')">Remove</button></div>
+                  <div style="display:flex;gap:6px;flex-shrink:0;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openModal('modal-season-class-edit')">Edit</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Class removed from season')">Remove</button></div>
                 </div>
               </div>
-              <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
+              <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;" onclick="openModal('modal-season-class-edit')">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
                   <div>
                     <div style="font-weight:600;font-size:13px;margin-bottom:2px;">High Tricks</div>
@@ -1306,10 +1308,10 @@ tr.clickable-row:hover td { background: #141414; }
                     <div style="font-size:11px;color:var(--grey);margin-top:2px;">8/10 enrolled</div>
                     <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;"><span class="tag tag-amber" style="font-size:10px;">High Tricks</span><span class="tag tag-lime" style="font-size:10px;">Spinning</span></div>
                   </div>
-                  <div style="display:flex;gap:6px;flex-shrink:0;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-season-class-edit')">Edit</button><button class="btn btn-ghost btn-xs" onclick="alert('Class removed from season')">Remove</button></div>
+                  <div style="display:flex;gap:6px;flex-shrink:0;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openModal('modal-season-class-edit')">Edit</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Class removed from season')">Remove</button></div>
                 </div>
               </div>
-              <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
+              <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;" onclick="openModal('modal-season-class-edit')">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
                   <div>
                     <div style="font-weight:600;font-size:13px;margin-bottom:2px;">Sensual Flow</div>
@@ -1317,10 +1319,10 @@ tr.clickable-row:hover td { background: #141414; }
                     <div style="font-size:11px;color:var(--grey);margin-top:2px;">8/10 enrolled</div>
                     <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;"><span class="tag tag-lav" style="font-size:10px;">Sensual Flow</span><span class="tag tag-lime" style="font-size:10px;">Beginner-friendly</span></div>
                   </div>
-                  <div style="display:flex;gap:6px;flex-shrink:0;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-season-class-edit')">Edit</button><button class="btn btn-ghost btn-xs" onclick="alert('Class removed from season')">Remove</button></div>
+                  <div style="display:flex;gap:6px;flex-shrink:0;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openModal('modal-season-class-edit')">Edit</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Class removed from season')">Remove</button></div>
                 </div>
               </div>
-              <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
+              <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;" onclick="openModal('modal-season-class-edit')">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
                   <div>
                     <div style="font-weight:600;font-size:13px;margin-bottom:2px;">Level 1</div>
@@ -1328,7 +1330,7 @@ tr.clickable-row:hover td { background: #141414; }
                     <div style="font-size:11px;color:var(--grey);margin-top:2px;">10/12 enrolled</div>
                     <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;"><span class="tag tag-lav" style="font-size:10px;">Level 1</span><span class="tag tag-lime" style="font-size:10px;">Beginner-friendly</span></div>
                   </div>
-                  <div style="display:flex;gap:6px;flex-shrink:0;"><button class="btn btn-ghost btn-xs" onclick="openModal('modal-season-class-edit')">Edit</button><button class="btn btn-ghost btn-xs" onclick="alert('Class removed from season')">Remove</button></div>
+                  <div style="display:flex;gap:6px;flex-shrink:0;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openModal('modal-season-class-edit')">Edit</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();alert('Class removed from season')">Remove</button></div>
                 </div>
               </div>
             </div>
@@ -1452,16 +1454,16 @@ tr.clickable-row:hover td { background: #141414; }
         <table>
           <thead><tr><th>Student</th><th>Description</th><th>Amount</th><th>Due Date</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>
-            <tr><td>Jess Malone</td><td>Season 3 — Level 2 (balance)</td><td class="bal-neg">$120</td><td style="color:var(--grey)">15 May</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
-            <tr><td>Kylie Rhodes</td><td>Season 3 + 2× no-show fees</td><td class="bal-neg">$95</td><td style="color:#ff6b6b">Overdue</td><td><span class="tag tag-red">Overdue</span></td><td><button class="btn btn-ghost btn-xs">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
-            <tr><td>Dana Park</td><td>Choreo Intensive Workshop</td><td class="bal-neg">$75</td><td style="color:var(--grey)">20 May</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
-            <tr><td>Amber Cole</td><td>No-show fee × 2</td><td class="bal-neg">$50</td><td style="color:var(--grey)">12 May</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
-            <tr><td>Hannah Webb</td><td>Season 3 — Level 1 (late enrolment)</td><td class="bal-neg">$40</td><td style="color:var(--grey)">22 May</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
-            <tr><td>Tara Bell</td><td>Workshop — balance owing</td><td class="bal-neg">$30</td><td style="color:#ff6b6b">Overdue</td><td><span class="tag tag-red">Overdue</span></td><td><button class="btn btn-ghost btn-xs">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
-            <tr><td>Nina Torres</td><td>Casual drop-in unpaid</td><td class="bal-neg">$35</td><td style="color:var(--grey)">18 May</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
-            <tr><td>Sophie Lawson</td><td>No-show fee</td><td class="bal-neg">$25</td><td style="color:var(--grey)">14 May</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
-            <tr><td>Ruby Kim</td><td>Sensual Flow casual</td><td class="bal-neg">$35</td><td style="color:var(--grey)">17 May</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
-            <tr><td>Mia Santos</td><td>High Tricks workshop deposit</td><td class="bal-neg">$50</td><td style="color:var(--grey)">25 May</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
+            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='jess'))">Jess Malone</span></td><td>Season 3 — Level 2 (balance)</td><td class="bal-neg">$120</td><td style="color:var(--grey)">15 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="alert('Chase sent to Jess Malone')">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button></td></tr>
+            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='kylie'))">Kylie Rhodes</span></td><td>Season 3 + 2× no-show fees</td><td class="bal-neg">$95</td><td style="color:#ff6b6b">Overdue</td><td><span class="tag tag-red">Overdue</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="alert('Chase sent to Kylie Rhodes')">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button></td></tr>
+            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='dana'))">Dana Park</span></td><td>Choreo Intensive Workshop</td><td class="bal-neg">$75</td><td style="color:var(--grey)">20 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="alert('Chase sent to Dana Park')">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button></td></tr>
+            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='amber'))">Amber Cole</span></td><td>No-show fee × 2</td><td class="bal-neg">$50</td><td style="color:var(--grey)">12 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="alert('Chase sent to Amber Cole')">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button></td></tr>
+            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='hannah'))">Hannah Webb</span></td><td>Season 3 — Level 1 (late enrolment)</td><td class="bal-neg">$40</td><td style="color:var(--grey)">22 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="alert('Chase sent to Hannah Webb')">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button></td></tr>
+            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='tara'))">Tara Bell</span></td><td>Workshop — balance owing</td><td class="bal-neg">$30</td><td style="color:#ff6b6b">Overdue</td><td><span class="tag tag-red">Overdue</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="alert('Chase sent to Tara Bell')">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button></td></tr>
+            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='nina'))">Nina Torres</span></td><td>Casual drop-in unpaid</td><td class="bal-neg">$35</td><td style="color:var(--grey)">18 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="alert('Chase sent to Nina Torres')">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button></td></tr>
+            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='sophie'))">Sophie Lawson</span></td><td>No-show fee</td><td class="bal-neg">$25</td><td style="color:var(--grey)">14 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="alert('Chase sent to Sophie Lawson')">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button></td></tr>
+            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='ruby'))">Ruby Kim</span></td><td>Sensual Flow casual</td><td class="bal-neg">$35</td><td style="color:var(--grey)">17 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="alert('Chase sent to Ruby Kim')">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button></td></tr>
+            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='mia'))">Mia Santos</span></td><td>High Tricks workshop deposit</td><td class="bal-neg">$50</td><td style="color:var(--grey)">25 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="alert('Chase sent to Mia Santos')">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button></td></tr>
           </tbody>
         </table>
       </div>
@@ -1700,11 +1702,11 @@ tr.clickable-row:hover td { background: #141414; }
           <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:14px;">Groups</div>
           <div class="tbl-section">
             <div style="padding:14px 16px;">
-              <div class="notif-row"><div><b style="font-size:13px;">General Chat</b><div style="font-size:12px;color:var(--grey);">All students · 94 members</div></div><div style="display:flex;align-items:center;gap:10px;"><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label><span style="font-size:12px;color:var(--grey)">Notifs</span></div></div>
-              <div class="notif-row"><div><b style="font-size:13px;">Level 1 Group</b><div style="font-size:12px;color:var(--grey);">28 members</div></div><div style="display:flex;align-items:center;gap:10px;"><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label><span style="font-size:12px;color:var(--grey)">Notifs</span></div></div>
-              <div class="notif-row"><div><b style="font-size:13px;">Level 2 Group</b><div style="font-size:12px;color:var(--grey);">32 members</div></div><div style="display:flex;align-items:center;gap:10px;"><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label><span style="font-size:12px;color:var(--grey)">Notifs</span></div></div>
-              <div class="notif-row"><div><b style="font-size:13px;">Level 3 Group</b><div style="font-size:12px;color:var(--grey);">18 members</div></div><div style="display:flex;align-items:center;gap:10px;"><label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label><span style="font-size:12px;color:var(--grey)">Notifs</span></div></div>
-              <div class="notif-row" style="border-bottom:none;"><div><b style="font-size:13px;">Staff Chat</b><div style="font-size:12px;color:var(--grey);">6 members (private)</div></div><div style="display:flex;align-items:center;gap:10px;"><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label><span style="font-size:12px;color:var(--grey)">Notifs</span></div></div>
+              <div class="notif-row"><div><b style="font-size:13px;cursor:pointer;" onclick="openGroupChat('General Chat',94)">General Chat</b><div style="font-size:12px;color:var(--grey);">All students · 94 members</div></div><div style="display:flex;align-items:center;gap:8px;"><button class="btn btn-ghost btn-xs" onclick="openGroupChat('General Chat',94)">Open</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label><span style="font-size:12px;color:var(--grey)">Notifs</span></div></div>
+              <div class="notif-row"><div><b style="font-size:13px;cursor:pointer;" onclick="openGroupChat('Level 1 Group',28)">Level 1 Group</b><div style="font-size:12px;color:var(--grey);">28 members</div></div><div style="display:flex;align-items:center;gap:8px;"><button class="btn btn-ghost btn-xs" onclick="openGroupChat('Level 1 Group',28)">Open</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label><span style="font-size:12px;color:var(--grey)">Notifs</span></div></div>
+              <div class="notif-row"><div><b style="font-size:13px;cursor:pointer;" onclick="openGroupChat('Level 2 Group',32)">Level 2 Group</b><div style="font-size:12px;color:var(--grey);">32 members</div></div><div style="display:flex;align-items:center;gap:8px;"><button class="btn btn-ghost btn-xs" onclick="openGroupChat('Level 2 Group',32)">Open</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label><span style="font-size:12px;color:var(--grey)">Notifs</span></div></div>
+              <div class="notif-row"><div><b style="font-size:13px;cursor:pointer;" onclick="openGroupChat('Level 3 Group',18)">Level 3 Group</b><div style="font-size:12px;color:var(--grey);">18 members</div></div><div style="display:flex;align-items:center;gap:8px;"><button class="btn btn-ghost btn-xs" onclick="openGroupChat('Level 3 Group',18)">Open</button><label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label><span style="font-size:12px;color:var(--grey)">Notifs</span></div></div>
+              <div class="notif-row" style="border-bottom:none;"><div><b style="font-size:13px;cursor:pointer;" onclick="openGroupChat('Staff Chat',6)">Staff Chat</b><div style="font-size:12px;color:var(--grey);">6 members (private)</div></div><div style="display:flex;align-items:center;gap:8px;"><button class="btn btn-ghost btn-xs" onclick="openGroupChat('Staff Chat',6)">Open</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label><span style="font-size:12px;color:var(--grey)">Notifs</span></div></div>
             </div>
           </div>
         </div>
@@ -1741,11 +1743,11 @@ tr.clickable-row:hover td { background: #141414; }
             <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:14px;">Groups</div>
             <div class="tbl-section">
               <div style="padding:14px 16px;">
-                <div class="notif-row"><div><b style="font-size:13px;">General Chat</b><div style="font-size:12px;color:var(--grey);">All students · 94 members</div></div><div style="display:flex;align-items:center;gap:10px;"><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label><span style="font-size:12px;color:var(--grey)">Notifs</span></div></div>
-                <div class="notif-row"><div><b style="font-size:13px;">Level 1 Group</b><div style="font-size:12px;color:var(--grey);">28 members</div></div><div style="display:flex;align-items:center;gap:10px;"><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label><span style="font-size:12px;color:var(--grey)">Notifs</span></div></div>
-                <div class="notif-row"><div><b style="font-size:13px;">Level 2 Group</b><div style="font-size:12px;color:var(--grey);">32 members</div></div><div style="display:flex;align-items:center;gap:10px;"><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label><span style="font-size:12px;color:var(--grey)">Notifs</span></div></div>
-                <div class="notif-row"><div><b style="font-size:13px;">Level 3 Group</b><div style="font-size:12px;color:var(--grey);">18 members</div></div><div style="display:flex;align-items:center;gap:10px;"><label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label><span style="font-size:12px;color:var(--grey)">Notifs</span></div></div>
-                <div class="notif-row" style="border-bottom:none;"><div><b style="font-size:13px;">Staff Chat</b><div style="font-size:12px;color:var(--grey);">6 members (private)</div></div><div style="display:flex;align-items:center;gap:10px;"><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label><span style="font-size:12px;color:var(--grey)">Notifs</span></div></div>
+                <div class="notif-row"><div><b style="font-size:13px;cursor:pointer;" onclick="openGroupChat('General Chat',94)">General Chat</b><div style="font-size:12px;color:var(--grey);">All students · 94 members</div></div><div style="display:flex;align-items:center;gap:8px;"><button class="btn btn-ghost btn-xs" onclick="openGroupChat('General Chat',94)">Open</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label><span style="font-size:12px;color:var(--grey)">Notifs</span></div></div>
+                <div class="notif-row"><div><b style="font-size:13px;cursor:pointer;" onclick="openGroupChat('Level 1 Group',28)">Level 1 Group</b><div style="font-size:12px;color:var(--grey);">28 members</div></div><div style="display:flex;align-items:center;gap:8px;"><button class="btn btn-ghost btn-xs" onclick="openGroupChat('Level 1 Group',28)">Open</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label><span style="font-size:12px;color:var(--grey)">Notifs</span></div></div>
+                <div class="notif-row"><div><b style="font-size:13px;cursor:pointer;" onclick="openGroupChat('Level 2 Group',32)">Level 2 Group</b><div style="font-size:12px;color:var(--grey);">32 members</div></div><div style="display:flex;align-items:center;gap:8px;"><button class="btn btn-ghost btn-xs" onclick="openGroupChat('Level 2 Group',32)">Open</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label><span style="font-size:12px;color:var(--grey)">Notifs</span></div></div>
+                <div class="notif-row"><div><b style="font-size:13px;cursor:pointer;" onclick="openGroupChat('Level 3 Group',18)">Level 3 Group</b><div style="font-size:12px;color:var(--grey);">18 members</div></div><div style="display:flex;align-items:center;gap:8px;"><button class="btn btn-ghost btn-xs" onclick="openGroupChat('Level 3 Group',18)">Open</button><label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label><span style="font-size:12px;color:var(--grey)">Notifs</span></div></div>
+                <div class="notif-row" style="border-bottom:none;"><div><b style="font-size:13px;cursor:pointer;" onclick="openGroupChat('Staff Chat',6)">Staff Chat</b><div style="font-size:12px;color:var(--grey);">6 members (private)</div></div><div style="display:flex;align-items:center;gap:8px;"><button class="btn btn-ghost btn-xs" onclick="openGroupChat('Staff Chat',6)">Open</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label><span style="font-size:12px;color:var(--grey)">Notifs</span></div></div>
               </div>
             </div>
           </div>
@@ -2728,7 +2730,7 @@ tr.clickable-row:hover td { background: #141414; }
             </thead>
             <tbody id="campaigns-tbody">
               <tr data-type="notification" data-status="Sent">
-                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View">👁</button></td>
+                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View" onclick="openModal('modal-new-campaign')">👁</button></td>
                 <td><span class="tag tag-lav">notification</span></td>
                 <td style="color:var(--grey);">All Connected Students</td>
                 <td style="font-weight:500;">Your final notice — opt in for Season 4!</td>
@@ -2737,7 +2739,7 @@ tr.clickable-row:hover td { background: #141414; }
                 <td style="color:var(--grey);">—</td>
               </tr>
               <tr data-type="notification" data-status="Sent">
-                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View">👁</button></td>
+                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View" onclick="openModal('modal-new-campaign')">👁</button></td>
                 <td><span class="tag tag-lav">notification</span></td>
                 <td style="color:var(--grey);">All Connected Students</td>
                 <td style="font-weight:500;">We want your thoughts + sign up for Season 4!</td>
@@ -2746,7 +2748,7 @@ tr.clickable-row:hover td { background: #141414; }
                 <td style="color:var(--grey);">—</td>
               </tr>
               <tr data-type="notification" data-status="Sent">
-                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View">👁</button></td>
+                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View" onclick="openModal('modal-new-campaign')">👁</button></td>
                 <td><span class="tag tag-lav">notification</span></td>
                 <td style="color:var(--grey);">All Connected Students</td>
                 <td style="font-weight:500;">Season 3 Routines are LIVE!</td>
@@ -2755,7 +2757,7 @@ tr.clickable-row:hover td { background: #141414; }
                 <td style="color:var(--grey);">—</td>
               </tr>
               <tr data-type="notification" data-status="Sent">
-                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View">👁</button></td>
+                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View" onclick="openModal('modal-new-campaign')">👁</button></td>
                 <td><span class="tag tag-lav">notification</span></td>
                 <td style="color:var(--grey);">All Connected Students</td>
                 <td style="font-weight:500;">LAST DAY TO ORDER SHOES!</td>
@@ -2764,7 +2766,7 @@ tr.clickable-row:hover td { background: #141414; }
                 <td style="color:var(--grey);">—</td>
               </tr>
               <tr data-type="notification" data-status="Sent">
-                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View">👁</button></td>
+                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View" onclick="openModal('modal-new-campaign')">👁</button></td>
                 <td><span class="tag tag-lav">notification</span></td>
                 <td style="color:var(--grey);">All Connected Students</td>
                 <td style="font-weight:500;">Are you coming to the showcase this weekend?</td>
@@ -2773,7 +2775,7 @@ tr.clickable-row:hover td { background: #141414; }
                 <td style="color:var(--grey);">—</td>
               </tr>
               <tr data-type="notification" data-status="Sent">
-                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View">👁</button></td>
+                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View" onclick="openModal('modal-new-campaign')">👁</button></td>
                 <td><span class="tag tag-lav">notification</span></td>
                 <td style="color:var(--grey);">All Connected Students</td>
                 <td style="font-weight:500;">Season 2 Routines Released!</td>
@@ -2782,7 +2784,7 @@ tr.clickable-row:hover td { background: #141414; }
                 <td style="color:var(--grey);">—</td>
               </tr>
               <tr data-type="email" data-status="Sent">
-                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View">👁</button></td>
+                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View" onclick="openModal('modal-new-campaign')">👁</button></td>
                 <td><span class="tag tag-amber">email</span></td>
                 <td style="color:var(--grey);">Pole Icon Waitlist</td>
                 <td style="font-weight:500;">Secret workshop release: Estefania at Duality</td>
@@ -2791,7 +2793,7 @@ tr.clickable-row:hover td { background: #141414; }
                 <td style="color:var(--grey);">—</td>
               </tr>
               <tr data-type="notification" data-status="Sent">
-                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View">👁</button></td>
+                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View" onclick="openModal('modal-new-campaign')">👁</button></td>
                 <td><span class="tag tag-lav">notification</span></td>
                 <td style="color:var(--grey);">All Connected Students</td>
                 <td style="font-weight:500;">Are you coming to the showcase tomorrow?</td>
@@ -2800,7 +2802,7 @@ tr.clickable-row:hover td { background: #141414; }
                 <td style="color:var(--grey);">—</td>
               </tr>
               <tr data-type="email" data-status="Draft">
-                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View">👁</button></td>
+                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View" onclick="openModal('modal-new-campaign')">👁</button></td>
                 <td><span class="tag tag-amber">email</span></td>
                 <td style="color:var(--grey);">Leads — Not Enrolled</td>
                 <td style="font-weight:500;">Come try Duality Pole — your first class is $20</td>
@@ -2809,7 +2811,7 @@ tr.clickable-row:hover td { background: #141414; }
                 <td style="color:var(--grey);">—</td>
               </tr>
               <tr data-type="notification" data-status="Scheduled">
-                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View">👁</button></td>
+                <td><button style="background:none;border:none;cursor:pointer;color:var(--grey);font-size:16px;" title="View" onclick="openModal('modal-new-campaign')">👁</button></td>
                 <td><span class="tag tag-lav">notification</span></td>
                 <td style="color:var(--grey);">All Connected Students</td>
                 <td style="font-weight:500;">Season 4 enrolments are now OPEN 🎉</td>
@@ -3652,21 +3654,56 @@ tr.clickable-row:hover td { background: #141414; }
 
 <!-- Bulk Assign Membership Modal -->
 <div class="modal-overlay" id="modal-bulk-assign-membership">
-  <div class="modal">
+  <div class="modal modal-lg">
     <div class="modal-title">Bulk Assign Membership <button class="modal-close" onclick="closeModal('modal-bulk-assign-membership')">✕</button></div>
-    <div class="field"><label>Membership Type</label><select><option>Season — 1 class/wk ($160)</option><option>Season — 2 classes/wk ($290)</option><option>Season — 3 classes/wk ($390)</option><option>Trial Class ($25)</option><option>Drop-in ($35)</option></select></div>
-    <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:8px;">Select Students</div>
-    <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:12px;max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
-      <div class="checkbox-row"><input type="checkbox" /><label>Jess Malone</label></div>
-      <div class="checkbox-row"><input type="checkbox" /><label>Ruby Kim</label></div>
-      <div class="checkbox-row"><input type="checkbox" /><label>Sophie Lawson</label></div>
-      <div class="checkbox-row"><input type="checkbox" /><label>Kylie Rhodes</label></div>
-      <div class="checkbox-row"><input type="checkbox" /><label>Mia Santos</label></div>
-      <div class="checkbox-row"><input type="checkbox" /><label>Tara Bell</label></div>
-      <div class="checkbox-row"><input type="checkbox" /><label>Hannah Webb</label></div>
-      <div class="checkbox-row"><input type="checkbox" /><label>Dana Park</label></div>
+
+    <div class="field"><label>Membership to Assign</label>
+      <select id="bam-type" style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
+        <option value="">Select membership…</option>
+        <option value="1">Season — 1 class/wk ($270)</option>
+        <option value="2">Season — 2 classes/wk ($440)</option>
+        <option value="3">Season — 3 classes/wk ($570)</option>
+        <option value="4">Season — 4+ classes/wk ($680)</option>
+      </select>
     </div>
-    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-bulk-assign-membership')">Cancel</button><button class="btn btn-lime" onclick="alert('Membership assigned!');closeModal('modal-bulk-assign-membership')">Assign</button></div>
+
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:10px;">Filter Students by Classes / Week</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+      <button class="btn btn-ghost btn-sm bam-filter-btn active" onclick="bamFilter(this,'all')" style="border-color:var(--lime);color:var(--lime);">All students</button>
+      <button class="btn btn-ghost btn-sm bam-filter-btn" onclick="bamFilter(this,'1')">1 class/wk <span style="color:var(--grey);font-size:11px;">(23 students)</span></button>
+      <button class="btn btn-ghost btn-sm bam-filter-btn" onclick="bamFilter(this,'2')">2 classes/wk <span style="color:var(--grey);font-size:11px;">(31 students)</span></button>
+      <button class="btn btn-ghost btn-sm bam-filter-btn" onclick="bamFilter(this,'3')">3 classes/wk <span style="color:var(--grey);font-size:11px;">(18 students)</span></button>
+      <button class="btn btn-ghost btn-sm bam-filter-btn" onclick="bamFilter(this,'4')">4+ classes/wk <span style="color:var(--grey);font-size:11px;">(8 students)</span></button>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div id="bam-count" style="font-size:12px;color:var(--grey);">Showing all 80 students</div>
+      <label style="font-size:12px;color:var(--grey);cursor:pointer;display:flex;align-items:center;gap:6px;">
+        <input type="checkbox" id="bam-select-all" style="accent-color:var(--lime);" onchange="document.querySelectorAll('#bam-list input[type=checkbox]:not([disabled])').forEach(cb=>cb.checked=this.checked)" />
+        Select all shown
+      </label>
+    </div>
+
+    <div id="bam-list" style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:12px;max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+      <!-- 1 class/wk -->
+      <div class="checkbox-row bam-row" data-freq="1"><input type="checkbox" style="accent-color:var(--lime);" /><label style="display:flex;justify-content:space-between;width:100%;"><span>Sophie Lawson</span><span style="color:var(--grey);font-size:11px;">Level 1 · Mon 5:30pm</span></label></div>
+      <div class="checkbox-row bam-row" data-freq="1"><input type="checkbox" style="accent-color:var(--lime);" /><label style="display:flex;justify-content:space-between;width:100%;"><span>Hannah Webb</span><span style="color:var(--grey);font-size:11px;">Level 1 · Mon 5:30pm</span></label></div>
+      <div class="checkbox-row bam-row" data-freq="1"><input type="checkbox" style="accent-color:var(--lime);" /><label style="display:flex;justify-content:space-between;width:100%;"><span>Priya Nair</span><span style="color:var(--grey);font-size:11px;">Level 1 · Wed 5:30pm</span></label></div>
+      <div class="checkbox-row bam-row" data-freq="1"><input type="checkbox" style="accent-color:var(--lime);" /><label style="display:flex;justify-content:space-between;width:100%;"><span>Emma Davis</span><span style="color:var(--grey);font-size:11px;">Level 1 · Wed 5:30pm</span></label></div>
+      <!-- 2 classes/wk -->
+      <div class="checkbox-row bam-row" data-freq="2"><input type="checkbox" style="accent-color:var(--lime);" /><label style="display:flex;justify-content:space-between;width:100%;"><span>Jess Malone</span><span style="color:var(--grey);font-size:11px;">Level 2 + Sensual Flow</span></label></div>
+      <div class="checkbox-row bam-row" data-freq="2"><input type="checkbox" style="accent-color:var(--lime);" /><label style="display:flex;justify-content:space-between;width:100%;"><span>Ruby Kim</span><span style="color:var(--grey);font-size:11px;">Level 3 + High Tricks</span></label></div>
+      <div class="checkbox-row bam-row" data-freq="2"><input type="checkbox" style="accent-color:var(--lime);" /><label style="display:flex;justify-content:space-between;width:100%;"><span>Lena Wu</span><span style="color:var(--grey);font-size:11px;">Level 1 + Practice</span></label></div>
+      <div class="checkbox-row bam-row" data-freq="2"><input type="checkbox" style="accent-color:var(--lime);" /><label style="display:flex;justify-content:space-between;width:100%;"><span>Nina Torres</span><span style="color:var(--grey);font-size:11px;">Level 2 + Heels</span></label></div>
+      <!-- 3 classes/wk -->
+      <div class="checkbox-row bam-row" data-freq="3"><input type="checkbox" style="accent-color:var(--lime);" /><label style="display:flex;justify-content:space-between;width:100%;"><span>Kylie Rhodes</span><span style="color:var(--grey);font-size:11px;">Level 2 + Exotic Floor + Sensual Flow</span></label></div>
+      <div class="checkbox-row bam-row" data-freq="3"><input type="checkbox" style="accent-color:var(--lime);" /><label style="display:flex;justify-content:space-between;width:100%;"><span>Mia Santos</span><span style="color:var(--grey);font-size:11px;">High Tricks + Exotic Floor + Heels</span></label></div>
+      <!-- 4+ classes/wk -->
+      <div class="checkbox-row bam-row" data-freq="4"><input type="checkbox" style="accent-color:var(--lime);" /><label style="display:flex;justify-content:space-between;width:100%;"><span>Dana Park</span><span style="color:var(--grey);font-size:11px;">Level 2 + High Tricks + Sensual Flow + Exotic Floor</span></label></div>
+    </div>
+
+    <div style="margin-top:10px;font-size:11px;color:var(--grey);">Tip: Select a filter above and the matching membership tier will auto-select.</div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-bulk-assign-membership')">Cancel</button><button class="btn btn-lime" onclick="alert('Membership assigned to selected students!');closeModal('modal-bulk-assign-membership')">Assign to Selected</button></div>
   </div>
 </div>
 
@@ -4076,8 +4113,8 @@ tr.clickable-row:hover td { background: #141414; }
 <!-- Season Class Edit Modal -->
 <div class="modal-overlay" id="modal-season-class-edit">
   <div class="modal modal-lg">
-    <div class="modal-title">Edit Class <button class="modal-close" onclick="closeModal('modal-season-class-edit')">✕</button></div>
-    <div class="field"><label>Class Name</label><input type="text" value="Level 2" /></div>
+    <div class="modal-title">Add / Edit Class <button class="modal-close" onclick="closeModal('modal-season-class-edit')">✕</button></div>
+    <div class="field"><label>Class</label><select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;"><option value="">Select a class…</option><option selected>Level 2</option><option>Level 1</option><option>Level 3</option><option>Level 4</option><option>Level 5</option><option>Level 6</option><option>Level 7</option><option>High Tricks</option><option>Sensual Flow</option><option>Exotic Floor</option><option>Heels</option><option>Choreo Intensive</option><option>Practice (Drop-in)</option><option>Trial</option></select></div>
     <div class="field-row">
       <div class="field"><label>Day</label><select><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select></div>
       <div class="field"><label>Start Time</label><input type="time" value="18:30" /></div>
@@ -4322,6 +4359,8 @@ const STUDENTS = [
   { id:'emma', name:'Emma Davis', pronouns:'she/her', email:'emma@email.com', phone:'0456 333 444', dob:'19 Nov 1995', level:'Trial', status:'Active', balance:0, memberSince:'12 May 2025', avatar:'E', avatarColor:'#b0f0b0', emergency:'', health:'', waiver:'', source:'Website', tags:[] },
   { id:'nina', name:'Nina Torres', pronouns:'she/her', email:'nina@email.com', phone:'0467 222 333', dob:'3 Mar 1993', level:'Level 2', status:'Active', balance:0, memberSince:'1 Mar 2025', avatar:'N', avatarColor:'#b0f0b0', emergency:'', health:'', waiver:'1 Mar 2025', source:'Instagram', tags:[] },
   { id:'lena', name:'Lena Wu', pronouns:'she/her', email:'lena@email.com', phone:'0467 444 555', dob:'27 Jul 1998', level:'Level 1', status:'Active', balance:0, memberSince:'5 May 2025', avatar:'L', avatarColor:'#66dddd', emergency:'', health:'', waiver:'5 May 2025', source:'Website', tags:[] },
+  { id:'dana', name:'Dana Park', pronouns:'she/her', email:'dana@email.com', phone:'0467 555 666', dob:'15 Feb 1997', level:'High Tricks', status:'Owing', balance:-75, memberSince:'10 Oct 2024', avatar:'D', avatarColor:'#ff9999', emergency:'', health:'', waiver:'10 Oct 2024', source:'Instagram', tags:[] },
+  { id:'tara', name:'Tara Bell', pronouns:'she/her', email:'tara@email.com', phone:'0412 999 000', dob:'20 Sep 2001', level:'Level 2', status:'Active', balance:-30, memberSince:'15 Jan 2025', avatar:'T', avatarColor:'#44ff99', emergency:'', health:'', waiver:'15 Jan 2025', source:'Google', tags:[] },
 ];
 
 const _searchData = [
@@ -4736,6 +4775,31 @@ function createDiscount() {
 }
 
 // ===== SEASON EDIT =====
+function bamFilter(btn, freq) {
+  document.querySelectorAll('.bam-filter-btn').forEach(b => { b.style.borderColor=''; b.style.color=''; b.classList.remove('active'); });
+  btn.style.borderColor = 'var(--lime)'; btn.style.color = 'var(--lime)'; btn.classList.add('active');
+  const rows = document.querySelectorAll('.bam-row');
+  let visible = 0;
+  rows.forEach(r => {
+    const show = freq === 'all' || r.dataset.freq === freq;
+    r.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  const freqLabels = {'all':'all','1':'1 class/wk','2':'2 classes/wk','3':'3 classes/wk','4':'4+ classes/wk'};
+  document.getElementById('bam-count').textContent = freq === 'all' ? 'Showing all 80 students (sample)' : `Showing ${visible} students — ${freqLabels[freq]}`;
+  const tierMap = {'1':'1','2':'2','3':'3','4':'4'};
+  if (freq !== 'all' && tierMap[freq]) document.getElementById('bam-type').value = tierMap[freq];
+  document.getElementById('bam-select-all').checked = false;
+}
+
+function addPricingTier() {
+  const tb = document.querySelector('#season-pricing-table tbody');
+  const tr = document.createElement('tr');
+  const inp = 'background:#1a1a1a;border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:inherit;font-size:12px;padding:5px 8px;';
+  tr.innerHTML = `<td><input type="text" placeholder="e.g. 5+" style="${inp}width:90px;" /></td><td><input type="number" style="${inp}color:var(--lime);width:80px;" /></td><td style="color:var(--grey);font-size:12px;">—</td><td style="color:var(--grey);font-size:12px;">—</td><td><button class="btn btn-ghost btn-xs" onclick="this.closest('tr').remove()">×</button></td>`;
+  tb.appendChild(tr);
+}
+
 function openSeasonEdit(name) {
   document.getElementById('season-edit-name').textContent = name;
   showScreen('season-edit');
