@@ -20,7 +20,18 @@ import AdminBilling from './pages/admin/AdminBilling'
 import AdminStaff from './pages/admin/AdminStaff'
 import AdminTimetable from './pages/admin/AdminTimetable'
 import AdminReporting from './pages/admin/AdminReporting'
-import AdminStub from './pages/admin/AdminStub'
+import AdminBookings from './pages/admin/AdminBookings'
+import AdminSeasons from './pages/admin/AdminSeasons'
+import AdminWaitlist from './pages/admin/AdminWaitlist'
+import AdminLeads from './pages/admin/AdminLeads'
+import AdminRecommendations from './pages/admin/AdminRecommendations'
+import AdminSettings from './pages/admin/AdminSettings'
+import AdminMessages from './pages/admin/AdminMessages'
+import AdminCommunity from './pages/admin/AdminCommunity'
+import AdminAutomations from './pages/admin/AdminAutomations'
+import AdminRetail from './pages/admin/AdminRetail'
+import AdminLockers from './pages/admin/AdminLockers'
+import AdminHelpdesk from './pages/admin/AdminHelpdesk'
 
 // Student pages
 import StudentDashboard from './pages/student/StudentDashboard'
@@ -28,7 +39,12 @@ import StudentMyClasses from './pages/student/StudentMyClasses'
 import StudentBilling from './pages/student/StudentBilling'
 import StudentAccount from './pages/student/StudentAccount'
 import StudentProgress from './pages/student/StudentProgress'
-import StudentStub from './pages/student/StudentStub'
+import StudentBook from './pages/student/StudentBook'
+import StudentCommunity from './pages/student/StudentCommunity'
+import StudentChat from './pages/student/StudentChat'
+import StudentNotifications from './pages/student/StudentNotifications'
+import StudentSupport from './pages/student/StudentSupport'
+import StudentStudioInfo from './pages/student/StudentStudioInfo'
 
 // Login
 import LoginPage from './pages/LoginPage'
@@ -77,8 +93,19 @@ export default function App() {
             <Route path="staff" element={<AdminStaff />} />
             <Route path="timetable" element={<AdminTimetable />} />
             <Route path="reporting" element={<AdminReporting />} />
+            <Route path="bookings" element={<AdminBookings />} />
+            <Route path="seasons" element={<AdminSeasons />} />
+            <Route path="waitlist" element={<AdminWaitlist />} />
+            <Route path="leads" element={<AdminLeads />} />
+            <Route path="recommendations" element={<AdminRecommendations />} />
+            <Route path="settings" element={<AdminSettings />} />
+            <Route path="messages" element={<AdminMessages />} />
+            <Route path="community" element={<AdminCommunity />} />
+            <Route path="automations" element={<AdminAutomations />} />
+            <Route path="retail" element={<AdminRetail />} />
+            <Route path="lockers" element={<AdminLockers />} />
+            <Route path="helpdesk" element={<AdminHelpdesk />} />
             <Route path="classes/:id/attendance" element={<AttendancePage />} />
-            <Route path="*" element={<AdminStub />} />
           </Route>
 
           {/* Student routes */}
@@ -88,7 +115,12 @@ export default function App() {
             <Route path="billing" element={<StudentBilling />} />
             <Route path="account" element={<StudentAccount />} />
             <Route path="progress" element={<StudentProgress />} />
-            <Route path="*" element={<StudentStub />} />
+            <Route path="book" element={<StudentBook />} />
+            <Route path="community" element={<StudentCommunity />} />
+            <Route path="chat" element={<StudentChat />} />
+            <Route path="notifications" element={<StudentNotifications />} />
+            <Route path="support" element={<StudentSupport />} />
+            <Route path="studio" element={<StudentStudioInfo />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

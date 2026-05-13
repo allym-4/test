@@ -13,9 +13,12 @@ const NAV = [
 ]
 
 const NAV2 = [
-  { to: '/portal/community', label: 'Community',    icon: '♬', stub: true },
-  { to: '/portal/chat',      label: 'Chat',         icon: '○', stub: true },
-  { to: '/portal/support',   label: 'Help & Support', icon: '🎧', stub: true },
+  { to: '/portal/book',          label: 'Book a Class',   icon: '＋' },
+  { to: '/portal/community',     label: 'Community',      icon: '♬' },
+  { to: '/portal/chat',          label: 'Messages',       icon: '○' },
+  { to: '/portal/notifications', label: 'Notifications',  icon: '🔔' },
+  { to: '/portal/support',       label: 'Help & Support', icon: '🎧' },
+  { to: '/portal/studio',        label: 'Studio Info',    icon: '◉' },
 ]
 
 export default function StudentShell() {
@@ -62,7 +65,7 @@ export default function StudentShell() {
             <NavLink
               key={to}
               to={to}
-              className={({ isActive }) => `student-nav-item${isActive ? ' active' : ''} stub`}
+              className={({ isActive }) => `student-nav-item${isActive ? ' active' : ''}`}
               onClick={() => setMobileOpen(false)}
             >
               <span className="student-nav-icon">{icon}</span>

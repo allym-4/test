@@ -22,21 +22,23 @@ const NAV_GROUPS = [
   {
     divider: true,
     items: [
-      { to: '/admin/messages',       label: 'Messages',      icon: '📩', stub: true },
-      { to: '/admin/community',      label: 'Community',     icon: '💬', stub: true },
-      { to: '/admin/automations',    label: 'Automations',   icon: '🔔', stub: true },
-      { to: '/admin/recommendations',label: 'Recommendations',icon: '💡', stub: true },
-      { to: '/admin/leads',          label: 'Leads',         icon: '🎯', stub: true },
+      { to: '/admin/messages',        label: 'Messages',       icon: '📩' },
+      { to: '/admin/community',       label: 'Community',      icon: '💬' },
+      { to: '/admin/automations',     label: 'Automations',    icon: '🔔' },
+      { to: '/admin/recommendations', label: 'Recommendations', icon: '💡' },
+      { to: '/admin/leads',           label: 'Leads',          icon: '🎯' },
     ]
   },
   {
     divider: true,
     items: [
-      { to: '/admin/retail',    label: 'Retail',    icon: '🛍', stub: true },
-      { to: '/admin/waitlist',  label: 'Waitlist',  icon: '⏳', stub: true },
-      { to: '/admin/lockers',   label: 'Lockers',   icon: '🔐', stub: true },
-      { to: '/admin/helpdesk',  label: 'Helpdesk',  icon: '🎧', stub: true },
-      { to: '/admin/settings',  label: 'Settings',  icon: '⚙️', stub: true },
+      { to: '/admin/retail',    label: 'Retail',    icon: '🛍' },
+      { to: '/admin/waitlist',  label: 'Waitlist',  icon: '⏳' },
+      { to: '/admin/lockers',   label: 'Lockers',   icon: '🔐' },
+      { to: '/admin/helpdesk',  label: 'Helpdesk',  icon: '🎧' },
+      { to: '/admin/bookings',  label: 'Bookings',  icon: '📋' },
+      { to: '/admin/seasons',   label: 'Seasons',   icon: '📆' },
+      { to: '/admin/settings',  label: 'Settings',  icon: '⚙️' },
     ]
   },
 ]
