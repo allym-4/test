@@ -8056,12 +8056,12 @@ Duality Pole</textarea>
 
 <!-- Staff Detail Modal -->
 <div class="modal-overlay" id="modal-staff-detail">
-  <div class="modal modal-lg" style="width:680px;">
-    <div class="modal-title">Staff Profile <button class="modal-close" onclick="closeModal('modal-staff-detail')">✕</button></div>
+  <div class="modal modal-lg" id="modal-staff-detail-inner" style="width:680px;max-width:95vw;">
+    <div class="modal-title" id="sdt-modal-title">Staff Profile <button class="modal-close" onclick="closeModal('modal-staff-detail')">✕</button></div>
     <div class="subtabs" id="staff-detail-tabs" style="margin-bottom:20px;">
-      <div class="subtab active" onclick="switchSubTab(this,'sdt-profile')">Profile</div>
+      <div class="subtab active" onclick="sdt_showProfile(this)">Profile</div>
       <div class="subtab" onclick="switchSubTab(this,'sdt-schedule')">Teaching Schedule</div>
-      <div class="subtab" onclick="openInstructorStudentProfile()">Student Profile</div>
+      <div class="subtab" onclick="sdt_showStudentProfile(this)">Student Profile</div>
       <div class="subtab" onclick="switchSubTab(this,'sdt-notes')">Notes</div>
     </div>
 
@@ -8117,39 +8117,8 @@ Duality Pole</textarea>
       <div style="margin-top:16px;font-size:13px;color:var(--grey);">Total: 4 classes per week · 39/51 enrolled</div>
     </div>
 
-    <!-- Student Profile tab -->
-    <div id="sdt-student" class="subscreen">
-      <div style="background:#0a1500;border:1px solid var(--lime);border-radius:8px;padding:10px 16px;margin-bottom:16px;font-size:12px;color:var(--lime);">
-        This instructor is also enrolled as a student. Their student profile is shown below.
-      </div>
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
-        <div class="sd-avatar" style="background:var(--lav);width:48px;height:48px;font-size:20px;">C</div>
-        <div>
-          <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">Chloe Nguyen</div>
-          <div style="display:flex;gap:8px;margin-top:4px;"><span class="tag tag-lav">Level 3</span><span class="tag tag-lime">Active</span></div>
-        </div>
-      </div>
-      <div class="info-row"><div class="info-label">Current Season</div><div class="info-val">Season 3 — Level 3</div></div>
-      <div class="info-row"><div class="info-label">Classes / Week</div><div class="info-val">2 (staff discount applied)</div></div>
-      <div class="info-row"><div class="info-label">Attendance Rate</div><div class="info-val" style="color:var(--lime)">95%</div></div>
-      <div class="info-row" style="border-bottom:none;"><div class="info-label">Balance</div><div class="info-val bal-pos">$0</div></div>
-      <div style="margin-top:16px;">
-        <div style="font-family:'Archivo Black',sans-serif;font-size:13px;margin-bottom:10px;">Recent Bookings</div>
-        <div class="tbl-section">
-          <table>
-            <thead><tr><th>Date</th><th>Class</th><th>Status</th></tr></thead>
-            <tbody>
-              <tr><td style="color:var(--grey)">12 May</td><td>Level 3 — Wed 7:30pm</td><td><span class="tag tag-lime">Present</span></td></tr>
-              <tr><td style="color:var(--grey)">5 May</td><td>Level 3 — Wed 7:30pm</td><td><span class="tag tag-lime">Present</span></td></tr>
-              <tr><td style="color:var(--grey)">28 Apr</td><td>Level 3 — Wed 7:30pm</td><td><span class="tag tag-lime">Present</span></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div style="margin-top:14px;">
-        <button class="btn btn-outline btn-sm" onclick="openInstructorStudentProfile()">View Full Student Profile →</button>
-      </div>
-    </div>
+    <!-- Student Profile tab — dynamically rendered -->
+    <div id="sdt-student" class="subscreen"></div>
 
     <!-- Notes tab -->
     <div id="sdt-notes" class="subscreen">
@@ -8175,6 +8144,65 @@ Duality Pole</textarea>
 </div>
 
 <script>
+// ===== INSTRUCTOR STUDENT PROFILE (inline modal expansion) =====
+function sdt_showProfile(btn) {
+  // Restore modal to normal size
+  var inner = document.getElementById('modal-staff-detail-inner');
+  if (inner) inner.style.width = '680px';
+  document.getElementById('sdt-modal-title').innerHTML = 'Staff Profile <button class="modal-close" onclick="closeModal(\'modal-staff-detail\')">✕</button>';
+  switchSubTab(btn, 'sdt-profile');
+}
+
+function sdt_showStudentProfile(btn) {
+  var s = STUDENTS.find(function(st){ return st.id === 'chloenguyeninstr'; });
+  if (!s) return;
+
+  // Expand modal to show full student profile
+  var inner = document.getElementById('modal-staff-detail-inner');
+  if (inner) inner.style.width = 'min(92vw, 860px)';
+
+  // Build full profile HTML
+  var lvlColor = 'var(--lav)';
+  var statusColor = s.status === 'Active' ? 'tag-lime' : 'tag-amber';
+  var tagColors = {VIP:'tag-lime','At Risk':'tag-amber',Blocked:'tag-red',Trial:'tag-lav',Frozen:'tag-blue',Staff:'tag-grey'};
+  var tagsHTML = (s.tags||[]).map(function(t){ return '<span class="chip '+(tagColors[t]||'tag-grey')+'">'+t+'</span>'; }).join('');
+  var classesHTML = (s.classes||[]).map(function(c){ return '<div style="font-size:13px;padding:6px 0;border-bottom:1px solid var(--border);">'+c+'</div>'; }).join('');
+
+  var html = '<div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">'
+    + '<div class="sd-avatar" style="background:'+s.avatarColor+';width:56px;height:56px;font-size:22px;flex-shrink:0;">'+s.avatar+'</div>'
+    + '<div>'
+    + '<div style="font-family:\'Archivo Black\',sans-serif;font-size:20px;">'+s.name+'</div>'
+    + '<div style="color:var(--grey);font-size:13px;margin-top:2px;">'+s.pronouns+'</div>'
+    + '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">'
+    + '<span class="tag" style="background:rgba(201,170,255,0.15);color:var(--lav);border:1px solid var(--lav);">'+s.level+'</span>'
+    + '<span class="tag '+statusColor+'">'+s.status+'</span>'
+    + '<span style="font-size:12px;color:var(--grey);display:flex;align-items:center;">Member since '+s.memberSince+'</span>'
+    + '</div></div></div>'
+    + '<div class="grid-2" style="gap:16px;margin-bottom:16px;">'
+    + '<div class="section" style="margin-bottom:0;">'
+    + '<div class="section-title" style="font-size:12px;">Contact</div>'
+    + '<div class="info-row"><div class="info-label">Email</div><div class="info-val">'+s.email+'</div></div>'
+    + '<div class="info-row"><div class="info-label">Phone</div><div class="info-val">'+(s.phone||'—')+'</div></div>'
+    + '<div class="info-row"><div class="info-label">DOB</div><div class="info-val">'+(s.dob||'—')+'</div></div>'
+    + '<div class="info-row"><div class="info-label">Emergency</div><div class="info-val">'+(s.emergency||'—')+'</div></div>'
+    + '<div class="info-row" style="border:none;"><div class="info-label">Health</div><div class="info-val" style="color:'+(s.health?'#ff9977':'var(--grey)')+';">'+(s.health||'None noted')+'</div></div>'
+    + '</div>'
+    + '<div class="section" style="margin-bottom:0;">'
+    + '<div class="section-title" style="font-size:12px;">Account</div>'
+    + '<div class="info-row"><div class="info-label">Balance</div><div class="info-val '+(s.balance<0?'bal-neg':s.balance>0?'bal-pos':'')+'">'+( s.balance===0?'$0':(s.balance<0?'−$'+Math.abs(s.balance):'+$'+s.balance+' credit'))+'</div></div>'
+    + '<div class="info-row"><div class="info-label">Waiver</div><div class="info-val">'+(s.waiver?'Signed '+s.waiver:'Not signed')+'</div></div>'
+    + '<div class="info-row"><div class="info-label">Source</div><div class="info-val">'+(s.source||'—')+'</div></div>'
+    + '<div class="info-row" style="border:none;"><div class="info-label">Tags</div><div class="info-val" style="display:flex;gap:6px;flex-wrap:wrap;">'+(tagsHTML||'<span style="color:var(--grey)">None</span>')+'</div></div>'
+    + '</div></div>'
+    + '<div class="section" style="margin-bottom:0;">'
+    + '<div class="section-title" style="font-size:12px;">Current Enrolments</div>'
+    + (classesHTML || '<div style="color:var(--grey);font-size:13px;">No current enrolments</div>')
+    + '</div>';
+
+  document.getElementById('sdt-student').innerHTML = html;
+  switchSubTab(btn, 'sdt-student');
+}
+
 // ===== MOBILE NAV =====
 function toggleMobSidebar() {
   document.body.classList.toggle('mob-sidebar-open');
