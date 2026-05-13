@@ -378,6 +378,7 @@ tr.clickable-row:hover td { background: #141414; }
       <div class="nav-item sub" onclick="showScreen('categories')" data-stub="1"><span class="nav-icon">📂</span> Categories</div>
       <div class="nav-item sub" onclick="showScreen('timetable')"><span class="nav-icon">📅</span> Timetable</div>
       <div class="nav-item sub" onclick="showScreen('classes')"><span class="nav-icon">📚</span> Classes</div>
+      <div class="nav-item sub" onclick="showScreen('waitlist')"><span class="nav-icon">⏳</span> Waitlist</div>
       <div class="nav-item sub" onclick="showScreen('seasons')"><span class="nav-icon">🌀</span> Seasons</div>
       <div class="nav-item sub" onclick="showScreen('manage-packages')" data-stub="1"><span class="nav-icon">📦</span> Packages</div>
       <div class="nav-item sub" onclick="showScreen('manage-memberships')" data-stub="1"><span class="nav-icon">🪪</span> Memberships</div>
@@ -2009,6 +2010,7 @@ tr.clickable-row:hover td { background: #141414; }
         <div class="subtab" id="sd-tab-progress" onclick="switchSubTab(this,'sd-progress')">Progress</div>
         <div class="subtab" id="sd-tab-documents" onclick="switchSubTab(this,'sd-documents')">Documents</div>
         <div class="subtab" id="sd-tab-notes" onclick="switchSubTab(this,'sd-notes')">Notes</div>
+        <div class="subtab" id="sd-tab-comms" onclick="switchSubTab(this,'sd-comms');loadCommsTab()">Comms</div>
       </div>
 
       <!-- OVERVIEW TAB -->
@@ -2222,6 +2224,20 @@ tr.clickable-row:hover td { background: #141414; }
         <div id="sdp-dance" class="subscreen">
           <div style="color:var(--grey);font-size:13px;padding:20px 0;">No progress data yet for Dance.</div>
         </div>
+      </div>
+
+      <!-- COMMS TAB -->
+      <div id="sd-comms" class="subscreen">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-lime btn-xs comms-filter active" onclick="filterComms(this,'all')">All</button>
+            <button class="btn btn-ghost btn-xs comms-filter" onclick="filterComms(this,'email')">Emails</button>
+            <button class="btn btn-ghost btn-xs comms-filter" onclick="filterComms(this,'dm')">DMs</button>
+            <button class="btn btn-ghost btn-xs comms-filter" onclick="filterComms(this,'sms')">SMS</button>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="openQuickMessageModal()">+ Send message</button>
+        </div>
+        <div id="sd-comms-list"><div style="text-align:center;padding:40px;color:var(--grey);font-size:13px;">Loading communications...</div></div>
       </div>
 
       <!-- DOCUMENTS TAB -->
@@ -4577,6 +4593,8 @@ dualitypole.com.au</textarea>
             <div class="subtab" onclick="switchSubTab(this,'rep-financial')">Financial</div>
             <div class="subtab" onclick="switchSubTab(this,'rep-attendance')">Attendance</div>
             <div class="subtab" onclick="switchSubTab(this,'rep-kisi')">Kisi Logs</div>
+            <div class="subtab" onclick="switchSubTab(this,'rep-retention')">Retention</div>
+            <div class="subtab" onclick="switchSubTab(this,'rep-referrals')">Referrals</div>
           </div>
           <div id="rep-enrolments" class="subscreen active">
             <div class="tbl-section"><table><thead><tr><th>Class</th><th>Instructor</th><th>Capacity</th><th style="color:var(--lav)">Trials</th><th style="color:var(--lime)">Full</th><th style="color:var(--amber)">Drop-ins</th><th>Total</th><th>Fill %</th></tr></thead><tbody><tr><td>Level 1 — Mon 5:30pm</td><td>Chloe</td><td>12</td><td style="color:var(--lav)">3</td><td style="color:var(--lime)">8</td><td style="color:var(--amber)">1</td><td>12</td><td><span class="tag tag-red">100%</span></td></tr><tr><td>Level 2 — Mon 6:30pm</td><td>Chloe</td><td>10</td><td style="color:var(--lav)">2</td><td style="color:var(--lime)">7</td><td style="color:var(--amber)">0</td><td>9</td><td><span class="tag tag-lime">90%</span></td></tr><tr><td>High Tricks — Mon 7:30pm</td><td>Mimi</td><td>10</td><td style="color:var(--lav)">0</td><td style="color:var(--lime)">8</td><td style="color:var(--amber)">0</td><td>8</td><td><span class="tag tag-lime">80%</span></td></tr><tr><td>Dance — Fri 6:00pm</td><td>Bambi</td><td>14</td><td style="color:var(--lav)">4</td><td style="color:var(--lime)">9</td><td style="color:var(--amber)">2</td><td>15</td><td><span class="tag tag-red">107%</span></td></tr></tbody></table></div>
@@ -4595,6 +4613,112 @@ dualitypole.com.au</textarea>
           <div id="rep-kisi" class="subscreen">
             <div class="tbl-section"><table><thead><tr><th>Student</th><th>Space</th><th>Access Granted</th><th>Valid From</th><th>Valid Until</th><th>Unlocked At</th><th>Status</th></tr></thead><tbody><tr><td>Jess Malone</td><td>Rhapsody</td><td style="color:var(--grey)">10 May 9:02am</td><td>11 May 10:00am</td><td>11 May 12:00pm</td><td>11 May 10:04am</td><td><span class="tag tag-lime">Used</span></td></tr><tr><td>Sophie Lawson</td><td>The Box</td><td style="color:var(--grey)">11 May 8:45am</td><td>11 May 2:00pm</td><td>11 May 4:00pm</td><td>—</td><td><span class="tag tag-amber">Pending</span></td></tr></tbody></table></div>
           </div>
+
+          <!-- RETENTION TAB -->
+          <div id="rep-retention" class="subscreen">
+            <!-- Season-over-season headline stats -->
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+              <div class="section" style="padding:16px;text-align:center;">
+                <div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">S3 → S4 Retention</div>
+                <div style="font-family:'Archivo Black',sans-serif;font-size:28px;color:var(--lime);">74%</div>
+                <div style="font-size:11px;color:var(--grey);margin-top:4px;">86 of 116 returned</div>
+              </div>
+              <div class="section" style="padding:16px;text-align:center;">
+                <div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">New This Season</div>
+                <div style="font-family:'Archivo Black',sans-serif;font-size:28px;color:var(--lav);">22</div>
+                <div style="font-size:11px;color:var(--grey);margin-top:4px;">First-time students</div>
+              </div>
+              <div class="section" style="padding:16px;text-align:center;">
+                <div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Lapsed (didn't return)</div>
+                <div style="font-family:'Archivo Black',sans-serif;font-size:28px;color:var(--amber);">30</div>
+                <div style="font-size:11px;color:var(--grey);margin-top:4px;">14 re-engaged via email</div>
+              </div>
+              <div class="section" style="padding:16px;text-align:center;">
+                <div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Avg Seasons per Student</div>
+                <div style="font-family:'Archivo Black',sans-serif;font-size:28px;color:var(--white);">3.2</div>
+                <div style="font-size:11px;color:var(--grey);margin-top:4px;">Up from 2.8 last season</div>
+              </div>
+            </div>
+            <!-- Per-instructor retention -->
+            <div class="tbl-section" style="margin-bottom:20px;">
+              <div style="font-family:'Archivo Black',sans-serif;font-size:13px;padding:12px 16px;border-bottom:1px solid var(--border);">Retention by Instructor</div>
+              <table>
+                <thead><tr><th>Instructor</th><th>S3 Students</th><th>Returned S4</th><th>Retention Rate</th><th>Avg Seasons</th></tr></thead>
+                <tbody>
+                  <tr><td>Chloe</td><td>42</td><td>36</td><td><span class="tag tag-lime">85.7%</span></td><td>3.8</td></tr>
+                  <tr><td>Mimi</td><td>38</td><td>29</td><td><span class="tag tag-lime">76.3%</span></td><td>4.1</td></tr>
+                  <tr><td>Maz</td><td>24</td><td>14</td><td><span class="tag tag-amber">58.3%</span></td><td>2.1</td></tr>
+                  <tr><td>Viv</td><td>12</td><td>7</td><td><span class="tag tag-amber">58.3%</span></td><td>1.9</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- Churn reasons -->
+            <div class="section" style="padding:16px;">
+              <div style="font-family:'Archivo Black',sans-serif;font-size:13px;margin-bottom:14px;">Why Students Lapsed (exit survey — 18 responses)</div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="font-size:12px;width:180px;color:var(--grey);">Schedule didn't suit</div>
+                  <div style="flex:1;background:#1a1a1a;border-radius:4px;height:8px;overflow:hidden;"><div style="width:44%;height:100%;background:var(--amber);border-radius:4px;"></div></div>
+                  <div style="font-size:12px;width:30px;text-align:right;">44%</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="font-size:12px;width:180px;color:var(--grey);">Financial / cost</div>
+                  <div style="flex:1;background:#1a1a1a;border-radius:4px;height:8px;overflow:hidden;"><div style="width:28%;height:100%;background:var(--amber);border-radius:4px;"></div></div>
+                  <div style="font-size:12px;width:30px;text-align:right;">28%</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="font-size:12px;width:180px;color:var(--grey);">Injury / health</div>
+                  <div style="flex:1;background:#1a1a1a;border-radius:4px;height:8px;overflow:hidden;"><div style="width:17%;height:100%;background:var(--lav);border-radius:4px;"></div></div>
+                  <div style="font-size:12px;width:30px;text-align:right;">17%</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="font-size:12px;width:180px;color:var(--grey);">Moving / relocation</div>
+                  <div style="flex:1;background:#1a1a1a;border-radius:4px;height:8px;overflow:hidden;"><div style="width:11%;height:100%;background:#555;border-radius:4px;"></div></div>
+                  <div style="font-size:12px;width:30px;text-align:right;">11%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- REFERRALS TAB -->
+          <div id="rep-referrals" class="subscreen">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+              <div class="section" style="padding:16px;text-align:center;">
+                <div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Referrals This Season</div>
+                <div style="font-family:'Archivo Black',sans-serif;font-size:28px;color:var(--lime);">14</div>
+                <div style="font-size:11px;color:var(--grey);margin-top:4px;">New students via referral</div>
+              </div>
+              <div class="section" style="padding:16px;text-align:center;">
+                <div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Conversion Rate</div>
+                <div style="font-family:'Archivo Black',sans-serif;font-size:28px;color:var(--lav);">68%</div>
+                <div style="font-size:11px;color:var(--grey);margin-top:4px;">20 codes shared → 14 used</div>
+              </div>
+              <div class="section" style="padding:16px;text-align:center;">
+                <div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Revenue from Referrals</div>
+                <div style="font-family:'Archivo Black',sans-serif;font-size:28px;color:var(--white);">$1,820</div>
+                <div style="font-size:11px;color:var(--grey);margin-top:4px;">$130 avg per referral</div>
+              </div>
+              <div class="section" style="padding:16px;text-align:center;">
+                <div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Unused Codes</div>
+                <div style="font-family:'Archivo Black',sans-serif;font-size:28px;color:var(--amber);">89</div>
+                <div style="font-size:11px;color:var(--grey);margin-top:4px;">Active but not yet shared</div>
+              </div>
+            </div>
+            <div class="tbl-section">
+              <div style="font-family:'Archivo Black',sans-serif;font-size:13px;padding:12px 16px;border-bottom:1px solid var(--border);">Referral Activity</div>
+              <table>
+                <thead><tr><th>Referrer</th><th>Code</th><th>Referred Student</th><th>Joined</th><th>Seasons Completed</th><th>Value</th></tr></thead>
+                <tbody>
+                  <tr><td>Jess Malone</td><td style="font-family:monospace;color:var(--lime);">JESS20</td><td>Amy Turner</td><td>Season 4</td><td>1</td><td>$180</td></tr>
+                  <tr><td>Belle Harrison</td><td style="font-family:monospace;color:var(--lime);">BELLE20</td><td>Chloe Park</td><td>Season 4</td><td>1</td><td>$180</td></tr>
+                  <tr><td>Belle Harrison</td><td style="font-family:monospace;color:var(--lime);">BELLE20</td><td>Dana Kim</td><td>Season 4</td><td>1</td><td>$180</td></tr>
+                  <tr><td>Ruby Chen</td><td style="font-family:monospace;color:var(--lime);">RUBY20</td><td>Mia Russo</td><td>Season 3</td><td>2</td><td>$360</td></tr>
+                  <tr><td>Stella Nguyen</td><td style="font-family:monospace;color:var(--lime);">STELLA20</td><td>Tara Singh</td><td>Season 4</td><td>1</td><td>$180</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
         </div>
         <!-- Right: report generator panel -->
         <div>
@@ -4745,6 +4869,7 @@ dualitypole.com.au</textarea>
               <label class="toggle" style="transform:scale(0.85);" id="flow-toggle-wrap"><input type="checkbox" id="flow-toggle-cb" onchange="toggleAutomation(this)" /><span class="toggle-slider"></span></label>
             </div>
           </div>
+          <div id="flow-canvas-stats"></div>
           <div id="flow-canvas" style="flex:1;padding:24px;overflow-y:auto;"></div>
         </div>
       </div>
@@ -5319,6 +5444,21 @@ dualitypole.com.au</textarea>
 
 
     <!-- ===== RETAIL ===== -->
+    <!-- ===== WAITLIST ===== -->
+    <div id="screen-waitlist" class="screen">
+      <div class="page-header">
+        <div><div class="page-title">Waitlist</div><div class="page-sub">Students waiting for spots across all classes this season</div></div>
+        <button class="btn btn-lime" onclick="showToast('Waitlist notifications sent to all eligible students')">Notify all eligible &#8594;</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+        <div class="section" style="padding:14px 16px;"><div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Total Waitlisted</div><div style="font-family:'Archivo Black',sans-serif;font-size:24px;">23</div></div>
+        <div class="section" style="padding:14px 16px;"><div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Classes with Waitlist</div><div style="font-family:'Archivo Black',sans-serif;font-size:24px;">4</div></div>
+        <div class="section" style="padding:14px 16px;"><div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Promoted This Season</div><div style="font-family:'Archivo Black',sans-serif;font-size:24px;color:var(--lime);">8</div></div>
+        <div class="section" style="padding:14px 16px;"><div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Avg Wait Time</div><div style="font-family:'Archivo Black',sans-serif;font-size:24px;">9 days</div></div>
+      </div>
+      <div id="waitlist-classes"></div>
+    </div>
+
     <div id="screen-retail" class="screen">
       <div class="page-header">
         <div><div class="page-title">Retail</div><div class="page-sub">Products, stock and sales</div></div>
@@ -10658,6 +10798,7 @@ var AUTOMATIONS = [
   {
     id:'booking-confirm', name:'Booking Confirmation', cat:'Booking & Class',
     enabled:true, lastRun:'Today', runCount:312,
+    freqCap:7,
     nodes:[
       {type:'trigger', label:'Trigger', detail:'Student completes checkout'},
       {type:'action-mc', label:'Email via Mailchimp', detail:'Subject: Your booking is confirmed!', template:'booking-confirm'},
@@ -10666,6 +10807,7 @@ var AUTOMATIONS = [
   {
     id:'class-reminder', name:'Class Reminder', cat:'Booking & Class',
     enabled:true, lastRun:'Today', runCount:1420,
+    freqCap:7,
     nodes:[
       {type:'trigger', label:'Trigger', detail:'24 hours before scheduled class'},
       {type:'action-gmail', label:'Email via Gmail', detail:'Subject: See you tomorrow, {first_name}!', template:'class-reminder'},
@@ -10674,6 +10816,7 @@ var AUTOMATIONS = [
   {
     id:'first-class', name:'First Class Welcome', cat:'Booking & Class',
     enabled:true, lastRun:'Mon 11 May', runCount:28,
+    freqCap:7,
     nodes:[
       {type:'trigger', label:'Trigger', detail:"Student's very first class within 24 hours"},
       {type:'action-gmail', label:'Email via Gmail', detail:'Subject: Your first class at Duality Pole!', template:'first-class'},
@@ -10682,6 +10825,7 @@ var AUTOMATIONS = [
   {
     id:'waitlist', name:'Waitlist Promotion', cat:'Booking & Class',
     enabled:true, lastRun:'Sat 10 May', runCount:64,
+    freqCap:7,
     nodes:[
       {type:'trigger', label:'Trigger', detail:'Spot opens on a class with waitlisted students'},
       {type:'action-gmail', label:'Email via Gmail', detail:'Subject: A spot just opened up for you!', template:'waitlist'},
@@ -10690,6 +10834,7 @@ var AUTOMATIONS = [
   {
     id:'noshow-fee', name:'No-show Fee Notification', cat:'Billing & Fees',
     enabled:true, lastRun:'Yesterday', runCount:89,
+    freqCap:7,
     nodes:[
       {type:'trigger', label:'Trigger', detail:'No-show fee added to student account'},
       {type:'action-gmail', label:'Email via Gmail', detail:'Subject: No-show fee — {class_name}', template:'noshow-fee'},
@@ -10698,6 +10843,7 @@ var AUTOMATIONS = [
   {
     id:'overdue-chase', name:'Overdue Balance Chase', cat:'Billing & Fees',
     enabled:true, lastRun:'Mon 11 May', runCount:43,
+    freqCap:7,
     nodes:[
       {type:'trigger', label:'Trigger', detail:'Balance overdue by 7 days'},
       {type:'action-gmail', label:'Email via Gmail', detail:'Subject: Your Duality balance — quick reminder', template:'overdue-1'},
@@ -10709,6 +10855,7 @@ var AUTOMATIONS = [
   {
     id:'season-reenrol', name:'Season Re-enrolment', cat:'Billing & Fees',
     enabled:true, lastRun:'2 weeks ago', runCount:127,
+    freqCap:7,
     nodes:[
       {type:'trigger', label:'Trigger', detail:'2 weeks before new season opens'},
       {type:'condition', label:'Condition', detail:'Currently enrolled in prior season?', yes:'Continue', no:'Stop'},
@@ -10718,6 +10865,7 @@ var AUTOMATIONS = [
   {
     id:'lapsed-3w', name:'Re-engagement — 3 weeks', cat:'Re-engagement',
     enabled:true, lastRun:'Yesterday', runCount:56,
+    freqCap:7,
     nodes:[
       {type:'trigger', label:'Trigger', detail:'No booking in 3 weeks'},
       {type:'action-gmail', label:'Email via Gmail', detail:'Subject: We miss you at Duality, {first_name}!', template:'lapsed-3w'},
@@ -10726,6 +10874,7 @@ var AUTOMATIONS = [
   {
     id:'lapsed-6w', name:'Re-engagement — 6 weeks', cat:'Re-engagement',
     enabled:true, lastRun:'Last week', runCount:31,
+    freqCap:7,
     nodes:[
       {type:'trigger', label:'Trigger', detail:'No booking in 6 weeks'},
       {type:'delay', label:'Wait', detail:'Check: sent lapsed-3w email?'},
@@ -10736,6 +10885,7 @@ var AUTOMATIONS = [
   {
     id:'lapsed-12w', name:'Re-engagement — 12 weeks', cat:'Re-engagement',
     enabled:false, lastRun:'Never', runCount:0,
+    freqCap:7,
     nodes:[
       {type:'trigger', label:'Trigger', detail:'No booking in 12 weeks'},
       {type:'action-gmail', label:'Email via Gmail', detail:'Subject: Should we say goodbye? (opt-out)', template:'lapsed-12w'},
@@ -10744,6 +10894,7 @@ var AUTOMATIONS = [
   {
     id:'post-season', name:'Post-season Check-in', cat:'Re-engagement',
     enabled:true, lastRun:'End of Season 4', runCount:19,
+    freqCap:7,
     nodes:[
       {type:'trigger', label:'Trigger', detail:'1 week after season ends — not re-enrolled'},
       {type:'action-gmail', label:'Email via Gmail', detail:'Subject: How was Season 4 for you, {first_name}?', template:'post-season'},
@@ -10751,10 +10902,29 @@ var AUTOMATIONS = [
   },
   {
     id:'referral', name:'Referral Reminder', cat:'Re-engagement',
-    enabled:false, lastRun:'Never', runCount:0,
+    enabled:false, lastRun:'Never', runCount:0, freqCap:7,
     nodes:[
       {type:'trigger', label:'Trigger', detail:'4 weeks into season — referral code unused'},
       {type:'action-gmail', label:'Email via Gmail', detail:'Subject: Share Duality with a friend!', template:'referral'},
+    ]
+  },
+  {
+    id:'birthday', name:'Birthday Email', cat:'Re-engagement',
+    enabled:true, lastRun:'Today', runCount:12, freqCap:365,
+    nodes:[
+      {type:'trigger', label:'Trigger', detail:'Student birthday (sent morning of)'},
+      {type:'action-gmail', label:'Email via Gmail', detail:'Subject: Happy birthday, {first_name}! 🎉', template:'birthday'},
+    ]
+  },
+  {
+    id:'payment-failed', name:'Payment Failed', cat:'Billing & Fees',
+    enabled:true, lastRun:'Yesterday', runCount:8, freqCap:3,
+    nodes:[
+      {type:'trigger', label:'Trigger', detail:'Scheduled payment instalment fails'},
+      {type:'action-gmail', label:'Email via Gmail', detail:'Subject: Payment issue — action needed', template:'payment-failed'},
+      {type:'delay', label:'Wait', detail:'3 days'},
+      {type:'condition', label:'Condition', detail:'Payment still failed?', yes:'Continue', no:'Stop — resolved'},
+      {type:'action-gmail', label:'Email via Gmail', detail:'Subject: Second attempt failed — please update payment method', template:'payment-failed-2'},
     ]
   },
 ];
@@ -10795,8 +10965,11 @@ function renderAutoList() {
 }
 
 // ── Open an automation ────────────────────────────────────────────────────────
+var _canvasView = 'flow'; // 'flow' or 'history'
+
 function openAutomation(id) {
   _activeAutoId = id;
+  _canvasView = 'flow';
   renderAutoList();
   var auto = AUTOMATIONS.find(function(a){return a.id===id;});
   if (!auto) return;
@@ -10810,6 +10983,104 @@ function openAutomation(id) {
   var cb = document.getElementById('flow-toggle-cb');
   if (cb) cb.checked = auto.enabled;
   renderFlowCanvas(auto);
+  renderAutoStats(auto);
+}
+
+function renderAutoStats(auto) {
+  var statsEl = document.getElementById('flow-canvas-stats');
+  if (!statsEl) return;
+  var openRate   = auto.id === 'booking-confirm' ? '68%' : auto.id === 'class-reminder' ? '72%' : auto.id === 'lapsed-3w' ? '41%' : auto.id === 'overdue-chase' ? '58%' : auto.id === 'birthday' ? '84%' : '49%';
+  var convRate   = auto.id === 'lapsed-3w' ? '18%' : auto.id === 'lapsed-6w' ? '11%' : auto.id === 'overdue-chase' ? '63%' : auto.id === 'season-reenrol' ? '71%' : auto.id === 'birthday' ? '22%' : '--';
+  var capLabel   = auto.freqCap ? 'Max 1 per ' + auto.freqCap + ' days' : 'No cap';
+  statsEl.innerHTML =
+    '<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;padding:10px 20px;border-bottom:1px solid var(--border);background:#0d0d0d;">' +
+    '<div style="display:flex;align-items:center;gap:6px;font-size:12px;"><span style="color:var(--grey);">Open rate</span> <span style="font-weight:600;color:var(--white);">' + openRate + '</span></div>' +
+    '<div style="display:flex;align-items:center;gap:6px;font-size:12px;"><span style="color:var(--grey);">Conversion</span> <span style="font-weight:600;color:var(--lime);">' + convRate + '</span></div>' +
+    '<div style="display:flex;align-items:center;gap:6px;font-size:12px;"><span style="color:var(--grey);">Frequency cap</span> <span style="font-weight:600;color:var(--white);">' + capLabel + '</span> <button onclick="editFreqCap()" style="background:transparent;border:1px solid #333;border-radius:4px;color:var(--grey);font-size:10px;padding:1px 7px;cursor:pointer;">Edit</button></div>' +
+    '<div style="margin-left:auto;display:flex;gap:6px;">' +
+    '<button onclick="setCanvasView(\&quot;flow\&quot;)"  class="btn btn-sm" id="cv-btn-flow"    style="font-size:11px;background:' + (_canvasView==='flow'?'var(--lime)':'transparent') + ';color:' + (_canvasView==='flow'?'#000':'var(--grey)') + ';border:1px solid ' + (_canvasView==='flow'?'var(--lime)':'#333') + ';">Flow</button>' +
+    '<button onclick="setCanvasView(\&quot;history\&quot;)" class="btn btn-sm" id="cv-btn-history" style="font-size:11px;background:' + (_canvasView==='history'?'var(--lime)':'transparent') + ';color:' + (_canvasView==='history'?'#000':'var(--grey)') + ';border:1px solid ' + (_canvasView==='history'?'var(--lime)':'#333') + ';">History</button>' +
+    '</div></div>';
+}
+
+function setCanvasView(view) {
+  _canvasView = view;
+  var auto = AUTOMATIONS.find(function(a){return a.id===_activeAutoId;});
+  if (!auto) return;
+  renderAutoStats(auto);
+  if (view === 'flow') renderFlowCanvas(auto);
+  else renderHistoryLog(auto);
+}
+
+var AUTO_HISTORY = {
+  'booking-confirm': [
+    {time:'Today 9:14am', student:'Belle Harrison', status:'sent', detail:'Opened · Clicked booking link'},
+    {time:'Today 8:52am', student:'Jade Li', status:'sent', detail:'Opened'},
+    {time:'Yesterday 6:30pm', student:'Ruby Chen', status:'sent', detail:'Opened · Clicked booking link'},
+    {time:'Yesterday 5:11pm', student:'Dana Park', status:'sent', detail:'No open recorded'},
+    {time:'Mon 11 May', student:'Stella Nguyen', status:'sent', detail:'Opened'},
+  ],
+  'overdue-chase': [
+    {time:'Mon 11 May', student:'Jess Malone', status:'sent', detail:'Opened · Balance paid same day'},
+    {time:'Mon 11 May', student:'Kylie Rhodes', status:'sent', detail:'Opened · Still outstanding'},
+    {time:'Sat 9 May', student:'Amy Turner', status:'bounced', detail:'Email bounced — invalid address'},
+  ],
+  'lapsed-3w': [
+    {time:'Yesterday', student:'Olivia Wang', status:'sent', detail:'Opened · Re-booked within 48h ✓'},
+    {time:'Mon 11 May', student:'Tara Singh', status:'sent', detail:'No open recorded'},
+    {time:'Mon 11 May', student:'Mia Russo', status:'sent', detail:'Opened · No booking yet'},
+  ],
+  'birthday': [
+    {time:'Today', student:'Jess Malone', status:'sent', detail:'Opened — replied "Thank you Mimi!" ♥'},
+    {time:'5 May', student:'Claire Wu', status:'sent', detail:'Opened'},
+  ],
+  'payment-failed': [
+    {time:'Yesterday', student:'Kylie Rhodes', status:'sent', detail:'Opened — payment retried, failed again'},
+    {time:'3 May', student:'Sam Torres', status:'sent', detail:'Opened — updated card, resolved'},
+  ],
+};
+
+function renderHistoryLog(auto) {
+  var canvas = document.getElementById('flow-canvas');
+  if (!canvas) return;
+  var runs = AUTO_HISTORY[auto.id] || [];
+  var html = '<div style="padding:4px 0;">';
+  if (runs.length === 0) {
+    html += '<div style="text-align:center;padding:40px;color:var(--grey);font-size:13px;">No runs yet for this automation.</div>';
+  } else {
+    html += '<div style="font-size:11px;color:var(--grey);margin-bottom:12px;">Showing last ' + runs.length + ' runs</div>';
+    runs.forEach(function(r) {
+      var statusColor = r.status === 'sent' ? 'var(--lime)' : r.status === 'bounced' ? '#ff6666' : 'var(--amber)';
+      var statusBg    = r.status === 'sent' ? '#0f1600' : r.status === 'bounced' ? '#1a0000' : '#1a0f00';
+      html += '<div style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">';
+      html += '<div style="width:8px;height:8px;border-radius:50%;background:' + statusColor + ';flex-shrink:0;"></div>';
+      html += '<div style="flex:1;min-width:0;">';
+      html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">';
+      html += '<span style="font-size:13px;font-weight:500;">' + r.student + '</span>';
+      html += '<span style="font-size:11px;padding:1px 7px;border-radius:4px;background:' + statusBg + ';color:' + statusColor + ';border:1px solid ' + statusColor + ';">' + r.status + '</span>';
+      html += '</div>';
+      html += '<div style="font-size:12px;color:var(--grey);margin-top:2px;">' + r.detail + '</div>';
+      html += '</div>';
+      html += '<div style="font-size:11px;color:#555;white-space:nowrap;">' + r.time + '</div>';
+      html += '</div>';
+    });
+    html += '<div style="text-align:center;margin-top:12px;"><button class="btn btn-ghost btn-sm" onclick="showToast(&quot;Full export coming soon&quot;)">Export all runs ↓</button></div>';
+  }
+  html += '</div>';
+  canvas.innerHTML = html;
+}
+
+function editFreqCap() {
+  var auto = AUTOMATIONS.find(function(a){return a.id===_activeAutoId;});
+  if (!auto) return;
+  var cur = auto.freqCap || 7;
+  var val = prompt('Minimum days between sends to the same student (frequency cap):', cur);
+  if (val === null) return;
+  var n = parseInt(val);
+  if (isNaN(n) || n < 1) { showToast('Enter a valid number of days'); return; }
+  auto.freqCap = n;
+  renderAutoStats(auto);
+  showToast('Frequency cap updated to ' + n + ' days');
 }
 
 function toggleAutomation(cb) {
@@ -10985,6 +11256,11 @@ function openNodeEdit(idx) {
     body += '<span style="font-weight:600;color:var(--white);">Merge tags: </span>';
     body += '{first_name} &nbsp;{full_name} &nbsp;{class_name} &nbsp;{class_date} &nbsp;{instructor} &nbsp;{balance} &nbsp;{season} &nbsp;{referral_code}';
     body += '</div>';
+    body += '<div style="margin-top:12px;padding:12px 14px;background:#0f1600;border:1px solid var(--lime);border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">';
+    body += '<div style="font-size:12px;color:var(--grey);">Send a test to <span style="color:var(--white);">mimi@dualitypole.com.au</span></div>';
+    body += '<button class="btn btn-ghost btn-sm" onclick="sendTestFromNode()" style="font-size:11px;">Send test email</button>';
+    body += '</div>';
+    body += '<div style="margin-top:8px;font-size:11px;color:var(--grey);padding:8px 12px;background:#1a1200;border:1px solid #333;border-radius:6px;">&#9888; Unsubscribed students are automatically excluded from this automation.</div>';
 
   /* ── Delay ── */
   } else if (node.type === 'delay') {
@@ -11117,6 +11393,7 @@ function createNewAutomation() {
   var id = 'custom-' + Date.now();
   var auto = {
     id:id, name:name, cat:cat, enabled:false, lastRun:'Never', runCount:0,
+    freqCap:7,
     nodes:[
       {type:'trigger', label:'Trigger', detail: trigLabels[trigVal] || trigVal},
       {type:'action-gmail', label:'Email via Gmail', detail:'Add subject line...'},
@@ -11131,6 +11408,12 @@ function createNewAutomation() {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+function sendTestFromNode() {
+  var subjectEl = document.getElementById('ne-subject');
+  var subject = subjectEl ? subjectEl.value : '(no subject)';
+  showToast('Test email sent to mimi@dualitypole.com.au — check inbox');
+}
+
 (function initAutomations() {
   // Hook into screen switch to render list when screen opens
   var origShowScreen = window.showScreen;
@@ -11202,5 +11485,219 @@ function createNewAutomation() {
   </div>
 </div>
 
+<script>
+var STUDENT_COMMS = {
+  'jess': [
+    {type:'email', dir:'out', auto:'Overdue Balance Chase', subject:'Your Duality balance — quick reminder', time:'Mon 11 May, 9:02am', status:'opened', channel:'gmail'},
+    {type:'email', dir:'out', auto:'Class Reminder', subject:'See you tomorrow, Jess!', time:'Sun 10 May, 5:00pm', status:'opened', channel:'gmail'},
+    {type:'dm', dir:'in', text:'Hey Mimi, just checking — does the Saturday class run this week?', time:'Sat 9 May, 11:14am', status:'read'},
+    {type:'dm', dir:'out', text:'Hi Jess! Yes we are on — see you there 😊', time:'Sat 9 May, 11:22am', status:'read'},
+    {type:'email', dir:'out', auto:'No-show Fee Notification', subject:'No-show fee — Level 2 Mon 6:30pm', time:'Tue 6 May, 8:45am', status:'opened', channel:'gmail'},
+    {type:'email', dir:'out', auto:'Class Reminder', subject:'See you tomorrow, Jess!', time:'Mon 5 May, 5:00pm', status:'opened', channel:'gmail'},
+    {type:'email', dir:'out', auto:'Booking Confirmation', subject:'Your booking is confirmed!', time:'Fri 2 May, 3:22pm', status:'opened', channel:'mailchimp'},
+  ],
+  'belle': [
+    {type:'email', dir:'out', auto:'Booking Confirmation', subject:'Your booking is confirmed!', time:'Today 9:14am', status:'opened', channel:'mailchimp'},
+    {type:'dm', dir:'in', text:'Hi! Can I swap to the 7pm class instead next week?', time:'Yesterday 4:30pm', status:'unread'},
+    {type:'email', dir:'out', auto:'No-show Fee Notification', subject:'No-show fee — Level 1 Sat 10am', time:'Mon 5 May, 9:01am', status:'no open', channel:'gmail'},
+    {type:'email', dir:'out', auto:'Booking Confirmation', subject:'Your booking is confirmed!', time:'Fri 2 May, 2:11pm', status:'opened', channel:'mailchimp'},
+  ],
+};
+
+var _commsFilter = 'all';
+
+function loadCommsTab() {
+  var student = _currentStudent;
+  if (!student) return;
+  var key = student.id || (student.name||'').split(' ')[0].toLowerCase();
+  var comms = STUDENT_COMMS[key] || generateGenericComms(student);
+  renderCommsTab(comms, _commsFilter);
+}
+
+function generateGenericComms(student) {
+  return [
+    {type:'email', dir:'out', auto:'Booking Confirmation', subject:'Your booking is confirmed!', time:'Mon 11 May, 3:10pm', status:'opened', channel:'mailchimp'},
+    {type:'email', dir:'out', auto:'Class Reminder', subject:'See you tomorrow, ' + (student.name||'').split(' ')[0] + '!', time:'Sun 10 May, 5:00pm', status:'opened', channel:'gmail'},
+    {type:'email', dir:'out', auto:'Re-engagement — 3 weeks', subject:'We miss you at Duality!', time:'2 May, 9:00am', status:'no open', channel:'gmail'},
+  ];
+}
+
+function renderCommsTab(comms, filter) {
+  var el = document.getElementById('sd-comms-list');
+  if (!el) return;
+  var filtered = filter === 'all' ? comms : comms.filter(function(c){ return c.type === filter; });
+  if (filtered.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--grey);font-size:13px;">No ' + filter + ' communications found.</div>';
+    return;
+  }
+  var html = '';
+  filtered.forEach(function(c) {
+    var isIn = c.dir === 'in';
+    var typeColor = c.type === 'email' ? (c.channel === 'gmail' ? 'var(--lime)' : 'var(--amber)') : c.type === 'dm' ? 'var(--lav)' : '#00d4ff';
+    var typeLabel = c.type === 'email' ? (c.channel === 'gmail' ? 'Email · Gmail' : 'Email · Mailchimp') : c.type === 'dm' ? 'Instagram DM' : 'SMS';
+    var statusColor = c.status === 'opened' ? 'var(--lime)' : c.status === 'unread' ? 'var(--amber)' : 'var(--grey)';
+    html += '<div style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:8px;">';
+    html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">';
+    html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">';
+    html += '<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:' + typeColor + '22;color:' + typeColor + ';border:1px solid ' + typeColor + '33;">' + typeLabel + '</span>';
+    html += '<span style="font-size:11px;color:var(--grey);">' + (isIn ? 'Received' : (c.auto ? 'Automated · ' + c.auto : 'Manual')) + '</span>';
+    html += '</div>';
+    html += '<span style="font-size:11px;color:#555;white-space:nowrap;">' + c.time + '</span>';
+    html += '</div>';
+    if (c.subject) {
+      html += '<div style="font-size:13px;font-weight:500;margin-top:6px;">' + c.subject + '</div>';
+    }
+    if (c.text) {
+      html += '<div style="font-size:13px;margin-top:6px;color:var(--white);">"' + c.text + '"</div>';
+    }
+    if (c.status) {
+      html += '<div style="font-size:11px;margin-top:6px;color:' + statusColor + ';">' + c.status.charAt(0).toUpperCase() + c.status.slice(1) + '</div>';
+    }
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
+function filterComms(btn, filter) {
+  _commsFilter = filter;
+  document.querySelectorAll('.comms-filter').forEach(function(b) {
+    b.className = 'btn btn-ghost btn-xs comms-filter';
+  });
+  btn.className = 'btn btn-lime btn-xs comms-filter active';
+  var student = _currentStudent;
+  if (!student) return;
+  var key = student.id || (student.name||'').split(' ')[0].toLowerCase();
+  var comms = STUDENT_COMMS[key] || generateGenericComms(student);
+  renderCommsTab(comms, filter);
+}
+</script>
+<!-- Bulk / Quick Message modal -->
+<div class="modal-overlay" id="modal-quick-message">
+  <div class="modal" style="width:520px;max-width:95vw;">
+    <div class="modal-title">Send Message <button class="modal-close" onclick="closeModal('modal-quick-message')">&#10005;</button></div>
+    <div class="field"><label>To</label>
+      <select id="qm-to" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:10px 12px;">
+        <option value="class-l1-mon">Level 1 — Mon 5:30pm (12 students)</option>
+        <option value="class-l2-mon">Level 2 — Mon 6:30pm (9 students)</option>
+        <option value="class-ht">High Tricks — Mon 7:30pm (8 students)</option>
+        <option value="class-dance">Dance — Fri 6:00pm (14 students)</option>
+        <option value="all-enrolled">All enrolled students (138)</option>
+        <option value="all-overdue">Students with overdue balance (3)</option>
+        <option value="all-lapsed">Lapsed students — 3+ weeks (12)</option>
+      </select></div>
+    <div class="field"><label>Channel</label>
+      <div style="display:flex;gap:8px;">
+        <button id="qm-ch-email" onclick="qmSetChannel('email')" class="btn btn-lime btn-sm" style="flex:1;">&#9993; Email (Gmail)</button>
+        <button id="qm-ch-push" onclick="qmSetChannel('push')" class="btn btn-ghost btn-sm" style="flex:1;">&#128241; Push</button>
+        <button id="qm-ch-sms" onclick="qmSetChannel('sms')" class="btn btn-ghost btn-sm" style="flex:1;">&#128172; SMS</button>
+      </div></div>
+    <div id="qm-subject-wrap" class="field"><label>Subject</label><input type="text" id="qm-subject" placeholder="e.g. Class update for this week" /></div>
+    <div class="field"><label>Message</label>
+      <textarea id="qm-body" rows="5" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:10px 12px;resize:vertical;box-sizing:border-box;" placeholder="Type your message... Use {first_name} to personalise."></textarea></div>
+    <div style="font-size:11px;color:var(--grey);margin-bottom:16px;padding:8px 12px;background:#1a1a1a;border-radius:6px;">Merge tags: {first_name} &nbsp;{full_name} &nbsp;{class_name} &nbsp;{balance}</div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-lime" onclick="sendQuickMessage()">Send now</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-quick-message')">Cancel</button>
+    </div>
+  </div>
+</div>
+<script>
+var WAITLISTS = [
+  {classId:'l1-mon', className:'Level 1 — Mon 5:30pm', instructor:'Chloe', capacity:12, enrolled:12,
+   spotsOpening:'1 cancellation pending',
+   entries:[{name:'Nina Patel',since:'2 May',days:11,notified:false},{name:'Zoe Hart',since:'4 May',days:9,notified:false},{name:'Ivy Lam',since:'7 May',days:6,notified:false}]},
+  {classId:'dance-fri', className:'Dance — Fri 6:00pm', instructor:'Bambi', capacity:14, enrolled:14,
+   spotsOpening:'Consistently full — consider a second class',
+   entries:[{name:'Amber Ross',since:'1 May',days:12,notified:true},{name:'Lucy Chen',since:'3 May',days:10,notified:false},{name:'Priya Mehta',since:'5 May',days:8,notified:false},{name:'Sarah Blake',since:'8 May',days:5,notified:false}]},
+  {classId:'l2-mon', className:'Level 2 — Mon 6:30pm', instructor:'Chloe', capacity:10, enrolled:9,
+   spotsOpening:'1 spot available now',
+   entries:[{name:'Mia Torres',since:'6 May',days:7,notified:false},{name:'Kai Nguyen',since:'9 May',days:4,notified:false}]},
+  {classId:'virgin-6', className:'Virgin 6 — Sat 10:00am', instructor:'Maz', capacity:8, enrolled:8,
+   spotsOpening:'Attendance low — monitor before promoting',
+   entries:[{name:'Jess Malone',since:'3 May',days:10,notified:false}]},
+];
+
+function renderWaitlistScreen() {
+  var el = document.getElementById('waitlist-classes');
+  if (!el) return;
+  var h = '';
+  WAITLISTS.forEach(function(wl) {
+    h += '<div class="section" style="margin-bottom:16px;padding:0;">';
+    h += '<div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">';
+    h += '<div>';
+    h += '<div style="font-family:var(--font-black,sans-serif);font-size:14px;">' + wl.className + '</div>';
+    h += '<div style="font-size:12px;color:var(--grey);margin-top:3px;">' + wl.instructor + ' &nbsp;·&nbsp; ' + wl.enrolled + '/' + wl.capacity + ' enrolled &nbsp;·&nbsp; <span style="color:var(--amber);">' + wl.spotsOpening + '</span></div>';
+    h += '</div>';
+    h += '<div style="display:flex;gap:8px;">';
+    h += '<span style="font-size:12px;font-weight:600;padding:4px 12px;border-radius:6px;background:#1a1200;border:1px solid var(--amber);color:var(--amber);">' + wl.entries.length + ' waiting</span>';
+    h += '<button class="btn btn-ghost btn-sm" data-cid="' + wl.classId + '" onclick="notifyWaitlist(this.dataset.cid)">Notify next</button>';
+    h += '</div></div>';
+    h += '<table style="width:100%;"><thead><tr><th>#</th><th>Student</th><th>Since</th><th>Days waiting</th><th>Status</th><th></th></tr></thead><tbody>';
+    wl.entries.forEach(function(e, i) {
+      h += '<tr>';
+      h += '<td style="color:var(--grey);">' + (i+1) + '</td>';
+      h += '<td style="font-weight:500;">' + e.name + '</td>';
+      h += '<td style="color:var(--grey);">' + e.since + '</td>';
+      h += '<td>' + e.days + ' days</td>';
+      h += '<td>' + (e.notified ? '<span class="tag tag-lime">Notified</span>' : '<span class="tag tag-grey">Waiting</span>') + '</td>';
+      h += '<td style="text-align:right;">';
+      h += '<button class="btn btn-ghost btn-xs" data-cid="' + wl.classId + '" data-i="' + i + '" onclick="promoteWaitlist(this.dataset.cid,+this.dataset.i)">Promote</button> ';
+      h += '<button class="btn btn-ghost btn-xs" data-cid="' + wl.classId + '" data-i="' + i + '" onclick="removeWaitlist(this.dataset.cid,+this.dataset.i)">Remove</button>';
+      h += '</td></tr>';
+    });
+    h += '</tbody></table></div>';
+  });
+  el.innerHTML = h;
+}
+
+function notifyWaitlist(classId) {
+  var wl = WAITLISTS.find(function(w){return w.classId===classId;});
+  if (!wl) return;
+  var next = wl.entries.find(function(e){return !e.notified;});
+  if (!next) { showToast('All students already notified'); return; }
+  next.notified = true;
+  renderWaitlistScreen();
+  showToast('Notification sent to ' + next.name);
+}
+function promoteWaitlist(classId, idx) {
+  var wl = WAITLISTS.find(function(w){return w.classId===classId;});
+  if (!wl) return;
+  var s = wl.entries.splice(idx, 1)[0];
+  wl.enrolled = Math.min(wl.enrolled + 1, wl.capacity);
+  renderWaitlistScreen();
+  showToast(s.name + ' promoted into ' + wl.className);
+}
+function removeWaitlist(classId, idx) {
+  var wl = WAITLISTS.find(function(w){return w.classId===classId;});
+  if (!wl) return;
+  var s = wl.entries.splice(idx, 1)[0];
+  renderWaitlistScreen();
+  showToast(s.name + ' removed from waitlist');
+}
+
+var _qmChannel = 'email';
+function openQuickMessageModal() { openModal('modal-quick-message'); }
+function qmSetChannel(ch) {
+  _qmChannel = ch;
+  ['email','push','sms'].forEach(function(c) {
+    var btn = document.getElementById('qm-ch-' + c);
+    if (btn) { btn.className = 'btn ' + (c===ch ? 'btn-lime' : 'btn-ghost') + ' btn-sm'; btn.style.flex = '1'; }
+  });
+  var sw = document.getElementById('qm-subject-wrap');
+  if (sw) sw.style.display = (ch === 'email') ? 'block' : 'none';
+}
+function sendQuickMessage() {
+  var body = document.getElementById('qm-body');
+  if (!body || !body.value.trim()) { showToast('Please write a message first'); return; }
+  var to = document.getElementById('qm-to');
+  var label = to ? to.options[to.selectedIndex].text : 'selected students';
+  closeModal('modal-quick-message');
+  body.value = '';
+  showToast('Message sent to ' + label);
+}
+(function() {
+  var orig = window.showScreen;
+  window.showScreen = function(id) { orig(id); if (id === 'waitlist') setTimeout(renderWaitlistScreen, 10); };
+})();
+</script>
 </body>
-</html>
