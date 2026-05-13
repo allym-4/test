@@ -6553,11 +6553,11 @@ function isBirthdayWeek(name) {
 
 // ===== DATA =====
 const STUDENTS = [
-  { id:"aishukripa", name:"Aishu Kripa", pronouns:'', email:"aishukripa33@gmail.com", phone:'', dob:'', level:"Dirty Dance", classes:["Dirty Dance", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#ffaa44', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"aishukripa", name:"Aishu Kripa", pronouns:'', email:"aishukripa33@gmail.com", phone:'', dob:'', level:"Dirty Dance", classes:["Dirty Dance", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#ffaa44', emergency:'', health:'', waiver:'', source:'', tags:[] , paymentPlan:null },
   { id:"alanajones", name:"Alana Jones", pronouns:'', email:"jonezalana@gmail.com", phone:'', dob:'', level:"Dance Virgin", classes:["Dance Virgin", "Level 2"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#CDA5FF', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"alexfleming", name:"Alex Fleming", pronouns:'', email:"alexfleming440@gmail.com", phone:'', dob:'', level:"Level 5", classes:["Level 5"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#DBFF00', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"alexawinterstein", name:"Alexa Winterstein", pronouns:'', email:"adwinterstein@gmail.com", phone:'', dob:'', level:"Level 1", classes:["Level 1"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#ff6b6b', emergency:'', health:'', waiver:'', source:'', tags:[] },
-  { id:"alexandradickie", name:"Alexandra Dickie", pronouns:'', email:"alexrdickie@gmail.com", phone:'', dob:'', level:"Chair", classes:["Chair", "Level 5", "6 Virgin", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#4ade80', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"alexandradickie", name:"Alexandra Dickie", pronouns:'', email:"alexrdickie@gmail.com", phone:'', dob:'', level:"Chair", classes:["Chair", "Level 5", "6 Virgin", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#4ade80', emergency:'', health:'', waiver:'', source:'', tags:[] , paymentPlan:{status:'active',total:210,paid:140,instalments:3,instAmt:70,nextDue:'1 Jul 2026'} },
   { id:"alicefoglino", name:"Alice Foglino", pronouns:'', email:"alice.foglino@gmail.com", phone:'', dob:'', level:"Dance Tech", classes:["Dance Tech", "Dance Virgin", "Invert Tech"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#9ac4ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"alicesteele", name:"Alice Steele", pronouns:'', email:"alicesteele99@gmail.com", phone:'', dob:'', level:"6 Virgin", classes:["6 Virgin"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#ffb3de', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"allylaspina", name:"Ally La Spina", pronouns:'', email:"Allylaspina@gmail.com", phone:'', dob:'', level:"Chole", classes:["Chole", "Dirty Dance", "Level 5"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#44ff99', emergency:'', health:'', waiver:'', source:'', tags:[] },
@@ -6570,7 +6570,7 @@ const STUDENTS = [
   { id:"ashleylamont", name:"Ashley Lamont", pronouns:'', email:"ashley@ashl.dev", phone:'', dob:'', level:"Level 2", classes:["Level 2"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#b5ead7', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"avaloncarnall", name:"Avalon Carnall", pronouns:'', email:"Avalon.carnall+1@gmail.com", phone:'', dob:'', level:"Advanced Floor", classes:["Advanced Floor", "High Tricks", "Level 6"], status:'Active', balance:0, memberSince:'', avatar:'A', avatarColor:'#ffc8dd', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"bellabushby", name:"Bella Bushby", pronouns:'', email:"bellabushby@live.com.au", phone:'', dob:'', level:"Level 2", classes:["Level 2"], status:'Active', balance:0, memberSince:'', avatar:'B', avatarColor:'#e8c1ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
-  { id:"bellecurrie", name:"Belle Currie", pronouns:'', email:"issycurrie18@gmail.com", phone:'', dob:'', level:"Chair Virgin", classes:["Chair Virgin", "Dance Tech", "Inter Floor", "Level 5", "6 Virgin"], status:'Active', balance:0, memberSince:'', avatar:'B', avatarColor:'#caffbf', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"bellecurrie", name:"Belle Currie", pronouns:'', email:"issycurrie18@gmail.com", phone:'', dob:'', level:"Chair Virgin", classes:["Chair Virgin", "Dance Tech", "Inter Floor", "Level 5", "6 Virgin"], status:'Owing', balance:-120, memberSince:'', avatar:'B', avatarColor:'#caffbf', emergency:'', health:'', waiver:'', source:'', tags:['Owing'] , paymentPlan:{status:'overdue',total:180,paid:60,instalments:3,instAmt:60,nextDue:'1 Jun 2026'} },
   { id:"bethhorsburgh", name:"Beth Horsburgh", pronouns:'', email:"Bhorsburgh@ozemail.com.au", phone:'', dob:'', level:"Dance Virgin", classes:["Dance Virgin"], status:'Active', balance:0, memberSince:'', avatar:'B', avatarColor:'#a8d8ea', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"bettinatang", name:"Bettina Tang", pronouns:'', email:"bettinatang25@gmail.com", phone:'', dob:'', level:"Strip", classes:["Strip"], status:'Active', balance:0, memberSince:'', avatar:'B', avatarColor:'#ffadad', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"bronteosborne", name:"Bronte Osborne", pronouns:'', email:"bronte.osborne@hotmail.com", phone:'', dob:'', level:"High Tricks", classes:["High Tricks", "Level 6"], status:'Active', balance:0, memberSince:'', avatar:'B', avatarColor:'#fdffb6', emergency:'', health:'', waiver:'', source:'', tags:[] },
@@ -6589,7 +6589,7 @@ const STUDENTS = [
   { id:"cherryliu", name:"Cherry liu", pronouns:'', email:"cherry_chang_liu@icloud.com", phone:'', dob:'', level:"Advanced Floor", classes:["Advanced Floor", "Level 5", "Strip"], status:'Active', balance:0, memberSince:'', avatar:'C', avatarColor:'#ffcc88', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"chloeseow", name:"Chloe Seow", pronouns:'', email:"chloechloe.seow@gmail.com", phone:'', dob:'', level:"Advanced Floor", classes:["Advanced Floor", "Level 6"], status:'Active', balance:0, memberSince:'', avatar:'C', avatarColor:'#ff9ecb', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"clancygreening", name:"Clancy Greening", pronouns:'', email:"clancy.greening@gmail.com", phone:'', dob:'', level:"Level 2", classes:["Level 2"], status:'Active', balance:0, memberSince:'', avatar:'C', avatarColor:'#c9aaff', emergency:'', health:'', waiver:'', source:'', tags:[] },
-  { id:"danaebeatie", name:"Danae Beatie", pronouns:'', email:"danaebeatie@gmail.com", phone:'', dob:'', level:"Chair", classes:["Chair", "Level 3", "Strip"], status:'Active', balance:0, memberSince:'', avatar:'D', avatarColor:'#ffd6a5', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"danaebeatie", name:"Danae Beatie", pronouns:'', email:"danaebeatie@gmail.com", phone:'', dob:'', level:"Chair", classes:["Chair", "Level 3", "Strip"], status:'Owing', balance:-25, memberSince:'', avatar:'D', avatarColor:'#ffd6a5', emergency:'', health:'', waiver:'', source:'', tags:['Owing'] , paymentPlan:null },
   { id:"dashamaiorova", name:"Dasha Maiorova", pronouns:'', email:"Dash_m12@hotmail.com", phone:'', dob:'', level:"Chair", classes:["Chair", "Level 3"], status:'Active', balance:0, memberSince:'', avatar:'D', avatarColor:'#b5ead7', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"duniagoh", name:"Dunia Goh", pronouns:'', email:"dunia.goh@gmail.com", phone:'', dob:'', level:"Strip Virgin", classes:["Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'D', avatarColor:'#ffc8dd', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"eleeshevamayoray", name:"Eleesheva Mayo-Ray", pronouns:'', email:"Eleeshevamayo@gmail.com", phone:'', dob:'', level:"Level 4", classes:["Level 4"], status:'Active', balance:0, memberSince:'', avatar:'E', avatarColor:'#e8c1ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
@@ -6612,14 +6612,14 @@ const STUDENTS = [
   { id:"georgiabritt", name:"Georgia Britt", pronouns:'', email:"georgiabritt17@gmail.com", phone:'', dob:'', level:"Chair", classes:["Chair", "Level 3"], status:'Active', balance:0, memberSince:'', avatar:'G', avatarColor:'#ffcc88', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"gigiwelsby", name:"Gigi Welsby", pronouns:'', email:"gracewelsby123@gmail.com", phone:'', dob:'', level:"Floor Virgin", classes:["Floor Virgin", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'G', avatarColor:'#ff9ecb', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"gisellebueti", name:"Giselle Bueti", pronouns:'', email:"gisellebueti@hotmail.com", phone:'', dob:'', level:"Level 1", classes:["Level 1"], status:'Active', balance:0, memberSince:'', avatar:'G', avatarColor:'#c9aaff', emergency:'', health:'', waiver:'', source:'', tags:[] },
-  { id:"hannahzywczak", name:"Hannah Zywczak", pronouns:'', email:"Hannah.zywczak@gmail.com", phone:'', dob:'', level:"Inter Floor", classes:["Inter Floor"], status:'Active', balance:0, memberSince:'', avatar:'H', avatarColor:'#ffd6a5', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"hannahzywczak", name:"Hannah Zywczak", pronouns:'', email:"Hannah.zywczak@gmail.com", phone:'', dob:'', level:"Inter Floor", classes:["Inter Floor"], status:'Active', balance:0, memberSince:'', avatar:'H', avatarColor:'#ffd6a5', emergency:'', health:'', waiver:'', source:'', tags:[] , paymentPlan:{status:'pending',total:150,paid:0,instalments:2,instAmt:75,nextDue:'Pending approval'} },
   { id:"hayliegriffis", name:"Haylie Griffis", pronouns:'', email:"haylie_griffis@hotmail.com", phone:'', dob:'', level:"Level 5", classes:["Level 5"], status:'Active', balance:0, memberSince:'', avatar:'H', avatarColor:'#b5ead7', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"hollyfung", name:"Holly Fung", pronouns:'', email:"starryeyedblunder@gmail.com", phone:'', dob:'', level:"Level 2", classes:["Level 2"], status:'Active', balance:0, memberSince:'', avatar:'H', avatarColor:'#ffc8dd', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"irenalysiuk", name:"Irena Lysiuk", pronouns:'', email:"irena.lysiuk@gmail.com", phone:'', dob:'', level:"Level 2", classes:["Level 2"], status:'Active', balance:0, memberSince:'', avatar:'I', avatarColor:'#e8c1ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"jasminpitts", name:"Jasmin Pitts", pronouns:'', email:"jpitts2468+1@gmail.com", phone:'', dob:'', level:"Advanced Floor", classes:["Advanced Floor", "High Tricks", "Level 6", "Strip"], status:'Active', balance:0, memberSince:'', avatar:'J', avatarColor:'#caffbf', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"jennyleech", name:"Jenny Leech", pronouns:'', email:"jennylleech@gmail.com", phone:'', dob:'', level:"Level 3", classes:["Level 3"], status:'Active', balance:0, memberSince:'', avatar:'J', avatarColor:'#a8d8ea', emergency:'', health:'', waiver:'', source:'', tags:[] },
-  { id:"jessicacoffey", name:"Jessica Coffey", pronouns:'', email:"jlcoffey93@gmail.com", phone:'', dob:'', level:"Level 4", classes:["Level 4"], status:'Active', balance:0, memberSince:'', avatar:'J', avatarColor:'#ffadad', emergency:'', health:'', waiver:'', source:'', tags:[] },
-  { id:"jessicaneary", name:"Jessica Neary", pronouns:'', email:"jessicalneary@outlook.com", phone:'', dob:'', level:"Inter Floor", classes:["Inter Floor", "Level 5"], status:'Active', balance:0, memberSince:'', avatar:'J', avatarColor:'#fdffb6', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"jessicacoffey", name:"Jessica Coffey", pronouns:'', email:"jlcoffey93@gmail.com", phone:'', dob:'', level:"Level 4", classes:["Level 4"], status:'Active', balance:0, memberSince:'', avatar:'J', avatarColor:'#ffadad', emergency:'', health:'', waiver:'', source:'', tags:[] , paymentPlan:{status:'active',total:150,paid:75,instalments:2,instAmt:75,nextDue:'1 Jul 2026'} },
+  { id:"jessicaneary", name:"Jessica Neary", pronouns:'', email:"jessicalneary@outlook.com", phone:'', dob:'', level:"Inter Floor", classes:["Inter Floor", "Level 5"], status:'Owing', balance:-75, memberSince:'', avatar:'J', avatarColor:'#fdffb6', emergency:'', health:'', waiver:'', source:'', tags:['Owing'] , paymentPlan:{status:'overdue',total:180,paid:105,instalments:3,instAmt:60,nextDue:'1 Jun 2026'} },
   { id:"jotanus", name:"Jo Tanus", pronouns:'', email:"Joeyjojojnr@outlook.com", phone:'', dob:'', level:"Strip Virgin", classes:["Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'J', avatarColor:'#9bf6ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"juliekha", name:"Julie Kha", pronouns:'', email:"julie.kha@hotmail.com", phone:'', dob:'', level:"Chair", classes:["Chair"], status:'Active', balance:0, memberSince:'', avatar:'J', avatarColor:'#bde0fe', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"kasviluthra", name:"Kasvi Luthra", pronouns:'', email:"kasviluthra@gmail.com", phone:'', dob:'', level:"Level 5", classes:["Level 5"], status:'Active', balance:0, memberSince:'', avatar:'K', avatarColor:'#ffaa44', emergency:'', health:'', waiver:'', source:'', tags:[] },
@@ -6627,7 +6627,7 @@ const STUDENTS = [
   { id:"katrinaburns", name:"Katrina Burns", pronouns:'', email:"Burns.nolan@gmail.com", phone:'', dob:'', level:"Chole", classes:["Chole", "Level 4"], status:'Active', balance:0, memberSince:'', avatar:'K', avatarColor:'#DBFF00', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"kerrichow", name:"Kerri Chow", pronouns:'', email:"Kerriann@fastmail.fm", phone:'', dob:'', level:"Advanced Floor", classes:["Advanced Floor"], status:'Active', balance:0, memberSince:'', avatar:'K', avatarColor:'#ff6b6b', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"kryskapsimallis", name:"Krys Kapsimallis", pronouns:'', email:"kkryskaps@icloud.com", phone:'', dob:'', level:"Kiki", classes:["Kiki"], status:'Active', balance:0, memberSince:'', avatar:'K', avatarColor:'#4ade80', emergency:'', health:'', waiver:'', source:'', tags:[] },
-  { id:"kyliedaisog", name:"Kylie Daisog", pronouns:'', email:"prettykylied@gmail.com", phone:'', dob:'', level:"Level 4", classes:["Level 4"], status:'Active', balance:0, memberSince:'', avatar:'K', avatarColor:'#9ac4ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"kyliedaisog", name:"Kylie Daisog", pronouns:'', email:"prettykylied@gmail.com", phone:'', dob:'', level:"Level 4", classes:["Level 4"], status:'Owing', balance:-50, memberSince:'', avatar:'K', avatarColor:'#9ac4ff', emergency:'', health:'', waiver:'', source:'', tags:['Owing'] , paymentPlan:null },
   { id:"laurakeenan", name:"Laura Keenan", pronouns:'', email:"laurakeenan2496@gmail.com", phone:'', dob:'', level:"Dance Virgin", classes:["Dance Virgin"], status:'Active', balance:0, memberSince:'', avatar:'L', avatarColor:'#ffb3de', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"lauramurphy", name:"Laura Murphy", pronouns:'', email:"Lauraclare98@gmail.com", phone:'', dob:'', level:"4 Tricks", classes:["4 Tricks", "Dance Virgin", "Level 4"], status:'Active', balance:0, memberSince:'', avatar:'L', avatarColor:'#44ff99', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"leanechew", name:"Leane Chew", pronouns:'', email:"Leane.chew@gmail.com", phone:'', dob:'', level:"Chole", classes:["Chole", "Level 5"], status:'Active', balance:0, memberSince:'', avatar:'L', avatarColor:'#66dddd', emergency:'', health:'', waiver:'', source:'', tags:[] },
@@ -6673,7 +6673,7 @@ const STUDENTS = [
   { id:"shirleytran", name:"Shirley Tran", pronouns:'', email:"shirleyanne.tran@gmail.com", phone:'', dob:'', level:"Level 2", classes:["Level 2", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'S', avatarColor:'#DBFF00', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"siennablake", name:"Sienna Blake", pronouns:'', email:"siennacharlotteblake@gmail.com", phone:'', dob:'', level:"Level 2", classes:["Level 2", "Level 3"], status:'Active', balance:0, memberSince:'', avatar:'S', avatarColor:'#ff6b6b', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"sofiaairubio", name:"Sofia (Ai) Rubio", pronouns:'', email:"ailoveai0719@gmail.com", phone:'', dob:'', level:"Dance", classes:["Dance", "Invert Tech", "Level 3", "Strip"], status:'Active', balance:0, memberSince:'', avatar:'S', avatarColor:'#4ade80', emergency:'', health:'', waiver:'', source:'', tags:[] },
-  { id:"sophiebrown", name:"Sophie Brown", pronouns:'', email:"sophiebrown820@gmail.com", phone:'', dob:'', level:"Dance Tech", classes:["Dance Tech", "Invert Tech", "Level 3"], status:'Active', balance:0, memberSince:'', avatar:'S', avatarColor:'#9ac4ff', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"sophiebrown", name:"Sophie Brown", pronouns:'', email:"sophiebrown820@gmail.com", phone:'', dob:'', level:"Dance Tech", classes:["Dance Tech", "Invert Tech", "Level 3"], status:'Active', balance:18, memberSince:'', avatar:'S', avatarColor:'#9ac4ff', emergency:'', health:'', waiver:'', source:'', tags:[] , paymentPlan:null },
   { id:"stephaniesmith", name:"Stephanie Smith", pronouns:'', email:"stephielsmith@gmail.com", phone:'', dob:'', level:"Dance", classes:["Dance", "Strip"], status:'Active', balance:0, memberSince:'', avatar:'S', avatarColor:'#ffb3de', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"sybilho", name:"Sybil Ho", pronouns:'', email:"sybilckho26@gmail.com", phone:'', dob:'', level:"Level 4", classes:["Level 4"], status:'Active', balance:0, memberSince:'', avatar:'S', avatarColor:'#44ff99', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"tahneewyllie", name:"Tahnee Wyllie", pronouns:'', email:"tahneewyllie@outlook.com", phone:'', dob:'', level:"Floor Virgin", classes:["Floor Virgin", "Level 3", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'T', avatarColor:'#66dddd', emergency:'', health:'', waiver:'', source:'', tags:[] },
@@ -6877,63 +6877,80 @@ function openStudentDetail(student) {
 
 function renderStudentPayments(student) {
   var bal = student.balance || 0;
+  var plan = student.paymentPlan || null;
   var numClasses = (student.classes || []).length;
+  var classNames = (student.classes || []).slice(0, 2).join(' + ') || student.level || 'Season 4';
 
-  // Build a plausible payment plan section
   var planHTML = '';
   var txHTML = '';
 
-  if (bal < 0) {
-    // Student owes — show active payment plan
-    var total = numClasses >= 2 ? 180 : 150;
-    var paid = total + bal; // e.g. total=180, bal=-120 → paid=60
-    var instalments = 3;
-    var instAmt = Math.round(total / instalments);
+  if (plan && plan.status !== 'pending') {
+    var isOverdue = plan.status === 'overdue';
+    var inst2Style = isOverdue
+      ? 'background:#1a1200;border:1px solid var(--amber);'
+      : 'background:#111;border:1px solid var(--border);';
+    var inst2Color = isOverdue ? 'color:var(--amber);' : 'color:var(--grey);';
+    var inst2Text  = isOverdue ? plan.instAmt + ' overdue' : plan.instAmt + ' pending';
+    var paidSoFar  = plan.paid;
+    var remaining  = plan.total - paidSoFar;
+
     planHTML = '<div style="font-family:\'Archivo Black\',sans-serif;font-size:14px;margin-bottom:10px;">Active Payment Plan</div>'
       + '<div class="section" style="margin-bottom:24px;">'
       + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">'
-      + '<div><div style="font-weight:600;font-size:14px;">Season 4 — ' + (student.classes||[]).slice(0,2).join(' &amp; ') + ' (' + instalments + '× instalments)</div>'
-      + '<div style="font-size:12px;color:var(--grey);margin-top:3px;">Set up 11 May 2026 · Total $' + total + '</div></div>'
-      + '<span class="tag tag-amber">Active</span></div>'
+      + '<div><div style="font-weight:600;font-size:14px;">Season 4 — ' + classNames + ' (' + plan.instalments + '× instalments)</div>'
+      + '<div style="font-size:12px;color:var(--grey);margin-top:3px;">Total $' + plan.total + ' · Paid $' + paidSoFar + ' · Remaining $' + remaining + '</div></div>'
+      + '<span class="tag ' + (isOverdue ? 'tag-amber' : 'tag-lime') + '">' + (isOverdue ? 'Overdue' : 'On Track') + '</span></div>'
       + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">'
-      + '<div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 12px;"><div style="font-size:11px;color:var(--grey);margin-bottom:3px;">Instalment 1</div><div style="font-size:14px;font-weight:700;color:var(--lime);">$' + instAmt + ' ✓</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Paid 11 May 2026</div></div>'
-      + '<div style="background:#1a1200;border:1px solid var(--amber);border-radius:8px;padding:10px 12px;"><div style="font-size:11px;color:var(--grey);margin-bottom:3px;">Instalment 2</div><div style="font-size:14px;font-weight:700;color:var(--amber);">$' + instAmt + ' overdue</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Due 1 Jun 2026</div></div>'
-      + '<div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 12px;"><div style="font-size:11px;color:var(--grey);margin-bottom:3px;">Instalment 3</div><div style="font-size:14px;font-weight:700;color:var(--grey);">$' + instAmt + ' pending</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Due 1 Jul 2026</div></div>'
+      + '<div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 12px;"><div style="font-size:11px;color:var(--grey);margin-bottom:3px;">Instalment 1</div><div style="font-size:14px;font-weight:700;color:var(--lime);">$' + plan.instAmt + ' ✓</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Paid 11 May 2026</div></div>'
+      + '<div style="' + inst2Style + 'border-radius:8px;padding:10px 12px;"><div style="font-size:11px;color:var(--grey);margin-bottom:3px;">Instalment 2</div><div style="font-size:14px;font-weight:700;' + inst2Color + '">' + inst2Text + '</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Due ' + plan.nextDue + '</div></div>'
+      + '<div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 12px;"><div style="font-size:11px;color:var(--grey);margin-bottom:3px;">Instalment 3</div><div style="font-size:14px;font-weight:700;color:var(--grey);">$' + plan.instAmt + ' pending</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Due 1 Jul 2026</div></div>'
       + '</div>'
-      + '<div style="margin-top:12px;display:flex;gap:8px;"><button class="btn btn-ghost btn-xs" onclick="openModal(\'modal-manual-payment\')">Record payment</button><button class="btn btn-ghost btn-xs" onclick="alert(\'Reminder sent to ' + student.name + '\')">Send reminder</button></div>'
-      + '</div>';
+      + '<div style="margin-top:12px;display:flex;gap:8px;">'
+      + '<button class="btn btn-ghost btn-xs" onclick="openModal(\'modal-manual-payment\')">Record payment</button>'
+      + '<button class="btn btn-ghost btn-xs" onclick="alert(\'Reminder sent to ' + student.name + '\')">Send reminder</button>'
+      + '</div></div>';
 
-    txHTML = '<tr><td style="color:var(--grey);white-space:nowrap;">22 May 2026</td><td>No-show fee — ' + (student.classes||['class'])[0] + '</td><td style="color:var(--grey);">S4</td><td><span class="tag tag-red" style="font-size:10px;">Fee</span></td><td class="bal-neg">$25</td><td>—</td><td class="bal-neg">−$' + Math.abs(bal) + '</td></tr>'
-      + '<tr><td style="color:var(--grey);white-space:nowrap;">11 May 2026</td><td>Season 4 enrolment — instalment 1 of ' + instalments + '</td><td style="color:var(--grey);">S4</td><td><span class="tag tag-lime" style="font-size:10px;">Payment</span></td><td>—</td><td class="bal-pos">$' + instAmt + '</td><td class="bal-neg">−$' + (Math.abs(bal)-25) + '</td></tr>'
-      + '<tr><td style="color:var(--grey);white-space:nowrap;">11 May 2026</td><td>Season 4 enrolment — ' + (student.classes||[]).slice(0,2).join(' + ') + ' (' + instalments + '× plan)</td><td style="color:var(--grey);">S4</td><td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td><td class="bal-neg">$' + total + '</td><td>—</td><td class="bal-neg">−$' + (Math.abs(bal)-25+instAmt) + '</td></tr>'
-      + '<tr style="background:#0a0a0a;"><td style="color:var(--grey);white-space:nowrap;">4 Mar 2026</td><td>Season 3 enrolment — paid in full</td><td style="color:var(--grey);">S3</td><td><span class="tag tag-lime" style="font-size:10px;">Payment</span></td><td>—</td><td class="bal-pos">$165</td><td style="color:var(--lime);">$0</td></tr>'
-      + '<tr style="background:#0a0a0a;"><td style="color:var(--grey);white-space:nowrap;">4 Mar 2026</td><td>Season 3 enrolment invoice</td><td style="color:var(--grey);">S3</td><td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td><td class="bal-neg">$165</td><td>—</td><td class="bal-neg">−$165</td></tr>';
-  } else {
-    // Student is paid up — show clean history
-    var s4total = numClasses >= 3 ? 210 : numClasses >= 2 ? 180 : 150;
-    txHTML = '<tr><td style="color:var(--grey);white-space:nowrap;">11 May 2026</td><td>Season 4 enrolment — ' + (student.classes||[]).slice(0,2).join(' + ') + ' (full payment)</td><td style="color:var(--grey);">S4</td><td><span class="tag tag-lime" style="font-size:10px;">Payment</span></td><td>—</td><td class="bal-pos">$' + s4total + '</td><td style="color:var(--lime);">$0</td></tr>'
-      + '<tr><td style="color:var(--grey);white-space:nowrap;">11 May 2026</td><td>Season 4 enrolment invoice</td><td style="color:var(--grey);">S4</td><td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td><td class="bal-neg">$' + s4total + '</td><td>—</td><td class="bal-neg">−$' + s4total + '</td></tr>'
-      + '<tr style="background:#0a0a0a;"><td style="color:var(--grey);white-space:nowrap;">4 Mar 2026</td><td>Season 3 enrolment — paid in full</td><td style="color:var(--grey);">S3</td><td><span class="tag tag-lime" style="font-size:10px;">Payment</span></td><td>—</td><td class="bal-pos">$165</td><td style="color:var(--lime);">$0</td></tr>'
-      + '<tr style="background:#0a0a0a;"><td style="color:var(--grey);white-space:nowrap;">4 Mar 2026</td><td>Season 3 enrolment invoice</td><td style="color:var(--grey);">S3</td><td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td><td class="bal-neg">$165</td><td>—</td><td class="bal-neg">−$165</td></tr>'
-      + '<tr style="background:#0a0a0a;"><td style="color:var(--grey);white-space:nowrap;">5 Nov 2025</td><td>Season 2 enrolment — paid in full</td><td style="color:var(--grey);">S2</td><td><span class="tag tag-lime" style="font-size:10px;">Payment</span></td><td>—</td><td class="bal-pos">$145</td><td style="color:var(--lime);">$0</td></tr>'
-      + '<tr style="background:#0a0a0a;"><td style="color:var(--grey);white-space:nowrap;">5 Nov 2025</td><td>Season 2 enrolment invoice</td><td style="color:var(--grey);">S2</td><td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td><td class="bal-neg">$145</td><td>—</td><td class="bal-neg">−$145</td></tr>';
+    if (isOverdue) {
+      txHTML += '<tr><td style="color:var(--grey);white-space:nowrap;">1 Jun 2026</td><td>Instalment 2 — overdue</td><td style="color:var(--grey);">S4</td><td><span class="tag tag-red" style="font-size:10px;">Overdue</span></td><td class="bal-neg">$' + plan.instAmt + '</td><td>—</td><td class="bal-neg">−$' + Math.abs(bal) + '</td></tr>';
+    }
+    txHTML += '<tr><td style="color:var(--grey);white-space:nowrap;">11 May 2026</td><td>Season 4 — ' + classNames + ' · Instalment 1</td><td style="color:var(--grey);">S4</td><td><span class="tag tag-lime" style="font-size:10px;">Payment</span></td><td>—</td><td class="bal-pos">$' + plan.instAmt + '</td><td style="color:var(--lime);">$0</td></tr>'
+      + '<tr><td style="color:var(--grey);white-space:nowrap;">11 May 2026</td><td>Season 4 enrolment — ' + classNames + ' (' + plan.instalments + '× plan)</td><td style="color:var(--grey);">S4</td><td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td><td class="bal-neg">$' + plan.total + '</td><td>—</td><td class="bal-neg">−$' + plan.total + '</td></tr>';
+
+  } else if (plan && plan.status === 'pending') {
+    planHTML = '<div class="section" style="margin-bottom:24px;background:#1a1200;border-color:var(--amber);">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;">'
+      + '<div><div style="font-weight:600;font-size:14px;">Season 4 — ' + classNames + ' (payment plan requested)</div>'
+      + '<div style="font-size:12px;color:var(--grey);margin-top:3px;">$' + plan.total + ' total · ' + plan.instalments + ' × $' + plan.instAmt + ' · Awaiting studio approval</div></div>'
+      + '<span class="tag tag-amber">Pending</span></div></div>';
+    txHTML += '<tr><td style="color:var(--grey);">11 May 2026</td><td>Season 4 enrolment — payment plan request pending</td><td style="color:var(--grey);">S4</td><td><span class="tag tag-amber" style="font-size:10px;">Pending</span></td><td class="bal-neg">$' + plan.total + '</td><td>—</td><td class="bal-neg">−$' + plan.total + '</td></tr>';
+
+  } else if (bal < 0) {
+    // Direct balance owing, no plan
+    txHTML += '<tr><td style="color:var(--grey);white-space:nowrap;">22 May 2026</td><td>No-show / late fee</td><td style="color:var(--grey);">S4</td><td><span class="tag tag-red" style="font-size:10px;">Fee</span></td><td class="bal-neg">$' + Math.abs(bal) + '</td><td>—</td><td class="bal-neg">−$' + Math.abs(bal) + '</td></tr>';
+  } else if (bal > 0) {
+    txHTML += '<tr><td style="color:var(--grey);white-space:nowrap;">14 Jan 2026</td><td>Account credit — missed class refund</td><td style="color:var(--grey);">S3</td><td><span class="tag tag-amber" style="font-size:10px;">Credit</span></td><td>—</td><td class="bal-pos">$' + bal + '</td><td class="bal-pos">+$' + bal + '</td></tr>';
   }
 
-  // Update KPI outstanding value
+  // Previous seasons (always shown)
+  txHTML += '<tr style="background:#0a0a0a;"><td style="color:var(--grey);white-space:nowrap;">4 Mar 2026</td><td>Season 3 enrolment — ' + (student.level || classNames) + ' · paid in full</td><td style="color:var(--grey);">S3</td><td><span class="tag tag-lime" style="font-size:10px;">Payment</span></td><td>—</td><td class="bal-pos">$165</td><td style="color:var(--lime);">$0</td></tr>'
+    + '<tr style="background:#0a0a0a;"><td style="color:var(--grey);white-space:nowrap;">4 Mar 2026</td><td>Season 3 enrolment invoice</td><td style="color:var(--grey);">S3</td><td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td><td class="bal-neg">$165</td><td>—</td><td class="bal-neg">−$165</td></tr>'
+    + '<tr style="background:#0a0a0a;"><td style="color:var(--grey);white-space:nowrap;">5 Nov 2025</td><td>Season 2 enrolment — paid in full</td><td style="color:var(--grey);">S2</td><td><span class="tag tag-lime" style="font-size:10px;">Payment</span></td><td>—</td><td class="bal-pos">$145</td><td style="color:var(--lime);">$0</td></tr>';
+
+  // Update outstanding KPI
   var kpiEl = document.getElementById('sd-balance-large');
   if (kpiEl) {
     kpiEl.textContent = bal < 0 ? '−$' + Math.abs(bal) : bal > 0 ? '+$' + bal + ' credit' : '$0';
     kpiEl.className = 'kpi-value ' + (bal < 0 ? 'bal-neg' : bal > 0 ? 'bal-pos' : '');
+    kpiEl.closest('.kpi').className = 'kpi ' + (bal < 0 ? 'kpi-red' : bal > 0 ? 'kpi-lime' : '');
   }
 
-  // Inject plan section
   var planEl = document.getElementById('sd-payment-plan-section');
   if (planEl) planEl.innerHTML = planHTML;
-
-  // Inject transaction rows
   var txEl = document.getElementById('sd-tx-tbody');
   if (txEl) txEl.innerHTML = txHTML;
 }
+
+
 
 // ===== ATTENDANCE REGISTER =====
 let _currentClass = null;
@@ -9777,6 +9794,49 @@ document.addEventListener('DOMContentLoaded', function() {
     if (e.target.closest('button')) return;
     var id = row.getAttribute('data-student-id');
     if (id) openStudentById(id);
+  });
+});
+</script>
+
+
+<script>
+// Re-render balance cells in students table from STUDENTS array data
+// Adds PP badge and ! alert based on paymentPlan field
+document.addEventListener('DOMContentLoaded', function() {
+  var rows = document.querySelectorAll('#students-tbody tr[data-student-id]');
+  rows.forEach(function(row) {
+    var id = row.getAttribute('data-student-id');
+    var s = STUDENTS.find(function(x){ return x.id === id; });
+    if (!s) return;
+    // Find the balance cell (5th td, index 4)
+    var cells = row.querySelectorAll('td');
+    var balCell = cells[4];
+    if (!balCell) return;
+
+    var bal = s.balance || 0;
+    var plan = s.paymentPlan || null;
+    var html = '';
+
+    if (bal < 0) {
+      html = '<span class="bal-neg" style="font-weight:600;">−$' + Math.abs(bal) + '</span>';
+      html += ' <span title="Amount owing" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#ff3333;color:#fff;font-size:10px;font-weight:900;vertical-align:middle;cursor:default;">!</span>';
+      if (plan) html += ' <span title="Payment plan active" style="display:inline-block;background:#1a1200;border:1px solid var(--amber);color:var(--amber);border-radius:4px;font-size:9px;font-family:Arial,sans-serif;padding:1px 5px;vertical-align:middle;cursor:default;">PP</span>';
+    } else if (plan && plan.status === 'active') {
+      html = '<span style="color:var(--grey);">$0</span>';
+      html += ' <span title="Payment plan active — on track" style="display:inline-block;background:#0f1600;border:1px solid var(--lime);color:var(--lime);border-radius:4px;font-size:9px;font-family:Arial,sans-serif;padding:1px 5px;vertical-align:middle;cursor:default;">PP</span>';
+    } else if (plan && plan.status === 'pending') {
+      html = '<span style="color:var(--grey);">$0</span>';
+      html += ' <span title="Payment plan pending approval" style="display:inline-block;background:#1a1200;border:1px solid var(--amber);color:var(--amber);border-radius:4px;font-size:9px;font-family:Arial,sans-serif;padding:1px 5px;vertical-align:middle;cursor:default;">PP?</span>';
+    } else if (bal > 0) {
+      html = '<span class="bal-pos">+$' + bal + '</span>';
+    } else {
+      html = '<span style="color:var(--grey);">$0</span>';
+    }
+
+    balCell.innerHTML = html;
+
+    // Also update data-balance attr for sorting
+    row.setAttribute('data-balance', bal);
   });
 });
 </script>
