@@ -1066,6 +1066,7 @@
     <div class="nav-item" onclick="showScreen('community')">
       <span class="nav-icon">&#9836;</span> Community
     </div>
+    <div class="nav-item" onclick="showScreen('support')"><span class="nav-icon">🎧</span> Help &amp; Support</div>
     <div class="nav-item" onclick="showScreen('studio-info')">
       <span class="nav-icon">&#9679;</span> Studio Info
     </div>
@@ -8111,12 +8112,12 @@ function submitRefundRequest() {
   if(type === 'season') {
     var reqType = document.querySelector('input[name="season-req-type"]:checked').value;
     if(reqType === 'transfer') {
-      alert('Transfer request submitted! We'll check availability and confirm within 2 business days.');
+      alert('Transfer request submitted! We\'ll check availability and confirm within 2 business days.');
     } else {
-      alert('Cancellation request submitted! We'll review and process your credit or refund within 2 business days.');
+      alert('Cancellation request submitted! We\'ll review and process your credit or refund within 2 business days.');
     }
   } else {
-    alert('Catch-up credit request submitted! We'll review and be in touch within 2 business days.');
+    alert('Catch-up credit request submitted! We\'ll review and be in touch within 2 business days.');
   }
   closeModal('modal-refund-request');
 }
@@ -8386,6 +8387,118 @@ function toggleFAQ(i) {
     }
   };
 })();
+</script>
+
+    <!-- ═══════════════ HELP & SUPPORT ═══════════════ -->
+    <div id="screen-support" class="screen">
+      <div class="page-header" style="margin-bottom:20px;">
+        <div>
+          <div class="page-title">Help &amp; Support</div>
+          <div class="page-sub">Get in touch with the Duality team</div>
+        </div>
+      </div>
+
+      <!-- FAQ quick links -->
+      <div class="section" style="padding:18px 20px;margin-bottom:16px;">
+        <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:14px;">Common Questions</div>
+        <div style="display:flex;flex-direction:column;gap:0;">
+          <details style="border-bottom:1px solid var(--border);padding:10px 0;">
+            <summary style="font-size:13px;font-weight:500;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">How do I reschedule a missed class? <span style="color:var(--grey);">+</span></summary>
+            <div style="font-size:13px;color:var(--grey);margin-top:8px;line-height:1.6;">You can attend any casual class in the same level within 2 weeks of your missed session at no extra charge. Just contact us first so we can add you to the register.</div>
+          </details>
+          <details style="border-bottom:1px solid var(--border);padding:10px 0;">
+            <summary style="font-size:13px;font-weight:500;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">Can I pause my season enrolment? <span style="color:var(--grey);">+</span></summary>
+            <div style="font-size:13px;color:var(--grey);margin-top:8px;line-height:1.6;">Yes — with a valid reason (injury, illness, major life event) we can hold your spot for up to 4 weeks. Submit a request below and our team will review it within 24 hours.</div>
+          </details>
+          <details style="border-bottom:1px solid var(--border);padding:10px 0;">
+            <summary style="font-size:13px;font-weight:500;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">What is your cancellation &amp; refund policy? <span style="color:var(--grey);">+</span></summary>
+            <div style="font-size:13px;color:var(--grey);margin-top:8px;line-height:1.6;">Full refunds are available up to 14 days before a season starts. After that, credits can be issued at our discretion. Workshops are refundable within 7 days of booking.</div>
+          </details>
+          <details style="border-bottom:1px solid var(--border);padding:10px 0;">
+            <summary style="font-size:13px;font-weight:500;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">How do I update my payment details? <span style="color:var(--grey);">+</span></summary>
+            <div style="font-size:13px;color:var(--grey);margin-top:8px;line-height:1.6;">Go to Account → Billing → Update Payment Method. Changes take effect immediately for any upcoming instalments.</div>
+          </details>
+          <details style="padding:10px 0;">
+            <summary style="font-size:13px;font-weight:500;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">I have an injury — can I still attend? <span style="color:var(--grey);">+</span></summary>
+            <div style="font-size:13px;color:var(--grey);margin-top:8px;line-height:1.6;">Please reach out before coming back to class. Our instructors can modify movements, but we need to know your limitations in advance to keep you safe.</div>
+          </details>
+        </div>
+      </div>
+
+      <!-- Contact / new ticket -->
+      <div class="section" style="padding:18px 20px;margin-bottom:16px;">
+        <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:4px;">Contact the Team</div>
+        <div style="font-size:13px;color:var(--grey);margin-bottom:16px;">Didn't find your answer above? Send us a message and we'll get back to you within 24 hours.</div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <div style="font-size:12px;color:var(--grey);margin-bottom:6px;">Category</div>
+            <select id="support-category" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);padding:9px 12px;font-size:13px;font-family:inherit;">
+              <option value="">Select a topic…</option>
+              <option>Attendance &amp; Make-ups</option>
+              <option>Billing &amp; Payments</option>
+              <option>Enrolment &amp; Class Changes</option>
+              <option>Injury &amp; Medical</option>
+              <option>Locker &amp; Access</option>
+              <option>Technical Issue</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--grey);margin-bottom:6px;">Subject</div>
+            <input id="support-subject" type="text" placeholder="Brief description of your issue" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);padding:9px 12px;font-size:13px;font-family:inherit;box-sizing:border-box;" />
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--grey);margin-bottom:6px;">Message</div>
+            <textarea id="support-message" placeholder="Tell us what's going on…" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);padding:9px 12px;font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box;" rows="5"></textarea>
+          </div>
+          <div>
+            <button class="btn btn-lime" onclick="submitSupportTicket()" style="width:100%;">Submit Request</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Existing tickets -->
+      <div class="section" style="padding:18px 20px;">
+        <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:14px;">My Previous Requests</div>
+        <div id="support-tickets-list">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);">
+            <div>
+              <div style="font-size:13px;font-weight:500;">Missed class — can I catch up?</div>
+              <div style="font-size:12px;color:var(--grey);margin-top:3px;">HD-001 &nbsp;·&nbsp; 12 May &nbsp;·&nbsp; Attendance</div>
+            </div>
+            <span class="tag tag-lime">Replied</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;">
+            <div>
+              <div style="font-size:13px;font-weight:500;">Payment plan query — Season 3</div>
+              <div style="font-size:12px;color:var(--grey);margin-top:3px;">HD-088 &nbsp;·&nbsp; 15 Feb &nbsp;·&nbsp; Billing</div>
+            </div>
+            <span class="tag tag-grey">Resolved</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ════════════════════════════════════════════════ -->
+
+<script>
+function submitSupportTicket() {
+  var cat = document.getElementById('support-category');
+  var sub = document.getElementById('support-subject');
+  var msg = document.getElementById('support-message');
+  if (!cat || !cat.value) { showToast('Please select a category'); return; }
+  if (!sub || !sub.value.trim()) { showToast('Please add a subject'); return; }
+  if (!msg || !msg.value.trim()) { showToast('Please write a message'); return; }
+  var list = document.getElementById('support-tickets-list');
+  if (list) {
+    var newRow = document.createElement('div');
+    newRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);';
+    newRow.innerHTML = '<div><div style="font-size:13px;font-weight:500;">' + sub.value.trim() + '</div><div style="font-size:12px;color:var(--grey);margin-top:3px;">HD-NEW &nbsp;&middot;&nbsp; Just now &nbsp;&middot;&nbsp; ' + cat.value + '</div></div><span class="tag tag-amber">Open</span>';
+    list.insertBefore(newRow, list.firstChild);
+  }
+  cat.value = ''; sub.value = ''; msg.value = '';
+  showToast('Request submitted — we\'ll reply within 24 hours');
+}
 </script>
 </body>
 </html>
