@@ -313,16 +313,20 @@ body.mob-sidebar-open .sidebar-overlay { display: block; }
   .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
   .page-title { font-size: 22px; }
 
-  /* Prevent horizontal page overflow */
-  body { overflow-x: hidden; }
+  /* Prevent horizontal page overflow — all containers clamped to viewport */
+  html, body { overflow-x: hidden; max-width: 100vw; }
+  .shell, .main, .content { overflow-x: hidden; max-width: 100%; box-sizing: border-box; }
 
-  /* Every table scrolls horizontally — never bleeds past screen */
+  /* Every table scrolls horizontally inside its wrapper — never bleeds past screen */
   .tbl-section { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
-  thead, tbody { display: table; width: 100%; }
+  table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; max-width: 100%; }
+  thead, tbody { display: table; width: 100%; table-layout: auto; }
 
-  /* search input: don't blow out width */
-  .search-input { min-width: 0; width: 100%; box-sizing: border-box; }
+  /* Inputs/selects: don't blow out width */
+  .search-input, .select-input { min-width: 0 !important; width: 100%; box-sizing: border-box; }
+
+  /* Filter bars: stack vertically so selects don't force wide row */
+  .filter-bar { flex-direction: column; align-items: stretch; gap: 8px; }
 
   /* Subtabs: scroll */
   .subtabs { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
@@ -339,12 +343,17 @@ body.mob-sidebar-open .sidebar-overlay { display: block; }
   /* Class list rows */
   .class-row { gap: 8px; padding: 10px 12px; }
 
-  /* Stop text wrapping inside cells */
+  /* Class cards: wrap and trim padding so they fit */
+  .class-card-today { flex-wrap: wrap; padding: 14px 16px; gap: 8px; }
+  .class-info { padding: 0 10px; }
+  .class-go-btn { display: none; }
+
+  /* Stop text wrapping inside table cells */
   td, th { white-space: nowrap; }
 
-  /* Hide less-critical columns on mobile to shrink table width */
+  /* Hide less-critical columns on mobile */
   .att-hide-mob { display: none; }
-  table th:last-child, table td:last-child { white-space: normal; } /* allow last col to wrap */
+  table th:last-child, table td:last-child { white-space: normal; }
 }
 </style>
 </head>
@@ -574,7 +583,7 @@ body.mob-sidebar-open .sidebar-overlay { display: block; }
         <div>
           <div class="page-title">Attendance</div>
           <div style="margin-top:10px;">
-            <select class="select-input" style="min-width:320px;">
+            <select class="select-input">
               <option>Level 2 — Mon 12 May, 6:30pm — The Box</option>
               <option>Level 3 — Mon 12 May, 8:30pm — Rhapsody</option>
               <option>Level 2 — Thu 15 May, 6:30pm — Rhapsody</option>
