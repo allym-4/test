@@ -183,6 +183,29 @@ tr:hover td { background: #0d0d0d; }
 .tab-btn:hover:not(.active) { color: var(--white); }
 
 /* ATTENDANCE ROW — card layout */
+/* App-style list cards — used everywhere instead of tables */
+.list-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.list-row { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid #1a1a1a; gap: 12px; }
+.list-row:last-child { border-bottom: none; }
+.list-row.clickable { cursor: pointer; transition: background 0.15s; }
+.list-row.clickable:hover { background: #111; }
+.list-time { width: 48px; flex-shrink: 0; text-align: center; }
+.list-time-val { font-family: 'Archivo Black', sans-serif; font-size: 17px; color: var(--lime); line-height: 1.1; }
+.list-time-day { font-size: 10px; color: var(--grey); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 1px; }
+.list-body { flex: 1; min-width: 0; }
+.list-title { font-size: 13px; font-weight: 600; }
+.list-sub { font-size: 11px; color: var(--grey); margin-top: 2px; }
+.list-end { display: flex; align-items: center; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+.list-earn { font-family: 'Archivo Black', sans-serif; font-size: 14px; color: var(--lime); flex-shrink: 0; min-width: 36px; text-align: right; }
+/* Student list cards */
+.stu-row { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid #1a1a1a; gap: 12px; cursor: pointer; transition: background 0.15s; }
+.stu-row:last-child { border-bottom: none; }
+.stu-row:hover { background: #111; }
+.stu-body { flex: 1; min-width: 0; }
+.stu-name { font-size: 14px; font-weight: 600; }
+.stu-meta { font-size: 11px; color: var(--grey); margin-top: 2px; }
+.stu-end { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+
 .att-row { padding: 14px 16px; border-bottom: 1px solid #1a1a1a; transition: background 0.15s; }
 .att-row:last-child { border-bottom: none; }
 .att-row.no-show-row { background: #1a0000; }
@@ -510,32 +533,66 @@ body.mob-sidebar-open .sidebar-overlay { display: block; }
       </div>
 
       <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:14px;">Your Upcoming This Week</div>
-      <div class="tbl-section" style="margin-bottom:28px;">
-        <table>
-          <thead><tr><th>Day</th><th>Class</th><th>Studio</th><th>Enrolled</th><th>Status</th><th></th></tr></thead>
-          <tbody>
-            <tr style="cursor:pointer" onclick="showScreen('attendance')" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''"><td>Mon 6:30pm</td><td><b>Level 2</b></td><td>The Box</td><td>15/15</td><td><span class="tag tag-amber">Full</span></td><td style="color:var(--grey);font-size:12px;">View roster →</td></tr>
-            <tr style="cursor:pointer" onclick="showScreen('attendance')" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''"><td>Mon 8:30pm</td><td><b>Level 3</b></td><td>Rhapsody</td><td>10/12</td><td><span class="tag tag-lime">Active</span></td><td style="color:var(--grey);font-size:12px;">View roster →</td></tr>
-            <tr style="cursor:pointer" onclick="showScreen('attendance')" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''"><td>Tue 8:30pm</td><td><b>Level 3</b></td><td>Rhapsody</td><td>8/12</td><td><span class="tag tag-lime">Active</span></td><td style="color:var(--grey);font-size:12px;">View roster →</td></tr>
-            <tr style="cursor:pointer" onclick="showScreen('attendance')" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''"><td>Thu 6:30pm</td><td><b>Level 2</b></td><td>Rhapsody</td><td>11/12</td><td><span class="tag tag-lime">Active</span></td><td style="color:var(--grey);font-size:12px;">View roster →</td></tr>
-            <tr style="cursor:pointer" onclick="showScreen('attendance')" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''"><td>Sat 10:00am</td><td><b>Level 1</b></td><td>The Box</td><td>9/12</td><td><span class="tag tag-lime">Active</span></td><td style="color:var(--grey);font-size:12px;">View roster →</td></tr>
-          </tbody>
-        </table>
+      <div class="list-card" style="margin-bottom:28px;">
+        <div class="list-row clickable" onclick="showScreen('attendance')">
+          <div class="list-time"><div class="list-time-val">6:30</div><div class="list-time-day">Mon</div></div>
+          <div class="list-body"><div class="list-title">Level 2</div><div class="list-sub">The Box · 15/15 enrolled</div></div>
+          <div class="list-end"><span class="tag tag-amber" style="font-size:10px;">Full</span><span style="font-size:12px;color:var(--grey);">→</span></div>
+        </div>
+        <div class="list-row clickable" onclick="showScreen('attendance')">
+          <div class="list-time"><div class="list-time-val">8:30</div><div class="list-time-day">Mon</div></div>
+          <div class="list-body"><div class="list-title">Level 3</div><div class="list-sub">Rhapsody · 10/12 enrolled</div></div>
+          <div class="list-end"><span class="tag tag-lime" style="font-size:10px;">Active</span><span style="font-size:12px;color:var(--grey);">→</span></div>
+        </div>
+        <div class="list-row clickable" onclick="showScreen('attendance')">
+          <div class="list-time"><div class="list-time-val">8:30</div><div class="list-time-day">Tue</div></div>
+          <div class="list-body"><div class="list-title">Level 3</div><div class="list-sub">Rhapsody · 8/12 enrolled</div></div>
+          <div class="list-end"><span class="tag tag-lime" style="font-size:10px;">Active</span><span style="font-size:12px;color:var(--grey);">→</span></div>
+        </div>
+        <div class="list-row clickable" onclick="showScreen('attendance')">
+          <div class="list-time"><div class="list-time-val">6:30</div><div class="list-time-day">Thu</div></div>
+          <div class="list-body"><div class="list-title">Level 2</div><div class="list-sub">Rhapsody · 11/12 enrolled</div></div>
+          <div class="list-end"><span class="tag tag-lime" style="font-size:10px;">Active</span><span style="font-size:12px;color:var(--grey);">→</span></div>
+        </div>
+        <div class="list-row clickable" onclick="showScreen('attendance')">
+          <div class="list-time"><div class="list-time-val">10:00</div><div class="list-time-day">Sat</div></div>
+          <div class="list-body"><div class="list-title">Level 1</div><div class="list-sub">The Box · 9/12 enrolled</div></div>
+          <div class="list-end"><span class="tag tag-lime" style="font-size:10px;">Active</span><span style="font-size:12px;color:var(--grey);">→</span></div>
+        </div>
       </div>
 
       <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:14px;">All Classes Today</div>
-      <div class="tbl-section">
-        <table>
-          <thead><tr><th>Time</th><th>Class</th><th>Instructor</th><th>Studio</th><th>Enrolled</th><th>Status</th></tr></thead>
-          <tbody>
-            <tr><td>5:30pm</td><td><b>Level 1</b></td><td>Chloe</td><td>The Box</td><td>10/12</td><td><span class="tag tag-lime">Active</span></td></tr>
-            <tr><td>6:00pm</td><td><b>Dance</b></td><td>Viv</td><td>Rhapsody</td><td>8/10</td><td><span class="tag tag-lime">Active</span></td></tr>
-            <tr style="background:#0a1800"><td>6:30pm</td><td><b>Level 2</b> <span style="font-size:10px;background:var(--lime);color:#000;border-radius:4px;padding:1px 5px;margin-left:4px;font-family:'Archivo Black',sans-serif;">YOURS</span></td><td>Chloe</td><td>The Box</td><td>15/15</td><td><span class="tag tag-amber">Full</span></td></tr>
-            <tr><td>7:30pm</td><td><b>High Tricks</b></td><td>Mimi</td><td>The Box</td><td>8/10</td><td><span class="tag tag-lime">Active</span></td></tr>
-            <tr><td>8:00pm</td><td><b>Inter Floor</b></td><td>Viv</td><td>Rhapsody</td><td>6/10</td><td><span class="tag tag-lime">Active</span></td></tr>
-            <tr style="background:#0a1800"><td>8:30pm</td><td><b>Level 3</b> <span style="font-size:10px;background:var(--lime);color:#000;border-radius:4px;padding:1px 5px;margin-left:4px;font-family:'Archivo Black',sans-serif;">YOURS</span></td><td>Chloe</td><td>Rhapsody</td><td>10/12</td><td><span class="tag tag-lime">Active</span></td></tr>
-          </tbody>
-        </table>
+      <div class="list-card">
+        <div class="list-row">
+          <div class="list-time"><div class="list-time-val" style="color:var(--grey);font-size:15px;">5:30</div><div class="list-time-day">pm</div></div>
+          <div class="list-body"><div class="list-title">Level 1</div><div class="list-sub">The Box · Chloe · 10/12</div></div>
+          <span class="tag tag-lime" style="font-size:10px;">Active</span>
+        </div>
+        <div class="list-row">
+          <div class="list-time"><div class="list-time-val" style="color:var(--grey);font-size:15px;">6:00</div><div class="list-time-day">pm</div></div>
+          <div class="list-body"><div class="list-title">Dance</div><div class="list-sub">Rhapsody · Viv · 8/10</div></div>
+          <span class="tag tag-lime" style="font-size:10px;">Active</span>
+        </div>
+        <div class="list-row" style="background:#0a1800;">
+          <div class="list-time"><div class="list-time-val">6:30</div><div class="list-time-day">pm</div></div>
+          <div class="list-body"><div class="list-title">Level 2 <span style="font-size:10px;background:var(--lime);color:#000;border-radius:4px;padding:1px 6px;margin-left:4px;font-family:'Archivo Black',sans-serif;vertical-align:middle;">YOURS</span></div><div class="list-sub">The Box · Chloe · 15/15</div></div>
+          <span class="tag tag-amber" style="font-size:10px;">Full</span>
+        </div>
+        <div class="list-row">
+          <div class="list-time"><div class="list-time-val" style="color:var(--grey);font-size:15px;">7:30</div><div class="list-time-day">pm</div></div>
+          <div class="list-body"><div class="list-title">High Tricks</div><div class="list-sub">The Box · Mimi · 8/10</div></div>
+          <span class="tag tag-lime" style="font-size:10px;">Active</span>
+        </div>
+        <div class="list-row">
+          <div class="list-time"><div class="list-time-val" style="color:var(--grey);font-size:15px;">8:00</div><div class="list-time-day">pm</div></div>
+          <div class="list-body"><div class="list-title">Inter Floor</div><div class="list-sub">Rhapsody · Viv · 6/10</div></div>
+          <span class="tag tag-lime" style="font-size:10px;">Active</span>
+        </div>
+        <div class="list-row" style="background:#0a1800;">
+          <div class="list-time"><div class="list-time-val">8:30</div><div class="list-time-day">pm</div></div>
+          <div class="list-body"><div class="list-title">Level 3 <span style="font-size:10px;background:var(--lime);color:#000;border-radius:4px;padding:1px 6px;margin-left:4px;font-family:'Archivo Black',sans-serif;vertical-align:middle;">YOURS</span></div><div class="list-sub">Rhapsody · Chloe · 10/12</div></div>
+          <span class="tag tag-lime" style="font-size:10px;">Active</span>
+        </div>
       </div>
     </div>
 
@@ -551,42 +608,52 @@ body.mob-sidebar-open .sidebar-overlay { display: block; }
           </div>
         </div>
       </div>
-      <div class="tbl-section">
-        <table>
-          <thead><tr><th>Day / Time</th><th>Class</th><th>Studio</th><th>Enrolled</th><th>Attendance</th><th>Action</th></tr></thead>
-          <tbody>
-            <tr>
-              <td><b>Mon 6:30pm</b><div style="font-size:11px;color:var(--grey)">12 May</div></td>
-              <td>Level 2</td><td>The Box</td><td>15/15</td>
-              <td><span class="tag tag-amber">Not saved</span></td>
-              <td><button class="btn btn-lime btn-xs" onclick="showScreen('attendance')">Take Register</button> <button class="btn btn-ghost btn-xs" onclick="openModal('modal-request-cover')">Request Cover</button></td>
-            </tr>
-            <tr>
-              <td><b>Mon 8:30pm</b><div style="font-size:11px;color:var(--grey)">12 May</div></td>
-              <td>Level 3</td><td>Rhapsody</td><td>10/12</td>
-              <td><span class="tag tag-amber">Not saved</span></td>
-              <td><button class="btn btn-lime btn-xs" onclick="showScreen('attendance')">Take Register</button> <button class="btn btn-ghost btn-xs" onclick="openModal('modal-request-cover')">Request Cover</button></td>
-            </tr>
-            <tr>
-              <td><b>Tue 8:30pm</b><div style="font-size:11px;color:var(--grey)">13 May</div></td>
-              <td>Level 3</td><td>Rhapsody</td><td>8/12</td>
-              <td><span class="tag tag-grey">Upcoming</span></td>
-              <td><button class="btn btn-ghost btn-xs">View Roster</button> <button class="btn btn-ghost btn-xs" onclick="openModal('modal-request-cover')">Request Cover</button></td>
-            </tr>
-            <tr>
-              <td><b>Thu 6:30pm</b><div style="font-size:11px;color:var(--grey)">15 May</div></td>
-              <td>Level 2</td><td>Rhapsody</td><td>11/12</td>
-              <td><span class="tag tag-grey">Upcoming</span></td>
-              <td><button class="btn btn-ghost btn-xs">View Roster</button> <button class="btn btn-ghost btn-xs" onclick="openModal('modal-request-cover')">Request Cover</button></td>
-            </tr>
-            <tr>
-              <td><b>Sat 10:00am</b><div style="font-size:11px;color:var(--grey)">17 May</div></td>
-              <td>Level 1</td><td>The Box</td><td>9/12</td>
-              <td><span class="tag tag-grey">Upcoming</span></td>
-              <td><button class="btn btn-ghost btn-xs">View Roster</button> <button class="btn btn-ghost btn-xs" onclick="openModal('modal-request-cover')">Request Cover</button></td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="list-card">
+        <div class="list-row" style="flex-wrap:wrap;gap:10px;">
+          <div class="list-time"><div class="list-time-val">6:30</div><div class="list-time-day">Mon 12</div></div>
+          <div class="list-body"><div class="list-title">Level 2 · The Box</div><div class="list-sub">15/15 enrolled · <span style="color:var(--amber);">Register not saved</span></div></div>
+          <div class="list-end"><span class="tag tag-amber" style="font-size:10px;">Action needed</span></div>
+          <div style="width:100%;padding-left:60px;display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-lime btn-xs" onclick="showScreen('attendance')">Take Register</button>
+            <button class="btn btn-ghost btn-xs" onclick="openModal('modal-request-cover')">Request Cover</button>
+          </div>
+        </div>
+        <div class="list-row" style="flex-wrap:wrap;gap:10px;">
+          <div class="list-time"><div class="list-time-val">8:30</div><div class="list-time-day">Mon 12</div></div>
+          <div class="list-body"><div class="list-title">Level 3 · Rhapsody</div><div class="list-sub">10/12 enrolled · <span style="color:var(--amber);">Register not saved</span></div></div>
+          <div class="list-end"><span class="tag tag-amber" style="font-size:10px;">Action needed</span></div>
+          <div style="width:100%;padding-left:60px;display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-lime btn-xs" onclick="showScreen('attendance')">Take Register</button>
+            <button class="btn btn-ghost btn-xs" onclick="openModal('modal-request-cover')">Request Cover</button>
+          </div>
+        </div>
+        <div class="list-row" style="flex-wrap:wrap;gap:10px;">
+          <div class="list-time"><div class="list-time-val" style="color:var(--grey);">8:30</div><div class="list-time-day">Tue 13</div></div>
+          <div class="list-body"><div class="list-title">Level 3 · Rhapsody</div><div class="list-sub">8/12 enrolled</div></div>
+          <div class="list-end"><span class="tag tag-grey" style="font-size:10px;">Upcoming</span></div>
+          <div style="width:100%;padding-left:60px;display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-ghost btn-xs">View Roster</button>
+            <button class="btn btn-ghost btn-xs" onclick="openModal('modal-request-cover')">Request Cover</button>
+          </div>
+        </div>
+        <div class="list-row" style="flex-wrap:wrap;gap:10px;">
+          <div class="list-time"><div class="list-time-val" style="color:var(--grey);">6:30</div><div class="list-time-day">Thu 15</div></div>
+          <div class="list-body"><div class="list-title">Level 2 · Rhapsody</div><div class="list-sub">11/12 enrolled</div></div>
+          <div class="list-end"><span class="tag tag-grey" style="font-size:10px;">Upcoming</span></div>
+          <div style="width:100%;padding-left:60px;display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-ghost btn-xs">View Roster</button>
+            <button class="btn btn-ghost btn-xs" onclick="openModal('modal-request-cover')">Request Cover</button>
+          </div>
+        </div>
+        <div class="list-row" style="flex-wrap:wrap;gap:10px;">
+          <div class="list-time"><div class="list-time-val" style="color:var(--grey);">10:00</div><div class="list-time-day">Sat 17</div></div>
+          <div class="list-body"><div class="list-title">Level 1 · The Box</div><div class="list-sub">9/12 enrolled</div></div>
+          <div class="list-end"><span class="tag tag-grey" style="font-size:10px;">Upcoming</span></div>
+          <div style="width:100%;padding-left:60px;display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-ghost btn-xs">View Roster</button>
+            <button class="btn btn-ghost btn-xs" onclick="openModal('modal-request-cover')">Request Cover</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -853,84 +920,88 @@ body.mob-sidebar-open .sidebar-overlay { display: block; }
         <select class="select-input"><option>All Levels</option><option>Level 1</option><option>Level 2</option><option>Level 3</option><option>High Tricks</option></select>
         <select class="select-input"><option>All Statuses</option><option>Active</option><option>Owing</option><option>Trial</option></select>
       </div>
-      <div class="tbl-section">
-        <table>
-          <thead><tr><th></th><th>Name</th><th>Pronouns</th><th>Level</th><th>Enrolment</th><th>Attendance</th><th>Balance</th><th>Actions</th></tr></thead>
-          <tbody id="students-tbody">
-            <tr style="cursor:pointer" onclick="openStudentReadPanel('Jess Malone')">
-              <td><div class="s-avatar" style="background:var(--lav);">J</div></td>
-              <td><b>Jess Malone</b><div style="font-size:11px;color:var(--grey)">jess@email.com</div></td>
-              <td style="color:var(--grey);font-size:12px;">she/her</td><td>Level 2</td><td><span class="tag tag-lav" style="font-size:10px;">Course</span></td>
-              <td><span style="color:var(--lime);">87%</span></td>
-              <td><span style="color:#ff6b6b;font-weight:500;">$120 owing</span></td>
-              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Jess Malone')">View</button> <button class="btn btn-lime btn-xs" onclick="event.stopPropagation();openTakePayment('Jess Malone','$120')">Take Payment</button></td>
-            </tr>
-            <tr style="cursor:pointer" onclick="openStudentReadPanel('Tara Bell')">
-              <td><div class="s-avatar" style="background:#44ff99;">T</div></td>
-              <td><b>Tara Bell</b><div style="font-size:11px;color:var(--grey)">tara@email.com</div></td>
-              <td style="color:var(--grey);font-size:12px;">she/her</td><td>Level 2</td><td><span class="tag tag-lav" style="font-size:10px;">Course</span></td>
-              <td><span style="color:var(--lime);">100%</span></td>
-              <td><span style="color:#4ade80;">Clear</span></td>
-              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Tara Bell')">View</button></td>
-            </tr>
-            <tr style="cursor:pointer" onclick="openStudentReadPanel('Dana Park')">
-              <td><div class="s-avatar" style="background:#ffcc88;">D</div></td>
-              <td><b>Dana Park</b><div style="font-size:11px;color:var(--grey)">dana@email.com</div></td>
-              <td style="color:var(--grey);font-size:12px;">she/her</td><td>Level 2</td><td><span class="tag tag-grey" style="font-size:10px;">Today Only</span></td>
-              <td><span style="color:var(--amber);">72%</span></td>
-              <td><span style="color:#ff6b6b;font-weight:500;">$75 owing</span></td>
-              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Dana Park')">View</button> <button class="btn btn-lime btn-xs" onclick="event.stopPropagation();openTakePayment('Dana Park','$75')">Take Payment</button></td>
-            </tr>
-            <tr style="cursor:pointer" onclick="openStudentReadPanel('Nina Torres')">
-              <td><div class="s-avatar" style="background:#b0f0b0;">N</div></td>
-              <td><b>Nina Torres</b><div style="font-size:11px;color:var(--grey)">nina@email.com</div></td>
-              <td style="color:var(--grey);font-size:12px;">she/her</td><td>Level 3</td><td><span class="tag tag-lav" style="font-size:10px;">Course</span></td>
-              <td><span style="color:var(--lime);">95%</span></td>
-              <td><span style="color:#4ade80;">Clear</span></td>
-              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Nina Torres')">View</button></td>
-            </tr>
-            <tr style="cursor:pointer" onclick="openStudentReadPanel('Sophie Lawson')">
-              <td><div class="s-avatar" style="background:var(--lime);">S</div></td>
-              <td><b>Sophie Lawson</b><div style="font-size:11px;color:var(--grey)">sophie@email.com</div></td>
-              <td style="color:var(--grey);font-size:12px;">they/them</td><td>Level 1</td><td><span class="tag tag-amber" style="font-size:10px;">Trial</span></td>
-              <td><span style="color:var(--lime);">100%</span></td>
-              <td><span style="color:#4ade80;">Clear</span></td>
-              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Sophie Lawson')">View</button></td>
-            </tr>
-            <tr style="cursor:pointer" onclick="openStudentReadPanel('Amber Cole')">
-              <td><div class="s-avatar" style="background:#ffb3de;">A</div></td>
-              <td><b>Amber Cole</b><div style="font-size:11px;color:var(--grey)">amber@email.com</div></td>
-              <td style="color:var(--grey);font-size:12px;">she/her</td><td>Level 1</td><td><span class="tag tag-lav" style="font-size:10px;">Course</span></td>
-              <td><span style="color:var(--amber);">67%</span></td>
-              <td><span style="color:#ff6b6b;font-weight:500;">$50 owing</span></td>
-              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Amber Cole')">View</button> <button class="btn btn-lime btn-xs" onclick="event.stopPropagation();openTakePayment('Amber Cole','$50')">Take Payment</button></td>
-            </tr>
-            <tr style="cursor:pointer" onclick="openStudentReadPanel('Hannah Webb')">
-              <td><div class="s-avatar" style="background:#9ac4ff;">H</div></td>
-              <td><b>Hannah Webb</b><div style="font-size:11px;color:var(--grey)">hannah@email.com</div></td>
-              <td style="color:var(--grey);font-size:12px;">she/her</td><td>Level 2</td><td><span class="tag tag-amber" style="font-size:10px;">Trial</span></td>
-              <td><span style="color:var(--lime);">100%</span></td>
-              <td><span style="color:#4ade80;">Clear</span></td>
-              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Hannah Webb')">View</button></td>
-            </tr>
-            <tr style="cursor:pointer" onclick="openStudentReadPanel('Ruby Kim')">
-              <td><div class="s-avatar" style="background:var(--lav);">R</div></td>
-              <td><b>Ruby Kim</b><div style="font-size:11px;color:var(--grey)">ruby@email.com</div></td>
-              <td style="color:var(--grey);font-size:12px;">she/her</td><td>Level 3</td><td><span class="tag tag-lav" style="font-size:10px;">Course</span></td>
-              <td><span style="color:var(--lime);">92%</span></td>
-              <td><span style="color:#4ade80;">Clear</span></td>
-              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Ruby Kim')">View</button></td>
-            </tr>
-            <tr style="cursor:pointer" onclick="openStudentReadPanel('Viv Santos')">
-              <td><div class="s-avatar" style="background:#4ade80;">M</div></td>
-              <td><b>Viv Santos</b><div style="font-size:11px;color:var(--grey)">viv@email.com</div></td>
-              <td style="color:var(--grey);font-size:12px;">she/they</td><td>High Tricks</td><td><span class="tag tag-lav" style="font-size:10px;">Course</span></td>
-              <td><span style="color:var(--lime);">98%</span></td>
-              <td><span style="color:#4ade80;">Clear</span></td>
-              <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentReadPanel('Viv Santos')">View</button></td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="list-card" id="students-list">
+        <div class="stu-row" onclick="openStudentReadPanel('Jess Malone')">
+          <div class="s-avatar" style="background:var(--lav);flex-shrink:0;">J</div>
+          <div class="stu-body">
+            <div class="stu-name">Jess Malone <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
+            <div class="stu-meta">Level 2 · 87% att · <span class="tag tag-lav" style="font-size:10px;">Course</span></div>
+          </div>
+          <div class="stu-end">
+            <span class="owing-badge">$120 owing</span>
+            <button class="btn btn-lime btn-xs" onclick="event.stopPropagation();openTakePayment('Jess Malone','$120')">Pay</button>
+          </div>
+        </div>
+        <div class="stu-row" onclick="openStudentReadPanel('Tara Bell')">
+          <div class="s-avatar" style="background:#44ff99;flex-shrink:0;">T</div>
+          <div class="stu-body">
+            <div class="stu-name">Tara Bell <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
+            <div class="stu-meta">Level 2 · 100% att · <span class="tag tag-lav" style="font-size:10px;">Course</span></div>
+          </div>
+          <div class="stu-end"><span style="font-size:12px;color:#4ade80;">Clear</span></div>
+        </div>
+        <div class="stu-row" onclick="openStudentReadPanel('Dana Park')">
+          <div class="s-avatar" style="background:#ffcc88;flex-shrink:0;">D</div>
+          <div class="stu-body">
+            <div class="stu-name">Dana Park <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
+            <div class="stu-meta">Level 2 · 72% att · <span class="tag tag-grey" style="font-size:10px;">Today Only</span></div>
+          </div>
+          <div class="stu-end">
+            <span class="owing-badge">$75 owing</span>
+            <button class="btn btn-lime btn-xs" onclick="event.stopPropagation();openTakePayment('Dana Park','$75')">Pay</button>
+          </div>
+        </div>
+        <div class="stu-row" onclick="openStudentReadPanel('Nina Torres')">
+          <div class="s-avatar" style="background:#b0f0b0;flex-shrink:0;">N</div>
+          <div class="stu-body">
+            <div class="stu-name">Nina Torres <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
+            <div class="stu-meta">Level 3 · 95% att · <span class="tag tag-lav" style="font-size:10px;">Course</span></div>
+          </div>
+          <div class="stu-end"><span style="font-size:12px;color:#4ade80;">Clear</span></div>
+        </div>
+        <div class="stu-row" onclick="openStudentReadPanel('Sophie Lawson')">
+          <div class="s-avatar" style="background:var(--lime);flex-shrink:0;">S</div>
+          <div class="stu-body">
+            <div class="stu-name">Sophie Lawson <span style="font-size:11px;color:var(--grey);font-weight:400;">they/them</span></div>
+            <div class="stu-meta">Level 1 · 100% att · <span class="tag tag-amber" style="font-size:10px;">Trial</span></div>
+          </div>
+          <div class="stu-end"><span style="font-size:12px;color:#4ade80;">Clear</span></div>
+        </div>
+        <div class="stu-row" onclick="openStudentReadPanel('Amber Cole')">
+          <div class="s-avatar" style="background:#ffb3de;flex-shrink:0;">A</div>
+          <div class="stu-body">
+            <div class="stu-name">Amber Cole <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
+            <div class="stu-meta">Level 1 · 67% att · <span class="tag tag-lav" style="font-size:10px;">Course</span></div>
+          </div>
+          <div class="stu-end">
+            <span class="owing-badge">$50 owing</span>
+            <button class="btn btn-lime btn-xs" onclick="event.stopPropagation();openTakePayment('Amber Cole','$50')">Pay</button>
+          </div>
+        </div>
+        <div class="stu-row" onclick="openStudentReadPanel('Hannah Webb')">
+          <div class="s-avatar" style="background:#9ac4ff;flex-shrink:0;">H</div>
+          <div class="stu-body">
+            <div class="stu-name">Hannah Webb <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
+            <div class="stu-meta">Level 2 · 100% att · <span class="tag tag-amber" style="font-size:10px;">Trial</span></div>
+          </div>
+          <div class="stu-end"><span style="font-size:12px;color:#4ade80;">Clear</span></div>
+        </div>
+        <div class="stu-row" onclick="openStudentReadPanel('Ruby Kim')">
+          <div class="s-avatar" style="background:var(--lav);flex-shrink:0;">R</div>
+          <div class="stu-body">
+            <div class="stu-name">Ruby Kim <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
+            <div class="stu-meta">Level 3 · 92% att · <span class="tag tag-lav" style="font-size:10px;">Course</span></div>
+          </div>
+          <div class="stu-end"><span style="font-size:12px;color:#4ade80;">Clear</span></div>
+        </div>
+        <div class="stu-row" onclick="openStudentReadPanel('Viv Santos')">
+          <div class="s-avatar" style="background:#4ade80;flex-shrink:0;">V</div>
+          <div class="stu-body">
+            <div class="stu-name">Viv Santos <span style="font-size:11px;color:var(--grey);font-weight:400;">she/they</span></div>
+            <div class="stu-meta">High Tricks · 98% att · <span class="tag tag-lav" style="font-size:10px;">Course</span></div>
+          </div>
+          <div class="stu-end"><span style="font-size:12px;color:#4ade80;">Clear</span></div>
+        </div>
       </div>
     </div>
 
@@ -1137,50 +1208,35 @@ body.mob-sidebar-open .sidebar-overlay { display: block; }
       </div>
 
       <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:14px;">Classes Taught — Season 3</div>
-      <div class="tbl-section" style="margin-bottom:28px;">
-        <table>
-          <thead><tr><th>Date</th><th>Class</th><th>Studio</th><th>Duration</th><th>Students</th><th>Rate</th><th>Amount</th></tr></thead>
-          <tbody>
-            <tr><td>Mon 5 May</td><td>Level 2</td><td>The Box</td><td>1.5 hrs</td><td>14</td><td>$65/class</td><td style="color:var(--lime);font-weight:500;">$65</td></tr>
-            <tr><td>Mon 5 May</td><td>Level 3</td><td>Rhapsody</td><td>1.5 hrs</td><td>10</td><td>$65/class</td><td style="color:var(--lime);font-weight:500;">$65</td></tr>
-            <tr><td>Tue 6 May</td><td>Level 3</td><td>Rhapsody</td><td>1.5 hrs</td><td>8</td><td>$65/class</td><td style="color:var(--lime);font-weight:500;">$65</td></tr>
-            <tr><td>Thu 8 May</td><td>Level 2</td><td>Rhapsody</td><td>1.5 hrs</td><td>11</td><td>$75/class</td><td style="color:var(--lime);font-weight:500;">$75</td></tr>
-            <tr><td>Sat 10 May</td><td>Level 1</td><td>The Box</td><td>1.5 hrs</td><td>9</td><td>$65/class</td><td style="color:var(--lime);font-weight:500;">$65</td></tr>
-            <tr><td>Mon 12 May</td><td>Level 2</td><td>The Box</td><td>1.5 hrs</td><td>15</td><td>$75/class</td><td style="color:var(--lime);font-weight:500;">$75</td></tr>
-            <tr><td>Mon 12 May</td><td>Level 3</td><td>Rhapsody</td><td>1.5 hrs</td><td>10</td><td>$65/class</td><td style="color:var(--lime);font-weight:500;">$65</td></tr>
-            <tr><td>Tue 13 May</td><td>Level 3</td><td>Rhapsody</td><td>1.5 hrs</td><td>8</td><td>$65/class</td><td style="color:var(--lime);font-weight:500;">$65</td></tr>
-          </tbody>
-          <tfoot>
-            <tr style="border-top:2px solid var(--border);">
-              <td colspan="6" style="font-family:'Archivo Black',sans-serif;font-size:13px;padding:12px 14px;">Total (Season 3 to date)</td>
-              <td style="font-family:'Archivo Black',sans-serif;font-size:15px;color:var(--lime);padding:12px 14px;">$540</td>
-            </tr>
-          </tfoot>
-        </table>
+      <div class="list-card" style="margin-bottom:28px;">
+        <div class="list-row"><div class="list-body"><div class="list-title">Level 2 · The Box</div><div class="list-sub">Mon 5 May · 14 students · 1.5 hrs</div></div><div class="list-earn">$65</div></div>
+        <div class="list-row"><div class="list-body"><div class="list-title">Level 3 · Rhapsody</div><div class="list-sub">Mon 5 May · 10 students · 1.5 hrs</div></div><div class="list-earn">$65</div></div>
+        <div class="list-row"><div class="list-body"><div class="list-title">Level 3 · Rhapsody</div><div class="list-sub">Tue 6 May · 8 students · 1.5 hrs</div></div><div class="list-earn">$65</div></div>
+        <div class="list-row"><div class="list-body"><div class="list-title">Level 2 · Rhapsody</div><div class="list-sub">Thu 8 May · 11 students · 1.5 hrs</div></div><div class="list-earn">$75</div></div>
+        <div class="list-row"><div class="list-body"><div class="list-title">Level 1 · The Box</div><div class="list-sub">Sat 10 May · 9 students · 1.5 hrs</div></div><div class="list-earn">$65</div></div>
+        <div class="list-row"><div class="list-body"><div class="list-title">Level 2 · The Box</div><div class="list-sub">Mon 12 May · 15 students · 1.5 hrs</div></div><div class="list-earn">$75</div></div>
+        <div class="list-row"><div class="list-body"><div class="list-title">Level 3 · Rhapsody</div><div class="list-sub">Mon 12 May · 10 students · 1.5 hrs</div></div><div class="list-earn">$65</div></div>
+        <div class="list-row"><div class="list-body"><div class="list-title">Level 3 · Rhapsody</div><div class="list-sub">Tue 13 May · 8 students · 1.5 hrs</div></div><div class="list-earn">$65</div></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:2px solid var(--border);background:#0a0f00;">
+          <span style="font-family:'Archivo Black',sans-serif;font-size:13px;">Season 3 total to date</span>
+          <span style="font-family:'Archivo Black',sans-serif;font-size:16px;color:var(--lime);">$540</span>
+        </div>
       </div>
 
       <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:14px;">Payment History</div>
-      <div class="tbl-section" style="margin-bottom:20px;">
-        <table>
-          <thead><tr><th>Pay Period</th><th>Classes</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody>
-            <tr>
-              <td>1 May – 15 May 2025</td><td>8</td><td>$540</td>
-              <td><span class="tag tag-amber">Pending</span></td>
-              <td><button class="btn btn-ghost btn-xs" onclick="alert('Invoice not yet available for current period.')">Invoice</button></td>
-            </tr>
-            <tr>
-              <td>15 Apr – 30 Apr 2025</td><td>8</td><td>$520</td>
-              <td><span class="tag tag-lime">Paid</span></td>
-              <td><button class="btn btn-ghost btn-xs" onclick="alert('Downloading invoice...')">Download Invoice</button></td>
-            </tr>
-            <tr>
-              <td>1 Apr – 14 Apr 2025</td><td>7</td><td>$455</td>
-              <td><span class="tag tag-lime">Paid</span></td>
-              <td><button class="btn btn-ghost btn-xs" onclick="alert('Downloading invoice...')">Download Invoice</button></td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="list-card" style="margin-bottom:20px;">
+        <div class="list-row">
+          <div class="list-body"><div class="list-title">1 May – 15 May 2025</div><div class="list-sub">8 classes · $540</div></div>
+          <div class="list-end"><span class="tag tag-amber" style="font-size:10px;">Pending</span><button class="btn btn-ghost btn-xs" onclick="alert('Invoice not yet available.')">Invoice</button></div>
+        </div>
+        <div class="list-row">
+          <div class="list-body"><div class="list-title">15 Apr – 30 Apr 2025</div><div class="list-sub">8 classes · $520</div></div>
+          <div class="list-end"><span class="tag tag-lime" style="font-size:10px;">Paid</span><button class="btn btn-ghost btn-xs" onclick="alert('Downloading...')">Invoice</button></div>
+        </div>
+        <div class="list-row">
+          <div class="list-body"><div class="list-title">1 Apr – 14 Apr 2025</div><div class="list-sub">7 classes · $455</div></div>
+          <div class="list-end"><span class="tag tag-lime" style="font-size:10px;">Paid</span><button class="btn btn-ghost btn-xs" onclick="alert('Downloading...')">Invoice</button></div>
+        </div>
       </div>
 
       <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:14px 18px;font-size:13px;color:var(--grey);">
