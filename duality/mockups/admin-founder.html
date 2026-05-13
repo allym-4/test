@@ -84,6 +84,7 @@ h1,h2,h3,.black { font-family: 'Archivo Black', sans-serif; font-weight: 900; }
 
 /* KPI CARDS */
 .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
 .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 22px; cursor: default; transition: border-color 0.15s; }
 .kpi.clickable { cursor: pointer; }
 .kpi.clickable:hover { border-color: #444; }
@@ -377,7 +378,7 @@ tr.clickable-row:hover td { background: #141414; }
       <div class="nav-item sub" onclick="showScreen('categories')" data-stub="1"><span class="nav-icon">📂</span> Categories</div>
       <div class="nav-item sub" onclick="showScreen('timetable')"><span class="nav-icon">📅</span> Timetable</div>
       <div class="nav-item sub" onclick="showScreen('classes')"><span class="nav-icon">📚</span> Classes</div>
-      <div class="nav-item sub" onclick="showScreen('seasons')"><span class="nav-icon">🌀</span> Terms</div>
+      <div class="nav-item sub" onclick="showScreen('seasons')"><span class="nav-icon">🌀</span> Seasons</div>
       <div class="nav-item sub" onclick="showScreen('manage-packages')" data-stub="1"><span class="nav-icon">📦</span> Packages</div>
       <div class="nav-item sub" onclick="showScreen('manage-memberships')" data-stub="1"><span class="nav-icon">🪪</span> Memberships</div>
       <div class="nav-item sub" onclick="showScreen('studio-notes')" data-stub="1"><span class="nav-icon">📌</span> Studio Notes</div>
@@ -387,6 +388,7 @@ tr.clickable-row:hover td { background: #141414; }
     <div class="nav-item" onclick="showScreen('timetable')"><span class="nav-icon">📅</span> Timetable</div>
     <div class="nav-item" onclick="showScreen('bookings')" data-stub="1"><span class="nav-icon">🎟</span> Bookings</div>
     <div class="nav-item" onclick="showScreen('billing')"><span class="nav-icon">💳</span> Billing</div>
+    <div class="nav-item" onclick="showScreen('billing-plans')"><span class="nav-icon">📋</span> Payment Plans</div>
     <div class="nav-item" onclick="showScreen('discounts')"><span class="nav-icon">🏷</span> Offers</div>
     <div class="nav-item" onclick="showScreen('community')"><span class="nav-icon">💬</span> Community</div>
     <div class="nav-item" onclick="showScreen('surveys')" data-stub="1">📋 Surveys</div>
@@ -697,7 +699,6 @@ tr.clickable-row:hover td { background: #141414; }
         <input class="search-input" id="students-search" type="text" placeholder="Search name, email…" oninput="filterStudentsTable(this.value)" />
         <select class="select-input" onchange="filterStudentsTable()"><option>All Levels</option><option>Level 1</option><option>Level 2</option><option>Level 3</option><option>High Tricks</option></select>
         <select class="select-input" onchange="filterStudentsTable()"><option>All Statuses</option><option>Active</option><option>Owing</option><option>Blocked</option><option>Frozen</option></select>
-        <select class="select-input"><option>All Instructors</option><option>Chloe</option><option>Viv</option><option>Mimi</option><option>Jaz</option><option>Avalon</option><option>Maz</option><option>Amy</option><option>Bambi</option><option>Violet</option><option>Peaches</option></select>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;padding:0 4px;">
         <span style="font-size:11px;color:var(--grey);align-self:center;margin-right:4px;">Filter by tag:</span>
@@ -712,9 +713,9 @@ tr.clickable-row:hover td { background: #141414; }
       <div id="students-tag-result" style="font-size:12px;color:var(--grey);margin-bottom:8px;"></div>
       <div class="tbl-section">
         <table>
-          <thead><tr><th></th><th>Name</th><th>Level</th><th>Classes</th><th>Balance</th><th>Status</th><th>Last Seen</th><th>Actions</th></tr></thead>
+          <thead><tr><th></th><th>Name</th><th>Level</th><th style="cursor:pointer;user-select:none;" onclick="sortStudentsBy('classes')" title="Sort by classes">Classes <span id="sort-classes-icon" style="color:var(--grey);font-size:10px;">↕</span></th><th style="cursor:pointer;user-select:none;" onclick="sortStudentsBy('balance')" title="Sort by owing">Balance <span id="sort-balance-icon" style="color:var(--grey);font-size:10px;">↕</span></th><th>Status</th><th>Last Seen</th><th>Actions</th></tr></thead>
           <tbody id="students-tbody">
-            <tr class="clickable-row student-row" data-name="aishu kripa aishukripa33@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='aishukripa';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="aishu kripa aishukripa33@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='aishukripa';}))">
               <td><div class="s-avatar" style="background:#ffaa44;">A</div></td>
               <td><b>Aishu Kripa</b><div style="font-size:11px;color:var(--grey)">aishukripa33@gmail.com</div></td>
               <td>Dirty Dance</td><td>2</td>
@@ -723,7 +724,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='aishukripa';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="alana jones jonezalana@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='alanajones';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="alana jones jonezalana@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='alanajones';}))">
               <td><div class="s-avatar" style="background:#CDA5FF;">A</div></td>
               <td><b>Alana Jones</b><div style="font-size:11px;color:var(--grey)">jonezalana@gmail.com</div></td>
               <td>Dance Virgin</td><td>2</td>
@@ -732,7 +733,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='alanajones';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="alex fleming alexfleming440@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='alexfleming';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="alex fleming alexfleming440@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='alexfleming';}))">
               <td><div class="s-avatar" style="background:#DBFF00;">A</div></td>
               <td><b>Alex Fleming</b><div style="font-size:11px;color:var(--grey)">alexfleming440@gmail.com</div></td>
               <td>Level 5</td><td>1</td>
@@ -741,7 +742,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='alexfleming';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="alexa winterstein adwinterstein@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='alexawinterstein';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="alexa winterstein adwinterstein@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='alexawinterstein';}))">
               <td><div class="s-avatar" style="background:#ff6b6b;">A</div></td>
               <td><b>Alexa Winterstein</b><div style="font-size:11px;color:var(--grey)">adwinterstein@gmail.com</div></td>
               <td>Level 1</td><td>1</td>
@@ -750,7 +751,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='alexawinterstein';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="alexandra dickie alexrdickie@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='alexandradickie';}))">
+            <tr class="clickable-row student-row" data-classes="4" data-balance="0.0" data-name="alexandra dickie alexrdickie@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='alexandradickie';}))">
               <td><div class="s-avatar" style="background:#4ade80;">A</div></td>
               <td><b>Alexandra Dickie</b><div style="font-size:11px;color:var(--grey)">alexrdickie@gmail.com</div></td>
               <td>Chair</td><td>4</td>
@@ -759,7 +760,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='alexandradickie';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="alice foglino alice.foglino@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='alicefoglino';}))">
+            <tr class="clickable-row student-row" data-classes="3" data-balance="0.0" data-name="alice foglino alice.foglino@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='alicefoglino';}))">
               <td><div class="s-avatar" style="background:#9ac4ff;">A</div></td>
               <td><b>Alice Foglino</b><div style="font-size:11px;color:var(--grey)">alice.foglino@gmail.com</div></td>
               <td>Dance Tech</td><td>3</td>
@@ -768,7 +769,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='alicefoglino';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="alice steele alicesteele99@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='alicesteele';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="alice steele alicesteele99@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='alicesteele';}))">
               <td><div class="s-avatar" style="background:#ffb3de;">A</div></td>
               <td><b>Alice Steele</b><div style="font-size:11px;color:var(--grey)">alicesteele99@gmail.com</div></td>
               <td>6 Virgin</td><td>1</td>
@@ -777,7 +778,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='alicesteele';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="ally la spina allylaspina@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='allylaspina';}))">
+            <tr class="clickable-row student-row" data-classes="3" data-balance="0.0" data-name="ally la spina allylaspina@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='allylaspina';}))">
               <td><div class="s-avatar" style="background:#44ff99;">A</div></td>
               <td><b>Ally La Spina</b><div style="font-size:11px;color:var(--grey)">Allylaspina@gmail.com</div></td>
               <td>Chole</td><td>3</td>
@@ -786,7 +787,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='allylaspina';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="amy reed aemyjosephine+1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='amyreed';}))">
+            <tr class="clickable-row student-row" data-classes="4" data-balance="0.0" data-name="amy reed aemyjosephine+1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='amyreed';}))">
               <td><div class="s-avatar" style="background:#66dddd;">A</div></td>
               <td><b>Amy Reed</b><div style="font-size:11px;color:var(--grey)">aemyjosephine+1@gmail.com</div></td>
               <td>Advanced Floor</td><td>4</td>
@@ -795,7 +796,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='amyreed';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="angela yang chilin0619@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='angelayang';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="angela yang chilin0619@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='angelayang';}))">
               <td><div class="s-avatar" style="background:#b0f0b0;">A</div></td>
               <td><b>Angela Yang</b><div style="font-size:11px;color:var(--grey)">chilin0619@gmail.com</div></td>
               <td>Dance Tech</td><td>2</td>
@@ -804,7 +805,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='angelayang';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="anna wong annablisswong+1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='annawong';}))">
+            <tr class="clickable-row student-row" data-classes="3" data-balance="0.0" data-name="anna wong annablisswong+1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='annawong';}))">
               <td><div class="s-avatar" style="background:#ffcc88;">A</div></td>
               <td><b>Anna Wong</b><div style="font-size:11px;color:var(--grey)">Annablisswong+1@gmail.com</div></td>
               <td>High Tricks</td><td>3</td>
@@ -813,7 +814,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='annawong';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="annika rees annikarees@outlook.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='annikarees';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="annika rees annikarees@outlook.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='annikarees';}))">
               <td><div class="s-avatar" style="background:#ff9ecb;">A</div></td>
               <td><b>Annika Rees</b><div style="font-size:11px;color:var(--grey)">Annikarees@outlook.com</div></td>
               <td>Level 3</td><td>1</td>
@@ -822,7 +823,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='annikarees';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="ariel tjeuw arielchewy@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='arieltjeuw';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="ariel tjeuw arielchewy@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='arieltjeuw';}))">
               <td><div class="s-avatar" style="background:#c9aaff;">A</div></td>
               <td><b>Ariel Tjeuw</b><div style="font-size:11px;color:var(--grey)">arielchewy@hotmail.com</div></td>
               <td>Level 5</td><td>1</td>
@@ -831,7 +832,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='arieltjeuw';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="arielle carver-o’neill arcarvero@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='ariellecarveroneil';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="arielle carver-o’neill arcarvero@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='ariellecarveroneil';}))">
               <td><div class="s-avatar" style="background:#ffd6a5;">A</div></td>
               <td><b>Arielle Carver-O’Neill</b><div style="font-size:11px;color:var(--grey)">Arcarvero@gmail.com</div></td>
               <td>Level 3</td><td>1</td>
@@ -840,7 +841,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='ariellecarveroneil';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="ashley lamont ashley@ashl.dev" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='ashleylamont';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="ashley lamont ashley@ashl.dev" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='ashleylamont';}))">
               <td><div class="s-avatar" style="background:#b5ead7;">A</div></td>
               <td><b>Ashley Lamont</b><div style="font-size:11px;color:var(--grey)">ashley@ashl.dev</div></td>
               <td>Level 2</td><td>1</td>
@@ -849,7 +850,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='ashleylamont';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="avalon carnall avalon.carnall+1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='avaloncarnall';}))">
+            <tr class="clickable-row student-row" data-classes="3" data-balance="0.0" data-name="avalon carnall avalon.carnall+1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='avaloncarnall';}))">
               <td><div class="s-avatar" style="background:#ffc8dd;">A</div></td>
               <td><b>Avalon Carnall</b><div style="font-size:11px;color:var(--grey)">Avalon.carnall+1@gmail.com</div></td>
               <td>Advanced Floor</td><td>3</td>
@@ -858,7 +859,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='avaloncarnall';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="bella bushby bellabushby@live.com.au" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='bellabushby';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="bella bushby bellabushby@live.com.au" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='bellabushby';}))">
               <td><div class="s-avatar" style="background:#e8c1ff;">B</div></td>
               <td><b>Bella Bushby</b><div style="font-size:11px;color:var(--grey)">bellabushby@live.com.au</div></td>
               <td>Level 2</td><td>1</td>
@@ -867,16 +868,16 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='bellabushby';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="belle currie issycurrie18@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='bellecurrie';}))">
+            <tr class="clickable-row student-row" data-classes="5" data-balance="-120" data-name="belle currie issycurrie18@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='bellecurrie';}))">
               <td><div class="s-avatar" style="background:#caffbf;">B</div></td>
               <td><b>Belle Currie</b><div style="font-size:11px;color:var(--grey)">issycurrie18@gmail.com</div></td>
               <td>Chair Virgin</td><td>5</td>
-              <td class="bal-pos">$0</td>
-              <td><span class="tag tag-lime">Active</span></td>
+              <td class="bal-neg">$120</td>
+              <td><span class="tag tag-amber">Owing</span></td>
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='bellecurrie';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="beth horsburgh bhorsburgh@ozemail.com.au" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='bethhorsburgh';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="beth horsburgh bhorsburgh@ozemail.com.au" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='bethhorsburgh';}))">
               <td><div class="s-avatar" style="background:#a8d8ea;">B</div></td>
               <td><b>Beth Horsburgh</b><div style="font-size:11px;color:var(--grey)">Bhorsburgh@ozemail.com.au</div></td>
               <td>Dance Virgin</td><td>1</td>
@@ -885,7 +886,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='bethhorsburgh';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="bettina tang bettinatang25@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='bettinatang';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="bettina tang bettinatang25@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='bettinatang';}))">
               <td><div class="s-avatar" style="background:#ffadad;">B</div></td>
               <td><b>Bettina Tang</b><div style="font-size:11px;color:var(--grey)">bettinatang25@gmail.com</div></td>
               <td>Strip</td><td>1</td>
@@ -894,7 +895,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='bettinatang';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="bronte osborne bronte.osborne@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='bronteosborne';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="bronte osborne bronte.osborne@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='bronteosborne';}))">
               <td><div class="s-avatar" style="background:#fdffb6;">B</div></td>
               <td><b>Bronte Osborne</b><div style="font-size:11px;color:var(--grey)">bronte.osborne@hotmail.com</div></td>
               <td>High Tricks</td><td>2</td>
@@ -903,7 +904,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='bronteosborne';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="bruce tsai pepsishill@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='brucetsai';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="bruce tsai pepsishill@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='brucetsai';}))">
               <td><div class="s-avatar" style="background:#9bf6ff;">B</div></td>
               <td><b>Bruce Tsai</b><div style="font-size:11px;color:var(--grey)">Pepsishill@gmail.com</div></td>
               <td>Level 3</td><td>1</td>
@@ -912,7 +913,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='brucetsai';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="caitlin williams cewilliams0105@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='caitlinwilliams';}))">
+            <tr class="clickable-row student-row" data-classes="3" data-balance="0.0" data-name="caitlin williams cewilliams0105@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='caitlinwilliams';}))">
               <td><div class="s-avatar" style="background:#bde0fe;">C</div></td>
               <td><b>Caitlin Williams</b><div style="font-size:11px;color:var(--grey)">cewilliams0105@gmail.com</div></td>
               <td>Kiki</td><td>3</td>
@@ -921,7 +922,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='caitlinwilliams';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="cassandra chakouch cassiechakouch@live.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='cassandrachakouch';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="cassandra chakouch cassiechakouch@live.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='cassandrachakouch';}))">
               <td><div class="s-avatar" style="background:#ffaa44;">C</div></td>
               <td><b>Cassandra Chakouch</b><div style="font-size:11px;color:var(--grey)">cassiechakouch@live.com</div></td>
               <td>Level 5</td><td>1</td>
@@ -930,7 +931,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='cassandrachakouch';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="cat reynolds catreynolds45@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='catreynolds';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="cat reynolds catreynolds45@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='catreynolds';}))">
               <td><div class="s-avatar" style="background:#CDA5FF;">C</div></td>
               <td><b>Cat Reynolds</b><div style="font-size:11px;color:var(--grey)">Catreynolds45@gmail.com</div></td>
               <td>Advanced Floor</td><td>1</td>
@@ -939,7 +940,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='catreynolds';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="cat thompson catt9194@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='catthompson';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="cat thompson catt9194@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='catthompson';}))">
               <td><div class="s-avatar" style="background:#DBFF00;">C</div></td>
               <td><b>Cat Thompson</b><div style="font-size:11px;color:var(--grey)">Catt9194@hotmail.com</div></td>
               <td>Dance Tech</td><td>2</td>
@@ -948,7 +949,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='catthompson';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="catherine adams cath.m.adams@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='catherineadams';}))">
+            <tr class="clickable-row student-row" data-classes="3" data-balance="0.0" data-name="catherine adams cath.m.adams@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='catherineadams';}))">
               <td><div class="s-avatar" style="background:#ff6b6b;">C</div></td>
               <td><b>Catherine Adams</b><div style="font-size:11px;color:var(--grey)">cath.m.adams@gmail.com</div></td>
               <td>Dance Virgin</td><td>3</td>
@@ -957,7 +958,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='catherineadams';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="celeste mather celestemather6@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='celestemather';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="celeste mather celestemather6@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='celestemather';}))">
               <td><div class="s-avatar" style="background:#4ade80;">C</div></td>
               <td><b>Celeste Mather</b><div style="font-size:11px;color:var(--grey)">Celestemather6@gmail.com</div></td>
               <td>Dance Virgin</td><td>1</td>
@@ -966,7 +967,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='celestemather';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="celina andrew celina.r.andrew@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='celinaandrew';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="celina andrew celina.r.andrew@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='celinaandrew';}))">
               <td><div class="s-avatar" style="background:#9ac4ff;">C</div></td>
               <td><b>Celina Andrew</b><div style="font-size:11px;color:var(--grey)">Celina.r.andrew@gmail.com</div></td>
               <td>Level 1</td><td>2</td>
@@ -975,7 +976,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='celinaandrew';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="chalida mckelvie chalida-mckelvie@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='chalidamckelvie';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="chalida mckelvie chalida-mckelvie@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='chalidamckelvie';}))">
               <td><div class="s-avatar" style="background:#ffb3de;">C</div></td>
               <td><b>Chalida Mckelvie</b><div style="font-size:11px;color:var(--grey)">chalida-mckelvie@hotmail.com</div></td>
               <td>Chole</td><td>2</td>
@@ -984,7 +985,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='chalidamckelvie';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="charlee campbell charleebcampbell99@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='charleecampbell';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="charlee campbell charleebcampbell99@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='charleecampbell';}))">
               <td><div class="s-avatar" style="background:#44ff99;">C</div></td>
               <td><b>Charlee Campbell</b><div style="font-size:11px;color:var(--grey)">charleebcampbell99@gmail.com</div></td>
               <td>Level 1</td><td>1</td>
@@ -993,7 +994,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='charleecampbell';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="charlotte norman charlottenorman@yahoo.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='charlottenorman';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="charlotte norman charlottenorman@yahoo.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='charlottenorman';}))">
               <td><div class="s-avatar" style="background:#66dddd;">C</div></td>
               <td><b>Charlotte Norman</b><div style="font-size:11px;color:var(--grey)">Charlottenorman@yahoo.com</div></td>
               <td>Dance Virgin</td><td>2</td>
@@ -1002,7 +1003,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='charlottenorman';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="chenda viriyan mak nayirivm@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='chendaviriyanmak';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="chenda viriyan mak nayirivm@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='chendaviriyanmak';}))">
               <td><div class="s-avatar" style="background:#b0f0b0;">C</div></td>
               <td><b>Chenda Viriyan Mak</b><div style="font-size:11px;color:var(--grey)">nayirivm@gmail.com</div></td>
               <td>Level 2</td><td>2</td>
@@ -1011,7 +1012,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='chendaviriyanmak';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="cherry liu cherry_chang_liu@icloud.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='cherryliu';}))">
+            <tr class="clickable-row student-row" data-classes="3" data-balance="0.0" data-name="cherry liu cherry_chang_liu@icloud.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='cherryliu';}))">
               <td><div class="s-avatar" style="background:#ffcc88;">C</div></td>
               <td><b>Cherry liu</b><div style="font-size:11px;color:var(--grey)">cherry_chang_liu@icloud.com</div></td>
               <td>Advanced Floor</td><td>3</td>
@@ -1020,7 +1021,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='cherryliu';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="chloe seow chloechloe.seow@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='chloeseow';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="chloe seow chloechloe.seow@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='chloeseow';}))">
               <td><div class="s-avatar" style="background:#ff9ecb;">C</div></td>
               <td><b>Chloe Seow</b><div style="font-size:11px;color:var(--grey)">chloechloe.seow@gmail.com</div></td>
               <td>Advanced Floor</td><td>2</td>
@@ -1029,7 +1030,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='chloeseow';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="clancy greening clancy.greening@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='clancygreening';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="clancy greening clancy.greening@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='clancygreening';}))">
               <td><div class="s-avatar" style="background:#c9aaff;">C</div></td>
               <td><b>Clancy Greening</b><div style="font-size:11px;color:var(--grey)">clancy.greening@gmail.com</div></td>
               <td>Level 2</td><td>1</td>
@@ -1038,7 +1039,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='clancygreening';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="danae beatie danaebeatie@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='danaebeatie';}))">
+            <tr class="clickable-row student-row" data-classes="3" data-balance="0.0" data-name="danae beatie danaebeatie@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='danaebeatie';}))">
               <td><div class="s-avatar" style="background:#ffd6a5;">D</div></td>
               <td><b>Danae Beatie</b><div style="font-size:11px;color:var(--grey)">danaebeatie@gmail.com</div></td>
               <td>Chair</td><td>3</td>
@@ -1047,7 +1048,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='danaebeatie';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="dasha maiorova dash_m12@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='dashamaiorova';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="dasha maiorova dash_m12@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='dashamaiorova';}))">
               <td><div class="s-avatar" style="background:#b5ead7;">D</div></td>
               <td><b>Dasha Maiorova</b><div style="font-size:11px;color:var(--grey)">Dash_m12@hotmail.com</div></td>
               <td>Chair</td><td>2</td>
@@ -1056,7 +1057,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='dashamaiorova';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="dunia goh dunia.goh@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='duniagoh';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="dunia goh dunia.goh@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='duniagoh';}))">
               <td><div class="s-avatar" style="background:#ffc8dd;">D</div></td>
               <td><b>Dunia Goh</b><div style="font-size:11px;color:var(--grey)">dunia.goh@gmail.com</div></td>
               <td>Strip Virgin</td><td>1</td>
@@ -1065,7 +1066,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='duniagoh';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="eleesheva mayo-ray eleeshevamayo@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='eleeshevamayoray';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="eleesheva mayo-ray eleeshevamayo@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='eleeshevamayoray';}))">
               <td><div class="s-avatar" style="background:#e8c1ff;">E</div></td>
               <td><b>Eleesheva Mayo-Ray</b><div style="font-size:11px;color:var(--grey)">Eleeshevamayo@gmail.com</div></td>
               <td>Level 4</td><td>1</td>
@@ -1074,7 +1075,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='eleeshevamayoray';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="elli-jane mielcarz ellijane.mielcarz+1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='ellijanemielcarz';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="elli-jane mielcarz ellijane.mielcarz+1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='ellijanemielcarz';}))">
               <td><div class="s-avatar" style="background:#caffbf;">E</div></td>
               <td><b>Elli-Jane Mielcarz</b><div style="font-size:11px;color:var(--grey)">ellijane.mielcarz+1@gmail.com</div></td>
               <td>Level 6</td><td>1</td>
@@ -1083,7 +1084,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='ellijanemielcarz';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="eloise green eloisegg@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='eloisegreen';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="eloise green eloisegg@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='eloisegreen';}))">
               <td><div class="s-avatar" style="background:#a8d8ea;">E</div></td>
               <td><b>Eloise Green</b><div style="font-size:11px;color:var(--grey)">eloisegg@gmail.com</div></td>
               <td>Level 2</td><td>1</td>
@@ -1092,7 +1093,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='eloisegreen';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="emily wooden woodenemily94@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='emilywooden';}))">
+            <tr class="clickable-row student-row" data-classes="4" data-balance="0.0" data-name="emily wooden woodenemily94@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='emilywooden';}))">
               <td><div class="s-avatar" style="background:#ffadad;">E</div></td>
               <td><b>Emily Wooden</b><div style="font-size:11px;color:var(--grey)">Woodenemily94@gmail.com</div></td>
               <td>Advanced Floor</td><td>4</td>
@@ -1101,7 +1102,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='emilywooden';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="emma chegwidden-hart emmacheg@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='emmachegwiddenhart';}))">
+            <tr class="clickable-row student-row" data-classes="3" data-balance="0.0" data-name="emma chegwidden-hart emmacheg@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='emmachegwiddenhart';}))">
               <td><div class="s-avatar" style="background:#fdffb6;">E</div></td>
               <td><b>Emma Chegwidden-Hart</b><div style="font-size:11px;color:var(--grey)">emmacheg@gmail.com</div></td>
               <td>4 Tricks</td><td>3</td>
@@ -1110,7 +1111,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='emmachegwiddenhart';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="emma donovic emmadonovic@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='emmadonovic';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="emma donovic emmadonovic@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='emmadonovic';}))">
               <td><div class="s-avatar" style="background:#9bf6ff;">E</div></td>
               <td><b>Emma Donovic</b><div style="font-size:11px;color:var(--grey)">emmadonovic@gmail.com</div></td>
               <td>5 Foundations</td><td>2</td>
@@ -1119,7 +1120,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='emmadonovic';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="emma fitzgerald emmakfitzy@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='emmafitzgerald';}))">
+            <tr class="clickable-row student-row" data-classes="4" data-balance="0.0" data-name="emma fitzgerald emmakfitzy@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='emmafitzgerald';}))">
               <td><div class="s-avatar" style="background:#bde0fe;">E</div></td>
               <td><b>Emma Fitzgerald</b><div style="font-size:11px;color:var(--grey)">emmakfitzy@hotmail.com</div></td>
               <td>Dance Virgin</td><td>4</td>
@@ -1128,7 +1129,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='emmafitzgerald';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="emma scott-stevenson emma.ss1234@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='emmascottstevenson';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="emma scott-stevenson emma.ss1234@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='emmascottstevenson';}))">
               <td><div class="s-avatar" style="background:#ffaa44;">E</div></td>
               <td><b>Emma Scott-Stevenson</b><div style="font-size:11px;color:var(--grey)">emma.ss1234@hotmail.com</div></td>
               <td>Level 2</td><td>2</td>
@@ -1137,7 +1138,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='emmascottstevenson';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="eric nguyen nhatnmt7+duality@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='ericnguyen';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="eric nguyen nhatnmt7+duality@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='ericnguyen';}))">
               <td><div class="s-avatar" style="background:#CDA5FF;">E</div></td>
               <td><b>Eric Nguyen</b><div style="font-size:11px;color:var(--grey)">nhatnmt7+duality@gmail.com</div></td>
               <td>Level 2</td><td>1</td>
@@ -1146,7 +1147,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='ericnguyen';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="essie gregory gregoryessie@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='essiegregory';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="essie gregory gregoryessie@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='essiegregory';}))">
               <td><div class="s-avatar" style="background:#DBFF00;">E</div></td>
               <td><b>Essie Gregory</b><div style="font-size:11px;color:var(--grey)">gregoryessie@gmail.com</div></td>
               <td>Level 5</td><td>2</td>
@@ -1155,7 +1156,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='essiegregory';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="faith chiang dongqiangsyd@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='faithchiang';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="faith chiang dongqiangsyd@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='faithchiang';}))">
               <td><div class="s-avatar" style="background:#ff6b6b;">F</div></td>
               <td><b>Faith Chiang</b><div style="font-size:11px;color:var(--grey)">dongqiangsyd@gmail.com</div></td>
               <td>Level 5</td><td>1</td>
@@ -1164,7 +1165,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='faithchiang';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="fleur glover fleur.glover@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='fleurglover';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="fleur glover fleur.glover@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='fleurglover';}))">
               <td><div class="s-avatar" style="background:#4ade80;">F</div></td>
               <td><b>Fleur Glover</b><div style="font-size:11px;color:var(--grey)">Fleur.glover@gmail.com</div></td>
               <td>Level 4</td><td>1</td>
@@ -1173,7 +1174,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='fleurglover';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="franky ferrer francescaferrerbest@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='frankyferrer';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="franky ferrer francescaferrerbest@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='frankyferrer';}))">
               <td><div class="s-avatar" style="background:#9ac4ff;">F</div></td>
               <td><b>Franky Ferrer</b><div style="font-size:11px;color:var(--grey)">francescaferrerbest@gmail.com</div></td>
               <td>5 Foundations</td><td>2</td>
@@ -1182,7 +1183,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='frankyferrer';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="freya noble freyanoble1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='freyanoble';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="freya noble freyanoble1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='freyanoble';}))">
               <td><div class="s-avatar" style="background:#ffb3de;">F</div></td>
               <td><b>Freya Noble</b><div style="font-size:11px;color:var(--grey)">freyanoble1@gmail.com</div></td>
               <td>Level 4</td><td>1</td>
@@ -1191,7 +1192,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='freyanoble';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="gabriella shone gabriella.shone@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='gabriellashone';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="gabriella shone gabriella.shone@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='gabriellashone';}))">
               <td><div class="s-avatar" style="background:#44ff99;">G</div></td>
               <td><b>Gabriella Shone</b><div style="font-size:11px;color:var(--grey)">Gabriella.shone@gmail.com</div></td>
               <td>Strip Virgin</td><td>1</td>
@@ -1200,7 +1201,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='gabriellashone';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="gabrielle darcy gabriellegenedarcy@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='gabrielledarcy';}))">
+            <tr class="clickable-row student-row" data-classes="3" data-balance="0.0" data-name="gabrielle darcy gabriellegenedarcy@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='gabrielledarcy';}))">
               <td><div class="s-avatar" style="background:#66dddd;">G</div></td>
               <td><b>Gabrielle D'Arcy</b><div style="font-size:11px;color:var(--grey)">gabriellegenedarcy@gmail.com</div></td>
               <td>4 Tricks</td><td>3</td>
@@ -1209,7 +1210,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='gabrielledarcy';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="gee chan princess.gigi.totally.rulez@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='geechan';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="gee chan princess.gigi.totally.rulez@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='geechan';}))">
               <td><div class="s-avatar" style="background:#b0f0b0;">G</div></td>
               <td><b>Gee Chan</b><div style="font-size:11px;color:var(--grey)">Princess.gigi.totally.rulez@gmail.com</div></td>
               <td>Level 5</td><td>1</td>
@@ -1218,7 +1219,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='geechan';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="georgia britt georgiabritt17@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='georgiabritt';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="georgia britt georgiabritt17@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='georgiabritt';}))">
               <td><div class="s-avatar" style="background:#ffcc88;">G</div></td>
               <td><b>Georgia Britt</b><div style="font-size:11px;color:var(--grey)">georgiabritt17@gmail.com</div></td>
               <td>Chair</td><td>2</td>
@@ -1227,7 +1228,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='georgiabritt';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="gigi welsby gracewelsby123@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='gigiwelsby';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="gigi welsby gracewelsby123@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='gigiwelsby';}))">
               <td><div class="s-avatar" style="background:#ff9ecb;">G</div></td>
               <td><b>Gigi Welsby</b><div style="font-size:11px;color:var(--grey)">gracewelsby123@gmail.com</div></td>
               <td>Floor Virgin</td><td>2</td>
@@ -1236,7 +1237,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='gigiwelsby';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="giselle bueti gisellebueti@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='gisellebueti';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="giselle bueti gisellebueti@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='gisellebueti';}))">
               <td><div class="s-avatar" style="background:#c9aaff;">G</div></td>
               <td><b>Giselle Bueti</b><div style="font-size:11px;color:var(--grey)">gisellebueti@hotmail.com</div></td>
               <td>Level 1</td><td>1</td>
@@ -1245,7 +1246,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='gisellebueti';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="hannah zywczak hannah.zywczak@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='hannahzywczak';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="hannah zywczak hannah.zywczak@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='hannahzywczak';}))">
               <td><div class="s-avatar" style="background:#ffd6a5;">H</div></td>
               <td><b>Hannah Zywczak</b><div style="font-size:11px;color:var(--grey)">Hannah.zywczak@gmail.com</div></td>
               <td>Inter Floor</td><td>1</td>
@@ -1254,7 +1255,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='hannahzywczak';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="haylie griffis haylie_griffis@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='hayliegriffis';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="haylie griffis haylie_griffis@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='hayliegriffis';}))">
               <td><div class="s-avatar" style="background:#b5ead7;">H</div></td>
               <td><b>Haylie Griffis</b><div style="font-size:11px;color:var(--grey)">haylie_griffis@hotmail.com</div></td>
               <td>Level 5</td><td>1</td>
@@ -1263,7 +1264,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='hayliegriffis';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="holly fung starryeyedblunder@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='hollyfung';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="holly fung starryeyedblunder@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='hollyfung';}))">
               <td><div class="s-avatar" style="background:#ffc8dd;">H</div></td>
               <td><b>Holly Fung</b><div style="font-size:11px;color:var(--grey)">starryeyedblunder@gmail.com</div></td>
               <td>Level 2</td><td>1</td>
@@ -1272,7 +1273,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='hollyfung';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="irena lysiuk irena.lysiuk@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='irenalysiuk';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="irena lysiuk irena.lysiuk@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='irenalysiuk';}))">
               <td><div class="s-avatar" style="background:#e8c1ff;">I</div></td>
               <td><b>Irena Lysiuk</b><div style="font-size:11px;color:var(--grey)">irena.lysiuk@gmail.com</div></td>
               <td>Level 2</td><td>1</td>
@@ -1281,7 +1282,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='irenalysiuk';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="jasmin pitts jpitts2468+1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='jasminpitts';}))">
+            <tr class="clickable-row student-row" data-classes="4" data-balance="0.0" data-name="jasmin pitts jpitts2468+1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='jasminpitts';}))">
               <td><div class="s-avatar" style="background:#caffbf;">J</div></td>
               <td><b>Jasmin Pitts</b><div style="font-size:11px;color:var(--grey)">jpitts2468+1@gmail.com</div></td>
               <td>Advanced Floor</td><td>4</td>
@@ -1290,7 +1291,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='jasminpitts';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="jenny leech jennylleech@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='jennyleech';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="jenny leech jennylleech@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='jennyleech';}))">
               <td><div class="s-avatar" style="background:#a8d8ea;">J</div></td>
               <td><b>Jenny Leech</b><div style="font-size:11px;color:var(--grey)">jennylleech@gmail.com</div></td>
               <td>Level 3</td><td>1</td>
@@ -1299,7 +1300,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='jennyleech';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="jessica coffey jlcoffey93@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='jessicacoffey';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="jessica coffey jlcoffey93@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='jessicacoffey';}))">
               <td><div class="s-avatar" style="background:#ffadad;">J</div></td>
               <td><b>Jessica Coffey</b><div style="font-size:11px;color:var(--grey)">jlcoffey93@gmail.com</div></td>
               <td>Level 4</td><td>1</td>
@@ -1308,7 +1309,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='jessicacoffey';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="jessica neary jessicalneary@outlook.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='jessicaneary';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="jessica neary jessicalneary@outlook.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='jessicaneary';}))">
               <td><div class="s-avatar" style="background:#fdffb6;">J</div></td>
               <td><b>Jessica Neary</b><div style="font-size:11px;color:var(--grey)">jessicalneary@outlook.com</div></td>
               <td>Inter Floor</td><td>2</td>
@@ -1317,7 +1318,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='jessicaneary';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="jo tanus joeyjojojnr@outlook.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='jotanus';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="jo tanus joeyjojojnr@outlook.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='jotanus';}))">
               <td><div class="s-avatar" style="background:#9bf6ff;">J</div></td>
               <td><b>Jo Tanus</b><div style="font-size:11px;color:var(--grey)">Joeyjojojnr@outlook.com</div></td>
               <td>Strip Virgin</td><td>1</td>
@@ -1326,7 +1327,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='jotanus';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="julie kha julie.kha@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='juliekha';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="julie kha julie.kha@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='juliekha';}))">
               <td><div class="s-avatar" style="background:#bde0fe;">J</div></td>
               <td><b>Julie Kha</b><div style="font-size:11px;color:var(--grey)">julie.kha@hotmail.com</div></td>
               <td>Chair</td><td>1</td>
@@ -1335,7 +1336,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='juliekha';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="kasvi luthra kasviluthra@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='kasviluthra';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="kasvi luthra kasviluthra@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='kasviluthra';}))">
               <td><div class="s-avatar" style="background:#ffaa44;">K</div></td>
               <td><b>Kasvi Luthra</b><div style="font-size:11px;color:var(--grey)">kasviluthra@gmail.com</div></td>
               <td>Level 5</td><td>1</td>
@@ -1344,7 +1345,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='kasviluthra';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="kathleen parkes kat.parkes@outlook.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='kathleenparkes';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="kathleen parkes kat.parkes@outlook.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='kathleenparkes';}))">
               <td><div class="s-avatar" style="background:#CDA5FF;">K</div></td>
               <td><b>Kathleen Parkes</b><div style="font-size:11px;color:var(--grey)">kat.parkes@outlook.com</div></td>
               <td>Level 2</td><td>1</td>
@@ -1353,7 +1354,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='kathleenparkes';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="katrina burns burns.nolan@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='katrinaburns';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="katrina burns burns.nolan@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='katrinaburns';}))">
               <td><div class="s-avatar" style="background:#DBFF00;">K</div></td>
               <td><b>Katrina Burns</b><div style="font-size:11px;color:var(--grey)">Burns.nolan@gmail.com</div></td>
               <td>Chole</td><td>2</td>
@@ -1362,7 +1363,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='katrinaburns';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="kerri chow kerriann@fastmail.fm" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='kerrichow';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="kerri chow kerriann@fastmail.fm" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='kerrichow';}))">
               <td><div class="s-avatar" style="background:#ff6b6b;">K</div></td>
               <td><b>Kerri Chow</b><div style="font-size:11px;color:var(--grey)">Kerriann@fastmail.fm</div></td>
               <td>Advanced Floor</td><td>1</td>
@@ -1371,7 +1372,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='kerrichow';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="krys kapsimallis kkryskaps@icloud.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='kryskapsimallis';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="krys kapsimallis kkryskaps@icloud.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='kryskapsimallis';}))">
               <td><div class="s-avatar" style="background:#4ade80;">K</div></td>
               <td><b>Krys Kapsimallis</b><div style="font-size:11px;color:var(--grey)">kkryskaps@icloud.com</div></td>
               <td>Kiki</td><td>1</td>
@@ -1380,7 +1381,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='kryskapsimallis';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="kylie daisog prettykylied@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='kyliedaisog';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="kylie daisog prettykylied@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='kyliedaisog';}))">
               <td><div class="s-avatar" style="background:#9ac4ff;">K</div></td>
               <td><b>Kylie Daisog</b><div style="font-size:11px;color:var(--grey)">prettykylied@gmail.com</div></td>
               <td>Level 4</td><td>1</td>
@@ -1389,7 +1390,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='kyliedaisog';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="laura keenan laurakeenan2496@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='laurakeenan';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="laura keenan laurakeenan2496@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='laurakeenan';}))">
               <td><div class="s-avatar" style="background:#ffb3de;">L</div></td>
               <td><b>Laura Keenan</b><div style="font-size:11px;color:var(--grey)">laurakeenan2496@gmail.com</div></td>
               <td>Dance Virgin</td><td>1</td>
@@ -1398,7 +1399,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='laurakeenan';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="laura murphy lauraclare98@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='lauramurphy';}))">
+            <tr class="clickable-row student-row" data-classes="3" data-balance="0.0" data-name="laura murphy lauraclare98@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='lauramurphy';}))">
               <td><div class="s-avatar" style="background:#44ff99;">L</div></td>
               <td><b>Laura Murphy</b><div style="font-size:11px;color:var(--grey)">Lauraclare98@gmail.com</div></td>
               <td>4 Tricks</td><td>3</td>
@@ -1407,7 +1408,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='lauramurphy';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="leane chew leane.chew@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='leanechew';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="leane chew leane.chew@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='leanechew';}))">
               <td><div class="s-avatar" style="background:#66dddd;">L</div></td>
               <td><b>Leane Chew</b><div style="font-size:11px;color:var(--grey)">Leane.chew@gmail.com</div></td>
               <td>Chole</td><td>2</td>
@@ -1416,7 +1417,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='leanechew';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="lena l lena202302@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='lenal';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="lena l lena202302@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='lenal';}))">
               <td><div class="s-avatar" style="background:#b0f0b0;">L</div></td>
               <td><b>Lena L</b><div style="font-size:11px;color:var(--grey)">Lena202302@gmail.com</div></td>
               <td>Level 2</td><td>1</td>
@@ -1425,7 +1426,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='lenal';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="leonardo shaw-voysey leoshaw161@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='leonardoshawvoysey';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="leonardo shaw-voysey leoshaw161@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='leonardoshawvoysey';}))">
               <td><div class="s-avatar" style="background:#ffcc88;">L</div></td>
               <td><b>Leonardo Shaw-Voysey</b><div style="font-size:11px;color:var(--grey)">leoshaw161@gmail.com</div></td>
               <td>Level 3</td><td>1</td>
@@ -1434,7 +1435,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='leonardoshawvoysey';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="lisa young lisay194@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='lisayoung';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="lisa young lisay194@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='lisayoung';}))">
               <td><div class="s-avatar" style="background:#ff9ecb;">L</div></td>
               <td><b>Lisa Young</b><div style="font-size:11px;color:var(--grey)">lisay194@gmail.com</div></td>
               <td>Inter Floor</td><td>1</td>
@@ -1443,7 +1444,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='lisayoung';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="liz brown elizabeth.brown623@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='lizbrown';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="liz brown elizabeth.brown623@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='lizbrown';}))">
               <td><div class="s-avatar" style="background:#c9aaff;">L</div></td>
               <td><b>Liz Brown</b><div style="font-size:11px;color:var(--grey)">Elizabeth.brown623@gmail.com</div></td>
               <td>Level 3</td><td>2</td>
@@ -1452,7 +1453,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='lizbrown';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="lucy davies lucyalicedavies@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='lucydavies';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="lucy davies lucyalicedavies@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='lucydavies';}))">
               <td><div class="s-avatar" style="background:#ffd6a5;">L</div></td>
               <td><b>Lucy Davies</b><div style="font-size:11px;color:var(--grey)">Lucyalicedavies@gmail.com</div></td>
               <td>Dance</td><td>1</td>
@@ -1461,7 +1462,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='lucydavies';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="lucy hargreaves lucy.a.hargreaves@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='lucyhargreaves';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="lucy hargreaves lucy.a.hargreaves@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='lucyhargreaves';}))">
               <td><div class="s-avatar" style="background:#b5ead7;">L</div></td>
               <td><b>Lucy Hargreaves</b><div style="font-size:11px;color:var(--grey)">Lucy.a.hargreaves@gmail.com</div></td>
               <td>Dirty Dance</td><td>1</td>
@@ -1470,7 +1471,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='lucyhargreaves';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="maddie hurst maddiehurst1996@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='maddiehurst';}))">
+            <tr class="clickable-row student-row" data-classes="5" data-balance="0.0" data-name="maddie hurst maddiehurst1996@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='maddiehurst';}))">
               <td><div class="s-avatar" style="background:#ffc8dd;">M</div></td>
               <td><b>Maddie Hurst</b><div style="font-size:11px;color:var(--grey)">maddiehurst1996@gmail.com</div></td>
               <td>Chair</td><td>5</td>
@@ -1479,7 +1480,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='maddiehurst';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="maddison bates-willis mbateswillis@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='maddisonbateswilli';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="maddison bates-willis mbateswillis@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='maddisonbateswilli';}))">
               <td><div class="s-avatar" style="background:#e8c1ff;">M</div></td>
               <td><b>Maddison Bates-Willis</b><div style="font-size:11px;color:var(--grey)">mbateswillis@gmail.com</div></td>
               <td>Level 2</td><td>1</td>
@@ -1488,7 +1489,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='maddisonbateswilli';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="mary nguyen mary.nguyen93@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='marynguyen';}))">
+            <tr class="clickable-row student-row" data-classes="3" data-balance="0.0" data-name="mary nguyen mary.nguyen93@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='marynguyen';}))">
               <td><div class="s-avatar" style="background:#caffbf;">M</div></td>
               <td><b>Mary Nguyen</b><div style="font-size:11px;color:var(--grey)">mary.nguyen93@hotmail.com</div></td>
               <td>High Tricks</td><td>3</td>
@@ -1497,7 +1498,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='marynguyen';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="matilda brown matildab94@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='matildabrown';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="matilda brown matildab94@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='matildabrown';}))">
               <td><div class="s-avatar" style="background:#a8d8ea;">M</div></td>
               <td><b>Matilda Brown</b><div style="font-size:11px;color:var(--grey)">matildab94@gmail.com</div></td>
               <td>Level 3</td><td>2</td>
@@ -1506,7 +1507,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='matildabrown';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="meg dortmans megad103@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='megdortmans';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="meg dortmans megad103@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='megdortmans';}))">
               <td><div class="s-avatar" style="background:#ffadad;">M</div></td>
               <td><b>Meg Dortmans</b><div style="font-size:11px;color:var(--grey)">Megad103@gmail.com</div></td>
               <td>Level 1</td><td>2</td>
@@ -1515,7 +1516,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='megdortmans';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="megan liang meganliang7@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='meganliang';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="megan liang meganliang7@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='meganliang';}))">
               <td><div class="s-avatar" style="background:#fdffb6;">M</div></td>
               <td><b>Megan Liang</b><div style="font-size:11px;color:var(--grey)">meganliang7@gmail.com</div></td>
               <td>Level 5</td><td>1</td>
@@ -1524,7 +1525,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='meganliang';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="melanie devonshire melanie.devonshire@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='melaniedevonshire';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="melanie devonshire melanie.devonshire@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='melaniedevonshire';}))">
               <td><div class="s-avatar" style="background:#9bf6ff;">M</div></td>
               <td><b>Melanie Devonshire</b><div style="font-size:11px;color:var(--grey)">melanie.devonshire@hotmail.com</div></td>
               <td>Level 3</td><td>2</td>
@@ -1533,7 +1534,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='melaniedevonshire';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="mia mcfarlane mia.mcfarlane12@icloud.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='miamcfarlane';}))">
+            <tr class="clickable-row student-row" data-classes="4" data-balance="0.0" data-name="mia mcfarlane mia.mcfarlane12@icloud.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='miamcfarlane';}))">
               <td><div class="s-avatar" style="background:#bde0fe;">M</div></td>
               <td><b>Mia McFarlane</b><div style="font-size:11px;color:var(--grey)">Mia.mcfarlane12@icloud.com</div></td>
               <td>4 Tricks</td><td>4</td>
@@ -1542,7 +1543,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='miamcfarlane';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="michelle ridge mridge.aus@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='michelleridge';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="michelle ridge mridge.aus@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='michelleridge';}))">
               <td><div class="s-avatar" style="background:#ffaa44;">M</div></td>
               <td><b>Michelle Ridge</b><div style="font-size:11px;color:var(--grey)">mridge.aus@gmail.com</div></td>
               <td>Chair</td><td>2</td>
@@ -1551,7 +1552,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='michelleridge';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="minyu vandenberg minnievee14@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='minyuvandenberg';}))">
+            <tr class="clickable-row student-row" data-classes="4" data-balance="0.0" data-name="minyu vandenberg minnievee14@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='minyuvandenberg';}))">
               <td><div class="s-avatar" style="background:#CDA5FF;">M</div></td>
               <td><b>Minyu Vandenberg</b><div style="font-size:11px;color:var(--grey)">minnievee14@gmail.com</div></td>
               <td>Advanced Floor</td><td>4</td>
@@ -1560,7 +1561,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='minyuvandenberg';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="monica jones monicadj101@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='monicajones';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="monica jones monicadj101@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='monicajones';}))">
               <td><div class="s-avatar" style="background:#DBFF00;">M</div></td>
               <td><b>Monica Jones</b><div style="font-size:11px;color:var(--grey)">monicadj101@gmail.com</div></td>
               <td>Level 5</td><td>1</td>
@@ -1569,7 +1570,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='monicajones';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="myles kuah kuahmyles@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='myleskuah';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="myles kuah kuahmyles@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='myleskuah';}))">
               <td><div class="s-avatar" style="background:#ff6b6b;">M</div></td>
               <td><b>Myles Kuah</b><div style="font-size:11px;color:var(--grey)">kuahmyles@gmail.com</div></td>
               <td>Level 5</td><td>2</td>
@@ -1578,7 +1579,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='myleskuah';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="nellie camp nellie.camp@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='nelliecamp';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="nellie camp nellie.camp@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='nelliecamp';}))">
               <td><div class="s-avatar" style="background:#4ade80;">N</div></td>
               <td><b>Nellie Camp</b><div style="font-size:11px;color:var(--grey)">Nellie.camp@gmail.com</div></td>
               <td>Level 6</td><td>1</td>
@@ -1587,7 +1588,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='nelliecamp';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="nicole gal nicole.galhardi@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='nicolegal';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="nicole gal nicole.galhardi@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='nicolegal';}))">
               <td><div class="s-avatar" style="background:#9ac4ff;">N</div></td>
               <td><b>Nicole Gal</b><div style="font-size:11px;color:var(--grey)">nicole.galhardi@gmail.com</div></td>
               <td>Level 2</td><td>1</td>
@@ -1596,7 +1597,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='nicolegal';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="nicole renvoize nicolerenvoize@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='nicolerenvoize';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="nicole renvoize nicolerenvoize@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='nicolerenvoize';}))">
               <td><div class="s-avatar" style="background:#ffb3de;">N</div></td>
               <td><b>Nicole Renvoize</b><div style="font-size:11px;color:var(--grey)">nicolerenvoize@hotmail.com</div></td>
               <td>Level 4</td><td>1</td>
@@ -1605,7 +1606,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='nicolerenvoize';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="olivia gengos oliviagengos@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='oliviagengos';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="olivia gengos oliviagengos@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='oliviagengos';}))">
               <td><div class="s-avatar" style="background:#44ff99;">O</div></td>
               <td><b>Olivia Gengos</b><div style="font-size:11px;color:var(--grey)">oliviagengos@gmail.com</div></td>
               <td>Level 2</td><td>1</td>
@@ -1614,7 +1615,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='oliviagengos';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="priscila alexandre priscilasalex81@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='priscilaalexandre';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="priscila alexandre priscilasalex81@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='priscilaalexandre';}))">
               <td><div class="s-avatar" style="background:#66dddd;">P</div></td>
               <td><b>Priscila Alexandre</b><div style="font-size:11px;color:var(--grey)">priscilasalex81@gmail.com</div></td>
               <td>Dirty Dance</td><td>2</td>
@@ -1623,7 +1624,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='priscilaalexandre';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="raechel carlsen raechel-carlsen@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='raechelcarlsen';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="raechel carlsen raechel-carlsen@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='raechelcarlsen';}))">
               <td><div class="s-avatar" style="background:#b0f0b0;">R</div></td>
               <td><b>Raechel Carlsen</b><div style="font-size:11px;color:var(--grey)">raechel-carlsen@hotmail.com</div></td>
               <td>Dance</td><td>1</td>
@@ -1632,7 +1633,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='raechelcarlsen';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="rebecca clare rebeccaeclare@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='rebeccaclare';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="rebecca clare rebeccaeclare@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='rebeccaclare';}))">
               <td><div class="s-avatar" style="background:#ffcc88;">R</div></td>
               <td><b>Rebecca Clare</b><div style="font-size:11px;color:var(--grey)">Rebeccaeclare@gmail.com</div></td>
               <td>Chair</td><td>1</td>
@@ -1641,7 +1642,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='rebeccaclare';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="rebecca lumbroso beckinoz@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='rebeccalumbroso';}))">
+            <tr class="clickable-row student-row" data-classes="4" data-balance="0.0" data-name="rebecca lumbroso beckinoz@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='rebeccalumbroso';}))">
               <td><div class="s-avatar" style="background:#ff9ecb;">R</div></td>
               <td><b>Rebecca Lumbroso</b><div style="font-size:11px;color:var(--grey)">Beckinoz@gmail.com</div></td>
               <td>Inter Floor</td><td>4</td>
@@ -1650,7 +1651,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='rebeccalumbroso';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="ren raine laurenraine1@outlook.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='renraine';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="ren raine laurenraine1@outlook.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='renraine';}))">
               <td><div class="s-avatar" style="background:#c9aaff;">R</div></td>
               <td><b>Ren Raine</b><div style="font-size:11px;color:var(--grey)">laurenraine1@outlook.com</div></td>
               <td>Level 1</td><td>1</td>
@@ -1659,7 +1660,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='renraine';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="rika tyebally rika.tyebally@outlook.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='rikatyebally';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="rika tyebally rika.tyebally@outlook.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='rikatyebally';}))">
               <td><div class="s-avatar" style="background:#ffd6a5;">R</div></td>
               <td><b>Rika Tyebally</b><div style="font-size:11px;color:var(--grey)">Rika.tyebally@outlook.com</div></td>
               <td>Chair Virgin</td><td>2</td>
@@ -1668,7 +1669,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='rikatyebally';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="roberta pia piaroberta1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='robertapia';}))">
+            <tr class="clickable-row student-row" data-classes="3" data-balance="0.0" data-name="roberta pia piaroberta1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='robertapia';}))">
               <td><div class="s-avatar" style="background:#b5ead7;">R</div></td>
               <td><b>Roberta Pia</b><div style="font-size:11px;color:var(--grey)">piaroberta1@gmail.com</div></td>
               <td>Floor Virgin</td><td>3</td>
@@ -1677,7 +1678,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='robertapia';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="rosemary power choccaramelpie@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='rosemarypower';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="rosemary power choccaramelpie@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='rosemarypower';}))">
               <td><div class="s-avatar" style="background:#ffc8dd;">R</div></td>
               <td><b>Rosemary Power</b><div style="font-size:11px;color:var(--grey)">choccaramelpie@gmail.com</div></td>
               <td>Level 3</td><td>1</td>
@@ -1686,7 +1687,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='rosemarypower';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="rosie meiroian rosiem92@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='rosiemeiroian';}))">
+            <tr class="clickable-row student-row" data-classes="3" data-balance="0.0" data-name="rosie meiroian rosiem92@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='rosiemeiroian';}))">
               <td><div class="s-avatar" style="background:#e8c1ff;">R</div></td>
               <td><b>Rosie Meiroian</b><div style="font-size:11px;color:var(--grey)">rosiem92@hotmail.com</div></td>
               <td>5 Foundations</td><td>3</td>
@@ -1695,7 +1696,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='rosiemeiroian';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="samantha yan samanthayan22@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='samanthayan';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="samantha yan samanthayan22@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='samanthayan';}))">
               <td><div class="s-avatar" style="background:#caffbf;">S</div></td>
               <td><b>Samantha Yan</b><div style="font-size:11px;color:var(--grey)">Samanthayan22@gmail.com</div></td>
               <td>Level 4</td><td>2</td>
@@ -1704,7 +1705,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='samanthayan';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="sarah jones sarjj84@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sarahjones';}))">
+            <tr class="clickable-row student-row" data-classes="3" data-balance="0.0" data-name="sarah jones sarjj84@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sarahjones';}))">
               <td><div class="s-avatar" style="background:#a8d8ea;">S</div></td>
               <td><b>Sarah Jones</b><div style="font-size:11px;color:var(--grey)">sarjj84@gmail.com</div></td>
               <td>Inter Floor</td><td>3</td>
@@ -1713,7 +1714,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='sarahjones';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="sarah magnell sarah.magnell@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sarahmagnell';}))">
+            <tr class="clickable-row student-row" data-classes="4" data-balance="0.0" data-name="sarah magnell sarah.magnell@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sarahmagnell';}))">
               <td><div class="s-avatar" style="background:#ffadad;">S</div></td>
               <td><b>Sarah Magnell</b><div style="font-size:11px;color:var(--grey)">Sarah.magnell@gmail.com</div></td>
               <td>Chole</td><td>4</td>
@@ -1722,7 +1723,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='sarahmagnell';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="sasha dyer sashagracedyer@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sashadyer';}))">
+            <tr class="clickable-row student-row" data-classes="3" data-balance="0.0" data-name="sasha dyer sashagracedyer@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sashadyer';}))">
               <td><div class="s-avatar" style="background:#fdffb6;">S</div></td>
               <td><b>Sasha Dyer</b><div style="font-size:11px;color:var(--grey)">sashagracedyer@gmail.com</div></td>
               <td>Chole</td><td>3</td>
@@ -1731,7 +1732,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='sashadyer';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="schielle harch schielle-paig@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='schielleharch';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="schielle harch schielle-paig@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='schielleharch';}))">
               <td><div class="s-avatar" style="background:#9bf6ff;">S</div></td>
               <td><b>Schielle Harch</b><div style="font-size:11px;color:var(--grey)">Schielle-paig@hotmail.com</div></td>
               <td>4 Tricks</td><td>2</td>
@@ -1740,7 +1741,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='schielleharch';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="sean pudebat sean.pud@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='seanpudebat';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="sean pudebat sean.pud@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='seanpudebat';}))">
               <td><div class="s-avatar" style="background:#bde0fe;">S</div></td>
               <td><b>Sean Pudebat</b><div style="font-size:11px;color:var(--grey)">Sean.pud@gmail.com</div></td>
               <td>Strip</td><td>1</td>
@@ -1749,7 +1750,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='seanpudebat';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="sharmonie cockayne sharmonie@sharmonie.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sharmoniecockayne';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="sharmonie cockayne sharmonie@sharmonie.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sharmoniecockayne';}))">
               <td><div class="s-avatar" style="background:#ffaa44;">S</div></td>
               <td><b>Sharmonie Cockayne</b><div style="font-size:11px;color:var(--grey)">sharmonie@sharmonie.com</div></td>
               <td>Level 2</td><td>2</td>
@@ -1758,7 +1759,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='sharmoniecockayne';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="sharon ye sharon.ye@live.com.au" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sharonye';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="sharon ye sharon.ye@live.com.au" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sharonye';}))">
               <td><div class="s-avatar" style="background:#CDA5FF;">S</div></td>
               <td><b>Sharon Ye</b><div style="font-size:11px;color:var(--grey)">Sharon.ye@live.com.au</div></td>
               <td>Level 4</td><td>2</td>
@@ -1767,7 +1768,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='sharonye';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="shirley tran shirleyanne.tran@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='shirleytran';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="shirley tran shirleyanne.tran@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='shirleytran';}))">
               <td><div class="s-avatar" style="background:#DBFF00;">S</div></td>
               <td><b>Shirley Tran</b><div style="font-size:11px;color:var(--grey)">shirleyanne.tran@gmail.com</div></td>
               <td>Level 2</td><td>2</td>
@@ -1776,7 +1777,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='shirleytran';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="sienna blake siennacharlotteblake@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='siennablake';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="sienna blake siennacharlotteblake@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='siennablake';}))">
               <td><div class="s-avatar" style="background:#ff6b6b;">S</div></td>
               <td><b>Sienna Blake</b><div style="font-size:11px;color:var(--grey)">siennacharlotteblake@gmail.com</div></td>
               <td>Level 2</td><td>2</td>
@@ -1785,7 +1786,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='siennablake';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="sofia (ai) rubio ailoveai0719@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sofiaairubio';}))">
+            <tr class="clickable-row student-row" data-classes="4" data-balance="0.0" data-name="sofia (ai) rubio ailoveai0719@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sofiaairubio';}))">
               <td><div class="s-avatar" style="background:#4ade80;">S</div></td>
               <td><b>Sofia (Ai) Rubio</b><div style="font-size:11px;color:var(--grey)">ailoveai0719@gmail.com</div></td>
               <td>Dance</td><td>4</td>
@@ -1794,7 +1795,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='sofiaairubio';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="sophie brown sophiebrown820@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sophiebrown';}))">
+            <tr class="clickable-row student-row" data-classes="3" data-balance="0.0" data-name="sophie brown sophiebrown820@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sophiebrown';}))">
               <td><div class="s-avatar" style="background:#9ac4ff;">S</div></td>
               <td><b>Sophie Brown</b><div style="font-size:11px;color:var(--grey)">sophiebrown820@gmail.com</div></td>
               <td>Dance Tech</td><td>3</td>
@@ -1803,7 +1804,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='sophiebrown';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="stephanie smith stephielsmith@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='stephaniesmith';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="stephanie smith stephielsmith@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='stephaniesmith';}))">
               <td><div class="s-avatar" style="background:#ffb3de;">S</div></td>
               <td><b>Stephanie Smith</b><div style="font-size:11px;color:var(--grey)">stephielsmith@gmail.com</div></td>
               <td>Dance</td><td>2</td>
@@ -1812,7 +1813,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='stephaniesmith';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="sybil ho sybilckho26@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sybilho';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="sybil ho sybilckho26@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='sybilho';}))">
               <td><div class="s-avatar" style="background:#44ff99;">S</div></td>
               <td><b>Sybil Ho</b><div style="font-size:11px;color:var(--grey)">sybilckho26@gmail.com</div></td>
               <td>Level 4</td><td>1</td>
@@ -1821,7 +1822,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='sybilho';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="tahnee wyllie tahneewyllie@outlook.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='tahneewyllie';}))">
+            <tr class="clickable-row student-row" data-classes="3" data-balance="0.0" data-name="tahnee wyllie tahneewyllie@outlook.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='tahneewyllie';}))">
               <td><div class="s-avatar" style="background:#66dddd;">T</div></td>
               <td><b>Tahnee Wyllie</b><div style="font-size:11px;color:var(--grey)">tahneewyllie@outlook.com</div></td>
               <td>Floor Virgin</td><td>3</td>
@@ -1830,7 +1831,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='tahneewyllie';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="tania costa taniateresacosta@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='taniacosta';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="tania costa taniateresacosta@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='taniacosta';}))">
               <td><div class="s-avatar" style="background:#b0f0b0;">T</div></td>
               <td><b>Tania Costa</b><div style="font-size:11px;color:var(--grey)">taniateresacosta@gmail.com</div></td>
               <td>Chair</td><td>1</td>
@@ -1839,7 +1840,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='taniacosta';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="tania vukicevic taniavukicevic@live.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='taniavukicevic';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="tania vukicevic taniavukicevic@live.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='taniavukicevic';}))">
               <td><div class="s-avatar" style="background:#ffcc88;">T</div></td>
               <td><b>Tania Vukicevic</b><div style="font-size:11px;color:var(--grey)">taniavukicevic@live.com</div></td>
               <td>Strip Virgin</td><td>1</td>
@@ -1848,7 +1849,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='taniavukicevic';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="tara frawley tarafrawls@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='tarafrawley';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="tara frawley tarafrawls@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='tarafrawley';}))">
               <td><div class="s-avatar" style="background:#ff9ecb;">T</div></td>
               <td><b>Tara Frawley</b><div style="font-size:11px;color:var(--grey)">Tarafrawls@gmail.com</div></td>
               <td>4 Tricks</td><td>2</td>
@@ -1857,7 +1858,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='tarafrawley';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="thanh hoang thanh.hoang1612@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='thanhhoang';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="thanh hoang thanh.hoang1612@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='thanhhoang';}))">
               <td><div class="s-avatar" style="background:#c9aaff;">T</div></td>
               <td><b>Thanh Hoang</b><div style="font-size:11px;color:var(--grey)">thanh.hoang1612@gmail.com</div></td>
               <td>Invert Tech</td><td>1</td>
@@ -1866,7 +1867,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='thanhhoang';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="valeriia mustafina valeri.mustafina@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='valeriiamustafina';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="valeriia mustafina valeri.mustafina@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='valeriiamustafina';}))">
               <td><div class="s-avatar" style="background:#ffd6a5;">V</div></td>
               <td><b>Valeriia Mustafina</b><div style="font-size:11px;color:var(--grey)">valeri.mustafina@gmail.com</div></td>
               <td>Level 1</td><td>2</td>
@@ -1875,7 +1876,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='valeriiamustafina';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="van dang dangngoctuongvan@yahoo.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='vandang';}))">
+            <tr class="clickable-row student-row" data-classes="3" data-balance="0.0" data-name="van dang dangngoctuongvan@yahoo.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='vandang';}))">
               <td><div class="s-avatar" style="background:#b5ead7;">V</div></td>
               <td><b>Van Dang</b><div style="font-size:11px;color:var(--grey)">dangngoctuongvan@yahoo.com</div></td>
               <td>Advanced Floor</td><td>3</td>
@@ -1884,7 +1885,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='vandang';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="vani srivastava fabulusvani@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='vanisrivastava';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="vani srivastava fabulusvani@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='vanisrivastava';}))">
               <td><div class="s-avatar" style="background:#ffc8dd;">V</div></td>
               <td><b>Vani Srivastava</b><div style="font-size:11px;color:var(--grey)">fabulusvani@gmail.com</div></td>
               <td>Level 2</td><td>1</td>
@@ -1893,7 +1894,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='vanisrivastava';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="victoria luo vluo27@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='victorialuo';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="victoria luo vluo27@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='victorialuo';}))">
               <td><div class="s-avatar" style="background:#e8c1ff;">V</div></td>
               <td><b>Victoria Luo</b><div style="font-size:11px;color:var(--grey)">Vluo27@hotmail.com</div></td>
               <td>Level 5</td><td>2</td>
@@ -1902,7 +1903,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='victorialuo';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="violet wang violetwang.vw+1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='violetwang';}))">
+            <tr class="clickable-row student-row" data-classes="4" data-balance="0.0" data-name="violet wang violetwang.vw+1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='violetwang';}))">
               <td><div class="s-avatar" style="background:#caffbf;">V</div></td>
               <td><b>Violet Wang</b><div style="font-size:11px;color:var(--grey)">Violetwang.vw+1@gmail.com</div></td>
               <td>5 Foundations</td><td>4</td>
@@ -1911,7 +1912,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='violetwang';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="vivian tse vivtse22+1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='viviantse';}))">
+            <tr class="clickable-row student-row" data-classes="2" data-balance="0.0" data-name="vivian tse vivtse22+1@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='viviantse';}))">
               <td><div class="s-avatar" style="background:#a8d8ea;">V</div></td>
               <td><b>Vivian Tse</b><div style="font-size:11px;color:var(--grey)">vivtse22+1@gmail.com</div></td>
               <td>High Tricks</td><td>2</td>
@@ -1920,7 +1921,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='viviantse';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="yolanda li yolandayutianli@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='yolandali';}))">
+            <tr class="clickable-row student-row" data-classes="3" data-balance="0.0" data-name="yolanda li yolandayutianli@hotmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='yolandali';}))">
               <td><div class="s-avatar" style="background:#ffadad;">Y</div></td>
               <td><b>Yolanda Li</b><div style="font-size:11px;color:var(--grey)">yolandayutianli@hotmail.com</div></td>
               <td>Inter Floor</td><td>3</td>
@@ -1929,7 +1930,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='yolandali';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="yulia bogatov bogatov.yulia@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='yuliabogatov';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="yulia bogatov bogatov.yulia@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='yuliabogatov';}))">
               <td><div class="s-avatar" style="background:#fdffb6;">Y</div></td>
               <td><b>Yulia Bogatov</b><div style="font-size:11px;color:var(--grey)">Bogatov.yulia@gmail.com</div></td>
               <td>Invert Tech</td><td>1</td>
@@ -1938,7 +1939,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='yuliabogatov';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="zoe mcfarlane zmcfarlane24@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='zoemcfarlane';}))">
+            <tr class="clickable-row student-row" data-classes="3" data-balance="0.0" data-name="zoe mcfarlane zmcfarlane24@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='zoemcfarlane';}))">
               <td><div class="s-avatar" style="background:#9bf6ff;">Z</div></td>
               <td><b>Zoe McFarlane</b><div style="font-size:11px;color:var(--grey)">zmcfarlane24@gmail.com</div></td>
               <td>Dance Tech</td><td>3</td>
@@ -1947,7 +1948,7 @@ tr.clickable-row:hover td { background: #141414; }
               <td style="color:var(--grey)">—</td>
               <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openStudentDetail(STUDENTS.find(function(x){return x.id==='zoemcfarlane';}))">View</button></td>
             </tr>
-            <tr class="clickable-row student-row" data-name="timbrucejones timbrucejones@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='timbrucejones';}))">
+            <tr class="clickable-row student-row" data-classes="1" data-balance="0.0" data-name="timbrucejones timbrucejones@gmail.com" onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='timbrucejones';}))">
               <td><div class="s-avatar" style="background:#bde0fe;">T</div></td>
               <td><b>timbrucejones</b><div style="font-size:11px;color:var(--grey)">timbrucejones@gmail.com</div></td>
               <td>Level 2</td><td>1</td>
@@ -2928,7 +2929,7 @@ tr.clickable-row:hover td { background: #141414; }
     <!-- ===== SEASONS ===== -->
     <div id="screen-seasons" class="screen">
       <div class="page-header">
-        <div><div class="page-title">Terms</div><div class="page-sub">Manage term schedules and pricing</div></div>
+        <div><div class="page-title">Seasons</div><div class="page-sub">Manage season schedules and pricing</div></div>
         <button class="btn btn-lime" onclick="openModal('modal-season')">+ New Season</button>
       </div>
       <div class="season-grid">
@@ -3132,6 +3133,7 @@ tr.clickable-row:hover td { background: #141414; }
       </div>
       <div style="text-align:right;margin-top:8px;margin-bottom:20px;">
         <button class="btn btn-ghost btn-xs" onclick="showScreen('billing-history')">See all payment history →</button>
+        <button class="btn btn-ghost btn-xs" onclick="showScreen('billing-plans')" style="margin-left:4px;">View payment plans →</button>
       </div>
       <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:12px;">Payment Plans</div>
       <div class="tbl-section" style="margin-bottom:20px;">
@@ -3187,6 +3189,112 @@ tr.clickable-row:hover td { background: #141414; }
     </div>
 
     <!-- ===== BILLING: PAYMENT HISTORY ===== -->
+    <div id="screen-billing-plans" class="screen">
+      <div class="page-header">
+        <div><div class="page-title">Payment Plans</div><div class="page-sub">All active and pending instalment plans</div></div>
+        <button class="btn btn-lime" onclick="openModal('modal-add-charge')">+ New Plan</button>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;">
+        <div class="kpi kpi-lime"><div class="kpi-label">Active Plans</div><div class="kpi-value">8</div><div class="kpi-sub">$1,440 total value</div></div>
+        <div class="kpi kpi-amber"><div class="kpi-label">Pending Approval</div><div class="kpi-value">2</div><div class="kpi-sub">Awaiting your sign-off</div></div>
+        <div class="kpi kpi-red"><div class="kpi-label">Overdue Instalments</div><div class="kpi-value">3</div><div class="kpi-sub">Action required</div></div>
+        <div class="kpi"><div class="kpi-label">Collected This Month</div><div class="kpi-value">$480</div><div class="kpi-sub">Via instalment plans</div></div>
+      </div>
+
+      <!-- Pending approval -->
+      <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:10px;">Pending Approval</div>
+      <div class="tbl-section" style="margin-bottom:24px;">
+        <table>
+          <thead><tr><th>Student</th><th>Plan</th><th>Total</th><th>Instalments</th><th>Requested</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr style="background:#1a1200;">
+              <td><b>Hannah Webb</b></td>
+              <td>Season 4 — Level 2 + Dance</td>
+              <td>$180</td>
+              <td>3 × $60</td>
+              <td style="color:var(--grey);">12 May 2026</td>
+              <td style="display:flex;gap:6px;">
+                <button class="btn btn-lime btn-xs" onclick="alert('Plan approved — Hannah Webb')">Approve</button>
+                <button class="btn btn-ghost btn-xs" onclick="openModal('modal-contact-student')">Query</button>
+                <button class="btn btn-ghost btn-xs" style="color:#e05555;" onclick="alert('Plan declined')">Decline</button>
+              </td>
+            </tr>
+            <tr style="background:#1a1200;">
+              <td><b>Amber Cole</b></td>
+              <td>Season 4 — Level 1</td>
+              <td>$150</td>
+              <td>2 × $75</td>
+              <td style="color:var(--grey);">13 May 2026</td>
+              <td style="display:flex;gap:6px;">
+                <button class="btn btn-lime btn-xs" onclick="alert('Plan approved — Amber Cole')">Approve</button>
+                <button class="btn btn-ghost btn-xs" onclick="openModal('modal-contact-student')">Query</button>
+                <button class="btn btn-ghost btn-xs" style="color:#e05555;" onclick="alert('Plan declined')">Decline</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Active plans -->
+      <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:10px;">Active Plans</div>
+      <div class="tbl-section">
+        <table>
+          <thead><tr><th>Student</th><th>Plan</th><th>Total</th><th>Paid</th><th>Remaining</th><th>Next Due</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr>
+              <td onclick="openStudentDetail(STUDENTS.find(function(x){return x.id==='miatorrres';}))" style="cursor:pointer;"><b>Mia Torres</b></td>
+              <td>S4 — Level 2 + Dance · 3×</td>
+              <td>$180</td><td class="bal-pos">$60</td><td class="bal-neg">$120</td>
+              <td style="color:var(--amber);">1 Jun 2026 overdue</td>
+              <td><span class="tag tag-amber">Overdue</span></td>
+              <td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-manual-payment')">Record</button> <button class="btn btn-ghost btn-xs" onclick="alert('Reminder sent')">Remind</button></td>
+            </tr>
+            <tr>
+              <td><b>Belle Currie</b></td>
+              <td>S4 — Level 5 + Floor · 3×</td>
+              <td>$180</td><td class="bal-pos">$60</td><td class="bal-neg">$120</td>
+              <td style="color:var(--amber);">1 Jun 2026 overdue</td>
+              <td><span class="tag tag-amber">Overdue</span></td>
+              <td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-manual-payment')">Record</button> <button class="btn btn-ghost btn-xs" onclick="alert('Reminder sent')">Remind</button></td>
+            </tr>
+            <tr>
+              <td><b>Jess Malone</b></td>
+              <td>S4 — Level 3 · 2×</td>
+              <td>$150</td><td class="bal-pos">$75</td><td>$75</td>
+              <td style="color:var(--grey);">1 Jul 2026</td>
+              <td><span class="tag tag-lime">On Track</span></td>
+              <td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-manual-payment')">Record</button> <button class="btn btn-ghost btn-xs" onclick="alert('Reminder sent')">Remind</button></td>
+            </tr>
+            <tr>
+              <td><b>Ruby Kim</b></td>
+              <td>S4 — Level 1 · 2×</td>
+              <td>$130</td><td class="bal-pos">$65</td><td>$65</td>
+              <td style="color:var(--grey);">1 Jul 2026</td>
+              <td><span class="tag tag-lime">On Track</span></td>
+              <td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-manual-payment')">Record</button> <button class="btn btn-ghost btn-xs" onclick="alert('Reminder sent')">Remind</button></td>
+            </tr>
+            <tr>
+              <td><b>Sophie Clarke</b></td>
+              <td>S4 — Dance + Strip · 3×</td>
+              <td>$165</td><td class="bal-pos">$165</td><td style="color:var(--lime);">$0</td>
+              <td style="color:var(--grey);">—</td>
+              <td><span class="tag tag-lime">Complete</span></td>
+              <td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-manual-payment')">View</button></td>
+            </tr>
+            <tr>
+              <td><b>Nina Torres</b></td>
+              <td>S4 — High Tricks · 2×</td>
+              <td>$150</td><td class="bal-pos">$150</td><td style="color:var(--lime);">$0</td>
+              <td style="color:var(--grey);">—</td>
+              <td><span class="tag tag-lime">Complete</span></td>
+              <td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-manual-payment')">View</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
     <div id="screen-billing-history" class="screen">
       <div class="back-link" onclick="showScreen('billing')">← Back to Billing</div>
       <div class="page-header">
@@ -6700,7 +6808,7 @@ const _searchData = [
 // ===== SCREEN =====
 const screenTitles = { 'action-log': 'Action Items Log',
   dashboard:'Dashboard', students:'Students', timetable:'Timetable',
-  seasons:'Terms', bookings:'Bookings', billing:'Billing',
+  seasons:'Seasons', bookings:'Bookings', billing:'Billing',
   discounts:'Offers', giftcards:'Gift Cards', community:'Community',
   surveys:'Surveys', staff:'Staff', settings:'Settings',
   reporting:'Analytics', 'activity-log':'Activity Log', leads:'Leads', kisi:'Kisi Access',
@@ -6711,7 +6819,7 @@ const screenTitles = { 'action-log': 'Action Items Log',
   notifications:'Automations', marketing:'Marketing',
   'student-detail':'Student Profile', attendance:'Attendance Register',
   'season-edit':'Edit Season', classes:'Classes',
-  'billing-outstanding':'All Outstanding',
+  'billing-outstanding':'All Outstanding','billing-plans':'Payment Plans',
   'billing-history':'Payment History',
   'billing-noshows':'No-show Fees'
 };
@@ -9648,6 +9756,42 @@ function openFormPreview(id) {
       return '<div>' + lbl + '</div>';
     }).join('');
   openModal('modal-form-preview');
+}
+</script>
+
+
+<script>
+// ── Students table sorting ───────────────────────────────────────────────────
+var _studentSortState = {col: null, dir: 'desc'};
+function sortStudentsBy(col) {
+  var tbody = document.getElementById('students-tbody');
+  if (!tbody) return;
+  var rows = Array.from(tbody.querySelectorAll('tr.student-row'));
+  if (_studentSortState.col === col) {
+    _studentSortState.dir = _studentSortState.dir === 'desc' ? 'asc' : 'desc';
+  } else {
+    _studentSortState.col = col;
+    _studentSortState.dir = 'desc';
+  }
+  var dir = _studentSortState.dir;
+  rows.sort(function(a, b) {
+    var av = parseFloat(a.getAttribute('data-' + col)) || 0;
+    var bv = parseFloat(b.getAttribute('data-' + col)) || 0;
+    return dir === 'desc' ? bv - av : av - bv;
+  });
+  rows.forEach(function(r) { tbody.appendChild(r); });
+  // Update icons
+  ['classes','balance'].forEach(function(c) {
+    var el = document.getElementById('sort-' + c + '-icon');
+    if (!el) return;
+    if (c === col) {
+      el.textContent = dir === 'desc' ? '↓' : '↑';
+      el.style.color = 'var(--lime)';
+    } else {
+      el.textContent = '↕';
+      el.style.color = 'var(--grey)';
+    }
+  });
 }
 </script>
 
