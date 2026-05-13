@@ -6,11 +6,17 @@ from apps.users.serializers import UserMinimalSerializer
 
 class PaymentSerializer(serializers.ModelSerializer):
     created_by_name = serializers.StringRelatedField(source='created_by')
+    student_name = serializers.SerializerMethodField()
+
+    def get_student_name(self, obj):
+        if not obj.student_id:
+            return None
+        return obj.student.get_full_name() or obj.student.username
 
     class Meta:
         model = Payment
         fields = (
-            'id', 'student', 'payment_type', 'amount', 'description',
+            'id', 'student', 'student_name', 'payment_type', 'amount', 'description',
             'reference', 'created_by', 'created_by_name', 'created_at',
         )
         read_only_fields = ('id', 'created_by', 'created_at')
@@ -28,11 +34,17 @@ class PaymentPlanSerializer(serializers.ModelSerializer):
     amount_paid = serializers.ReadOnlyField()
     amount_remaining = serializers.ReadOnlyField()
     created_by_name = serializers.StringRelatedField(source='created_by')
+    student_name = serializers.SerializerMethodField()
+
+    def get_student_name(self, obj):
+        if not obj.student_id:
+            return None
+        return obj.student.get_full_name() or obj.student.username
 
     class Meta:
         model = PaymentPlan
         fields = (
-            'id', 'student', 'description', 'total_amount', 'status',
+            'id', 'student', 'student_name', 'description', 'total_amount', 'status',
             'amount_paid', 'amount_remaining',
             'created_by', 'created_by_name', 'created_at', 'notes',
             'instalments',

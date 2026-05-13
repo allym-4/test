@@ -6,11 +6,12 @@ export function useApi(apiFn, deps = []) {
   const [error, setError] = useState(null)
 
   const fetch = useCallback(async () => {
+    if (!apiFn) { setLoading(false); return }
     setLoading(true)
     setError(null)
     try {
       const res = await apiFn()
-      setData(res.data)
+      if (res) setData(res.data)
     } catch (err) {
       setError(err.response?.data?.detail || 'Something went wrong')
     } finally {

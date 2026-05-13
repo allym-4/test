@@ -1,0 +1,120 @@
+import { useState } from 'react'
+import { useApi } from '../../hooks/useApi'
+import { users, classes } from '../../api'
+
+const AVATAR_COLORS = ['#b0a0ff', '#ccff00', '#ffaa00', '#ff88aa', '#44ffcc', '#ffcc88', '#b0f0b0', '#9ac4ff', '#ffb3de', '#44ff99']
+function avatarColor(name) {
+  let h = 0
+  for (const c of (name || '')) h = (h * 31 + c.charCodeAt(0)) % AVATAR_COLORS.length
+  return AVATAR_COLORS[h]
+}
+
+export default function AdminStaff() {
+  const [tab, setTab] = useState('team')
+  const { data: instructorsData, loading } = useApi(() => users.list({ role: 'instructor' }))
+  const { data: adminData } = useApi(() => users.list({ role: 'admin' }))
+  const { data: sessionsData } = useApi(() => classes.list())
+
+  const instructors = instructorsData?.results || []
+  const admins = adminData?.results || []
+  const sessions = sessionsData?.results || []
+
+  const allStaff = [...admins, ...instructors]
+
+  function classesForInstructor(instructorId) {
+    return sessions.filter(s => s.instructor === instructorId).map(s => s.name).join(', ') || '—'
+  }
+
+  return (
+    <div>
+      <div className="page-header">
+        <div>
+          <div className="page-title">Staff</div>
+          <div className="page-sub">Instructors, team members and access</div>
+        </div>
+        <button className="btn btn-lime btn-sm">+ Add Staff</button>
+      </div>
+
+      <div className="subtabs">
+        {[['team', 'Team'], ['permissions', 'Permissions'], ['availability', 'Availability']].map(([key, label]) => (
+          <div key={key} className={`subtab ${tab === key ? 'active' : ''}`} onClick={() => setTab(key)}>{label}</div>
+        ))}
+      </div>
+
+      {tab === 'team' && (
+        loading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><div className="spinner" /></div>
+        ) : (
+          <div className="tbl-section">
+            <table>
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Name</th>
+                  <th>Role</th>
+                  <th>Classes</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {allStaff.map(s => (
+                  <tr key={s.id}>
+                    <td>
+                      <div className="staff-photo" style={{ background: avatarColor(s.display_name) }}>
+                        {s.first_name?.[0] || '?'}
+                      </div>
+                    </td>
+                    <td>
+                      <b>{s.display_name}</b>
+                      <div style={{ fontSize: 11, color: 'var(--grey)' }}>{s.email}</div>
+                    </td>
+                    <td>
+                      <span className={`tag ${s.role === 'admin' ? 'tag-lime' : 'tag-lav'}`} style={{ fontSize: 10 }}>
+                        {s.role === 'admin' ? 'Admin' : 'Instructor'}
+                      </span>
+                    </td>
+                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{classesForInstructor(s.id)}</td>
+                    <td><span className="tag tag-lime" style={{ fontSize: 10 }}>Active</span></td>
+                    <td><button className="btn btn-ghost btn-xs">Edit</button></td>
+                  </tr>
+                ))}
+                {allStaff.length === 0 && (
+                  <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--grey)', padding: '24px 0' }}>No staff found</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )
+      )}
+
+      {tab === 'permissions' && (
+        <div className="list-card">
+          {allStaff.map(s => (
+            <div key={s.id} className="list-row">
+              <div className="staff-photo" style={{ background: avatarColor(s.display_name) }}>
+                {s.first_name?.[0] || '?'}
+              </div>
+              <div className="list-body">
+                <div className="list-title">{s.display_name}</div>
+                <div className="list-sub">{s.role === 'admin' ? 'Full access — all features' : 'Instructor — classes, attendance, homework, students'}</div>
+              </div>
+              <span className={`tag ${s.role === 'admin' ? 'tag-lime' : 'tag-lav'}`} style={{ fontSize: 10 }}>
+                {s.role === 'admin' ? 'Admin' : 'Instructor'}
+              </span>
+              <button className="btn btn-ghost btn-xs">Edit</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === 'availability' && (
+        <div className="empty-state">
+          <div style={{ fontSize: 32, marginBottom: 12 }}>📅</div>
+          <div style={{ marginBottom: 8 }}>Availability grid</div>
+          <div style={{ fontSize: 12 }}>Staff can set their availability from their profile</div>
+        </div>
+      )}
+    </div>
+  )
+}

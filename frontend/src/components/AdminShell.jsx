@@ -1,0 +1,108 @@
+import { useState } from 'react'
+import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+import './AdminShell.css'
+
+const NAV_GROUPS = [
+  {
+    items: [
+      { to: '/admin', label: 'Dashboard', icon: '⬡', end: true },
+    ]
+  },
+  {
+    divider: true,
+    items: [
+      { to: '/admin/timetable',  label: 'Timetable',      icon: '📅' },
+      { to: '/admin/students',   label: 'Students',       icon: '👤' },
+      { to: '/admin/staff',      label: 'Staff',          icon: '🧑‍🏫' },
+      { to: '/admin/billing',    label: 'Billing',        icon: '💳' },
+      { to: '/admin/reporting',  label: 'Analytics',      icon: '📊' },
+    ]
+  },
+  {
+    divider: true,
+    items: [
+      { to: '/admin/messages',       label: 'Messages',      icon: '📩', stub: true },
+      { to: '/admin/community',      label: 'Community',     icon: '💬', stub: true },
+      { to: '/admin/automations',    label: 'Automations',   icon: '🔔', stub: true },
+      { to: '/admin/recommendations',label: 'Recommendations',icon: '💡', stub: true },
+      { to: '/admin/leads',          label: 'Leads',         icon: '🎯', stub: true },
+    ]
+  },
+  {
+    divider: true,
+    items: [
+      { to: '/admin/retail',    label: 'Retail',    icon: '🛍', stub: true },
+      { to: '/admin/waitlist',  label: 'Waitlist',  icon: '⏳', stub: true },
+      { to: '/admin/lockers',   label: 'Lockers',   icon: '🔐', stub: true },
+      { to: '/admin/helpdesk',  label: 'Helpdesk',  icon: '🎧', stub: true },
+      { to: '/admin/settings',  label: 'Settings',  icon: '⚙️', stub: true },
+    ]
+  },
+]
+
+export default function AdminShell() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  function handleLogout() {
+    logout()
+    navigate('/login')
+  }
+
+  return (
+    <div className="admin-shell">
+      {mobileOpen && <div className="admin-mob-overlay" onClick={() => setMobileOpen(false)} />}
+
+      <nav className={`admin-sidebar ${mobileOpen ? 'open' : ''}`}>
+        <div className="admin-sidebar-logo">
+          DUALITY <span>POLE</span>
+          <button className="admin-sidebar-close" onClick={() => setMobileOpen(false)}>✕</button>
+        </div>
+
+        <div className="admin-sidebar-nav">
+          {NAV_GROUPS.map((group, gi) => (
+            <div key={gi}>
+              {group.divider && <div className="admin-nav-divider" />}
+              {group.items.map(({ to, label, icon, end, stub }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={end}
+                  className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}${stub ? ' stub' : ''}`}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <span className="admin-nav-icon">{icon}</span>
+                  <span>{label}</span>
+                </NavLink>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        <div className="admin-sidebar-footer">
+          <div className="admin-sidebar-user">
+            <div className="avatar" style={{ background: 'var(--lime)', fontSize: 12 }}>
+              {user?.first_name?.[0] || '?'}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.display_name}</div>
+              <div style={{ fontSize: 10, color: 'var(--grey)', textTransform: 'capitalize' }}>Founder</div>
+            </div>
+          </div>
+          <button className="btn btn-ghost btn-xs" onClick={handleLogout}>Log out</button>
+        </div>
+      </nav>
+
+      <div className="admin-topbar">
+        <button className="admin-hamburger" onClick={() => setMobileOpen(true)}>☰</button>
+        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, letterSpacing: 2, color: 'var(--lime)' }}>DUALITY</div>
+      </div>
+
+      <main className="admin-main">
+        <Outlet />
+      </main>
+    </div>
+  )
+}

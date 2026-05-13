@@ -16,8 +16,10 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
     try {
-      await login(username, password)
-      navigate('/')
+      const me = await login(username, password)
+      if (me.role === 'admin') navigate('/admin')
+      else if (me.role === 'student') navigate('/portal')
+      else navigate('/')
     } catch {
       setError('Incorrect username or password.')
     } finally {
