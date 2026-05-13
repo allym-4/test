@@ -177,28 +177,36 @@ tr:hover td { background: #0d0d0d; }
 .tab-btn.active { background: var(--black); color: var(--white); }
 .tab-btn:hover:not(.active) { color: var(--white); }
 
-/* ATTENDANCE ROW */
-.att-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid #1a1a1a; transition: background 0.15s; }
+/* ATTENDANCE ROW — card layout */
+.att-row { padding: 14px 16px; border-bottom: 1px solid #1a1a1a; transition: background 0.15s; }
 .att-row:last-child { border-bottom: none; }
 .att-row.no-show-row { background: #1a0000; }
-.att-row.no-show-row td { background: transparent; }
+.att-card-head { display: flex; align-items: flex-start; gap: 10px; }
+.att-identity { flex: 1; min-width: 0; }
+.att-name-line { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.att-name-text { font-size: 14px; font-weight: 600; cursor: pointer; }
+.att-name-text:hover { text-decoration: underline; }
+.att-pronouns { font-size: 11px; color: var(--grey); }
+.att-sub { font-size: 11px; color: var(--grey); margin-top: 3px; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.att-alerts { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+.att-action-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+/* keep .att-name / .att-level for any legacy refs */
 .att-name { flex: 1; min-width: 0; }
-.att-name-text { font-size: 13px; font-weight: 500; }
 .att-level { font-size: 11px; color: var(--grey); margin-top: 1px; }
-.att-type { min-width: 70px; }
-.att-status-sel { width: 130px; background: #1a1a1a; border: 1px solid var(--border); border-radius: 7px; color: var(--white); font-family: inherit; font-size: 12px; padding: 7px 10px; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; padding-right: 24px; }
+.att-status-sel { flex: 1; background: #1a1a1a; border: 1px solid var(--border); border-radius: 8px; color: var(--white); font-family: inherit; font-size: 13px; padding: 9px 28px 9px 12px; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
 .att-status-sel.sel-noshow { border-color: #ff6b6b; color: #ff6b6b; background-color: #1a0000; }
 .att-status-sel.sel-present { border-color: var(--lime); color: var(--lime); background-color: #0f1600; }
 .att-status-sel.sel-late { border-color: var(--amber); color: var(--amber); background-color: #1a0f00; }
 .att-status-sel.sel-excused { border-color: var(--lav); color: var(--lav); background-color: #1a1028; }
-.att-note-btn { background: none; border: none; color: var(--grey); cursor: pointer; font-size: 14px; padding: 4px; border-radius: 4px; }
-.att-note-btn:hover { color: var(--white); background: #222; }
-.att-fee-msg { font-size: 11px; color: #ff6b6b; margin-top: 4px; }
-.att-fee-waived { font-size: 11px; color: var(--amber); margin-top: 4px; display:none; }
 .att-status-sel.sel-noshow-waived { border-color: var(--amber); color: var(--amber); background-color: #1a0f00; }
-.owing-badge { display:inline-block; font-size:10px; font-weight:600; background:#2a0000; color:#ff6b6b; border:1px solid #ff3333; border-radius:20px; padding:2px 7px; margin-top:3px; }
-.staff-notes-btn { background:none; border:1px solid #333; border-radius:6px; color:var(--amber); font-size:11px; padding:3px 8px; cursor:pointer; white-space:nowrap; }
-.staff-notes-btn:hover { background:#1a1a1a; }
+.att-note-btn { background: none; border: 1px solid #2a2a2a; color: var(--grey); cursor: pointer; font-size: 15px; padding: 7px 9px; border-radius: 8px; flex-shrink: 0; line-height: 1; }
+.att-note-btn:hover { color: var(--white); background: #222; border-color: #444; }
+.att-fee-msg { font-size: 11px; color: #ff6b6b; margin-top: 5px; }
+.att-fee-waived { font-size: 11px; color: var(--amber); margin-top: 5px; display: none; }
+.owing-badge { display: inline-flex; align-items: center; font-size: 10px; font-weight: 700; background: #2a0000; color: #ff6b6b; border: 1px solid #ff333366; border-radius: 20px; padding: 2px 8px; gap: 3px; }
+.first-time-badge { display: inline-flex; align-items: center; font-size: 10px; font-weight: 900; background: var(--lime); color: #000; border-radius: 4px; padding: 2px 8px; letter-spacing: 0.3px; font-family: 'Archivo Black', sans-serif; }
+.staff-notes-btn { background: none; border: 1px solid #3a2800; border-radius: 6px; color: var(--amber); font-size: 10px; font-family: 'Archivo Black', sans-serif; letter-spacing: 0.3px; padding: 4px 9px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+.staff-notes-btn:hover { background: #1a1000; }
 
 /* HOMEWORK CARD */
 .hw-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 12px; cursor: pointer; transition: border-color 0.15s; }
@@ -620,16 +628,22 @@ body.mob-sidebar-open .sidebar-overlay { display: block; }
       <div class="tbl-section" id="att-roster">
         <div style="padding:0 4px;">
           <!-- Roster rows -->
-          <!-- Row 0: Jess Malone — owing $120, staff note: shoulder injury -->
+          <!-- Row 0: Jess Malone — owing $120, staff note -->
           <div class="att-row" id="att-row-0" data-status="attending">
-            <div class="s-avatar" style="background:var(--lav);">J</div>
-            <div class="att-name">
-              <div class="att-name-text" style="cursor:pointer;text-decoration:underline dotted;" onclick="openStaffStudentDetail('Jess Malone')">Jess Malone <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
-              <div class="att-level">Level 2 · Mon 6:30pm</div>
-              <div class="owing-badge">$120 owing</div>
+            <div class="att-card-head">
+              <div class="s-avatar" style="background:var(--lav);">J</div>
+              <div class="att-identity">
+                <div class="att-name-line">
+                  <span class="att-name-text" onclick="openStaffStudentDetail('Jess Malone')">Jess Malone</span>
+                  <span class="att-pronouns">she/her</span>
+                  <span class="tag tag-lav" style="font-size:10px;">Course</span>
+                </div>
+                <div class="att-sub">Level 2 · Mon 6:30pm</div>
+                <div class="att-alerts"><div class="owing-badge">$120 owing</div></div>
+              </div>
+              <button class="staff-notes-btn" onclick="showStaffNotes('Jess Malone')">⚠ Notes</button>
             </div>
-            <div class="att-type"><span class="tag tag-lav" style="font-size:10px;">Course</span></div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+            <div class="att-action-row">
               <select class="att-status-sel sel-present" id="sel-0" onchange="onStatusChange(0)">
                 <option value="present" selected>Present</option>
                 <option value="noshow">No-show + $20 fee</option>
@@ -637,23 +651,26 @@ body.mob-sidebar-open .sidebar-overlay { display: block; }
                 <option value="late">Late</option>
                 <option value="excused">Excused</option>
               </select>
-              <div class="att-fee-msg" id="fee-0" style="display:none;">$20 no-show fee will be added</div>
-              <div class="att-fee-waived" id="waived-0">No fee charged</div>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
-              <button class="staff-notes-btn" onclick="showStaffNotes('Jess Malone')">⚠ Notes</button>
               <button class="att-note-btn" onclick="openNoteModal('Jess Malone')" title="Add attendance note">✏️</button>
             </div>
+            <div class="att-fee-msg" id="fee-0" style="display:none;">$20 no-show fee will be added</div>
+            <div class="att-fee-waived" id="waived-0">No fee charged</div>
           </div>
+
           <!-- Row 1: Tara Bell — no notes, no owing -->
           <div class="att-row" id="att-row-1" data-status="attending">
-            <div class="s-avatar" style="background:#44ff99;">T</div>
-            <div class="att-name">
-              <div class="att-name-text" style="cursor:pointer;text-decoration:underline dotted;" onclick="openStaffStudentDetail('Tara Bell')">Tara Bell <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
-              <div class="att-level">Level 2 · Mon 6:30pm</div>
+            <div class="att-card-head">
+              <div class="s-avatar" style="background:#44ff99;">T</div>
+              <div class="att-identity">
+                <div class="att-name-line">
+                  <span class="att-name-text" onclick="openStaffStudentDetail('Tara Bell')">Tara Bell</span>
+                  <span class="att-pronouns">she/her</span>
+                  <span class="tag tag-lav" style="font-size:10px;">Course</span>
+                </div>
+                <div class="att-sub">Level 2 · Mon 6:30pm</div>
+              </div>
             </div>
-            <div class="att-type"><span class="tag tag-lav" style="font-size:10px;">Course</span></div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+            <div class="att-action-row">
               <select class="att-status-sel sel-present" id="sel-1" onchange="onStatusChange(1)">
                 <option value="present" selected>Present</option>
                 <option value="noshow">No-show + $20 fee</option>
@@ -661,21 +678,27 @@ body.mob-sidebar-open .sidebar-overlay { display: block; }
                 <option value="late">Late</option>
                 <option value="excused">Excused</option>
               </select>
-              <div class="att-fee-msg" id="fee-1" style="display:none;">$20 no-show fee will be added</div>
-              <div class="att-fee-waived" id="waived-1">No fee charged</div>
+              <button class="att-note-btn" onclick="openNoteModal('Tara Bell')" title="Add attendance note">✏️</button>
             </div>
-            <button class="att-note-btn" onclick="openNoteModal('Tara Bell')" title="Add attendance note">✏️</button>
+            <div class="att-fee-msg" id="fee-1" style="display:none;">$20 no-show fee will be added</div>
+            <div class="att-fee-waived" id="waived-1">No fee charged</div>
           </div>
-          <!-- Row 2: Dana Park — owing $75, today only drop-in -->
+
+          <!-- Row 2: Dana Park — owing $75, drop-in -->
           <div class="att-row" id="att-row-2" data-status="attending">
-            <div class="s-avatar" style="background:#ffcc88;">D</div>
-            <div class="att-name">
-              <div class="att-name-text" style="cursor:pointer;text-decoration:underline dotted;" onclick="openStaffStudentDetail('Dana Park')">Dana Park <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
-              <div class="att-level">Level 2 · Drop-in today</div>
-              <div class="owing-badge">$75 owing</div>
+            <div class="att-card-head">
+              <div class="s-avatar" style="background:#ffcc88;">D</div>
+              <div class="att-identity">
+                <div class="att-name-line">
+                  <span class="att-name-text" onclick="openStaffStudentDetail('Dana Park')">Dana Park</span>
+                  <span class="att-pronouns">she/her</span>
+                  <span class="tag tag-grey" style="font-size:10px;">Today Only</span>
+                </div>
+                <div class="att-sub">Level 2 · Drop-in today</div>
+                <div class="att-alerts"><div class="owing-badge">$75 owing</div></div>
+              </div>
             </div>
-            <div class="att-type"><span class="tag tag-grey" style="font-size:10px;">Today Only</span></div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+            <div class="att-action-row">
               <select class="att-status-sel sel-present" id="sel-2" onchange="onStatusChange(2)">
                 <option value="present" selected>Present</option>
                 <option value="noshow">No-show + $20 fee</option>
@@ -683,20 +706,27 @@ body.mob-sidebar-open .sidebar-overlay { display: block; }
                 <option value="late">Late</option>
                 <option value="excused">Excused</option>
               </select>
-              <div class="att-fee-msg" id="fee-2" style="display:none;">$20 no-show fee will be added</div>
-              <div class="att-fee-waived" id="waived-2">No fee charged</div>
+              <button class="att-note-btn" onclick="openNoteModal('Dana Park')" title="Add attendance note">✏️</button>
             </div>
-            <button class="att-note-btn" onclick="openNoteModal('Dana Park')" title="Add attendance note">✏️</button>
+            <div class="att-fee-msg" id="fee-2" style="display:none;">$20 no-show fee will be added</div>
+            <div class="att-fee-waived" id="waived-2">No fee charged</div>
           </div>
-          <!-- Row 3: Nina Torres — catch-up from Wed Level 3 -->
+
+          <!-- Row 3: Nina Torres — catch-up, staff note -->
           <div class="att-row" id="att-row-3" data-status="attending">
-            <div class="s-avatar" style="background:#b0f0b0;">N</div>
-            <div class="att-name">
-              <div class="att-name-text" style="cursor:pointer;text-decoration:underline dotted;" onclick="openStaffStudentDetail('Nina Torres')">Nina Torres <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
-              <div class="att-level">Level 2 · Catch-up from Wed Level 3</div>
+            <div class="att-card-head">
+              <div class="s-avatar" style="background:#b0f0b0;">N</div>
+              <div class="att-identity">
+                <div class="att-name-line">
+                  <span class="att-name-text" onclick="openStaffStudentDetail('Nina Torres')">Nina Torres</span>
+                  <span class="att-pronouns">she/her</span>
+                  <span class="tag tag-lav" style="font-size:10px;">Course</span>
+                </div>
+                <div class="att-sub">Level 2 · Catch-up from Wed Level 3</div>
+              </div>
+              <button class="staff-notes-btn" onclick="showStaffNotes('Nina Torres')">⚠ Notes</button>
             </div>
-            <div class="att-type"><span class="tag tag-lav" style="font-size:10px;">Course</span></div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+            <div class="att-action-row">
               <select class="att-status-sel sel-present" id="sel-3" onchange="onStatusChange(3)">
                 <option value="present" selected>Present</option>
                 <option value="noshow">No-show + $20 fee</option>
@@ -704,23 +734,26 @@ body.mob-sidebar-open .sidebar-overlay { display: block; }
                 <option value="late">Late</option>
                 <option value="excused">Excused</option>
               </select>
-              <div class="att-fee-msg" id="fee-3" style="display:none;">$20 no-show fee will be added</div>
-              <div class="att-fee-waived" id="waived-3">No fee charged</div>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
-              <button class="staff-notes-btn" onclick="showStaffNotes('Nina Torres')">⚠ Notes</button>
               <button class="att-note-btn" onclick="openNoteModal('Nina Torres')" title="Add attendance note">✏️</button>
             </div>
+            <div class="att-fee-msg" id="fee-3" style="display:none;">$20 no-show fee will be added</div>
+            <div class="att-fee-waived" id="waived-3">No fee charged</div>
           </div>
-          <!-- Row 4: Hannah Webb — trial student -->
+
+          <!-- Row 4: Hannah Webb — trial -->
           <div class="att-row" id="att-row-4" data-status="attending">
-            <div class="s-avatar" style="background:#9ac4ff;">H</div>
-            <div class="att-name">
-              <div class="att-name-text">Hannah Webb <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
-              <div class="att-level">Level 2 · Trial class</div>
+            <div class="att-card-head">
+              <div class="s-avatar" style="background:#9ac4ff;">H</div>
+              <div class="att-identity">
+                <div class="att-name-line">
+                  <span class="att-name-text">Hannah Webb</span>
+                  <span class="att-pronouns">she/her</span>
+                  <span class="tag tag-amber" style="font-size:10px;">Trial</span>
+                </div>
+                <div class="att-sub">Level 2 · Trial class</div>
+              </div>
             </div>
-            <div class="att-type"><span class="tag tag-amber" style="font-size:10px;">Trial</span></div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+            <div class="att-action-row">
               <select class="att-status-sel sel-present" id="sel-4" onchange="onStatusChange(4)">
                 <option value="present" selected>Present</option>
                 <option value="noshow">No-show + $20 fee</option>
@@ -728,24 +761,31 @@ body.mob-sidebar-open .sidebar-overlay { display: block; }
                 <option value="late">Late</option>
                 <option value="excused">Excused</option>
               </select>
-              <div class="att-fee-msg" id="fee-4" style="display:none;">$20 no-show fee will be added</div>
-              <div class="att-fee-waived" id="waived-4">No fee charged</div>
+              <button class="att-note-btn" onclick="openNoteModal('Hannah Webb')" title="Add attendance note">✏️</button>
             </div>
-            <button class="att-note-btn" onclick="openNoteModal('Hannah Webb')" title="Add attendance note">✏️</button>
+            <div class="att-fee-msg" id="fee-4" style="display:none;">$20 no-show fee will be added</div>
+            <div class="att-fee-waived" id="waived-4">No fee charged</div>
           </div>
+
           <!-- Row 5: Amber Cole — FIRST TIME, staff note, owing $50 -->
           <div class="att-row" id="att-row-5" data-status="attending">
-            <div class="s-avatar" style="background:#ffb3de;">A</div>
-            <div class="att-name">
-              <div class="att-name-text">Amber Cole <span style="font-size:11px;color:var(--grey);font-weight:400;">she/her</span></div>
-              <div class="att-level">Level 2 · Mon 6:30pm</div>
-              <div style="display:flex;align-items:center;gap:6px;margin-top:3px;">
-                <div class="owing-badge">$50 owing</div>
-                <div style="display:inline-block;font-size:10px;font-weight:900;background:var(--lime);color:#000;border-radius:4px;padding:2px 8px;letter-spacing:0.5px;font-family:'Archivo Black',sans-serif;">FIRST TIME 🌟</div>
+            <div class="att-card-head">
+              <div class="s-avatar" style="background:#ffb3de;">A</div>
+              <div class="att-identity">
+                <div class="att-name-line">
+                  <span class="att-name-text">Amber Cole</span>
+                  <span class="att-pronouns">she/her</span>
+                  <span class="tag tag-lav" style="font-size:10px;">Course</span>
+                </div>
+                <div class="att-sub">Level 2 · Mon 6:30pm</div>
+                <div class="att-alerts">
+                  <div class="owing-badge">$50 owing</div>
+                  <div class="first-time-badge">FIRST TIME 🌟</div>
+                </div>
               </div>
+              <button class="staff-notes-btn" onclick="showStaffNotes('Amber Cole')">⚠ Notes</button>
             </div>
-            <div class="att-type"><span class="tag tag-lav" style="font-size:10px;">Course</span></div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+            <div class="att-action-row">
               <select class="att-status-sel sel-present" id="sel-5" onchange="onStatusChange(5)">
                 <option value="present" selected>Present</option>
                 <option value="noshow">No-show + $20 fee</option>
@@ -753,24 +793,27 @@ body.mob-sidebar-open .sidebar-overlay { display: block; }
                 <option value="late">Late</option>
                 <option value="excused">Excused</option>
               </select>
-              <div class="att-fee-msg" id="fee-5" style="display:none;">$20 no-show fee will be added</div>
-              <div class="att-fee-waived" id="waived-5">No fee charged</div>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
-              <button class="staff-notes-btn" onclick="showStaffNotes('Amber Cole')">⚠ Notes</button>
               <button class="att-note-btn" onclick="openNoteModal('Amber Cole')" title="Add attendance note">✏️</button>
             </div>
+            <div class="att-fee-msg" id="fee-5" style="display:none;">$20 no-show fee will be added</div>
+            <div class="att-fee-waived" id="waived-5">No fee charged</div>
           </div>
-          <!-- Row 6: Sophie Lawson — trial, first time at this level -->
+
+          <!-- Row 6: Sophie Lawson — trial, FIRST TIME -->
           <div class="att-row" id="att-row-6" data-status="attending">
-            <div class="s-avatar" style="background:var(--lime);">S</div>
-            <div class="att-name">
-              <div class="att-name-text">Sophie Lawson <span style="font-size:11px;color:var(--grey);font-weight:400;">they/them</span></div>
-              <div class="att-level">Level 2 · Trial class</div>
-              <div style="margin-top:3px;display:inline-block;font-size:10px;font-weight:900;background:var(--lime);color:#000;border-radius:4px;padding:2px 8px;letter-spacing:0.5px;font-family:'Archivo Black',sans-serif;">FIRST TIME 🌟</div>
+            <div class="att-card-head">
+              <div class="s-avatar" style="background:var(--lime);">S</div>
+              <div class="att-identity">
+                <div class="att-name-line">
+                  <span class="att-name-text">Sophie Lawson</span>
+                  <span class="att-pronouns">they/them</span>
+                  <span class="tag tag-amber" style="font-size:10px;">Trial</span>
+                </div>
+                <div class="att-sub">Level 2 · Trial class</div>
+                <div class="att-alerts"><div class="first-time-badge">FIRST TIME 🌟</div></div>
+              </div>
             </div>
-            <div class="att-type"><span class="tag tag-amber" style="font-size:10px;">Trial</span></div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+            <div class="att-action-row">
               <select class="att-status-sel sel-present" id="sel-6" onchange="onStatusChange(6)">
                 <option value="present" selected>Present</option>
                 <option value="noshow">No-show + $20 fee</option>
@@ -778,10 +821,10 @@ body.mob-sidebar-open .sidebar-overlay { display: block; }
                 <option value="late">Late</option>
                 <option value="excused">Excused</option>
               </select>
-              <div class="att-fee-msg" id="fee-6" style="display:none;">$20 no-show fee will be added</div>
-              <div class="att-fee-waived" id="waived-6">No fee charged</div>
+              <button class="att-note-btn" onclick="openNoteModal('Sophie Lawson')" title="Add attendance note">✏️</button>
             </div>
-            <button class="att-note-btn" onclick="openNoteModal('Sophie Lawson')" title="Add attendance note">✏️</button>
+            <div class="att-fee-msg" id="fee-6" style="display:none;">$20 no-show fee will be added</div>
+            <div class="att-fee-waived" id="waived-6">No fee charged</div>
           </div>
         </div>
       </div>
