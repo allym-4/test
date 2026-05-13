@@ -29,6 +29,7 @@ h1,h2,h3,.black { font-family: 'Archivo Black', sans-serif; font-weight: 900; }
   text-transform: uppercase; border-bottom: 1px solid var(--border);
 }
 .sidebar-logo span { color: var(--white); }
+.sidebar nav { overflow-y: auto; overflow-x: hidden; flex: 1; min-height: 0; padding-bottom: 8px; }
 .nav-item {
   display: flex; align-items: center; gap: 11px;
   padding: 12px 24px; color: var(--grey); cursor: pointer;
@@ -396,6 +397,8 @@ tr.clickable-row:hover td { background: #141414; }
     <div class="nav-item" onclick="showScreen('reporting')"><span class="nav-icon">📊</span> Analytics</div>
     <div class="nav-item" onclick="showScreen('activity-log')"><span class="nav-icon">📋</span> Activity Log</div>
     <div class="nav-item" onclick="showScreen('leads')"><span class="nav-icon">🎯</span> Leads</div>
+    <div class="nav-item" onclick="showScreen('retail')"><span class="nav-icon">🛍</span> Retail</div>
+    <div class="nav-item" onclick="showScreen('lockers')"><span class="nav-icon">🔐</span> Lockers</div>
     <div class="nav-item" onclick="showScreen('kisi')"><span class="nav-icon">🔑</span> Kisi Access</div>
     <div class="nav-item" onclick="showScreen('marketing')"><span class="nav-icon">📧</span> Marketing</div>
     <div class="nav-item" onclick="showScreen('notifications')"><span class="nav-icon">🔔</span> Automations</div>
@@ -429,6 +432,45 @@ tr.clickable-row:hover td { background: #141414; }
     <div id="screen-dashboard" class="screen active">
       <div class="page-header">
         <div><div class="page-title">Dashboard</div><div class="page-sub">Monday, 12 May 2025</div></div>
+      </div>
+      <!-- Daily Notifications -->
+      <div id="daily-notifications" style="background:#111;border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <div style="font-family:'Archivo Black',sans-serif;font-size:14px;">Today's Action Items <span style="background:var(--lime);color:#000;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;font-size:11px;font-weight:700;margin-left:6px;">5</span></div>
+          <button class="btn btn-ghost btn-xs" onclick="this.closest('#daily-notifications').querySelector('#notif-list').style.display=this.closest('#daily-notifications').querySelector('#notif-list').style.display==='none'?'':'none'">Hide</button>
+        </div>
+        <div id="notif-list">
+          <div class="notif-action-row" style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);">
+            <input type="checkbox" style="accent-color:var(--lime);width:16px;height:16px;flex-shrink:0;" onchange="markNotifDone(this)" />
+            <span style="font-size:20px;">🛍</span>
+            <div style="flex:1;font-size:13px;"><b>New retail purchase</b> — Ruby Kim ordered <b>Pole Grip Aid (Medium)</b>. Ready to collect at front desk.</div>
+            <span style="font-size:11px;color:var(--grey);white-space:nowrap;">9:32am</span>
+          </div>
+          <div class="notif-action-row" style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);">
+            <input type="checkbox" style="accent-color:var(--lime);width:16px;height:16px;flex-shrink:0;" onchange="markNotifDone(this)" />
+            <span style="font-size:20px;">🛍</span>
+            <div style="flex:1;font-size:13px;"><b>New retail purchase</b> — Tara Bell ordered <b>Duality Crop Top (S)</b>. Ready to collect.</div>
+            <span style="font-size:11px;color:var(--grey);white-space:nowrap;">8:14am</span>
+          </div>
+          <div class="notif-action-row" style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);">
+            <input type="checkbox" style="accent-color:var(--lime);width:16px;height:16px;flex-shrink:0;" onchange="markNotifDone(this)" />
+            <span style="font-size:20px;">👤</span>
+            <div style="flex:1;font-size:13px;"><b>New student enrolled</b> — <b>Priya Sharma</b> signed up for Level 1 (Mon 5:30pm). Waiver not yet signed.</div>
+            <span style="font-size:11px;color:var(--grey);white-space:nowrap;">Yesterday</span>
+          </div>
+          <div class="notif-action-row" style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);">
+            <input type="checkbox" style="accent-color:var(--lime);width:16px;height:16px;flex-shrink:0;" onchange="markNotifDone(this)" />
+            <span style="font-size:20px;">🩹</span>
+            <div style="flex:1;font-size:13px;"><b>Injury note due for re-check</b> — <b>Jess Malone</b> — right shoulder impingement check-in was due 17 May. <button class="btn btn-ghost btn-xs" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='jess'))">View Notes</button></div>
+            <span style="font-size:11px;color:var(--amber);white-space:nowrap;">Overdue</span>
+          </div>
+          <div class="notif-action-row" style="display:flex;align-items:center;gap:12px;padding:8px 0;">
+            <input type="checkbox" style="accent-color:var(--lime);width:16px;height:16px;flex-shrink:0;" onchange="markNotifDone(this)" />
+            <span style="font-size:20px;">💳</span>
+            <div style="flex:1;font-size:13px;"><b>Exemption request</b> — <b>Dana Park</b> has applied for a payment exemption on $75 workshop fee. <button class="btn btn-ghost btn-xs" onclick="openChaseModal('Dana Park','Workshop exemption request','$75',0)">Review</button></div>
+            <span style="font-size:11px;color:var(--grey);white-space:nowrap;">2 hrs ago</span>
+          </div>
+        </div>
       </div>
       <div class="kpi-grid">
         <div class="kpi kpi-lime"><div class="kpi-label">Today's Revenue</div><div class="kpi-value">$440</div><div class="kpi-sub">↑ $60 vs last Mon</div></div>
@@ -474,9 +516,9 @@ tr.clickable-row:hover td { background: #141414; }
         <table>
           <thead><tr><th>Student</th><th>Description</th><th>Amount</th><th>Due</th><th>Action</th></tr></thead>
           <tbody>
-            <tr><td style="cursor:pointer;" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='jess'))"><span style="text-decoration:underline;text-underline-offset:2px;">Jess M.</span></td><td>Season 4 — Level 2 (balance)</td><td class="bal-neg">$120</td><td style="color:var(--grey)">15 May 2025</td><td><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();alert('Reminder sent to Jess M.')">Chase</button></td></tr>
-            <tr><td style="cursor:pointer;" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='kylie'))"><span style="text-decoration:underline;text-underline-offset:2px;">Kylie R.</span></td><td>Season 4 + 2× no-show fees</td><td class="bal-neg">$95</td><td style="color:var(--grey)">Overdue</td><td><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();alert('Reminder sent to Kylie R.')">Chase</button></td></tr>
-            <tr><td>Dana P.</td><td>Workshop: Choreo Intensive</td><td class="bal-neg">$75</td><td style="color:var(--grey)">20 May 2025</td><td><button class="btn btn-sm btn-outline" onclick="alert('Reminder sent to Dana P.')">Chase</button></td></tr>
+            <tr><td style="cursor:pointer;" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='jess'))"><span style="text-decoration:underline;text-underline-offset:2px;">Jess M.</span></td><td>Season 4 — Level 2 (balance)</td><td class="bal-neg">$120</td><td style="color:var(--grey)">15 May 2025</td><td><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();openChaseModal('Jess M.','Season 4 — Level 2 (balance)','$120',1)">Chase</button></td></tr>
+            <tr><td style="cursor:pointer;" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='kylie'))"><span style="text-decoration:underline;text-underline-offset:2px;">Kylie R.</span></td><td>Season 4 + 2× no-show fees</td><td class="bal-neg">$95</td><td style="color:var(--grey)">Overdue</td><td><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();openChaseModal('Kylie R.','Season 4 + 2× no-show fees','$95',2)">Chase</button></td></tr>
+            <tr><td>Dana P.</td><td>Workshop: Choreo Intensive</td><td class="bal-neg">$75</td><td style="color:var(--grey)">20 May 2025</td><td><button class="btn btn-sm btn-outline" onclick="openChaseModal('Dana P.','Workshop: Choreo Intensive','$75',0)">Chase</button></td></tr>
           </tbody>
         </table>
       </div>
@@ -1990,7 +2032,8 @@ tr.clickable-row:hover td { background: #141414; }
           <div id="sd-balance-large" style="font-family:'Archivo Black',sans-serif;font-size:48px;" class="bal-neg">−$120</div>
           <div style="display:flex;gap:10px;justify-content:center;margin-top:16px;">
             <button class="btn btn-lime btn-sm" onclick="openModal('modal-manual-payment')">+ Add Payment</button>
-            <button class="btn btn-ghost btn-sm" onclick="openModal('modal-issue-refund')">Issue Refund</button>
+            <button class="btn btn-ghost btn-sm" onclick="openModal('modal-season-cancel')">Season Transfer/Cancel</button>
+            <button class="btn btn-ghost btn-sm" onclick="openModal('modal-issue-refund')">Issue Refund / Credit</button>
             <button class="btn btn-ghost btn-sm" onclick="openModal('modal-add-credit')">Add Credit</button>
             <button class="btn btn-ghost btn-sm" onclick="document.getElementById('credit-type').value='makeup';openModal('modal-add-credit')">Assign Make-up</button>
           </div>
@@ -2073,50 +2116,136 @@ tr.clickable-row:hover td { background: #141414; }
 
       <!-- NOTES TAB -->
       <div id="sd-notes" class="subscreen">
-        <div class="note-urgent-tab" onclick="toggleUrgentNotes()">🔥 2 Urgent Notes — Click to view</div>
-        <div id="urgent-notes-list" style="display:none;margin-bottom:16px;">
-          <div class="note-item note-flag-fire"><div class="note-meta">🔥 Mimi · 10 May 2025</div><div class="note-text">Right shoulder impingement flaring up — do not push into overhead moves this week.</div></div>
-          <div class="note-item note-flag-fire"><div class="note-meta">🔥 Chloe · 8 May 2025</div><div class="note-text">Student has outstanding balance of $120 — 2nd reminder sent. Flag if she attends without paying.</div></div>
+        <!-- Filter tabs by category -->
+        <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;">
+          <button class="btn btn-lime btn-xs note-cat-filter active" onclick="filterNotes(this,'all')">All</button>
+          <button class="btn btn-ghost btn-xs note-cat-filter" onclick="filterNotes(this,'medical')">🏥 Medical</button>
+          <button class="btn btn-ghost btn-xs note-cat-filter" onclick="filterNotes(this,'injury')">🩹 Injury</button>
+          <button class="btn btn-ghost btn-xs note-cat-filter" onclick="filterNotes(this,'vibe')">✨ Personality & Vibe</button>
+          <button class="btn btn-ghost btn-xs note-cat-filter" onclick="filterNotes(this,'general')">📝 General</button>
+          <button class="btn btn-ghost btn-xs note-cat-filter" onclick="filterNotes(this,'archived')" style="margin-left:auto;">🗂 Archived</button>
         </div>
-        <div class="tbl-section" style="margin-bottom:20px;padding:0;">
-          <div style="padding:16px 20px;">
-            <div class="note-item note-flag-yellow">
-              <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-                <div class="s-avatar" style="background:var(--lav);width:28px;height:28px;font-size:11px;">C</div>
-                <div class="note-meta" style="margin:0;">🟡 Chloe Nguyen · 8 May 2025, 6:45pm</div>
+
+        <!-- Urgent banner -->
+        <div class="note-urgent-tab" onclick="toggleUrgentNotes()">🔥 1 Urgent Note — Click to view</div>
+        <div id="urgent-notes-list" style="display:none;margin-bottom:12px;">
+          <div class="note-item note-flag-fire"><div class="note-meta">🔥 Mimi · 10 May 2026 · <span class="tag tag-red" style="font-size:10px;">Injury</span></div><div class="note-text">Right shoulder impingement flaring up — do not push into overhead moves this week.</div><div style="font-size:11px;color:var(--amber);margin-top:4px;">📅 Check-in date: 17 May 2026</div></div>
+        </div>
+
+        <!-- Active notes -->
+        <div id="sd-notes-active">
+          <div class="note-item note-flag-red" data-category="injury">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="tag" style="background:#1a0500;color:var(--amber);border:1px solid var(--amber);font-size:10px;">🩹 Injury</span>
+                <div class="note-meta" style="margin:0;">Mimi · 10 May 2026</div>
               </div>
-              <div class="note-text">Progressing really well with spinning holds. Ready to attempt cross-knee release next session.</div>
-              <div style="display:flex;gap:6px;margin-top:8px;"><button class="btn btn-ghost btn-xs">Edit</button><button class="btn btn-ghost btn-xs">Delete</button></div>
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-ghost btn-xs">Edit</button>
+                <button class="btn btn-ghost btn-xs" onclick="archiveNote(this)">Archive</button>
+              </div>
             </div>
-            <div class="note-item note-flag-green">
-              <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-                <div class="s-avatar" style="background:var(--lime);width:28px;height:28px;font-size:11px;">A</div>
-                <div class="note-meta" style="margin:0;">🟢 Mimi · 2 Apr 2025, 8:30pm</div>
-              </div>
-              <div class="note-text">Attended showcase workshop — great engagement and attitude.</div>
-              <div style="display:flex;gap:6px;margin-top:8px;"><button class="btn btn-ghost btn-xs">Edit</button><button class="btn btn-ghost btn-xs">Delete</button></div>
-            </div>
-            <div class="note-item note-flag-red" style="border-bottom:none;">
-              <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-                <div class="s-avatar" style="background:var(--lav);width:28px;height:28px;font-size:11px;">C</div>
-                <div class="note-meta" style="margin:0;">🔴 Chloe Nguyen · 14 Mar 2025, 7:00pm</div>
-              </div>
-              <div class="note-text">Needs more shoulder conditioning before progressing to inverts. Recommended home exercises.</div>
-              <div style="display:flex;gap:6px;margin-top:8px;"><button class="btn btn-ghost btn-xs">Edit</button><button class="btn btn-ghost btn-xs">Delete</button></div>
+            <div class="note-text">Right shoulder impingement — avoid overhead work, no jade splits or dead lifts.</div>
+            <div style="display:flex;gap:16px;margin-top:8px;font-size:12px;">
+              <span style="color:var(--amber);">📅 Check-in: 17 May 2026</span>
+              <span style="color:var(--grey);">Added by Mimi</span>
             </div>
           </div>
-        </div>
-        <div class="section" style="margin-bottom:0;">
-          <div style="font-family:'Archivo Black',sans-serif;font-size:13px;margin-bottom:10px;">Add Note</div>
-          <div style="display:flex;gap:8px;margin-bottom:8px;">
-            <select id="note-flag" style="background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:7px 10px;border-radius:8px;font-family:inherit;font-size:13px;">
-              <option value="general">🟡 General</option>
-              <option value="positive">🟢 Positive</option>
-              <option value="important">🔴 Important</option>
-              <option value="fire">🔥 Urgent</option>
-            </select>
+
+          <div class="note-item note-flag-yellow" data-category="general">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="tag" style="background:#1a1500;color:var(--amber);border:1px solid #55440055;font-size:10px;">📝 General</span>
+                <div class="note-meta" style="margin:0;">Chloe · 8 May 2026</div>
+              </div>
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-ghost btn-xs">Edit</button>
+                <button class="btn btn-ghost btn-xs" onclick="archiveNote(this)">Archive</button>
+              </div>
+            </div>
+            <div class="note-text">Progressing really well with spinning holds. Ready to attempt cross-knee release next session.</div>
+            <div style="margin-top:8px;font-size:12px;color:var(--grey);">No re-check needed</div>
           </div>
-          <textarea style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:10px 12px;min-height:80px;resize:vertical;margin-bottom:10px;" placeholder="Add an internal note about this student…"></textarea>
+
+          <div class="note-item" data-category="vibe">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="tag" style="background:#100a1a;color:var(--lav);border:1px solid #3a2a5a;font-size:10px;">✨ Personality & Vibe</span>
+                <div class="note-meta" style="margin:0;">Chloe · 2 Apr 2026</div>
+              </div>
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-ghost btn-xs">Edit</button>
+                <button class="btn btn-ghost btn-xs" onclick="archiveNote(this)">Archive</button>
+              </div>
+            </div>
+            <div class="note-text">Loves being challenged — responds well to push. Prefers direct feedback over sugar-coating. Very committed, rarely misses class.</div>
+            <div style="margin-top:8px;font-size:12px;color:var(--grey);">No re-check needed (permanent)</div>
+          </div>
+
+          <div class="note-item" data-category="medical" style="border-bottom:none;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="tag" style="background:#001a0a;color:var(--lime);border:1px solid #0a3a1a;font-size:10px;">🏥 Medical</span>
+                <div class="note-meta" style="margin:0;">Mimi · 3 Feb 2026</div>
+              </div>
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-ghost btn-xs">Edit</button>
+                <button class="btn btn-ghost btn-xs" onclick="archiveNote(this)">Archive</button>
+              </div>
+            </div>
+            <div class="note-text">Hypermobile — instructor to monitor over-extension in hip flexors. Not a safety risk but needs mindful cueing.</div>
+            <div style="margin-top:8px;font-size:12px;color:var(--grey);">Permanent condition — no re-check needed</div>
+          </div>
+        </div>
+
+        <!-- Archived notes (hidden) -->
+        <div id="sd-notes-archived" style="display:none;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--grey);letter-spacing:.5px;margin-bottom:10px;">Archived Notes</div>
+          <div class="note-item" style="opacity:0.6;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <div class="note-meta">📝 General · Chloe · 14 Mar 2026</div>
+              <button class="btn btn-ghost btn-xs" onclick="unarchiveNote(this)">Restore</button>
+            </div>
+            <div class="note-text">Mentioned interest in trying the high heels class. Follow up end of season.</div>
+          </div>
+        </div>
+
+        <!-- Add Note -->
+        <div class="section" style="margin-top:20px;margin-bottom:0;">
+          <div style="font-family:'Archivo Black',sans-serif;font-size:13px;margin-bottom:12px;">Add Note</div>
+          <div class="field-row">
+            <div class="field" style="flex:1;">
+              <label>Category</label>
+              <select id="note-category" style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:8px 10px;border-radius:8px;font-family:inherit;font-size:13px;">
+                <option value="general">📝 General</option>
+                <option value="medical">🏥 Medical</option>
+                <option value="injury">🩹 Injury</option>
+                <option value="vibe">✨ Personality & Vibe</option>
+              </select>
+            </div>
+            <div class="field" style="flex:1;">
+              <label>Priority</label>
+              <select id="note-flag" style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:8px 10px;border-radius:8px;font-family:inherit;font-size:13px;">
+                <option value="general">🟡 General</option>
+                <option value="positive">🟢 Positive</option>
+                <option value="important">🔴 Important</option>
+                <option value="urgent">🔥 Urgent</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-row" id="note-checkin-row">
+            <div class="field" style="flex:1;">
+              <label>Check-in Date <span style="font-weight:400;color:var(--grey);font-size:11px;">(leave blank if permanent)</span></label>
+              <input type="date" id="note-checkin-date" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 10px;box-sizing:border-box;" />
+            </div>
+            <div class="field" style="flex:0 0 auto;display:flex;align-items:flex-end;padding-bottom:2px;">
+              <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;white-space:nowrap;">
+                <input type="checkbox" id="note-permanent" style="accent-color:var(--lav);" onchange="document.getElementById('note-checkin-date').disabled=this.checked;document.getElementById('note-checkin-date').style.opacity=this.checked?'0.4':'1';" />
+                Permanent — no re-check
+              </label>
+            </div>
+          </div>
+          <textarea id="note-text-input" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:10px 12px;min-height:80px;resize:vertical;margin-bottom:10px;box-sizing:border-box;" placeholder="Add an internal note about this student…"></textarea>
           <button class="btn btn-lime btn-sm" onclick="alert('Note saved')">Save Note</button>
         </div>
       </div>
@@ -2139,10 +2268,28 @@ tr.clickable-row:hover td { background: #141414; }
       <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
         <button class="btn btn-lime btn-sm" onclick="markAllPresent()">Mark All Present</button>
         <button class="btn btn-ghost btn-sm" onclick="alert('Register saved!')">Save Register</button>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-add-to-class')">+ Add Student</button>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-override-capacity')">Override Capacity</button>
         <button class="btn btn-ghost btn-sm" onclick="alert('Class summary email sent to instructor')">Send Class Summary Email</button>
         <button class="btn btn-ghost btn-sm" style="color:#e05555;border-color:#e05555;" onclick="openCancelClass(document.getElementById('att-class-name').textContent, document.getElementById('att-time').textContent+' '+document.getElementById('att-studio').textContent, document.getElementById('att-studio').textContent, 8)">Cancel Class</button>
       </div>
 
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
+        <select id="att-filter-season" style="background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:7px 12px;border-radius:8px;font-family:inherit;font-size:13px;">
+          <option value="">All Seasons</option>
+          <option value="s4" selected>Season 4 (Current)</option>
+          <option value="s3">Season 3</option>
+          <option value="s2">Season 2</option>
+          <option value="custom">Custom Date Range</option>
+        </select>
+        <div id="att-date-range" style="display:none;display:flex;gap:6px;">
+          <input type="date" id="att-from" style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:7px 10px;" />
+          <span style="color:var(--grey);line-height:34px;">→</span>
+          <input type="date" id="att-to" style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:7px 10px;" />
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="alert('Filter applied')">Apply</button>
+        <span style="font-size:12px;color:var(--grey);margin-left:4px;">Showing: Season 4 · 8 weeks</span>
+      </div>
       <div class="subtabs">
         <div class="subtab active" onclick="switchSubTab(this,'att-register')">Register</div>
         <div class="subtab" onclick="switchSubTab(this,'att-waitlist')">Waitlist (2)</div>
@@ -2152,10 +2299,10 @@ tr.clickable-row:hover td { background: #141414; }
       <div id="att-register" class="subscreen active">
         <div class="tbl-section">
           <table id="att-table">
-            <thead><tr><th>Student</th><th>Type</th><th>Contact</th><th>Status</th><th>Fee</th><th>Notes</th></tr></thead>
+            <thead><tr><th>Student</th><th>Type</th><th>Contact</th><th>Status</th><th>Balance</th><th>Notes</th></tr></thead>
             <tbody>
               <tr id="att-row-0">
-                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#ffaa44;">J</div><div><div style="font-weight:500;"><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='jess'))">Jess Malone</span> 🎂 <span style="display:inline-block;background:#0f1600;color:var(--lime);border:1px solid var(--lime);border-radius:12px;font-size:10px;font-weight:600;padding:1px 8px;letter-spacing:0.3px;margin-left:2px;">Birthday this week!</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
+                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#ffaa44;">J</div><div><div style="font-weight:500;"><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="openModal('modal-instructor-student-detail')">Jess Malone</span> 🎂 <span style="display:inline-block;background:#0f1600;color:var(--lime);border:1px solid var(--lime);border-radius:12px;font-size:10px;font-weight:600;padding:1px 8px;letter-spacing:0.3px;margin-left:2px;">Birthday this week!</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
                 <td><span class="tag tag-lav">Enrolled</span></td>
                 <td style="color:var(--grey);font-size:12px;">0412 345 678</td>
                 <td><select class="att-status-select" onchange="updateAttRow(0,this.value)"><option value="">Select…</option><option value="present">Present</option><option value="noshow-fee">No-show + $25 fee</option><option value="noshow-waived">No-show — fee waived</option><option value="late">Late</option><option value="excused">Excused</option></select></td>
@@ -2689,10 +2836,10 @@ tr.clickable-row:hover td { background: #141414; }
         <table>
           <thead><tr><th>Student</th><th>Description</th><th>Amount</th><th>Due Date</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>
-            <tr><td>Jess Malone</td><td>Season 4 — Level 2 (balance)</td><td class="bal-neg">$120</td><td style="color:var(--grey)">15 May</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs" onclick="alert('Chased!')">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
-            <tr><td>Kylie Rhodes</td><td>Season 4 + 2× no-show fees</td><td class="bal-neg">$95</td><td style="color:#ff6b6b">Overdue</td><td><span class="tag tag-red">Overdue</span></td><td><button class="btn btn-ghost btn-xs">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
-            <tr><td>Dana Park</td><td>Choreo Intensive Workshop</td><td class="bal-neg">$75</td><td style="color:var(--grey)">20 May</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
-            <tr><td>Amber Cole</td><td>No-show fee × 2</td><td class="bal-neg">$50</td><td style="color:var(--grey)">12 May</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
+            <tr><td>Jess Malone</td><td>Season 4 — Level 2 (balance)</td><td class="bal-neg">$120</td><td style="color:var(--grey)">15 May</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs" onclick="openChaseModal('Jess Malone','Season 4 — Level 2 (balance)','$120',1)">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
+            <tr><td>Kylie Rhodes</td><td>Season 4 + 2× no-show fees</td><td class="bal-neg">$95</td><td style="color:#ff6b6b">Overdue</td><td><span class="tag tag-red">Overdue</span></td><td><button class="btn btn-ghost btn-xs" onclick="openChaseModal('Kylie Rhodes','Season 4 + 2× no-show fees','$95',2)">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
+            <tr><td>Dana Park</td><td>Choreo Intensive Workshop</td><td class="bal-neg">$75</td><td style="color:var(--grey)">20 May</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs" onclick="openChaseModal('Dana Park','Choreo Intensive Workshop','$75',0)">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
+            <tr><td>Amber Cole</td><td>No-show fee × 2</td><td class="bal-neg">$50</td><td style="color:var(--grey)">12 May</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs" onclick="openChaseModal('Amber Cole','No-show fee × 2','$50',0)">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
           </tbody>
         </table>
       </div>
@@ -2772,9 +2919,18 @@ tr.clickable-row:hover td { background: #141414; }
       <div class="back-link" onclick="showScreen('billing')">← Back to Billing</div>
       <div class="page-header">
         <div><div class="page-title">Payment History</div><div class="page-sub">All payments received</div></div>
-        <div style="display:flex;gap:8px;">
-          <input type="date" style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 12px;" title="Filter from date" />
-          <input type="date" style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 12px;" title="Filter to date" />
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <select style="background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:8px 12px;border-radius:8px;font-family:inherit;font-size:13px;">
+            <option>All Seasons</option><option selected>Season 4</option><option>Season 3</option><option>Season 2</option>
+          </select>
+          <select style="background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:8px 12px;border-radius:8px;font-family:inherit;font-size:13px;">
+            <option>All Types</option><option>Season Enrolment</option><option>Drop-in</option><option>Workshop</option><option>No-show Fee</option><option>Retail</option><option>Credit</option>
+          </select>
+          <select style="background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:8px 12px;border-radius:8px;font-family:inherit;font-size:13px;">
+            <option>All Methods</option><option>Card</option><option>Bank Transfer</option><option>Cash</option><option>Gift Card</option>
+          </select>
+          <input type="date" style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 10px;" title="From date" />
+          <input type="date" style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 10px;" title="To date" />
           <button class="btn btn-ghost" onclick="alert('Exported!')">↓ Export CSV</button>
         </div>
       </div>
@@ -4549,6 +4705,143 @@ tr.clickable-row:hover td { background: #141414; }
       </div>
     </div>
 
+
+    <!-- ===== RETAIL ===== -->
+    <div id="screen-retail" class="screen">
+      <div class="page-header">
+        <div><div class="page-title">Retail</div><div class="page-sub">Products, stock and sales</div></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost" onclick="openModal('modal-square-sync')">🔄 Sync with Square</button>
+          <button class="btn btn-lime" onclick="openModal('modal-add-product')">+ Add Product</button>
+        </div>
+      </div>
+      <div style="background:#1a1a0a;border:1px solid #aaaa0044;border-radius:8px;padding:10px 16px;margin-bottom:20px;display:flex;align-items:center;gap:12px;font-size:13px;">
+        <span>🔗</span>
+        <span>Connected to Square · Last synced <b>13 May 2026, 8:00am</b></span>
+        <button class="btn btn-ghost btn-xs" onclick="openModal('modal-square-sync')" style="margin-left:auto;">Manage Integration</button>
+      </div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
+        <div class="kpi kpi-lime"><div class="kpi-label">Sales This Month</div><div class="kpi-value">$840</div><div class="kpi-sub">14 orders</div></div>
+        <div class="kpi kpi-amber"><div class="kpi-label">Low Stock Items</div><div class="kpi-value">3</div><div class="kpi-sub">Need reorder</div></div>
+        <div class="kpi kpi-lav"><div class="kpi-label">Pending Pickups</div><div class="kpi-value">2</div><div class="kpi-sub">At front desk</div></div>
+      </div>
+
+      <div class="subtabs">
+        <div class="subtab active" onclick="switchSubTab(this,'retail-products')">Products</div>
+        <div class="subtab" onclick="switchSubTab(this,'retail-orders')">Orders</div>
+        <div class="subtab" onclick="switchSubTab(this,'retail-pending')">Pending Pickup (2)</div>
+      </div>
+
+      <div id="retail-products" class="subscreen active">
+        <div class="filter-bar">
+          <input class="search-input" type="text" placeholder="Search products…" style="min-width:220px;" />
+          <select class="select-input"><option>All Categories</option><option>Grip Aids</option><option>Activewear</option><option>Merchandise</option><option>Accessories</option></select>
+          <select class="select-input"><option>All Stock</option><option>In Stock</option><option>Low Stock</option><option>Out of Stock</option></select>
+        </div>
+        <div class="tbl-section">
+          <table>
+            <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>SKU</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+              <tr><td><b>Dry Hands Grip Aid</b><div style="font-size:11px;color:var(--grey);">60ml bottle</div></td><td>Grip Aids</td><td>$18</td><td style="color:var(--lime);">24</td><td style="color:var(--grey);font-size:12px;">DH-60</td><td><span class="tag tag-lime">In Stock</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-add-product')">Edit</button> <button class="btn btn-ghost btn-xs">Archive</button></td></tr>
+              <tr><td><b>Pole Grip Aid (Medium)</b><div style="font-size:11px;color:var(--grey);">Tite Grip II</div></td><td>Grip Aids</td><td>$22</td><td style="color:var(--amber);">3</td><td style="color:var(--grey);font-size:12px;">TG-M</td><td><span class="tag tag-amber">Low Stock</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-add-product')">Edit</button> <button class="btn btn-ghost btn-xs">Archive</button></td></tr>
+              <tr><td><b>Duality Crop Top</b><div style="font-size:11px;color:var(--grey);">XS / S / M / L</div></td><td>Activewear</td><td>$55</td><td style="color:var(--lime);">12</td><td style="color:var(--grey);font-size:12px;">DPT-CROP</td><td><span class="tag tag-lime">In Stock</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-add-product')">Edit</button> <button class="btn btn-ghost btn-xs">Archive</button></td></tr>
+              <tr><td><b>Duality Booty Shorts</b><div style="font-size:11px;color:var(--grey);">XS / S / M / L / XL</div></td><td>Activewear</td><td>$48</td><td style="color:var(--lime);">8</td><td style="color:var(--grey);font-size:12px;">DPT-SHORT</td><td><span class="tag tag-lime">In Stock</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-add-product')">Edit</button> <button class="btn btn-ghost btn-xs">Archive</button></td></tr>
+              <tr><td><b>Duality Tote Bag</b><div style="font-size:11px;color:var(--grey);">Canvas, black</div></td><td>Merchandise</td><td>$35</td><td style="color:var(--amber);">2</td><td style="color:var(--grey);font-size:12px;">DP-TOTE</td><td><span class="tag tag-amber">Low Stock</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-add-product')">Edit</button> <button class="btn btn-ghost btn-xs">Archive</button></td></tr>
+              <tr><td><b>Knee Pads</b><div style="font-size:11px;color:var(--grey);">Inline skating style, one size</div></td><td>Accessories</td><td>$28</td><td style="color:#ff6b6b;">0</td><td style="color:var(--grey);font-size:12px;">ACC-KP</td><td><span class="tag tag-red">Out of Stock</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-add-product')">Edit</button> <button class="btn btn-ghost btn-xs">Archive</button></td></tr>
+              <tr><td><b>Grip Socks</b><div style="font-size:11px;color:var(--grey);">One size</div></td><td>Accessories</td><td>$15</td><td style="color:var(--lime);">18</td><td style="color:var(--grey);font-size:12px;">ACC-GS</td><td><span class="tag tag-lime">In Stock</span></td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-add-product')">Edit</button> <button class="btn btn-ghost btn-xs">Archive</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="retail-orders" class="subscreen">
+        <div class="tbl-section">
+          <table>
+            <thead><tr><th>Date</th><th>Student</th><th>Product</th><th>Qty</th><th>Total</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr><td style="color:var(--grey)">13 May</td><td>Ruby Kim</td><td>Pole Grip Aid (Medium)</td><td>1</td><td class="bal-pos">$22</td><td><span class="tag tag-amber">Pending Pickup</span></td><td><button class="btn btn-lime btn-xs" onclick="alert('Marked as collected')">Mark Collected</button></td></tr>
+              <tr><td style="color:var(--grey)">13 May</td><td>Tara Bell</td><td>Duality Crop Top (S)</td><td>1</td><td class="bal-pos">$55</td><td><span class="tag tag-amber">Pending Pickup</span></td><td><button class="btn btn-lime btn-xs" onclick="alert('Marked as collected')">Mark Collected</button></td></tr>
+              <tr><td style="color:var(--grey)">10 May</td><td>Sophie Lawson</td><td>Dry Hands Grip Aid × 2</td><td>2</td><td class="bal-pos">$36</td><td><span class="tag tag-lime">Collected</span></td><td>—</td></tr>
+              <tr><td style="color:var(--grey)">9 May</td><td>Nina Torres</td><td>Duality Booty Shorts (M)</td><td>1</td><td class="bal-pos">$48</td><td><span class="tag tag-lime">Collected</span></td><td>—</td></tr>
+              <tr><td style="color:var(--grey)">7 May</td><td>Jess Malone</td><td>Grip Socks × 3</td><td>3</td><td class="bal-pos">$45</td><td><span class="tag tag-lime">Collected</span></td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="retail-pending" class="subscreen">
+        <div style="font-size:13px;color:var(--grey);margin-bottom:14px;">These orders have been paid and are ready for the student to collect at the front desk.</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="background:#1a1500;border:1px solid var(--amber);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
+            <div><div style="font-weight:600;">Ruby Kim</div><div style="font-size:13px;color:var(--grey);margin-top:2px;">Pole Grip Aid (Medium) · $22 · ordered 13 May 9:32am</div></div>
+            <button class="btn btn-lime btn-sm" onclick="alert('Marked as collected — notifying Ruby Kim')">Mark Collected</button>
+          </div>
+          <div style="background:#1a1500;border:1px solid var(--amber);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
+            <div><div style="font-weight:600;">Tara Bell</div><div style="font-size:13px;color:var(--grey);margin-top:2px;">Duality Crop Top (S) · $55 · ordered 13 May 8:14am</div></div>
+            <button class="btn btn-lime btn-sm" onclick="alert('Marked as collected — notifying Tara Bell')">Mark Collected</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== LOCKERS ===== -->
+    <div id="screen-lockers" class="screen">
+      <div class="page-header">
+        <div><div class="page-title">Lockers</div><div class="page-sub">Manage locker assignments and payments</div></div>
+        <button class="btn btn-lime" onclick="openModal('modal-assign-locker')">+ Assign Locker</button>
+      </div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
+        <div class="kpi kpi-lime"><div class="kpi-label">Assigned</div><div class="kpi-value">18</div><div class="kpi-sub">of 24 total</div></div>
+        <div class="kpi"><div class="kpi-label">Available</div><div class="kpi-value">6</div><div class="kpi-sub">Ready to assign</div></div>
+        <div class="kpi kpi-amber"><div class="kpi-label">Overdue Payment</div><div class="kpi-value">2</div><div class="kpi-sub">Chase needed</div></div>
+        <div class="kpi kpi-lav"><div class="kpi-label">Monthly Revenue</div><div class="kpi-value">$270</div><div class="kpi-sub">18 × $15/mo</div></div>
+      </div>
+
+      <!-- Locker grid visual -->
+      <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:12px;">Locker Map</div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:24px;">
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">01</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">02</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">03</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
+        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--grey)">04</div><div style="font-size:10px;margin-top:3px;color:var(--border)">Free</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">05</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">06</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">07</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">08</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">09</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">10</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">11</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
+        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--grey)">12</div><div style="font-size:10px;margin-top:3px;color:var(--border)">Free</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">13</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">14</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">15</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">16</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">17</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">18</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
+        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--grey)">19</div><div style="font-size:10px;margin-top:3px;color:var(--border)">Free</div></div>
+        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--grey)">20</div><div style="font-size:10px;margin-top:3px;color:var(--border)">Free</div></div>
+        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--grey)">21</div><div style="font-size:10px;margin-top:3px;color:var(--border)">Free</div></div>
+        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--grey)">22</div><div style="font-size:10px;margin-top:3px;color:var(--border)">Free</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">23</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">24</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
+      </div>
+
+      <!-- Assignments table -->
+      <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:12px;">Assignments</div>
+      <div class="tbl-section">
+        <table>
+          <thead><tr><th>Locker</th><th>Student</th><th>Assigned</th><th>Monthly Fee</th><th>Last Paid</th><th>Next Due</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr><td><b>#01</b></td><td>Jess Malone</td><td style="color:var(--grey)">1 Mar 2026</td><td>$15</td><td style="color:var(--grey)">1 May</td><td style="color:var(--grey)">1 Jun</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs">Edit</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;">Unassign</button></td></tr>
+            <tr><td><b>#02</b></td><td>Ruby Kim</td><td style="color:var(--grey)">1 Apr 2026</td><td>$15</td><td style="color:var(--grey)">1 May</td><td style="color:var(--grey)">1 Jun</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs">Edit</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;">Unassign</button></td></tr>
+            <tr><td><b>#04</b></td><td>Sophie Lawson</td><td style="color:var(--grey)">1 Feb 2026</td><td>$15</td><td style="color:#ff6b6b">Overdue</td><td style="color:#ff6b6b">Overdue</td><td><span class="tag tag-red">Overdue</span></td><td><button class="btn btn-ghost btn-xs" onclick="openChaseModal('Sophie Lawson','Locker #04 fee','$30',1)">Chase</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;">Unassign</button></td></tr>
+            <tr><td><b>#05</b></td><td>Nina Torres</td><td style="color:var(--grey)">1 Mar 2026</td><td>$15</td><td style="color:var(--grey)">1 May</td><td style="color:var(--grey)">1 Jun</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs">Edit</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;">Unassign</button></td></tr>
+            <tr><td><b>#06</b></td><td>Tara Bell</td><td style="color:var(--grey)">1 May 2026</td><td>$15</td><td style="color:var(--grey)">1 May</td><td style="color:var(--grey)">1 Jun</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs">Edit</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;">Unassign</button></td></tr>
+            <tr><td><b>#07</b></td><td>Kylie Rhodes</td><td style="color:var(--grey)">1 Jan 2026</td><td>$15</td><td style="color:#ff6b6b">Overdue</td><td style="color:#ff6b6b">Overdue</td><td><span class="tag tag-red">Overdue</span></td><td><button class="btn btn-ghost btn-xs" onclick="openChaseModal('Kylie Rhodes','Locker #07 fee','$45',2)">Chase</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;">Unassign</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div><!-- end .content -->
 </div><!-- end .main -->
 
@@ -6416,6 +6709,66 @@ function setTTView(view) {
     document.getElementById('tt-view-list').style.color='var(--grey)';
   }
 }
+
+function filterNotes(btn, category) {
+  const btns = document.querySelectorAll('.note-cat-filter');
+  btns.forEach(b => { b.className = b.className.replace('btn-lime','btn-ghost'); });
+  btn.className = btn.className.replace('btn-ghost','btn-lime');
+  const activeDiv = document.getElementById('sd-notes-active');
+  const archiveDiv = document.getElementById('sd-notes-archived');
+  if (category === 'archived') {
+    activeDiv.style.display = 'none';
+    archiveDiv.style.display = '';
+  } else {
+    activeDiv.style.display = '';
+    archiveDiv.style.display = 'none';
+    const noteItems = activeDiv.querySelectorAll('[data-category]');
+    noteItems.forEach(n => {
+      n.style.display = (category === 'all' || n.dataset.category === category) ? '' : 'none';
+    });
+  }
+}
+
+function archiveNote(btn) {
+  const note = btn.closest('[data-category]');
+  if (!note) return;
+  if (confirm('Archive this note?')) { note.style.display = 'none'; }
+}
+
+function unarchiveNote(btn) {
+  const note = btn.closest('.note-item');
+  if (!note) return;
+  note.style.display = 'none';
+  alert('Note restored to active notes.');
+}
+
+
+function searchAddStudent(query) {
+  const res = document.getElementById('add-student-results');
+  if (!query || query.length < 2) { res.style.display = 'none'; return; }
+  const q = query.toLowerCase();
+  const matches = STUDENTS.filter(s => s.name.toLowerCase().includes(q) || (s.email && s.email.toLowerCase().includes(q))).slice(0, 6);
+  if (!matches.length) { res.style.display = 'none'; return; }
+  res.innerHTML = matches.map(s =>
+    '<div style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);" ' +
+    'onmouseenter="this.style.background='#1a1a1a'" onmouseleave="this.style.background=''" ' +
+    'onclick="document.querySelector('#modal-add-to-class input[type=text]').value='' + s.name + '';this.closest('#add-student-results').style.display='none'">' +
+    s.name + '<span style=\"color:var(--grey);font-size:11px;margin-left:8px;\">' + (s.email || '') + '</span></div>'
+  ).join('');
+  res.style.display = '';
+}
+
+function markNotifDone(cb) {
+  const row = cb.closest('.notif-action-row');
+  if (cb.checked) {
+    row.style.opacity = '0.4';
+    row.style.textDecoration = 'line-through';
+  } else {
+    row.style.opacity = '';
+    row.style.textDecoration = '';
+  }
+}
+
 function openSeasonClassDetail(name, timeslot, instructor, studio, enrolled, cap, waitlist, tab) {
   document.getElementById('scd-class-name').textContent = name;
   document.getElementById('scd-class-meta').textContent = timeslot + ' · ' + instructor + ' · ' + studio;
@@ -6474,6 +6827,87 @@ function openSeasonClassDetail(name, timeslot, instructor, studio, enrolled, cap
     switchSubTab(tabs[0], 'scd-roster');
   }
   openModal('modal-season-class-detail');
+}
+
+
+
+var _chaseData = {};
+
+function openChaseModal(student, description, amount, chaseCount) {
+  document.getElementById('chase-student-name').textContent = student;
+  document.getElementById('chase-description').textContent = description;
+  document.getElementById('chase-amount').textContent = amount;
+  _chaseData = {student, description, amount, chaseCount};
+
+  // History
+  const hl = document.getElementById('chase-history-list');
+  if (chaseCount === 0) {
+    hl.innerHTML = '<div style="color:var(--grey);font-size:13px;">No previous chase attempts.</div>';
+  } else {
+    const dates = ['8 May 2026','1 May 2026','24 Apr 2026'];
+    const labels = ['1st Chase — Friendly reminder','2nd Chase — Firm notice','3rd Chase — Final warning (account locked)'];
+    let rows = '';
+    for (let i = 0; i < chaseCount; i++) {
+      rows += '<div style="display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;">' +
+        '<span style="color:var(--grey);white-space:nowrap;">' + dates[i] + '</span>' +
+        '<span>' + labels[i] + '</span></div>';
+    }
+    hl.innerHTML = rows;
+  }
+
+  // Action panel
+  const lockOption = document.getElementById('chase-lock-option');
+  const actionTitle = document.getElementById('chase-action-title');
+  const actionBody = document.getElementById('chase-action-body');
+  const sendBtn = document.getElementById('chase-send-btn');
+  const msg = document.getElementById('chase-message-preview');
+
+  if (chaseCount === 0) {
+    actionTitle.textContent = 'Send 1st Chase — Friendly Reminder';
+    actionTitle.style.color = 'var(--white)';
+    actionBody.textContent = 'A friendly payment reminder will be sent.';
+    msg.value = 'Hi ' + student.split(' ')[0] + ', just a friendly reminder that you have an outstanding balance of ' + amount + ' for ' + description + '. Please settle this at your earliest convenience. Thanks! — Duality Pole x';
+    lockOption.style.display = 'none';
+    sendBtn.textContent = 'Send 1st Reminder';
+    sendBtn.style.background = 'var(--lime)';
+    sendBtn.style.color = '#000';
+  } else if (chaseCount === 1) {
+    actionTitle.textContent = 'Send 2nd Chase — Firm Notice';
+    actionTitle.style.color = 'var(--amber)';
+    actionBody.textContent = 'A firmer notice will be sent. One more chase before the final warning.';
+    msg.value = 'Hi ' + student.split(' ')[0] + ', this is a second reminder about your outstanding balance of ' + amount + '. This needs to be resolved to keep your account in good standing. If you're having difficulty, please reach out to discuss payment options. — Duality Pole';
+    lockOption.style.display = 'none';
+    sendBtn.textContent = 'Send 2nd Reminder';
+    sendBtn.style.background = 'var(--amber)';
+    sendBtn.style.color = '#000';
+  } else {
+    actionTitle.textContent = 'Send Final Warning — Account Lock';
+    actionTitle.style.color = '#ff6b6b';
+    actionBody.textContent = 'This is the final warning. After this, the account will be locked until the balance is cleared or an exemption is granted.';
+    msg.value = 'Hi ' + student.split(' ')[0] + ', this is your final notice regarding your outstanding balance of ' + amount + '. If this is not resolved within 48 hours, your account will be locked and you will be unable to make new bookings or access the studio until it is cleared. Please contact us immediately if you need assistance. — Duality Pole';
+    lockOption.style.display = '';
+    sendBtn.textContent = 'Send Final Warning';
+    sendBtn.style.background = '#e05555';
+    sendBtn.style.color = '#fff';
+  }
+  openModal('modal-chase');
+}
+
+function sendChase() {
+  const d = _chaseData;
+  const lock = document.getElementById('chase-lock-account') && document.getElementById('chase-lock-account').checked;
+  if (lock) {
+    alert('Final warning sent to ' + d.student + '. Account has been locked.');
+  } else {
+    alert('Chase reminder sent to ' + d.student + '.');
+  }
+  closeModal('modal-chase');
+}
+
+function updateSeasonCancelForm() {
+  const type = document.getElementById('sc-type').value;
+  document.getElementById('sc-transfer-fields').style.display = (type === 'transfer' || type === 'downgrade') ? '' : 'none';
+  document.getElementById('sc-cancel-fields').style.display = type === 'cancel' ? '' : 'none';
 }
 
 
@@ -7187,6 +7621,378 @@ function clearAssistant() {
       </div>
     </div>
 
+
+
+<div class="modal-overlay" id="modal-chase">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-title">Chase Payment <button class="modal-close" onclick="closeModal('modal-chase')">✕</button></div>
+    <div style="background:#1a1a1a;border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+      <div style="font-size:15px;font-weight:600;" id="chase-student-name">Kylie R.</div>
+      <div style="font-size:13px;color:var(--grey);margin-top:4px;" id="chase-description">Season 4 + 2× no-show fees</div>
+      <div style="font-size:20px;font-weight:700;color:#ff6b6b;margin-top:8px;" id="chase-amount">$95</div>
+    </div>
+    <div id="chase-history" style="margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--grey);letter-spacing:.5px;margin-bottom:8px;">Chase History</div>
+      <div id="chase-history-list"></div>
+    </div>
+    <div id="chase-action-panel" style="border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+      <div id="chase-action-title" style="font-weight:600;font-size:13px;margin-bottom:8px;">Send Chase Reminder</div>
+      <div id="chase-action-body" style="font-size:13px;color:var(--grey);line-height:1.5;margin-bottom:12px;"></div>
+      <div class="field"><label>Message Preview</label>
+        <textarea id="chase-message-preview" rows="4" style="width:100%;background:#111;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:10px 12px;resize:vertical;box-sizing:border-box;"></textarea>
+      </div>
+      <div id="chase-lock-option" style="display:none;margin-bottom:12px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="chase-lock-account" style="accent-color:#ff6b6b;width:15px;height:15px;" />
+          <span>Lock account immediately (prevents bookings and app access)</span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-chase')">Cancel</button>
+      <button id="chase-send-btn" class="btn btn-lime" onclick="sendChase()">Send Reminder</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-outstanding-payment">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-title" style="color:#ff6b6b;">Outstanding Balance <button class="modal-close" onclick="closeModal('modal-outstanding-payment')">✕</button></div>
+    <div style="background:#2a0000;border:1px solid #ff3333;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;">
+      Your account has an outstanding balance. You need to resolve this before making new bookings or accessing the studio.
+    </div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--grey);letter-spacing:.5px;margin-bottom:8px;">Amount Owing</div>
+    <div id="op-items-list" style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;">
+        <span>Season 4 — Level 2 (instalment 2)</span><span class="bal-neg">$60</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;">
+        <span>No-show fee — Dance (12 May)</span><span class="bal-neg">$25</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:10px 0;font-size:15px;font-weight:700;">
+        <span>Total</span><span class="bal-neg">−$85</span>
+      </div>
+    </div>
+    <div class="modal-footer" style="flex-direction:column;gap:8px;">
+      <button class="btn btn-lime" style="width:100%;" onclick="alert('Redirecting to payment...');closeModal('modal-outstanding-payment')">Pay Now</button>
+      <button class="btn btn-ghost" style="width:100%;" onclick="alert('Exemption request submitted. You will be notified within 24 hours.');closeModal('modal-outstanding-payment')">Apply for Exemption</button>
+      <div style="font-size:11px;color:var(--grey);text-align:center;margin-top:4px;">Exemption requests are reviewed manually. Access remains restricted until approved or paid.</div>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-season-cancel">
+  <div class="modal" style="max-width:540px;">
+    <div class="modal-title">Season Transfer or Cancellation <button class="modal-close" onclick="closeModal('modal-season-cancel')">✕</button></div>
+    <div style="font-size:13px;color:var(--grey);margin-bottom:16px;line-height:1.5;">Use this for changes to a student's entire season enrolment. For a single missed class, use the catch-up / individual class cancel option instead.</div>
+    <div class="field"><label>Request Type</label>
+      <select id="sc-type" onchange="updateSeasonCancelForm()" style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
+        <option value="transfer">Transfer to another class / season</option>
+        <option value="cancel">Cancel full season enrolment</option>
+        <option value="downgrade">Downgrade (remove one class)</option>
+      </select>
+    </div>
+    <div id="sc-transfer-fields">
+      <div class="field"><label>Transfer to Class</label>
+        <select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
+          <option>Level 1 · Wed 5:30pm · Jaz · Rhapsody</option>
+          <option>Level 2 · Thu 6:30pm · Jaz · Rhapsody (1 spot)</option>
+          <option>Level 3 · Tue 8:30pm · Chloe · Rhapsody</option>
+          <option>Next season (Season 5)</option>
+        </select>
+      </div>
+      <div class="field"><label>Price Adjustment</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select style="background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:8px 10px;border-radius:8px;font-family:inherit;font-size:13px;">
+            <option>No adjustment (carry credit)</option><option>Pro-rata discount</option><option>Manual override</option><option>Full credit to account</option>
+          </select>
+          <input type="number" placeholder="$0" style="width:80px;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--lime);font-family:inherit;font-size:13px;padding:8px 10px;" />
+        </div>
+      </div>
+    </div>
+    <div id="sc-cancel-fields" style="display:none;">
+      <div style="background:#1a0000;border:1px solid #ff333355;border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--grey);">
+        Cancelling a full season enrolment. Apply the studio cancellation policy or manually set a refund/credit amount.
+      </div>
+      <div class="field"><label>Weeks Completed</label><input type="number" value="2" min="0" max="8" style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 12px;" /></div>
+      <div class="field"><label>Refund / Credit Amount</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select id="sc-refund-type" style="background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:8px 10px;border-radius:8px;font-family:inherit;font-size:13px;">
+            <option>Pro-rata refund (auto)</option><option>Full refund</option><option>Credit to account</option><option>Manual override</option><option>No refund</option>
+          </select>
+          <input type="number" placeholder="$0" id="sc-refund-amount" style="width:80px;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--lime);font-family:inherit;font-size:13px;padding:8px 10px;" />
+        </div>
+      </div>
+      <div style="background:#1a1a1a;border-radius:8px;padding:10px 14px;font-size:12px;color:var(--grey);margin-bottom:14px;">
+        <b style="color:var(--white);">Pro-rata calculation:</b> 2 of 8 weeks completed = 75% remaining → suggested refund: $120
+      </div>
+      <div class="field"><label>Line Item Overrides <span style="font-size:11px;font-weight:400;">(edit individual charges)</span></label>
+        <div style="background:#111;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;">
+            <thead><tr style="border-bottom:1px solid var(--border);"><th style="padding:8px 12px;text-align:left;color:var(--grey);">Item</th><th style="padding:8px 12px;text-align:right;color:var(--grey);">Original</th><th style="padding:8px 12px;text-align:right;color:var(--grey);">Adjusted</th></tr></thead>
+            <tbody>
+              <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px;">Season enrolment — Level 2</td><td style="padding:8px 12px;text-align:right;color:var(--lime);">$270</td><td style="padding:8px 12px;text-align:right;"><input type="number" value="200" style="width:70px;background:#1a1a1a;border:1px solid var(--border);border-radius:4px;color:var(--lime);font-family:inherit;font-size:12px;padding:3px 6px;text-align:right;" /></td></tr>
+              <tr><td style="padding:8px 12px;">Admin fee</td><td style="padding:8px 12px;text-align:right;color:#ff6b6b;">−$25</td><td style="padding:8px 12px;text-align:right;"><input type="number" value="25" style="width:70px;background:#1a1a1a;border:1px solid var(--border);border-radius:4px;color:#ff6b6b;font-family:inherit;font-size:12px;padding:3px 6px;text-align:right;" /></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="field"><label>Internal Note</label>
+      <textarea rows="2" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:10px 12px;resize:vertical;" placeholder="Reason for transfer or cancellation…"></textarea>
+    </div>
+    <div class="field"><label>Notify Student</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--lime);" /> Send confirmation email to student</label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-season-cancel')">Cancel</button>
+      <button class="btn btn-lime" onclick="alert('Season change processed.');closeModal('modal-season-cancel')">Confirm Change</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-add-product">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-title">Add / Edit Product <button class="modal-close" onclick="closeModal('modal-add-product')">✕</button></div>
+    <div class="field"><label>Product Name</label><input type="text" placeholder="e.g. Dry Hands Grip Aid" /></div>
+    <div class="field-row">
+      <div class="field"><label>Category</label>
+        <select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
+          <option>Grip Aids</option><option>Activewear</option><option>Merchandise</option><option>Accessories</option>
+        </select>
+      </div>
+      <div class="field"><label>Price (A$)</label><input type="number" placeholder="0.00" /></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>SKU</label><input type="text" placeholder="SKU-001" /></div>
+      <div class="field"><label>Initial Stock</label><input type="number" placeholder="0" /></div>
+    </div>
+    <div class="field"><label>Description <span style="font-size:11px;color:var(--grey);">(optional)</span></label><textarea rows="2" placeholder="Short product description…"></textarea></div>
+    <div class="field"><label>Variants <span style="font-size:11px;color:var(--grey);">(e.g. XS,S,M,L — leave blank if N/A)</span></label><input type="text" placeholder="XS, S, M, L" /></div>
+    <div class="field"><label>Low Stock Alert Threshold</label><input type="number" value="5" /></div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--lime);" /> Visible to students in app</label>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-add-product')">Cancel</button><button class="btn btn-lime" onclick="alert('Product saved!');closeModal('modal-add-product')">Save Product</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-square-sync">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-title">Square Integration <button class="modal-close" onclick="closeModal('modal-square-sync')">✕</button></div>
+    <div style="display:flex;align-items:center;gap:12px;background:#1a1a1a;border-radius:8px;padding:12px 16px;margin-bottom:16px;">
+      <div style="width:36px;height:36px;background:#00b140;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px;">■</div>
+      <div><div style="font-weight:600;">Connected to Square</div><div style="font-size:12px;color:var(--grey);">Location: Duality Pole · Last sync: 13 May 2026, 8:00am</div></div>
+      <span class="tag tag-lime" style="margin-left:auto;">Active</span>
+    </div>
+    <div class="field"><label>Sync Direction</label>
+      <select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
+        <option>Two-way (recommended)</option><option>Square → Duality only</option><option>Duality → Square only</option>
+      </select>
+    </div>
+    <div class="field"><label>Auto-sync Frequency</label>
+      <select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
+        <option>Every hour</option><option selected>Every morning at 8am</option><option>Manual only</option>
+      </select>
+    </div>
+    <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--lime);" /> Sync stock levels</label></div>
+    <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--lime);" /> Sync prices</label></div>
+    <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" style="accent-color:var(--lime);" /> Import new products from Square automatically</label></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="alert('Sync triggered...');closeModal('modal-square-sync')">Sync Now</button>
+      <button class="btn btn-lime" onclick="alert('Settings saved!');closeModal('modal-square-sync')">Save Settings</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-assign-locker">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-title">Assign Locker <button class="modal-close" onclick="closeModal('modal-assign-locker')">✕</button></div>
+    <div class="field"><label>Locker Number</label>
+      <select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
+        <option>#04 (Available)</option><option>#12 (Available)</option><option>#19 (Available)</option><option>#20 (Available)</option><option>#21 (Available)</option><option>#22 (Available)</option>
+      </select>
+    </div>
+    <div class="field"><label>Student</label><input type="text" placeholder="Search student name…" /></div>
+    <div class="field-row">
+      <div class="field"><label>Monthly Fee (A$)</label><input type="number" value="15" /></div>
+      <div class="field"><label>Start Date</label><input type="date" /></div>
+    </div>
+    <div class="field"><label>Notes <span style="font-size:11px;color:var(--grey);">(optional)</span></label><textarea rows="2" placeholder="Any notes…"></textarea></div>
+    <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--lime);" /> Send confirmation to student</label></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-assign-locker')">Cancel</button><button class="btn btn-lime" onclick="alert('Locker assigned!');closeModal('modal-assign-locker')">Assign Locker</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-locker-detail">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-title">Locker #01 — Jess Malone <button class="modal-close" onclick="closeModal('modal-locker-detail')">✕</button></div>
+    <div style="background:#1a1a1a;border-radius:8px;padding:14px 16px;margin-bottom:14px;font-size:13px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div><div style="color:var(--grey);font-size:11px;">Assigned</div><div>1 Mar 2026</div></div>
+      <div><div style="color:var(--grey);font-size:11px;">Monthly fee</div><div class="bal-pos">$15</div></div>
+      <div><div style="color:var(--grey);font-size:11px;">Last paid</div><div>1 May 2026</div></div>
+      <div><div style="color:var(--grey);font-size:11px;">Next due</div><div>1 Jun 2026</div></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" style="color:#e05555;" onclick="alert('Locker unassigned');closeModal('modal-locker-detail')">Unassign</button>
+      <button class="btn btn-lime" onclick="alert('Payment recorded');closeModal('modal-locker-detail')">Record Payment</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-add-to-class">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-title">Add Student to Class <button class="modal-close" onclick="closeModal('modal-add-to-class')">✕</button></div>
+    <div class="field"><label>Search Student</label>
+      <input type="text" placeholder="Name or email…" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:9px 12px;box-sizing:border-box;" oninput="searchAddStudent(this.value)" />
+      <div id="add-student-results" style="margin-top:6px;max-height:160px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;display:none;"></div>
+    </div>
+    <div class="field"><label>Booking Type</label>
+      <select id="add-student-type" style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
+        <option value="season">Season enrolment</option>
+        <option value="catchup">Catch-up class</option>
+        <option value="casual">Casual drop-in</option>
+        <option value="waitlist">Add to waitlist</option>
+      </select>
+    </div>
+    <div id="add-student-override-warning" style="background:#151000;border:1px solid var(--amber);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--amber);display:none;">
+      ⚠️ This class is at capacity. Adding this student will override the limit.
+    </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+        <input type="checkbox" style="accent-color:var(--lime);" /> Send confirmation email to student
+      </label>
+    </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+        <input type="checkbox" /> Override capacity limit (admin only)
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-to-class')">Cancel</button>
+      <button class="btn btn-lime" onclick="alert('Student added to class!');closeModal('modal-add-to-class')">Add to Class</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-override-capacity">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-title">Override Class Capacity <button class="modal-close" onclick="closeModal('modal-override-capacity')">✕</button></div>
+    <div style="font-size:13px;color:var(--grey);margin-bottom:16px;">Temporarily change the maximum number of students for this session or permanently for the season.</div>
+    <div class="field-row">
+      <div class="field">
+        <label>Current Capacity</label>
+        <input type="number" value="12" style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--grey);font-family:inherit;font-size:13px;padding:9px 12px;width:100%;box-sizing:border-box;" readonly />
+      </div>
+      <div class="field">
+        <label>New Capacity</label>
+        <input type="number" value="14" style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:9px 12px;width:100%;box-sizing:border-box;" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Apply to</label>
+      <select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
+        <option>This class only (tonight)</option>
+        <option>All remaining classes this season</option>
+        <option>All classes in this season</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-override-capacity')">Cancel</button>
+      <button class="btn btn-lime" onclick="alert('Capacity updated to 14!');closeModal('modal-override-capacity')">Update Capacity</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-instructor-student-detail">
+  <div class="modal" style="max-width:580px;max-height:85vh;overflow-y:auto;">
+    <div class="modal-title">
+      <div>
+        <div id="isd-name" style="font-family:'Archivo Black',sans-serif;font-size:16px;">Jess Malone</div>
+        <div id="isd-meta" style="font-size:12px;color:var(--grey);font-family:Archivo,sans-serif;font-weight:400;margin-top:2px;">Level 2 Mon 6:30pm · Season 4</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-instructor-student-detail')">✕</button>
+    </div>
+
+    <!-- Quick status row -->
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+      <div style="background:#1a1a1a;border-radius:8px;padding:10px 14px;flex:1;min-width:100px;">
+        <div style="font-size:11px;color:var(--grey);">Balance</div>
+        <div style="font-size:18px;font-weight:700;" class="bal-neg">−$120</div>
+      </div>
+      <div style="background:#1a1a1a;border-radius:8px;padding:10px 14px;flex:1;min-width:100px;">
+        <div style="font-size:11px;color:var(--grey);">Classes Booked</div>
+        <div style="font-size:18px;font-weight:700;">3</div>
+      </div>
+      <div style="background:#1a1a1a;border-radius:8px;padding:10px 14px;flex:1;min-width:100px;">
+        <div style="font-size:11px;color:var(--grey);">Attendance</div>
+        <div style="font-size:18px;font-weight:700;" style="color:var(--lime);">6/8</div>
+      </div>
+      <div style="background:#1a1a1a;border-radius:8px;padding:10px 14px;flex:1;min-width:100px;">
+        <div style="font-size:11px;color:var(--grey);">No-shows</div>
+        <div style="font-size:18px;font-weight:700;color:#ff6b6b;">1</div>
+      </div>
+    </div>
+
+    <div class="subtabs">
+      <button class="subtab active" onclick="switchSubTab(this,'isd-bookings')">Bookings</button>
+      <button class="subtab" onclick="switchSubTab(this,'isd-payments')">Payments & Charges</button>
+      <button class="subtab" onclick="switchSubTab(this,'isd-notes')">Notes</button>
+    </div>
+
+    <div id="isd-bookings" class="subscreen active">
+      <div class="tbl-section">
+        <table>
+          <thead><tr><th>Class</th><th>Season</th><th>Type</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td><b>Level 2</b><div style="font-size:11px;color:var(--grey)">Mon 6:30pm · Chloe</div></td><td>Season 4</td><td><span class="tag tag-lav">Season</span></td><td><span class="tag tag-lime">Active</span></td></tr>
+            <tr><td><b>High Tricks</b><div style="font-size:11px;color:var(--grey)">Mon 7:30pm · Mimi</div></td><td>Season 4</td><td><span class="tag tag-lav">Season</span></td><td><span class="tag tag-lime">Active</span></td></tr>
+            <tr><td><b>Level 2</b><div style="font-size:11px;color:var(--grey)">Tue · Chloe</div></td><td>Season 3</td><td><span class="tag tag-lav">Season</span></td><td><span class="tag tag-grey">Completed</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="isd-payments" class="subscreen">
+      <div style="background:#2a0000;border:1px solid #ff333355;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#ff6b6b;">
+        Outstanding balance: <b>$120</b> — Season 4 instalment 2 overdue
+      </div>
+      <div class="tbl-section">
+        <table>
+          <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Amount</th><th>Balance</th></tr></thead>
+          <tbody>
+            <tr><td style="color:var(--grey);font-size:12px;">12 May</td><td>No-show fee — Dance</td><td><span class="tag tag-red" style="font-size:10px;">Fee</span></td><td class="bal-neg">−$25</td><td class="bal-neg">−$120</td></tr>
+            <tr><td style="color:var(--grey);font-size:12px;">5 May</td><td>Season 4 — instalment 1 paid</td><td><span class="tag tag-lime" style="font-size:10px;">Payment</span></td><td class="bal-pos">+$90</td><td class="bal-neg">−$95</td></tr>
+            <tr><td style="color:var(--grey);font-size:12px;">1 May</td><td>Season 4 — High Tricks enrolment</td><td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td><td class="bal-neg">−$160</td><td class="bal-neg">−$185</td></tr>
+            <tr><td style="color:var(--grey);font-size:12px;">1 May</td><td>Season 4 — Level 2 enrolment</td><td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td><td class="bal-neg">−$160</td><td class="bal-neg">−$25</td></tr>
+            <tr><td style="color:var(--grey);font-size:12px;">28 Apr</td><td>Account credit applied</td><td><span class="tag tag-lime" style="font-size:10px;">Credit</span></td><td class="bal-pos">+$135</td><td class="bal-pos">+$135</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="isd-notes" class="subscreen">
+      <div class="note-item note-flag-red">
+        <div class="note-meta">🩹 Injury · Mimi · 10 May 2026 · Check-in: 17 May</div>
+        <div class="note-text">Right shoulder impingement — avoid overhead work.</div>
+      </div>
+      <div class="note-item">
+        <div class="note-meta">✨ Personality & Vibe · Chloe · 2 Apr 2026</div>
+        <div class="note-text">Loves being challenged — responds well to push. Very committed.</div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-instructor-student-detail')">Close</button>
+      <button class="btn btn-lime" onclick="closeModal('modal-instructor-student-detail');openModal('modal-chase')">Chase Payment</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
