@@ -387,8 +387,7 @@ tr.clickable-row:hover td { background: #141414; }
     <div class="nav-item" onclick="showScreen('timetable')"><span class="nav-icon">📅</span> Timetable</div>
     <div class="nav-item" onclick="showScreen('bookings')" data-stub="1"><span class="nav-icon">🎟</span> Bookings</div>
     <div class="nav-item" onclick="showScreen('billing')"><span class="nav-icon">💳</span> Billing</div>
-    <div class="nav-item" onclick="showScreen('discounts')" data-stub="1"><span class="nav-icon">🏷</span> Discounts</div>
-    <div class="nav-item" onclick="showScreen('giftcards')" data-stub="1">🎁 Gift Cards</div>
+    <div class="nav-item" onclick="showScreen('discounts')"><span class="nav-icon">🏷</span> Offers</div>
     <div class="nav-item" onclick="showScreen('community')"><span class="nav-icon">💬</span> Community</div>
     <div class="nav-item" onclick="showScreen('surveys')" data-stub="1">📋 Surveys</div>
     <div class="nav-divider"></div>
@@ -442,7 +441,7 @@ tr.clickable-row:hover td { background: #141414; }
             <span id="notif-badge" style="background:var(--lime);color:#000;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;font-size:11px;font-weight:700;">4</span>
           </div>
           <div style="display:flex;gap:8px;">
-            <button class="btn btn-ghost btn-xs" onclick="openModal('modal-action-log')">View log / + Add</button>
+            <button class="btn btn-ghost btn-xs" onclick="showScreen('action-log')">View log / + Add</button>
             <button class="btn btn-ghost btn-xs" onclick="toggleNotifList()">Hide</button>
           </div>
         </div>
@@ -480,7 +479,7 @@ tr.clickable-row:hover td { background: #141414; }
             <div style="flex:1;">
               <div style="font-size:13px;color:var(--white);">Injury check-in overdue</div>
               <div style="font-size:12px;color:var(--grey);margin-top:2px;">Jess Malone · right shoulder impingement · check-in was due 17 May</div>
-              <button class="btn btn-ghost btn-xs" style="margin-top:6px;" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='jess'))">View Notes</button>
+              <button class="btn btn-ghost btn-xs" style="margin-top:6px;" onclick="openStudentDetail(STUDENTS.find(function(s){return s.name==='Jess Malone'||s.id==='jess';})||{name:'Jess Malone',notes:[]})">View Notes</button>
             </div>
             <span style="font-size:11px;color:var(--amber);white-space:nowrap;margin-top:1px;">Overdue</span>
           </div>
@@ -541,56 +540,63 @@ tr.clickable-row:hover td { background: #141414; }
 
       <!-- Pending Actions -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;margin-top:4px;">
-        <div style="font-family:'Archivo Black',sans-serif;font-size:15px;">Pending Actions <span style="font-size:12px;background:var(--amber);color:#000;border-radius:10px;padding:2px 8px;margin-left:6px;font-weight:700;font-family:inherit;">3</span></div>
+        <div style="font-family:'Archivo Black',sans-serif;font-size:15px;">Pending Actions <span style="font-size:12px;background:var(--amber);color:#000;border-radius:10px;padding:2px 8px;margin-left:6px;font-weight:700;font-family:inherit;">4</span></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
 
-        <!-- Catch-up requests -->
-        <div>
-          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:8px;">Catch-up Requests</div>
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <div style="font-size:13px;font-weight:600;">Jess Malone</div>
-                <span class="tag tag-lav" style="font-size:10px;">Work commitment</span>
-              </div>
-              <div style="font-size:12px;color:var(--grey);margin-bottom:8px;">Missed Level 2 Mon 5 May &rarr; requesting Level 2 Mon 19 May</div>
-              <div style="display:flex;gap:6px;">
-                <button class="btn btn-lime btn-xs" onclick="alert('Catch-up approved for Jess Malone.')">Approve</button>
-                <button class="btn btn-ghost btn-xs" onclick="alert('Catch-up declined — Jess Malone notified.')">Decline</button>
-              </div>
-            </div>
-            <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <div style="font-size:13px;font-weight:600;">Ruby Kim</div>
-                <span class="tag tag-lav" style="font-size:10px;">Illness</span>
-              </div>
-              <div style="font-size:12px;color:var(--grey);margin-bottom:8px;">Missed Dance Fri 9 May &rarr; requesting Dance Sat 17 May</div>
-              <div style="display:flex;gap:6px;">
-                <button class="btn btn-lime btn-xs" onclick="alert('Catch-up approved for Ruby Kim.')">Approve</button>
-                <button class="btn btn-ghost btn-xs" onclick="alert('Catch-up declined — Ruby Kim notified.')">Decline</button>
-              </div>
-            </div>
+      <!-- Catch-up exemption requests -->
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:8px;">Catch-up Exemption Requests</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <div style="font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline dotted;" onclick="openStudentDetail(STUDENTS.find(function(s){return s.name==='Jess Malone';}))">Jess Malone</div>
+            <span class="tag tag-lav" style="font-size:10px;">Work commitment</span>
+          </div>
+          <div style="font-size:12px;color:var(--grey);margin-bottom:8px;">Missed Level 2 Mon 5 May &rarr; requesting Level 2 Mon 19 May</div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-lime btn-xs" onclick="alert('Catch-up approved — Jess Malone will be notified.')">Approve</button>
+            <button class="btn btn-ghost btn-xs" onclick="openContactStudentModal('Jess Malone','level-jump','Level 2 Mon 19 May','')">Decline &amp; Contact</button>
           </div>
         </div>
-
-        <!-- Overdue payment plan -->
-        <div>
-          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:8px;">Payment Plan &mdash; Overdue</div>
-          <div style="background:#1a0505;border:1px solid #3a1010;border-radius:10px;padding:12px 14px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-              <div style="font-size:13px;font-weight:600;">Kylie Rhodes</div>
-              <span class="tag tag-red" style="font-size:10px;">Overdue</span>
-            </div>
-            <div style="font-size:12px;color:var(--grey);margin-bottom:4px;">Season 4 &mdash; 2&times; instalments &middot; $160 total</div>
-            <div style="font-size:12px;color:#ff6b6b;margin-bottom:8px;font-weight:600;">$0 paid &middot; both instalments overdue</div>
-            <div style="display:flex;gap:6px;">
-              <button class="btn btn-ghost btn-xs" onclick="openChaseModal('Kylie Rhodes','Season 4 payment plan — both instalments overdue','$160',2)">Chase</button>
-              <button class="btn btn-ghost btn-xs" onclick="showScreen('billing')">View plan</button>
-            </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <div style="font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline dotted;" onclick="openStudentDetail(STUDENTS.find(function(s){return s.name==='Ruby Kim';}))">Ruby Kim</div>
+            <span class="tag tag-lav" style="font-size:10px;">Illness</span>
+          </div>
+          <div style="font-size:12px;color:var(--grey);margin-bottom:8px;">Missed Dance Fri 9 May &rarr; requesting Dance Sat 17 May</div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-lime btn-xs" onclick="alert('Catch-up approved — Ruby Kim will be notified.')">Approve</button>
+            <button class="btn btn-ghost btn-xs" onclick="openContactStudentModal('Ruby Kim','level-jump','Dance Sat 17 May','')">Decline &amp; Contact</button>
           </div>
         </div>
+      </div>
 
+      <!-- Payment plan approval requests -->
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:8px;">Payment Plan Requests — Awaiting Approval</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <div style="font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline dotted;" onclick="openStudentDetail(STUDENTS.find(function(s){return s.name==='Hannah Webb';}))">Hannah Webb</div>
+            <span class="tag tag-amber" style="font-size:10px;">Pending approval</span>
+          </div>
+          <div style="font-size:12px;color:var(--grey);margin-bottom:2px;">Season 4 — Level 1 &middot; $270 total</div>
+          <div style="font-size:12px;color:var(--grey);margin-bottom:8px;">Requested 3&times; instalments of $90</div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-lime btn-xs" onclick="alert('Payment plan approved — Hannah Webb will be notified.')">Approve</button>
+            <button class="btn btn-ghost btn-xs" onclick="openContactStudentModal('Hannah Webb','custom','','')">Deny &amp; Contact</button>
+          </div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <div style="font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline dotted;" onclick="openStudentDetail(STUDENTS.find(function(s){return s.name==='Amber Cole';}))">Amber Cole</div>
+            <span class="tag tag-amber" style="font-size:10px;">Pending approval</span>
+          </div>
+          <div style="font-size:12px;color:var(--grey);margin-bottom:2px;">Season 4 — Level 2 &middot; $270 total</div>
+          <div style="font-size:12px;color:var(--grey);margin-bottom:8px;">Requested 2&times; instalments of $135</div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-lime btn-xs" onclick="alert('Payment plan approved — Amber Cole will be notified.')">Approve</button>
+            <button class="btn btn-ghost btn-xs" onclick="openContactStudentModal('Amber Cole','custom','','')">Deny &amp; Contact</button>
+          </div>
+        </div>
       </div>
 
 
@@ -2376,7 +2382,7 @@ tr.clickable-row:hover td { background: #141414; }
         <button class="btn btn-ghost btn-sm" onclick="alert('Register saved!')">Save Register</button>
         <button class="btn btn-ghost btn-sm" onclick="openModal('modal-add-to-class')">+ Add Student</button>
         <button class="btn btn-ghost btn-sm" onclick="openModal('modal-override-capacity')">Override Capacity</button>
-        <button class="btn btn-ghost btn-sm" onclick="alert('Class summary email sent to instructor')">Send Class Summary Email</button>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-email-attendees')">Email All Students Attending</button>
         <button class="btn btn-ghost btn-sm" style="color:#e05555;border-color:#e05555;" onclick="openCancelClass(document.getElementById('att-class-name').textContent, document.getElementById('att-time').textContent+' '+document.getElementById('att-studio').textContent, document.getElementById('att-studio').textContent, 8)">Cancel Class</button>
       </div>
 
@@ -2409,7 +2415,7 @@ tr.clickable-row:hover td { background: #141414; }
             <tbody>
               <tr id="att-row-0">
                 <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#ffaa44;">J</div><div><div style="font-weight:500;"><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="openModal('modal-instructor-student-detail')">Jess Malone</span> 🎂 <span style="display:inline-block;background:#0f1600;color:var(--lime);border:1px solid var(--lime);border-radius:12px;font-size:10px;font-weight:600;padding:1px 8px;letter-spacing:0.3px;margin-left:2px;">Birthday this week!</span></div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
-                <td><span class="tag tag-lav">Enrolled</span></td>
+                <td><span class="tag tag-lav" style="font-size:10px;">Enrolled</span></td>
                 <td style="color:var(--grey);font-size:12px;">0412 345 678</td>
                 <td><select class="att-status-select" onchange="updateAttRow(0,this.value)"><option value="">Select…</option><option value="present">Present</option><option value="noshow-fee">No-show + $25 fee</option><option value="noshow-waived">No-show — fee waived</option><option value="late">Late</option><option value="excused">Excused</option></select></td>
                 <td id="att-fee-0">—</td>
@@ -2496,10 +2502,32 @@ tr.clickable-row:hover td { background: #141414; }
       <div id="att-waitlist" class="subscreen">
         <div class="tbl-section">
           <table>
-            <thead><tr><th>#</th><th>Student</th><th>Contact</th><th>Joined Waitlist</th><th>Action</th></tr></thead>
+            <thead><tr><th>#</th><th>Student</th><th>Contact</th><th>Joined</th><th>Status</th><th>Action</th></tr></thead>
             <tbody>
-              <tr><td style="color:var(--grey);">1</td><td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#44ff99;">T</div><div><div style="font-weight:500;">Tara Bell</div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td><td style="color:var(--grey);font-size:12px;">0412 999 000</td><td style="color:var(--grey);">10 May 2025</td><td><button class="btn btn-lime btn-xs" onclick="alert('Tara Bell promoted from waitlist — notification sent')">Promote</button></td></tr>
-              <tr><td style="color:var(--grey);">2</td><td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#ff9966;">Z</div><div><div style="font-weight:500;">Zoe Clarke</div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td><td style="color:var(--grey);font-size:12px;">0412 000 111</td><td style="color:var(--grey);">11 May 2025</td><td><button class="btn btn-lime btn-xs" onclick="alert('Zoe Clarke promoted from waitlist — notification sent')">Promote</button></td></tr>
+              <tr id="wl-row-0">
+                <td style="color:var(--grey);">1</td>
+                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#44ff99;">T</div><div><div style="font-weight:500;cursor:pointer;text-decoration:underline dotted;" onclick="openStudentDetail(STUDENTS.find(function(s){return s.name==='Tara Bell';}))">Tara Bell</div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
+                <td style="color:var(--grey);font-size:12px;">0412 999 000</td>
+                <td style="color:var(--grey);">10 May 2025</td>
+                <td id="wl-status-0"><span class="tag tag-grey" style="font-size:10px;">Waiting</span></td>
+                <td style="white-space:nowrap;">
+                  <button class="btn btn-lime btn-xs" id="wl-offer-0" onclick="offerWaitlistSpot(0,'Tara Bell')">Offer Spot</button>
+                  <button class="btn btn-ghost btn-xs" id="wl-revoke-0" style="display:none;" onclick="revokeWaitlistOffer(0,'Tara Bell')">Revoke Offer</button>
+                  <button class="btn btn-ghost btn-xs" onclick="removeFromWaitlist(0,'Tara Bell')">Remove</button>
+                </td>
+              </tr>
+              <tr id="wl-row-1">
+                <td style="color:var(--grey);">2</td>
+                <td><div style="display:flex;align-items:center;gap:10px;"><div class="s-avatar" style="background:#ff9966;">Z</div><div><div style="font-weight:500;cursor:pointer;text-decoration:underline dotted;" onclick="openStudentDetail(STUDENTS.find(function(s){return s.name==='Zoe Clarke';}))">Zoe Clarke</div><div style="font-size:11px;color:var(--grey);">she/her</div></div></div></td>
+                <td style="color:var(--grey);font-size:12px;">0412 000 111</td>
+                <td style="color:var(--grey);">11 May 2025</td>
+                <td id="wl-status-1"><span class="tag tag-amber" style="font-size:10px;">Offer Sent</span></td>
+                <td style="white-space:nowrap;">
+                  <button class="btn btn-lime btn-xs" id="wl-accept-1" onclick="acceptWaitlistForStudent(1,'Zoe Clarke')">Accept for Them</button>
+                  <button class="btn btn-ghost btn-xs" id="wl-revoke-1" onclick="revokeWaitlistOffer(1,'Zoe Clarke')">Revoke Offer</button>
+                  <button class="btn btn-ghost btn-xs" onclick="removeFromWaitlist(1,'Zoe Clarke')">Remove</button>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -2541,7 +2569,7 @@ tr.clickable-row:hover td { background: #141414; }
         </div>
         <div style="display:flex;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
           <button id="tt-mode-attend" onclick="setTTMode('attend')" style="padding:8px 16px;font-size:12px;border:none;cursor:pointer;background:var(--lime);color:#000;font-family:inherit;font-weight:600;">Attendance Mode</button>
-          <button id="tt-mode-setup" onclick="setTTMode('setup')" style="padding:8px 16px;font-size:12px;border:none;cursor:pointer;background:transparent;color:var(--grey);font-family:inherit;">Season Setup</button>
+          <button id="tt-mode-setup" onclick="setTTMode('setup')" style="padding:8px 16px;font-size:12px;border:none;cursor:pointer;background:transparent;color:var(--grey);font-family:inherit;">Term Setup</button>
         </div>
       </div>
 
@@ -2635,10 +2663,42 @@ tr.clickable-row:hover td { background: #141414; }
 
       <!-- ── Season Setup View ── -->
       <div id="tt-season-view" style="display:none;">
+
+        <!-- Season Setup Filters -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
+          <select id="tt-filter-level" onchange="filterSeasonView()" style="background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:7px 12px;border-radius:8px;font-family:inherit;font-size:13px;">
+            <option value="">All Levels</option>
+            <option value="Level 1">Level 1</option>
+            <option value="Level 2">Level 2</option>
+            <option value="Level 3">Level 3</option>
+            <option value="High Tricks">High Tricks</option>
+            <option value="Inter Floor">Inter Floor</option>
+            <option value="Strip Virgin">Strip Virgin</option>
+            <option value="Dance">Dance</option>
+          </select>
+          <select id="tt-filter-teacher" onchange="filterSeasonView()" style="background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:7px 12px;border-radius:8px;font-family:inherit;font-size:13px;">
+            <option value="">All Teachers</option>
+            <option value="Mimi">Mimi</option>
+            <option value="Chloe">Chloe</option>
+            <option value="Jaz">Jaz</option>
+            <option value="Viv">Viv</option>
+            <option value="Bambi">Bambi</option>
+          </select>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" id="tt-filter-waitlisted" onchange="filterSeasonView()" style="accent-color:var(--amber);" />
+            <span style="color:var(--amber);">Has waitlist</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" id="tt-filter-low" onchange="filterSeasonView()" style="accent-color:var(--lav);" />
+            <span style="color:var(--lav);">Low numbers (&lt;4)</span>
+          </label>
+          <button class="btn btn-ghost btn-xs" onclick="document.getElementById('tt-filter-level').value='';document.getElementById('tt-filter-teacher').value='';document.getElementById('tt-filter-waitlisted').checked=false;document.getElementById('tt-filter-low').checked=false;filterSeasonView()">Clear</button>
+        </div>
+
         <div style="font-size:13px;color:var(--grey);margin-bottom:16px;">Season 4 — 11 May to 5 Jul 2026 · 8 weeks · Click any class to view season roster or edit settings</div>
         <div style="display:flex;flex-direction:column;gap:8px;">
 
-          <div style="background:#111;border:1px solid var(--border);border-radius:10px;">
+          <div data-level="Level 1" data-teacher="Chloe" data-enrolled="10" data-waitlist="1" style="background:#111;border:1px solid var(--border);border-radius:10px;">
             <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('Level 1','Mon 5:30pm','Chloe','The Box',10,12,1)">
               <div><div style="font-weight:600;font-size:14px;">Level 1</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Mon 5:30pm</div></div>
               <div style="font-size:13px;">Chloe <span style="color:var(--grey);">· The Box</span></div>
@@ -2648,7 +2708,7 @@ tr.clickable-row:hover td { background: #141414; }
             </div>
           </div>
 
-          <div style="background:#111;border:1px solid #ff3333aa;border-radius:10px;">
+          <div data-level="Level 2" data-teacher="Chloe" data-enrolled="15" data-waitlist="3" style="background:#111;border:1px solid #ff3333aa;border-radius:10px;">
             <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('Level 2','Mon 6:30pm','Chloe','The Box',15,15,3)">
               <div><div style="font-weight:600;font-size:14px;">Level 2</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Mon 6:30pm</div></div>
               <div style="font-size:13px;">Chloe <span style="color:var(--grey);">· The Box</span></div>
@@ -2658,7 +2718,7 @@ tr.clickable-row:hover td { background: #141414; }
             </div>
           </div>
 
-          <div style="background:#111;border:1px solid var(--border);border-radius:10px;">
+          <div data-level="High Tricks" data-teacher="Mimi" data-enrolled="8" data-waitlist="0" style="background:#111;border:1px solid var(--border);border-radius:10px;">
             <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('High Tricks','Mon 7:30pm','Mimi','The Box',8,10,0)">
               <div><div style="font-weight:600;font-size:14px;">High Tricks</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Mon 7:30pm</div></div>
               <div style="font-size:13px;">Mimi <span style="color:var(--grey);">· The Box</span></div>
@@ -2668,7 +2728,7 @@ tr.clickable-row:hover td { background: #141414; }
             </div>
           </div>
 
-          <div style="background:#111;border:1px solid var(--border);border-radius:10px;">
+          <div data-level="Inter Floor" data-teacher="Viv" data-enrolled="6" data-waitlist="0" style="background:#111;border:1px solid var(--border);border-radius:10px;">
             <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('Inter Floor','Tue 6:30pm','Viv','Rhapsody',6,10,0)">
               <div><div style="font-weight:600;font-size:14px;">Inter Floor</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Tue 6:30pm</div></div>
               <div style="font-size:13px;">Viv <span style="color:var(--grey);">· Rhapsody</span></div>
@@ -2678,7 +2738,7 @@ tr.clickable-row:hover td { background: #141414; }
             </div>
           </div>
 
-          <div style="background:#111;border:1px solid var(--border);border-radius:10px;">
+          <div data-level="Level 3" data-teacher="Chloe" data-enrolled="5" data-waitlist="0" style="background:#111;border:1px solid var(--border);border-radius:10px;">
             <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('Level 3','Tue 8:30pm','Chloe','Rhapsody',5,12,0)">
               <div><div style="font-weight:600;font-size:14px;">Level 3</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Tue 8:30pm</div></div>
               <div style="font-size:13px;">Chloe <span style="color:var(--grey);">· Rhapsody</span></div>
@@ -2688,7 +2748,7 @@ tr.clickable-row:hover td { background: #141414; }
             </div>
           </div>
 
-          <div style="background:#111;border:1px solid var(--border);border-radius:10px;">
+          <div data-level="Level 1" data-teacher="Jaz" data-enrolled="9" data-waitlist="2" style="background:#111;border:1px solid var(--border);border-radius:10px;">
             <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('Level 1','Wed 5:30pm','Jaz','Rhapsody',9,12,2)">
               <div><div style="font-weight:600;font-size:14px;">Level 1</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Wed 5:30pm</div></div>
               <div style="font-size:13px;">Jaz <span style="color:var(--grey);">· Rhapsody</span></div>
@@ -2698,7 +2758,7 @@ tr.clickable-row:hover td { background: #141414; }
             </div>
           </div>
 
-          <div style="background:#111;border:1px solid var(--border);border-radius:10px;">
+          <div data-level="Level 3" data-teacher="Mimi" data-enrolled="7" data-waitlist="0" style="background:#111;border:1px solid var(--border);border-radius:10px;">
             <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('Level 3','Wed 7:30pm','Mimi','The Box',7,10,0)">
               <div><div style="font-weight:600;font-size:14px;">Level 3</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Wed 7:30pm</div></div>
               <div style="font-size:13px;">Mimi <span style="color:var(--grey);">· The Box</span></div>
@@ -2708,7 +2768,7 @@ tr.clickable-row:hover td { background: #141414; }
             </div>
           </div>
 
-          <div style="background:#111;border:1px solid var(--border);border-radius:10px;">
+          <div data-level="Level 2" data-teacher="Jaz" data-enrolled="11" data-waitlist="0" style="background:#111;border:1px solid var(--border);border-radius:10px;">
             <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('Level 2','Thu 6:30pm','Jaz','Rhapsody',11,12,0)">
               <div><div style="font-weight:600;font-size:14px;">Level 2</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Thu 6:30pm</div></div>
               <div style="font-size:13px;">Jaz <span style="color:var(--grey);">· Rhapsody</span></div>
@@ -2718,7 +2778,7 @@ tr.clickable-row:hover td { background: #141414; }
             </div>
           </div>
 
-          <div style="background:#111;border:1px solid var(--border);border-radius:10px;">
+          <div data-level="Strip Virgin" data-teacher="Viv" data-enrolled="9" data-waitlist="2" style="background:#111;border:1px solid var(--border);border-radius:10px;">
             <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('Strip Virgin','Thu 7:30pm','Viv','Rhapsody',9,12,2)">
               <div><div style="font-weight:600;font-size:14px;">Strip Virgin</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Thu 7:30pm</div></div>
               <div style="font-size:13px;">Viv <span style="color:var(--grey);">· Rhapsody</span></div>
@@ -2728,7 +2788,7 @@ tr.clickable-row:hover td { background: #141414; }
             </div>
           </div>
 
-          <div style="background:#111;border:1px solid var(--border);border-radius:10px;">
+          <div data-level="Dance" data-teacher="Viv" data-enrolled="8" data-waitlist="0" style="background:#111;border:1px solid var(--border);border-radius:10px;">
             <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('Dance','Fri 6:00pm','Viv','Rhapsody',8,10,0)">
               <div><div style="font-weight:600;font-size:14px;">Dance</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Fri 6:00pm</div></div>
               <div style="font-size:13px;">Viv <span style="color:var(--grey);">· Rhapsody</span></div>
@@ -2738,7 +2798,7 @@ tr.clickable-row:hover td { background: #141414; }
             </div>
           </div>
 
-          <div style="background:#111;border:1px solid var(--border);border-radius:10px;">
+          <div data-level="Inter Floor" data-teacher="Viv" data-enrolled="4" data-waitlist="0" style="background:#111;border:1px solid var(--lav);border-radius:10px;">
             <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('Inter Floor','Fri 8:30pm','Viv','Rhapsody',4,10,0)">
               <div><div style="font-weight:600;font-size:14px;">Inter Floor</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Fri 8:30pm</div></div>
               <div style="font-size:13px;">Viv <span style="color:var(--grey);">· Rhapsody</span></div>
@@ -2748,7 +2808,7 @@ tr.clickable-row:hover td { background: #141414; }
             </div>
           </div>
 
-          <div style="background:#111;border:1px solid var(--border);border-radius:10px;">
+          <div data-level="Choreo Intensive" data-teacher="Mimi" data-enrolled="7" data-waitlist="0" style="background:#111;border:1px solid var(--border);border-radius:10px;">
             <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('Choreo Intensive','Sat 11:00am','Mimi','The Box',7,10,0)">
               <div><div style="font-weight:600;font-size:14px;">Choreo Intensive</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Sat 11:00am</div></div>
               <div style="font-size:13px;">Mimi <span style="color:var(--grey);">· The Box</span></div>
@@ -2765,7 +2825,7 @@ tr.clickable-row:hover td { background: #141414; }
     <!-- ===== SEASONS ===== -->
     <div id="screen-seasons" class="screen">
       <div class="page-header">
-        <div><div class="page-title">Seasons</div><div class="page-sub">Manage term bookings and pricing</div></div>
+        <div><div class="page-title">Terms</div><div class="page-sub">Manage term schedules and pricing</div></div>
         <button class="btn btn-lime" onclick="openModal('modal-season')">+ New Season</button>
       </div>
       <div class="season-grid">
@@ -2778,7 +2838,7 @@ tr.clickable-row:hover td { background: #141414; }
 
     <!-- ===== SEASON EDIT (full-page) ===== -->
     <div id="screen-season-edit" class="screen">
-      <div class="back-link" onclick="showScreen('seasons')">← Back to Seasons</div>
+      <div class="back-link" onclick="showScreen('seasons')">← Back to Terms</div>
       <div class="page-header" style="margin-bottom:20px;">
         <div><div id="season-edit-name" class="page-title">Season 3</div></div>
       </div>
@@ -2894,7 +2954,7 @@ tr.clickable-row:hover td { background: #141414; }
     <!-- ===== BOOKINGS ===== -->
     <div id="screen-bookings" class="screen">
       <div class="page-header">
-        <div><div class="page-title">Bookings</div><div class="page-sub">All class bookings</div></div>
+        <div><div class="page-title">Bookings</div><div class="page-sub">Every booking across terms, casuals, trials and workshops</div></div>
         <div style="display:flex;gap:8px;align-items:center;">
           <select id="bulk-action-select" class="select-input"><option value="">Bulk Actions</option><option value="Send reminder">Send reminder</option><option value="Export selected">Export selected</option><option value="Cancel selected">Cancel selected</option><option value="Add to waitlist">Add to waitlist</option></select>
           <button class="btn btn-ghost btn-sm" onclick="(function(){var a=document.getElementById('bulk-action-select').value;if(!a){alert('Please select a bulk action');return;}alert('Bulk action: '+a+' applied to selected bookings');document.getElementById('bulk-action-select').value='';})()">Apply</button>
@@ -2903,6 +2963,7 @@ tr.clickable-row:hover td { background: #141414; }
       <div class="filter-bar">
         <select class="select-input"><option>Season 3 (Active)</option><option>Season 2</option><option>Season 1</option><option>All Seasons</option><option>Casual</option></select>
         <select class="select-input"><option>All Classes</option><option>Level 1</option><option>Level 2</option><option>Level 3</option><option>High Tricks</option><option>Dance</option></select>
+        <select class="select-input"><option>All Types</option><option>Season</option><option>Trial</option><option>Casual</option><option>Workshop</option><option>Catch-up</option></select>
         <select class="select-input"><option>All Statuses</option><option>Confirmed</option><option>Waitlist</option><option>No-show</option><option>Cancelled</option></select>
         <input class="search-input" type="text" placeholder="Search student…" style="min-width:160px;" />
       </div>
@@ -2916,6 +2977,8 @@ tr.clickable-row:hover td { background: #141414; }
             <tr><td><input type="checkbox" style="accent-color:var(--lime);"/></td><td>Jess Malone</td><td>Level 2 · Mon 6:30pm</td><td>Season 3</td><td><span class="tag tag-lav">Season</span></td><td><span class="tag tag-lime">Confirmed</span></td><td>$180</td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-transfer')">Transfer</button> <button class="btn btn-ghost btn-xs">Cancel</button></td></tr>
             <tr><td><input type="checkbox" style="accent-color:var(--lime);"/></td><td>Ruby Kim</td><td>Level 3 · Wed 7:30pm</td><td>Season 3</td><td><span class="tag tag-lav">Season</span></td><td><span class="tag tag-lime">Confirmed</span></td><td>$180</td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-transfer')">Transfer</button> <button class="btn btn-ghost btn-xs">Cancel</button></td></tr>
             <tr><td><input type="checkbox" style="accent-color:var(--lime);"/></td><td>Sophie Lawson</td><td>Level 1 · Mon 5:30pm</td><td>Season 3</td><td><span class="tag tag-lav">Season</span></td><td><span class="tag tag-lime">Confirmed</span></td><td>$160</td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-transfer')">Transfer</button> <button class="btn btn-ghost btn-xs">Cancel</button></td></tr>
+            <tr><td><input type="checkbox" style="accent-color:var(--lime);"/></td><td>Maya Tran</td><td>Level 1 · Mon 5:30pm</td><td>13 May 2026</td><td><span class="tag" style="background:#1a0f30;border:1px solid #aa88ff;color:#aa88ff;">Trial</span></td><td><span class="tag tag-lime">Confirmed</span></td><td>$0</td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-transfer')">Convert to Season</button></td></tr>
+            <tr><td><input type="checkbox" style="accent-color:var(--lime);"/></td><td>Cleo Nguyen</td><td>Choreo Intensive · Sat 11am</td><td>17 May 2026</td><td><span class="tag tag-amber">Workshop</span></td><td><span class="tag tag-lime">Confirmed</span></td><td>$75</td><td><button class="btn btn-ghost btn-xs">Cancel</button></td></tr>
             <tr><td><input type="checkbox" style="accent-color:var(--lime);"/></td><td>Tara Bell</td><td>Level 2 · Mon 6:30pm</td><td>Season 3</td><td><span class="tag tag-lav">Season</span></td><td><span class="tag tag-amber">Waitlist</span></td><td>$0</td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-transfer')">Transfer</button> <button class="btn btn-ghost btn-xs">Cancel</button></td></tr>
             <tr><td><input type="checkbox" style="accent-color:var(--lime);"/></td><td>Ruby Kim</td><td>Dance · Fri 6:00pm</td><td>12 May 2025</td><td><span class="tag tag-grey">Casual</span></td><td><span class="tag tag-red">No-show</span></td><td>$35</td><td><button class="btn btn-ghost btn-xs">Mark No-show</button> <button class="btn btn-ghost btn-xs">Cancel</button></td></tr>
             <tr><td><input type="checkbox" style="accent-color:var(--lime);"/></td><td>Dana Park</td><td>High Tricks · Mon 7:30pm</td><td>Season 3</td><td><span class="tag tag-lav">Season</span></td><td><span class="tag tag-lime">Confirmed</span></td><td>$180</td><td><button class="btn btn-ghost btn-xs" onclick="openModal('modal-transfer')">Transfer</button> <button class="btn btn-ghost btn-xs">Cancel</button></td></tr>
@@ -3093,7 +3156,7 @@ tr.clickable-row:hover td { background: #141414; }
     <!-- ===== DISCOUNTS ===== -->
     <div id="screen-discounts" class="screen">
       <div class="page-header">
-        <div><div class="page-title">Discounts</div><div class="page-sub">Promo codes and offers</div></div>
+        <div><div class="page-title">Offers</div><div class="page-sub">Discounts, promo codes and gift vouchers</div></div>
         <button class="btn btn-lime" onclick="openModal('modal-discount')">+ Create Code</button>
       </div>
       <!-- Class-count Pricing section -->
@@ -3199,6 +3262,28 @@ tr.clickable-row:hover td { background: #141414; }
           </table>
         </div>
       </div>
+    
+          <!-- Gift Vouchers / Gift Cards section -->
+          <div class="section" style="margin-top:24px;margin-bottom:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <div>
+                <div class="section-title" style="margin-bottom:0;">Gift Vouchers</div>
+                <p style="font-size:13px;color:var(--grey);line-height:1.6;margin-top:4px;margin-bottom:0;">Issue gift vouchers redeemable against any class or package.</p>
+              </div>
+              <button class="btn btn-lime btn-sm" onclick="openModal('modal-create-giftcard')">+ Issue Voucher</button>
+            </div>
+            <div class="tbl-section">
+              <table>
+                <thead><tr><th>Code</th><th>Recipient</th><th>Value</th><th>Balance</th><th>Issued</th><th>Expires</th><th>Status</th></tr></thead>
+                <tbody>
+                  <tr><td><code style="font-size:12px;background:#1a1a1a;padding:2px 6px;border-radius:4px;">DPGIFT-8821</code></td><td>Ruby Kim (from Jess M.)</td><td>$100</td><td style="color:var(--lime);">$100</td><td style="color:var(--grey);">1 May 2026</td><td style="color:var(--grey);">1 May 2027</td><td><span class="tag tag-lime">Active</span></td></tr>
+                  <tr><td><code style="font-size:12px;background:#1a1a1a;padding:2px 6px;border-radius:4px;">DPGIFT-4410</code></td><td>Sophie Lawson</td><td>$50</td><td style="color:var(--grey);">$0</td><td style="color:var(--grey);">10 Jan 2026</td><td style="color:var(--grey);">10 Jan 2027</td><td><span class="tag tag-grey">Redeemed</span></td></tr>
+                  <tr><td><code style="font-size:12px;background:#1a1a1a;padding:2px 6px;border-radius:4px;">DPGIFT-7753</code></td><td>Nina Torres</td><td>$75</td><td style="color:var(--amber);">$25</td><td style="color:var(--grey);">15 Mar 2026</td><td style="color:var(--grey);">15 Mar 2027</td><td><span class="tag tag-lime">Active</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
     </div>
 
     <!-- ===== GIFT CARDS ===== -->
@@ -5855,7 +5940,16 @@ tr.clickable-row:hover td { background: #141414; }
 <!-- Add to Class Modal (enhanced B2) -->
 <div class="modal-overlay" id="modal-add-to-class">
   <div class="modal modal-lg">
-    <div class="modal-title">Add to Class <button class="modal-close" onclick="closeModal('modal-add-to-class')">✕</button></div>
+    <div class="modal-title">Add Student to Class <button class="modal-close" onclick="closeModal('modal-add-to-class')">✕</button></div>
+    <div class="field">
+      <label>Student</label>
+      <input type="text" id="atc-student-search" placeholder="Search by name or email…" oninput="searchAtcStudent(this.value)" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:10px 12px;box-sizing:border-box;" />
+      <div id="atc-student-results" style="display:none;margin-top:4px;border:1px solid var(--border);border-radius:8px;overflow:hidden;max-height:160px;overflow-y:auto;"></div>
+      <div id="atc-student-selected" style="display:none;margin-top:6px;padding:8px 12px;background:#0f1600;border:1px solid var(--lime);border-radius:8px;font-size:13px;display:flex;align-items:center;justify-content:space-between;">
+        <span id="atc-student-name">—</span>
+        <button class="btn btn-ghost btn-xs" onclick="clearAtcStudent()">✕</button>
+      </div>
+    </div>
     <div class="field">
       <label>Enrolment Type</label>
       <select id="add-class-type" onchange="toggleAddToClassType()" style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;font-size:13px;">
@@ -5898,7 +5992,43 @@ tr.clickable-row:hover td { background: #141414; }
     </div>
     <div class="field"><label>Notes</label><textarea placeholder="Optional notes…"></textarea></div>
     <input type="hidden" id="selected-add-class" value="" />
-    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-add-to-class')">Cancel</button><button class="btn btn-lime" onclick="confirmAddToClass()">Add Student</button></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-add-to-class')">Cancel</button><button class="btn btn-lime" onclick="confirmAddToClass()">Continue to Payment →</button></div>
+  </div>
+</div>
+
+<!-- Add to Class: Payment Step Modal -->
+<div class="modal-overlay" id="modal-atc-payment">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-title">Payment — <span id="atc-pay-summary">Level 2 Mon 6:30pm</span> <button class="modal-close" onclick="closeModal('modal-atc-payment')">✕</button></div>
+    <div style="background:#1a1a1a;border-radius:8px;padding:12px 14px;margin-bottom:18px;font-size:13px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--grey);">Student</span><strong id="atc-pay-student">Jess Malone</strong></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--grey);">Class</span><span id="atc-pay-class">Level 2 Mon 6:30pm</span></div>
+      <div style="display:flex;justify-content:space-between;"><span style="color:var(--grey);">Type</span><span id="atc-pay-type">Season enrolment</span></div>
+    </div>
+    <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:10px;">Standard price</div>
+    <div style="font-size:22px;font-family:'Archivo Black',sans-serif;margin-bottom:18px;" id="atc-pay-price">$270.00</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button class="btn btn-lime" style="justify-content:flex-start;gap:12px;padding:14px 16px;" onclick="atcPayAction('payment')">
+        <span style="font-size:18px;">💳</span>
+        <div style="text-align:left;"><div style="font-weight:700;">Take Payment</div><div style="font-size:11px;font-weight:400;opacity:0.8;">Process card, cash or bank transfer now</div></div>
+      </button>
+      <button class="btn btn-ghost" style="justify-content:flex-start;gap:12px;padding:14px 16px;" onclick="atcPayAction('credit')">
+        <span style="font-size:18px;">🪙</span>
+        <div style="text-align:left;"><div style="font-weight:700;">Use Account Credit</div><div id="atc-credit-bal" style="font-size:11px;opacity:0.8;">No credit on account</div></div>
+      </button>
+      <button class="btn btn-ghost" style="justify-content:flex-start;gap:12px;padding:14px 16px;" onclick="atcPayAction('plan')">
+        <span style="font-size:18px;">📅</span>
+        <div style="text-align:left;"><div style="font-weight:700;">Set Up Payment Plan</div><div style="font-size:11px;opacity:0.8;">Split into 2 or 3 instalments</div></div>
+      </button>
+      <button class="btn btn-ghost" style="justify-content:flex-start;gap:12px;padding:14px 16px;" onclick="atcPayAction('change')">
+        <span style="font-size:18px;">✏️</span>
+        <div style="text-align:left;"><div style="font-weight:700;">Change Price</div><div style="font-size:11px;opacity:0.8;">Override the standard rate for this student</div></div>
+      </button>
+      <button class="btn btn-ghost" style="justify-content:flex-start;gap:12px;padding:14px 16px;border-color:#333;" onclick="atcPayAction('skip')">
+        <span style="font-size:18px;">⏭</span>
+        <div style="text-align:left;"><div style="font-weight:700;color:var(--amber);">Skip for Now</div><div style="font-size:11px;opacity:0.8;">Student will show as owing — resolve later</div></div>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -6423,10 +6553,10 @@ const _searchData = [
 ];
 
 // ===== SCREEN =====
-const screenTitles = {
+const screenTitles = { 'action-log': 'Action Items Log',
   dashboard:'Dashboard', students:'Students', timetable:'Timetable',
-  seasons:'Seasons', bookings:'Bookings', billing:'Billing',
-  discounts:'Discounts', giftcards:'Gift Cards', community:'Community',
+  seasons:'Terms', bookings:'Bookings', billing:'Billing',
+  discounts:'Offers', giftcards:'Gift Cards', community:'Community',
   surveys:'Surveys', staff:'Staff', settings:'Settings',
   reporting:'Analytics', 'activity-log':'Activity Log', leads:'Leads', kisi:'Kisi Access',
   'manage-tags':'Tags', 'skill-lists':'Skill Lists', rooms:'Rooms', categories:'Categories',
@@ -7173,6 +7303,114 @@ function openInvoiceDetail(student, description, amount, due, chaseCount) {
   openModal('modal-invoice-detail');
 }
 
+
+// ── Add to Class: student search ────────────────────────────────────────────
+var _atcSelectedStudent = null;
+function searchAtcStudent(q) {
+  var res = document.getElementById("atc-student-results");
+  if(!q || q.length < 2) { res.style.display = "none"; return; }
+  var matches = STUDENTS.filter(function(s) {
+    return s.name.toLowerCase().includes(q.toLowerCase()) || (s.email && s.email.toLowerCase().includes(q.toLowerCase()));
+  }).slice(0, 6);
+  if(!matches.length) { res.style.display = "none"; return; }
+  res.style.display = "";
+  res.innerHTML = matches.map(function(s) {
+    return "<div style=\"padding:9px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);background:var(--card);\" " +
+      "onmouseenter=\"this.style.background='#1a1a1a';\" onmouseleave=\"this.style.background='var(--card)';\" " +
+      "onclick=\"selectAtcStudent(JSON.parse(decodeURIComponent('" + encodeURIComponent(JSON.stringify({name:s.name,id:s.id})) + "')))\">" +
+      "<div style=\"font-weight:500;\">" + s.name + "</div>" +
+      "<div style=\"font-size:11px;color:var(--grey);\">" + (s.email || s.phone || "") + "</div></div>";
+  }).join("");
+}
+function selectAtcStudent(obj) {
+  _atcSelectedStudent = obj;
+  var sel = document.getElementById("atc-student-selected");
+  var nm = document.getElementById("atc-student-name");
+  var res = document.getElementById("atc-student-results");
+  var inp = document.getElementById("atc-student-search");
+  if(nm) nm.textContent = obj.name;
+  if(sel) sel.style.display = "flex";
+  if(res) res.style.display = "none";
+  if(inp) inp.value = "";
+}
+function clearAtcStudent() {
+  _atcSelectedStudent = null;
+  var sel = document.getElementById("atc-student-selected");
+  if(sel) sel.style.display = "none";
+}
+function confirmAddToClass() {
+  var cls = document.getElementById("selected-add-class") ? document.getElementById("selected-add-class").value : "";
+  var type = document.getElementById("add-class-type") ? document.getElementById("add-class-type").value : "season";
+  var studentName = _atcSelectedStudent ? _atcSelectedStudent.name : "Student";
+  if(!_atcSelectedStudent) { alert("Please search for and select a student first."); return; }
+  if(!cls) { alert("Please select a class."); return; }
+  closeModal("modal-add-to-class");
+  var payEl = document.getElementById("atc-pay-summary");
+  var payStudent = document.getElementById("atc-pay-student");
+  var payClass = document.getElementById("atc-pay-class");
+  var payType = document.getElementById("atc-pay-type");
+  var payPrice = document.getElementById("atc-pay-price");
+  var prices = {"season":"$270.00","dropin":"$40.00","trial":"$35.00"};
+  var labels = {"season":"Season enrolment","dropin":"Drop-in (single session)","trial":"Trial class"};
+  if(payEl) payEl.textContent = cls;
+  if(payStudent) payStudent.textContent = studentName;
+  if(payClass) payClass.textContent = cls;
+  if(payType) payType.textContent = labels[type] || type;
+  if(payPrice) payPrice.textContent = prices[type] || "$270.00";
+  openModal("modal-atc-payment");
+}
+function atcPayAction(action) {
+  var studentName = document.getElementById("atc-pay-student") ? document.getElementById("atc-pay-student").textContent : "Student";
+  var cls = document.getElementById("atc-pay-class") ? document.getElementById("atc-pay-class").textContent : "class";
+  var msgs = {
+    payment: "Opening payment terminal for " + studentName + "...",
+    credit: "Account credit applied. " + studentName + " is now enrolled in " + cls + ".",
+    plan: "Payment plan set up. " + studentName + " will be notified with instalment schedule.",
+    change: "Enter new price for " + studentName,
+    skip: studentName + " added to " + cls + ". Balance will show as owing until payment is recorded."
+  };
+  closeModal("modal-atc-payment");
+  if(action === "change") {
+    var newPrice = prompt("Custom price for " + studentName + " ($):", "270");
+    if(newPrice) alert("Price set to $" + newPrice + " for " + studentName + ". Proceed to take payment.");
+  } else {
+    alert(msgs[action]);
+  }
+}
+
+// ── Waitlist actions ─────────────────────────────────────────────────────────
+function offerWaitlistSpot(idx, name) {
+  var statusEl = document.getElementById("wl-status-" + idx);
+  var offerBtn = document.getElementById("wl-offer-" + idx);
+  var revokeBtn = document.getElementById("wl-revoke-" + idx);
+  if(statusEl) statusEl.innerHTML = "<span class=\"tag tag-amber\" style=\"font-size:10px;\">Offer Sent</span>";
+  if(offerBtn) offerBtn.style.display = "none";
+  if(revokeBtn) revokeBtn.style.display = "";
+  alert("Spot offered to " + name + " — they have 24 hours to accept.");
+}
+function revokeWaitlistOffer(idx, name) {
+  var statusEl = document.getElementById("wl-status-" + idx);
+  var offerBtn = document.getElementById("wl-offer-" + idx);
+  var revokeBtn = document.getElementById("wl-revoke-" + idx);
+  var acceptBtn = document.getElementById("wl-accept-" + idx);
+  if(statusEl) statusEl.innerHTML = "<span class=\"tag tag-grey\" style=\"font-size:10px;\">Waiting</span>";
+  if(offerBtn) { offerBtn.style.display = ""; offerBtn.textContent = "Offer Spot"; }
+  if(revokeBtn) revokeBtn.style.display = "none";
+  if(acceptBtn) acceptBtn.style.display = "none";
+  alert("Offer revoked for " + name + " — they have been notified.");
+}
+function acceptWaitlistForStudent(idx, name) {
+  var row = document.getElementById("wl-row-" + idx);
+  if(row) { row.style.opacity = "0.4"; row.style.pointerEvents = "none"; }
+  alert(name + " has been moved off the waitlist and enrolled. Payment step will open.");
+}
+function removeFromWaitlist(idx, name) {
+  if(!confirm("Remove " + name + " from the waitlist?")) return;
+  var row = document.getElementById("wl-row-" + idx);
+  if(row) row.style.display = "none";
+  alert(name + " removed from waitlist.");
+}
+
 function openExemptionReview(student, amount) {
   var nameEl = document.getElementById('exempt-student-name');
   var amtEl = document.getElementById('exempt-amount');
@@ -7260,6 +7498,44 @@ function addManualActionItem() {
   if(badge) { badge.textContent = _notifPending; badge.style.background = 'var(--lime)'; }
   desc.value = '';
   closeModal('modal-action-log');
+}
+
+
+function filterSeasonView() {
+  var levelFilter = document.getElementById('tt-filter-level').value.toLowerCase();
+  var teacherFilter = document.getElementById('tt-filter-teacher').value.toLowerCase();
+  var waitlistedOnly = document.getElementById('tt-filter-waitlisted').checked;
+  var lowOnly = document.getElementById('tt-filter-low').checked;
+
+  var rows = document.querySelectorAll('#tt-season-view [data-level]');
+  var shown = 0;
+  rows.forEach(function(row) {
+    var level = (row.getAttribute('data-level') || '').toLowerCase();
+    var teacher = (row.getAttribute('data-teacher') || '').toLowerCase();
+    var enrolled = parseInt(row.getAttribute('data-enrolled') || '0');
+    var waitlist = parseInt(row.getAttribute('data-waitlist') || '0');
+
+    var show = true;
+    if (levelFilter && level !== levelFilter) show = false;
+    if (teacherFilter && teacher !== teacherFilter) show = false;
+    if (waitlistedOnly && waitlist === 0) show = false;
+    if (lowOnly && enrolled >= 4) show = false;
+
+    row.style.display = show ? '' : 'none';
+    if (show) shown++;
+  });
+
+  // Show empty state if nothing matches
+  var empty = document.getElementById('tt-season-empty');
+  if (!empty) {
+    empty = document.createElement('div');
+    empty.id = 'tt-season-empty';
+    empty.style.cssText = 'color:var(--grey);font-size:13px;padding:20px;text-align:center;';
+    empty.textContent = 'No classes match the current filters.';
+    var container = document.querySelector('#tt-season-view > div:last-child');
+    if (container) container.appendChild(empty);
+  }
+  empty.style.display = shown === 0 ? '' : 'none';
 }
 
 function openSeasonClassDetail(name, timeslot, instructor, studio, enrolled, cap, waitlist, tab) {
@@ -8629,7 +8905,7 @@ function clearAssistant() {
 
 
 <!-- Coming Soon / Stub Screen -->
-<div id="screen-stub" class="screen" style="display:none;">
+<div id="screen-stub" class="screen">
   <div class="page-header">
     <div><div class="page-title" id="stub-title">Coming Soon</div><div class="page-sub" id="stub-sub">This section is in the mockup pipeline</div></div>
   </div>
@@ -8685,6 +8961,214 @@ function clearAssistant() {
       <button class="btn btn-ghost" onclick="closeModal('modal-invoice-detail')">Close</button>
       <button class="btn btn-ghost" onclick="closeModal('modal-invoice-detail');openModal('modal-manual-payment')">Take Payment</button>
       <button class="btn btn-lime" id="inv-chase-btn" onclick="">Chase</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Email All Students Attending Modal -->
+<div class="modal-overlay" id="modal-email-attendees">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-title">Email All Students Attending <button class="modal-close" onclick="closeModal('modal-email-attendees')">✕</button></div>
+    <div style="background:#1a1a1a;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--grey);">
+      Sending to <strong style="color:var(--white);">8 students</strong> enrolled in Level 2 — Mon 12 May, 6:30pm
+    </div>
+    <div style="margin-bottom:14px;">
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px;">Subject</div>
+      <input type="text" value="Level 2 — Monday 12 May · See you tonight!" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:13px;font-family:inherit;box-sizing:border-box;" />
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px;">Message</div>
+      <textarea rows="6" style="width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:13px;font-family:inherit;resize:vertical;line-height:1.65;box-sizing:border-box;">Hey everyone!
+
+Just a quick note ahead of tonight's Level 2 class at 6:30pm in The Box. Can't wait to see you all on the pole!
+
+If you need to cancel, please do so before 2:30pm to avoid a late cancel fee.
+
+See you tonight 🖤
+Duality Pole</textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-email-attendees')">Cancel</button>
+      <button class="btn btn-lime" style="flex:1" onclick="alert('Email sent to 8 students attending Level 2 — Mon 12 May.');closeModal('modal-email-attendees')">Send to All 8 Students</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Action Log Screen -->
+<div id="screen-action-log" class="screen">
+  <div class="page-header">
+    <div><div class="page-title">Action Items Log</div><div class="page-sub">All studio action items — pending, completed, and history</div></div>
+    <button class="btn btn-lime" onclick="switchLogTab('add');openModal('modal-action-log')">+ Add Item</button>
+  </div>
+
+  <div class="subtabs" style="margin-bottom:16px;">
+    <div class="subtab active" onclick="switchSubTab(this,'al-pending')">Pending (<span id="al-pending-count">4</span>)</div>
+    <div class="subtab" onclick="switchSubTab(this,'al-completed')">Completed Today</div>
+    <div class="subtab" onclick="switchSubTab(this,'al-history')">History</div>
+  </div>
+
+  <div id="al-pending" class="subscreen active">
+    <div style="display:flex;flex-direction:column;gap:8px;" id="al-pending-list">
+      <div class="notif-action-row" id="al-ni-0" data-label="New order — Ruby Kim: Pole Grip Aid (Medium)" style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;">
+        <input type="checkbox" style="accent-color:var(--lime);width:16px;height:16px;flex-shrink:0;margin-top:2px;" onchange="markNotifDone(this,0)" />
+        <span style="font-size:18px;line-height:1;">🛍</span>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:500;">New order — prepare for pickup</div>
+          <div style="font-size:12px;color:var(--grey);margin-top:2px;">Ruby Kim ordered Pole Grip Aid (Medium) — not yet collected</div>
+          <div style="font-size:11px;color:var(--grey);margin-top:4px;">9:32am · Retail</div>
+        </div>
+      </div>
+      <div class="notif-action-row" id="al-ni-1" data-label="New order — Tara Bell: Duality Crop Top (S)" style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;">
+        <input type="checkbox" style="accent-color:var(--lime);width:16px;height:16px;flex-shrink:0;margin-top:2px;" onchange="markNotifDone(this,1)" />
+        <span style="font-size:18px;line-height:1;">🛍</span>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:500;">New order — prepare for pickup</div>
+          <div style="font-size:12px;color:var(--grey);margin-top:2px;">Tara Bell ordered Duality Crop Top (S) — not yet collected</div>
+          <div style="font-size:11px;color:var(--grey);margin-top:4px;">8:14am · Retail</div>
+        </div>
+      </div>
+      <div class="notif-action-row" id="al-ni-2" data-label="New student today — Priya Sharma, Level 1 5:30pm" style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;">
+        <input type="checkbox" style="accent-color:var(--lime);width:16px;height:16px;flex-shrink:0;margin-top:2px;" onchange="markNotifDone(this,2)" />
+        <span style="font-size:18px;line-height:1;">👋</span>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:500;">New student coming today — please greet</div>
+          <div style="font-size:12px;color:var(--grey);margin-top:2px;">Priya Sharma · Level 1 at 5:30pm · Instructor: Chloe · Waiver not yet signed</div>
+          <div style="font-size:11px;color:var(--lime);margin-top:4px;">Today · Student</div>
+        </div>
+      </div>
+      <div class="notif-action-row" id="al-ni-3" data-label="Injury check-in overdue — Jess Malone" style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:#1a0505;border:1px solid #3a1010;border-radius:10px;">
+        <input type="checkbox" style="accent-color:var(--lime);width:16px;height:16px;flex-shrink:0;margin-top:2px;" onchange="markNotifDone(this,3)" />
+        <span style="font-size:18px;line-height:1;">🩹</span>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:500;">Injury check-in overdue</div>
+          <div style="font-size:12px;color:var(--grey);margin-top:2px;">Jess Malone · right shoulder impingement · check-in was due 17 May</div>
+          <div style="font-size:11px;color:var(--amber);margin-top:4px;">Overdue · Health</div>
+          <button class="btn btn-ghost btn-xs" style="margin-top:6px;" onclick="openStudentDetail(STUDENTS.find(function(s){return s.name==='Jess Malone';}))">View Student Notes →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="al-completed" class="subscreen">
+    <div id="al-completed-list" style="display:flex;flex-direction:column;gap:8px;">
+      <div style="font-size:13px;color:var(--grey);padding:20px 0;text-align:center;">No items completed yet today. Tick items above to move them here.</div>
+    </div>
+  </div>
+
+  <div id="al-history" class="subscreen">
+    <div class="tbl-section">
+      <table>
+        <thead><tr><th>Date</th><th>Item</th><th>Type</th><th>Completed by</th><th>Time</th></tr></thead>
+        <tbody>
+          <tr><td style="color:var(--grey);">12 May</td><td>New order — Jess Malone: Pole Shorts (M)</td><td><span class="tag tag-grey" style="font-size:10px;">Retail</span></td><td>Mimi</td><td style="color:var(--grey);">10:14am</td></tr>
+          <tr><td style="color:var(--grey);">11 May</td><td>Injury check-in — Ruby Kim</td><td><span class="tag tag-grey" style="font-size:10px;">Health</span></td><td>Chloe</td><td style="color:var(--grey);">6:45pm</td></tr>
+          <tr><td style="color:var(--grey);">11 May</td><td>New order — Nina Torres: Grip Aid (Small)</td><td><span class="tag tag-grey" style="font-size:10px;">Retail</span></td><td>Mimi</td><td style="color:var(--grey);">9:02am</td></tr>
+          <tr><td style="color:var(--grey);">10 May</td><td>Exemption request — Amber Cole ($40 workshop)</td><td><span class="tag tag-grey" style="font-size:10px;">Payment</span></td><td>Mimi</td><td style="color:var(--grey);">2:30pm</td></tr>
+          <tr><td style="color:var(--grey);">9 May</td><td>New student today — Zoe Clarke, Level 1</td><td><span class="tag tag-grey" style="font-size:10px;">Student</span></td><td>Chloe</td><td style="color:var(--grey);">5:28pm</td></tr>
+          <tr><td style="color:var(--grey);">8 May</td><td>New order — Sophie Lawson: Pole Shorts (XS)</td><td><span class="tag tag-grey" style="font-size:10px;">Retail</span></td><td>Mimi</td><td style="color:var(--grey);">11:20am</td></tr>
+          <tr><td style="color:var(--grey);">7 May</td><td>Catch-up approved — Jess Malone</td><td><span class="tag tag-grey" style="font-size:10px;">Catch-up</span></td><td>Mimi</td><td style="color:var(--grey);">3:15pm</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
+<!-- Season Class Detail Modal -->
+<div class="modal-overlay" id="modal-season-class-detail">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-title">
+      <span id="scd-class-name">Level 2</span>
+      <button class="modal-close" onclick="closeModal('modal-season-class-detail')">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--grey);margin-bottom:16px;" id="scd-class-meta">Mon 6:30pm · Chloe · The Box</div>
+
+    <!-- Stats strip -->
+    <div style="display:flex;gap:12px;margin-bottom:18px;">
+      <div style="background:#1a1a1a;border-radius:8px;padding:10px 16px;flex:1;text-align:center;">
+        <div style="font-family:'Archivo Black',sans-serif;font-size:20px;" id="scd-enrolled-count">0</div>
+        <div style="font-size:11px;color:var(--grey);margin-top:2px;">Enrolled</div>
+      </div>
+      <div style="background:#1a1a1a;border-radius:8px;padding:10px 16px;flex:1;text-align:center;">
+        <div style="font-family:'Archivo Black',sans-serif;font-size:20px;" id="scd-cap">0</div>
+        <div style="font-size:11px;color:var(--grey);margin-top:2px;">Capacity</div>
+      </div>
+      <div style="background:#1a1a1a;border-radius:8px;padding:10px 16px;flex:1;text-align:center;">
+        <div style="font-family:'Archivo Black',sans-serif;font-size:20px;color:var(--amber);" id="scd-waitlist-count">0</div>
+        <div style="font-size:11px;color:var(--grey);margin-top:2px;">Waitlist</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="subtab-bar">
+      <button class="subtab active" onclick="switchSubTab(this,'scd-roster')">Roster</button>
+      <button class="subtab" onclick="switchSubTab(this,'scd-waitlist')">Waitlist</button>
+      <button class="subtab" onclick="switchSubTab(this,'scd-cancelled')">Cancellations</button>
+      <button class="subtab" onclick="switchSubTab(this,'scd-edit')">Edit Class</button>
+    </div>
+
+    <!-- Roster -->
+    <div id="scd-roster" class="subscreen" style="display:block;max-height:320px;overflow-y:auto;margin-top:12px;">
+      <div id="scd-enrolled-list"></div>
+    </div>
+
+    <!-- Waitlist -->
+    <div id="scd-waitlist" class="subscreen" style="max-height:320px;overflow-y:auto;margin-top:12px;">
+      <div id="scd-waitlist-list"></div>
+    </div>
+
+    <!-- Cancellations -->
+    <div id="scd-cancelled" class="subscreen" style="max-height:320px;overflow-y:auto;margin-top:12px;">
+      <div id="scd-cancelled-list"></div>
+    </div>
+
+    <!-- Edit Class -->
+    <div id="scd-edit" class="subscreen" style="margin-top:12px;">
+      <div class="field-row">
+        <div class="field"><label>Class Name</label><input type="text" id="scd-edit-name" /></div>
+        <div class="field"><label>Capacity</label><input type="number" id="scd-edit-cap" /></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Instructor</label>
+          <select id="scd-edit-instructor">
+            <option value="Mimi">Mimi</option>
+            <option value="Chloe">Chloe</option>
+            <option value="Jaz">Jaz</option>
+            <option value="Viv">Viv</option>
+            <option value="Bambi">Bambi</option>
+          </select>
+        </div>
+        <div class="field"><label>Room</label>
+          <select id="scd-edit-room">
+            <option value="The Box">The Box</option>
+            <option value="Rhapsody">Rhapsody</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Day</label>
+          <select>
+            <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+            <option>Thursday</option><option>Friday</option><option>Saturday</option>
+          </select>
+        </div>
+        <div class="field"><label>Start Time</label><input type="time" value="18:30" /></div>
+        <div class="field"><label>Duration (min)</label><input type="number" value="90" /></div>
+      </div>
+      <div class="field"><label>Allowed Levels</label>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
+          <label style="display:flex;align-items:center;gap:4px;font-size:12px;"><input type="checkbox" checked style="accent-color:var(--lime);" /> Level 2</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:12px;"><input type="checkbox" style="accent-color:var(--lime);" /> Level 1</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:12px;"><input type="checkbox" style="accent-color:var(--lime);" /> Level 3</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-season-class-detail')">Close</button>
+      <button class="btn btn-lime" onclick="alert('Class settings saved');closeModal('modal-season-class-detail')">Save Changes</button>
     </div>
   </div>
 </div>
