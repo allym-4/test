@@ -1,0 +1,7 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.EnrolmentListView.as_view(), name='enrolment-list'),
+    path('<int:pk>/', views.EnrolmentDetailView.as_view(), name='enrolment-detail'),
+]
