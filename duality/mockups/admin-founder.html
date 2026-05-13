@@ -6979,8 +6979,8 @@ function searchAddStudent(query) {
   if (!matches.length) { res.style.display = 'none'; return; }
   res.innerHTML = matches.map(s =>
     '<div style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);" ' +
-    'onmouseenter="this.style.background='#1a1a1a'" onmouseleave="this.style.background=''" ' +
-    'onclick="document.querySelector('#modal-add-to-class input[type=text]').value='' + s.name + '';this.closest('#add-student-results').style.display='none'">' +
+    "onmouseenter='this.style.background=\"#1a1a1a\"' onmouseleave='this.style.background=\"\"' " +
+    "onclick='selectAddStudent(\"" + s.name + "\")'>" +
     s.name + '<span style=\"color:var(--grey);font-size:11px;margin-left:8px;\">' + (s.email || '') + '</span></div>'
   ).join('');
   res.style.display = '';
@@ -7306,7 +7306,7 @@ function openSeasonClassDetail(name, timeslot, instructor, studio, enrolled, cap
         '<div><div style="font-size:13px;font-weight:500;">' + s.name + '</div>' +
         '<div style="font-size:11px;color:var(--grey);">' + s.email + '</div></div></div>' +
         '<div style="display:flex;gap:6px;">' +
-        '<button class="btn btn-lime btn-xs" onclick="event.stopPropagation();alert('Moving ' + s.name.split(' ')[0] + ' into class')">Accept into Class</button>' +
+        "<button class=\"btn btn-lime btn-xs\" onclick=\"event.stopPropagation();alert('Moving ' + s.name.split(' ')[0] + ' into class')\">Accept into Class</button>" +
         '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation()">Remove</button></div></div>';
     }).join('');
 
@@ -7368,7 +7368,7 @@ function openChaseModal(student, description, amount, chaseCount) {
     actionTitle.textContent = 'Send 2nd Chase — Firm Notice';
     actionTitle.style.color = 'var(--amber)';
     actionBody.textContent = 'A firmer notice will be sent. One more chase before the final warning.';
-    msg.value = 'Hi ' + student.split(' ')[0] + ', this is a second reminder about your outstanding balance of ' + amount + '. This needs to be resolved to keep your account in good standing. If you're having difficulty, please reach out to discuss payment options. — Duality Pole';
+    msg.value = 'Hi ' + student.split(' ')[0] + ', this is a second reminder about your outstanding balance of ' + amount + '. This needs to be resolved to keep your account in good standing. If you\'re having difficulty, please reach out to discuss payment options. — Duality Pole';
     lockOption.style.display = 'none';
     sendBtn.textContent = 'Send 2nd Reminder';
     sendBtn.style.background = 'var(--amber)';
