@@ -2145,7 +2145,7 @@ tr.clickable-row:hover td { background: #141414; }
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;">
           <div class="kpi kpi-red" style="text-align:center;">
             <div class="kpi-label">Outstanding</div>
-            <div class="kpi-value" style="font-size:28px;">−$120</div>
+            <div class="kpi-value" id="sd-balance-large" style="font-size:28px;">−$120</div>
             <div class="kpi-sub">Instalment plan overdue</div>
           </div>
           <div class="kpi kpi-lime" style="text-align:center;">
@@ -6938,24 +6938,20 @@ function openStudentDetail(student) {
   const balDisplay = document.getElementById('sd-balance-display');
   const balLarge = document.getElementById('sd-balance-large');
   if (student.balance < 0) {
-    balDisplay.textContent = '−$' + Math.abs(student.balance);
-    balDisplay.className = 'bal-neg';
-    balLarge.textContent = '−$' + Math.abs(student.balance);
-    balLarge.className = 'bal-neg';
+    if (balDisplay) { balDisplay.textContent = '−$' + Math.abs(student.balance); balDisplay.className = 'bal-neg'; }
+    if (balLarge) { balLarge.textContent = '−$' + Math.abs(student.balance); balLarge.className = 'bal-neg'; }
   } else if (student.balance > 0) {
-    balDisplay.textContent = '+$' + student.balance + ' credit';
-    balDisplay.className = 'bal-pos';
+    if (balDisplay) { balDisplay.textContent = '+$' + student.balance + ' credit'; balDisplay.className = 'bal-pos'; }
     balLarge.textContent = '+$' + student.balance;
     balLarge.className = 'bal-pos';
   } else {
-    balDisplay.textContent = '$0';
-    balDisplay.className = '';
-    balLarge.textContent = '$0';
-    balLarge.className = '';
+    if (balDisplay) { balDisplay.textContent = '$0'; balDisplay.className = ''; }
+    if (balLarge) { balLarge.textContent = '$0'; balLarge.className = ''; }
   }
   // Waiver
-  document.getElementById('sd-waiver').textContent = 'Signed ' + student.waiver;
-  document.getElementById('sd-waiver-doc').textContent = 'Signed ' + student.waiver;
+  var waiverText = student.waiver ? 'Signed ' + student.waiver : 'Not yet signed';
+  var waiverEl = document.getElementById('sd-waiver'); if (waiverEl) waiverEl.textContent = waiverText;
+  var waiverDocEl = document.getElementById('sd-waiver-doc'); if (waiverDocEl) waiverDocEl.textContent = waiverText;
   // Source
   document.getElementById('sd-source').textContent = student.source;
   // Tags
