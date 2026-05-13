@@ -2059,8 +2059,8 @@ tr.clickable-row:hover td { background: #141414; }
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
-            <div><div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:4px;">Current Season</div><div style="font-size:14px;font-weight:500;">Season 3 — Level 2</div></div>
-            <div><div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:4px;">Status</div><span class="tag tag-amber">Owing</span></div>
+            <div><div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:4px;">Current Season</div><div style="font-size:14px;font-weight:500;" id="sd-current-season">Season 3 — Level 2</div></div>
+            <div><div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:4px;">Status</div><span class="tag tag-amber" id="sd-membership-status">Owing</span></div>
             <div><div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:4px;">Instructor</div><div style="font-size:14px;">Chloe Nguyen</div></div>
             <div><div style="font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:4px;">Studio</div><div style="font-size:14px;">The Box</div></div>
           </div>
@@ -8011,7 +8011,7 @@ Duality Pole</textarea>
         </div>
       </div>
       <div style="margin-top:14px;">
-        <button class="btn btn-outline btn-sm" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='ruby'));closeModal('modal-staff-detail')">View Full Student Profile →</button>
+        <button class="btn btn-outline btn-sm" onclick="openStudentDetail(STUDENTS.find(function(s){return s.id==='chloenguyeninstr';}));closeModal('modal-staff-detail')">View Full Student Profile →</button>
       </div>
     </div>
 
@@ -8376,6 +8376,18 @@ function openStudentDetail(student) {
   tagsWrap.innerHTML = student.tags.map(t =>
     '<span class="chip ' + (tagColors[t]||'tag-grey') + '">' + t + ' ×</span>'
   ).join('') + '<button class="btn btn-ghost btn-xs" onclick="alert(\'Add tag\')">+ Tag</button>';
+  // Overview — membership status section
+  var seasonEl = document.getElementById('sd-current-season');
+  if (seasonEl) {
+    var classes = student.classes || [];
+    seasonEl.textContent = classes.length ? 'Season 4 — ' + (student.level || classes[0]) : (student.level || '—');
+  }
+  var memStatusEl = document.getElementById('sd-membership-status');
+  if (memStatusEl) {
+    memStatusEl.textContent = student.status || 'Active';
+    var msc = {Active:'tag-lime',Owing:'tag-amber',Blocked:'tag-red',Frozen:'tag-blue'};
+    memStatusEl.className = 'tag ' + (msc[student.status] || 'tag-grey');
+  }
   // Reset to first tab
   const firstTab = document.querySelector('#screen-student-detail .subtabs .subtab');
   // Payments tab — render dynamically per student
