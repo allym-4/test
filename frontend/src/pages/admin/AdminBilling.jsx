@@ -1,14 +1,22 @@
 import { useState, useEffect } from 'react'
 import { useApi } from '../../hooks/useApi'
 import { payments, users } from '../../api'
+import TakePaymentModal from '../../components/TakePaymentModal'
+import AddChargeModal from '../../components/AddChargeModal'
+import ChaseModal from '../../components/ChaseModal'
+import WaiveModal from '../../components/WaiveModal'
 
 export default function AdminBilling() {
   const [tab, setTab] = useState('outstanding')
-  const { data: paymentsData, loading: loadingPayments } = useApi(() => payments.list())
+  const { data: paymentsData, loading: loadingPayments, refetch: refetchPayments } = useApi(() => payments.list())
   const { data: plansData, loading: loadingPlans } = useApi(() => payments.plans())
   const { data: studentsData } = useApi(() => users.list({ role: 'student' }))
   const [balances, setBalances] = useState({})
   const [loadingBal, setLoadingBal] = useState(false)
+  const [activeModal, setActiveModal] = useState(null)
+  const [modalStudent, setModalStudent] = useState(null)
+  const [addChargeTarget, setAddChargeTarget] = useState(null)
+  const [chargePickStudent, setChargePickStudent] = useState('')
 
   const allPayments = paymentsData?.results || []
   const plans = plansData?.results || []
@@ -21,8 +29,8 @@ export default function AdminBilling() {
     Promise.all(students.map(async s => {
       try {
         const res = await payments.balance(s.id)
-        map[s.id] = { ...res.data, name: s.display_name, email: s.email }
-      } catch { map[s.id] = { balance: '0', name: s.display_name } }
+        map[s.id] = { ...res.data, name: s.display_name, email: s.email, id: s.id, first_name: s.first_name }
+      } catch { map[s.id] = { balance: '0', name: s.display_name, id: s.id, first_name: s.first_name } }
     })).then(() => { setBalances(map); setLoadingBal(false) })
   }, [students.length])
 
@@ -43,7 +51,7 @@ export default function AdminBilling() {
           <div className="page-title">Billing</div>
           <div className="page-sub">Invoices, payments and fees</div>
         </div>
-        <button className="btn btn-lime btn-sm">+ Add Charge</button>
+        <button className="btn btn-lime btn-sm" onClick={() => setAddChargeTarget('pick')}>+ Add Charge</button>
       </div>
 
       <div className="kpi-grid">
@@ -104,9 +112,9 @@ export default function AdminBilling() {
                       <td style={{ color: 'var(--grey)' }}>${parseFloat(b.total_charged || 0).toFixed(2)}</td>
                       <td className="bal-pos">${parseFloat(b.total_paid || 0).toFixed(2)}</td>
                       <td style={{ whiteSpace: 'nowrap' }}>
-                        <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }}>Chase</button>
-                        <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }}>Waive</button>
-                        <button className="btn btn-lime btn-xs">Mark Paid</button>
+                        <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => { setModalStudent(b); setActiveModal('chase') }}>Chase</button>
+                        <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => { setModalStudent(b); setActiveModal('waive') }}>Waive</button>
+                        <button className="btn btn-lime btn-xs" onClick={() => { setModalStudent(b); setActiveModal('payment') }}>Mark Paid</button>
                       </td>
                     </tr>
                   ))}
@@ -240,6 +248,65 @@ export default function AdminBilling() {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+      {activeModal === 'payment' && modalStudent && (
+        <TakePaymentModal
+          student={modalStudent}
+          onClose={() => { setActiveModal(null); setModalStudent(null) }}
+          onSuccess={() => { setActiveModal(null); setModalStudent(null); refetchPayments() }}
+        />
+      )}
+      {activeModal === 'charge' && modalStudent && (
+        <AddChargeModal
+          student={modalStudent}
+          onClose={() => { setActiveModal(null); setModalStudent(null) }}
+          onSuccess={() => { setActiveModal(null); setModalStudent(null); refetchPayments() }}
+        />
+      )}
+      {activeModal === 'chase' && modalStudent && (
+        <ChaseModal
+          student={modalStudent}
+          amount={Math.abs(parseFloat(modalStudent.balance || 0)).toFixed(2)}
+          description="outstanding balance"
+          onClose={() => { setActiveModal(null); setModalStudent(null) }}
+          onSuccess={() => { setActiveModal(null); setModalStudent(null); refetchPayments() }}
+        />
+      )}
+      {activeModal === 'waive' && modalStudent && (
+        <WaiveModal
+          student={modalStudent}
+          amount={Math.abs(parseFloat(modalStudent.balance || 0)).toFixed(2)}
+          description="outstanding balance"
+          onClose={() => { setActiveModal(null); setModalStudent(null) }}
+          onSuccess={() => { setActiveModal(null); setModalStudent(null); refetchPayments() }}
+        />
+      )}
+
+      {addChargeTarget === 'pick' && (
+        <div className="sd-overlay" onClick={e => e.target === e.currentTarget && setAddChargeTarget(null)}>
+          <div className="sd-modal" style={{ maxWidth: 360 }}>
+            <div className="sd-header">
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18 }}>Add Charge</div>
+              <button className="modal-close-btn" onClick={() => setAddChargeTarget(null)}>✕</button>
+            </div>
+            <div className="sd-body">
+              <div className="field">
+                <label>Select Student</label>
+                <select value={chargePickStudent} onChange={e => setChargePickStudent(e.target.value)}>
+                  <option value="">— Choose student —</option>
+                  {students.map(s => <option key={s.id} value={s.id}>{s.display_name}</option>)}
+                </select>
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => setAddChargeTarget(null)}>Cancel</button>
+                <button className="btn btn-lime btn-sm" disabled={!chargePickStudent} onClick={() => {
+                  const s = students.find(x => x.id === parseInt(chargePickStudent) || x.id === chargePickStudent)
+                  setModalStudent(s); setActiveModal('charge'); setAddChargeTarget(null); setChargePickStudent('')
+                }}>Next</button>
+              </div>
+            </div>
           </div>
         </div>
       )}

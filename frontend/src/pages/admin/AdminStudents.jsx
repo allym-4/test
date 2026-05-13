@@ -4,6 +4,10 @@ import { users, payments, enrolments, attendance } from '../../api'
 import '../StudentsPage.css'
 import AddStudentModal from '../../components/AddStudentModal'
 import BulkImportModal from '../../components/BulkImportModal'
+import EditStudentModal from '../../components/EditStudentModal'
+import TakePaymentModal from '../../components/TakePaymentModal'
+import AddChargeModal from '../../components/AddChargeModal'
+import AddToClassModal from '../../components/AddToClassModal'
 
 const AVATAR_COLORS = ['#b0a0ff', '#ccff00', '#ffaa00', '#ff88aa', '#44ffcc', '#ffcc88', '#b0f0b0', '#9ac4ff', '#ffb3de', '#44ff99']
 function avatarColor(name) {
@@ -34,6 +38,12 @@ export default function AdminStudents() {
   const [showAdd, setShowAdd] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [studentList, setStudentList] = useState(null)
+  const [showEdit, setShowEdit] = useState(false)
+  const [showPayment, setShowPayment] = useState(false)
+  const [showCharge, setShowCharge] = useState(false)
+  const [showAddToClass, setShowAddToClass] = useState(false)
+  const [noteText, setNoteText] = useState('')
+  const [savingNote, setSavingNote] = useState(false)
 
   const allStudents = studentList ?? (data?.results || [])
 
@@ -72,6 +82,43 @@ export default function AdminStudents() {
       setAttData(attRes.data.results || [])
     } finally {
       setLoadingDetail(false)
+    }
+  }
+
+  async function reloadBalance() {
+    if (!selected) return
+    try {
+      const res = await payments.balance(selected.id)
+      setBalanceData(res.data)
+    } catch {}
+  }
+
+  async function reloadEnrolments() {
+    if (!selected) return
+    try {
+      const res = await enrolments.list({ student: selected.id })
+      setEnrolData(res.data.results || [])
+    } catch {}
+  }
+
+  async function reloadNotes() {
+    if (!selected) return
+    try {
+      const res = await users.notes(selected.id)
+      setNotesData(res.data.results || [])
+    } catch {}
+  }
+
+  async function submitNote(e) {
+    e.preventDefault()
+    if (!noteText.trim()) return
+    setSavingNote(true)
+    try {
+      await users.addNote(selected.id, { body: noteText })
+      setNoteText('')
+      await reloadNotes()
+    } finally {
+      setSavingNote(false)
     }
   }
 
@@ -167,7 +214,10 @@ export default function AdminStudents() {
                   <div style={{ marginTop: 4 }}><span className="tag tag-lime" style={{ fontSize: 10 }}>Active</span></div>
                 </div>
               </div>
-              <button className="modal-close-btn" onClick={() => setSelected(null)}>✕</button>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <button className="btn btn-ghost btn-xs" onClick={() => setShowEdit(true)}>Edit</button>
+                <button className="modal-close-btn" onClick={() => setSelected(null)}>✕</button>
+              </div>
             </div>
 
             {loadingDetail ? (
@@ -234,7 +284,10 @@ export default function AdminStudents() {
 
                   {activeTab === 'bookings' && (
                     <div>
-                      <div className="sd-section-label">Current Enrolments</div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <div className="sd-section-label" style={{ marginBottom: 0 }}>Current Enrolments</div>
+                        <button className="btn btn-lime btn-xs" onClick={() => setShowAddToClass(true)}>+ Add to Class</button>
+                      </div>
                       <div className="list-card" style={{ marginBottom: 16 }}>
                         {(enrolData || []).filter(e => e.status === 'active').map(e => (
                           <div key={e.id} className="list-row">
@@ -261,13 +314,17 @@ export default function AdminStudents() {
                             <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#ff8888', marginBottom: 4 }}>Outstanding Balance</div>
                             <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color: '#ff6b6b' }}>${Math.abs(bal).toFixed(2)}</div>
                           </div>
-                          <button className="btn btn-lime btn-sm">Take Payment</button>
+                          <button className="btn btn-lime btn-sm" onClick={() => setShowPayment(true)}>Take Payment</button>
                         </div>
                       )}
                       <div className="sd-section-label">Summary</div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8, marginBottom: 16 }}>
                         <div className="sd-stat"><div className="sd-stat-label">Total Charged</div><div className="sd-stat-val">${parseFloat(balanceData?.total_charged || 0).toFixed(2)}</div></div>
                         <div className="sd-stat"><div className="sd-stat-label">Total Paid</div><div className="sd-stat-val" style={{ color: 'var(--lime)' }}>${parseFloat(balanceData?.total_paid || 0).toFixed(2)}</div></div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button className="btn btn-lime btn-sm" onClick={() => setShowPayment(true)}>Take Payment</button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setShowCharge(true)}>+ Add Charge</button>
                       </div>
                     </div>
                   )}
@@ -302,6 +359,18 @@ export default function AdminStudents() {
 
                   {activeTab === 'notes' && (
                     <div>
+                      <form onSubmit={submitNote} style={{ marginBottom: 16 }}>
+                        <textarea
+                          value={noteText}
+                          onChange={e => setNoteText(e.target.value)}
+                          placeholder="Add a note…"
+                          rows={3}
+                          style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', padding: '10px 12px', fontSize: 13, resize: 'vertical', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
+                          <button type="submit" className="btn btn-lime btn-xs" disabled={savingNote || !noteText.trim()}>{savingNote ? 'Saving…' : 'Add Note'}</button>
+                        </div>
+                      </form>
                       {(notesData || []).map(n => (
                         <div key={n.id} className="note-item">
                           <div className="note-meta">{n.created_by_name} · {new Date(n.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
@@ -333,6 +402,42 @@ export default function AdminStudents() {
             const res = await users.list({ role: 'student' })
             setStudentList(res.data.results || [])
           }}
+        />
+      )}
+
+      {showEdit && selected && (
+        <EditStudentModal
+          student={selected}
+          onClose={() => setShowEdit(false)}
+          onSaved={updated => {
+            setSelected(updated)
+            setStudentList(prev => (prev ?? allStudents).map(s => s.id === updated.id ? updated : s))
+            setShowEdit(false)
+          }}
+        />
+      )}
+
+      {showPayment && selected && (
+        <TakePaymentModal
+          student={selected}
+          onClose={() => setShowPayment(false)}
+          onSuccess={() => { setShowPayment(false); reloadBalance() }}
+        />
+      )}
+
+      {showCharge && selected && (
+        <AddChargeModal
+          student={selected}
+          onClose={() => setShowCharge(false)}
+          onSuccess={() => { setShowCharge(false); reloadBalance() }}
+        />
+      )}
+
+      {showAddToClass && selected && (
+        <AddToClassModal
+          student={selected}
+          onClose={() => setShowAddToClass(false)}
+          onSuccess={() => { setShowAddToClass(false); reloadEnrolments() }}
         />
       )}
     </div>

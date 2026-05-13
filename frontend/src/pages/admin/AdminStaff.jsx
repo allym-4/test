@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useApi } from '../../hooks/useApi'
 import { users, classes } from '../../api'
+import AddEditStaffModal from '../../components/AddEditStaffModal'
 
 const AVATAR_COLORS = ['#b0a0ff', '#ccff00', '#ffaa00', '#ff88aa', '#44ffcc', '#ffcc88', '#b0f0b0', '#9ac4ff', '#ffb3de', '#44ff99']
 function avatarColor(name) {
@@ -19,10 +20,22 @@ export default function AdminStaff() {
   const admins = adminData?.results || []
   const sessions = sessionsData?.results || []
 
-  const allStaff = [...admins, ...instructors]
+  const [staffList, setStaffList] = useState(null)
+  const [showAddStaff, setShowAddStaff] = useState(false)
+  const [editStaff, setEditStaff] = useState(null)
+
+  const allStaff = staffList ?? [...admins, ...instructors]
 
   function classesForInstructor(instructorId) {
     return sessions.filter(s => s.instructor === instructorId).map(s => s.name).join(', ') || '—'
+  }
+
+  function handleStaffSaved(member) {
+    if (editStaff) {
+      setStaffList(prev => (prev ?? allStaff).map(s => s.id === member.id ? member : s))
+    } else {
+      setStaffList(prev => [...(prev ?? allStaff), member])
+    }
   }
 
   return (
@@ -32,7 +45,7 @@ export default function AdminStaff() {
           <div className="page-title">Staff</div>
           <div className="page-sub">Instructors, team members and access</div>
         </div>
-        <button className="btn btn-lime btn-sm">+ Add Staff</button>
+        <button className="btn btn-lime btn-sm" onClick={() => { setEditStaff(null); setShowAddStaff(true) }}>+ Add Staff</button>
       </div>
 
       <div className="subtabs">
@@ -76,11 +89,11 @@ export default function AdminStaff() {
                     </td>
                     <td style={{ color: 'var(--grey)', fontSize: 12 }}>{classesForInstructor(s.id)}</td>
                     <td><span className="tag tag-lime" style={{ fontSize: 10 }}>Active</span></td>
-                    <td><button className="btn btn-ghost btn-xs">Edit</button></td>
+                    <td><button className="btn btn-ghost btn-xs" onClick={() => { setEditStaff(s); setShowAddStaff(true) }}>Edit</button></td>
                   </tr>
                 ))}
                 {allStaff.length === 0 && (
-                  <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--grey)', padding: '24px 0' }}>No staff found</td></tr>
+                  <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--grey)', padding: '24px 0' }}>No staff yet — add your first team member above</td></tr>
                 )}
               </tbody>
             </table>
@@ -102,7 +115,7 @@ export default function AdminStaff() {
               <span className={`tag ${s.role === 'admin' ? 'tag-lime' : 'tag-lav'}`} style={{ fontSize: 10 }}>
                 {s.role === 'admin' ? 'Admin' : 'Instructor'}
               </span>
-              <button className="btn btn-ghost btn-xs">Edit</button>
+              <button className="btn btn-ghost btn-xs" onClick={() => { setEditStaff(s); setShowAddStaff(true) }}>Edit</button>
             </div>
           ))}
         </div>
@@ -114,6 +127,14 @@ export default function AdminStaff() {
           <div style={{ marginBottom: 8 }}>Availability grid</div>
           <div style={{ fontSize: 12 }}>Staff can set their availability from their profile</div>
         </div>
+      )}
+
+      {showAddStaff && (
+        <AddEditStaffModal
+          staff={editStaff}
+          onClose={() => { setShowAddStaff(false); setEditStaff(null) }}
+          onSaved={handleStaffSaved}
+        />
       )}
     </div>
   )
