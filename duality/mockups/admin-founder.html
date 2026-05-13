@@ -2168,109 +2168,15 @@ tr.clickable-row:hover td { background: #141414; }
           <button class="btn btn-ghost btn-sm" onclick="openModal('modal-season-cancel')">Transfer / Cancel Enrolment</button>
         </div>
 
-        <!-- Active payment plan -->
-        <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:10px;">Active Payment Plan</div>
-        <div class="section" style="margin-bottom:24px;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
-            <div>
-              <div style="font-weight:600;font-size:14px;">Season 4 — Level 2 &amp; Dance (3× instalments)</div>
-              <div style="font-size:12px;color:var(--grey);margin-top:3px;">Set up 11 May 2026 · Total $180</div>
-            </div>
-            <span class="tag tag-amber">Active</span>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
-            <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 12px;">
-              <div style="font-size:11px;color:var(--grey);margin-bottom:3px;">Instalment 1</div>
-              <div style="font-size:14px;font-weight:700;color:var(--lime);">$60 ✓</div>
-              <div style="font-size:11px;color:var(--grey);margin-top:2px;">Paid 11 May 2026</div>
-            </div>
-            <div style="background:#1a1200;border:1px solid var(--amber);border-radius:8px;padding:10px 12px;">
-              <div style="font-size:11px;color:var(--grey);margin-bottom:3px;">Instalment 2</div>
-              <div style="font-size:14px;font-weight:700;color:var(--amber);">$60 overdue</div>
-              <div style="font-size:11px;color:var(--grey);margin-top:2px;">Due 1 Jun 2026</div>
-            </div>
-            <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
-              <div style="font-size:11px;color:var(--grey);margin-bottom:3px;">Instalment 3</div>
-              <div style="font-size:14px;font-weight:700;color:var(--grey);">$60 pending</div>
-              <div style="font-size:11px;color:var(--grey);margin-top:2px;">Due 1 Jul 2026</div>
-            </div>
-          </div>
-          <div style="margin-top:12px;display:flex;gap:8px;">
-            <button class="btn btn-ghost btn-xs" onclick="openModal('modal-manual-payment')">Record payment</button>
-            <button class="btn btn-ghost btn-xs" onclick="alert('Chase email sent to mia.torres@gmail.com')">Send reminder</button>
-          </div>
-        </div>
+        <!-- Active payment plan (rendered dynamically) -->
+        <div id="sd-payment-plan-section"></div>
 
-        <!-- Transaction history -->
+        <!-- Transaction history (rendered dynamically) -->
         <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:10px;">Transaction History</div>
         <div class="tbl-section">
           <table>
             <thead><tr><th>Date</th><th>Description</th><th>Season</th><th>Type</th><th>Debit</th><th>Credit</th><th>Balance</th></tr></thead>
-            <tbody>
-              <tr>
-                <td style="color:var(--grey);white-space:nowrap;">22 May 2026</td>
-                <td>No-show fee — Level 2 (Tue 6pm)</td>
-                <td style="color:var(--grey);">S4</td>
-                <td><span class="tag tag-red" style="font-size:10px;">Fee</span></td>
-                <td class="bal-neg">$25</td><td>—</td><td class="bal-neg">−$120</td>
-              </tr>
-              <tr>
-                <td style="color:var(--grey);white-space:nowrap;">11 May 2026</td>
-                <td>Season 4 enrolment — Level 2 + Dance · Instalment 1</td>
-                <td style="color:var(--grey);">S4</td>
-                <td><span class="tag tag-lime" style="font-size:10px;">Payment</span></td>
-                <td>—</td><td class="bal-pos">$60</td><td class="bal-neg">−$95</td>
-              </tr>
-              <tr>
-                <td style="color:var(--grey);white-space:nowrap;">11 May 2026</td>
-                <td>Season 4 enrolment — Level 2 + Dance (instalment plan ×3)</td>
-                <td style="color:var(--grey);">S4</td>
-                <td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td>
-                <td class="bal-neg">$180</td><td>—</td><td class="bal-neg">−$155</td>
-              </tr>
-              <tr style="background:#0a0a0a;">
-                <td style="color:var(--grey);white-space:nowrap;">5 Mar 2026</td>
-                <td>Season 3 enrolment — Level 2 (paid in full)</td>
-                <td style="color:var(--grey);">S3</td>
-                <td><span class="tag tag-lime" style="font-size:10px;">Payment</span></td>
-                <td>—</td><td class="bal-pos">$165</td><td style="color:var(--lime);">$0</td>
-              </tr>
-              <tr style="background:#0a0a0a;">
-                <td style="color:var(--grey);white-space:nowrap;">5 Mar 2026</td>
-                <td>Season 3 enrolment — Level 2 (full payment)</td>
-                <td style="color:var(--grey);">S3</td>
-                <td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td>
-                <td class="bal-neg">$165</td><td>—</td><td class="bal-neg">−$165</td>
-              </tr>
-              <tr style="background:#0a0a0a;">
-                <td style="color:var(--grey);white-space:nowrap;">18 Feb 2026</td>
-                <td>Retail — Dry Hands Grip Aid</td>
-                <td style="color:var(--grey);">—</td>
-                <td><span class="tag" style="background:#222;font-size:10px;">Retail</span></td>
-                <td class="bal-neg">$18</td><td>—</td><td style="color:var(--lime);">$0</td>
-              </tr>
-              <tr style="background:#0a0a0a;">
-                <td style="color:var(--grey);white-space:nowrap;">14 Jan 2026</td>
-                <td>Account credit applied — catch-up class</td>
-                <td style="color:var(--grey);">S3</td>
-                <td><span class="tag tag-amber" style="font-size:10px;">Credit</span></td>
-                <td>—</td><td class="bal-pos">$18</td><td style="color:var(--lime);">$18</td>
-              </tr>
-              <tr style="background:#0a0a0a;">
-                <td style="color:var(--grey);white-space:nowrap;">5 Nov 2025</td>
-                <td>Season 2 enrolment — Level 1 (paid in full)</td>
-                <td style="color:var(--grey);">S2</td>
-                <td><span class="tag tag-lime" style="font-size:10px;">Payment</span></td>
-                <td>—</td><td class="bal-pos">$145</td><td style="color:var(--lime);">$0</td>
-              </tr>
-              <tr style="background:#0a0a0a;">
-                <td style="color:var(--grey);white-space:nowrap;">5 Nov 2025</td>
-                <td>Season 2 enrolment — Level 1 (full payment)</td>
-                <td style="color:var(--grey);">S2</td>
-                <td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td>
-                <td class="bal-neg">$145</td><td>—</td><td class="bal-neg">−$145</td>
-              </tr>
-            </tbody>
+            <tbody id="sd-tx-tbody"></tbody>
           </table>
         </div>
       </div>
@@ -6962,8 +6868,71 @@ function openStudentDetail(student) {
   ).join('') + '<button class="btn btn-ghost btn-xs" onclick="alert(\'Add tag\')">+ Tag</button>';
   // Reset to first tab
   const firstTab = document.querySelector('#screen-student-detail .subtabs .subtab');
+  // Payments tab — render dynamically per student
+  renderStudentPayments(student);
+
   if (firstTab) switchSubTab(firstTab, 'sd-overview');
   showScreen('student-detail');
+}
+
+function renderStudentPayments(student) {
+  var bal = student.balance || 0;
+  var numClasses = (student.classes || []).length;
+
+  // Build a plausible payment plan section
+  var planHTML = '';
+  var txHTML = '';
+
+  if (bal < 0) {
+    // Student owes — show active payment plan
+    var total = numClasses >= 2 ? 180 : 150;
+    var paid = total + bal; // e.g. total=180, bal=-120 → paid=60
+    var instalments = 3;
+    var instAmt = Math.round(total / instalments);
+    planHTML = '<div style="font-family:\'Archivo Black\',sans-serif;font-size:14px;margin-bottom:10px;">Active Payment Plan</div>'
+      + '<div class="section" style="margin-bottom:24px;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">'
+      + '<div><div style="font-weight:600;font-size:14px;">Season 4 — ' + (student.classes||[]).slice(0,2).join(' &amp; ') + ' (' + instalments + '× instalments)</div>'
+      + '<div style="font-size:12px;color:var(--grey);margin-top:3px;">Set up 11 May 2026 · Total $' + total + '</div></div>'
+      + '<span class="tag tag-amber">Active</span></div>'
+      + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">'
+      + '<div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 12px;"><div style="font-size:11px;color:var(--grey);margin-bottom:3px;">Instalment 1</div><div style="font-size:14px;font-weight:700;color:var(--lime);">$' + instAmt + ' ✓</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Paid 11 May 2026</div></div>'
+      + '<div style="background:#1a1200;border:1px solid var(--amber);border-radius:8px;padding:10px 12px;"><div style="font-size:11px;color:var(--grey);margin-bottom:3px;">Instalment 2</div><div style="font-size:14px;font-weight:700;color:var(--amber);">$' + instAmt + ' overdue</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Due 1 Jun 2026</div></div>'
+      + '<div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 12px;"><div style="font-size:11px;color:var(--grey);margin-bottom:3px;">Instalment 3</div><div style="font-size:14px;font-weight:700;color:var(--grey);">$' + instAmt + ' pending</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Due 1 Jul 2026</div></div>'
+      + '</div>'
+      + '<div style="margin-top:12px;display:flex;gap:8px;"><button class="btn btn-ghost btn-xs" onclick="openModal(\'modal-manual-payment\')">Record payment</button><button class="btn btn-ghost btn-xs" onclick="alert(\'Reminder sent to ' + student.name + '\')">Send reminder</button></div>'
+      + '</div>';
+
+    txHTML = '<tr><td style="color:var(--grey);white-space:nowrap;">22 May 2026</td><td>No-show fee — ' + (student.classes||['class'])[0] + '</td><td style="color:var(--grey);">S4</td><td><span class="tag tag-red" style="font-size:10px;">Fee</span></td><td class="bal-neg">$25</td><td>—</td><td class="bal-neg">−$' + Math.abs(bal) + '</td></tr>'
+      + '<tr><td style="color:var(--grey);white-space:nowrap;">11 May 2026</td><td>Season 4 enrolment — instalment 1 of ' + instalments + '</td><td style="color:var(--grey);">S4</td><td><span class="tag tag-lime" style="font-size:10px;">Payment</span></td><td>—</td><td class="bal-pos">$' + instAmt + '</td><td class="bal-neg">−$' + (Math.abs(bal)-25) + '</td></tr>'
+      + '<tr><td style="color:var(--grey);white-space:nowrap;">11 May 2026</td><td>Season 4 enrolment — ' + (student.classes||[]).slice(0,2).join(' + ') + ' (' + instalments + '× plan)</td><td style="color:var(--grey);">S4</td><td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td><td class="bal-neg">$' + total + '</td><td>—</td><td class="bal-neg">−$' + (Math.abs(bal)-25+instAmt) + '</td></tr>'
+      + '<tr style="background:#0a0a0a;"><td style="color:var(--grey);white-space:nowrap;">4 Mar 2026</td><td>Season 3 enrolment — paid in full</td><td style="color:var(--grey);">S3</td><td><span class="tag tag-lime" style="font-size:10px;">Payment</span></td><td>—</td><td class="bal-pos">$165</td><td style="color:var(--lime);">$0</td></tr>'
+      + '<tr style="background:#0a0a0a;"><td style="color:var(--grey);white-space:nowrap;">4 Mar 2026</td><td>Season 3 enrolment invoice</td><td style="color:var(--grey);">S3</td><td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td><td class="bal-neg">$165</td><td>—</td><td class="bal-neg">−$165</td></tr>';
+  } else {
+    // Student is paid up — show clean history
+    var s4total = numClasses >= 3 ? 210 : numClasses >= 2 ? 180 : 150;
+    txHTML = '<tr><td style="color:var(--grey);white-space:nowrap;">11 May 2026</td><td>Season 4 enrolment — ' + (student.classes||[]).slice(0,2).join(' + ') + ' (full payment)</td><td style="color:var(--grey);">S4</td><td><span class="tag tag-lime" style="font-size:10px;">Payment</span></td><td>—</td><td class="bal-pos">$' + s4total + '</td><td style="color:var(--lime);">$0</td></tr>'
+      + '<tr><td style="color:var(--grey);white-space:nowrap;">11 May 2026</td><td>Season 4 enrolment invoice</td><td style="color:var(--grey);">S4</td><td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td><td class="bal-neg">$' + s4total + '</td><td>—</td><td class="bal-neg">−$' + s4total + '</td></tr>'
+      + '<tr style="background:#0a0a0a;"><td style="color:var(--grey);white-space:nowrap;">4 Mar 2026</td><td>Season 3 enrolment — paid in full</td><td style="color:var(--grey);">S3</td><td><span class="tag tag-lime" style="font-size:10px;">Payment</span></td><td>—</td><td class="bal-pos">$165</td><td style="color:var(--lime);">$0</td></tr>'
+      + '<tr style="background:#0a0a0a;"><td style="color:var(--grey);white-space:nowrap;">4 Mar 2026</td><td>Season 3 enrolment invoice</td><td style="color:var(--grey);">S3</td><td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td><td class="bal-neg">$165</td><td>—</td><td class="bal-neg">−$165</td></tr>'
+      + '<tr style="background:#0a0a0a;"><td style="color:var(--grey);white-space:nowrap;">5 Nov 2025</td><td>Season 2 enrolment — paid in full</td><td style="color:var(--grey);">S2</td><td><span class="tag tag-lime" style="font-size:10px;">Payment</span></td><td>—</td><td class="bal-pos">$145</td><td style="color:var(--lime);">$0</td></tr>'
+      + '<tr style="background:#0a0a0a;"><td style="color:var(--grey);white-space:nowrap;">5 Nov 2025</td><td>Season 2 enrolment invoice</td><td style="color:var(--grey);">S2</td><td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td><td class="bal-neg">$145</td><td>—</td><td class="bal-neg">−$145</td></tr>';
+  }
+
+  // Update KPI outstanding value
+  var kpiEl = document.getElementById('sd-balance-large');
+  if (kpiEl) {
+    kpiEl.textContent = bal < 0 ? '−$' + Math.abs(bal) : bal > 0 ? '+$' + bal + ' credit' : '$0';
+    kpiEl.className = 'kpi-value ' + (bal < 0 ? 'bal-neg' : bal > 0 ? 'bal-pos' : '');
+  }
+
+  // Inject plan section
+  var planEl = document.getElementById('sd-payment-plan-section');
+  if (planEl) planEl.innerHTML = planHTML;
+
+  // Inject transaction rows
+  var txEl = document.getElementById('sd-tx-tbody');
+  if (txEl) txEl.innerHTML = txHTML;
 }
 
 // ===== ATTENDANCE REGISTER =====
