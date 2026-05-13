@@ -4749,65 +4749,6 @@ dualitypole.com.au</textarea>
         </div>
       </div>
 
-      <!-- ── Node edit modal ───────────────────────────────────────────────── -->
-      <div id="modal-node-edit" class="modal" style="display:none;">
-        <div class="modal-box" style="width:480px;">
-          <div class="modal-header">
-            <div class="modal-title" id="node-edit-title">Edit Node</div>
-            <button class="modal-close" onclick="closeModal('modal-node-edit')">&#10005;</button>
-          </div>
-          <div id="node-edit-body" style="padding:20px;"></div>
-          <div style="padding:0 20px 20px;display:flex;gap:10px;">
-            <button class="btn btn-lime" onclick="saveNodeEdit()">Save</button>
-            <button class="btn btn-ghost" onclick="closeModal('modal-node-edit')">Cancel</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── New automation modal ──────────────────────────────────────────── -->
-      <div id="modal-new-automation" class="modal" style="display:none;">
-        <div class="modal-box" style="width:500px;">
-          <div class="modal-header">
-            <div class="modal-title">New Automation</div>
-            <button class="modal-close" onclick="closeModal('modal-new-automation')">&#10005;</button>
-          </div>
-          <div style="padding:20px;">
-            <div class="field">
-              <label>Automation name</label>
-              <input type="text" id="new-auto-name" placeholder="e.g. No-show follow-up" />
-            </div>
-            <div class="field">
-              <label>Category</label>
-              <select id="new-auto-cat" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:10px 12px;">
-                <option>Booking &amp; Class</option>
-                <option>Billing &amp; Fees</option>
-                <option>Re-engagement</option>
-                <option>Custom</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Starts with trigger</label>
-              <select id="new-auto-trigger" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:10px 12px;">
-                <option value="booking">Student completes booking</option>
-                <option value="noshow">Student marked no-show</option>
-                <option value="overdue">Balance becomes overdue</option>
-                <option value="lapsed3">No booking for 3 weeks</option>
-                <option value="lapsed6">No booking for 6 weeks</option>
-                <option value="lapsed12">No booking for 12 weeks</option>
-                <option value="waitlist">Spot opens on waitlist</option>
-                <option value="firstclass">First class within 24h</option>
-                <option value="season_end">Season ends</option>
-                <option value="manual">Manual / on demand</option>
-              </select>
-            </div>
-          </div>
-          <div style="padding:0 20px 20px;display:flex;gap:10px;">
-            <button class="btn btn-lime" onclick="createNewAutomation()">Create &amp; Open</button>
-            <button class="btn btn-ghost" onclick="closeModal('modal-new-automation')">Cancel</button>
-          </div>
-        </div>
-      </div>
-
     </div>
 
     <!-- ===== MARKETING ===== -->
@@ -10988,7 +10929,7 @@ function openNodeEdit(idx) {
   }
   body += '<div style="display:flex;gap:8px;"><button class="btn btn-ghost btn-sm" onclick="deleteNode('+idx+')" style="color:#ff6666;border-color:#ff6666;">Delete node</button></div>';
   document.getElementById('node-edit-body').innerHTML = body;
-  document.getElementById('modal-node-edit').style.display = 'flex';
+  openModal('modal-node-edit');
 }
 
 function saveNodeEdit() {
@@ -11026,7 +10967,7 @@ function deleteNode(idx) {
 
 // ── New automation modal ──────────────────────────────────────────────────────
 function openNewAutomationModal() {
-  document.getElementById('modal-new-automation').style.display = 'flex';
+  openModal('modal-new-automation');
 }
 
 function createNewAutomation() {
@@ -11078,5 +11019,56 @@ function createNewAutomation() {
   }
 })();
 </script>
+<!-- ── Node edit modal ── -->
+<div class="modal-overlay" id="modal-node-edit">
+  <div class="modal" style="width:480px;max-width:95vw;">
+    <div class="modal-title" id="node-edit-title">Edit Node</div>
+    <div id="node-edit-body"></div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button class="btn btn-lime" onclick="saveNodeEdit()">Save</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-node-edit')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── New automation modal ── -->
+<div class="modal-overlay" id="modal-new-automation">
+  <div class="modal" style="width:500px;max-width:95vw;">
+    <div class="modal-title">New Automation</div>
+    <div class="field">
+      <label>Automation name</label>
+      <input type="text" id="new-auto-name" placeholder="e.g. No-show follow-up" />
+    </div>
+    <div class="field">
+      <label>Category</label>
+      <select id="new-auto-cat" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:10px 12px;">
+        <option>Booking &amp; Class</option>
+        <option>Billing &amp; Fees</option>
+        <option>Re-engagement</option>
+        <option>Custom</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Starts with trigger</label>
+      <select id="new-auto-trigger" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:10px 12px;">
+        <option value="booking">Student completes booking</option>
+        <option value="noshow">Student marked no-show</option>
+        <option value="overdue">Balance becomes overdue</option>
+        <option value="lapsed3">No booking for 3 weeks</option>
+        <option value="lapsed6">No booking for 6 weeks</option>
+        <option value="lapsed12">No booking for 12 weeks</option>
+        <option value="waitlist">Spot opens on waitlist</option>
+        <option value="firstclass">First class within 24h</option>
+        <option value="season_end">Season ends</option>
+        <option value="manual">Manual / on demand</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button class="btn btn-lime" onclick="createNewAutomation()">Create &amp; Open</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-new-automation')">Cancel</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
