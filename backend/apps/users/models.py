@@ -39,3 +39,38 @@ class StaffNote(models.Model):
 
     def __str__(self):
         return f'Note on {self.student} by {self.created_by} ({self.tag})'
+
+
+class Lead(models.Model):
+    class Status(models.TextChoices):
+        NEW = 'new', 'New'
+        TRIAL_BOOKED = 'trial_booked', 'Trial Booked'
+        FOLLOW_UP = 'follow_up', 'Follow-up'
+        COLD = 'cold', 'Cold'
+        ENROLLED = 'enrolled', 'Enrolled'
+
+    class Source(models.TextChoices):
+        INSTAGRAM = 'instagram', 'Instagram'
+        GOOGLE = 'google', 'Google'
+        REFERRAL = 'referral', 'Referral'
+        WEBSITE = 'website', 'Website'
+        WALKIN = 'walkin', 'Walk-in'
+        OTHER = 'other', 'Other'
+
+    name = models.CharField(max_length=100)
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=20, blank=True)
+    source = models.CharField(max_length=20, choices=Source.choices, default=Source.OTHER)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.NEW)
+    notes = models.TextField(blank=True)
+    assigned_to = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_leads'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.name} ({self.status})'

@@ -7,4 +7,6 @@ urlpatterns = [
     path('sessions/<int:pk>/', views.ClassSessionDetailView.as_view(), name='session-detail'),
     path('occurrences/', views.ClassOccurrenceListView.as_view(), name='occurrence-list'),
     path('occurrences/<int:pk>/', views.ClassOccurrenceDetailView.as_view(), name='occurrence-detail'),
+    path('seasons/', views.SeasonListView.as_view(), name='season-list'),
+    path('seasons/<int:pk>/', views.SeasonDetailView.as_view(), name='season-detail'),
 ]

@@ -6,8 +6,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db import transaction
 from django.db.models import Q
-from .models import User, StaffNote
-from .serializers import UserSerializer, UserCreateSerializer, StaffNoteSerializer
+from .models import User, StaffNote, Lead
+from .serializers import UserSerializer, UserCreateSerializer, StaffNoteSerializer, LeadSerializer
 from .permissions import IsAdminOrInstructor, IsAdminUser
 
 
@@ -143,4 +143,25 @@ class BulkImportView(APIView):
             'skipped_detail': skipped,
             'error_detail': errors,
         }, status=status.HTTP_200_OK)
+
+
+class LeadListView(generics.ListCreateAPIView):
+    serializer_class = LeadSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+    def get_queryset(self):
+        qs = Lead.objects.select_related('assigned_to')
+        status_filter = self.request.query_params.get('status')
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        search = self.request.query_params.get('search')
+        if search:
+            qs = qs.filter(Q(name__icontains=search) | Q(email__icontains=search))
+        return qs
+
+
+class LeadDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Lead.objects.select_related('assigned_to')
+    serializer_class = LeadSerializer
+    permission_classes = [IsAdminOrInstructor]
 

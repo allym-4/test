@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Studio, ClassSession, ClassOccurrence
+from .models import Studio, ClassSession, ClassOccurrence, Season
 from apps.users.serializers import UserMinimalSerializer
 
 
@@ -36,3 +36,10 @@ class ClassOccurrenceSerializer(serializers.ModelSerializer):
             'substitute_instructor', 'substitute_instructor_detail',
             'notes', 'register_saved',
         )
+
+
+class SeasonSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Season
+        fields = ('id', 'name', 'start_date', 'end_date', 'status', 'notes', 'created_at')
+        read_only_fields = ('id', 'created_at')

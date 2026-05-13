@@ -71,3 +71,23 @@ class ClassOccurrence(models.Model):
 
     def __str__(self):
         return f'{self.session.name} — {self.date}'
+
+
+class Season(models.Model):
+    class Status(models.TextChoices):
+        UPCOMING = 'upcoming', 'Upcoming'
+        ACTIVE = 'active', 'Active'
+        COMPLETED = 'completed', 'Completed'
+
+    name = models.CharField(max_length=100)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    status = models.CharField(max_length=15, choices=Status.choices, default=Status.UPCOMING)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-start_date']
+
+    def __str__(self):
+        return self.name

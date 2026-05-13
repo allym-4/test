@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, StaffNote
+from .models import User, StaffNote, Lead
 
 
 class UserMinimalSerializer(serializers.ModelSerializer):
@@ -49,3 +49,15 @@ class StaffNoteSerializer(serializers.ModelSerializer):
         model = StaffNote
         fields = ('id', 'student', 'created_by', 'created_by_name', 'tag', 'body', 'created_at', 'updated_at')
         read_only_fields = ('id', 'created_by', 'created_at', 'updated_at')
+
+
+class LeadSerializer(serializers.ModelSerializer):
+    assigned_to_name = serializers.StringRelatedField(source='assigned_to')
+
+    class Meta:
+        model = Lead
+        fields = (
+            'id', 'name', 'email', 'phone', 'source', 'status', 'notes',
+            'assigned_to', 'assigned_to_name', 'created_at', 'updated_at',
+        )
+        read_only_fields = ('id', 'created_at', 'updated_at')

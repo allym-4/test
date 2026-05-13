@@ -8,3 +8,8 @@ urlpatterns = [
     path('<int:pk>/', views.UserDetailView.as_view(), name='user-detail'),
     path('<int:user_pk>/notes/', views.StaffNoteListView.as_view(), name='staff-notes'),
 ]
+
+leads_urlpatterns = [
+    path('', views.LeadListView.as_view(), name='lead-list'),
+    path('<int:pk>/', views.LeadDetailView.as_view(), name='lead-detail'),
+]

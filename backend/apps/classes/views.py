@@ -1,6 +1,6 @@
 from rest_framework import generics, permissions
-from .models import Studio, ClassSession, ClassOccurrence
-from .serializers import StudioSerializer, ClassSessionSerializer, ClassOccurrenceSerializer
+from .models import Studio, ClassSession, ClassOccurrence, Season
+from .serializers import StudioSerializer, ClassSessionSerializer, ClassOccurrenceSerializer, SeasonSerializer
 from apps.users.permissions import IsAdminOrInstructor
 
 
@@ -47,4 +47,16 @@ class ClassOccurrenceListView(generics.ListCreateAPIView):
 class ClassOccurrenceDetailView(generics.RetrieveUpdateAPIView):
     queryset = ClassOccurrence.objects.select_related('session__instructor', 'session__studio')
     serializer_class = ClassOccurrenceSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class SeasonListView(generics.ListCreateAPIView):
+    queryset = Season.objects.all()
+    serializer_class = SeasonSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class SeasonDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Season.objects.all()
+    serializer_class = SeasonSerializer
     permission_classes = [IsAdminOrInstructor]

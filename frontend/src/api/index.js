@@ -27,6 +27,21 @@ export const payments = {
   list: (params) => client.get('/api/payments/', { params }),
   balance: (studentId) => client.get(`/api/payments/balance/${studentId}/`),
   plans: (params) => client.get('/api/payments/plans/', { params }),
+  create: (data) => client.post('/api/payments/', data),
+}
+
+export const leads = {
+  list: (params) => client.get('/api/leads/', { params }),
+  create: (data) => client.post('/api/leads/', data),
+  update: (id, data) => client.patch(`/api/leads/${id}/`, data),
+  delete: (id) => client.delete(`/api/leads/${id}/`),
+}
+
+export const seasons = {
+  list: () => client.get('/api/classes/seasons/'),
+  create: (data) => client.post('/api/classes/seasons/', data),
+  update: (id, data) => client.patch(`/api/classes/seasons/${id}/`, data),
+  delete: (id) => client.delete(`/api/classes/seasons/${id}/`),
 }
 
 export const homework = {
