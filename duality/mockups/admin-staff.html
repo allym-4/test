@@ -1532,23 +1532,106 @@ body.mob-sidebar-open .sidebar-overlay { display: block; }
 
     <!-- Payments & Charges tab -->
     <div id="staff-sd-sub-payments" class="staff-sd-sub" style="display:none;">
+
+      <!-- Balance banner -->
+      <div id="staff-sd-balance-banner" style="background:#1a0000;border:1px solid #ff333344;border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#ff8888;margin-bottom:4px;">Outstanding Balance</div>
+          <div id="staff-sd-balance-large" style="font-family:'Archivo Black',sans-serif;font-size:28px;color:#ff6b6b;">$120.00</div>
+        </div>
+        <button class="btn btn-lime btn-sm" id="staff-sd-take-payment-btn" onclick="openTakePayment(document.getElementById('staff-sd-name').textContent, '$120')">Take Payment</button>
+      </div>
+
+      <!-- What's owing -->
+      <div id="staff-sd-owing-section">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:8px;">What's Owing</div>
+        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 13px;background:#111;border-radius:8px;gap:10px;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:500;">Season 4 — Level 2 course fee</div>
+              <div style="font-size:11px;color:var(--grey);margin-top:2px;">$215 of $270 paid · remainder outstanding</div>
+            </div>
+            <div style="font-family:'Archivo Black',sans-serif;font-size:14px;color:#ff6b6b;flex-shrink:0;">$55</div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 13px;background:#111;border-radius:8px;gap:10px;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:500;">No-show fee · Mon Level 2, 5 May</div>
+              <div style="font-size:11px;color:var(--grey);margin-top:2px;">Automatic charge — not yet paid</div>
+            </div>
+            <div style="font-family:'Archivo Black',sans-serif;font-size:14px;color:#ff6b6b;flex-shrink:0;">$20</div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 13px;background:#111;border-radius:8px;gap:10px;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:500;">No-show fee · High Tricks, 21 Apr</div>
+              <div style="font-size:11px;color:var(--grey);margin-top:2px;">Automatic charge — not yet paid</div>
+            </div>
+            <div style="font-family:'Archivo Black',sans-serif;font-size:14px;color:#ff6b6b;flex-shrink:0;">$20</div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 13px;background:#111;border-radius:8px;gap:10px;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:500;">Grip Aid 250ml — retail purchase</div>
+              <div style="font-size:11px;color:var(--grey);margin-top:2px;">Studio shop · 21 Apr</div>
+            </div>
+            <div style="font-family:'Archivo Black',sans-serif;font-size:14px;color:#ff6b6b;flex-shrink:0;">$25</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment plan -->
+      <div id="staff-sd-plan-section" style="background:#0d1a00;border:1px solid #2a4400;border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-family:'Archivo Black',sans-serif;font-size:13px;color:var(--lime);">Payment Plan</div>
+          <span style="font-size:10px;background:#1f3300;color:var(--lime);border-radius:4px;padding:2px 8px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Active</span>
+        </div>
+        <div style="font-size:11px;color:var(--grey);margin-bottom:12px;">3 instalments — paying off full $120 balance. Arranged by Mimi.</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:22px;height:22px;border-radius:50%;background:var(--lime);display:flex;align-items:center;justify-content:center;font-size:12px;color:#000;font-weight:700;flex-shrink:0;">✓</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:500;">Instalment 1 · $40</div>
+              <div style="font-size:11px;color:var(--grey);">Due 1 May 2025</div>
+            </div>
+            <span class="tag tag-lime" style="font-size:10px;flex-shrink:0;">Paid</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:22px;height:22px;border-radius:50%;background:#ff6b6b;display:flex;align-items:center;justify-content:center;font-size:12px;color:#000;font-weight:700;flex-shrink:0;">!</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:500;">Instalment 2 · $40</div>
+              <div style="font-size:11px;color:#ff8888;">Due 12 May 2025 — overdue</div>
+            </div>
+            <span class="tag tag-red" style="font-size:10px;flex-shrink:0;">Overdue</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:22px;height:22px;border-radius:50%;border:2px solid #333;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--grey);flex-shrink:0;">3</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:500;">Instalment 3 · $40</div>
+              <div style="font-size:11px;color:var(--grey);">Due 1 Jun 2025</div>
+            </div>
+            <span class="tag tag-grey" style="font-size:10px;flex-shrink:0;">Upcoming</span>
+          </div>
+        </div>
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid #1f3300;font-size:11px;color:var(--grey);">To adjust this plan, contact <a href="mailto:mimi@dualitypole.com.au" style="color:var(--lav);">mimi@dualitypole.com.au</a></div>
+      </div>
+
+      <!-- Full history -->
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:8px;">Full History</div>
       <div class="tbl-section">
         <table>
-          <thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Status</th></tr></thead>
+          <thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Balance</th></tr></thead>
           <tbody>
-            <tr><td>7 Apr 2025</td><td>Season 4 — Level 2</td><td style="color:var(--lime);">+$270</td><td><span class="tag tag-lime">Paid</span></td></tr>
-            <tr><td>5 May 2025</td><td>No-show fee — Mon Level 2</td><td style="color:var(--red);">-$20</td><td><span class="tag tag-amber">Owing</span></td></tr>
-            <tr><td>21 Apr 2025</td><td>No-show fee — High Tricks</td><td style="color:var(--red);">-$20</td><td><span class="tag tag-amber">Owing</span></td></tr>
-            <tr><td>21 Apr 2025</td><td>Grip Aid 250ml (retail)</td><td style="color:var(--red);">-$45</td><td><span class="tag tag-amber">Owing</span></td></tr>
-            <tr><td>10 Feb 2025</td><td>Season 3 — Level 2</td><td style="color:var(--lime);">+$270</td><td><span class="tag tag-lime">Paid</span></td></tr>
-            <tr><td>15 Nov 2024</td><td>Season 2 — Level 2</td><td style="color:var(--lime);">+$270</td><td><span class="tag tag-lime">Paid</span></td></tr>
+            <tr><td>5 May 25</td><td>No-show fee · Level 2 Mon</td><td style="color:#ff6b6b;">−$20</td><td style="color:#ff6b6b;font-weight:600;">−$120</td></tr>
+            <tr><td>21 Apr 25</td><td>Grip Aid 250ml (retail)</td><td style="color:#ff6b6b;">−$25</td><td style="color:#ff6b6b;">−$100</td></tr>
+            <tr><td>21 Apr 25</td><td>No-show fee · High Tricks</td><td style="color:#ff6b6b;">−$20</td><td style="color:#ff6b6b;">−$75</td></tr>
+            <tr><td>7 Apr 25</td><td>Season 4 deposit payment</td><td style="color:var(--lime);">+$215</td><td style="color:#ff6b6b;">−$55</td></tr>
+            <tr><td>7 Apr 25</td><td>Season 4 — Level 2 course fee</td><td style="color:#ff6b6b;">−$270</td><td style="color:#ff6b6b;">−$270</td></tr>
+            <tr style="background:#0a0f00;"><td>20 Feb 25</td><td>Season 3 — payment in full</td><td style="color:var(--lime);">+$270</td><td style="color:var(--lime);">$0</td></tr>
+            <tr style="background:#0a0f00;"><td>10 Feb 25</td><td>Season 3 — Level 2 course fee</td><td style="color:#ff6b6b;">−$270</td><td style="color:#ff6b6b;">−$270</td></tr>
+            <tr style="background:#0a0a0a;"><td>20 Nov 24</td><td>Season 2 — payment in full</td><td style="color:var(--lime);">+$270</td><td style="color:var(--lime);">$0</td></tr>
+            <tr style="background:#0a0a0a;"><td>15 Nov 24</td><td>Season 2 — Level 2 course fee</td><td style="color:#ff6b6b;">−$270</td><td style="color:#ff6b6b;">−$270</td></tr>
           </tbody>
         </table>
       </div>
-      <div style="margin-top:10px;padding:10px 14px;background:#111;border-radius:8px;font-size:13px;display:flex;align-items:center;justify-content:space-between;">
-        <span style="color:var(--grey);">Total owing</span>
-        <span style="font-family:'Archivo Black',sans-serif;color:var(--red);">$120.00</span>
-      </div>
+
     </div>
 
     <!-- Notes tab -->
@@ -1715,6 +1798,7 @@ var _staffSdData = {};
 function openStaffStudentDetail(name) {
   var balances = {'Jess Malone':'-$120','Tara Bell':'$0','Dana Park':'-$75','Nina Torres':'$0'};
   var levels = {'Jess Malone':'Level 2','Tara Bell':'Level 2','Dana Park':'Level 2 (Drop-in)','Nina Torres':'Level 2'};
+  var hasPaymentPlan = {'Jess Malone':true};
   document.getElementById('staff-sd-name').textContent = name;
   var badge = document.getElementById('staff-sd-badge');
   badge.textContent = levels[name] || 'Student';
@@ -1722,6 +1806,19 @@ function openStaffStudentDetail(name) {
   var balEl = document.getElementById('staff-sd-balance');
   balEl.textContent = bal;
   balEl.style.color = bal.startsWith('-') ? 'var(--red)' : 'var(--lime)';
+  // Show/hide balance banner and owing sections
+  var owing = bal.startsWith('-');
+  var banner = document.getElementById('staff-sd-balance-banner');
+  var owingSection = document.getElementById('staff-sd-owing-section');
+  var planSection = document.getElementById('staff-sd-plan-section');
+  if(banner) banner.style.display = owing ? 'flex' : 'none';
+  if(owingSection) owingSection.style.display = owing ? '' : 'none';
+  if(planSection) planSection.style.display = (owing && hasPaymentPlan[name]) ? '' : 'none';
+  if(banner) {
+    var balNum = bal.replace('-','').replace('$','');
+    document.getElementById('staff-sd-balance-large').textContent = '$' + balNum;
+    document.getElementById('staff-sd-take-payment-btn').setAttribute('onclick', "openTakePayment('" + name + "','" + bal.replace('-','$') + "')");
+  }
   switchStaffSdTab('bookings');
   openModal('modal-staff-student-detail');
 }
