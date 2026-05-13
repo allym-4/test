@@ -7925,7 +7925,7 @@ Duality Pole</textarea>
     <div class="subtabs" id="staff-detail-tabs" style="margin-bottom:20px;">
       <div class="subtab active" onclick="switchSubTab(this,'sdt-profile')">Profile</div>
       <div class="subtab" onclick="switchSubTab(this,'sdt-schedule')">Teaching Schedule</div>
-      <div class="subtab" onclick="switchSubTab(this,'sdt-student')">Student Profile</div>
+      <div class="subtab" onclick="openStudentDetail(STUDENTS.find(function(s){return s.id==='chloenguyeninstr';}));closeModal('modal-staff-detail')">Student Profile</div>
       <div class="subtab" onclick="switchSubTab(this,'sdt-notes')">Notes</div>
     </div>
 
@@ -8097,6 +8097,7 @@ const STUDENTS = [
   { id:"chendaviriyanmak", name:"Chenda Viriyan Mak", pronouns:'', email:"nayirivm@gmail.com", phone:'', dob:'', level:"Level 2", classes:["Level 2", "Strip Virgin"], status:'Active', balance:0, memberSince:'', avatar:'C', avatarColor:'#b0f0b0', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"cherryliu", name:"Cherry liu", pronouns:'', email:"cherry_chang_liu@icloud.com", phone:'', dob:'', level:"Advanced Floor", classes:["Advanced Floor", "Level 5", "Strip"], status:'Active', balance:0, memberSince:'', avatar:'C', avatarColor:'#ffcc88', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"chloeseow", name:"Chloe Seow", pronouns:'', email:"chloechloe.seow@gmail.com", phone:'', dob:'', level:"Advanced Floor", classes:["Advanced Floor", "Level 6"], status:'Active', balance:0, memberSince:'', avatar:'C', avatarColor:'#ff9ecb', emergency:'', health:'', waiver:'', source:'', tags:[] },
+  { id:"chloenguyeninstr", name:"Chloe Nguyen", pronouns:'she/her', email:"chloe@dualitypole.com.au", phone:'0412 000 001', dob:'14 Aug 1992', level:"Level 3", classes:["Level 3 — Wed 7:30pm", "Kiki — Fri 6:00pm"], status:'Active', balance:0, memberSince:'Season 2', avatar:'C', avatarColor:'var(--lav)', emergency:'James Nguyen — 0411 000 002', health:'Previous shoulder injury (recovered)', waiver:'Apr 2024', source:'Instructor', tags:['Staff'] , paymentPlan:null },
   { id:"clancygreening", name:"Clancy Greening", pronouns:'', email:"clancy.greening@gmail.com", phone:'', dob:'', level:"Level 2", classes:["Level 2"], status:'Active', balance:0, memberSince:'', avatar:'C', avatarColor:'#c9aaff', emergency:'', health:'', waiver:'', source:'', tags:[] },
   { id:"danaebeatie", name:"Danae Beatie", pronouns:'', email:"danaebeatie@gmail.com", phone:'', dob:'', level:"Chair", classes:["Chair", "Level 3", "Strip"], status:'Owing', balance:-25, memberSince:'', avatar:'D', avatarColor:'#ffd6a5', emergency:'', health:'', waiver:'', source:'', tags:['Owing'] , paymentPlan:null },
   { id:"dashamaiorova", name:"Dasha Maiorova", pronouns:'', email:"Dash_m12@hotmail.com", phone:'', dob:'', level:"Chair", classes:["Chair", "Level 3"], status:'Active', balance:0, memberSince:'', avatar:'D', avatarColor:'#b5ead7', emergency:'', health:'', waiver:'', source:'', tags:[] },
