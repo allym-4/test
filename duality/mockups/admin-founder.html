@@ -4364,6 +4364,77 @@ dualitypole.com.au</textarea>
           <div style="display:flex;gap:8px;align-items:center;"><button class="btn btn-ghost btn-xs" onclick="openFormEdit('season-agreement')">Edit</button><button class="btn btn-ghost btn-xs" onclick="openFormPreview('season-agreement')">Preview</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
         </div>
       </div>
+
+      <!-- FAQ & App Copy editor -->
+      <div class="section" style="margin-top:20px;" id="settings-faq-copy">
+        <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>Student FAQ &amp; App Copy</span>
+          <button class="btn btn-lime btn-sm" onclick="saveFaqCopy()">Save All Changes</button>
+        </div>
+        <div style="font-size:13px;color:var(--grey);margin-bottom:16px;">Edit the FAQ answers and key copy shown to students in the app. Changes go live immediately after saving.</div>
+
+        <div style="display:flex;flex-direction:column;gap:0;" id="faq-editor-list">
+
+          <div class="faq-edit-row" style="border-bottom:1px solid var(--border);padding:14px 0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <div style="font-size:13px;font-weight:600;">How do I access the studio with Kisi?</div>
+              <button class="btn btn-ghost btn-xs" onclick="toggleFaqEdit(this)">Edit</button>
+            </div>
+            <div class="faq-preview" style="font-size:13px;color:var(--grey);line-height:1.6;">The studio door is already unlocked and open during all scheduled class times — you don't need Kisi just to walk in for your class. Kisi is for accessing the studio outside of scheduled class hours (e.g. practice sessions or early arrival). Your Kisi access activates before your session and remains active until 4 minutes 59 seconds into the warm-up, after which the door re-locks. To get set up: download the Kisi app (iOS or Android) and accept the invite email we sent you. For any access issues, email staff@dualitypole.com before heading in.</div>
+            <textarea class="faq-edit-input" style="display:none;width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);padding:10px 12px;font-size:13px;resize:vertical;font-family:inherit;box-sizing:border-box;line-height:1.6;" rows="5">The studio door is already unlocked and open during all scheduled class times — you don't need Kisi just to walk in for your class. Kisi is for accessing the studio outside of scheduled class hours (e.g. practice sessions or early arrival). Your Kisi access activates before your session and remains active until 4 minutes 59 seconds into the warm-up, after which the door re-locks. To get set up: download the Kisi app (iOS or Android) and accept the invite email we sent you. For any access issues, email staff@dualitypole.com before heading in.</textarea>
+          </div>
+
+          <div class="faq-edit-row" style="border-bottom:1px solid var(--border);padding:14px 0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <div style="font-size:13px;font-weight:600;">What happens if I'm late?</div>
+              <button class="btn btn-ghost btn-xs" onclick="toggleFaqEdit(this)">Edit</button>
+            </div>
+            <div class="faq-preview" style="font-size:13px;color:var(--grey);line-height:1.6;">If you arrive 5 or more minutes after class starts you will not be admitted — this protects the experience for students who are already mid-warm-up. A missed class due to lateness is treated as a no-show and a $20 penalty fee applies.</div>
+            <textarea class="faq-edit-input" style="display:none;width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);padding:10px 12px;font-size:13px;resize:vertical;font-family:inherit;box-sizing:border-box;line-height:1.6;" rows="4">If you arrive 5 or more minutes after class starts you will not be admitted — this protects the experience for students who are already mid-warm-up. A missed class due to lateness is treated as a no-show and a $20 penalty fee applies.</textarea>
+          </div>
+
+          <div class="faq-edit-row" style="border-bottom:1px solid var(--border);padding:14px 0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <div style="font-size:13px;font-weight:600;">How do I cancel a season class?</div>
+              <button class="btn btn-ghost btn-xs" onclick="toggleFaqEdit(this)">Edit</button>
+            </div>
+            <div class="faq-preview" style="font-size:13px;color:var(--grey);line-height:1.6;">Cancel through the app at least 4 hours before class and a make-up credit is issued automatically. Cancellations inside 4 hours are forfeited with no credit. If you do not cancel and do not attend, a $20 no-show fee applies.</div>
+            <textarea class="faq-edit-input" style="display:none;width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);padding:10px 12px;font-size:13px;resize:vertical;font-family:inherit;box-sizing:border-box;line-height:1.6;" rows="4">Cancel through the app at least 4 hours before class and a make-up credit is issued automatically. Cancellations inside 4 hours are forfeited with no credit. If you do not cancel and do not attend, a $20 no-show fee applies.</textarea>
+          </div>
+
+          <div class="faq-edit-row" style="border-bottom:1px solid var(--border);padding:14px 0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <div style="font-size:13px;font-weight:600;">How do make-up credits work?</div>
+              <button class="btn btn-ghost btn-xs" onclick="toggleFaqEdit(this)">Edit</button>
+            </div>
+            <div class="faq-preview" style="font-size:13px;color:var(--grey);line-height:1.6;">Make-up credits are issued when you cancel a season class with 4+ hours notice. Credits are valid for the current season only, expire at the end of the season, and are non-transferable. Use them to book any casual or catch-up slot at your level through the app.</div>
+            <textarea class="faq-edit-input" style="display:none;width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);padding:10px 12px;font-size:13px;resize:vertical;font-family:inherit;box-sizing:border-box;line-height:1.6;" rows="4">Make-up credits are issued when you cancel a season class with 4+ hours notice. Credits are valid for the current season only, expire at the end of the season, and are non-transferable. Use them to book any casual or catch-up slot at your level through the app.</textarea>
+          </div>
+
+          <div class="faq-edit-row" style="border-bottom:1px solid var(--border);padding:14px 0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <div style="font-size:13px;font-weight:600;">What do I wear to a levelled pole class?</div>
+              <button class="btn btn-ghost btn-xs" onclick="toggleFaqEdit(this)">Edit</button>
+            </div>
+            <div class="faq-preview" style="font-size:13px;color:var(--grey);line-height:1.6;">Skin contact is essential for grip: wear shorts or bike shorts and a fitted crop top or sports bra. Bare feet are best; pole shoes are also fine. Avoid moisturiser on your legs, arms and hands on class day.</div>
+            <textarea class="faq-edit-input" style="display:none;width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);padding:10px 12px;font-size:13px;resize:vertical;font-family:inherit;box-sizing:border-box;line-height:1.6;" rows="4">Skin contact is essential for grip: wear shorts or bike shorts and a fitted crop top or sports bra. Bare feet are best; pole shoes are also fine. Avoid moisturiser on your legs, arms and hands on class day.</textarea>
+          </div>
+
+          <div class="faq-edit-row" style="padding:14px 0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <div style="font-size:13px;font-weight:600;">How does practice time work?</div>
+              <button class="btn btn-ghost btn-xs" onclick="toggleFaqEdit(this)">Edit</button>
+            </div>
+            <div class="faq-preview" style="font-size:13px;color:var(--grey);line-height:1.6;">Practice time is bookable through the app. Cost is $20/hr for currently-enrolled students and $30/hr for non-enrolled students. Practice time is free if you attend 3 or more classes in the same week.</div>
+            <textarea class="faq-edit-input" style="display:none;width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);padding:10px 12px;font-size:13px;resize:vertical;font-family:inherit;box-sizing:border-box;line-height:1.6;" rows="4">Practice time is bookable through the app. Cost is $20/hr for currently-enrolled students and $30/hr for non-enrolled students. Practice time is free if you attend 3 or more classes in the same week.</textarea>
+          </div>
+
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+          <button class="btn btn-lime btn-sm" onclick="saveFaqCopy()">Save All Changes</button>
+          <button class="btn btn-ghost btn-sm" onclick="showToast('+ Add FAQ row')">+ Add FAQ Item</button>
+        </div>
+      </div>
     </div>
 
     <!-- ===== ACTIVITY LOG ===== -->
@@ -11700,6 +11771,39 @@ function sendQuickMessage() {
   var orig = window.showScreen;
   window.showScreen = function(id) { orig(id); if (id === 'waitlist') setTimeout(renderWaitlistScreen, 10); };
 })();
+
+function toggleFaqEdit(btn) {
+  var row = btn.closest('.faq-edit-row');
+  var preview = row.querySelector('.faq-preview');
+  var input = row.querySelector('.faq-edit-input');
+  var editing = input.style.display !== 'none';
+  if (editing) {
+    preview.textContent = input.value;
+    preview.style.display = '';
+    input.style.display = 'none';
+    btn.textContent = 'Edit';
+  } else {
+    input.value = preview.textContent;
+    preview.style.display = 'none';
+    input.style.display = '';
+    btn.textContent = 'Done';
+    input.focus();
+  }
+}
+function saveFaqCopy() {
+  document.querySelectorAll('.faq-edit-row').forEach(function(row) {
+    var input = row.querySelector('.faq-edit-input');
+    var preview = row.querySelector('.faq-preview');
+    var btn = row.querySelector('button');
+    if (input && input.style.display !== 'none') {
+      preview.textContent = input.value;
+      preview.style.display = '';
+      input.style.display = 'none';
+      if (btn) btn.textContent = 'Edit';
+    }
+  });
+  showToast('FAQ copy saved — changes live in student app');
+}
 </script>
 
     <!-- ═══════════════════════ HELPDESK ═══════════════════════ -->
