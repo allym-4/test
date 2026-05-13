@@ -6450,7 +6450,7 @@ function showScreen(id) {
   if(_builtScreens.indexOf(id) === -1) {
     document.getElementById('stub-title').textContent = id.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
     document.getElementById('stub-heading').textContent = 'Not built yet';
-    document.getElementById('stub-desc').textContent = 'This screen is planned but hasn't been built in the mockup yet. In the real app it'll be fully functional.';
+    document.getElementById('stub-desc').textContent = "This screen is planned but hasn't been built in the mockup yet. In the real app it'll be fully functional.";
     targetId = 'stub';
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
