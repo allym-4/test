@@ -193,6 +193,19 @@ var ACCOUNTS = {
   'jess@gmail.com':           { role: 'student',    dest: 'student-ux.html'    },
 };
 
+function buildDest(filename) {
+  var loc = window.location.href;
+  // When served via htmlpreview, the URL is: https://htmlpreview.github.io/?https://raw.../login.html
+  // Strip login.html and replace with the target filename, keeping the wrapper intact
+  if (loc.indexOf('htmlpreview.github.io') !== -1) {
+    var rawBase = loc.split('?')[1] || loc;
+    rawBase = rawBase.replace(/[^/]+\.html$/, '');
+    return 'https://htmlpreview.github.io/?' + rawBase + filename;
+  }
+  // Local / direct access — relative path works fine
+  return filename;
+}
+
 function doLogin() {
   var email = document.getElementById('email').value.trim().toLowerCase();
   var acc = ACCOUNTS[email];
@@ -202,7 +215,7 @@ function doLogin() {
     return;
   }
   errEl.style.display = 'none';
-  window.location.href = acc.dest;
+  window.location.href = buildDest(acc.dest);
 }
 
 // Allow Enter key to submit
