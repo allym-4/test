@@ -316,9 +316,10 @@ body.mob-sidebar-open .sidebar-overlay { display: block; }
   /* Prevent horizontal page overflow */
   body { overflow-x: hidden; }
 
-  /* Tables: scroll within container only */
+  /* Every table scrolls horizontally — never bleeds past screen */
   .tbl-section { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .tbl-section table { min-width: 480px; }
+  table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+  thead, tbody { display: table; width: 100%; }
 
   /* search input: don't blow out width */
   .search-input { min-width: 0; width: 100%; box-sizing: border-box; }
@@ -338,8 +339,12 @@ body.mob-sidebar-open .sidebar-overlay { display: block; }
   /* Class list rows */
   .class-row { gap: 8px; padding: 10px 12px; }
 
-  /* Attendance table: hide less-important cols on small screens */
+  /* Stop text wrapping inside cells */
+  td, th { white-space: nowrap; }
+
+  /* Hide less-critical columns on mobile to shrink table width */
   .att-hide-mob { display: none; }
+  table th:last-child, table td:last-child { white-space: normal; } /* allow last col to wrap */
 }
 </style>
 </head>
