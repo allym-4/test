@@ -27,6 +27,7 @@ h1,h2,h3,.black { font-family: 'Archivo Black', sans-serif; font-weight: 900; }
   font-family: 'Archivo Black', sans-serif; font-size: 20px;
   letter-spacing: 2px; color: var(--lime); padding: 28px 24px 30px;
   text-transform: uppercase; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
 }
 .sidebar-logo span { color: var(--white); }
 .sidebar nav { overflow-y: auto; overflow-x: hidden; flex: 1; min-height: 0; padding-bottom: 8px; }
@@ -354,14 +355,130 @@ tr.clickable-row:hover td { background: #141414; }
 .kiosk-sub { color: var(--grey); font-size: 13px; margin-bottom: 28px; }
 .kiosk-input { width: 100%; background: #1a1a1a; border: 1px solid var(--border); border-radius: 10px; color: var(--white); font-family: 'Archivo', sans-serif; font-size: 18px; padding: 14px 16px; text-align: center; margin-bottom: 14px; outline: none; }
 .kiosk-input:focus { border-color: var(--lime); }
+
+/* ─── MOBILE ADMIN ──────────────────────────────────── */
+.mob-topbar {
+  display: none; position: fixed; top: 0; left: 0; right: 0; height: 56px;
+  background: var(--dark); border-bottom: 1px solid var(--border);
+  z-index: 150; align-items: center; justify-content: space-between;
+  padding: 0 16px;
+}
+.mob-topbar-logo {
+  font-family: 'Archivo Black', sans-serif; font-size: 16px;
+  letter-spacing: 2px; color: var(--lime); text-transform: uppercase;
+}
+.mob-topbar-logo span { color: var(--white); }
+.mob-hamburger {
+  background: none; border: 1px solid var(--border); border-radius: 8px;
+  color: var(--grey); font-size: 18px; padding: 5px 10px; cursor: pointer;
+  line-height: 1;
+}
+.mob-bottom-nav {
+  display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 58px;
+  background: var(--dark); border-top: 1px solid var(--border);
+  z-index: 150; align-items: center; justify-content: space-around;
+  padding: 0 4px;
+}
+.mob-nav-item {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; flex: 1; cursor: pointer; padding: 6px 2px;
+  color: var(--grey); transition: color 0.15s; user-select: none;
+}
+.mob-nav-item.active { color: var(--lime); }
+.mob-nav-icon { font-size: 18px; line-height: 1; }
+.mob-nav-label { font-size: 10px; font-weight: 500; letter-spacing: 0.3px; }
+.sidebar-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55); z-index: 190;
+}
+body.mob-sidebar-open .sidebar-overlay { display: block; }
+
+@media (max-width: 768px) {
+  /* Show mobile chrome */
+  .mob-topbar { display: flex; }
+  .mob-bottom-nav { display: flex; }
+  #sidebar-close-btn { display: flex !important; align-items: center; }
+
+  /* Sidebar: slide-in drawer */
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.28s ease;
+    width: 85vw; max-width: 300px; min-width: 0;
+    z-index: 200;
+  }
+  body.mob-sidebar-open .sidebar { transform: translateX(0); }
+
+  /* Hide desktop topbar, give main room */
+  .topbar { display: none; }
+  .main { margin-left: 0; }
+  .content { padding: 72px 16px 80px; }
+
+  /* Grids collapse */
+  .kpi-grid, .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+
+  /* Page header: stack */
+  .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+
+  /* Tables: horizontal scroll */
+  .tbl-section { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tbl-section table { min-width: 480px; }
+
+  /* Subtabs: horizontal scroll, no wrap */
+  .subtabs { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; padding-bottom: 4px; gap: 0; }
+  .subtab { white-space: nowrap; flex-shrink: 0; }
+
+  /* Modals: slide up from bottom */
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .modal { border-radius: 20px 20px 0 0; max-height: 92dvh; overflow-y: auto;
+    width: 100%; max-width: 100% !important; padding: 24px 20px 32px; }
+  .modal-title { font-size: 20px; }
+
+  /* Section titles with actions: wrap */
+  .section-title { flex-wrap: wrap; gap: 8px; }
+
+  /* Student detail */
+  .sd-actions { flex-wrap: wrap; }
+
+  /* Helpdesk 3-col → stacked */
+  #screen-helpdesk .hd-cols {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+  #screen-helpdesk .hd-col-list,
+  #screen-helpdesk .hd-col-thread,
+  #screen-helpdesk .hd-col-detail {
+    width: 100% !important;
+    min-width: 0 !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border);
+  }
+  #screen-helpdesk .hd-col-list { max-height: 260px; overflow-y: auto; }
+  #screen-helpdesk .hd-col-thread { max-height: 380px; overflow-y: auto; }
+  #screen-helpdesk .hd-col-detail { max-height: none; }
+}
 </style>
 </head>
 <body>
 <div class="shell">
 
 <!-- SIDEBAR -->
+<!-- Mobile topbar -->
+<div class="mob-topbar">
+  <button class="mob-hamburger" onclick="toggleMobSidebar()">☰</button>
+  <div class="mob-topbar-logo">DUALITY <span>POLE</span></div>
+  <div style="width:44px"></div>
+</div>
+<div class="sidebar-overlay" onclick="closeMobSidebar()"></div>
+
 <aside class="sidebar">
-  <div class="sidebar-logo">DUALITY <span>POLE</span></div>
+  <div class="sidebar-logo">DUALITY <span>POLE</span>
+    <button class="mob-hamburger" onclick="closeMobSidebar()" style="margin-left:auto;display:none;" id="sidebar-close-btn">✕</button>
+  </div>
   <nav>
     <div class="nav-item active" onclick="showScreen('dashboard')"><span class="nav-icon">⬡</span> Dashboard</div>
     <div class="nav-divider"></div>
@@ -6704,6 +6821,25 @@ Duality Pole</textarea>
   </div><!-- end .content -->
 </div><!-- end .main -->
 
+<!-- Mobile bottom nav -->
+<div class="mob-bottom-nav">
+  <div class="mob-nav-item active" id="mob-nav-dashboard" onclick="showScreen('dashboard');setMobNav(this)">
+    <div class="mob-nav-icon">⬡</div><div class="mob-nav-label">Home</div>
+  </div>
+  <div class="mob-nav-item" id="mob-nav-students" onclick="showScreen('students');setMobNav(this)">
+    <div class="mob-nav-icon">👤</div><div class="mob-nav-label">Students</div>
+  </div>
+  <div class="mob-nav-item" id="mob-nav-timetable" onclick="showScreen('timetable');setMobNav(this)">
+    <div class="mob-nav-icon">📅</div><div class="mob-nav-label">Timetable</div>
+  </div>
+  <div class="mob-nav-item" id="mob-nav-billing" onclick="showScreen('billing');setMobNav(this)">
+    <div class="mob-nav-icon">💳</div><div class="mob-nav-label">Billing</div>
+  </div>
+  <div class="mob-nav-item" id="mob-nav-more" onclick="toggleMobSidebar()">
+    <div class="mob-nav-icon">☰</div><div class="mob-nav-label">More</div>
+  </div>
+</div>
+
 <!-- Create Class Modal -->
 <div class="modal-overlay" id="modal-create-class">
   <div class="modal modal-lg" style="max-width:640px;">
@@ -7925,7 +8061,7 @@ Duality Pole</textarea>
     <div class="subtabs" id="staff-detail-tabs" style="margin-bottom:20px;">
       <div class="subtab active" onclick="switchSubTab(this,'sdt-profile')">Profile</div>
       <div class="subtab" onclick="switchSubTab(this,'sdt-schedule')">Teaching Schedule</div>
-      <div class="subtab" onclick="openStudentDetail(STUDENTS.find(function(s){return s.id==='chloenguyeninstr';}));closeModal('modal-staff-detail')">Student Profile</div>
+      <div class="subtab" onclick="openInstructorStudentProfile()">Student Profile</div>
       <div class="subtab" onclick="switchSubTab(this,'sdt-notes')">Notes</div>
     </div>
 
@@ -8011,7 +8147,7 @@ Duality Pole</textarea>
         </div>
       </div>
       <div style="margin-top:14px;">
-        <button class="btn btn-outline btn-sm" onclick="openStudentDetail(STUDENTS.find(function(s){return s.id==='chloenguyeninstr';}));closeModal('modal-staff-detail')">View Full Student Profile →</button>
+        <button class="btn btn-outline btn-sm" onclick="openInstructorStudentProfile()">View Full Student Profile →</button>
       </div>
     </div>
 
@@ -8039,6 +8175,28 @@ Duality Pole</textarea>
 </div>
 
 <script>
+// ===== MOBILE NAV =====
+function toggleMobSidebar() {
+  document.body.classList.toggle('mob-sidebar-open');
+}
+function closeMobSidebar() {
+  document.body.classList.remove('mob-sidebar-open');
+}
+function setMobNav(el) {
+  closeMobSidebar();
+  document.querySelectorAll('.mob-nav-item').forEach(function(i){ i.classList.remove('active'); });
+  if (el) el.classList.add('active');
+}
+// Auto-close sidebar on mobile when any nav item is clicked
+document.addEventListener('DOMContentLoaded', function() {
+  var nav = document.querySelector('.sidebar nav');
+  if (nav) {
+    nav.addEventListener('click', function(e) {
+      if (e.target.closest('.nav-item')) closeMobSidebar();
+    });
+  }
+});
+
 // ===== BIRTHDAY DATA =====
 const _studentBirthdays = {
   'Jess Malone': '05-11',   // May 11 — today
@@ -8320,6 +8478,15 @@ function switchSubTab(el, targetId) {
 
 // ===== STUDENT DETAIL =====
 let _currentStudent = null;
+
+function openInstructorStudentProfile() {
+  // Close any open modal first, then navigate to the full student screen
+  document.querySelectorAll('.modal-overlay.open').forEach(function(m) {
+    m.classList.remove('open');
+  });
+  var s = STUDENTS.find(function(st) { return st.id === 'chloenguyeninstr'; });
+  if (s) openStudentDetail(s);
+}
 
 function openStudentDetail(student) {
   if (!student) return;
@@ -11857,10 +12024,10 @@ function saveFaqCopy() {
       </div>
 
       <!-- Three-column layout -->
-      <div style="display:grid;grid-template-columns:300px 1fr 270px;gap:0;background:#111;border:1px solid var(--border);border-radius:12px;overflow:hidden;height:calc(100vh - 290px);min-height:480px;">
+      <div class="hd-cols" style="display:grid;grid-template-columns:300px 1fr 270px;gap:0;background:#111;border:1px solid var(--border);border-radius:12px;overflow:hidden;height:calc(100vh - 290px);min-height:480px;">
 
         <!-- Col 1: Ticket list -->
-        <div style="border-right:1px solid var(--border);display:flex;flex-direction:column;">
+        <div class="hd-col-list" style="border-right:1px solid var(--border);display:flex;flex-direction:column;">
           <div style="padding:10px 12px;border-bottom:1px solid var(--border);">
             <input type="text" class="search-input" placeholder="Search tickets…" style="width:100%;padding:7px 12px;font-size:13px;box-sizing:border-box;" oninput="hdSearch(this.value)" />
           </div>
@@ -11873,7 +12040,7 @@ function saveFaqCopy() {
         </div>
 
         <!-- Col 2: Thread -->
-        <div style="display:flex;flex-direction:column;">
+        <div class="hd-col-thread" style="display:flex;flex-direction:column;">
           <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;" id="hd-thread-header">
             <div>
               <div style="font-size:14px;font-weight:600;" id="hd-thread-title">Select a ticket</div>
@@ -11894,7 +12061,7 @@ function saveFaqCopy() {
         </div>
 
         <!-- Col 3: Ticket details -->
-        <div style="border-left:1px solid var(--border);overflow-y:auto;padding:16px;" id="hd-ticket-details">
+        <div class="hd-col-detail" style="border-left:1px solid var(--border);overflow-y:auto;padding:16px;" id="hd-ticket-details">
           <div style="color:var(--grey);font-size:13px;text-align:center;margin-top:40px;">No ticket selected</div>
         </div>
       </div>
