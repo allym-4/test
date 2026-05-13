@@ -5192,6 +5192,862 @@ tr.clickable-row:hover td { background: #141414; }
       </div>
     </div>
     </div>
+  
+<div id="screen-recommendations" class="screen">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Recommendations</div>
+          <div class="page-sub">Demand-driven scheduling insights based on Season 4 enrolments</div>
+        </div>
+        <button class="btn btn-lime" onclick="alert('Exported to PDF')">Export Report</button>
+      </div>
+
+      <!-- KPI strip -->
+      <div class="kpi-row" style="margin-bottom:24px;">
+        <div class="kpi"><div class="kpi-label">Total Enrolments</div><div class="kpi-value">260</div><div class="kpi-sub">138 students · 27 classes</div></div>
+        <div class="kpi kpi-red"><div class="kpi-label">Classes Over Capacity</div><div class="kpi-value">4</div><div class="kpi-sub">Level 2, Level 5, Level 3, Strip Virgin</div></div>
+        <div class="kpi"><div class="kpi-label">Avg Classes/Student</div><div class="kpi-value">1.9</div><div class="kpi-sub">Up from 1.6 last season</div></div>
+        <div class="kpi"><div class="kpi-label">Revenue Opportunity</div><div class="kpi-value">$2,160+</div><div class="kpi-sub">If waitlisted students are placed</div></div>
+      </div>
+
+      <!-- Action cards -->
+      <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:12px;">🚨 Classes Needing Extra Sessions</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:28px;">
+
+        <div style="background:#1a1a1a;border:1px solid #ff6b6b;border-radius:10px;padding:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+            <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">Level 2</div>
+            <span class="tag tag-red">24 enrolled</span>
+          </div>
+          <div style="font-size:12px;color:var(--grey);margin-bottom:10px;">2 sessions × ~12 cap = 24 spots. Zero buffer — any late enrolments go to waitlist.</div>
+          <div style="font-size:12px;margin-bottom:12px;"><span style="color:var(--lime);">✦</span> Add a <b>Wednesday or Friday 6:30pm</b> Level 2 session. Estimated demand: 8–10 students.</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-lime btn-xs" onclick="alert('Opening timetable to add Level 2 session')">Add Session</button>
+            <button class="btn btn-ghost btn-xs" onclick="showAssistantQuery('list all Level 2 students')">View Students</button>
+          </div>
+        </div>
+
+        <div style="background:#1a1a1a;border:1px solid #ff6b6b;border-radius:10px;padding:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+            <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">Level 5</div>
+            <span class="tag tag-red">23 enrolled</span>
+          </div>
+          <div style="font-size:12px;color:var(--grey);margin-bottom:10px;">1 session × ~12 cap = significant overflow. Level 5 is your second-biggest class.</div>
+          <div style="font-size:12px;margin-bottom:12px;"><span style="color:var(--lime);">✦</span> Add a <b>Tuesday or Saturday 10am</b> Level 5. Mimi already teaches Saturday morning.</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-lime btn-xs" onclick="alert('Opening timetable to add Level 5 session')">Add Session</button>
+            <button class="btn btn-ghost btn-xs" onclick="showAssistantQuery('list all Level 5 students')">View Students</button>
+          </div>
+        </div>
+
+        <div style="background:#1a1a1a;border:1px solid #ff6b6b;border-radius:10px;padding:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+            <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">Level 3</div>
+            <span class="tag tag-red">23 enrolled</span>
+          </div>
+          <div style="font-size:12px;color:var(--grey);margin-bottom:10px;">1 main session at Wed 7:30pm (Maz) + Mon 8:30pm (Chloe). Still tight for 23 students.</div>
+          <div style="font-size:12px;margin-bottom:12px;"><span style="color:var(--lime);">✦</span> Add a <b>Thursday 7:30pm</b> Level 3. Frees Maz's session and absorbs overflow.</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-lime btn-xs" onclick="alert('Opening timetable to add Level 3 session')">Add Session</button>
+            <button class="btn btn-ghost btn-xs" onclick="showAssistantQuery('list all Level 3 students')">View Students</button>
+          </div>
+        </div>
+
+        <div style="background:#1a1a1a;border:1px solid var(--amber);border-radius:10px;padding:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+            <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">Strip Virgin</div>
+            <span class="tag tag-amber">21 enrolled</span>
+          </div>
+          <div style="font-size:12px;color:var(--grey);margin-bottom:10px;">2 sessions (Mon Jaz + Thu Amy) × ~12 cap = 24 spots. Nearly full.</div>
+          <div style="font-size:12px;margin-bottom:12px;"><span style="color:var(--lime);">✦</span> Add a <b>weekend Strip Virgin</b> for students who can't do weeknights. High demand class.</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-lime btn-xs" onclick="alert('Opening timetable to add Strip Virgin session')">Add Session</button>
+            <button class="btn btn-ghost btn-xs" onclick="showAssistantQuery('list all Strip Virgin students')">View Students</button>
+          </div>
+        </div>
+
+        <div style="background:#1a1a1a;border:1px solid var(--amber);border-radius:10px;padding:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+            <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">Strip</div>
+            <span class="tag tag-amber">16 enrolled</span>
+          </div>
+          <div style="font-size:12px;color:var(--grey);margin-bottom:10px;">2 sessions (Tue + Thu Mimi) at ~12 cap each = 24 spots. 8 buffer spots left.</div>
+          <div style="font-size:12px;margin-bottom:12px;"><span style="color:var(--lime);">✦</span> Monitor closely. Consider a Sunday Strip if Mimi is available — it sold out last season.</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-ghost btn-xs" onclick="showAssistantQuery('list all Strip students')">View Students</button>
+          </div>
+        </div>
+
+        <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+            <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">Advanced Floor</div>
+            <span class="tag tag-lav">12 enrolled</span>
+          </div>
+          <div style="font-size:12px;color:var(--grey);margin-bottom:10px;">1 session (Sun 10am Mimi) × ~10 cap = full. No overflow session exists.</div>
+          <div style="font-size:12px;margin-bottom:12px;"><span style="color:var(--lime);">✦</span> Add a <b>Saturday Advanced Floor</b> — Mimi teaches Saturday mornings already.</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-lime btn-xs" onclick="alert('Opening timetable to add Adv Floor session')">Add Session</button>
+            <button class="btn btn-ghost btn-xs" onclick="showAssistantQuery('list all Advanced Floor students')">View Students</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Full demand table -->
+      <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:12px;">📊 Full Class Demand — Season 4</div>
+      <div class="tbl-section" style="margin-bottom:28px;">
+        <table>
+          <thead><tr><th>Class</th><th>Students Enrolled</th><th>Demand Bar</th><th>Sessions This Season</th><th>Recommendation</th></tr></thead>
+          <tbody id="rec-demand-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Growth classes -->
+      <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:12px;">🌱 Growth Opportunities</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px;">
+        <div class="section" style="padding:16px;">
+          <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:8px;">Level 1 is undersubscribed (7 students)</div>
+          <div style="font-size:13px;color:var(--grey);margin-bottom:12px;">Level 1 is your pipeline for every other class — low intake now = lower numbers across all levels in 2–3 seasons. Consider a targeted new-student campaign.</div>
+          <button class="btn btn-lime btn-sm" onclick="showScreen('marketing')" data-stub="1">Launch Beginner Campaign →</button>
+        </div>
+        <div class="section" style="padding:16px;">
+          <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:8px;">Multi-class students drive revenue</div>
+          <div style="font-size:13px;color:var(--grey);margin-bottom:12px;">Students doing 3+ classes/week are your highest-value cohort. <b>42 students</b> currently do 3+ classes. Targeted upsell to 2-class students could add $4,000+ this season.</div>
+          <button class="btn btn-ghost btn-sm" onclick="showAssistantQuery('list students taking 2 classes')">View 2-class students →</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ===== ASSISTANT ===== -->
+    <div id="screen-assistant" class="screen">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Assistant</div>
+          <div class="page-sub">Ask anything about your students, enrolments, and data</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="clearAssistant()">Clear Chat</button>
+      </div>
+
+      <!-- Suggestion chips -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:12px;color:var(--grey);margin-bottom:8px;">Try asking:</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <button class="chip" onclick="runAssistant('List all Level 5 students')">List all Level 5 students</button>
+          <button class="chip" onclick="runAssistant('Show students taking 3 or more classes')">Students taking 3+ classes</button>
+          <button class="chip" onclick="runAssistant('Who is in both Strip and Level 6?')">Who is in Strip AND Level 6?</button>
+          <button class="chip" onclick="runAssistant('Show me an enrolment summary')">Enrolment summary</button>
+          <button class="chip" onclick="runAssistant('Which students were enrolled last season but not this season?')">Not re-enrolled from last season</button>
+          <button class="chip" onclick="runAssistant('Email list for Advanced Floor')">Email list for Advanced Floor</button>
+          <button class="chip" onclick="runAssistant('List new students this season')">New students this season</button>
+          <button class="chip" onclick="runAssistant('Who is taking Invert Tech?')">Who is in Invert Tech?</button>
+        </div>
+      </div>
+
+      <!-- Chat window -->
+      <div id="assistant-chat" style="min-height:340px;max-height:520px;overflow-y:auto;background:#0d0d0d;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--lime);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🤖</div>
+          <div style="background:#1a1a1a;border-radius:0 10px 10px 10px;padding:12px 14px;font-size:13px;line-height:1.6;max-width:85%;">
+            Hey! I'm your studio assistant. I have access to all <b>138 Season 4 students</b> and their enrolments.<br><br>
+            Ask me to pull reports, list students by class, find overlaps, generate email lists, or compare with last season. Try one of the suggestions above to get started.
+          </div>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <div style="display:flex;gap:10px;">
+        <input id="assistant-input" class="search-input" type="text" placeholder="Ask a question about your students or enrolments…" style="flex:1;padding:12px 16px;font-size:14px;"
+          onkeydown="if(event.key==='Enter'){runAssistant(this.value);this.value=''}" />
+        <button class="btn btn-lime" onclick="runAssistant(document.getElementById('assistant-input').value);document.getElementById('assistant-input').value=''">Ask →</button>
+      </div>
+    </div>
+
+
+
+<div class="modal-overlay" id="modal-chase">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-title">Chase Payment <button class="modal-close" onclick="closeModal('modal-chase')">✕</button></div>
+    <div style="background:#1a1a1a;border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+      <div style="font-size:15px;font-weight:600;" id="chase-student-name">Kylie R.</div>
+      <div style="font-size:13px;color:var(--grey);margin-top:4px;" id="chase-description">Season 4 + 2× no-show fees</div>
+      <div style="font-size:20px;font-weight:700;color:#ff6b6b;margin-top:8px;" id="chase-amount">$95</div>
+    </div>
+    <div id="chase-history" style="margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--grey);letter-spacing:.5px;margin-bottom:8px;">Chase History</div>
+      <div id="chase-history-list"></div>
+    </div>
+    <div id="chase-action-panel" style="border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+      <div id="chase-action-title" style="font-weight:600;font-size:13px;margin-bottom:8px;">Send Chase Reminder</div>
+      <div id="chase-action-body" style="font-size:13px;color:var(--grey);line-height:1.5;margin-bottom:12px;"></div>
+      <div class="field"><label>Message Preview</label>
+        <textarea id="chase-message-preview" rows="4" style="width:100%;background:#111;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:10px 12px;resize:vertical;box-sizing:border-box;"></textarea>
+      </div>
+      <div id="chase-lock-option" style="display:none;margin-bottom:12px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="chase-lock-account" style="accent-color:#ff6b6b;width:15px;height:15px;" />
+          <span>Lock account immediately (prevents bookings and app access)</span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-chase')">Cancel</button>
+      <button id="chase-send-btn" class="btn btn-lime" onclick="sendChase()">Send Reminder</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-outstanding-payment">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-title" style="color:#ff6b6b;">Outstanding Balance <button class="modal-close" onclick="closeModal('modal-outstanding-payment')">✕</button></div>
+    <div style="background:#2a0000;border:1px solid #ff3333;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;">
+      Your account has an outstanding balance. You need to resolve this before making new bookings or accessing the studio.
+    </div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--grey);letter-spacing:.5px;margin-bottom:8px;">Amount Owing</div>
+    <div id="op-items-list" style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;">
+        <span>Season 4 — Level 2 (instalment 2)</span><span class="bal-neg">$60</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;">
+        <span>No-show fee — Dance (12 May)</span><span class="bal-neg">$25</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:10px 0;font-size:15px;font-weight:700;">
+        <span>Total</span><span class="bal-neg">−$85</span>
+      </div>
+    </div>
+    <div class="modal-footer" style="flex-direction:column;gap:8px;">
+      <button class="btn btn-lime" style="width:100%;" onclick="alert('Redirecting to payment...');closeModal('modal-outstanding-payment')">Pay Now</button>
+      <button class="btn btn-ghost" style="width:100%;" onclick="alert('Exemption request submitted. You will be notified within 24 hours.');closeModal('modal-outstanding-payment')">Apply for Exemption</button>
+      <div style="font-size:11px;color:var(--grey);text-align:center;margin-top:4px;">Exemption requests are reviewed manually. Access remains restricted until approved or paid.</div>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-season-cancel">
+  <div class="modal" style="max-width:540px;">
+    <div class="modal-title">Season Transfer or Cancellation <button class="modal-close" onclick="closeModal('modal-season-cancel')">✕</button></div>
+    <div style="font-size:13px;color:var(--grey);margin-bottom:16px;line-height:1.5;">Use this for changes to a student's entire season enrolment. For a single missed class, use the catch-up / individual class cancel option instead.</div>
+    <div class="field"><label>Request Type</label>
+      <select id="sc-type" onchange="updateSeasonCancelForm()" style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
+        <option value="transfer">Transfer to another class / season</option>
+        <option value="cancel">Cancel full season enrolment</option>
+        <option value="downgrade">Downgrade (remove one class)</option>
+      </select>
+    </div>
+    <div id="sc-transfer-fields">
+      <div class="field"><label>Transfer to Class</label>
+        <select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
+          <option>Level 1 · Wed 5:30pm · Jaz · Rhapsody</option>
+          <option>Level 2 · Thu 6:30pm · Jaz · Rhapsody (1 spot)</option>
+          <option>Level 3 · Tue 8:30pm · Chloe · Rhapsody</option>
+          <option>Next season (Season 5)</option>
+        </select>
+      </div>
+      <div class="field"><label>Price Adjustment</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select style="background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:8px 10px;border-radius:8px;font-family:inherit;font-size:13px;">
+            <option>No adjustment (carry credit)</option><option>Pro-rata discount</option><option>Manual override</option><option>Full credit to account</option>
+          </select>
+          <input type="number" placeholder="$0" style="width:80px;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--lime);font-family:inherit;font-size:13px;padding:8px 10px;" />
+        </div>
+      </div>
+    </div>
+    <div id="sc-cancel-fields" style="display:none;">
+      <div style="background:#1a0000;border:1px solid #ff333355;border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--grey);">
+        Cancelling a full season enrolment. Apply the studio cancellation policy or manually set a refund/credit amount.
+      </div>
+      <div class="field"><label>Weeks Completed</label><input type="number" value="2" min="0" max="8" style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 12px;" /></div>
+      <div class="field"><label>Refund / Credit Amount</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select id="sc-refund-type" style="background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:8px 10px;border-radius:8px;font-family:inherit;font-size:13px;">
+            <option>Pro-rata refund (auto)</option><option>Full refund</option><option>Credit to account</option><option>Manual override</option><option>No refund</option>
+          </select>
+          <input type="number" placeholder="$0" id="sc-refund-amount" style="width:80px;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--lime);font-family:inherit;font-size:13px;padding:8px 10px;" />
+        </div>
+      </div>
+      <div style="background:#1a1a1a;border-radius:8px;padding:10px 14px;font-size:12px;color:var(--grey);margin-bottom:14px;">
+        <b style="color:var(--white);">Pro-rata calculation:</b> 2 of 8 weeks completed = 75% remaining → suggested refund: $120
+      </div>
+      <div class="field"><label>Line Item Overrides <span style="font-size:11px;font-weight:400;">(edit individual charges)</span></label>
+        <div style="background:#111;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;">
+            <thead><tr style="border-bottom:1px solid var(--border);"><th style="padding:8px 12px;text-align:left;color:var(--grey);">Item</th><th style="padding:8px 12px;text-align:right;color:var(--grey);">Original</th><th style="padding:8px 12px;text-align:right;color:var(--grey);">Adjusted</th></tr></thead>
+            <tbody>
+              <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px;">Season enrolment — Level 2</td><td style="padding:8px 12px;text-align:right;color:var(--lime);">$270</td><td style="padding:8px 12px;text-align:right;"><input type="number" value="200" style="width:70px;background:#1a1a1a;border:1px solid var(--border);border-radius:4px;color:var(--lime);font-family:inherit;font-size:12px;padding:3px 6px;text-align:right;" /></td></tr>
+              <tr><td style="padding:8px 12px;">Admin fee</td><td style="padding:8px 12px;text-align:right;color:#ff6b6b;">−$25</td><td style="padding:8px 12px;text-align:right;"><input type="number" value="25" style="width:70px;background:#1a1a1a;border:1px solid var(--border);border-radius:4px;color:#ff6b6b;font-family:inherit;font-size:12px;padding:3px 6px;text-align:right;" /></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="field"><label>Internal Note</label>
+      <textarea rows="2" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:10px 12px;resize:vertical;" placeholder="Reason for transfer or cancellation…"></textarea>
+    </div>
+    <div class="field"><label>Notify Student</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--lime);" /> Send confirmation email to student</label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-season-cancel')">Cancel</button>
+      <button class="btn btn-lime" onclick="alert('Season change processed.');closeModal('modal-season-cancel')">Confirm Change</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-add-product">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-title">Add / Edit Product <button class="modal-close" onclick="closeModal('modal-add-product')">✕</button></div>
+    <div class="field"><label>Product Name</label><input type="text" placeholder="e.g. Dry Hands Grip Aid" /></div>
+    <div class="field-row">
+      <div class="field"><label>Category</label>
+        <select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
+          <option>Grip Aids</option><option>Activewear</option><option>Merchandise</option><option>Accessories</option>
+        </select>
+      </div>
+      <div class="field"><label>Price (A$)</label><input type="number" placeholder="0.00" /></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>SKU</label><input type="text" placeholder="SKU-001" /></div>
+      <div class="field"><label>Initial Stock</label><input type="number" placeholder="0" /></div>
+    </div>
+    <div class="field"><label>Description <span style="font-size:11px;color:var(--grey);">(optional)</span></label><textarea rows="2" placeholder="Short product description…"></textarea></div>
+    <div class="field"><label>Variants <span style="font-size:11px;color:var(--grey);">(e.g. XS,S,M,L — leave blank if N/A)</span></label><input type="text" placeholder="XS, S, M, L" /></div>
+    <div class="field"><label>Low Stock Alert Threshold</label><input type="number" value="5" /></div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--lime);" /> Visible to students in app</label>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-add-product')">Cancel</button><button class="btn btn-lime" onclick="alert('Product saved!');closeModal('modal-add-product')">Save Product</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-square-sync">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-title">Square Integration <button class="modal-close" onclick="closeModal('modal-square-sync')">✕</button></div>
+    <div style="display:flex;align-items:center;gap:12px;background:#1a1a1a;border-radius:8px;padding:12px 16px;margin-bottom:16px;">
+      <div style="width:36px;height:36px;background:#00b140;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px;">■</div>
+      <div><div style="font-weight:600;">Connected to Square</div><div style="font-size:12px;color:var(--grey);">Location: Duality Pole · Last sync: 13 May 2026, 8:00am</div></div>
+      <span class="tag tag-lime" style="margin-left:auto;">Active</span>
+    </div>
+    <div class="field"><label>Sync Direction</label>
+      <select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
+        <option>Two-way (recommended)</option><option>Square → Duality only</option><option>Duality → Square only</option>
+      </select>
+    </div>
+    <div class="field"><label>Auto-sync Frequency</label>
+      <select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
+        <option>Every hour</option><option selected>Every morning at 8am</option><option>Manual only</option>
+      </select>
+    </div>
+    <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--lime);" /> Sync stock levels</label></div>
+    <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--lime);" /> Sync prices</label></div>
+    <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" style="accent-color:var(--lime);" /> Import new products from Square automatically</label></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="alert('Sync triggered...');closeModal('modal-square-sync')">Sync Now</button>
+      <button class="btn btn-lime" onclick="alert('Settings saved!');closeModal('modal-square-sync')">Save Settings</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-assign-locker">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-title">Assign Locker <button class="modal-close" onclick="closeModal('modal-assign-locker')">✕</button></div>
+    <div class="field"><label>Locker Number</label>
+      <select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
+        <option>#04 (Available)</option><option>#12 (Available)</option><option>#19 (Available)</option><option>#20 (Available)</option><option>#21 (Available)</option><option>#22 (Available)</option>
+      </select>
+    </div>
+    <div class="field"><label>Student</label><input type="text" placeholder="Search student name…" /></div>
+    <div class="field-row">
+      <div class="field"><label>Monthly Fee (A$)</label><input type="number" value="15" /></div>
+      <div class="field"><label>Start Date</label><input type="date" /></div>
+    </div>
+    <div class="field"><label>Notes <span style="font-size:11px;color:var(--grey);">(optional)</span></label><textarea rows="2" placeholder="Any notes…"></textarea></div>
+    <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--lime);" /> Send confirmation to student</label></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-assign-locker')">Cancel</button><button class="btn btn-lime" onclick="alert('Locker assigned!');closeModal('modal-assign-locker')">Assign Locker</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-locker-detail">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-title">Locker #01 — Jess Malone <button class="modal-close" onclick="closeModal('modal-locker-detail')">✕</button></div>
+    <div style="background:#1a1a1a;border-radius:8px;padding:14px 16px;margin-bottom:14px;font-size:13px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div><div style="color:var(--grey);font-size:11px;">Assigned</div><div>1 Mar 2026</div></div>
+      <div><div style="color:var(--grey);font-size:11px;">Monthly fee</div><div class="bal-pos">$15</div></div>
+      <div><div style="color:var(--grey);font-size:11px;">Last paid</div><div>1 May 2026</div></div>
+      <div><div style="color:var(--grey);font-size:11px;">Next due</div><div>1 Jun 2026</div></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" style="color:#e05555;" onclick="alert('Locker unassigned');closeModal('modal-locker-detail')">Unassign</button>
+      <button class="btn btn-lime" onclick="alert('Payment recorded');closeModal('modal-locker-detail')">Record Payment</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-add-to-class">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-title">Add Student to Class <button class="modal-close" onclick="closeModal('modal-add-to-class')">✕</button></div>
+    <div class="field"><label>Search Student</label>
+      <input type="text" placeholder="Name or email…" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:9px 12px;box-sizing:border-box;" oninput="searchAddStudent(this.value)" />
+      <div id="add-student-results" style="margin-top:6px;max-height:160px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;display:none;"></div>
+    </div>
+    <div class="field"><label>Booking Type</label>
+      <select id="add-student-type" style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
+        <option value="season">Season enrolment</option>
+        <option value="catchup">Catch-up class</option>
+        <option value="casual">Casual drop-in</option>
+        <option value="waitlist">Add to waitlist</option>
+      </select>
+    </div>
+    <div id="add-student-override-warning" style="background:#151000;border:1px solid var(--amber);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--amber);display:none;">
+      ⚠️ This class is at capacity. Adding this student will override the limit.
+    </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+        <input type="checkbox" style="accent-color:var(--lime);" /> Send confirmation email to student
+      </label>
+    </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+        <input type="checkbox" /> Override capacity limit (admin only)
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-to-class')">Cancel</button>
+      <button class="btn btn-lime" onclick="alert('Student added to class!');closeModal('modal-add-to-class')">Add to Class</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-override-capacity">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-title">Override Class Capacity <button class="modal-close" onclick="closeModal('modal-override-capacity')">✕</button></div>
+    <div style="font-size:13px;color:var(--grey);margin-bottom:16px;">Temporarily change the maximum number of students for this session or permanently for the season.</div>
+    <div class="field-row">
+      <div class="field">
+        <label>Current Capacity</label>
+        <input type="number" value="12" style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--grey);font-family:inherit;font-size:13px;padding:9px 12px;width:100%;box-sizing:border-box;" readonly />
+      </div>
+      <div class="field">
+        <label>New Capacity</label>
+        <input type="number" value="14" style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:9px 12px;width:100%;box-sizing:border-box;" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Apply to</label>
+      <select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
+        <option>This class only (tonight)</option>
+        <option>All remaining classes this season</option>
+        <option>All classes in this season</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-override-capacity')">Cancel</button>
+      <button class="btn btn-lime" onclick="alert('Capacity updated to 14!');closeModal('modal-override-capacity')">Update Capacity</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-instructor-student-detail">
+  <div class="modal" style="max-width:580px;max-height:85vh;overflow-y:auto;">
+    <div class="modal-title">
+      <div>
+        <div id="isd-name" style="font-family:'Archivo Black',sans-serif;font-size:16px;">Jess Malone</div>
+        <div id="isd-meta" style="font-size:12px;color:var(--grey);font-family:Archivo,sans-serif;font-weight:400;margin-top:2px;">Level 2 Mon 6:30pm · Season 4</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-instructor-student-detail')">✕</button>
+    </div>
+
+    <!-- Quick status row -->
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+      <div style="background:#1a1a1a;border-radius:8px;padding:10px 14px;flex:1;min-width:100px;">
+        <div style="font-size:11px;color:var(--grey);">Balance</div>
+        <div style="font-size:18px;font-weight:700;" class="bal-neg">−$120</div>
+      </div>
+      <div style="background:#1a1a1a;border-radius:8px;padding:10px 14px;flex:1;min-width:100px;">
+        <div style="font-size:11px;color:var(--grey);">Classes Booked</div>
+        <div style="font-size:18px;font-weight:700;">3</div>
+      </div>
+      <div style="background:#1a1a1a;border-radius:8px;padding:10px 14px;flex:1;min-width:100px;">
+        <div style="font-size:11px;color:var(--grey);">Attendance</div>
+        <div style="font-size:18px;font-weight:700;" style="color:var(--lime);">6/8</div>
+      </div>
+      <div style="background:#1a1a1a;border-radius:8px;padding:10px 14px;flex:1;min-width:100px;">
+        <div style="font-size:11px;color:var(--grey);">No-shows</div>
+        <div style="font-size:18px;font-weight:700;color:#ff6b6b;">1</div>
+      </div>
+    </div>
+
+    <div class="subtabs">
+      <button class="subtab active" onclick="switchSubTab(this,'isd-bookings')">Bookings</button>
+      <button class="subtab" onclick="switchSubTab(this,'isd-payments')">Payments & Charges</button>
+      <button class="subtab" onclick="switchSubTab(this,'isd-notes')">Notes</button>
+    </div>
+
+    <div id="isd-bookings" class="subscreen active">
+      <div class="tbl-section">
+        <table>
+          <thead><tr><th>Class</th><th>Season</th><th>Type</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td><b>Level 2</b><div style="font-size:11px;color:var(--grey)">Mon 6:30pm · Chloe</div></td><td>Season 4</td><td><span class="tag tag-lav">Season</span></td><td><span class="tag tag-lime">Active</span></td></tr>
+            <tr><td><b>High Tricks</b><div style="font-size:11px;color:var(--grey)">Mon 7:30pm · Mimi</div></td><td>Season 4</td><td><span class="tag tag-lav">Season</span></td><td><span class="tag tag-lime">Active</span></td></tr>
+            <tr><td><b>Level 2</b><div style="font-size:11px;color:var(--grey)">Tue · Chloe</div></td><td>Season 3</td><td><span class="tag tag-lav">Season</span></td><td><span class="tag tag-grey">Completed</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="isd-payments" class="subscreen">
+      <div style="background:#2a0000;border:1px solid #ff333355;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#ff6b6b;">
+        Outstanding balance: <b>$120</b> — Season 4 instalment 2 overdue
+      </div>
+      <div class="tbl-section">
+        <table>
+          <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Amount</th><th>Balance</th></tr></thead>
+          <tbody>
+            <tr><td style="color:var(--grey);font-size:12px;">12 May</td><td>No-show fee — Dance</td><td><span class="tag tag-red" style="font-size:10px;">Fee</span></td><td class="bal-neg">−$25</td><td class="bal-neg">−$120</td></tr>
+            <tr><td style="color:var(--grey);font-size:12px;">5 May</td><td>Season 4 — instalment 1 paid</td><td><span class="tag tag-lime" style="font-size:10px;">Payment</span></td><td class="bal-pos">+$90</td><td class="bal-neg">−$95</td></tr>
+            <tr><td style="color:var(--grey);font-size:12px;">1 May</td><td>Season 4 — High Tricks enrolment</td><td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td><td class="bal-neg">−$160</td><td class="bal-neg">−$185</td></tr>
+            <tr><td style="color:var(--grey);font-size:12px;">1 May</td><td>Season 4 — Level 2 enrolment</td><td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td><td class="bal-neg">−$160</td><td class="bal-neg">−$25</td></tr>
+            <tr><td style="color:var(--grey);font-size:12px;">28 Apr</td><td>Account credit applied</td><td><span class="tag tag-lime" style="font-size:10px;">Credit</span></td><td class="bal-pos">+$135</td><td class="bal-pos">+$135</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="isd-notes" class="subscreen">
+      <div class="note-item note-flag-red">
+        <div class="note-meta">🩹 Injury · Mimi · 10 May 2026 · Check-in: 17 May</div>
+        <div class="note-text">Right shoulder impingement — avoid overhead work.</div>
+      </div>
+      <div class="note-item">
+        <div class="note-meta">✨ Personality & Vibe · Chloe · 2 Apr 2026</div>
+        <div class="note-text">Loves being challenged — responds well to push. Very committed.</div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-instructor-student-detail')">Close</button>
+      <button class="btn btn-lime" onclick="closeModal('modal-instructor-student-detail');openModal('modal-chase')">Chase Payment</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Exemption Review Modal -->
+<div class="modal-overlay" id="modal-exemption-review">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-title">Payment Exemption Request <button class="modal-close" onclick="closeModal('modal-exemption-review')">✕</button></div>
+    <div style="background:#1a1a1a;border-radius:10px;padding:14px 16px;margin-bottom:18px;">
+      <div style="font-size:12px;color:var(--grey);margin-bottom:4px;">Student</div>
+      <div style="font-size:14px;font-weight:600;" id="exempt-student-name">Dana Park</div>
+      <div style="font-size:12px;color:var(--grey);margin-top:10px;margin-bottom:4px;">Amount requested</div>
+      <div style="font-size:14px;" id="exempt-amount">$75 workshop fee</div>
+      <div style="font-size:12px;color:var(--grey);margin-top:10px;margin-bottom:4px;">Reason provided</div>
+      <div style="font-size:13px;color:#ccc;">Financial hardship — requested partial credit or payment plan</div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:10px;">Decision</div>
+      <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;margin-bottom:8px;padding:10px 12px;background:#111;border-radius:8px;">
+        <input type="radio" name="exempt-decision" value="approve" checked style="accent-color:var(--lime);margin-top:2px;flex-shrink:0;">
+        <div><div style="font-size:13px;font-weight:500;">Approve — apply full credit to account</div></div>
+      </label>
+      <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;margin-bottom:8px;padding:10px 12px;background:#111;border-radius:8px;">
+        <input type="radio" name="exempt-decision" value="partial" style="accent-color:var(--lime);margin-top:2px;flex-shrink:0;">
+        <div><div style="font-size:13px;font-weight:500;">Approve partial — set up payment plan</div></div>
+      </label>
+      <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;padding:10px 12px;background:#111;border-radius:8px;">
+        <input type="radio" name="exempt-decision" value="deny" style="accent-color:var(--lime);margin-top:2px;flex-shrink:0;">
+        <div><div style="font-size:13px;font-weight:500;">Deny — notify student</div></div>
+      </label>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px;">Note to student (optional)</div>
+      <textarea rows="2" placeholder="Add a message for the student..." style="width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:13px;font-family:inherit;resize:vertical;line-height:1.5;box-sizing:border-box;"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-exemption-review')">Cancel</button>
+      <button class="btn btn-lime" style="flex:1" onclick="submitExemptionDecision()">Confirm Decision</button>
+    </div>
+  </div>
+</div>
+
+<!-- Action Items Log Modal -->
+<div class="modal-overlay" id="modal-action-log">
+  <div class="modal modal-lg" style="max-width:640px;">
+    <div class="modal-title">Action Items Log <button class="modal-close" onclick="closeModal('modal-action-log')">✕</button></div>
+    <div class="subtab-bar" style="margin-bottom:16px;">
+      <button class="subtab-btn active" id="log-tab-today" onclick="switchLogTab('today')">Today</button>
+      <button class="subtab-btn" id="log-tab-history" onclick="switchLogTab('history')">History</button>
+      <button class="subtab-btn" id="log-tab-add" onclick="switchLogTab('add')">+ Add item</button>
+    </div>
+    <div id="log-sub-today">
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:8px;">Pending</div>
+      <div id="log-pending-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;"></div>
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:8px;">Completed</div>
+      <div id="log-done-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <div id="log-done-empty" style="font-size:13px;color:var(--grey);padding:8px 0;">No items completed yet today.</div>
+    </div>
+    <div id="log-sub-history" style="display:none;">
+      <div class="tbl-section">
+        <table>
+          <thead><tr><th>Date</th><th>Item</th><th>Completed by</th><th>Time</th></tr></thead>
+          <tbody>
+            <tr><td style="color:var(--grey);">12 May</td><td>New order — Jess Malone: Pole Shorts (M)</td><td>Mimi</td><td style="color:var(--grey);">10:14am</td></tr>
+            <tr><td style="color:var(--grey);">11 May</td><td>Injury check-in — Ruby Kim</td><td>Chloe</td><td style="color:var(--grey);">6:45pm</td></tr>
+            <tr><td style="color:var(--grey);">11 May</td><td>New order — Nina Torres: Grip Aid (Small)</td><td>Mimi</td><td style="color:var(--grey);">9:02am</td></tr>
+            <tr><td style="color:var(--grey);">10 May</td><td>Exemption request — Amber Cole ($40)</td><td>Mimi</td><td style="color:var(--grey);">2:30pm</td></tr>
+            <tr><td style="color:var(--grey);">9 May</td><td>New student today — Zoe Clarke, Level 1</td><td>Chloe</td><td style="color:var(--grey);">5:28pm</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div id="log-sub-add" style="display:none;">
+      <div style="margin-bottom:14px;">
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px;">Type</div>
+        <select id="new-item-type" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:13px;font-family:inherit;">
+          <option value="general">General task</option>
+          <option value="retail">Retail / pickup</option>
+          <option value="student">Student related</option>
+          <option value="injury">Injury / health</option>
+          <option value="payment">Payment / billing</option>
+        </select>
+      </div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px;">Description</div>
+        <input type="text" id="new-item-desc" placeholder="Describe the action item..." style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:13px;font-family:inherit;box-sizing:border-box;" />
+      </div>
+      <div style="margin-bottom:18px;">
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px;">Assign to</div>
+        <select id="new-item-assign" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:13px;font-family:inherit;">
+          <option>Anyone on duty</option>
+          <option>Mimi</option>
+          <option>Chloe</option>
+          <option>Viv</option>
+          <option>Bambi</option>
+          <option>Violet</option>
+        </select>
+      </div>
+      <button class="btn btn-lime" style="width:100%;" onclick="addManualActionItem()">Add Action Item</button>
+    </div>
+    <div class="modal-footer" style="margin-top:20px;">
+      <button class="btn btn-ghost" onclick="closeModal('modal-action-log')">Close</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Contact Student Modal (Flagged Enrolment) -->
+<div class="modal-overlay" id="modal-contact-student">
+  <div class="modal modal-lg" style="max-width:600px;">
+    <div class="modal-title">Contact Student <button class="modal-close" onclick="closeModal('modal-contact-student')">✕</button></div>
+    <div style="background:#1a1a1a;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--grey);">
+      Sending to: <strong id="contact-student-name" style="color:var(--white);">Sophie Lawson</strong>
+      &nbsp;·&nbsp; Re: <strong id="contact-student-class" style="color:var(--white);">Level 3 — Wed 7pm</strong>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px;">Template</div>
+      <select id="contact-template-sel" onchange="applyContactTemplate()" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:13px;font-family:inherit;">
+        <option value="above-level">Enrolled above assessed level</option>
+        <option value="no-prereq-tricks">No prerequisite — tricks class</option>
+        <option value="level-jump">Skipped a level — let's chat</option>
+        <option value="custom">Custom message</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:6px;">
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px;">Subject</div>
+      <input type="text" id="contact-subject" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:13px;font-family:inherit;box-sizing:border-box;" />
+    </div>
+
+    <div style="margin-bottom:16px;margin-top:14px;">
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px;">Message</div>
+      <textarea id="contact-body" rows="10" style="width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:13px;font-family:inherit;resize:vertical;line-height:1.65;box-sizing:border-box;"></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-contact-student')">Cancel</button>
+      <button class="btn btn-lime" style="flex:1" onclick="sendContactEmail()">Send Email</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Coming Soon / Stub Screen -->
+<div id="screen-stub" class="screen">
+  <div class="page-header">
+    <div><div class="page-title" id="stub-title">Coming Soon</div><div class="page-sub" id="stub-sub">This section is in the mockup pipeline</div></div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;text-align:center;">
+    <div style="font-size:48px;margin-bottom:20px;">🚧</div>
+    <div style="font-family:'Archivo Black',sans-serif;font-size:20px;margin-bottom:12px;" id="stub-heading">Not built yet</div>
+    <div style="font-size:14px;color:var(--grey);max-width:380px;line-height:1.7;" id="stub-desc">This screen is planned but hasn't been built in the mockup yet. In the real app it'll be fully functional.</div>
+    <button class="btn btn-ghost" style="margin-top:28px;" onclick="showScreen('dashboard')">← Back to Dashboard</button>
+  </div>
+</div>
+
+
+<!-- Invoice Detail Modal -->
+<div class="modal-overlay" id="modal-invoice-detail">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-title">
+      Invoice Detail
+      <button class="modal-close" onclick="closeModal('modal-invoice-detail')">✕</button>
+    </div>
+
+    <!-- Student + summary -->
+    <div style="background:#1a1a1a;border-radius:10px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;gap:14px;">
+      <div id="inv-avatar" style="width:40px;height:40px;border-radius:50%;background:var(--lav);display:flex;align-items:center;justify-content:center;font-family:'Archivo Black',sans-serif;font-size:16px;flex-shrink:0;">J</div>
+      <div style="flex:1;">
+        <div style="font-size:14px;font-weight:600;" id="inv-student">Jess Malone</div>
+        <div style="font-size:12px;color:var(--grey);margin-top:2px;" id="inv-description">Season 4 — Level 2 (balance)</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:11px;text-transform:uppercase;color:var(--grey);margin-bottom:2px;">Total owing</div>
+        <div id="inv-total" style="font-family:'Archivo Black',sans-serif;font-size:20px;color:#ff6b6b;">$120</div>
+      </div>
+    </div>
+
+    <!-- What's outstanding -->
+    <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:10px;">What's outstanding</div>
+    <div id="inv-line-items" style="background:#111;border-radius:8px;padding:0 14px;margin-bottom:18px;">
+      <!-- populated by JS -->
+    </div>
+
+    <!-- Payment history against this invoice -->
+    <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:10px;">Payments applied</div>
+    <div id="inv-payments" style="background:#111;border-radius:8px;padding:0 14px;margin-bottom:18px;">
+      <!-- populated by JS -->
+    </div>
+
+    <!-- Due date -->
+    <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;margin-bottom:18px;padding:10px 14px;background:#1a1a1a;border-radius:8px;">
+      <span style="color:var(--grey);">Due date</span>
+      <span id="inv-due" style="font-weight:600;">15 May 2025</span>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-invoice-detail')">Close</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-invoice-detail');openModal('modal-manual-payment')">Take Payment</button>
+      <button class="btn btn-lime" id="inv-chase-btn" onclick="">Chase</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Email All Students Attending Modal -->
+<div class="modal-overlay" id="modal-email-attendees">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-title">Email All Students Attending <button class="modal-close" onclick="closeModal('modal-email-attendees')">✕</button></div>
+    <div style="background:#1a1a1a;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--grey);">
+      Sending to <strong style="color:var(--white);">8 students</strong> enrolled in Level 2 — Mon 12 May, 6:30pm
+    </div>
+    <div style="margin-bottom:14px;">
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px;">Subject</div>
+      <input type="text" value="Level 2 — Monday 12 May · See you tonight!" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:13px;font-family:inherit;box-sizing:border-box;" />
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px;">Message</div>
+      <textarea rows="6" style="width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:13px;font-family:inherit;resize:vertical;line-height:1.65;box-sizing:border-box;">Hey everyone!
+
+Just a quick note ahead of tonight's Level 2 class at 6:30pm in The Box. Can't wait to see you all on the pole!
+
+If you need to cancel, please do so before 2:30pm to avoid a late cancel fee.
+
+See you tonight 🖤
+Duality Pole</textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-email-attendees')">Cancel</button>
+      <button class="btn btn-lime" style="flex:1" onclick="alert('Email sent to 8 students attending Level 2 — Mon 12 May.');closeModal('modal-email-attendees')">Send to All 8 Students</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Action Log Screen -->
+<div id="screen-action-log" class="screen">
+  <div class="page-header">
+    <div><div class="page-title">Action Items Log</div><div class="page-sub">All studio action items — pending, completed, and history</div></div>
+    <button class="btn btn-lime" onclick="switchLogTab('add');openModal('modal-action-log')">+ Add Item</button>
+  </div>
+
+  <div class="subtabs" style="margin-bottom:16px;">
+    <div class="subtab active" onclick="switchSubTab(this,'al-pending')">Pending (<span id="al-pending-count">4</span>)</div>
+    <div class="subtab" onclick="switchSubTab(this,'al-completed')">Completed Today</div>
+    <div class="subtab" onclick="switchSubTab(this,'al-history')">History</div>
+  </div>
+
+  <div id="al-pending" class="subscreen active">
+    <div style="display:flex;flex-direction:column;gap:8px;" id="al-pending-list">
+      <div class="notif-action-row" id="al-ni-0" data-label="New order — Ruby Kim: Pole Grip Aid (Medium)" style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;">
+        <input type="checkbox" style="accent-color:var(--lime);width:16px;height:16px;flex-shrink:0;margin-top:2px;" onchange="markNotifDone(this,0)" />
+        <span style="font-size:18px;line-height:1;">🛍</span>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:500;">New order — prepare for pickup</div>
+          <div style="font-size:12px;color:var(--grey);margin-top:2px;">Ruby Kim ordered Pole Grip Aid (Medium) — not yet collected</div>
+          <div style="font-size:11px;color:var(--grey);margin-top:4px;">9:32am · Retail</div>
+        </div>
+      </div>
+      <div class="notif-action-row" id="al-ni-1" data-label="New order — Tara Bell: Duality Crop Top (S)" style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;">
+        <input type="checkbox" style="accent-color:var(--lime);width:16px;height:16px;flex-shrink:0;margin-top:2px;" onchange="markNotifDone(this,1)" />
+        <span style="font-size:18px;line-height:1;">🛍</span>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:500;">New order — prepare for pickup</div>
+          <div style="font-size:12px;color:var(--grey);margin-top:2px;">Tara Bell ordered Duality Crop Top (S) — not yet collected</div>
+          <div style="font-size:11px;color:var(--grey);margin-top:4px;">8:14am · Retail</div>
+        </div>
+      </div>
+      <div class="notif-action-row" id="al-ni-2" data-label="New student today — Priya Sharma, Level 1 5:30pm" style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;">
+        <input type="checkbox" style="accent-color:var(--lime);width:16px;height:16px;flex-shrink:0;margin-top:2px;" onchange="markNotifDone(this,2)" />
+        <span style="font-size:18px;line-height:1;">👋</span>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:500;">New student coming today — please greet</div>
+          <div style="font-size:12px;color:var(--grey);margin-top:2px;">Priya Sharma · Level 1 at 5:30pm · Instructor: Chloe · Waiver not yet signed</div>
+          <div style="font-size:11px;color:var(--lime);margin-top:4px;">Today · Student</div>
+        </div>
+      </div>
+      <div class="notif-action-row" id="al-ni-3" data-label="Injury check-in overdue — Jess Malone" style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:#1a0505;border:1px solid #3a1010;border-radius:10px;">
+        <input type="checkbox" style="accent-color:var(--lime);width:16px;height:16px;flex-shrink:0;margin-top:2px;" onchange="markNotifDone(this,3)" />
+        <span style="font-size:18px;line-height:1;">🩹</span>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:500;">Injury check-in overdue</div>
+          <div style="font-size:12px;color:var(--grey);margin-top:2px;">Jess Malone · right shoulder impingement · check-in was due 17 May</div>
+          <div style="font-size:11px;color:var(--amber);margin-top:4px;">Overdue · Health</div>
+          <button class="btn btn-ghost btn-xs" style="margin-top:6px;" onclick="openStudentDetail(STUDENTS.find(function(s){return s.name==='Jess Malone';}))">View Student Notes →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="al-completed" class="subscreen">
+    <div id="al-completed-list" style="display:flex;flex-direction:column;gap:8px;">
+      <div style="font-size:13px;color:var(--grey);padding:20px 0;text-align:center;">No items completed yet today. Tick items above to move them here.</div>
+    </div>
+  </div>
+
+  <div id="al-history" class="subscreen">
+    <div class="tbl-section">
+      <table>
+        <thead><tr><th>Date</th><th>Item</th><th>Type</th><th>Completed by</th><th>Time</th></tr></thead>
+        <tbody>
+          <tr><td style="color:var(--grey);">12 May</td><td>New order — Jess Malone: Pole Shorts (M)</td><td><span class="tag tag-grey" style="font-size:10px;">Retail</span></td><td>Mimi</td><td style="color:var(--grey);">10:14am</td></tr>
+          <tr><td style="color:var(--grey);">11 May</td><td>Injury check-in — Ruby Kim</td><td><span class="tag tag-grey" style="font-size:10px;">Health</span></td><td>Chloe</td><td style="color:var(--grey);">6:45pm</td></tr>
+          <tr><td style="color:var(--grey);">11 May</td><td>New order — Nina Torres: Grip Aid (Small)</td><td><span class="tag tag-grey" style="font-size:10px;">Retail</span></td><td>Mimi</td><td style="color:var(--grey);">9:02am</td></tr>
+          <tr><td style="color:var(--grey);">10 May</td><td>Exemption request — Amber Cole ($40 workshop)</td><td><span class="tag tag-grey" style="font-size:10px;">Payment</span></td><td>Mimi</td><td style="color:var(--grey);">2:30pm</td></tr>
+          <tr><td style="color:var(--grey);">9 May</td><td>New student today — Zoe Clarke, Level 1</td><td><span class="tag tag-grey" style="font-size:10px;">Student</span></td><td>Chloe</td><td style="color:var(--grey);">5:28pm</td></tr>
+          <tr><td style="color:var(--grey);">8 May</td><td>New order — Sophie Lawson: Pole Shorts (XS)</td><td><span class="tag tag-grey" style="font-size:10px;">Retail</span></td><td>Mimi</td><td style="color:var(--grey);">11:20am</td></tr>
+          <tr><td style="color:var(--grey);">7 May</td><td>Catch-up approved — Jess Malone</td><td><span class="tag tag-grey" style="font-size:10px;">Catch-up</span></td><td>Mimi</td><td style="color:var(--grey);">3:15pm</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
   </div><!-- end .content -->
 </div><!-- end .main -->
 
@@ -8493,862 +9349,6 @@ function clearAssistant() {
 
 
     <!-- ===== RECOMMENDATIONS ===== -->
-    <div id="screen-recommendations" class="screen">
-      <div class="page-header">
-        <div>
-          <div class="page-title">Recommendations</div>
-          <div class="page-sub">Demand-driven scheduling insights based on Season 4 enrolments</div>
-        </div>
-        <button class="btn btn-lime" onclick="alert('Exported to PDF')">Export Report</button>
-      </div>
-
-      <!-- KPI strip -->
-      <div class="kpi-row" style="margin-bottom:24px;">
-        <div class="kpi"><div class="kpi-label">Total Enrolments</div><div class="kpi-value">260</div><div class="kpi-sub">138 students · 27 classes</div></div>
-        <div class="kpi kpi-red"><div class="kpi-label">Classes Over Capacity</div><div class="kpi-value">4</div><div class="kpi-sub">Level 2, Level 5, Level 3, Strip Virgin</div></div>
-        <div class="kpi"><div class="kpi-label">Avg Classes/Student</div><div class="kpi-value">1.9</div><div class="kpi-sub">Up from 1.6 last season</div></div>
-        <div class="kpi"><div class="kpi-label">Revenue Opportunity</div><div class="kpi-value">$2,160+</div><div class="kpi-sub">If waitlisted students are placed</div></div>
-      </div>
-
-      <!-- Action cards -->
-      <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:12px;">🚨 Classes Needing Extra Sessions</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:28px;">
-
-        <div style="background:#1a1a1a;border:1px solid #ff6b6b;border-radius:10px;padding:16px;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
-            <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">Level 2</div>
-            <span class="tag tag-red">24 enrolled</span>
-          </div>
-          <div style="font-size:12px;color:var(--grey);margin-bottom:10px;">2 sessions × ~12 cap = 24 spots. Zero buffer — any late enrolments go to waitlist.</div>
-          <div style="font-size:12px;margin-bottom:12px;"><span style="color:var(--lime);">✦</span> Add a <b>Wednesday or Friday 6:30pm</b> Level 2 session. Estimated demand: 8–10 students.</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button class="btn btn-lime btn-xs" onclick="alert('Opening timetable to add Level 2 session')">Add Session</button>
-            <button class="btn btn-ghost btn-xs" onclick="showAssistantQuery('list all Level 2 students')">View Students</button>
-          </div>
-        </div>
-
-        <div style="background:#1a1a1a;border:1px solid #ff6b6b;border-radius:10px;padding:16px;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
-            <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">Level 5</div>
-            <span class="tag tag-red">23 enrolled</span>
-          </div>
-          <div style="font-size:12px;color:var(--grey);margin-bottom:10px;">1 session × ~12 cap = significant overflow. Level 5 is your second-biggest class.</div>
-          <div style="font-size:12px;margin-bottom:12px;"><span style="color:var(--lime);">✦</span> Add a <b>Tuesday or Saturday 10am</b> Level 5. Mimi already teaches Saturday morning.</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button class="btn btn-lime btn-xs" onclick="alert('Opening timetable to add Level 5 session')">Add Session</button>
-            <button class="btn btn-ghost btn-xs" onclick="showAssistantQuery('list all Level 5 students')">View Students</button>
-          </div>
-        </div>
-
-        <div style="background:#1a1a1a;border:1px solid #ff6b6b;border-radius:10px;padding:16px;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
-            <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">Level 3</div>
-            <span class="tag tag-red">23 enrolled</span>
-          </div>
-          <div style="font-size:12px;color:var(--grey);margin-bottom:10px;">1 main session at Wed 7:30pm (Maz) + Mon 8:30pm (Chloe). Still tight for 23 students.</div>
-          <div style="font-size:12px;margin-bottom:12px;"><span style="color:var(--lime);">✦</span> Add a <b>Thursday 7:30pm</b> Level 3. Frees Maz's session and absorbs overflow.</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button class="btn btn-lime btn-xs" onclick="alert('Opening timetable to add Level 3 session')">Add Session</button>
-            <button class="btn btn-ghost btn-xs" onclick="showAssistantQuery('list all Level 3 students')">View Students</button>
-          </div>
-        </div>
-
-        <div style="background:#1a1a1a;border:1px solid var(--amber);border-radius:10px;padding:16px;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
-            <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">Strip Virgin</div>
-            <span class="tag tag-amber">21 enrolled</span>
-          </div>
-          <div style="font-size:12px;color:var(--grey);margin-bottom:10px;">2 sessions (Mon Jaz + Thu Amy) × ~12 cap = 24 spots. Nearly full.</div>
-          <div style="font-size:12px;margin-bottom:12px;"><span style="color:var(--lime);">✦</span> Add a <b>weekend Strip Virgin</b> for students who can't do weeknights. High demand class.</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button class="btn btn-lime btn-xs" onclick="alert('Opening timetable to add Strip Virgin session')">Add Session</button>
-            <button class="btn btn-ghost btn-xs" onclick="showAssistantQuery('list all Strip Virgin students')">View Students</button>
-          </div>
-        </div>
-
-        <div style="background:#1a1a1a;border:1px solid var(--amber);border-radius:10px;padding:16px;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
-            <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">Strip</div>
-            <span class="tag tag-amber">16 enrolled</span>
-          </div>
-          <div style="font-size:12px;color:var(--grey);margin-bottom:10px;">2 sessions (Tue + Thu Mimi) at ~12 cap each = 24 spots. 8 buffer spots left.</div>
-          <div style="font-size:12px;margin-bottom:12px;"><span style="color:var(--lime);">✦</span> Monitor closely. Consider a Sunday Strip if Mimi is available — it sold out last season.</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button class="btn btn-ghost btn-xs" onclick="showAssistantQuery('list all Strip students')">View Students</button>
-          </div>
-        </div>
-
-        <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:16px;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
-            <div style="font-family:'Archivo Black',sans-serif;font-size:16px;">Advanced Floor</div>
-            <span class="tag tag-lav">12 enrolled</span>
-          </div>
-          <div style="font-size:12px;color:var(--grey);margin-bottom:10px;">1 session (Sun 10am Mimi) × ~10 cap = full. No overflow session exists.</div>
-          <div style="font-size:12px;margin-bottom:12px;"><span style="color:var(--lime);">✦</span> Add a <b>Saturday Advanced Floor</b> — Mimi teaches Saturday mornings already.</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button class="btn btn-lime btn-xs" onclick="alert('Opening timetable to add Adv Floor session')">Add Session</button>
-            <button class="btn btn-ghost btn-xs" onclick="showAssistantQuery('list all Advanced Floor students')">View Students</button>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Full demand table -->
-      <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:12px;">📊 Full Class Demand — Season 4</div>
-      <div class="tbl-section" style="margin-bottom:28px;">
-        <table>
-          <thead><tr><th>Class</th><th>Students Enrolled</th><th>Demand Bar</th><th>Sessions This Season</th><th>Recommendation</th></tr></thead>
-          <tbody id="rec-demand-tbody"></tbody>
-        </table>
-      </div>
-
-      <!-- Growth classes -->
-      <div class="section-title" style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:12px;">🌱 Growth Opportunities</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px;">
-        <div class="section" style="padding:16px;">
-          <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:8px;">Level 1 is undersubscribed (7 students)</div>
-          <div style="font-size:13px;color:var(--grey);margin-bottom:12px;">Level 1 is your pipeline for every other class — low intake now = lower numbers across all levels in 2–3 seasons. Consider a targeted new-student campaign.</div>
-          <button class="btn btn-lime btn-sm" onclick="showScreen('marketing')" data-stub="1">Launch Beginner Campaign →</button>
-        </div>
-        <div class="section" style="padding:16px;">
-          <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:8px;">Multi-class students drive revenue</div>
-          <div style="font-size:13px;color:var(--grey);margin-bottom:12px;">Students doing 3+ classes/week are your highest-value cohort. <b>42 students</b> currently do 3+ classes. Targeted upsell to 2-class students could add $4,000+ this season.</div>
-          <button class="btn btn-ghost btn-sm" onclick="showAssistantQuery('list students taking 2 classes')">View 2-class students →</button>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- ===== ASSISTANT ===== -->
-    <div id="screen-assistant" class="screen">
-      <div class="page-header">
-        <div>
-          <div class="page-title">Assistant</div>
-          <div class="page-sub">Ask anything about your students, enrolments, and data</div>
-        </div>
-        <button class="btn btn-ghost btn-sm" onclick="clearAssistant()">Clear Chat</button>
-      </div>
-
-      <!-- Suggestion chips -->
-      <div style="margin-bottom:20px;">
-        <div style="font-size:12px;color:var(--grey);margin-bottom:8px;">Try asking:</div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;">
-          <button class="chip" onclick="runAssistant('List all Level 5 students')">List all Level 5 students</button>
-          <button class="chip" onclick="runAssistant('Show students taking 3 or more classes')">Students taking 3+ classes</button>
-          <button class="chip" onclick="runAssistant('Who is in both Strip and Level 6?')">Who is in Strip AND Level 6?</button>
-          <button class="chip" onclick="runAssistant('Show me an enrolment summary')">Enrolment summary</button>
-          <button class="chip" onclick="runAssistant('Which students were enrolled last season but not this season?')">Not re-enrolled from last season</button>
-          <button class="chip" onclick="runAssistant('Email list for Advanced Floor')">Email list for Advanced Floor</button>
-          <button class="chip" onclick="runAssistant('List new students this season')">New students this season</button>
-          <button class="chip" onclick="runAssistant('Who is taking Invert Tech?')">Who is in Invert Tech?</button>
-        </div>
-      </div>
-
-      <!-- Chat window -->
-      <div id="assistant-chat" style="min-height:340px;max-height:520px;overflow-y:auto;background:#0d0d0d;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px;display:flex;flex-direction:column;gap:14px;">
-        <div style="display:flex;gap:10px;align-items:flex-start;">
-          <div style="width:28px;height:28px;border-radius:50%;background:var(--lime);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🤖</div>
-          <div style="background:#1a1a1a;border-radius:0 10px 10px 10px;padding:12px 14px;font-size:13px;line-height:1.6;max-width:85%;">
-            Hey! I'm your studio assistant. I have access to all <b>138 Season 4 students</b> and their enrolments.<br><br>
-            Ask me to pull reports, list students by class, find overlaps, generate email lists, or compare with last season. Try one of the suggestions above to get started.
-          </div>
-        </div>
-      </div>
-
-      <!-- Input -->
-      <div style="display:flex;gap:10px;">
-        <input id="assistant-input" class="search-input" type="text" placeholder="Ask a question about your students or enrolments…" style="flex:1;padding:12px 16px;font-size:14px;"
-          onkeydown="if(event.key==='Enter'){runAssistant(this.value);this.value=''}" />
-        <button class="btn btn-lime" onclick="runAssistant(document.getElementById('assistant-input').value);document.getElementById('assistant-input').value=''">Ask →</button>
-      </div>
-    </div>
-
-
-
-<div class="modal-overlay" id="modal-chase">
-  <div class="modal" style="max-width:500px;">
-    <div class="modal-title">Chase Payment <button class="modal-close" onclick="closeModal('modal-chase')">✕</button></div>
-    <div style="background:#1a1a1a;border-radius:8px;padding:14px 16px;margin-bottom:16px;">
-      <div style="font-size:15px;font-weight:600;" id="chase-student-name">Kylie R.</div>
-      <div style="font-size:13px;color:var(--grey);margin-top:4px;" id="chase-description">Season 4 + 2× no-show fees</div>
-      <div style="font-size:20px;font-weight:700;color:#ff6b6b;margin-top:8px;" id="chase-amount">$95</div>
-    </div>
-    <div id="chase-history" style="margin-bottom:16px;">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--grey);letter-spacing:.5px;margin-bottom:8px;">Chase History</div>
-      <div id="chase-history-list"></div>
-    </div>
-    <div id="chase-action-panel" style="border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:16px;">
-      <div id="chase-action-title" style="font-weight:600;font-size:13px;margin-bottom:8px;">Send Chase Reminder</div>
-      <div id="chase-action-body" style="font-size:13px;color:var(--grey);line-height:1.5;margin-bottom:12px;"></div>
-      <div class="field"><label>Message Preview</label>
-        <textarea id="chase-message-preview" rows="4" style="width:100%;background:#111;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:10px 12px;resize:vertical;box-sizing:border-box;"></textarea>
-      </div>
-      <div id="chase-lock-option" style="display:none;margin-bottom:12px;">
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
-          <input type="checkbox" id="chase-lock-account" style="accent-color:#ff6b6b;width:15px;height:15px;" />
-          <span>Lock account immediately (prevents bookings and app access)</span>
-        </label>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-chase')">Cancel</button>
-      <button id="chase-send-btn" class="btn btn-lime" onclick="sendChase()">Send Reminder</button>
-    </div>
-  </div>
-</div>
-
-
-<div class="modal-overlay" id="modal-outstanding-payment">
-  <div class="modal" style="max-width:480px;">
-    <div class="modal-title" style="color:#ff6b6b;">Outstanding Balance <button class="modal-close" onclick="closeModal('modal-outstanding-payment')">✕</button></div>
-    <div style="background:#2a0000;border:1px solid #ff3333;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;">
-      Your account has an outstanding balance. You need to resolve this before making new bookings or accessing the studio.
-    </div>
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--grey);letter-spacing:.5px;margin-bottom:8px;">Amount Owing</div>
-    <div id="op-items-list" style="margin-bottom:16px;">
-      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;">
-        <span>Season 4 — Level 2 (instalment 2)</span><span class="bal-neg">$60</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;">
-        <span>No-show fee — Dance (12 May)</span><span class="bal-neg">$25</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:10px 0;font-size:15px;font-weight:700;">
-        <span>Total</span><span class="bal-neg">−$85</span>
-      </div>
-    </div>
-    <div class="modal-footer" style="flex-direction:column;gap:8px;">
-      <button class="btn btn-lime" style="width:100%;" onclick="alert('Redirecting to payment...');closeModal('modal-outstanding-payment')">Pay Now</button>
-      <button class="btn btn-ghost" style="width:100%;" onclick="alert('Exemption request submitted. You will be notified within 24 hours.');closeModal('modal-outstanding-payment')">Apply for Exemption</button>
-      <div style="font-size:11px;color:var(--grey);text-align:center;margin-top:4px;">Exemption requests are reviewed manually. Access remains restricted until approved or paid.</div>
-    </div>
-  </div>
-</div>
-
-
-<div class="modal-overlay" id="modal-season-cancel">
-  <div class="modal" style="max-width:540px;">
-    <div class="modal-title">Season Transfer or Cancellation <button class="modal-close" onclick="closeModal('modal-season-cancel')">✕</button></div>
-    <div style="font-size:13px;color:var(--grey);margin-bottom:16px;line-height:1.5;">Use this for changes to a student's entire season enrolment. For a single missed class, use the catch-up / individual class cancel option instead.</div>
-    <div class="field"><label>Request Type</label>
-      <select id="sc-type" onchange="updateSeasonCancelForm()" style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
-        <option value="transfer">Transfer to another class / season</option>
-        <option value="cancel">Cancel full season enrolment</option>
-        <option value="downgrade">Downgrade (remove one class)</option>
-      </select>
-    </div>
-    <div id="sc-transfer-fields">
-      <div class="field"><label>Transfer to Class</label>
-        <select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
-          <option>Level 1 · Wed 5:30pm · Jaz · Rhapsody</option>
-          <option>Level 2 · Thu 6:30pm · Jaz · Rhapsody (1 spot)</option>
-          <option>Level 3 · Tue 8:30pm · Chloe · Rhapsody</option>
-          <option>Next season (Season 5)</option>
-        </select>
-      </div>
-      <div class="field"><label>Price Adjustment</label>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <select style="background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:8px 10px;border-radius:8px;font-family:inherit;font-size:13px;">
-            <option>No adjustment (carry credit)</option><option>Pro-rata discount</option><option>Manual override</option><option>Full credit to account</option>
-          </select>
-          <input type="number" placeholder="$0" style="width:80px;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--lime);font-family:inherit;font-size:13px;padding:8px 10px;" />
-        </div>
-      </div>
-    </div>
-    <div id="sc-cancel-fields" style="display:none;">
-      <div style="background:#1a0000;border:1px solid #ff333355;border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--grey);">
-        Cancelling a full season enrolment. Apply the studio cancellation policy or manually set a refund/credit amount.
-      </div>
-      <div class="field"><label>Weeks Completed</label><input type="number" value="2" min="0" max="8" style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:8px 12px;" /></div>
-      <div class="field"><label>Refund / Credit Amount</label>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <select id="sc-refund-type" style="background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:8px 10px;border-radius:8px;font-family:inherit;font-size:13px;">
-            <option>Pro-rata refund (auto)</option><option>Full refund</option><option>Credit to account</option><option>Manual override</option><option>No refund</option>
-          </select>
-          <input type="number" placeholder="$0" id="sc-refund-amount" style="width:80px;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--lime);font-family:inherit;font-size:13px;padding:8px 10px;" />
-        </div>
-      </div>
-      <div style="background:#1a1a1a;border-radius:8px;padding:10px 14px;font-size:12px;color:var(--grey);margin-bottom:14px;">
-        <b style="color:var(--white);">Pro-rata calculation:</b> 2 of 8 weeks completed = 75% remaining → suggested refund: $120
-      </div>
-      <div class="field"><label>Line Item Overrides <span style="font-size:11px;font-weight:400;">(edit individual charges)</span></label>
-        <div style="background:#111;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
-          <table style="width:100%;border-collapse:collapse;font-size:12px;">
-            <thead><tr style="border-bottom:1px solid var(--border);"><th style="padding:8px 12px;text-align:left;color:var(--grey);">Item</th><th style="padding:8px 12px;text-align:right;color:var(--grey);">Original</th><th style="padding:8px 12px;text-align:right;color:var(--grey);">Adjusted</th></tr></thead>
-            <tbody>
-              <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 12px;">Season enrolment — Level 2</td><td style="padding:8px 12px;text-align:right;color:var(--lime);">$270</td><td style="padding:8px 12px;text-align:right;"><input type="number" value="200" style="width:70px;background:#1a1a1a;border:1px solid var(--border);border-radius:4px;color:var(--lime);font-family:inherit;font-size:12px;padding:3px 6px;text-align:right;" /></td></tr>
-              <tr><td style="padding:8px 12px;">Admin fee</td><td style="padding:8px 12px;text-align:right;color:#ff6b6b;">−$25</td><td style="padding:8px 12px;text-align:right;"><input type="number" value="25" style="width:70px;background:#1a1a1a;border:1px solid var(--border);border-radius:4px;color:#ff6b6b;font-family:inherit;font-size:12px;padding:3px 6px;text-align:right;" /></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    <div class="field"><label>Internal Note</label>
-      <textarea rows="2" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:10px 12px;resize:vertical;" placeholder="Reason for transfer or cancellation…"></textarea>
-    </div>
-    <div class="field"><label>Notify Student</label>
-      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--lime);" /> Send confirmation email to student</label>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-season-cancel')">Cancel</button>
-      <button class="btn btn-lime" onclick="alert('Season change processed.');closeModal('modal-season-cancel')">Confirm Change</button>
-    </div>
-  </div>
-</div>
-
-
-<div class="modal-overlay" id="modal-add-product">
-  <div class="modal" style="max-width:480px;">
-    <div class="modal-title">Add / Edit Product <button class="modal-close" onclick="closeModal('modal-add-product')">✕</button></div>
-    <div class="field"><label>Product Name</label><input type="text" placeholder="e.g. Dry Hands Grip Aid" /></div>
-    <div class="field-row">
-      <div class="field"><label>Category</label>
-        <select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
-          <option>Grip Aids</option><option>Activewear</option><option>Merchandise</option><option>Accessories</option>
-        </select>
-      </div>
-      <div class="field"><label>Price (A$)</label><input type="number" placeholder="0.00" /></div>
-    </div>
-    <div class="field-row">
-      <div class="field"><label>SKU</label><input type="text" placeholder="SKU-001" /></div>
-      <div class="field"><label>Initial Stock</label><input type="number" placeholder="0" /></div>
-    </div>
-    <div class="field"><label>Description <span style="font-size:11px;color:var(--grey);">(optional)</span></label><textarea rows="2" placeholder="Short product description…"></textarea></div>
-    <div class="field"><label>Variants <span style="font-size:11px;color:var(--grey);">(e.g. XS,S,M,L — leave blank if N/A)</span></label><input type="text" placeholder="XS, S, M, L" /></div>
-    <div class="field"><label>Low Stock Alert Threshold</label><input type="number" value="5" /></div>
-    <div class="field">
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--lime);" /> Visible to students in app</label>
-    </div>
-    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-add-product')">Cancel</button><button class="btn btn-lime" onclick="alert('Product saved!');closeModal('modal-add-product')">Save Product</button></div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modal-square-sync">
-  <div class="modal" style="max-width:440px;">
-    <div class="modal-title">Square Integration <button class="modal-close" onclick="closeModal('modal-square-sync')">✕</button></div>
-    <div style="display:flex;align-items:center;gap:12px;background:#1a1a1a;border-radius:8px;padding:12px 16px;margin-bottom:16px;">
-      <div style="width:36px;height:36px;background:#00b140;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px;">■</div>
-      <div><div style="font-weight:600;">Connected to Square</div><div style="font-size:12px;color:var(--grey);">Location: Duality Pole · Last sync: 13 May 2026, 8:00am</div></div>
-      <span class="tag tag-lime" style="margin-left:auto;">Active</span>
-    </div>
-    <div class="field"><label>Sync Direction</label>
-      <select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
-        <option>Two-way (recommended)</option><option>Square → Duality only</option><option>Duality → Square only</option>
-      </select>
-    </div>
-    <div class="field"><label>Auto-sync Frequency</label>
-      <select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
-        <option>Every hour</option><option selected>Every morning at 8am</option><option>Manual only</option>
-      </select>
-    </div>
-    <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--lime);" /> Sync stock levels</label></div>
-    <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--lime);" /> Sync prices</label></div>
-    <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" style="accent-color:var(--lime);" /> Import new products from Square automatically</label></div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="alert('Sync triggered...');closeModal('modal-square-sync')">Sync Now</button>
-      <button class="btn btn-lime" onclick="alert('Settings saved!');closeModal('modal-square-sync')">Save Settings</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modal-assign-locker">
-  <div class="modal" style="max-width:420px;">
-    <div class="modal-title">Assign Locker <button class="modal-close" onclick="closeModal('modal-assign-locker')">✕</button></div>
-    <div class="field"><label>Locker Number</label>
-      <select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
-        <option>#04 (Available)</option><option>#12 (Available)</option><option>#19 (Available)</option><option>#20 (Available)</option><option>#21 (Available)</option><option>#22 (Available)</option>
-      </select>
-    </div>
-    <div class="field"><label>Student</label><input type="text" placeholder="Search student name…" /></div>
-    <div class="field-row">
-      <div class="field"><label>Monthly Fee (A$)</label><input type="number" value="15" /></div>
-      <div class="field"><label>Start Date</label><input type="date" /></div>
-    </div>
-    <div class="field"><label>Notes <span style="font-size:11px;color:var(--grey);">(optional)</span></label><textarea rows="2" placeholder="Any notes…"></textarea></div>
-    <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--lime);" /> Send confirmation to student</label></div>
-    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-assign-locker')">Cancel</button><button class="btn btn-lime" onclick="alert('Locker assigned!');closeModal('modal-assign-locker')">Assign Locker</button></div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modal-locker-detail">
-  <div class="modal" style="max-width:380px;">
-    <div class="modal-title">Locker #01 — Jess Malone <button class="modal-close" onclick="closeModal('modal-locker-detail')">✕</button></div>
-    <div style="background:#1a1a1a;border-radius:8px;padding:14px 16px;margin-bottom:14px;font-size:13px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      <div><div style="color:var(--grey);font-size:11px;">Assigned</div><div>1 Mar 2026</div></div>
-      <div><div style="color:var(--grey);font-size:11px;">Monthly fee</div><div class="bal-pos">$15</div></div>
-      <div><div style="color:var(--grey);font-size:11px;">Last paid</div><div>1 May 2026</div></div>
-      <div><div style="color:var(--grey);font-size:11px;">Next due</div><div>1 Jun 2026</div></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" style="color:#e05555;" onclick="alert('Locker unassigned');closeModal('modal-locker-detail')">Unassign</button>
-      <button class="btn btn-lime" onclick="alert('Payment recorded');closeModal('modal-locker-detail')">Record Payment</button>
-    </div>
-  </div>
-</div>
-
-
-<div class="modal-overlay" id="modal-add-to-class">
-  <div class="modal" style="max-width:480px;">
-    <div class="modal-title">Add Student to Class <button class="modal-close" onclick="closeModal('modal-add-to-class')">✕</button></div>
-    <div class="field"><label>Search Student</label>
-      <input type="text" placeholder="Name or email…" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:9px 12px;box-sizing:border-box;" oninput="searchAddStudent(this.value)" />
-      <div id="add-student-results" style="margin-top:6px;max-height:160px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;display:none;"></div>
-    </div>
-    <div class="field"><label>Booking Type</label>
-      <select id="add-student-type" style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
-        <option value="season">Season enrolment</option>
-        <option value="catchup">Catch-up class</option>
-        <option value="casual">Casual drop-in</option>
-        <option value="waitlist">Add to waitlist</option>
-      </select>
-    </div>
-    <div id="add-student-override-warning" style="background:#151000;border:1px solid var(--amber);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--amber);display:none;">
-      ⚠️ This class is at capacity. Adding this student will override the limit.
-    </div>
-    <div class="field">
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
-        <input type="checkbox" style="accent-color:var(--lime);" /> Send confirmation email to student
-      </label>
-    </div>
-    <div class="field">
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
-        <input type="checkbox" /> Override capacity limit (admin only)
-      </label>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-add-to-class')">Cancel</button>
-      <button class="btn btn-lime" onclick="alert('Student added to class!');closeModal('modal-add-to-class')">Add to Class</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modal-override-capacity">
-  <div class="modal" style="max-width:380px;">
-    <div class="modal-title">Override Class Capacity <button class="modal-close" onclick="closeModal('modal-override-capacity')">✕</button></div>
-    <div style="font-size:13px;color:var(--grey);margin-bottom:16px;">Temporarily change the maximum number of students for this session or permanently for the season.</div>
-    <div class="field-row">
-      <div class="field">
-        <label>Current Capacity</label>
-        <input type="number" value="12" style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--grey);font-family:inherit;font-size:13px;padding:9px 12px;width:100%;box-sizing:border-box;" readonly />
-      </div>
-      <div class="field">
-        <label>New Capacity</label>
-        <input type="number" value="14" style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:9px 12px;width:100%;box-sizing:border-box;" />
-      </div>
-    </div>
-    <div class="field">
-      <label>Apply to</label>
-      <select style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:8px;font-family:inherit;">
-        <option>This class only (tonight)</option>
-        <option>All remaining classes this season</option>
-        <option>All classes in this season</option>
-      </select>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-override-capacity')">Cancel</button>
-      <button class="btn btn-lime" onclick="alert('Capacity updated to 14!');closeModal('modal-override-capacity')">Update Capacity</button>
-    </div>
-  </div>
-</div>
-
-
-<div class="modal-overlay" id="modal-instructor-student-detail">
-  <div class="modal" style="max-width:580px;max-height:85vh;overflow-y:auto;">
-    <div class="modal-title">
-      <div>
-        <div id="isd-name" style="font-family:'Archivo Black',sans-serif;font-size:16px;">Jess Malone</div>
-        <div id="isd-meta" style="font-size:12px;color:var(--grey);font-family:Archivo,sans-serif;font-weight:400;margin-top:2px;">Level 2 Mon 6:30pm · Season 4</div>
-      </div>
-      <button class="modal-close" onclick="closeModal('modal-instructor-student-detail')">✕</button>
-    </div>
-
-    <!-- Quick status row -->
-    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
-      <div style="background:#1a1a1a;border-radius:8px;padding:10px 14px;flex:1;min-width:100px;">
-        <div style="font-size:11px;color:var(--grey);">Balance</div>
-        <div style="font-size:18px;font-weight:700;" class="bal-neg">−$120</div>
-      </div>
-      <div style="background:#1a1a1a;border-radius:8px;padding:10px 14px;flex:1;min-width:100px;">
-        <div style="font-size:11px;color:var(--grey);">Classes Booked</div>
-        <div style="font-size:18px;font-weight:700;">3</div>
-      </div>
-      <div style="background:#1a1a1a;border-radius:8px;padding:10px 14px;flex:1;min-width:100px;">
-        <div style="font-size:11px;color:var(--grey);">Attendance</div>
-        <div style="font-size:18px;font-weight:700;" style="color:var(--lime);">6/8</div>
-      </div>
-      <div style="background:#1a1a1a;border-radius:8px;padding:10px 14px;flex:1;min-width:100px;">
-        <div style="font-size:11px;color:var(--grey);">No-shows</div>
-        <div style="font-size:18px;font-weight:700;color:#ff6b6b;">1</div>
-      </div>
-    </div>
-
-    <div class="subtabs">
-      <button class="subtab active" onclick="switchSubTab(this,'isd-bookings')">Bookings</button>
-      <button class="subtab" onclick="switchSubTab(this,'isd-payments')">Payments & Charges</button>
-      <button class="subtab" onclick="switchSubTab(this,'isd-notes')">Notes</button>
-    </div>
-
-    <div id="isd-bookings" class="subscreen active">
-      <div class="tbl-section">
-        <table>
-          <thead><tr><th>Class</th><th>Season</th><th>Type</th><th>Status</th></tr></thead>
-          <tbody>
-            <tr><td><b>Level 2</b><div style="font-size:11px;color:var(--grey)">Mon 6:30pm · Chloe</div></td><td>Season 4</td><td><span class="tag tag-lav">Season</span></td><td><span class="tag tag-lime">Active</span></td></tr>
-            <tr><td><b>High Tricks</b><div style="font-size:11px;color:var(--grey)">Mon 7:30pm · Mimi</div></td><td>Season 4</td><td><span class="tag tag-lav">Season</span></td><td><span class="tag tag-lime">Active</span></td></tr>
-            <tr><td><b>Level 2</b><div style="font-size:11px;color:var(--grey)">Tue · Chloe</div></td><td>Season 3</td><td><span class="tag tag-lav">Season</span></td><td><span class="tag tag-grey">Completed</span></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div id="isd-payments" class="subscreen">
-      <div style="background:#2a0000;border:1px solid #ff333355;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#ff6b6b;">
-        Outstanding balance: <b>$120</b> — Season 4 instalment 2 overdue
-      </div>
-      <div class="tbl-section">
-        <table>
-          <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Amount</th><th>Balance</th></tr></thead>
-          <tbody>
-            <tr><td style="color:var(--grey);font-size:12px;">12 May</td><td>No-show fee — Dance</td><td><span class="tag tag-red" style="font-size:10px;">Fee</span></td><td class="bal-neg">−$25</td><td class="bal-neg">−$120</td></tr>
-            <tr><td style="color:var(--grey);font-size:12px;">5 May</td><td>Season 4 — instalment 1 paid</td><td><span class="tag tag-lime" style="font-size:10px;">Payment</span></td><td class="bal-pos">+$90</td><td class="bal-neg">−$95</td></tr>
-            <tr><td style="color:var(--grey);font-size:12px;">1 May</td><td>Season 4 — High Tricks enrolment</td><td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td><td class="bal-neg">−$160</td><td class="bal-neg">−$185</td></tr>
-            <tr><td style="color:var(--grey);font-size:12px;">1 May</td><td>Season 4 — Level 2 enrolment</td><td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td><td class="bal-neg">−$160</td><td class="bal-neg">−$25</td></tr>
-            <tr><td style="color:var(--grey);font-size:12px;">28 Apr</td><td>Account credit applied</td><td><span class="tag tag-lime" style="font-size:10px;">Credit</span></td><td class="bal-pos">+$135</td><td class="bal-pos">+$135</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div id="isd-notes" class="subscreen">
-      <div class="note-item note-flag-red">
-        <div class="note-meta">🩹 Injury · Mimi · 10 May 2026 · Check-in: 17 May</div>
-        <div class="note-text">Right shoulder impingement — avoid overhead work.</div>
-      </div>
-      <div class="note-item">
-        <div class="note-meta">✨ Personality & Vibe · Chloe · 2 Apr 2026</div>
-        <div class="note-text">Loves being challenged — responds well to push. Very committed.</div>
-      </div>
-    </div>
-
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-instructor-student-detail')">Close</button>
-      <button class="btn btn-lime" onclick="closeModal('modal-instructor-student-detail');openModal('modal-chase')">Chase Payment</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- Exemption Review Modal -->
-<div class="modal-overlay" id="modal-exemption-review">
-  <div class="modal" style="max-width:480px;">
-    <div class="modal-title">Payment Exemption Request <button class="modal-close" onclick="closeModal('modal-exemption-review')">✕</button></div>
-    <div style="background:#1a1a1a;border-radius:10px;padding:14px 16px;margin-bottom:18px;">
-      <div style="font-size:12px;color:var(--grey);margin-bottom:4px;">Student</div>
-      <div style="font-size:14px;font-weight:600;" id="exempt-student-name">Dana Park</div>
-      <div style="font-size:12px;color:var(--grey);margin-top:10px;margin-bottom:4px;">Amount requested</div>
-      <div style="font-size:14px;" id="exempt-amount">$75 workshop fee</div>
-      <div style="font-size:12px;color:var(--grey);margin-top:10px;margin-bottom:4px;">Reason provided</div>
-      <div style="font-size:13px;color:#ccc;">Financial hardship — requested partial credit or payment plan</div>
-    </div>
-    <div style="margin-bottom:16px;">
-      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:10px;">Decision</div>
-      <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;margin-bottom:8px;padding:10px 12px;background:#111;border-radius:8px;">
-        <input type="radio" name="exempt-decision" value="approve" checked style="accent-color:var(--lime);margin-top:2px;flex-shrink:0;">
-        <div><div style="font-size:13px;font-weight:500;">Approve — apply full credit to account</div></div>
-      </label>
-      <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;margin-bottom:8px;padding:10px 12px;background:#111;border-radius:8px;">
-        <input type="radio" name="exempt-decision" value="partial" style="accent-color:var(--lime);margin-top:2px;flex-shrink:0;">
-        <div><div style="font-size:13px;font-weight:500;">Approve partial — set up payment plan</div></div>
-      </label>
-      <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;padding:10px 12px;background:#111;border-radius:8px;">
-        <input type="radio" name="exempt-decision" value="deny" style="accent-color:var(--lime);margin-top:2px;flex-shrink:0;">
-        <div><div style="font-size:13px;font-weight:500;">Deny — notify student</div></div>
-      </label>
-    </div>
-    <div style="margin-bottom:16px;">
-      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px;">Note to student (optional)</div>
-      <textarea rows="2" placeholder="Add a message for the student..." style="width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:13px;font-family:inherit;resize:vertical;line-height:1.5;box-sizing:border-box;"></textarea>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-exemption-review')">Cancel</button>
-      <button class="btn btn-lime" style="flex:1" onclick="submitExemptionDecision()">Confirm Decision</button>
-    </div>
-  </div>
-</div>
-
-<!-- Action Items Log Modal -->
-<div class="modal-overlay" id="modal-action-log">
-  <div class="modal modal-lg" style="max-width:640px;">
-    <div class="modal-title">Action Items Log <button class="modal-close" onclick="closeModal('modal-action-log')">✕</button></div>
-    <div class="subtab-bar" style="margin-bottom:16px;">
-      <button class="subtab-btn active" id="log-tab-today" onclick="switchLogTab('today')">Today</button>
-      <button class="subtab-btn" id="log-tab-history" onclick="switchLogTab('history')">History</button>
-      <button class="subtab-btn" id="log-tab-add" onclick="switchLogTab('add')">+ Add item</button>
-    </div>
-    <div id="log-sub-today">
-      <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:8px;">Pending</div>
-      <div id="log-pending-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;"></div>
-      <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:8px;">Completed</div>
-      <div id="log-done-list" style="display:flex;flex-direction:column;gap:6px;"></div>
-      <div id="log-done-empty" style="font-size:13px;color:var(--grey);padding:8px 0;">No items completed yet today.</div>
-    </div>
-    <div id="log-sub-history" style="display:none;">
-      <div class="tbl-section">
-        <table>
-          <thead><tr><th>Date</th><th>Item</th><th>Completed by</th><th>Time</th></tr></thead>
-          <tbody>
-            <tr><td style="color:var(--grey);">12 May</td><td>New order — Jess Malone: Pole Shorts (M)</td><td>Mimi</td><td style="color:var(--grey);">10:14am</td></tr>
-            <tr><td style="color:var(--grey);">11 May</td><td>Injury check-in — Ruby Kim</td><td>Chloe</td><td style="color:var(--grey);">6:45pm</td></tr>
-            <tr><td style="color:var(--grey);">11 May</td><td>New order — Nina Torres: Grip Aid (Small)</td><td>Mimi</td><td style="color:var(--grey);">9:02am</td></tr>
-            <tr><td style="color:var(--grey);">10 May</td><td>Exemption request — Amber Cole ($40)</td><td>Mimi</td><td style="color:var(--grey);">2:30pm</td></tr>
-            <tr><td style="color:var(--grey);">9 May</td><td>New student today — Zoe Clarke, Level 1</td><td>Chloe</td><td style="color:var(--grey);">5:28pm</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-    <div id="log-sub-add" style="display:none;">
-      <div style="margin-bottom:14px;">
-        <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px;">Type</div>
-        <select id="new-item-type" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:13px;font-family:inherit;">
-          <option value="general">General task</option>
-          <option value="retail">Retail / pickup</option>
-          <option value="student">Student related</option>
-          <option value="injury">Injury / health</option>
-          <option value="payment">Payment / billing</option>
-        </select>
-      </div>
-      <div style="margin-bottom:14px;">
-        <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px;">Description</div>
-        <input type="text" id="new-item-desc" placeholder="Describe the action item..." style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:13px;font-family:inherit;box-sizing:border-box;" />
-      </div>
-      <div style="margin-bottom:18px;">
-        <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px;">Assign to</div>
-        <select id="new-item-assign" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:13px;font-family:inherit;">
-          <option>Anyone on duty</option>
-          <option>Mimi</option>
-          <option>Chloe</option>
-          <option>Viv</option>
-          <option>Bambi</option>
-          <option>Violet</option>
-        </select>
-      </div>
-      <button class="btn btn-lime" style="width:100%;" onclick="addManualActionItem()">Add Action Item</button>
-    </div>
-    <div class="modal-footer" style="margin-top:20px;">
-      <button class="btn btn-ghost" onclick="closeModal('modal-action-log')">Close</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- Contact Student Modal (Flagged Enrolment) -->
-<div class="modal-overlay" id="modal-contact-student">
-  <div class="modal modal-lg" style="max-width:600px;">
-    <div class="modal-title">Contact Student <button class="modal-close" onclick="closeModal('modal-contact-student')">✕</button></div>
-    <div style="background:#1a1a1a;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--grey);">
-      Sending to: <strong id="contact-student-name" style="color:var(--white);">Sophie Lawson</strong>
-      &nbsp;·&nbsp; Re: <strong id="contact-student-class" style="color:var(--white);">Level 3 — Wed 7pm</strong>
-    </div>
-
-    <div style="margin-bottom:14px;">
-      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px;">Template</div>
-      <select id="contact-template-sel" onchange="applyContactTemplate()" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:13px;font-family:inherit;">
-        <option value="above-level">Enrolled above assessed level</option>
-        <option value="no-prereq-tricks">No prerequisite — tricks class</option>
-        <option value="level-jump">Skipped a level — let's chat</option>
-        <option value="custom">Custom message</option>
-      </select>
-    </div>
-
-    <div style="margin-bottom:6px;">
-      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px;">Subject</div>
-      <input type="text" id="contact-subject" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:13px;font-family:inherit;box-sizing:border-box;" />
-    </div>
-
-    <div style="margin-bottom:16px;margin-top:14px;">
-      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px;">Message</div>
-      <textarea id="contact-body" rows="10" style="width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:13px;font-family:inherit;resize:vertical;line-height:1.65;box-sizing:border-box;"></textarea>
-    </div>
-
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-contact-student')">Cancel</button>
-      <button class="btn btn-lime" style="flex:1" onclick="sendContactEmail()">Send Email</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- Coming Soon / Stub Screen -->
-<div id="screen-stub" class="screen">
-  <div class="page-header">
-    <div><div class="page-title" id="stub-title">Coming Soon</div><div class="page-sub" id="stub-sub">This section is in the mockup pipeline</div></div>
-  </div>
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;text-align:center;">
-    <div style="font-size:48px;margin-bottom:20px;">🚧</div>
-    <div style="font-family:'Archivo Black',sans-serif;font-size:20px;margin-bottom:12px;" id="stub-heading">Not built yet</div>
-    <div style="font-size:14px;color:var(--grey);max-width:380px;line-height:1.7;" id="stub-desc">This screen is planned but hasn't been built in the mockup yet. In the real app it'll be fully functional.</div>
-    <button class="btn btn-ghost" style="margin-top:28px;" onclick="showScreen('dashboard')">← Back to Dashboard</button>
-  </div>
-</div>
-
-
-<!-- Invoice Detail Modal -->
-<div class="modal-overlay" id="modal-invoice-detail">
-  <div class="modal" style="max-width:520px;">
-    <div class="modal-title">
-      Invoice Detail
-      <button class="modal-close" onclick="closeModal('modal-invoice-detail')">✕</button>
-    </div>
-
-    <!-- Student + summary -->
-    <div style="background:#1a1a1a;border-radius:10px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;gap:14px;">
-      <div id="inv-avatar" style="width:40px;height:40px;border-radius:50%;background:var(--lav);display:flex;align-items:center;justify-content:center;font-family:'Archivo Black',sans-serif;font-size:16px;flex-shrink:0;">J</div>
-      <div style="flex:1;">
-        <div style="font-size:14px;font-weight:600;" id="inv-student">Jess Malone</div>
-        <div style="font-size:12px;color:var(--grey);margin-top:2px;" id="inv-description">Season 4 — Level 2 (balance)</div>
-      </div>
-      <div style="text-align:right;">
-        <div style="font-size:11px;text-transform:uppercase;color:var(--grey);margin-bottom:2px;">Total owing</div>
-        <div id="inv-total" style="font-family:'Archivo Black',sans-serif;font-size:20px;color:#ff6b6b;">$120</div>
-      </div>
-    </div>
-
-    <!-- What's outstanding -->
-    <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:10px;">What's outstanding</div>
-    <div id="inv-line-items" style="background:#111;border-radius:8px;padding:0 14px;margin-bottom:18px;">
-      <!-- populated by JS -->
-    </div>
-
-    <!-- Payment history against this invoice -->
-    <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:10px;">Payments applied</div>
-    <div id="inv-payments" style="background:#111;border-radius:8px;padding:0 14px;margin-bottom:18px;">
-      <!-- populated by JS -->
-    </div>
-
-    <!-- Due date -->
-    <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;margin-bottom:18px;padding:10px 14px;background:#1a1a1a;border-radius:8px;">
-      <span style="color:var(--grey);">Due date</span>
-      <span id="inv-due" style="font-weight:600;">15 May 2025</span>
-    </div>
-
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-invoice-detail')">Close</button>
-      <button class="btn btn-ghost" onclick="closeModal('modal-invoice-detail');openModal('modal-manual-payment')">Take Payment</button>
-      <button class="btn btn-lime" id="inv-chase-btn" onclick="">Chase</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- Email All Students Attending Modal -->
-<div class="modal-overlay" id="modal-email-attendees">
-  <div class="modal" style="max-width:500px;">
-    <div class="modal-title">Email All Students Attending <button class="modal-close" onclick="closeModal('modal-email-attendees')">✕</button></div>
-    <div style="background:#1a1a1a;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--grey);">
-      Sending to <strong style="color:var(--white);">8 students</strong> enrolled in Level 2 — Mon 12 May, 6:30pm
-    </div>
-    <div style="margin-bottom:14px;">
-      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px;">Subject</div>
-      <input type="text" value="Level 2 — Monday 12 May · See you tonight!" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:13px;font-family:inherit;box-sizing:border-box;" />
-    </div>
-    <div style="margin-bottom:16px;">
-      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey);margin-bottom:8px;">Message</div>
-      <textarea rows="6" style="width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:11px 14px;color:var(--white);font-size:13px;font-family:inherit;resize:vertical;line-height:1.65;box-sizing:border-box;">Hey everyone!
-
-Just a quick note ahead of tonight's Level 2 class at 6:30pm in The Box. Can't wait to see you all on the pole!
-
-If you need to cancel, please do so before 2:30pm to avoid a late cancel fee.
-
-See you tonight 🖤
-Duality Pole</textarea>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-email-attendees')">Cancel</button>
-      <button class="btn btn-lime" style="flex:1" onclick="alert('Email sent to 8 students attending Level 2 — Mon 12 May.');closeModal('modal-email-attendees')">Send to All 8 Students</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- Action Log Screen -->
-<div id="screen-action-log" class="screen">
-  <div class="page-header">
-    <div><div class="page-title">Action Items Log</div><div class="page-sub">All studio action items — pending, completed, and history</div></div>
-    <button class="btn btn-lime" onclick="switchLogTab('add');openModal('modal-action-log')">+ Add Item</button>
-  </div>
-
-  <div class="subtabs" style="margin-bottom:16px;">
-    <div class="subtab active" onclick="switchSubTab(this,'al-pending')">Pending (<span id="al-pending-count">4</span>)</div>
-    <div class="subtab" onclick="switchSubTab(this,'al-completed')">Completed Today</div>
-    <div class="subtab" onclick="switchSubTab(this,'al-history')">History</div>
-  </div>
-
-  <div id="al-pending" class="subscreen active">
-    <div style="display:flex;flex-direction:column;gap:8px;" id="al-pending-list">
-      <div class="notif-action-row" id="al-ni-0" data-label="New order — Ruby Kim: Pole Grip Aid (Medium)" style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;">
-        <input type="checkbox" style="accent-color:var(--lime);width:16px;height:16px;flex-shrink:0;margin-top:2px;" onchange="markNotifDone(this,0)" />
-        <span style="font-size:18px;line-height:1;">🛍</span>
-        <div style="flex:1;">
-          <div style="font-size:13px;font-weight:500;">New order — prepare for pickup</div>
-          <div style="font-size:12px;color:var(--grey);margin-top:2px;">Ruby Kim ordered Pole Grip Aid (Medium) — not yet collected</div>
-          <div style="font-size:11px;color:var(--grey);margin-top:4px;">9:32am · Retail</div>
-        </div>
-      </div>
-      <div class="notif-action-row" id="al-ni-1" data-label="New order — Tara Bell: Duality Crop Top (S)" style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;">
-        <input type="checkbox" style="accent-color:var(--lime);width:16px;height:16px;flex-shrink:0;margin-top:2px;" onchange="markNotifDone(this,1)" />
-        <span style="font-size:18px;line-height:1;">🛍</span>
-        <div style="flex:1;">
-          <div style="font-size:13px;font-weight:500;">New order — prepare for pickup</div>
-          <div style="font-size:12px;color:var(--grey);margin-top:2px;">Tara Bell ordered Duality Crop Top (S) — not yet collected</div>
-          <div style="font-size:11px;color:var(--grey);margin-top:4px;">8:14am · Retail</div>
-        </div>
-      </div>
-      <div class="notif-action-row" id="al-ni-2" data-label="New student today — Priya Sharma, Level 1 5:30pm" style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;">
-        <input type="checkbox" style="accent-color:var(--lime);width:16px;height:16px;flex-shrink:0;margin-top:2px;" onchange="markNotifDone(this,2)" />
-        <span style="font-size:18px;line-height:1;">👋</span>
-        <div style="flex:1;">
-          <div style="font-size:13px;font-weight:500;">New student coming today — please greet</div>
-          <div style="font-size:12px;color:var(--grey);margin-top:2px;">Priya Sharma · Level 1 at 5:30pm · Instructor: Chloe · Waiver not yet signed</div>
-          <div style="font-size:11px;color:var(--lime);margin-top:4px;">Today · Student</div>
-        </div>
-      </div>
-      <div class="notif-action-row" id="al-ni-3" data-label="Injury check-in overdue — Jess Malone" style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:#1a0505;border:1px solid #3a1010;border-radius:10px;">
-        <input type="checkbox" style="accent-color:var(--lime);width:16px;height:16px;flex-shrink:0;margin-top:2px;" onchange="markNotifDone(this,3)" />
-        <span style="font-size:18px;line-height:1;">🩹</span>
-        <div style="flex:1;">
-          <div style="font-size:13px;font-weight:500;">Injury check-in overdue</div>
-          <div style="font-size:12px;color:var(--grey);margin-top:2px;">Jess Malone · right shoulder impingement · check-in was due 17 May</div>
-          <div style="font-size:11px;color:var(--amber);margin-top:4px;">Overdue · Health</div>
-          <button class="btn btn-ghost btn-xs" style="margin-top:6px;" onclick="openStudentDetail(STUDENTS.find(function(s){return s.name==='Jess Malone';}))">View Student Notes →</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="al-completed" class="subscreen">
-    <div id="al-completed-list" style="display:flex;flex-direction:column;gap:8px;">
-      <div style="font-size:13px;color:var(--grey);padding:20px 0;text-align:center;">No items completed yet today. Tick items above to move them here.</div>
-    </div>
-  </div>
-
-  <div id="al-history" class="subscreen">
-    <div class="tbl-section">
-      <table>
-        <thead><tr><th>Date</th><th>Item</th><th>Type</th><th>Completed by</th><th>Time</th></tr></thead>
-        <tbody>
-          <tr><td style="color:var(--grey);">12 May</td><td>New order — Jess Malone: Pole Shorts (M)</td><td><span class="tag tag-grey" style="font-size:10px;">Retail</span></td><td>Mimi</td><td style="color:var(--grey);">10:14am</td></tr>
-          <tr><td style="color:var(--grey);">11 May</td><td>Injury check-in — Ruby Kim</td><td><span class="tag tag-grey" style="font-size:10px;">Health</span></td><td>Chloe</td><td style="color:var(--grey);">6:45pm</td></tr>
-          <tr><td style="color:var(--grey);">11 May</td><td>New order — Nina Torres: Grip Aid (Small)</td><td><span class="tag tag-grey" style="font-size:10px;">Retail</span></td><td>Mimi</td><td style="color:var(--grey);">9:02am</td></tr>
-          <tr><td style="color:var(--grey);">10 May</td><td>Exemption request — Amber Cole ($40 workshop)</td><td><span class="tag tag-grey" style="font-size:10px;">Payment</span></td><td>Mimi</td><td style="color:var(--grey);">2:30pm</td></tr>
-          <tr><td style="color:var(--grey);">9 May</td><td>New student today — Zoe Clarke, Level 1</td><td><span class="tag tag-grey" style="font-size:10px;">Student</span></td><td>Chloe</td><td style="color:var(--grey);">5:28pm</td></tr>
-          <tr><td style="color:var(--grey);">8 May</td><td>New order — Sophie Lawson: Pole Shorts (XS)</td><td><span class="tag tag-grey" style="font-size:10px;">Retail</span></td><td>Mimi</td><td style="color:var(--grey);">11:20am</td></tr>
-          <tr><td style="color:var(--grey);">7 May</td><td>Catch-up approved — Jess Malone</td><td><span class="tag tag-grey" style="font-size:10px;">Catch-up</span></td><td>Mimi</td><td style="color:var(--grey);">3:15pm</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-
 <!-- Season Class Detail Modal -->
 <div class="modal-overlay" id="modal-season-class-detail">
   <div class="modal" style="max-width:600px;">
