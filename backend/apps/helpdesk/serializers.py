@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Ticket, TicketMessage
+from .models import Ticket, TicketMessage, Conversation, DirectMessage
 from apps.users.serializers import UserMinimalSerializer
 
 
@@ -45,3 +45,47 @@ class TicketListSerializer(serializers.ModelSerializer):
     def get_last_message_at(self, obj):
         last = obj.messages.last()
         return last.created_at if last else obj.created_at
+
+
+class DirectMessageSerializer(serializers.ModelSerializer):
+    sender_detail = UserMinimalSerializer(source='sender', read_only=True)
+
+    class Meta:
+        model = DirectMessage
+        fields = ('id', 'conversation', 'sender', 'sender_detail', 'body', 'created_at')
+        read_only_fields = ('id', 'sender', 'created_at')
+
+
+class ConversationSerializer(serializers.ModelSerializer):
+    student_detail = UserMinimalSerializer(source='student', read_only=True)
+    messages = DirectMessageSerializer(many=True, read_only=True)
+    last_message_at = serializers.SerializerMethodField()
+    message_count = serializers.IntegerField(source='messages.count', read_only=True)
+
+    class Meta:
+        model = Conversation
+        fields = ('id', 'student', 'student_detail', 'messages', 'message_count', 'last_message_at', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'created_at', 'updated_at')
+
+    def get_last_message_at(self, obj):
+        last = obj.messages.last()
+        return last.created_at if last else obj.updated_at
+
+
+class ConversationListSerializer(serializers.ModelSerializer):
+    student_detail = UserMinimalSerializer(source='student', read_only=True)
+    last_message_at = serializers.SerializerMethodField()
+    message_count = serializers.IntegerField(source='messages.count', read_only=True)
+    last_message_preview = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Conversation
+        fields = ('id', 'student', 'student_detail', 'message_count', 'last_message_at', 'last_message_preview', 'created_at', 'updated_at')
+
+    def get_last_message_at(self, obj):
+        last = obj.messages.last()
+        return last.created_at if last else obj.updated_at
+
+    def get_last_message_preview(self, obj):
+        last = obj.messages.last()
+        return last.body[:80] if last else ''

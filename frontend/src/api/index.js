@@ -44,6 +44,13 @@ export const seasons = {
   delete: (id) => client.delete(`/api/classes/seasons/${id}/`),
 }
 
+export const lockers = {
+  list: () => client.get('/api/classes/lockers/'),
+  create: (data) => client.post('/api/classes/lockers/', data),
+  update: (id, data) => client.patch(`/api/classes/lockers/${id}/`, data),
+  delete: (id) => client.delete(`/api/classes/lockers/${id}/`),
+}
+
 export const helpdesk = {
   list: (params) => client.get('/api/helpdesk/', { params }),
   get: (id) => client.get(`/api/helpdesk/${id}/`),
@@ -51,6 +58,10 @@ export const helpdesk = {
   update: (id, data) => client.patch(`/api/helpdesk/${id}/`, data),
   messages: (ticketId) => client.get(`/api/helpdesk/${ticketId}/messages/`),
   reply: (ticketId, data) => client.post(`/api/helpdesk/${ticketId}/messages/`, data),
+  conversations: (params) => client.get('/api/helpdesk/conversations/', { params }),
+  getConversation: (id) => client.get(`/api/helpdesk/conversations/${id}/`),
+  dms: (convId) => client.get(`/api/helpdesk/conversations/${convId}/messages/`),
+  sendDm: (convId, data) => client.post(`/api/helpdesk/conversations/${convId}/messages/`, data),
 }
 
 export const homework = {
@@ -70,4 +81,9 @@ export const users = {
   bulkImport: (formData) => client.post('/api/users/import/', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
+}
+
+export const settings = {
+  get: () => client.get('/api/users/settings/'),
+  save: (data) => client.patch('/api/users/settings/', data),
 }

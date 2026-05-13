@@ -91,3 +91,17 @@ class Season(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Locker(models.Model):
+    number = models.PositiveIntegerField(unique=True)
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='lockers')
+    notes = models.TextField(blank=True)
+    expires_at = models.DateField(null=True, blank=True)
+    assigned_at = models.DateField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['number']
+
+    def __str__(self):
+        return f'Locker #{self.number}'

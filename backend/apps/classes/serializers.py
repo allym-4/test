@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Studio, ClassSession, ClassOccurrence, Season
+from .models import Studio, ClassSession, ClassOccurrence, Season, Locker
 from apps.users.serializers import UserMinimalSerializer
 
 
@@ -43,3 +43,12 @@ class SeasonSerializer(serializers.ModelSerializer):
         model = Season
         fields = ('id', 'name', 'start_date', 'end_date', 'status', 'notes', 'created_at')
         read_only_fields = ('id', 'created_at')
+
+
+class LockerSerializer(serializers.ModelSerializer):
+    assigned_to_detail = UserMinimalSerializer(source='assigned_to', read_only=True)
+
+    class Meta:
+        model = Locker
+        fields = ('id', 'number', 'assigned_to', 'assigned_to_detail', 'notes', 'expires_at', 'assigned_at')
+        read_only_fields = ('id',)

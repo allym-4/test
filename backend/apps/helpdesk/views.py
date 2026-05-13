@@ -1,7 +1,10 @@
 from rest_framework import generics, permissions
 from rest_framework.response import Response
-from .models import Ticket, TicketMessage
-from .serializers import TicketSerializer, TicketListSerializer, TicketMessageSerializer
+from .models import Ticket, TicketMessage, Conversation, DirectMessage
+from .serializers import (
+    TicketSerializer, TicketListSerializer, TicketMessageSerializer,
+    ConversationSerializer, ConversationListSerializer, DirectMessageSerializer,
+)
 from apps.users.permissions import IsAdminOrInstructor
 
 
@@ -43,3 +46,32 @@ class TicketMessageListView(generics.ListCreateAPIView):
         if ticket.status == 'open':
             ticket.status = 'pending'
             ticket.save(update_fields=['status'])
+
+
+class ConversationListView(generics.ListCreateAPIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def get_serializer_class(self):
+        return ConversationListSerializer if self.request.method == 'GET' else ConversationSerializer
+
+    def get_queryset(self):
+        return Conversation.objects.select_related('student').prefetch_related('messages__sender')
+
+
+class ConversationDetailView(generics.RetrieveAPIView):
+    queryset = Conversation.objects.select_related('student').prefetch_related('messages__sender')
+    serializer_class = ConversationSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class DirectMessageListView(generics.ListCreateAPIView):
+    serializer_class = DirectMessageSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+    def get_queryset(self):
+        return DirectMessage.objects.filter(conversation_id=self.kwargs['conv_pk']).select_related('sender')
+
+    def perform_create(self, serializer):
+        conv = Conversation.objects.get(pk=self.kwargs['conv_pk'])
+        serializer.save(sender=self.request.user, conversation=conv)
+        conv.save(update_fields=['updated_at'])

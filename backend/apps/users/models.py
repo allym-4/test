@@ -74,3 +74,34 @@ class Lead(models.Model):
 
     def __str__(self):
         return f'{self.name} ({self.status})'
+
+
+class StudioSettings(models.Model):
+    studio_name = models.CharField(max_length=100, default='Duality Pole Studio')
+    email = models.EmailField(default='hello@dualitypole.com.au')
+    phone = models.CharField(max_length=30, blank=True)
+    instagram = models.CharField(max_length=100, blank=True)
+    timezone = models.CharField(max_length=50, default='Australia/Sydney')
+    tagline = models.CharField(max_length=200, blank=True)
+    primary_colour = models.CharField(max_length=20, default='#CCFF00')
+    enquiries_email = models.EmailField(blank=True)
+    urgent_email = models.EmailField(blank=True)
+    cancellation_window_hours = models.PositiveIntegerField(default=24)
+    no_show_fee = models.DecimalField(max_digits=6, decimal_places=2, default=20)
+    late_cancel_fee = models.DecimalField(max_digits=6, decimal_places=2, default=10)
+    credit_expiry_days = models.PositiveIntegerField(default=60)
+    max_freeze_weeks = models.PositiveIntegerField(default=8)
+    gst_registered = models.BooleanField(default=True)
+    abn = models.CharField(max_length=30, blank=True)
+
+    class Meta:
+        verbose_name = 'Studio Settings'
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj

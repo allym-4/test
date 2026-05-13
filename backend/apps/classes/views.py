@@ -1,6 +1,6 @@
 from rest_framework import generics, permissions
-from .models import Studio, ClassSession, ClassOccurrence, Season
-from .serializers import StudioSerializer, ClassSessionSerializer, ClassOccurrenceSerializer, SeasonSerializer
+from .models import Studio, ClassSession, ClassOccurrence, Season, Locker
+from .serializers import StudioSerializer, ClassSessionSerializer, ClassOccurrenceSerializer, SeasonSerializer, LockerSerializer
 from apps.users.permissions import IsAdminOrInstructor
 
 
@@ -59,4 +59,16 @@ class SeasonListView(generics.ListCreateAPIView):
 class SeasonDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Season.objects.all()
     serializer_class = SeasonSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class LockerListView(generics.ListCreateAPIView):
+    queryset = Locker.objects.select_related('assigned_to')
+    serializer_class = LockerSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class LockerDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Locker.objects.select_related('assigned_to')
+    serializer_class = LockerSerializer
     permission_classes = [IsAdminOrInstructor]

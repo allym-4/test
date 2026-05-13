@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, StaffNote, Lead
+from .models import User, StaffNote, Lead, StudioSettings
 
 
 class UserMinimalSerializer(serializers.ModelSerializer):
@@ -61,3 +61,14 @@ class LeadSerializer(serializers.ModelSerializer):
             'assigned_to', 'assigned_to_name', 'created_at', 'updated_at',
         )
         read_only_fields = ('id', 'created_at', 'updated_at')
+
+
+class StudioSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudioSettings
+        fields = (
+            'studio_name', 'email', 'phone', 'instagram', 'timezone', 'tagline',
+            'primary_colour', 'enquiries_email', 'urgent_email',
+            'cancellation_window_hours', 'no_show_fee', 'late_cancel_fee',
+            'credit_expiry_days', 'max_freeze_weeks', 'gst_registered', 'abn',
+        )

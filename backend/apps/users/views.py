@@ -6,8 +6,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db import transaction
 from django.db.models import Q
-from .models import User, StaffNote, Lead
-from .serializers import UserSerializer, UserCreateSerializer, StaffNoteSerializer, LeadSerializer
+from .models import User, StaffNote, Lead, StudioSettings
+from .serializers import UserSerializer, UserCreateSerializer, StaffNoteSerializer, LeadSerializer, StudioSettingsSerializer
 from .permissions import IsAdminOrInstructor, IsAdminUser
 
 
@@ -164,4 +164,19 @@ class LeadDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Lead.objects.select_related('assigned_to')
     serializer_class = LeadSerializer
     permission_classes = [IsAdminOrInstructor]
+
+
+class StudioSettingsView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        settings = StudioSettings.get()
+        return Response(StudioSettingsSerializer(settings).data)
+
+    def patch(self, request):
+        settings = StudioSettings.get()
+        serializer = StudioSettingsSerializer(settings, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 

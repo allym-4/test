@@ -49,3 +49,28 @@ class TicketMessage(models.Model):
 
     def __str__(self):
         return f'Message on #{self.ticket_id} by {self.sender}'
+
+
+class Conversation(models.Model):
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='conversations')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f'Conversation with {self.student}'
+
+
+class DirectMessage(models.Model):
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='direct_messages')
+    body = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'DM from {self.sender} in convo #{self.conversation_id}'
