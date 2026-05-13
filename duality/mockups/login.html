@@ -195,14 +195,17 @@ var ACCOUNTS = {
 
 function buildDest(filename) {
   var loc = window.location.href;
-  // When served via htmlpreview, the URL is: https://htmlpreview.github.io/?https://raw.../login.html
-  // Strip login.html and replace with the target filename, keeping the wrapper intact
+  var rawBase;
   if (loc.indexOf('htmlpreview.github.io') !== -1) {
-    var rawBase = loc.split('?')[1] || loc;
-    rawBase = rawBase.replace(/[^/]+\.html$/, '');
+    // https://htmlpreview.github.io/?https://raw.githubusercontent.com/.../login.html
+    rawBase = (loc.split('?')[1] || loc).replace(/[^/]+\.html[^/]*$/, '');
     return 'https://htmlpreview.github.io/?' + rawBase + filename;
   }
-  // Local / direct access — relative path works fine
+  if (loc.indexOf('raw.githubusercontent.com') !== -1) {
+    // Page loaded directly from raw — wrap destination in htmlpreview
+    rawBase = loc.replace(/[^/]+\.html[^/]*$/, '');
+    return 'https://htmlpreview.github.io/?' + rawBase + filename;
+  }
   return filename;
 }
 
