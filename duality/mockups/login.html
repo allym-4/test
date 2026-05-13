@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Duality Pole Studio — Sign In</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --lime: #DBFF00;
+    --amber: #ffaa00;
+    --lav: #CDA5FF;
+    --white: #f0f0f0;
+    --grey: #888;
+    --border: #222;
+    --bg: #0a0a0a;
+  }
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'Archivo', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .login-wrap {
+    width: 100%;
+    max-width: 420px;
+    padding: 24px;
+  }
+  .logo {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .logo span { color: var(--grey); }
+  .tagline {
+    text-align: center;
+    font-size: 12px;
+    color: var(--grey);
+    margin-bottom: 40px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .card {
+    background: #111;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 32px;
+  }
+  .card-title {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 20px;
+    margin-bottom: 6px;
+  }
+  .card-sub {
+    font-size: 13px;
+    color: var(--grey);
+    margin-bottom: 28px;
+  }
+  .field { margin-bottom: 18px; }
+  label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--grey);
+    margin-bottom: 6px;
+  }
+  input[type="email"], input[type="password"] {
+    width: 100%;
+    background: #1a1a1a;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--white);
+    font-family: 'Archivo', sans-serif;
+    font-size: 14px;
+    padding: 11px 14px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus { border-color: #444; }
+  .btn-login {
+    width: 100%;
+    background: var(--lime);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 14px;
+    padding: 13px;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: opacity 0.15s;
+  }
+  .btn-login:hover { opacity: 0.9; }
+  .hint {
+    margin-top: 28px;
+    background: #0f0f0f;
+    border: 1px solid #1e1e1e;
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .hint-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--grey);
+    margin-bottom: 10px;
+  }
+  .hint-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #1a1a1a;
+    font-size: 12px;
+  }
+  .hint-row:last-child { border-bottom: none; }
+  .hint-email { color: var(--grey); font-family: monospace; }
+  .hint-role {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .role-founder { background: var(--lime); color: #000; }
+  .role-staff   { background: var(--lav); color: #000; }
+  .role-student { background: #222; color: var(--white); }
+  .error-msg {
+    display: none;
+    background: #2a0000;
+    border: 1px solid #ff3333;
+    border-radius: 8px;
+    color: #ff9999;
+    font-size: 13px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+  }
+</style>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="logo">DUALITY <span>POLE</span></div>
+  <div class="tagline">Studio Management</div>
+
+  <div class="card">
+    <div class="card-title">Sign in</div>
+    <div class="card-sub">Enter your email and password to continue.</div>
+
+    <div class="error-msg" id="error-msg">Incorrect email or password. Try one of the demo accounts below.</div>
+
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="email" placeholder="you@example.com" autocomplete="email" />
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+    <button class="btn-login" onclick="doLogin()">Sign in →</button>
+  </div>
+
+  <!-- Demo hint -->
+  <div class="hint">
+    <div class="hint-title">Demo accounts</div>
+    <div class="hint-row">
+      <span class="hint-email">mimi@dualitypole.com.au</span>
+      <span class="hint-role role-founder">Founder</span>
+    </div>
+    <div class="hint-row">
+      <span class="hint-email">chloe@dualitypole.com.au</span>
+      <span class="hint-role role-staff">Instructor</span>
+    </div>
+    <div class="hint-row">
+      <span class="hint-email">jess@gmail.com</span>
+      <span class="hint-role role-student">Student</span>
+    </div>
+    <div style="font-size:11px;color:var(--grey);margin-top:10px;">Any password works for demo accounts.</div>
+  </div>
+</div>
+
+<script>
+var ACCOUNTS = {
+  'mimi@dualitypole.com.au':  { role: 'founder',   dest: 'admin-founder.html' },
+  'chloe@dualitypole.com.au': { role: 'instructor', dest: 'admin-staff.html'   },
+  'viv@dualitypole.com.au':   { role: 'instructor', dest: 'admin-staff.html'   },
+  'maz@dualitypole.com.au':   { role: 'instructor', dest: 'admin-staff.html'   },
+  'jess@gmail.com':           { role: 'student',    dest: 'student-ux.html'    },
+};
+
+function doLogin() {
+  var email = document.getElementById('email').value.trim().toLowerCase();
+  var acc = ACCOUNTS[email];
+  var errEl = document.getElementById('error-msg');
+  if (!acc) {
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+  window.location.href = acc.dest;
+}
+
+// Allow Enter key to submit
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doLogin();
+});
+
+// Pre-fill on hint row click
+document.querySelectorAll('.hint-row').forEach(function(row) {
+  row.style.cursor = 'pointer';
+  row.addEventListener('click', function() {
+    var email = row.querySelector('.hint-email').textContent;
+    document.getElementById('email').value = email;
+    document.getElementById('password').value = 'demo';
+    document.getElementById('password').focus();
+  });
+});
+</script>
+</body>
+</html>

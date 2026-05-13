@@ -271,7 +271,12 @@ tr:hover td { background: #0d0d0d; }
   <div class="sidebar-footer">
     <div class="user-badge">
       <div class="avatar" style="background:var(--lav);">C</div>
-      <div><div class="user-name">Chloe</div><div class="user-role">Instructor</div></div>
+      <div><div class="user-name">Chloe</div><div class="user-role" id="sidebar-role-label">Instructor</div></div>
+    </div>
+    <!-- Staff / Student account toggle -->
+    <div style="margin-top:14px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:4px;display:flex;gap:4px;">
+      <button id="toggle-staff-btn" onclick="switchAccountView('staff')" style="flex:1;background:var(--lav);color:#000;border:none;border-radius:7px;font-family:'Archivo Black',sans-serif;font-size:11px;padding:7px 4px;cursor:pointer;">Staff</button>
+      <button id="toggle-student-btn" onclick="switchAccountView('student')" style="flex:1;background:transparent;color:var(--grey);border:none;border-radius:7px;font-family:'Archivo Black',sans-serif;font-size:11px;padding:7px 4px;cursor:pointer;">Student</button>
     </div>
   </div>
 </aside>
@@ -1915,6 +1920,119 @@ function acceptCover(rowId) {
     </div>
   </div>
 </div>
+
+<!-- ===== STUDENT VIEW SCREENS ===== -->
+<!-- These replace the staff nav when in Student mode -->
+<div id="student-view-wrap" style="display:none;position:fixed;inset:0;z-index:50;background:var(--bg);display:none;flex-direction:column;">
+  <!-- Student topbar -->
+  <div style="background:#111;border-bottom:1px solid var(--border);padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+    <div style="font-family:'Archivo Black',sans-serif;font-size:15px;">DUALITY <span style="color:var(--grey);">POLE</span> <span style="font-size:11px;color:var(--lav);margin-left:8px;">MY STUDENT ACCOUNT</span></div>
+    <button onclick="switchAccountView('staff')" style="background:transparent;border:1px solid var(--border);color:var(--grey);border-radius:8px;font-family:'Archivo Black',sans-serif;font-size:11px;padding:6px 14px;cursor:pointer;">← Back to Staff View</button>
+  </div>
+  <!-- Student content -->
+  <div style="flex:1;overflow-y:auto;padding:28px 32px;max-width:800px;margin:0 auto;width:100%;">
+    <!-- Profile header -->
+    <div style="display:flex;align-items:center;gap:18px;margin-bottom:28px;">
+      <div style="width:64px;height:64px;border-radius:50%;background:var(--lav);display:flex;align-items:center;justify-content:center;font-family:'Archivo Black',sans-serif;font-size:26px;color:#000;">C</div>
+      <div>
+        <div style="font-family:'Archivo Black',sans-serif;font-size:22px;">Chloe Nguyen</div>
+        <div style="font-size:13px;color:var(--grey);margin-top:2px;">chloe@dualitypole.com.au · Member since Feb 2023</div>
+        <div style="display:flex;gap:8px;margin-top:6px;">
+          <span style="background:#0f1600;border:1px solid var(--lime);border-radius:4px;font-size:11px;padding:2px 8px;color:var(--lime);">Level 5</span>
+          <span style="background:#1a0a2a;border:1px solid var(--lav);border-radius:4px;font-size:11px;padding:2px 8px;color:var(--lav);">High Tricks</span>
+          <span style="background:#111;border:1px solid var(--border);border-radius:4px;font-size:11px;padding:2px 8px;color:var(--grey);">Staff</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- My enrolments -->
+    <div style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:12px;">Season 4 Enrolments</div>
+    <div style="background:#111;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:24px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);">
+        <div><div style="font-size:14px;font-weight:600;">Level 5</div><div style="font-size:12px;color:var(--grey);margin-top:2px;">Wed 7:30pm · Mimi · The Box</div></div>
+        <span style="background:#0f1600;border:1px solid var(--lime);border-radius:4px;font-size:11px;padding:2px 8px;color:var(--lime);">Enrolled</span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;">
+        <div><div style="font-size:14px;font-weight:600;">High Tricks</div><div style="font-size:12px;color:var(--grey);margin-top:2px;">Thu 8:00pm · Mimi · Rhapsody</div></div>
+        <span style="background:#0f1600;border:1px solid var(--lime);border-radius:4px;font-size:11px;padding:2px 8px;color:var(--lime);">Enrolled</span>
+      </div>
+    </div>
+
+    <!-- Balance -->
+    <div style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:12px;">Payments</div>
+    <div style="background:#111;border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:24px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <span style="font-size:13px;color:var(--grey);">Current balance</span>
+        <span style="font-family:'Archivo Black',sans-serif;font-size:20px;color:var(--lime);">$0</span>
+      </div>
+      <div style="font-size:12px;color:var(--grey);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.6px;">Staff discount applied — 100% off Season 4</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr style="color:var(--grey);font-size:11px;text-transform:uppercase;letter-spacing:0.6px;"><th style="text-align:left;padding:6px 0;font-weight:400;">Date</th><th style="text-align:left;padding:6px 0;font-weight:400;">Description</th><th style="text-align:right;padding:6px 0;font-weight:400;">Amount</th></tr></thead>
+        <tbody>
+          <tr style="border-top:1px solid var(--border);"><td style="padding:10px 0;color:var(--grey);">11 May 2026</td><td style="padding:10px 0;">Season 4 — staff comp</td><td style="padding:10px 0;text-align:right;color:var(--lime);">$0</td></tr>
+          <tr style="border-top:1px solid var(--border);"><td style="padding:10px 0;color:var(--grey);">4 Mar 2026</td><td style="padding:10px 0;">Season 3 — staff comp</td><td style="padding:10px 0;text-align:right;color:var(--lime);">$0</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Upcoming bookings -->
+    <div style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:12px;">This Week</div>
+    <div style="background:#111;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:24px;">
+      <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <div><div style="font-size:14px;font-weight:600;">Level 5</div><div style="font-size:12px;color:var(--grey);margin-top:2px;">Wed 14 May · 7:30pm</div></div>
+        <span style="background:#0f1600;color:var(--lime);border-radius:4px;font-size:11px;padding:2px 8px;">Booked</span>
+      </div>
+      <div style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;">
+        <div><div style="font-size:14px;font-weight:600;">High Tricks</div><div style="font-size:12px;color:var(--grey);margin-top:2px;">Thu 15 May · 8:00pm</div></div>
+        <span style="background:#0f1600;color:var(--lime);border-radius:4px;font-size:11px;padding:2px 8px;">Booked</span>
+      </div>
+    </div>
+
+    <!-- Forms & docs -->
+    <div style="font-family:'Archivo Black',sans-serif;font-size:15px;margin-bottom:12px;">Forms & Documents</div>
+    <div style="background:#111;border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+      <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:13px;font-weight:500;">Studio Waiver</div>
+        <span style="background:#0f1600;color:var(--lime);border-radius:4px;font-size:11px;padding:2px 8px;">Signed</span>
+      </div>
+      <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:13px;font-weight:500;">Health & PAR-Q</div>
+        <span style="background:#0f1600;color:var(--lime);border-radius:4px;font-size:11px;padding:2px 8px;">Complete</span>
+      </div>
+      <div style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:13px;font-weight:500;">Photo Consent</div>
+        <span style="background:#0f1600;color:var(--lime);border-radius:4px;font-size:11px;padding:2px 8px;">Granted</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Staff / Student account toggle ───────────────────────────────────────────
+var _accountView = 'staff';
+function switchAccountView(mode) {
+  _accountView = mode;
+  var wrap = document.getElementById('student-view-wrap');
+  var staffBtn = document.getElementById('toggle-staff-btn');
+  var studentBtn = document.getElementById('toggle-student-btn');
+  var roleLabel = document.getElementById('sidebar-role-label');
+  if (mode === 'student') {
+    wrap.style.display = 'flex';
+    staffBtn.style.background = 'transparent';
+    staffBtn.style.color = 'var(--grey)';
+    studentBtn.style.background = 'var(--lime)';
+    studentBtn.style.color = '#000';
+    if (roleLabel) roleLabel.textContent = 'Viewing as Student';
+  } else {
+    wrap.style.display = 'none';
+    staffBtn.style.background = 'var(--lav)';
+    staffBtn.style.color = '#000';
+    studentBtn.style.background = 'transparent';
+    studentBtn.style.color = 'var(--grey)';
+    if (roleLabel) roleLabel.textContent = 'Instructor';
+  }
+}
+</script>
 
 </body>
 </html>
