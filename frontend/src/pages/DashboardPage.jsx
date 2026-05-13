@@ -1,9 +1,21 @@
 import { useAuth } from '../contexts/AuthContext'
 import { useApi } from '../hooks/useApi'
-import { classes, homework } from '../api'
+import { classes, homework, attendance } from '../api'
 import { Link } from 'react-router-dom'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const DAYS_LONG = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+function greeting() {
+  const h = new Date().getHours()
+  if (h < 12) return 'Good morning'
+  if (h < 17) return 'Good afternoon'
+  return 'Good evening'
+}
+
+function todayLabel() {
+  return new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+}
 
 export default function DashboardPage() {
   const { user } = useAuth()
@@ -13,73 +25,132 @@ export default function DashboardPage() {
   const sessions = sessionsData?.results || []
   const assignments = hwData?.results || []
 
+  const todayDow = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1
+  const todaySessions = sessions.filter(s => s.day_of_week === todayDow)
+  const pendingReview = assignments.filter(a => a.submission_count > 0).length
+
   return (
     <div>
       <div className="page-header">
         <div>
-          <div className="page-title">Hey {user?.first_name} 👋</div>
-          <div className="page-sub">Here's what's on today</div>
+          <div className="page-title">{greeting()}, {user?.first_name}</div>
+          <div className="page-sub">{todayLabel()}</div>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '24px' }}>
-        <StatCard label="Active Classes" value={sessions.length} loading={loadingSessions} />
-        <StatCard label="Active Homework" value={assignments.length} loading={loadingHw} />
-        <StatCard label="Pending Review" value={assignments.filter(a => a.submission_count > 0).length} loading={loadingHw} color="var(--amber)" />
+      {/* KPI strip */}
+      <div className="kpi-grid">
+        <Link to="/classes" className="kpi kpi-lime" style={{ textDecoration: 'none' }}>
+          <div className="kpi-label">Students Today</div>
+          <div className="kpi-value">
+            {loadingSessions ? '—' : todaySessions.reduce((s, c) => s + (c.enrolled_count || 0), 0)}
+          </div>
+          <div className="kpi-sub">Across {todaySessions.length} class{todaySessions.length !== 1 ? 'es' : ''} →</div>
+        </Link>
+        <Link to="/homework" className="kpi kpi-lav" style={{ textDecoration: 'none' }}>
+          <div className="kpi-label">Homework Pending</div>
+          <div className="kpi-value">{loadingHw ? '—' : pendingReview}</div>
+          <div className="kpi-sub">Submissions to review →</div>
+        </Link>
+        <div className="kpi kpi-amber">
+          <div className="kpi-label">Active Assignments</div>
+          <div className="kpi-value">{loadingHw ? '—' : assignments.length}</div>
+          <div className="kpi-sub">Across your classes</div>
+        </div>
+        <div className="kpi kpi-red">
+          <div className="kpi-label">Your Classes</div>
+          <div className="kpi-value">{loadingSessions ? '—' : sessions.length}</div>
+          <div className="kpi-sub">Total active →</div>
+        </div>
       </div>
 
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: '12px', fontWeight: 500 }}>
-          Your Classes
+      {/* Today's classes */}
+      {!loadingSessions && todaySessions.length > 0 && (
+        <div style={{ marginBottom: 28 }}>
+          <div className="section-title" style={{ fontSize: 15, marginBottom: 14 }}>Your Classes Today</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {todaySessions.map(s => {
+              const isFull = s.enrolled_count >= s.capacity
+              return (
+                <Link key={s.id} to={`/classes/${s.id}/attendance`} className="class-card-today" style={{ textDecoration: 'none' }}>
+                  <div className="class-time-block">
+                    <div className="class-day-label">{DAYS[s.day_of_week]}</div>
+                    <div className="class-time-label">{s.start_time?.slice(0, 5)}</div>
+                  </div>
+                  <div className="class-info">
+                    <div className="class-name-large">{s.name}</div>
+                    <div className="class-meta-row">{s.studio_detail?.name} · {s.enrolled_count}/{s.capacity} enrolled</div>
+                    <div style={{ marginTop: 6 }}>
+                      <span className={`tag ${isFull ? 'tag-amber' : 'tag-lime'}`}>{isFull ? 'Full' : 'Active'}</span>
+                      <span style={{ fontSize: 12, color: 'var(--grey)', marginLeft: 8 }}>Register not yet saved</span>
+                    </div>
+                  </div>
+                  <div className="class-go-btn">Take Attendance →</div>
+                </Link>
+              )
+            })}
+          </div>
         </div>
+      )}
+
+      {/* All classes this week */}
+      <div style={{ marginBottom: 28 }}>
+        <div className="section-title" style={{ fontSize: 15, marginBottom: 14 }}>Your Upcoming This Week</div>
         {loadingSessions ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '32px' }}><div className="spinner" /></div>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}><div className="spinner" /></div>
         ) : sessions.length === 0 ? (
-          <div className="empty-state">No active classes</div>
+          <div className="empty-state">No classes this week</div>
         ) : (
           <div className="list-card">
-            {sessions.map(s => (
-              <Link key={s.id} to={`/classes/${s.id}/attendance`} className="list-row clickable">
-                <div style={{ width: 40, flexShrink: 0, textAlign: 'center' }}>
-                  <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, color: 'var(--lime)' }}>
-                    {DAYS[s.day_of_week]}
+            {sessions.map(s => {
+              const isFull = s.enrolled_count >= s.capacity
+              return (
+                <Link key={s.id} to={`/classes/${s.id}/attendance`} className="list-row clickable" style={{ textDecoration: 'none' }}>
+                  <div className="list-time">
+                    <div className="list-time-val">{s.start_time?.slice(0, 5)}</div>
+                    <div className="list-time-day">{DAYS[s.day_of_week]}</div>
                   </div>
-                  <div style={{ fontSize: 10, color: 'var(--grey)' }}>
-                    {s.start_time?.slice(0, 5)}
+                  <div className="list-body">
+                    <div className="list-title">{s.name} · {s.studio_detail?.name}</div>
+                    <div className="list-sub">{s.enrolled_count}/{s.capacity} enrolled</div>
                   </div>
-                </div>
-                <div className="list-body">
-                  <div className="list-title">{s.name} · {s.studio_detail?.name}</div>
-                  <div className="list-sub">{s.enrolled_count}/{s.capacity} enrolled</div>
-                </div>
-                <span className="tag tag-lav" style={{ fontSize: 10 }}>{s.session_type}</span>
-              </Link>
-            ))}
+                  <div className="list-end">
+                    <span className={`tag ${isFull ? 'tag-amber' : 'tag-lime'}`} style={{ fontSize: 10 }}>
+                      {isFull ? 'Full' : 'Active'}
+                    </span>
+                    <span style={{ fontSize: 12, color: 'var(--grey)' }}>›</span>
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         )}
       </div>
 
-      {assignments.length > 0 && (
+      {/* Homework section */}
+      {!loadingHw && assignments.length > 0 && (
         <div>
-          <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: '12px', fontWeight: 500 }}>
-            Active Homework
-          </div>
-          <div className="list-card">
+          <div className="section-title" style={{ fontSize: 15, marginBottom: 14 }}>Active Homework</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             {assignments.map(a => {
               const pct = a.enrolled_count ? Math.round(a.submission_count / a.enrolled_count * 100) : 0
+              const s = a.class_session_detail
+              const pctColor = pct === 100 ? 'var(--lime)' : pct > 50 ? 'var(--amber)' : 'var(--grey)'
               return (
-                <Link key={a.id} to="/homework" className="list-row clickable">
-                  <div className="list-body">
-                    <div className="list-title">{a.title}</div>
-                    <div className="list-sub">
-                      {a.class_session_detail?.name} — {DAYS[a.class_session_detail?.day_of_week]} {a.class_session_detail?.start_time?.slice(0, 5)}
+                <Link key={a.id} to="/homework" className="hw-card" style={{ textDecoration: 'none' }}>
+                  <div className="hw-card-header">
+                    <div>
+                      <div className="hw-card-title">{a.title}</div>
+                      <div className="hw-card-meta">
+                        {s?.name} — {DAYS[s?.day_of_week]} {s?.start_time?.slice(0, 5)} · {s?.studio_detail?.name} · Assigned {a.assigned_date ? new Date(a.assigned_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+                      </div>
                     </div>
+                    <span className="tag tag-lime" style={{ fontSize: 10, flexShrink: 0 }}>Active</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                    <div style={{ width: 60 }}>
-                      <div className="progress-bar"><div className="progress-fill" style={{ width: `${pct}%` }} /></div>
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--grey)', width: 28, textAlign: 'right' }}>{pct}%</div>
+                  <div className="hw-card-progress">
+                    <span>{a.submission_count}/{a.enrolled_count} submitted</span>
+                    <div className="progress-bar"><div className="progress-fill" style={{ width: `${pct}%`, background: pctColor }} /></div>
+                    <span style={{ color: pctColor, minWidth: 28, textAlign: 'right' }}>{pct}%</span>
                   </div>
                 </Link>
               )
@@ -87,17 +158,6 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-    </div>
-  )
-}
-
-function StatCard({ label, value, loading, color = 'var(--lime)' }) {
-  return (
-    <div className="card" style={{ textAlign: 'center' }}>
-      <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color }}>
-        {loading ? '—' : value}
-      </div>
-      <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>{label}</div>
     </div>
   )
 }
