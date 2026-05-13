@@ -2278,11 +2278,11 @@ tr.clickable-row:hover td { background: #141414; }
       <!-- Top controls bar -->
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px;">
         <select id="tt-season-select" style="background:#1a1a1a;border:1px solid var(--border);color:var(--white);padding:8px 12px;border-radius:8px;font-family:inherit;">
-          <option>Season 3 (Current) — 2 Apr – 20 Jun 2025</option>
-          <option>Season 3 — 14 Jul – 12 Sep 2025</option>
+          <option>Season 4 (Current) — 11 May – 5 Jul 2026</option>
+          <option>Season 3 (Completed) — 2 Apr – 20 Jun 2025</option>
           <option>Season 2 (Completed)</option>
         </select>
-        <div style="display:flex;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+        <div id="tt-view-toggle" style="display:flex;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
           <button id="tt-view-calendar" onclick="setTTView('calendar')" style="padding:8px 16px;font-size:13px;border:none;cursor:pointer;background:var(--lime);color:#000;font-family:inherit;font-weight:600;">Calendar</button>
           <button id="tt-view-list" onclick="setTTView('list')" style="padding:8px 16px;font-size:13px;border:none;cursor:pointer;background:transparent;color:var(--grey);font-family:inherit;">List</button>
         </div>
@@ -2298,7 +2298,7 @@ tr.clickable-row:hover td { background: #141414; }
       </div>
 
       <!-- Week navigation -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div id="tt-week-nav" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
         <button class="btn btn-ghost btn-sm">← Prev Week</button>
         <div style="text-align:center;">
           <div style="font-family:'Archivo Black',sans-serif;font-size:15px;">Week of 12 May 2025</div>
@@ -2377,6 +2377,134 @@ tr.clickable-row:hover td { background: #141414; }
               <tr><td>Sat</td><td style="color:var(--grey)">11:00am</td><td><b>Choreo Intensive</b></td><td>Mimi</td><td>The Box</td><td>7/10</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs" onclick="openAttendanceRegister('Choreo Intensive','11:00am','Mimi','The Box')">Attendance</button></td></tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- ── Season Setup View ── -->
+      <div id="tt-season-view" style="display:none;">
+        <div style="font-size:13px;color:var(--grey);margin-bottom:16px;">Season 4 — 11 May to 5 Jul 2026 · 8 weeks · Click any class to view season roster or edit settings</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+
+          <div style="background:#111;border:1px solid var(--border);border-radius:10px;">
+            <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('Level 1','Mon 5:30pm','Chloe','The Box',10,12,1)">
+              <div><div style="font-weight:600;font-size:14px;">Level 1</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Mon 5:30pm</div></div>
+              <div style="font-size:13px;">Chloe <span style="color:var(--grey);">· The Box</span></div>
+              <div><div style="font-size:13px;color:var(--lime);">10/12 enrolled</div><div style="font-size:11px;color:var(--amber);margin-top:2px;">1 on waitlist</div></div>
+              <span class="tag tag-lime">Active</span>
+              <div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('Level 1','Mon 5:30pm','Chloe','The Box',10,12,1)">Roster</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('Level 1','Mon 5:30pm','Chloe','The Box',10,12,1,'edit')">Edit</button></div>
+            </div>
+          </div>
+
+          <div style="background:#111;border:1px solid #ff3333aa;border-radius:10px;">
+            <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('Level 2','Mon 6:30pm','Chloe','The Box',15,15,3)">
+              <div><div style="font-weight:600;font-size:14px;">Level 2</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Mon 6:30pm</div></div>
+              <div style="font-size:13px;">Chloe <span style="color:var(--grey);">· The Box</span></div>
+              <div><div style="font-size:13px;color:#ff6b6b;">15/15 FULL</div><div style="font-size:11px;color:var(--amber);margin-top:2px;">3 on waitlist</div></div>
+              <span class="tag tag-amber">Full</span>
+              <div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('Level 2','Mon 6:30pm','Chloe','The Box',15,15,3)">Roster</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('Level 2','Mon 6:30pm','Chloe','The Box',15,15,3,'edit')">Edit</button></div>
+            </div>
+          </div>
+
+          <div style="background:#111;border:1px solid var(--border);border-radius:10px;">
+            <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('High Tricks','Mon 7:30pm','Mimi','The Box',8,10,0)">
+              <div><div style="font-weight:600;font-size:14px;">High Tricks</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Mon 7:30pm</div></div>
+              <div style="font-size:13px;">Mimi <span style="color:var(--grey);">· The Box</span></div>
+              <div><div style="font-size:13px;color:var(--lime);">8/10 enrolled</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">No waitlist</div></div>
+              <span class="tag tag-lime">Active</span>
+              <div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('High Tricks','Mon 7:30pm','Mimi','The Box',8,10,0)">Roster</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('High Tricks','Mon 7:30pm','Mimi','The Box',8,10,0,'edit')">Edit</button></div>
+            </div>
+          </div>
+
+          <div style="background:#111;border:1px solid var(--border);border-radius:10px;">
+            <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('Inter Floor','Tue 6:30pm','Viv','Rhapsody',6,10,0)">
+              <div><div style="font-weight:600;font-size:14px;">Inter Floor</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Tue 6:30pm</div></div>
+              <div style="font-size:13px;">Viv <span style="color:var(--grey);">· Rhapsody</span></div>
+              <div><div style="font-size:13px;color:var(--lav);">6/10 enrolled</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">No waitlist</div></div>
+              <span class="tag tag-lime">Active</span>
+              <div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('Inter Floor','Tue 6:30pm','Viv','Rhapsody',6,10,0)">Roster</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('Inter Floor','Tue 6:30pm','Viv','Rhapsody',6,10,0,'edit')">Edit</button></div>
+            </div>
+          </div>
+
+          <div style="background:#111;border:1px solid var(--border);border-radius:10px;">
+            <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('Level 3','Tue 8:30pm','Chloe','Rhapsody',5,12,0)">
+              <div><div style="font-weight:600;font-size:14px;">Level 3</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Tue 8:30pm</div></div>
+              <div style="font-size:13px;">Chloe <span style="color:var(--grey);">· Rhapsody</span></div>
+              <div><div style="font-size:13px;color:var(--lime);">5/12 enrolled</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">No waitlist</div></div>
+              <span class="tag tag-lime">Active</span>
+              <div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('Level 3','Tue 8:30pm','Chloe','Rhapsody',5,12,0)">Roster</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('Level 3','Tue 8:30pm','Chloe','Rhapsody',5,12,0,'edit')">Edit</button></div>
+            </div>
+          </div>
+
+          <div style="background:#111;border:1px solid var(--border);border-radius:10px;">
+            <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('Level 1','Wed 5:30pm','Jaz','Rhapsody',9,12,2)">
+              <div><div style="font-weight:600;font-size:14px;">Level 1</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Wed 5:30pm</div></div>
+              <div style="font-size:13px;">Jaz <span style="color:var(--grey);">· Rhapsody</span></div>
+              <div><div style="font-size:13px;color:var(--lime);">9/12 enrolled</div><div style="font-size:11px;color:var(--amber);margin-top:2px;">2 on waitlist</div></div>
+              <span class="tag tag-lime">Active</span>
+              <div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('Level 1','Wed 5:30pm','Jaz','Rhapsody',9,12,2)">Roster</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('Level 1','Wed 5:30pm','Jaz','Rhapsody',9,12,2,'edit')">Edit</button></div>
+            </div>
+          </div>
+
+          <div style="background:#111;border:1px solid var(--border);border-radius:10px;">
+            <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('Level 3','Wed 7:30pm','Mimi','The Box',7,10,0)">
+              <div><div style="font-weight:600;font-size:14px;">Level 3</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Wed 7:30pm</div></div>
+              <div style="font-size:13px;">Mimi <span style="color:var(--grey);">· The Box</span></div>
+              <div><div style="font-size:13px;color:var(--lime);">7/10 enrolled</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">No waitlist</div></div>
+              <span class="tag tag-lime">Active</span>
+              <div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('Level 3','Wed 7:30pm','Mimi','The Box',7,10,0)">Roster</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('Level 3','Wed 7:30pm','Mimi','The Box',7,10,0,'edit')">Edit</button></div>
+            </div>
+          </div>
+
+          <div style="background:#111;border:1px solid var(--border);border-radius:10px;">
+            <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('Level 2','Thu 6:30pm','Jaz','Rhapsody',11,12,0)">
+              <div><div style="font-weight:600;font-size:14px;">Level 2</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Thu 6:30pm</div></div>
+              <div style="font-size:13px;">Jaz <span style="color:var(--grey);">· Rhapsody</span></div>
+              <div><div style="font-size:13px;color:var(--lime);">11/12 enrolled</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">No waitlist</div></div>
+              <span class="tag tag-lime">Active</span>
+              <div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('Level 2','Thu 6:30pm','Jaz','Rhapsody',11,12,0)">Roster</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('Level 2','Thu 6:30pm','Jaz','Rhapsody',11,12,0,'edit')">Edit</button></div>
+            </div>
+          </div>
+
+          <div style="background:#111;border:1px solid var(--border);border-radius:10px;">
+            <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('Strip Virgin','Thu 7:30pm','Viv','Rhapsody',9,12,2)">
+              <div><div style="font-weight:600;font-size:14px;">Strip Virgin</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Thu 7:30pm</div></div>
+              <div style="font-size:13px;">Viv <span style="color:var(--grey);">· Rhapsody</span></div>
+              <div><div style="font-size:13px;color:var(--lav);">9/12 enrolled</div><div style="font-size:11px;color:var(--amber);margin-top:2px;">2 on waitlist</div></div>
+              <span class="tag tag-lime">Active</span>
+              <div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('Strip Virgin','Thu 7:30pm','Viv','Rhapsody',9,12,2)">Roster</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('Strip Virgin','Thu 7:30pm','Viv','Rhapsody',9,12,2,'edit')">Edit</button></div>
+            </div>
+          </div>
+
+          <div style="background:#111;border:1px solid var(--border);border-radius:10px;">
+            <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('Dance','Fri 6:00pm','Viv','Rhapsody',8,10,0)">
+              <div><div style="font-weight:600;font-size:14px;">Dance</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Fri 6:00pm</div></div>
+              <div style="font-size:13px;">Viv <span style="color:var(--grey);">· Rhapsody</span></div>
+              <div><div style="font-size:13px;color:var(--lav);">8/10 enrolled</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">No waitlist</div></div>
+              <span class="tag tag-lime">Active</span>
+              <div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('Dance','Fri 6:00pm','Viv','Rhapsody',8,10,0)">Roster</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('Dance','Fri 6:00pm','Viv','Rhapsody',8,10,0,'edit')">Edit</button></div>
+            </div>
+          </div>
+
+          <div style="background:#111;border:1px solid var(--border);border-radius:10px;">
+            <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('Inter Floor','Fri 8:30pm','Viv','Rhapsody',4,10,0)">
+              <div><div style="font-weight:600;font-size:14px;">Inter Floor</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Fri 8:30pm</div></div>
+              <div style="font-size:13px;">Viv <span style="color:var(--grey);">· Rhapsody</span></div>
+              <div><div style="font-size:13px;color:var(--lav);">4/10 enrolled</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">No waitlist</div></div>
+              <span class="tag tag-lime">Active</span>
+              <div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('Inter Floor','Fri 8:30pm','Viv','Rhapsody',4,10,0)">Roster</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('Inter Floor','Fri 8:30pm','Viv','Rhapsody',4,10,0,'edit')">Edit</button></div>
+            </div>
+          </div>
+
+          <div style="background:#111;border:1px solid var(--border);border-radius:10px;">
+            <div style="display:grid;grid-template-columns:170px 1fr 155px 90px auto;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;" onclick="openSeasonClassDetail('Choreo Intensive','Sat 11:00am','Mimi','The Box',7,10,0)">
+              <div><div style="font-weight:600;font-size:14px;">Choreo Intensive</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Sat 11:00am</div></div>
+              <div style="font-size:13px;">Mimi <span style="color:var(--grey);">· The Box</span></div>
+              <div><div style="font-size:13px;color:var(--amber);">7/10 enrolled</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">No waitlist</div></div>
+              <span class="tag tag-lime">Active</span>
+              <div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('Choreo Intensive','Sat 11:00am','Mimi','The Box',7,10,0)">Roster</button><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openSeasonClassDetail('Choreo Intensive','Sat 11:00am','Mimi','The Box',7,10,0,'edit')">Edit</button></div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -6288,9 +6416,93 @@ function setTTView(view) {
     document.getElementById('tt-view-list').style.color='var(--grey)';
   }
 }
+function openSeasonClassDetail(name, timeslot, instructor, studio, enrolled, cap, waitlist, tab) {
+  document.getElementById('scd-class-name').textContent = name;
+  document.getElementById('scd-class-meta').textContent = timeslot + ' · ' + instructor + ' · ' + studio;
+  document.getElementById('scd-enrolled-count').textContent = enrolled;
+  document.getElementById('scd-cap').textContent = cap;
+  document.getElementById('scd-waitlist-count').textContent = waitlist;
+  document.getElementById('scd-edit-name').value = name;
+  document.getElementById('scd-edit-cap').value = cap;
+  const iSel = document.getElementById('scd-edit-instructor');
+  for (let o of iSel.options) o.selected = o.value === instructor;
+  const rSel = document.getElementById('scd-edit-room');
+  for (let o of rSel.options) o.selected = o.value === studio;
+
+  const statuses = ['Paid','Paid','Paid','Pending','Paid','Paid','Overdue','Paid','Paid','Paid','Pending','Paid','Paid','Paid','Paid'];
+  const matching = STUDENTS.filter(s => s.classes && s.classes.some(c => c.toLowerCase() === name.toLowerCase()));
+  const el = document.getElementById('scd-enrolled-list');
+  const sample = matching.length >= enrolled ? matching.slice(0, enrolled) : matching;
+  el.innerHTML = sample.map(function(s, i) {
+    const status = statuses[i % statuses.length];
+    const tagCls = status === 'Paid' ? 'tag-lime' : status === 'Pending' ? 'tag-amber' : '';
+    const tagStyle = status === 'Overdue' ? 'style="background:#3a0000;color:#ff6b6b;border:1px solid #ff3333;border-radius:4px;padding:2px 7px;font-size:11px;"' : '';
+    const initials = s.name.split(' ').map(function(n){return n[0];}).join('').slice(0,2);
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#1a1a1a;border-radius:6px;margin-bottom:4px;">' +
+      '<div style="display:flex;align-items:center;gap:10px;">' +
+      '<div class="s-avatar" style="width:28px;height:28px;font-size:11px;flex-shrink:0;">' + initials + '</div>' +
+      '<div><div style="font-size:13px;font-weight:500;">' + s.name + '</div>' +
+      '<div style="font-size:11px;color:var(--grey);">' + s.email + '</div></div></div>' +
+      '<div style="display:flex;align-items:center;gap:8px;">' +
+      (tagStyle ? '<span ' + tagStyle + '>' + status + '</span>' : '<span class="tag ' + tagCls + '">' + status + '</span>') +
+      '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation()">Remove</button></div></div>';
+  }).join('') || '<div style="color:var(--grey);font-size:13px;padding:8px 0;">No matching students found</div>';
+
+  const wl = document.getElementById('scd-waitlist-list');
+  const fallback = [{name:'Jordan Lee',email:'jordan.lee@email.com'},{name:'Sam Chen',email:'sam.chen@email.com'},{name:'Riley Park',email:'riley.park@email.com'}];
+  const wlStudents = waitlist > 0 ? fallback.slice(0, waitlist) : [];
+  wl.innerHTML = wlStudents.length === 0
+    ? '<div style="color:var(--grey);font-size:13px;padding:4px 0;">No students on waitlist</div>'
+    : wlStudents.map(function(s, i) {
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#1a1a1a;border-radius:6px;margin-bottom:4px;">' +
+        '<div style="display:flex;align-items:center;gap:10px;">' +
+        '<div style="width:22px;height:22px;background:#333;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--amber);">' + (i+1) + '</div>' +
+        '<div><div style="font-size:13px;font-weight:500;">' + s.name + '</div>' +
+        '<div style="font-size:11px;color:var(--grey);">' + s.email + '</div></div></div>' +
+        '<div style="display:flex;gap:6px;">' +
+        '<button class="btn btn-lime btn-xs" onclick="event.stopPropagation();alert('Moving ' + s.name.split(' ')[0] + ' into class')">Accept into Class</button>' +
+        '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation()">Remove</button></div></div>';
+    }).join('');
+
+  const cancelled = document.getElementById('scd-cancelled-list');
+  cancelled.innerHTML = '<div style="color:var(--grey);font-size:13px;padding:4px 0;">No cancellations this season</div>';
+
+  const tabs = document.querySelectorAll('#modal-season-class-detail .subtab');
+  if (tab === 'edit') {
+    switchSubTab(tabs[1], 'scd-edit');
+  } else {
+    switchSubTab(tabs[0], 'scd-roster');
+  }
+  openModal('modal-season-class-detail');
+}
+
+
+var _ttMode = 'attend';
 function setTTMode(mode) {
+  _ttMode = mode;
   const banner = document.getElementById('tt-setup-banner');
-  banner.style.display = mode === 'setup' ? '' : 'none';
+  const weekNav = document.getElementById('tt-week-nav');
+  const viewToggle = document.getElementById('tt-view-toggle');
+  const calGrid = document.getElementById('tt-calendar-grid');
+  const listView = document.getElementById('tt-list-view');
+  const seasonView = document.getElementById('tt-season-view');
+  const conflictBanner = document.getElementById('timetable-conflict-banner');
+  if (mode === 'setup') {
+    banner.style.display = '';
+    weekNav.style.display = 'none';
+    viewToggle.style.display = 'none';
+    if (calGrid) calGrid.style.display = 'none';
+    listView.style.display = 'none';
+    seasonView.style.display = '';
+    if (conflictBanner) conflictBanner.style.display = 'none';
+  } else {
+    banner.style.display = 'none';
+    weekNav.style.display = '';
+    viewToggle.style.display = '';
+    seasonView.style.display = 'none';
+    setTTView('calendar');
+    if (conflictBanner) conflictBanner.style.display = '';
+  }
   document.getElementById('tt-mode-attend').style.background = mode === 'attend' ? 'var(--lime)' : 'transparent';
   document.getElementById('tt-mode-attend').style.color = mode === 'attend' ? '#000' : 'var(--grey)';
   document.getElementById('tt-mode-setup').style.background = mode === 'setup' ? 'var(--amber)' : 'transparent';
