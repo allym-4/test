@@ -249,14 +249,116 @@ tr:hover td { background: #0d0d0d; }
 /* ATTENDANCE SUMMARY BANNER */
 .att-summary { background: #0f1600; border: 1px solid var(--lime); border-radius: 10px; padding: 14px 18px; margin-top: 16px; font-size: 13px; display: none; }
 .att-summary.visible { display: block; }
+
+/* ─── MOBILE ─────────────────────────────────────────── */
+.mob-topbar {
+  display: none; position: fixed; top: 0; left: 0; right: 0; height: 56px;
+  background: var(--dark); border-bottom: 1px solid var(--border);
+  z-index: 150; align-items: center; justify-content: space-between;
+  padding: 0 16px;
+}
+.mob-topbar-logo {
+  font-family: 'Archivo Black', sans-serif; font-size: 16px;
+  letter-spacing: 2px; color: var(--lime); text-transform: uppercase;
+}
+.mob-topbar-logo span { color: var(--white); }
+.mob-hamburger {
+  background: none; border: 1px solid var(--border); border-radius: 8px;
+  color: var(--grey); font-size: 18px; padding: 5px 10px; cursor: pointer; line-height: 1;
+}
+.mob-bottom-nav {
+  display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 58px;
+  background: var(--dark); border-top: 1px solid var(--border);
+  z-index: 150; align-items: center; justify-content: space-around; padding: 0 4px;
+}
+.mob-nav-item {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; flex: 1; cursor: pointer; padding: 6px 2px;
+  color: var(--grey); transition: color 0.15s; user-select: none;
+}
+.mob-nav-item.active { color: var(--lime); }
+.mob-nav-icon { font-size: 18px; line-height: 1; }
+.mob-nav-label { font-size: 10px; font-weight: 500; letter-spacing: 0.3px; }
+.sidebar-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55); z-index: 125;
+}
+body.mob-sidebar-open .sidebar-overlay { display: block; }
+
+@media (max-width: 768px) {
+  .mob-topbar { display: flex; }
+  .mob-bottom-nav { display: flex; }
+  #sidebar-close-btn { display: flex !important; }
+
+  /* Sidebar: slide-in drawer */
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.28s ease;
+    width: 85vw; max-width: 300px; min-width: 0;
+    z-index: 130;
+  }
+  body.mob-sidebar-open .sidebar { transform: translateX(0); }
+  .sidebar-logo { display: flex; align-items: center; padding: 20px 18px; }
+
+  /* Hide desktop topbar, give main room */
+  .topbar { display: none; }
+  .main { margin-left: 0; }
+  .content { padding: 72px 16px 80px; }
+
+  /* Grids collapse */
+  .kpi-grid, .kpi-row { grid-template-columns: repeat(2, 1fr) !important; }
+  .grid-2, .grid-3 { grid-template-columns: 1fr !important; }
+
+  /* Page header: stack */
+  .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .page-title { font-size: 22px; }
+
+  /* Prevent horizontal page overflow */
+  body { overflow-x: hidden; }
+
+  /* Tables: scroll within container only */
+  .tbl-section { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tbl-section table { min-width: 480px; }
+
+  /* search input: don't blow out width */
+  .search-input { min-width: 0; width: 100%; box-sizing: border-box; }
+
+  /* Subtabs: scroll */
+  .subtabs { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+  .subtab { white-space: nowrap; flex-shrink: 0; }
+
+  /* Modals: slide up */
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .modal { border-radius: 20px 20px 0 0; max-height: 92dvh; overflow-y: auto;
+    width: 100%; max-width: 100% !important; padding: 24px 20px 32px; }
+
+  /* Section titles */
+  .section-title { flex-wrap: wrap; gap: 8px; }
+
+  /* Class list rows */
+  .class-row { gap: 8px; padding: 10px 12px; }
+
+  /* Attendance table: hide less-important cols on small screens */
+  .att-hide-mob { display: none; }
+}
 </style>
 </head>
 <body>
 <div class="shell">
 
+<!-- Mobile topbar -->
+<div class="mob-topbar">
+  <button class="mob-hamburger" onclick="toggleMobSidebar()">☰</button>
+  <div class="mob-topbar-logo">DUALITY <span>POLE</span></div>
+  <div style="width:44px"></div>
+</div>
+<div class="sidebar-overlay" onclick="closeMobSidebar()"></div>
+
 <!-- SIDEBAR -->
 <aside class="sidebar">
-  <div class="sidebar-logo">DUALITY <span>POLE</span></div>
+  <div class="sidebar-logo">DUALITY <span>POLE</span>
+    <button id="sidebar-close-btn" class="mob-hamburger" onclick="closeMobSidebar()" style="margin-left:auto;display:none;">✕</button>
+  </div>
   <nav>
     <div class="nav-item active" onclick="showScreen('dashboard')"><span class="nav-icon">⬡</span> Dashboard</div>
     <div class="nav-item" onclick="showScreen('myclasses')"><span class="nav-icon">📅</span> My Classes</div>
@@ -1234,6 +1336,25 @@ tr:hover td { background: #0d0d0d; }
   </div><!-- end .content -->
 </div><!-- end .main -->
 
+<!-- Mobile bottom nav -->
+<div class="mob-bottom-nav">
+  <div class="mob-nav-item active" onclick="showScreen('dashboard');setMobNav(this)">
+    <div class="mob-nav-icon">⬡</div><div class="mob-nav-label">Home</div>
+  </div>
+  <div class="mob-nav-item" onclick="showScreen('myclasses');setMobNav(this)">
+    <div class="mob-nav-icon">📅</div><div class="mob-nav-label">My Classes</div>
+  </div>
+  <div class="mob-nav-item" onclick="showScreen('attendance');setMobNav(this)">
+    <div class="mob-nav-icon">✅</div><div class="mob-nav-label">Attendance</div>
+  </div>
+  <div class="mob-nav-item" onclick="showScreen('messages');setMobNav(this)">
+    <div class="mob-nav-icon">💬</div><div class="mob-nav-label">Messages</div>
+  </div>
+  <div class="mob-nav-item" onclick="toggleMobSidebar()">
+    <div class="mob-nav-icon">☰</div><div class="mob-nav-label">More</div>
+  </div>
+</div>
+
 <!-- ===== STUDENT READ-ONLY SLIDE PANEL ===== -->
 <div class="panel-overlay" id="student-overlay" onclick="closeStudentPanel()"></div>
 <div class="slide-panel" id="student-panel">
@@ -1934,6 +2055,22 @@ function acceptCover(rowId) {
 </div>
 
 <script>
+// ── Mobile nav ───────────────────────────────────────────────────────────────
+function toggleMobSidebar() { document.body.classList.toggle('mob-sidebar-open'); }
+function closeMobSidebar() { document.body.classList.remove('mob-sidebar-open'); }
+function setMobNav(el) {
+  closeMobSidebar();
+  document.querySelectorAll('.mob-nav-item').forEach(function(i){ i.classList.remove('active'); });
+  if (el) el.classList.add('active');
+}
+// Close sidebar when any nav item in sidebar is tapped
+document.addEventListener('DOMContentLoaded', function() {
+  var nav = document.querySelector('.sidebar nav');
+  if (nav) nav.addEventListener('click', function(e) {
+    if (e.target.closest('.nav-item')) closeMobSidebar();
+  });
+});
+
 // ── Staff / Student account toggle ───────────────────────────────────────────
 var _accountView = 'staff';
 function switchAccountView(mode) {
