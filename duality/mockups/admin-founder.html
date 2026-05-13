@@ -3027,8 +3027,8 @@ tr.clickable-row:hover td { background: #141414; }
           <tbody>
             <tr><td>Jess Malone</td><td>Season 4 — Level 2 (balance)</td><td class="bal-neg">$120</td><td style="color:var(--grey)">15 May</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs" onclick="openChaseModal('Jess Malone','Season 4 — Level 2 (balance)','$120',1)">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
             <tr><td>Kylie Rhodes</td><td>Season 4 + 2× no-show fees</td><td class="bal-neg">$95</td><td style="color:#ff6b6b">Overdue</td><td><span class="tag tag-red">Overdue</span></td><td><button class="btn btn-ghost btn-xs" onclick="openChaseModal('Kylie Rhodes','Season 4 + 2× no-show fees','$95',2)">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
-            <tr><td>Dana Park</td><td>Choreo Intensive Workshop</td><td class="bal-neg">$75</td><td style="color:var(--grey)">20 May</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs" onclick="openChaseModal('Dana Park','Choreo Intensive Workshop','$75',0)">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
-            <tr><td>Amber Cole</td><td>No-show fee × 2</td><td class="bal-neg">$50</td><td style="color:var(--grey)">12 May</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs" onclick="openChaseModal('Amber Cole','No-show fee × 2','$50',0)">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
+            <tr><td>Dana Park</td><td>Choreo Intensive Workshop</td><td class="bal-neg">$75</td><td style="color:var(--grey)">20 May</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs" onclick="openChaseModal('Dana Park','Choreo Intensive Workshop','$75',0)">Chase</button> <button class="btn btn-ghost btn-xs" onclick="openWaiveModal('Dana Park','$75 outstanding','$75',this)">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
+            <tr><td>Amber Cole</td><td>No-show fee × 2</td><td class="bal-neg">$50</td><td style="color:var(--grey)">12 May</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs" onclick="openChaseModal('Amber Cole','No-show fee × 2','$50',0)">Chase</button> <button class="btn btn-ghost btn-xs" onclick="openWaiveModal('Amber Cole','$50 outstanding','$50',this)">Waive</button> <button class="btn btn-ghost btn-xs">Mark Paid</button></td></tr>
           </tbody>
         </table>
       </div>
@@ -3067,9 +3067,9 @@ tr.clickable-row:hover td { background: #141414; }
         <table>
           <thead><tr><th>Student</th><th>Class</th><th>Date</th><th>Fee</th><th>Action</th></tr></thead>
           <tbody>
-            <tr><td>Ruby Kim</td><td>Dance</td><td style="color:var(--grey)">12 May</td><td class="bal-neg">$25</td><td><button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Charge Now</button></td></tr>
-            <tr><td>Amber Cole</td><td>Level 1</td><td style="color:var(--grey)">9 May</td><td class="bal-neg">$25</td><td><button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Charge Now</button></td></tr>
-            <tr><td>Amber Cole</td><td>Level 1</td><td style="color:var(--grey)">2 May</td><td class="bal-neg">$25</td><td><button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Charge Now</button></td></tr>
+            <tr><td>Ruby Kim</td><td>Dance</td><td style="color:var(--grey)">12 May</td><td class="bal-neg">$25</td><td><button class="btn btn-ghost btn-xs" onclick="openWaiveModal('Ruby Kim','No-show — Dance 12 May','$25',this)">Waive</button> <button class="btn btn-lime btn-xs" onclick="chargeNowFee('Ruby Kim','Dance 12 May',this)">Charge Now</button></td></tr>
+            <tr><td>Amber Cole</td><td>Level 1</td><td style="color:var(--grey)">9 May</td><td class="bal-neg">$25</td><td><button class="btn btn-ghost btn-xs" onclick="openWaiveModal('Amber Cole','No-show — Level 1 9 May','$25',this)">Waive</button> <button class="btn btn-lime btn-xs" onclick="chargeNowFee('Amber Cole','Level 1 9 May',this)">Charge Now</button></td></tr>
+            <tr><td>Amber Cole</td><td>Level 1</td><td style="color:var(--grey)">2 May</td><td class="bal-neg">$25</td><td><button class="btn btn-ghost btn-xs" onclick="openWaiveModal('Amber Cole','No-show — Level 1 2 May','$25',this)">Waive</button> <button class="btn btn-lime btn-xs" onclick="chargeNowFee('Amber Cole','Level 1 2 May',this)">Charge Now</button></td></tr>
           </tbody>
         </table>
       </div>
@@ -3089,16 +3089,16 @@ tr.clickable-row:hover td { background: #141414; }
         <table>
           <thead><tr><th>Student</th><th>Description</th><th>Amount</th><th>Due Date</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>
-            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='jess'))">Jess Malone</span></td><td>Season 4 — Level 2 (balance)</td><td class="bal-neg">$120</td><td style="color:var(--grey)">15 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="alert('Chase sent to Jess Malone')">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button></td></tr>
-            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='kylie'))">Kylie Rhodes</span></td><td>Season 4 + 2× no-show fees</td><td class="bal-neg">$95</td><td style="color:#ff6b6b">Overdue</td><td><span class="tag tag-red">Overdue</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="alert('Chase sent to Kylie Rhodes')">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button></td></tr>
-            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='dana'))">Dana Park</span></td><td>Choreo Intensive Workshop</td><td class="bal-neg">$75</td><td style="color:var(--grey)">20 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="alert('Chase sent to Dana Park')">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button></td></tr>
-            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='amber'))">Amber Cole</span></td><td>No-show fee × 2</td><td class="bal-neg">$50</td><td style="color:var(--grey)">12 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="alert('Chase sent to Amber Cole')">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button></td></tr>
-            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='hannah'))">Hannah Webb</span></td><td>Season 3 — Level 1 (late enrolment)</td><td class="bal-neg">$40</td><td style="color:var(--grey)">22 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="alert('Chase sent to Hannah Webb')">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button></td></tr>
-            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='tara'))">Tara Bell</span></td><td>Workshop — balance owing</td><td class="bal-neg">$30</td><td style="color:#ff6b6b">Overdue</td><td><span class="tag tag-red">Overdue</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="alert('Chase sent to Tara Bell')">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button></td></tr>
-            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='nina'))">Nina Torres</span></td><td>Casual drop-in unpaid</td><td class="bal-neg">$35</td><td style="color:var(--grey)">18 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="alert('Chase sent to Nina Torres')">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button></td></tr>
-            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='sophie'))">Sophie Lawson</span></td><td>No-show fee</td><td class="bal-neg">$25</td><td style="color:var(--grey)">14 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="alert('Chase sent to Sophie Lawson')">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button></td></tr>
-            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='ruby'))">Ruby Kim</span></td><td>Dance casual</td><td class="bal-neg">$35</td><td style="color:var(--grey)">17 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="alert('Chase sent to Ruby Kim')">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button></td></tr>
-            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='mia'))">Mia Santos</span></td><td>High Tricks workshop deposit</td><td class="bal-neg">$50</td><td style="color:var(--grey)">25 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="alert('Chase sent to Mia Santos')">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button></td></tr>
+            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='jess'))">Jess Malone</span></td><td>Season 4 — Level 2 (balance)</td><td class="bal-neg">$120</td><td style="color:var(--grey)">15 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="openChaseModal('Jess Malone','Season 4 — Level 2 (balance)','$120',1)">Chase</button> <button class="btn btn-ghost btn-xs" onclick="openWaiveModal('Jess Malone','Season 4 — Level 2 (balance)','$120',this)">Waive</button></td></tr>
+            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='kylie'))">Kylie Rhodes</span></td><td>Season 4 + 2× no-show fees</td><td class="bal-neg">$95</td><td style="color:#ff6b6b">Overdue</td><td><span class="tag tag-red">Overdue</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="openChaseModal('Kylie Rhodes','Season 4 + no-show fees','$95',2)">Chase</button> <button class="btn btn-ghost btn-xs" onclick="openWaiveModal('Kylie Rhodes','Season 4 + no-show fees','$95',this)">Waive</button></td></tr>
+            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='dana'))">Dana Park</span></td><td>Choreo Intensive Workshop</td><td class="bal-neg">$75</td><td style="color:var(--grey)">20 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="openChaseModal('Dana Park','Choreo Intensive Workshop','$75',0)">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button></td></tr>
+            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='amber'))">Amber Cole</span></td><td>No-show fee × 2</td><td class="bal-neg">$50</td><td style="color:var(--grey)">12 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="openChaseModal('Amber Cole','No-show fee × 2','$50',0)">Chase</button> <button class="btn btn-ghost btn-xs">Waive</button></td></tr>
+            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='hannah'))">Hannah Webb</span></td><td>Season 3 — Level 1 (late enrolment)</td><td class="bal-neg">$40</td><td style="color:var(--grey)">22 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="openChaseModal('Hannah Webb','Season 3 — Level 1 (late enrolment)','$40',0)">Chase</button> <button class="btn btn-ghost btn-xs" onclick="openWaiveModal('Hannah Webb','$40 outstanding','$40',this)">Waive</button></td></tr>
+            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='tara'))">Tara Bell</span></td><td>Workshop — balance owing</td><td class="bal-neg">$30</td><td style="color:#ff6b6b">Overdue</td><td><span class="tag tag-red">Overdue</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="openChaseModal('Tara Bell','Workshop — balance owing','$30',1)">Chase</button> <button class="btn btn-ghost btn-xs" onclick="openWaiveModal('Tara Bell','$30 outstanding','$30',this)">Waive</button></td></tr>
+            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='nina'))">Nina Torres</span></td><td>Casual drop-in unpaid</td><td class="bal-neg">$35</td><td style="color:var(--grey)">18 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="openChaseModal('Nina Torres','Casual drop-in unpaid','$35',0)">Chase</button> <button class="btn btn-ghost btn-xs" onclick="openWaiveModal('Nina Torres','$35 outstanding','$35',this)">Waive</button></td></tr>
+            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='sophie'))">Sophie Lawson</span></td><td>No-show fee</td><td class="bal-neg">$25</td><td style="color:var(--grey)">14 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="openChaseModal('Sophie Lawson','No-show fee','$25',0)">Chase</button> <button class="btn btn-ghost btn-xs" onclick="openWaiveModal('Sophie Lawson','$25 outstanding','$25',this)">Waive</button></td></tr>
+            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='ruby'))">Ruby Kim</span></td><td>Dance casual</td><td class="bal-neg">$35</td><td style="color:var(--grey)">17 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="openChaseModal('Ruby Kim','Dance casual','$35',0)">Chase</button> <button class="btn btn-ghost btn-xs" onclick="openWaiveModal('Ruby Kim','$35 outstanding','$35',this)">Waive</button></td></tr>
+            <tr><td><span class="student-link" onclick="openStudentDetail(STUDENTS.find(s=>s.id==='mia'))">Mia Santos</span></td><td>High Tricks workshop deposit</td><td class="bal-neg">$50</td><td style="color:var(--grey)">25 May</td><td><span class="tag tag-amber">Pending</span></td><td style="white-space:nowrap;"><button class="btn btn-lime btn-xs" onclick="openModal('modal-manual-payment')">Take Payment</button> <button class="btn btn-ghost btn-xs" onclick="openChaseModal('Mia Santos','High Tricks workshop deposit','$50',0)">Chase</button> <button class="btn btn-ghost btn-xs" onclick="openWaiveModal('Mia Santos','$50 outstanding','$50',this)">Waive</button></td></tr>
           </tbody>
         </table>
       </div>
@@ -3268,12 +3268,12 @@ tr.clickable-row:hover td { background: #141414; }
             <tr><td><input type="checkbox" style="accent-color:var(--lime);" /></td><td>Ruby Kim</td><td>Dance</td><td style="color:var(--grey)">12 May</td><td class="bal-neg">$25</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Charge Now</button></td></tr>
             <tr><td><input type="checkbox" style="accent-color:var(--lime);" /></td><td>Amber Cole</td><td>Level 1</td><td style="color:var(--grey)">9 May</td><td class="bal-neg">$25</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Charge Now</button></td></tr>
             <tr><td><input type="checkbox" style="accent-color:var(--lime);" /></td><td>Amber Cole</td><td>Level 1</td><td style="color:var(--grey)">2 May</td><td class="bal-neg">$25</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Charge Now</button></td></tr>
-            <tr><td><input type="checkbox" style="accent-color:var(--lime);" /></td><td>Jess Malone</td><td>Dance</td><td style="color:var(--grey)">28 Apr</td><td class="bal-neg">$25</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Charge Now</button></td></tr>
-            <tr><td><input type="checkbox" style="accent-color:var(--lime);" /></td><td>Tara Bell</td><td>Level 2</td><td style="color:var(--grey)">21 Apr</td><td class="bal-neg">$25</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs">Waive</button> <button class="btn btn-ghost btn-xs">Charge Now</button></td></tr>
-            <tr><td><input type="checkbox" style="accent-color:var(--lime);" /></td><td>Hannah Webb</td><td>Level 1</td><td style="color:var(--grey)">14 Apr</td><td class="bal-neg">$25</td><td><span class="tag tag-lime">Charged</span></td><td><button class="btn btn-ghost btn-xs">Waive &amp; Refund</button></td></tr>
-            <tr><td><input type="checkbox" style="accent-color:var(--lime);" /></td><td>Kylie Rhodes</td><td>Level 2</td><td style="color:var(--grey)">7 Apr</td><td class="bal-neg">$25</td><td><span class="tag tag-lime">Charged</span></td><td><button class="btn btn-ghost btn-xs">Waive &amp; Refund</button></td></tr>
+            <tr><td><input type="checkbox" style="accent-color:var(--lime);" /></td><td>Jess Malone</td><td>Dance</td><td style="color:var(--grey)">28 Apr</td><td class="bal-neg">$25</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs" onclick="openWaiveModal('Jess Malone','No-show — Dance 28 Apr','$25',this)">Waive</button> <button class="btn btn-lime btn-xs" onclick="chargeNowFee('Jess Malone','Dance 28 Apr',this)">Charge Now</button></td></tr>
+            <tr><td><input type="checkbox" style="accent-color:var(--lime);" /></td><td>Tara Bell</td><td>Level 2</td><td style="color:var(--grey)">21 Apr</td><td class="bal-neg">$25</td><td><span class="tag tag-amber">Pending</span></td><td><button class="btn btn-ghost btn-xs" onclick="openWaiveModal('Tara Bell','No-show — Level 2 21 Apr','$25',this)">Waive</button> <button class="btn btn-lime btn-xs" onclick="chargeNowFee('Tara Bell','Level 2 21 Apr',this)">Charge Now</button></td></tr>
+            <tr><td><input type="checkbox" style="accent-color:var(--lime);" /></td><td>Hannah Webb</td><td>Level 1</td><td style="color:var(--grey)">14 Apr</td><td class="bal-neg">$25</td><td><span class="tag tag-lime">Charged</span></td><td><button class="btn btn-ghost btn-xs" onclick="openWaiveModal('Hannah Webb','Level 1 no-show 14 Apr','$25',this,true)">Waive &amp; Refund</button></td></tr>
+            <tr><td><input type="checkbox" style="accent-color:var(--lime);" /></td><td>Kylie Rhodes</td><td>Level 2</td><td style="color:var(--grey)">7 Apr</td><td class="bal-neg">$25</td><td><span class="tag tag-lime">Charged</span></td><td><button class="btn btn-ghost btn-xs" onclick="openWaiveModal('Kylie Rhodes','Level 2 no-show 7 Apr','$25',this,true)">Waive &amp; Refund</button></td></tr>
             <tr><td><input type="checkbox" style="accent-color:var(--lime);" /></td><td>Sophie Lawson</td><td>Level 1</td><td style="color:var(--grey)">31 Mar</td><td class="bal-neg">$25</td><td><span class="tag tag-grey">Waived</span></td><td>—</td></tr>
-            <tr><td><input type="checkbox" style="accent-color:var(--lime);" /></td><td>Dana Park</td><td>High Tricks</td><td style="color:var(--grey)">24 Mar</td><td class="bal-neg">$25</td><td><span class="tag tag-lime">Charged</span></td><td><button class="btn btn-ghost btn-xs">Waive &amp; Refund</button></td></tr>
+            <tr><td><input type="checkbox" style="accent-color:var(--lime);" /></td><td>Dana Park</td><td>High Tricks</td><td style="color:var(--grey)">24 Mar</td><td class="bal-neg">$25</td><td><span class="tag tag-lime">Charged</span></td><td><button class="btn btn-ghost btn-xs" onclick="openWaiveModal('Dana Park','High Tricks no-show 24 Mar','$25',this,true)">Waive &amp; Refund</button></td></tr>
             <tr><td><input type="checkbox" style="accent-color:var(--lime);" /></td><td>Nina Torres</td><td>Dance</td><td style="color:var(--grey)">17 Mar</td><td class="bal-neg">$25</td><td><span class="tag tag-grey">Waived</span></td><td>—</td></tr>
           </tbody>
         </table>
@@ -10069,6 +10069,91 @@ function runRecsAnimation() {
     btn.textContent = '▶ Run Recommendations';
     btn.style.background = 'var(--lime)';
   }, 2200);
+}
+</script>
+
+<div class="modal-overlay" id="modal-waive">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-title">Waive Charge <button class="modal-close" onclick="closeModal('modal-waive')">&#x2715;</button></div>
+    <div style="background:#1a1a1a;border-radius:8px;padding:14px 16px;margin-bottom:18px;">
+      <div style="font-size:15px;font-weight:600;" id="waive-student-name">&#x2014;</div>
+      <div style="font-size:13px;color:var(--grey);margin-top:3px;" id="waive-description">&#x2014;</div>
+      <div style="font-size:22px;font-weight:700;color:#ff6b6b;margin-top:8px;" id="waive-amount">&#x2014;</div>
+    </div>
+    <div id="waive-refund-notice" style="display:none;background:#1a2a1a;border:1px solid var(--lime);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#9ef09e;">
+      This fee has already been charged. Waiving will issue a credit back to the student's account.
+    </div>
+    <div class="field">
+      <label>Reason for waiving</label>
+      <select id="waive-reason" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:14px;padding:10px 14px;">
+        <option value="">Select a reason&#x2026;</option>
+        <option value="goodwill">Goodwill gesture</option>
+        <option value="first-time">First-time student / didn't know the policy</option>
+        <option value="error">Admin or system error</option>
+        <option value="complaint">Student complaint &#x2014; resolved by waiving</option>
+        <option value="loyalty">Long-term student loyalty</option>
+        <option value="medical">Medical / emergency circumstance</option>
+        <option value="other">Other (add note below)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Internal note (optional)</label>
+      <textarea id="waive-note" rows="2" placeholder="e.g. Student called in &#x2014; genuine emergency" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:13px;padding:10px 14px;resize:vertical;box-sizing:border-box;"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-waive')">Cancel</button>
+      <button class="btn" id="waive-confirm-btn" style="background:#e05555;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-family:'Archivo Black',sans-serif;font-size:13px;cursor:pointer;" onclick="confirmWaive()">Confirm Waive</button>
+    </div>
+  </div>
+</div>
+<script>
+var _waiveData = {};
+function openWaiveModal(student, description, amount, triggerBtn, isRefund) {
+  _waiveData = { student: student, description: description, amount: amount, triggerBtn: triggerBtn, isRefund: !!isRefund };
+  document.getElementById('waive-student-name').textContent = student;
+  document.getElementById('waive-description').textContent = description;
+  document.getElementById('waive-amount').textContent = amount;
+  document.getElementById('waive-reason').value = '';
+  document.getElementById('waive-note').value = '';
+  document.getElementById('waive-reason').style.borderColor = '';
+  document.getElementById('waive-refund-notice').style.display = isRefund ? 'block' : 'none';
+  var btn = document.getElementById('waive-confirm-btn');
+  btn.textContent = isRefund ? 'Confirm Waive & Refund' : 'Confirm Waive';
+  openModal('modal-waive');
+}
+function confirmWaive() {
+  var reason = document.getElementById('waive-reason').value;
+  if (!reason) { document.getElementById('waive-reason').style.borderColor = '#ff6b6b'; return; }
+  document.getElementById('waive-reason').style.borderColor = '';
+  closeModal('modal-waive');
+  if (_waiveData.triggerBtn) {
+    var row = _waiveData.triggerBtn.closest('tr');
+    if (row) { row.style.transition = 'opacity 0.3s'; row.style.opacity = '0'; setTimeout(function() { row.remove(); }, 300); }
+  }
+  var msg = _waiveData.isRefund
+    ? _waiveData.amount + ' credit issued to ' + _waiveData.student
+    : _waiveData.amount + ' charge waived for ' + _waiveData.student;
+  showToast(msg);
+}
+function chargeNowFee(student, description, triggerBtn) {
+  if (!confirm('Charge $25 no-show fee to ' + student + ' (' + description + ')?')) return;
+  if (triggerBtn) {
+    var row = triggerBtn.closest('tr');
+    if (row) {
+      var cells = row.querySelectorAll('td');
+      if (cells[5]) cells[5].innerHTML = '<span class="tag tag-lime">Charged</span>';
+      if (cells[6]) cells[6].innerHTML = '<button class="btn btn-ghost btn-xs" onclick="openWaiveModal(\u0027' + student + '\u0027,\u0027' + description + '\u0027,\u0027$25\u0027,this,true)">Waive &amp; Refund</button>';
+    }
+  }
+  showToast('$25 fee charged to ' + student);
+}
+function showToast(msg) {
+  var t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid var(--lime);color:var(--white);font-size:13px;padding:12px 20px;border-radius:10px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.6);white-space:nowrap;';
+  document.body.appendChild(t);
+  setTimeout(function(){ t.style.transition='opacity 0.4s'; t.style.opacity='0'; }, 2200);
+  setTimeout(function(){ t.remove(); }, 2700);
 }
 </script>
 </body>
