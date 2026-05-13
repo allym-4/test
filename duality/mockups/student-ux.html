@@ -8110,6 +8110,7 @@ function submitRefundRequest() {
 var INSTRUCTORS = [
   {
     name:'Mimi', initial:'M', color:'var(--lime)', titleText:'Founder & Instructor',
+    photo:'https://i.pravatar.cc/150?img=47',
     bio:'Mimi founded Duality Pole in 2022 after 8 years of training across Sydney and Melbourne. She teaches High Tricks, intermediate and advanced levels, and is obsessed with strength-based progressions and helping students nail their first invert.',
     styles:['High Tricks','Intermediate','Advanced'],
     insta:'@dualitypole',
@@ -8117,6 +8118,7 @@ var INSTRUCTORS = [
   },
   {
     name:'Chloe', initial:'C', color:'#CDA5FF', titleText:'Senior Instructor',
+    photo:'https://i.pravatar.cc/150?img=44',
     bio:'Chloe has been teaching pole for 5 years and specialises in Level 1 and Level 2. Her classes are known for being warm, encouraging and technically rigorous — she has a real talent for breaking down scary moves into manageable steps.',
     styles:['Level 1','Level 2','Beginner-friendly'],
     insta:'@chloe.pole',
@@ -8124,6 +8126,7 @@ var INSTRUCTORS = [
   },
   {
     name:'Maz', initial:'M', color:'var(--amber)', titleText:'Instructor',
+    photo:'https://i.pravatar.cc/150?img=35',
     bio:'Maz brings a background in contemporary dance to her pole classes. She teaches Virgin and foundational classes and loves working with absolute beginners. Expect lots of laughs and a very non-intimidating vibe.',
     styles:['Virgin','Floor work','Beginners'],
     insta:'@mazonpole',
@@ -8131,6 +8134,7 @@ var INSTRUCTORS = [
   },
   {
     name:'Viv', initial:'V', color:'#00d4ff', titleText:'Instructor',
+    photo:'https://i.pravatar.cc/150?img=23',
     bio:'Viv is a trained circus artist who discovered pole five years ago and never looked back. She teaches flexibility, exotic flow, and is the go-to for anyone wanting to add artistry and expression to their movement.',
     styles:['Exotic','Flexibility','Flow'],
     insta:'@vivmoves',
@@ -8138,6 +8142,7 @@ var INSTRUCTORS = [
   },
   {
     name:'Bambi', initial:'B', color:'#ff8888', titleText:'Dance & Style Instructor',
+    photo:'https://i.pravatar.cc/150?img=9',
     bio:'Bambi comes from a commercial dance background and runs our Dance and style classes. Her Friday Dance class is the most popular in the studio — high energy, great music, and always a packed room.',
     styles:['Dance','Style','Choreo'],
     insta:'@bambi.dance',
@@ -8161,7 +8166,7 @@ function renderInstructorBios() {
   var h = '';
   INSTRUCTORS.forEach(function(inst) {
     h += '<div onclick="openInstructorBio(\'' + inst.name + '\')" style="background:#1a1a1a;border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:border-color 0.15s;" onmouseover="this.style.borderColor=\'' + inst.color + '\'" onmouseout="this.style.borderColor=\'var(--border)\'">';
-    h += '<div style="width:44px;height:44px;border-radius:50%;background:' + inst.color + ';display:flex;align-items:center;justify-content:center;font-family:\'Archivo Black\',sans-serif;font-size:18px;color:#000;margin-bottom:10px;">' + inst.initial + '</div>';
+    h += '<img src="' + inst.photo + '" alt="' + inst.name + '" style="width:72px;height:72px;border-radius:50%;object-fit:cover;margin-bottom:10px;border:2px solid ' + inst.color + ';" />';
     h += '<div style="font-family:\'Archivo Black\',sans-serif;font-size:14px;">' + inst.name + '</div>';
     h += '<div style="font-size:12px;color:var(--grey);margin-top:2px;">' + inst.titleText + '</div>';
     h += '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;">';
@@ -8176,8 +8181,10 @@ function renderInstructorBios() {
 function openInstructorBio(name) {
   var inst = INSTRUCTORS.find(function(i){return i.name===name;});
   if (!inst) return;
-  document.getElementById('bio-avatar').textContent = inst.initial;
-  document.getElementById('bio-avatar').style.background = inst.color;
+  var avatarEl = document.getElementById('bio-avatar');
+  avatarEl.innerHTML = '<img src="' + inst.photo + '" alt="' + inst.name + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />';
+  avatarEl.style.background = 'transparent';
+  avatarEl.style.border = '2px solid ' + inst.color;
   document.getElementById('bio-name').textContent = inst.name;
   document.getElementById('bio-title').textContent = inst.titleText + ' · ' + inst.years + ' years teaching';
   var body = '<p style="font-size:14px;line-height:1.7;color:var(--grey);margin-bottom:16px;">' + inst.bio + '</p>';
