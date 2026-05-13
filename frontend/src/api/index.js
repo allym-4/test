@@ -39,5 +39,11 @@ export const homework = {
 export const users = {
   list: (params) => client.get('/api/users/', { params }),
   get: (id) => client.get(`/api/users/${id}/`),
+  create: (data) => client.post('/api/users/', data),
+  update: (id, data) => client.patch(`/api/users/${id}/`, data),
   notes: (userId) => client.get(`/api/users/${userId}/notes/`),
+  addNote: (userId, data) => client.post(`/api/users/${userId}/notes/`, data),
+  bulkImport: (formData) => client.post('/api/users/import/', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
 }

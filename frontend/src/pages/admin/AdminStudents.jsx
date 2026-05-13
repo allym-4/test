@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useApi } from '../../hooks/useApi'
 import { users, payments, enrolments, attendance } from '../../api'
 import '../StudentsPage.css'
+import AddStudentModal from '../../components/AddStudentModal'
+import BulkImportModal from '../../components/BulkImportModal'
 
 const AVATAR_COLORS = ['#b0a0ff', '#ccff00', '#ffaa00', '#ff88aa', '#44ffcc', '#ffcc88', '#b0f0b0', '#9ac4ff', '#ffb3de', '#44ff99']
 function avatarColor(name) {
@@ -29,8 +31,11 @@ export default function AdminStudents() {
   const [notesData, setNotesData] = useState(null)
   const [balances, setBalances] = useState({})
   const [loadingDetail, setLoadingDetail] = useState(false)
+  const [showAdd, setShowAdd] = useState(false)
+  const [showImport, setShowImport] = useState(false)
+  const [studentList, setStudentList] = useState(null)
 
-  const allStudents = data?.results || []
+  const allStudents = studentList ?? (data?.results || [])
 
   // Load quick balances for the table
   useEffect(() => {
@@ -81,7 +86,10 @@ export default function AdminStudents() {
           <div className="page-title">Students</div>
           <div className="page-sub">{allStudents.length} active students</div>
         </div>
-        <button className="btn btn-lime btn-sm">+ Add Student</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowImport(true)}>↑ Bulk Import</button>
+          <button className="btn btn-lime btn-sm" onClick={() => setShowAdd(true)}>+ Add Student</button>
+        </div>
       </div>
 
       <div className="filter-bar">
@@ -309,6 +317,23 @@ export default function AdminStudents() {
             )}
           </div>
         </div>
+      )}
+
+      {showAdd && (
+        <AddStudentModal
+          onClose={() => setShowAdd(false)}
+          onCreated={newStudent => setStudentList(prev => [...(prev ?? allStudents), newStudent])}
+        />
+      )}
+
+      {showImport && (
+        <BulkImportModal
+          onClose={() => setShowImport(false)}
+          onImported={async () => {
+            const res = await users.list({ role: 'student' })
+            setStudentList(res.data.results || [])
+          }}
+        />
       )}
     </div>
   )
