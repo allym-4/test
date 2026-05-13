@@ -2139,33 +2139,136 @@ tr.clickable-row:hover td { background: #141414; }
 
       <!-- PAYMENTS TAB -->
       <div id="sd-payments" class="subscreen">
-        <div class="section" style="text-align:center;padding:24px;margin-bottom:20px;">
-          <div style="font-size:12px;color:var(--grey);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Current Balance</div>
-          <div id="sd-balance-large" style="font-family:'Archivo Black',sans-serif;font-size:48px;" class="bal-neg">−$120</div>
-          <div style="display:flex;gap:10px;justify-content:center;margin-top:16px;">
-            <button class="btn btn-lime btn-sm" onclick="openModal('modal-manual-payment')">+ Add Payment</button>
-            <button class="btn btn-ghost btn-sm" onclick="openModal('modal-season-cancel')">Season Transfer/Cancel</button>
-            <button class="btn btn-ghost btn-sm" onclick="openModal('modal-issue-refund')">Issue Refund / Credit</button>
-            <button class="btn btn-ghost btn-sm" onclick="openModal('modal-add-credit')">Add Credit</button>
-            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('credit-type').value='makeup';openModal('modal-add-credit')">Assign Make-up</button>
+
+        <!-- Balance header -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;">
+          <div class="kpi kpi-red" style="text-align:center;">
+            <div class="kpi-label">Outstanding</div>
+            <div class="kpi-value" style="font-size:28px;">−$120</div>
+            <div class="kpi-sub">Instalment plan overdue</div>
+          </div>
+          <div class="kpi kpi-lime" style="text-align:center;">
+            <div class="kpi-label">Paid This Term</div>
+            <div class="kpi-value" style="font-size:28px;">$60</div>
+            <div class="kpi-sub">Instalment 1 of 3</div>
+          </div>
+          <div class="kpi" style="text-align:center;">
+            <div class="kpi-label">Account Credit</div>
+            <div class="kpi-value" style="font-size:28px;">$0</div>
+            <div class="kpi-sub">No credit on account</div>
           </div>
         </div>
-        <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:10px;">Active Payment Plans</div>
-        <div class="section" style="margin-bottom:20px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-            <div><b>Season 4 — 3× instalments</b><div style="font-size:12px;color:var(--grey);margin-top:2px;">Total $180 · Paid $60 · Remaining $120</div></div>
+
+        <!-- Actions -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;">
+          <button class="btn btn-lime btn-sm" onclick="openModal('modal-manual-payment')">+ Record Payment</button>
+          <button class="btn btn-ghost btn-sm" onclick="openModal('modal-issue-refund')">Issue Refund / Credit</button>
+          <button class="btn btn-ghost btn-sm" onclick="openModal('modal-add-credit')">Add Account Credit</button>
+          <button class="btn btn-ghost btn-sm" onclick="openModal('modal-season-cancel')">Transfer / Cancel Enrolment</button>
+        </div>
+
+        <!-- Active payment plan -->
+        <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:10px;">Active Payment Plan</div>
+        <div class="section" style="margin-bottom:24px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
+            <div>
+              <div style="font-weight:600;font-size:14px;">Season 4 — Level 2 &amp; Dance (3× instalments)</div>
+              <div style="font-size:12px;color:var(--grey);margin-top:3px;">Set up 11 May 2026 · Total $180</div>
+            </div>
             <span class="tag tag-amber">Active</span>
           </div>
-          <div style="font-size:12px;color:var(--grey);">Next due: 1 Jun 2025 · $60</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+            <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 12px;">
+              <div style="font-size:11px;color:var(--grey);margin-bottom:3px;">Instalment 1</div>
+              <div style="font-size:14px;font-weight:700;color:var(--lime);">$60 ✓</div>
+              <div style="font-size:11px;color:var(--grey);margin-top:2px;">Paid 11 May 2026</div>
+            </div>
+            <div style="background:#1a1200;border:1px solid var(--amber);border-radius:8px;padding:10px 12px;">
+              <div style="font-size:11px;color:var(--grey);margin-bottom:3px;">Instalment 2</div>
+              <div style="font-size:14px;font-weight:700;color:var(--amber);">$60 overdue</div>
+              <div style="font-size:11px;color:var(--grey);margin-top:2px;">Due 1 Jun 2026</div>
+            </div>
+            <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+              <div style="font-size:11px;color:var(--grey);margin-bottom:3px;">Instalment 3</div>
+              <div style="font-size:14px;font-weight:700;color:var(--grey);">$60 pending</div>
+              <div style="font-size:11px;color:var(--grey);margin-top:2px;">Due 1 Jul 2026</div>
+            </div>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:8px;">
+            <button class="btn btn-ghost btn-xs" onclick="openModal('modal-manual-payment')">Record payment</button>
+            <button class="btn btn-ghost btn-xs" onclick="alert('Chase email sent to mia.torres@gmail.com')">Send reminder</button>
+          </div>
         </div>
+
+        <!-- Transaction history -->
         <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:10px;">Transaction History</div>
         <div class="tbl-section">
           <table>
-            <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Amount</th><th>Balance</th></tr></thead>
+            <thead><tr><th>Date</th><th>Description</th><th>Season</th><th>Type</th><th>Debit</th><th>Credit</th><th>Balance</th></tr></thead>
             <tbody>
-              <tr><td style="color:var(--grey)">12 May</td><td>No-show fee — Dance</td><td><span class="tag tag-red" style="font-size:10px;">Fee</span></td><td class="bal-neg">−$25</td><td class="bal-neg">−$120</td></tr>
-              <tr><td style="color:var(--grey)">5 Jun</td><td>Payment received — instalment 1</td><td><span class="tag tag-lime" style="font-size:10px;">Payment</span></td><td class="bal-pos">+$60</td><td class="bal-neg">−$95</td></tr>
-              <tr><td style="color:var(--grey)">1 Jun</td><td>Season 3 — Level 2 (instalment plan)</td><td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td><td class="bal-neg">−$180</td><td class="bal-neg">−$155</td></tr>
+              <tr>
+                <td style="color:var(--grey);white-space:nowrap;">22 May 2026</td>
+                <td>No-show fee — Level 2 (Tue 6pm)</td>
+                <td style="color:var(--grey);">S4</td>
+                <td><span class="tag tag-red" style="font-size:10px;">Fee</span></td>
+                <td class="bal-neg">$25</td><td>—</td><td class="bal-neg">−$120</td>
+              </tr>
+              <tr>
+                <td style="color:var(--grey);white-space:nowrap;">11 May 2026</td>
+                <td>Season 4 enrolment — Level 2 + Dance · Instalment 1</td>
+                <td style="color:var(--grey);">S4</td>
+                <td><span class="tag tag-lime" style="font-size:10px;">Payment</span></td>
+                <td>—</td><td class="bal-pos">$60</td><td class="bal-neg">−$95</td>
+              </tr>
+              <tr>
+                <td style="color:var(--grey);white-space:nowrap;">11 May 2026</td>
+                <td>Season 4 enrolment — Level 2 + Dance (instalment plan ×3)</td>
+                <td style="color:var(--grey);">S4</td>
+                <td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td>
+                <td class="bal-neg">$180</td><td>—</td><td class="bal-neg">−$155</td>
+              </tr>
+              <tr style="background:#0a0a0a;">
+                <td style="color:var(--grey);white-space:nowrap;">5 Mar 2026</td>
+                <td>Season 3 enrolment — Level 2 (paid in full)</td>
+                <td style="color:var(--grey);">S3</td>
+                <td><span class="tag tag-lime" style="font-size:10px;">Payment</span></td>
+                <td>—</td><td class="bal-pos">$165</td><td style="color:var(--lime);">$0</td>
+              </tr>
+              <tr style="background:#0a0a0a;">
+                <td style="color:var(--grey);white-space:nowrap;">5 Mar 2026</td>
+                <td>Season 3 enrolment — Level 2 (full payment)</td>
+                <td style="color:var(--grey);">S3</td>
+                <td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td>
+                <td class="bal-neg">$165</td><td>—</td><td class="bal-neg">−$165</td>
+              </tr>
+              <tr style="background:#0a0a0a;">
+                <td style="color:var(--grey);white-space:nowrap;">18 Feb 2026</td>
+                <td>Retail — Dry Hands Grip Aid</td>
+                <td style="color:var(--grey);">—</td>
+                <td><span class="tag" style="background:#222;font-size:10px;">Retail</span></td>
+                <td class="bal-neg">$18</td><td>—</td><td style="color:var(--lime);">$0</td>
+              </tr>
+              <tr style="background:#0a0a0a;">
+                <td style="color:var(--grey);white-space:nowrap;">14 Jan 2026</td>
+                <td>Account credit applied — catch-up class</td>
+                <td style="color:var(--grey);">S3</td>
+                <td><span class="tag tag-amber" style="font-size:10px;">Credit</span></td>
+                <td>—</td><td class="bal-pos">$18</td><td style="color:var(--lime);">$18</td>
+              </tr>
+              <tr style="background:#0a0a0a;">
+                <td style="color:var(--grey);white-space:nowrap;">5 Nov 2025</td>
+                <td>Season 2 enrolment — Level 1 (paid in full)</td>
+                <td style="color:var(--grey);">S2</td>
+                <td><span class="tag tag-lime" style="font-size:10px;">Payment</span></td>
+                <td>—</td><td class="bal-pos">$145</td><td style="color:var(--lime);">$0</td>
+              </tr>
+              <tr style="background:#0a0a0a;">
+                <td style="color:var(--grey);white-space:nowrap;">5 Nov 2025</td>
+                <td>Season 2 enrolment — Level 1 (full payment)</td>
+                <td style="color:var(--grey);">S2</td>
+                <td><span class="tag tag-lav" style="font-size:10px;">Invoice</span></td>
+                <td class="bal-neg">$145</td><td>—</td><td class="bal-neg">−$145</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -3933,19 +4036,19 @@ tr.clickable-row:hover td { background: #141414; }
         </div>
         <div class="notif-row">
           <div><div style="font-weight:500;font-size:13px;">Health, Injury &amp; PAR-Q Questionnaire</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Required before first class — includes physical activity readiness questions</div></div>
-          <div style="display:flex;gap:8px;align-items:center;"><button class="btn btn-ghost btn-xs">Edit</button><button class="btn btn-ghost btn-xs">Preview</button><label class="toggle" title="Required"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+          <div style="display:flex;gap:8px;align-items:center;"><button class="btn btn-ghost btn-xs" onclick="openFormEdit('Health PAR-Q')">Edit</button><button class="btn btn-ghost btn-xs" onclick="openFormPreview('Health PAR-Q')">Preview</button><label class="toggle" title="Required"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
         </div>
         <div class="notif-row">
           <div><div style="font-weight:500;font-size:13px;">Photo &amp; Media Consent</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Collected on sign up</div></div>
-          <div style="display:flex;gap:8px;align-items:center;"><button class="btn btn-ghost btn-xs">Edit</button><button class="btn btn-ghost btn-xs">Preview</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+          <div style="display:flex;gap:8px;align-items:center;"><button class="btn btn-ghost btn-xs" onclick="openFormEdit('photo-consent')">Edit</button><button class="btn btn-ghost btn-xs" onclick="openFormPreview('photo-consent')">Preview</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
         </div>
         <div class="notif-row">
           <div><div style="font-weight:500;font-size:13px;">Studio Waiver</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Required before each season</div></div>
-          <div style="display:flex;gap:8px;align-items:center;"><button class="btn btn-ghost btn-xs">Edit</button><button class="btn btn-ghost btn-xs">Preview</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+          <div style="display:flex;gap:8px;align-items:center;"><button class="btn btn-ghost btn-xs" onclick="openFormEdit('studio-waiver')">Edit</button><button class="btn btn-ghost btn-xs" onclick="openFormPreview('studio-waiver')">Preview</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
         </div>
         <div class="notif-row" style="border-bottom:none;">
           <div><div style="font-weight:500;font-size:13px;">Season Enrolment Agreement</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">Required before each season enrolment</div></div>
-          <div style="display:flex;gap:8px;align-items:center;"><button class="btn btn-ghost btn-xs">Edit</button><button class="btn btn-ghost btn-xs">Preview</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+          <div style="display:flex;gap:8px;align-items:center;"><button class="btn btn-ghost btn-xs" onclick="openFormEdit('season-agreement')">Edit</button><button class="btn btn-ghost btn-xs" onclick="openFormPreview('season-agreement')">Preview</button><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
         </div>
       </div>
     </div>
@@ -4903,7 +5006,8 @@ tr.clickable-row:hover td { background: #141414; }
         <div><div class="page-title">Retail</div><div class="page-sub">Products, stock and sales</div></div>
         <div style="display:flex;gap:8px;">
           <button class="btn btn-ghost" onclick="openModal('modal-square-sync')">🔄 Sync with Square</button>
-          <button class="btn btn-lime" onclick="openModal('modal-add-product')">+ Add Product</button>
+          <button class="btn btn-ghost" onclick="openModal('modal-add-product')">+ Add Product</button>
+          <button class="btn btn-lime" onclick="openModal('modal-new-purchase')">🛒 New Purchase</button>
         </div>
       </div>
       <div style="background:#1a1a0a;border:1px solid #aaaa0044;border-radius:8px;padding:10px 16px;margin-bottom:20px;display:flex;align-items:center;gap:12px;font-size:13px;">
@@ -4978,60 +5082,101 @@ tr.clickable-row:hover td { background: #141414; }
     <!-- ===== LOCKERS ===== -->
     <div id="screen-lockers" class="screen">
       <div class="page-header">
-        <div><div class="page-title">Lockers</div><div class="page-sub">Manage locker assignments and payments</div></div>
+        <div><div class="page-title">Lockers</div><div class="page-sub">36 lockers · Season 4</div></div>
         <button class="btn btn-lime" onclick="openModal('modal-assign-locker')">+ Assign Locker</button>
       </div>
+
+      <!-- KPIs -->
       <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
-        <div class="kpi kpi-lime"><div class="kpi-label">Assigned</div><div class="kpi-value">18</div><div class="kpi-sub">of 24 total</div></div>
-        <div class="kpi"><div class="kpi-label">Available</div><div class="kpi-value">6</div><div class="kpi-sub">Ready to assign</div></div>
-        <div class="kpi kpi-amber"><div class="kpi-label">Overdue Payment</div><div class="kpi-value">2</div><div class="kpi-sub">Chase needed</div></div>
-        <div class="kpi kpi-lav"><div class="kpi-label">Monthly Revenue</div><div class="kpi-value">$270</div><div class="kpi-sub">18 × $15/mo</div></div>
+        <div class="kpi kpi-amber"><div class="kpi-label">Free Lockers</div><div class="kpi-value">8</div><div class="kpi-sub">Auto — 4+ classes/season</div></div>
+        <div class="kpi kpi-lime"><div class="kpi-label">Paid Lockers</div><div class="kpi-value">11</div><div class="kpi-sub">$50/season</div></div>
+        <div class="kpi"><div class="kpi-label">Available</div><div class="kpi-value">17</div><div class="kpi-sub">Unassigned</div></div>
+        <div class="kpi kpi-red"><div class="kpi-label">Overdue</div><div class="kpi-value">2</div><div class="kpi-sub">Chase needed</div></div>
       </div>
 
-      <!-- Locker grid visual -->
-      <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:12px;">Locker Map</div>
-      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:24px;">
-        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">01</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
-        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">02</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
-        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">03</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
-        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--grey)">04</div><div style="font-size:10px;margin-top:3px;color:var(--border)">Free</div></div>
-        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">05</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
-        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">06</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
-        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">07</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
-        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">08</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
-        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">09</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
-        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">10</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
-        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">11</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
-        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--grey)">12</div><div style="font-size:10px;margin-top:3px;color:var(--border)">Free</div></div>
-        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">13</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
-        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">14</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
-        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">15</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
-        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">16</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
-        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">17</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
-        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">18</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
-        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--grey)">19</div><div style="font-size:10px;margin-top:3px;color:var(--border)">Free</div></div>
-        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--grey)">20</div><div style="font-size:10px;margin-top:3px;color:var(--border)">Free</div></div>
-        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--grey)">21</div><div style="font-size:10px;margin-top:3px;color:var(--border)">Free</div></div>
-        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--grey)">22</div><div style="font-size:10px;margin-top:3px;color:var(--border)">Free</div></div>
-        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">23</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
-        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;" onclick="openModal('modal-locker-detail')"><div style="font-size:11px;font-weight:700;color:var(--lime)">24</div><div style="font-size:10px;margin-top:3px;color:var(--grey)">Assigned</div></div>
+      <!-- Auto-assign alert -->
+      <div style="background:#1a1200;border:1px solid var(--amber);border-radius:10px;padding:14px 16px;margin-bottom:20px;">
+        <div style="font-family:'Archivo Black',sans-serif;font-size:13px;color:var(--amber);margin-bottom:10px;">⚡ Auto-Assign Required — students in 4+ classes without a locker</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;background:#0f0c00;border-radius:8px;padding:10px 14px;">
+            <div><div style="font-size:13px;font-weight:600;">Belle Currie</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">4 classes this season — entitled to a free locker</div></div>
+            <button style="background:var(--amber);color:#000;border:none;padding:5px 14px;border-radius:6px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;" onclick="openAssignLockerFor('Belle Currie')">Assign Locker</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:#0f0c00;border-radius:8px;padding:10px 14px;">
+            <div><div style="font-size:13px;font-weight:600;">Avalon Carnall</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">4 classes this season — entitled to a free locker</div></div>
+            <button style="background:var(--amber);color:#000;border:none;padding:5px 14px;border-radius:6px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;" onclick="openAssignLockerFor('Avalon Carnall')">Assign Locker</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:#0f0c00;border-radius:8px;padding:10px 14px;">
+            <div><div style="font-size:13px;font-weight:600;">Krys Kapsimallis</div><div style="font-size:11px;color:var(--grey);margin-top:2px;">5 classes this season — entitled to a free locker</div></div>
+            <button style="background:var(--amber);color:#000;border:none;padding:5px 14px;border-radius:6px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;" onclick="openAssignLockerFor('Krys Kapsimallis')">Assign Locker</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Locker map legend -->
+      <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:8px;">Locker Map</div>
+      <div style="display:flex;gap:16px;margin-bottom:10px;font-size:12px;">
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#1a1000;border:1px solid var(--amber);display:inline-block;"></span> Free (auto)</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#0f1600;border:1px solid var(--lime);display:inline-block;"></span> Paid</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#2a0000;border:1px solid #ff3333;display:inline-block;"></span> Overdue</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#111;border:1px solid var(--border);display:inline-block;"></span> Available</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:24px;">
+        <div style="background:#1a1000;border:1px solid var(--amber);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openLockerDetail(1,'Jess Malone','free')"><div style="font-size:11px;font-weight:700;color:var(--amber)">01</div><div style="font-size:9px;margin-top:2px;color:var(--grey)">Free</div></div>
+        <div style="background:#1a1000;border:1px solid var(--amber);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openLockerDetail(2,'Ruby Kim','free')"><div style="font-size:11px;font-weight:700;color:var(--amber)">02</div><div style="font-size:9px;margin-top:2px;color:var(--grey)">Free</div></div>
+        <div style="background:#1a1000;border:1px solid var(--amber);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openLockerDetail(3,'Nina Torres','free')"><div style="font-size:11px;font-weight:700;color:var(--amber)">03</div><div style="font-size:9px;margin-top:2px;color:var(--grey)">Free</div></div>
+        <div style="background:#1a1000;border:1px solid var(--amber);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openLockerDetail(4,'Dana Park','free')"><div style="font-size:11px;font-weight:700;color:var(--amber)">04</div><div style="font-size:9px;margin-top:2px;color:var(--grey)">Free</div></div>
+        <div style="background:#1a1000;border:1px solid var(--amber);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openLockerDetail(5,'Amber Cole','free')"><div style="font-size:11px;font-weight:700;color:var(--amber)">05</div><div style="font-size:9px;margin-top:2px;color:var(--grey)">Free</div></div>
+        <div style="background:#1a1000;border:1px solid var(--amber);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openLockerDetail(6,'Sophie Lawson','free')"><div style="font-size:11px;font-weight:700;color:var(--amber)">06</div><div style="font-size:9px;margin-top:2px;color:var(--grey)">Free</div></div>
+        <div style="background:#1a1000;border:1px solid var(--amber);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openLockerDetail(7,'Hannah Webb','free')"><div style="font-size:11px;font-weight:700;color:var(--amber)">07</div><div style="font-size:9px;margin-top:2px;color:var(--grey)">Free</div></div>
+        <div style="background:#1a1000;border:1px solid var(--amber);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openLockerDetail(8,'Tara Bell','free')"><div style="font-size:11px;font-weight:700;color:var(--amber)">08</div><div style="font-size:9px;margin-top:2px;color:var(--grey)">Free</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openLockerDetail(9,'Kylie Rhodes','paid')"><div style="font-size:11px;font-weight:700;color:var(--lime)">09</div><div style="font-size:9px;margin-top:2px;color:var(--grey)">Paid</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openLockerDetail(10,'Maya Tran','paid')"><div style="font-size:11px;font-weight:700;color:var(--lime)">10</div><div style="font-size:9px;margin-top:2px;color:var(--grey)">Paid</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openLockerDetail(11,'Cleo Nguyen','paid')"><div style="font-size:11px;font-weight:700;color:var(--lime)">11</div><div style="font-size:9px;margin-top:2px;color:var(--grey)">Paid</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openLockerDetail(12,'Rika Tyebally','paid')"><div style="font-size:11px;font-weight:700;color:var(--lime)">12</div><div style="font-size:9px;margin-top:2px;color:var(--grey)">Paid</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openLockerDetail(13,'Gee Chan','paid')"><div style="font-size:11px;font-weight:700;color:var(--lime)">13</div><div style="font-size:9px;margin-top:2px;color:var(--grey)">Paid</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openLockerDetail(14,'Zoe Clarke','paid')"><div style="font-size:11px;font-weight:700;color:var(--lime)">14</div><div style="font-size:9px;margin-top:2px;color:var(--grey)">Paid</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openLockerDetail(15,'Zara Malone','paid')"><div style="font-size:11px;font-weight:700;color:var(--lime)">15</div><div style="font-size:9px;margin-top:2px;color:var(--grey)">Paid</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openLockerDetail(16,'Lily Chen','paid')"><div style="font-size:11px;font-weight:700;color:var(--lime)">16</div><div style="font-size:9px;margin-top:2px;color:var(--grey)">Paid</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openLockerDetail(17,'Jordan Lee','paid')"><div style="font-size:11px;font-weight:700;color:var(--lime)">17</div><div style="font-size:9px;margin-top:2px;color:var(--grey)">Paid</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openLockerDetail(18,'Sam Lee','paid')"><div style="font-size:11px;font-weight:700;color:var(--lime)">18</div><div style="font-size:9px;margin-top:2px;color:var(--grey)">Paid</div></div>
+        <div style="background:#0f1600;border:1px solid var(--lime);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openLockerDetail(19,'Mia Park','paid')"><div style="font-size:11px;font-weight:700;color:var(--lime)">19</div><div style="font-size:9px;margin-top:2px;color:var(--grey)">Paid</div></div>
+        <div style="background:#2a0000;border:1px solid #ff3333;border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openLockerDetail(20,'Sophie Lawson','overdue')"><div style="font-size:11px;font-weight:700;color:#ff6b6b">20</div><div style="font-size:9px;margin-top:2px;color:#ff6b6b">Overdue</div></div>
+        <div style="background:#2a0000;border:1px solid #ff3333;border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openLockerDetail(21,'Kylie Rhodes','overdue')"><div style="font-size:11px;font-weight:700;color:#ff6b6b">21</div><div style="font-size:9px;margin-top:2px;color:#ff6b6b">Overdue</div></div>
+        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openModal('modal-assign-locker')"><div style="font-size:11px;font-weight:700;color:var(--grey)">22</div><div style="font-size:9px;margin-top:2px;color:var(--border)">Free</div></div>
+        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openModal('modal-assign-locker')"><div style="font-size:11px;font-weight:700;color:var(--grey)">23</div><div style="font-size:9px;margin-top:2px;color:var(--border)">Free</div></div>
+        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openModal('modal-assign-locker')"><div style="font-size:11px;font-weight:700;color:var(--grey)">24</div><div style="font-size:9px;margin-top:2px;color:var(--border)">Free</div></div>
+        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openModal('modal-assign-locker')"><div style="font-size:11px;font-weight:700;color:var(--grey)">25</div><div style="font-size:9px;margin-top:2px;color:var(--border)">Free</div></div>
+        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openModal('modal-assign-locker')"><div style="font-size:11px;font-weight:700;color:var(--grey)">26</div><div style="font-size:9px;margin-top:2px;color:var(--border)">Free</div></div>
+        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openModal('modal-assign-locker')"><div style="font-size:11px;font-weight:700;color:var(--grey)">27</div><div style="font-size:9px;margin-top:2px;color:var(--border)">Free</div></div>
+        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openModal('modal-assign-locker')"><div style="font-size:11px;font-weight:700;color:var(--grey)">28</div><div style="font-size:9px;margin-top:2px;color:var(--border)">Free</div></div>
+        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openModal('modal-assign-locker')"><div style="font-size:11px;font-weight:700;color:var(--grey)">29</div><div style="font-size:9px;margin-top:2px;color:var(--border)">Free</div></div>
+        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openModal('modal-assign-locker')"><div style="font-size:11px;font-weight:700;color:var(--grey)">30</div><div style="font-size:9px;margin-top:2px;color:var(--border)">Free</div></div>
+        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openModal('modal-assign-locker')"><div style="font-size:11px;font-weight:700;color:var(--grey)">31</div><div style="font-size:9px;margin-top:2px;color:var(--border)">Free</div></div>
+        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openModal('modal-assign-locker')"><div style="font-size:11px;font-weight:700;color:var(--grey)">32</div><div style="font-size:9px;margin-top:2px;color:var(--border)">Free</div></div>
+        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openModal('modal-assign-locker')"><div style="font-size:11px;font-weight:700;color:var(--grey)">33</div><div style="font-size:9px;margin-top:2px;color:var(--border)">Free</div></div>
+        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openModal('modal-assign-locker')"><div style="font-size:11px;font-weight:700;color:var(--grey)">34</div><div style="font-size:9px;margin-top:2px;color:var(--border)">Free</div></div>
+        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openModal('modal-assign-locker')"><div style="font-size:11px;font-weight:700;color:var(--grey)">35</div><div style="font-size:9px;margin-top:2px;color:var(--border)">Free</div></div>
+        <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;" onclick="openModal('modal-assign-locker')"><div style="font-size:11px;font-weight:700;color:var(--grey)">36</div><div style="font-size:9px;margin-top:2px;color:var(--border)">Free</div></div>
       </div>
 
       <!-- Assignments table -->
       <div style="font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:12px;">Assignments</div>
       <div class="tbl-section">
         <table>
-          <thead><tr><th>Locker</th><th>Student</th><th>Assigned</th><th>Monthly Fee</th><th>Last Paid</th><th>Next Due</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Locker</th><th>Student</th><th>Type</th><th>Season Fee</th><th>Paid</th><th>Key Status</th><th>Actions</th></tr></thead>
           <tbody>
-            <tr><td><b>#01</b></td><td>Jess Malone</td><td style="color:var(--grey)">1 Mar 2026</td><td>$15</td><td style="color:var(--grey)">1 May</td><td style="color:var(--grey)">1 Jun</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs">Edit</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;">Unassign</button></td></tr>
-            <tr><td><b>#02</b></td><td>Ruby Kim</td><td style="color:var(--grey)">1 Apr 2026</td><td>$15</td><td style="color:var(--grey)">1 May</td><td style="color:var(--grey)">1 Jun</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs">Edit</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;">Unassign</button></td></tr>
-            <tr><td><b>#04</b></td><td>Sophie Lawson</td><td style="color:var(--grey)">1 Feb 2026</td><td>$15</td><td style="color:#ff6b6b">Overdue</td><td style="color:#ff6b6b">Overdue</td><td><span class="tag tag-red">Overdue</span></td><td><button class="btn btn-ghost btn-xs" onclick="openChaseModal('Sophie Lawson','Locker #04 fee','$30',1)">Chase</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;">Unassign</button></td></tr>
-            <tr><td><b>#05</b></td><td>Nina Torres</td><td style="color:var(--grey)">1 Mar 2026</td><td>$15</td><td style="color:var(--grey)">1 May</td><td style="color:var(--grey)">1 Jun</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs">Edit</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;">Unassign</button></td></tr>
-            <tr><td><b>#06</b></td><td>Tara Bell</td><td style="color:var(--grey)">1 May 2026</td><td>$15</td><td style="color:var(--grey)">1 May</td><td style="color:var(--grey)">1 Jun</td><td><span class="tag tag-lime">Active</span></td><td><button class="btn btn-ghost btn-xs">Edit</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;">Unassign</button></td></tr>
-            <tr><td><b>#07</b></td><td>Kylie Rhodes</td><td style="color:var(--grey)">1 Jan 2026</td><td>$15</td><td style="color:#ff6b6b">Overdue</td><td style="color:#ff6b6b">Overdue</td><td><span class="tag tag-red">Overdue</span></td><td><button class="btn btn-ghost btn-xs" onclick="openChaseModal('Kylie Rhodes','Locker #07 fee','$45',2)">Chase</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;">Unassign</button></td></tr>
+            <tr><td><b>#01</b></td><td>Jess Malone</td><td><span class="tag tag-amber" style="font-size:10px;">Free</span></td><td style="color:var(--grey);">—</td><td style="color:var(--lime);">Season 4</td><td><label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--lime);" /> Key given</label></td><td><button class="btn btn-ghost btn-xs" onclick="openLockerDetail(1,'Jess Malone','free')">Edit</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;" onclick="if(confirm('Unassign?'))alert('Unassigned')">Unassign</button></td></tr>
+            <tr><td><b>#02</b></td><td>Ruby Kim</td><td><span class="tag tag-amber" style="font-size:10px;">Free</span></td><td style="color:var(--grey);">—</td><td style="color:var(--lime);">Season 4</td><td><label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--lime);" /> Key given</label></td><td><button class="btn btn-ghost btn-xs" onclick="openLockerDetail(2,'Ruby Kim','free')">Edit</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;" onclick="if(confirm('Unassign?'))alert('Unassigned')">Unassign</button></td></tr>
+            <tr><td><b>#03</b></td><td>Nina Torres</td><td><span class="tag tag-amber" style="font-size:10px;">Free</span></td><td style="color:var(--grey);">—</td><td style="color:var(--lime);">Season 4</td><td><label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--lime);" /> Key given</label><label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;margin-top:2px;"><input type="checkbox" style="accent-color:var(--lime);" /> Key returned</label></td><td><button class="btn btn-ghost btn-xs" onclick="openLockerDetail(3,'Nina Torres','free')">Edit</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;" onclick="if(confirm('Unassign?'))alert('Unassigned')">Unassign</button></td></tr>
+            <tr><td><b>#09</b></td><td>Kylie Rhodes</td><td><span class="tag tag-lime" style="font-size:10px;">Paid</span></td><td style="color:var(--lime);">$50</td><td style="color:var(--lime);">Paid</td><td><label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--lime);" /> Key given</label></td><td><button class="btn btn-ghost btn-xs" onclick="openLockerDetail(9,'Kylie Rhodes','paid')">Edit</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;" onclick="if(confirm('Unassign?'))alert('Unassigned')">Unassign</button></td></tr>
+            <tr><td><b>#10</b></td><td>Maya Tran</td><td><span class="tag tag-lime" style="font-size:10px;">Paid</span></td><td style="color:var(--lime);">$50</td><td style="color:var(--lime);">Paid</td><td><label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--lime);" /> Key given</label></td><td><button class="btn btn-ghost btn-xs" onclick="openLockerDetail(10,'Maya Tran','paid')">Edit</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;" onclick="if(confirm('Unassign?'))alert('Unassigned')">Unassign</button></td></tr>
+            <tr><td><b>#20</b></td><td>Sophie Lawson</td><td><span class="tag tag-lime" style="font-size:10px;">Paid</span></td><td style="color:#ff6b6b;">$50 OVERDUE</td><td style="color:#ff6b6b;">Overdue</td><td><label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--lime);" /> Key given</label><label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;margin-top:2px;"><input type="checkbox" style="accent-color:#ff6b6b;" /> Key lost</label></td><td><button class="btn btn-ghost btn-xs" onclick="openChaseModal('Sophie Lawson','Locker #20 fee','$50',1)">Chase</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;" onclick="if(confirm('Unassign?'))alert('Unassigned')">Unassign</button></td></tr>
+            <tr><td><b>#21</b></td><td>Kylie Rhodes</td><td><span class="tag tag-lime" style="font-size:10px;">Paid</span></td><td style="color:#ff6b6b;">$50 OVERDUE</td><td style="color:#ff6b6b;">Overdue</td><td><label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--lime);" /> Key given</label></td><td><button class="btn btn-ghost btn-xs" onclick="openChaseModal('Kylie Rhodes','Locker #21 fee','$50',2)">Chase</button> <button class="btn btn-ghost btn-xs" style="color:#e05555;" onclick="if(confirm('Unassign?'))alert('Unassigned')">Unassign</button></td></tr>
           </tbody>
         </table>
       </div>
+    </div>
     </div>
   </div><!-- end .content -->
 </div><!-- end .main -->
@@ -9172,6 +9317,339 @@ Duality Pole</textarea>
     </div>
   </div>
 </div>
+
+
+<!-- ===== New Purchase (POS) Modal ===== -->
+<div class="modal-overlay" id="modal-new-purchase">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-title">New Purchase <button class="modal-close" onclick="closeModal('modal-new-purchase')">✕</button></div>
+    <div class="field">
+      <label>Customer</label>
+      <button id="pos-guest-toggle" class="btn btn-ghost btn-xs" style="margin-bottom:8px;" onclick="togglePosGuest()">Switch to Guest</button>
+      <div id="pos-student-row">
+        <input type="text" id="pos-student-search" placeholder="Search student by name or email…" oninput="posSearchStudent(this.value)" autocomplete="off" />
+        <div id="pos-student-results" style="display:none;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;margin-top:4px;max-height:160px;overflow-y:auto;"></div>
+        <div id="pos-student-selected" style="display:none;background:#111;border:1px solid var(--lime);border-radius:8px;padding:8px 12px;margin-top:4px;align-items:center;justify-content:space-between;">
+          <span id="pos-student-name" style="font-size:13px;font-weight:600;">—</span>
+          <button class="btn btn-ghost btn-xs" onclick="clearPosStudent()">✕</button>
+        </div>
+      </div>
+      <div id="pos-guest-row" style="display:none;"><input type="text" placeholder="Guest name (optional)" style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--white);font-family:inherit;width:100%;font-size:13px;box-sizing:border-box;" /></div>
+    </div>
+    <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:10px;">Items</div>
+    <div id="pos-cart" style="background:#111;border-radius:8px;padding:0 14px;margin-bottom:12px;"><div id="pos-cart-items"><div style="padding:12px 0;font-size:13px;color:var(--grey);">No items added yet.</div></div></div>
+    <div style="display:flex;gap:8px;margin-bottom:18px;align-items:center;">
+      <select id="pos-product-select" class="select-input" style="flex:1;">
+        <option value="">— Select product —</option>
+        <option value="Dry Hands Grip Aid|18">Dry Hands Grip Aid — $18</option>
+        <option value="Pole Grip Aid (Medium)|22">Pole Grip Aid (Medium) — $22</option>
+        <option value="Duality Crop Top|55">Duality Crop Top — $55</option>
+        <option value="Duality Booty Shorts|48">Duality Booty Shorts — $48</option>
+        <option value="Duality Tote Bag|35">Duality Tote Bag — $35</option>
+        <option value="Grip Socks|15">Grip Socks — $15</option>
+        <option value="Knee Pads|28">Knee Pads — $28</option>
+      </select>
+      <input type="number" id="pos-qty" value="1" min="1" style="width:60px;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;padding:8px 10px;font-size:13px;" />
+      <button class="btn btn-ghost btn-sm" onclick="posAddItem()">Add</button>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#1a1a1a;border-radius:8px;margin-bottom:18px;">
+      <span style="font-size:13px;color:var(--grey);">Total</span>
+      <span id="pos-total" style="font-family:'Archivo Black',sans-serif;font-size:22px;color:var(--lime);">$0.00</span>
+    </div>
+    <div class="field"><label>Payment Method</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-lime btn-sm" id="pos-pay-card" onclick="posSelectPayment('card')">💳 Card (Square)</button>
+        <button class="btn btn-ghost btn-sm" id="pos-pay-cash" onclick="posSelectPayment('cash')">💵 Cash</button>
+        <button class="btn btn-ghost btn-sm" id="pos-pay-credit" onclick="posSelectPayment('credit')">🎟 Account Credit</button>
+        <button class="btn btn-ghost btn-sm" id="pos-pay-voucher" onclick="posSelectPayment('voucher')">🎁 Voucher</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-new-purchase')">Cancel</button>
+      <button class="btn btn-lime" onclick="posCheckout()">Complete Sale</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Assign Locker Modal ===== -->
+<div class="modal-overlay" id="modal-assign-locker">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-title">Assign Locker <button class="modal-close" onclick="closeModal('modal-assign-locker')">✕</button></div>
+    <div class="field"><label>Student</label><input type="text" id="locker-assign-student" placeholder="Name or email…" /></div>
+    <div class="field-row">
+      <div class="field"><label>Locker Number</label>
+        <select class="select-input" id="locker-assign-num">
+          <option>22</option><option>23</option><option>24</option><option>25</option>
+          <option>26</option><option>27</option><option>28</option><option>29</option>
+          <option>30</option><option>31</option><option>32</option><option>33</option>
+          <option>34</option><option>35</option><option>36</option>
+        </select>
+      </div>
+      <div class="field"><label>Type</label>
+        <select class="select-input" id="locker-assign-type">
+          <option value="free">Free (4+ classes)</option>
+          <option value="paid">Paid ($50/season)</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>Key Status</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-top:4px;"><input type="checkbox" id="locker-key-given" style="accent-color:var(--lime);" /> Key given to student</label>
+    </div>
+    <div class="field"><label>Notes</label><textarea placeholder="e.g. Combo: 1234" rows="2"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-assign-locker')">Cancel</button>
+      <button class="btn btn-lime" onclick="alert('Locker assigned!');closeModal('modal-assign-locker')">Assign</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Locker Detail Modal ===== -->
+<div class="modal-overlay" id="modal-locker-detail">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-title">Locker <span id="ld-num">#01</span> <button class="modal-close" onclick="closeModal('modal-locker-detail')">✕</button></div>
+    <div style="font-size:14px;font-weight:600;margin-bottom:14px;" id="ld-student">Jess Malone</div>
+    <div style="background:#1a1a1a;border-radius:10px;padding:14px 16px;margin-bottom:18px;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;"><span style="color:var(--grey);">Type</span><span id="ld-type-badge"></span></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;"><span style="color:var(--grey);">Season</span><span>Season 4 (11 May – 5 Jul 2026)</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--grey);">Fee</span><span id="ld-fee">—</span></div>
+    </div>
+    <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:10px;">Key Status</div>
+    <div style="background:#111;border-radius:8px;padding:14px 16px;margin-bottom:18px;display:flex;flex-direction:column;gap:10px;">
+      <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;"><input type="checkbox" id="ld-key-given" style="accent-color:var(--lime);width:16px;height:16px;" /> Key given to student</label>
+      <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;"><input type="checkbox" id="ld-key-returned" style="accent-color:var(--lime);width:16px;height:16px;" /> Key returned</label>
+      <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;"><input type="checkbox" id="ld-key-lost" style="accent-color:#ff6b6b;width:16px;height:16px;" onchange="if(this.checked){document.getElementById('ld-key-given').checked=false;document.getElementById('ld-key-returned').checked=false;}" /> <span style="color:#ff9999;">Key lost — replacement fee applies ($15)</span></label>
+    </div>
+    <div class="field"><label>Notes / Combo</label><textarea id="ld-notes" placeholder="e.g. Combo: 1234" rows="2"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-locker-detail')">Cancel</button>
+      <button class="btn btn-ghost" style="color:#e05555;" onclick="if(confirm('Unassign this locker?')){alert('Locker unassigned');closeModal('modal-locker-detail')}">Unassign</button>
+      <button class="btn btn-lime" onclick="alert('Changes saved');closeModal('modal-locker-detail')">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Form Builder Modal ===== -->
+<div class="modal-overlay" id="modal-form-builder">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-title"><span id="form-builder-title">Edit Form</span> <button class="modal-close" onclick="closeModal('modal-form-builder')">✕</button></div>
+    <div class="field"><label>Form Name</label><input type="text" id="form-builder-name" /></div>
+    <div class="field"><label>Instructions</label><textarea id="form-builder-desc" rows="2" placeholder="Brief instructions shown to the student…"></textarea></div>
+    <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:10px;">Fields</div>
+    <div id="form-builder-fields" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
+    <button class="btn btn-ghost btn-sm" onclick="alert('Add field (not functional in mockup)')">+ Add Field</button>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-form-builder')">Cancel</button>
+      <button class="btn btn-ghost" onclick="openFormPreview(document.getElementById('form-builder-name').value)">Preview</button>
+      <button class="btn btn-lime" onclick="alert('Form saved!');closeModal('modal-form-builder')">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Form Preview Modal ===== -->
+<div class="modal-overlay" id="modal-form-preview">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-title">Preview — <span id="form-preview-title">Form</span> <button class="modal-close" onclick="closeModal('modal-form-preview')">✕</button></div>
+    <div style="font-size:12px;color:var(--grey);margin-bottom:14px;">How this form appears to students in the app.</div>
+    <div id="form-preview-content" style="background:#111;border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:14px;max-height:420px;overflow-y:auto;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-form-preview')">Close</button>
+      <button class="btn btn-lime" onclick="openFormEdit(document.getElementById('form-preview-title').textContent);closeModal('modal-form-preview')">Edit Form</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── POS / New Purchase ───────────────────────────────────────────────────────
+var _posIsGuest = false;
+var _posCart = [];
+var _posPayMethod = 'card';
+var _posSelectedStudent = null;
+
+function togglePosGuest() {
+  _posIsGuest = !_posIsGuest;
+  document.getElementById('pos-student-row').style.display = _posIsGuest ? 'none' : '';
+  document.getElementById('pos-guest-row').style.display = _posIsGuest ? '' : 'none';
+  document.getElementById('pos-guest-toggle').textContent = _posIsGuest ? 'Switch to Student' : 'Switch to Guest';
+}
+function posSearchStudent(q) {
+  var res = document.getElementById('pos-student-results');
+  if (!q || q.length < 2) { res.style.display = 'none'; return; }
+  var matches = STUDENTS.filter(function(s) {
+    return s.name.toLowerCase().indexOf(q.toLowerCase()) > -1 || (s.email && s.email.toLowerCase().indexOf(q.toLowerCase()) > -1);
+  }).slice(0, 6);
+  if (!matches.length) { res.style.display = 'none'; return; }
+  res.innerHTML = matches.map(function(s) {
+    return '<div style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);" ' +
+      'onmouseenter="this.style.background=\'#222\'" onmouseleave="this.style.background=\'transparent\'" ' +
+      'onclick="selectPosStudent({id:\'' + s.id + '\',name:\'' + s.name.replace(/'/g, '') + '\'})">' +
+      '<b>' + s.name + '</b>' + (s.email ? '<span style="color:var(--grey);font-size:11px;margin-left:8px;">' + s.email + '</span>' : '') + '</div>';
+  }).join('');
+  res.style.display = '';
+}
+function selectPosStudent(obj) {
+  _posSelectedStudent = obj;
+  document.getElementById('pos-student-search').value = '';
+  document.getElementById('pos-student-results').style.display = 'none';
+  var sel = document.getElementById('pos-student-selected');
+  document.getElementById('pos-student-name').textContent = obj.name;
+  sel.style.display = 'flex';
+}
+function clearPosStudent() {
+  _posSelectedStudent = null;
+  document.getElementById('pos-student-selected').style.display = 'none';
+  document.getElementById('pos-student-search').value = '';
+}
+function posAddItem() {
+  var sel = document.getElementById('pos-product-select');
+  var qty = parseInt(document.getElementById('pos-qty').value) || 1;
+  if (!sel.value) return;
+  var parts = sel.value.split('|');
+  _posCart.push({name: parts[0], price: parseFloat(parts[1]), qty: qty});
+  posRenderCart(); sel.value = ''; document.getElementById('pos-qty').value = 1;
+}
+function posRemoveItem(idx) { _posCart.splice(idx,1); posRenderCart(); }
+function posRenderCart() {
+  var el = document.getElementById('pos-cart-items');
+  if (!_posCart.length) { el.innerHTML = '<div style="padding:12px 0;font-size:13px;color:var(--grey);">No items added yet.</div>'; document.getElementById('pos-total').textContent = '$0.00'; return; }
+  var total = 0;
+  el.innerHTML = _posCart.map(function(item, i) {
+    var lineTotal = item.price * item.qty; total += lineTotal;
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">' +
+      '<div style="font-size:13px;">' + item.name + (item.qty > 1 ? ' × ' + item.qty : '') + '</div>' +
+      '<div style="display:flex;align-items:center;gap:10px;"><span style="font-size:13px;color:var(--lime);">$' + lineTotal.toFixed(2) + '</span>' +
+      '<button class="btn btn-ghost btn-xs" onclick="posRemoveItem(' + i + ')">&#10005;</button></div></div>';
+  }).join('');
+  document.getElementById('pos-total').textContent = '$' + total.toFixed(2);
+}
+function posSelectPayment(method) {
+  _posPayMethod = method;
+  ['card','cash','credit','voucher'].forEach(function(m) {
+    var btn = document.getElementById('pos-pay-' + m);
+    if (btn) { btn.className = m === method ? 'btn btn-lime btn-sm' : 'btn btn-ghost btn-sm'; }
+  });
+}
+function posCheckout() {
+  if (!_posCart.length) { alert('Add at least one item first.'); return; }
+  var customer = _posIsGuest ? 'Guest' : (_posSelectedStudent ? _posSelectedStudent.name : null);
+  if (!customer) { alert('Please select a student or switch to Guest.'); return; }
+  var total = _posCart.reduce(function(s,i){ return s + i.price*i.qty; }, 0);
+  var methods = {card:'Card (Square)',cash:'Cash',credit:'Account Credit',voucher:'Voucher'};
+  alert('Sale complete!\n' + customer + ' — $' + total.toFixed(2) + ' via ' + methods[_posPayMethod] + '.');
+  _posCart = []; _posSelectedStudent = null; posRenderCart();
+  if (!_posIsGuest) clearPosStudent();
+  closeModal('modal-new-purchase');
+}
+
+// ── Lockers ──────────────────────────────────────────────────────────────────
+var _lockerData = {
+  1:{student:'Jess Malone',type:'free',keyGiven:true,keyReturned:false,keyLost:false,notes:''},
+  2:{student:'Ruby Kim',type:'free',keyGiven:true,keyReturned:false,keyLost:false,notes:''},
+  3:{student:'Nina Torres',type:'free',keyGiven:true,keyReturned:false,keyLost:false,notes:''},
+  9:{student:'Kylie Rhodes',type:'paid',keyGiven:true,keyReturned:false,keyLost:false,notes:''},
+  10:{student:'Maya Tran',type:'paid',keyGiven:true,keyReturned:false,keyLost:false,notes:''},
+  20:{student:'Sophie Lawson',type:'overdue',keyGiven:true,keyReturned:false,keyLost:true,notes:'Key reported lost 10 May'},
+  21:{student:'Kylie Rhodes',type:'overdue',keyGiven:true,keyReturned:false,keyLost:false,notes:''},
+};
+function openLockerDetail(num, student, type) {
+  var data = _lockerData[num] || {student:student,type:type,keyGiven:false,keyReturned:false,keyLost:false,notes:''};
+  document.getElementById('ld-num').textContent = '#' + String(num).padStart(2,'0');
+  document.getElementById('ld-student').textContent = data.student;
+  var tb = document.getElementById('ld-type-badge');
+  if (type==='free') tb.innerHTML = '<span class="tag tag-amber" style="font-size:11px;">Free — 4+ classes</span>';
+  else if (type==='paid') tb.innerHTML = '<span class="tag tag-lime" style="font-size:11px;">Paid</span>';
+  else tb.innerHTML = '<span style="background:#3a0000;color:#ff6b6b;border:1px solid #ff3333;border-radius:4px;padding:2px 8px;font-size:11px;">Overdue</span>';
+  document.getElementById('ld-fee').textContent = type==='free' ? 'Free (included in 4+ enrolment)' : '$50 / season';
+  document.getElementById('ld-key-given').checked = data.keyGiven;
+  document.getElementById('ld-key-returned').checked = data.keyReturned;
+  document.getElementById('ld-key-lost').checked = data.keyLost;
+  document.getElementById('ld-notes').value = data.notes || '';
+  openModal('modal-locker-detail');
+}
+function openAssignLockerFor(name) {
+  document.getElementById('locker-assign-student').value = name;
+  document.getElementById('locker-assign-type').value = 'free';
+  openModal('modal-assign-locker');
+}
+
+// ── Forms & Documents ────────────────────────────────────────────────────────
+var _formDefs = {
+  'parq': {
+    name: 'Health, Injury & PAR-Q Questionnaire',
+    desc: 'Complete before your first class. Your answers help us keep you safe.',
+    fields: [
+      {label:'Full Name',type:'text',required:true},
+      {label:'Date of Birth',type:'date',required:true},
+      {label:'Emergency Contact Name & Phone',type:'text',required:true},
+      {label:'Do you have any current injuries or health conditions?',type:'yesno',required:true},
+      {label:'Please describe (if yes)',type:'textarea',required:false},
+      {label:'Are you pregnant or post-natal (within 6 months)?',type:'yesno',required:true},
+    ]
+  },
+  'photo-consent': {
+    name: 'Photo & Media Consent',
+    desc: 'Duality Pole Studio may photograph and video classes for promotional use.',
+    fields: [
+      {label:'I consent to being photographed / filmed during classes',type:'checkbox',required:false},
+      {label:'I consent to images being shared on social media',type:'checkbox',required:false},
+      {label:'I consent to images being used in marketing materials',type:'checkbox',required:false},
+    ]
+  },
+  'studio-waiver': {
+    name: 'Studio Waiver',
+    desc: 'Please read carefully and sign. Required each term.',
+    fields: [
+      {label:'I understand pole dance carries inherent risk of injury',type:'checkbox',required:true},
+      {label:'I agree to follow all instructor and studio safety guidelines',type:'checkbox',required:true},
+      {label:'I release Duality Pole Studio from liability for injury during class',type:'checkbox',required:true},
+      {label:'Full Name (signature)',type:'text',required:true},
+      {label:'Date',type:'date',required:true},
+    ]
+  },
+  'season-agreement': {
+    name: 'Season Enrolment Agreement',
+    desc: 'By enrolling you agree to the following terms for the current season.',
+    fields: [
+      {label:'I understand the cancellation policy (4hr window, no-show fee applies)',type:'checkbox',required:true},
+      {label:'I understand fees are non-refundable unless a transfer is arranged',type:'checkbox',required:true},
+      {label:'I agree to the catch-up class policy',type:'checkbox',required:true},
+      {label:'Full Name',type:'text',required:true},
+    ]
+  }
+};
+function openFormEdit(id) {
+  var def = _formDefs[id] || _formDefs['studio-waiver'];
+  document.getElementById('form-builder-title').textContent = 'Edit — ' + (def.name || id);
+  document.getElementById('form-builder-name').value = def.name || id;
+  document.getElementById('form-builder-desc').value = def.desc || '';
+  var el = document.getElementById('form-builder-fields');
+  el.innerHTML = (def.fields || []).map(function(f) {
+    return '<div style="background:#1a1a1a;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;">' +
+      '<span style="font-size:13px;flex:1;">' + f.label + ' <span style="color:var(--grey);font-size:11px;">(' + f.type + (f.required?', required':'') + ')</span></span>' +
+      '<button class="btn btn-ghost btn-xs" onclick="alert(\'Edit field (mockup)\')">Edit</button>' +
+      '<button class="btn btn-ghost btn-xs" style="color:#e05555;" onclick="this.closest(\'div\').remove()">×</button></div>';
+  }).join('');
+  openModal('modal-form-builder');
+}
+function openFormPreview(id) {
+  var def = _formDefs[id] || _formDefs['studio-waiver'];
+  document.getElementById('form-preview-title').textContent = def.name || id;
+  var content = document.getElementById('form-preview-content');
+  content.innerHTML = '<div style="font-size:13px;color:var(--grey);font-style:italic;margin-bottom:4px;">' + (def.desc||'') + '</div>' +
+    (def.fields||[]).map(function(f) {
+      var inp = '';
+      if (f.type==='text') inp = '<input type="text" disabled placeholder="Student answer…" style="width:100%;background:#222;border:1px solid var(--border);border-radius:6px;color:var(--grey);font-family:inherit;padding:7px 10px;font-size:12px;margin-top:4px;box-sizing:border-box;" />';
+      else if (f.type==='date') inp = '<input type="date" disabled style="background:#222;border:1px solid var(--border);border-radius:6px;color:var(--grey);padding:7px 10px;font-size:12px;margin-top:4px;" />';
+      else if (f.type==='textarea') inp = '<textarea disabled rows="2" style="width:100%;background:#222;border:1px solid var(--border);border-radius:6px;color:var(--grey);font-family:inherit;padding:7px 10px;font-size:12px;margin-top:4px;box-sizing:border-box;resize:none;"></textarea>';
+      else if (f.type==='yesno') inp = '<div style="display:flex;gap:10px;margin-top:6px;"><label style="font-size:12px;"><input type="radio" disabled /> Yes</label><label style="font-size:12px;"><input type="radio" disabled /> No</label></div>';
+      else if (f.type==='checkbox') inp = '';
+      var lbl = f.type==='checkbox'
+        ? '<label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;"><input type="checkbox" disabled style="margin-top:2px;" /> <span style="font-size:13px;">' + f.label + '</span></label>'
+        : '<div style="font-size:13px;font-weight:500;">' + f.label + (f.required?' <span style="color:#ff6b6b;">*</span>':'') + '</div>' + inp;
+      return '<div>' + lbl + '</div>';
+    }).join('');
+  openModal('modal-form-preview');
+}
+</script>
 
 </body>
 </html>
