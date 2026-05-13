@@ -1,6 +1,4 @@
 import { useState } from 'react'
-import { useApi } from '../../hooks/useApi'
-import { classes } from '../../api'
 
 function Section({ title, children }) {
   return (

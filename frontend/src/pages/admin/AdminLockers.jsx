@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import '../StudentsPage.css'
 
 const TOTAL_LOCKERS = 36
 const ASSIGNMENTS = [

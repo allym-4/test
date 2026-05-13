@@ -31,7 +31,7 @@ export default function LoginPage() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-logo">DUALITY</div>
-        <p className="login-tagline">Instructor Portal</p>
+        <p className="login-tagline">Move your body. Find your power.</p>
 
         <form onSubmit={handleSubmit}>
           {error && <div className="error-msg">{error}</div>}
