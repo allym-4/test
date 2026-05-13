@@ -13,6 +13,9 @@ class Command(BaseCommand):
     help = 'Seed the database with demo data'
 
     def handle(self, *args, **options):
+        if User.objects.filter(username='chloe').exists():
+            self.stdout.write('Seed data already present, skipping.')
+            return
         self.stdout.write('Clearing existing data...')
         HomeworkSubmissionItem.objects.all().delete()
         HomeworkSubmission.objects.all().delete()
