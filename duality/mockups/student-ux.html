@@ -1581,6 +1581,12 @@
                 <div class="class-row-tags"><span class="tag tag-grey">Level 3+</span></div>
                 <div class="class-row-check">✓</div>
               </div>
+              <div class="class-row" data-day="thu" data-instr="amy" data-level="0" data-locked="false" onclick="toggleClass('chairvir-thu730','Chair Virgin','Thu 7:30pm',this)">
+                <div class="class-row-time-block"><div class="class-row-day-label">Thu</div><div class="class-row-time-label">7:30pm</div></div>
+                <div class="class-row-body"><div class="class-row-name">Chair Virgin</div><div class="class-row-instr">Amy</div></div>
+                <div class="class-row-tags"><span class="tag tag-grey">Beginner</span></div>
+                <div class="class-row-check">✓</div>
+              </div>
               <div class="class-row" data-day="wed" data-instr="chloe" data-level="0" data-locked="false" onclick="toggleClass('dancevir-wed730','Dance Virgin','Wed 7:30pm',this)">
                 <div class="class-row-time-block"><div class="class-row-day-label">Wed</div><div class="class-row-time-label">7:30pm</div></div>
                 <div class="class-row-body"><div class="class-row-name">Dance Virgin</div><div class="class-row-instr">Chloe</div></div>
@@ -3290,6 +3296,15 @@
         <div class="page-title">Studio Info</div>
       </div>
 
+      <!-- About Duality -->
+      <div class="card mb-24" style="max-width:760px;background:linear-gradient(135deg,#0a0010 0%,#050005 100%);border-color:var(--lav);">
+        <div style="font-family:'Archivo Black',sans-serif;font-size:16px;margin-bottom:12px;color:var(--lav);">About Duality</div>
+        <div style="font-size:14px;line-height:1.8;color:var(--grey);margin-bottom:14px;">At Duality, we celebrate your body for everything it can do. We believe everyone has a sensual side, and this is your safe space to explore it at your own pace. No experience required — just curiosity. Are you ready to discover your Duality?</div>
+        <div style="font-size:14px;line-height:1.8;color:var(--grey);margin-bottom:14px;">Since we've caught your attention, let us introduce you to your shadow side — the part of you that laughs louder, moves freer, and doesn't ask for permission.</div>
+        <div style="font-size:14px;line-height:1.8;color:var(--grey);margin-bottom:14px;">All of our classes are structured to build strength, technique and confidence. At the end of the class, we're determined to make sure that you're feeling yourself — satisfied, full of endorphins and proud of your ability.</div>
+        <div style="font-size:14px;line-height:1.8;color:var(--grey);">Our classes are 50 minutes and run for 8 weeks. Each class begins with a warm-up focused on conditioning and safe practice, followed by the skills portion, finishing with choreography. By the end of 8 weeks, you'll have met a group of fabulous new people, have a transformed view of your body and just how much it can achieve, and will have learnt a kick-ass routine that you'll want to flaunt on every dance floor.</div>
+      </div>
+
       <!-- Address + getting there -->
       <div class="card mb-24" style="max-width:760px;">
         <div style="font-family:'Archivo Black',sans-serif;font-size:16px;margin-bottom:16px;">Finding Us</div>
@@ -3381,6 +3396,10 @@
             </div>
           </div>
           <div>
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--grey);margin-bottom:4px;">Phone</div>
+            <a href="#" onclick="event.preventDefault();showToast('Calling...')" style="font-size:14px;color:var(--white);">(02) 9160 0223</a>
+          </div>
+          <div>
             <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--grey);margin-bottom:4px;">Instagram</div>
             <a href="#" onclick="event.preventDefault();showToast('Opening Instagram...')" style="font-size:14px;color:var(--lav);">@dualitypole</a>
           </div>
@@ -3388,6 +3407,13 @@
             For same-day issues (e.g. can't access Kisi, running late) please email <span style="color:var(--white);">staff@dualitypole.com</span> — this inbox is monitored before and during class time. The general inbox may not be checked until the next business day.
           </div>
         </div>
+      </div>
+
+      <!-- Acknowledgements -->
+      <div class="card mb-24" style="max-width:760px;background:#050000;border-color:#333;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--grey);margin-bottom:10px;">Acknowledgements</div>
+        <div style="font-size:13px;color:var(--grey);line-height:1.8;margin-bottom:14px;border-bottom:1px solid #1a1a1a;padding-bottom:14px;">We acknowledge the Traditional Custodians of the land on which we dance, the Gadigal People. We pay our respects to their Elders past and present. We dance on stolen land.</div>
+        <div style="font-size:13px;color:var(--grey);line-height:1.8;">We honour and respect the pioneers of pole dance — the past and present sex workers whose artistry, resilience, and innovation built the foundation of this industry. Their courage and creativity carved a path that allows us to move, express, and connect through pole today. We dance freely because of their work, and we remain grateful for the legacy they continue to shape.</div>
       </div>
     </div>
 
@@ -6252,6 +6278,10 @@
       format: '8-week season choreography.',
       bring: 'Heels optional but encouraged. Comfortable attire.',
       prereqs: null, progressMoves: null, progressTo: null,
+    },
+    'chair virgin': {
+      name: 'Chair Virgin', tag: 'Beginner',
+      description: 'New to chair or under Level 3? Join us here to learn the art of chair and lap dancing with a focus on confidence and tease. Each week you\'ll build a new routine — flirty transitions, confident movement, and a whole lot of fun. Zero experience needed.',
     },
     'chair': {
       name: 'Chair', tag: 'Level 3+',
