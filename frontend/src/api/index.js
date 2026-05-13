@@ -44,6 +44,15 @@ export const seasons = {
   delete: (id) => client.delete(`/api/classes/seasons/${id}/`),
 }
 
+export const helpdesk = {
+  list: (params) => client.get('/api/helpdesk/', { params }),
+  get: (id) => client.get(`/api/helpdesk/${id}/`),
+  create: (data) => client.post('/api/helpdesk/', data),
+  update: (id, data) => client.patch(`/api/helpdesk/${id}/`, data),
+  messages: (ticketId) => client.get(`/api/helpdesk/${ticketId}/messages/`),
+  reply: (ticketId, data) => client.post(`/api/helpdesk/${ticketId}/messages/`, data),
+}
+
 export const homework = {
   list: (params) => client.get('/api/homework/', { params }),
   get: (id) => client.get(`/api/homework/${id}/`),
