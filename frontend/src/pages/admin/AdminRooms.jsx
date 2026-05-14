@@ -54,7 +54,7 @@ function RoomModal({ existing, onClose, onSaved }) {
 
 export default function AdminRooms() {
   const { data, loading, refetch } = useApi(() => studios.list())
-  const rooms = data || []
+  const rooms = data?.results || data || []
   const [modal, setModal] = useState(null)
 
   function handleSaved() {

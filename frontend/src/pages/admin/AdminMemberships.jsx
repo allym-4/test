@@ -59,7 +59,7 @@ function MembershipModal({ existing, onClose, onSaved }) {
 
 export default function AdminMemberships() {
   const { data, loading, refetch } = useApi(() => membershipTypes.list())
-  const memberships = data || []
+  const memberships = data?.results || data || []
   const [modal, setModal] = useState(null)
 
   function handleSaved() {

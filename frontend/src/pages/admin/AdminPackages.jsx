@@ -59,7 +59,7 @@ function PackageModal({ existing, onClose, onSaved }) {
 
 export default function AdminPackages() {
   const { data, loading, refetch } = useApi(() => packagesApi.list())
-  const packages = data || []
+  const packages = data?.results || data || []
   const [modal, setModal] = useState(null)
 
   function handleSaved() {

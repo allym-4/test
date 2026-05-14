@@ -59,7 +59,7 @@ function CategoryModal({ existing, onClose, onSaved }) {
 
 export default function AdminCategories() {
   const { data, loading, refetch } = useApi(() => categoriesApi.list())
-  const categories = data || []
+  const categories = data?.results || data || []
   const [modal, setModal] = useState(null)
 
   function handleSaved() {
