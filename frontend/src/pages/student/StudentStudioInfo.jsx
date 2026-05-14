@@ -1,4 +1,13 @@
 import { useState } from 'react'
+import { useApi } from '../../hooks/useApi'
+import { settings, users } from '../../api'
+
+const AVATAR_COLORS = ['#b0a0ff', '#ccff00', '#ffaa00', '#ff88aa', '#44ffcc', '#ffcc88', '#b0f0b0', '#9ac4ff', '#ffb3de', '#44ff99']
+function avatarColor(name) {
+  let h = 0
+  for (const c of (name || '')) h = (h * 31 + c.charCodeAt(0)) % AVATAR_COLORS.length
+  return AVATAR_COLORS[h]
+}
 
 const CODE = [
   { icon: '💪', title: 'Show up', body: 'Consistency is how you grow. If you need to miss a class, let us know in advance.' },
@@ -6,11 +15,49 @@ const CODE = [
   { icon: '🙏', title: 'Be respectful', body: 'Of the space, the equipment, the instructors, and each other. We look after this place together.' },
   { icon: '📱', title: 'Phones on silent', body: 'Be present in class. You can share your journey after, not during.' },
   { icon: '🚫', title: 'No unsolicited filming', body: "Always ask before filming other students. Everyone's comfort matters." },
-  { icon: '💚', title: 'Your pace is your pace', body: 'Never compare your chapter 1 to someone else\'s chapter 10. Progress is personal.' },
+  { icon: '💚', title: 'Your pace is your pace', body: "Never compare your chapter 1 to someone else's chapter 10. Progress is personal." },
 ]
 
 export default function StudentStudioInfo() {
   const [tab, setTab] = useState('about')
+  const { data: settingsData } = useApi(() => settings.get())
+  const { data: staffData } = useApi(() => users.list({ role: 'instructor' }))
+
+  const s = settingsData || {}
+  const instructors = staffData?.results || []
+
+  const cancelWindow = s.cancellation_window_hours ?? 24
+  const noShowFee = s.no_show_fee ? `$${parseFloat(s.no_show_fee).toFixed(0)}` : '$20'
+  const lateCancelFee = s.late_cancel_fee ? `$${parseFloat(s.late_cancel_fee).toFixed(0)}` : '$10'
+  const creditExpiry = s.credit_expiry_days ?? 60
+  const maxFreeze = s.max_freeze_weeks ?? 8
+
+  const policies = [
+    {
+      title: 'Cancellation Policy',
+      body: `Cancellations must be made at least ${cancelWindow} hours before class. Late cancellations (within ${cancelWindow} hours) incur a ${lateCancelFee} fee. No-shows (unannounced absences) incur a ${noShowFee} fee.`,
+    },
+    {
+      title: 'Waitlist Policy',
+      body: "When a spot opens, the first student on the waitlist is notified by email and has 12 hours to accept. If they don't respond, the next student is offered the spot.",
+    },
+    {
+      title: 'Makeup Credits',
+      body: `Approved absences (illness, injury, or emergency) may receive a makeup credit. Credits expire ${creditExpiry} days after issue. Maximum 2 credits per season. Credits are non-transferable.`,
+    },
+    {
+      title: 'Membership Freeze',
+      body: `You can freeze your season membership for up to ${maxFreeze} weeks, once per season. 7 days notice required. Freeze is free of charge.`,
+    },
+    {
+      title: 'Refund Policy',
+      body: "Season enrolments are non-refundable after the season commences. If you are unable to continue due to medical reasons, please contact us — we'll do our best to help.",
+    },
+    {
+      title: 'Photography & Filming',
+      body: "You must obtain consent from all individuals before filming or photographing in the studio. Duality may photograph or film classes for marketing purposes — let us know if you opt out.",
+    },
+  ]
 
   return (
     <div>
@@ -28,9 +75,11 @@ export default function StudentStudioInfo() {
       {tab === 'about' && (
         <div style={{ maxWidth: 600 }}>
           <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '24px 24px', marginBottom: 16 }}>
-            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, marginBottom: 14, color: 'var(--lime)' }}>Move your body. Find your power.</div>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, marginBottom: 14, color: 'var(--lime)' }}>
+              {s.tagline || 'Move your body. Find your power.'}
+            </div>
             <div style={{ fontSize: 14, color: 'var(--grey)', lineHeight: 1.8, marginBottom: 14 }}>
-              Duality Pole Studio is Surry Hills' home for pole fitness, founded by Mimi in 2021. We believe pole dance is for every body — and that moving your body is one of the most powerful things you can do.
+              {s.studio_name || 'Duality Pole Studio'} is Surry Hills' home for pole fitness, founded in 2021. We believe pole dance is for every body — and that moving your body is one of the most powerful things you can do.
             </div>
             <div style={{ fontSize: 14, color: 'var(--grey)', lineHeight: 1.8, marginBottom: 14 }}>
               We run structured season programmes as well as casual classes, workshops, and open practice sessions. Our two studios — The Box and Rhapsody — are fully equipped with professional-grade poles in multiple diameters.
@@ -38,10 +87,16 @@ export default function StudentStudioInfo() {
             <div style={{ fontSize: 14, color: 'var(--grey)', lineHeight: 1.8 }}>
               Whether you're just starting out or looking to push your technique, there's a place for you at Duality.
             </div>
+            {(s.email || s.phone || s.instagram) && (
+              <div style={{ marginTop: 18, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                {s.email && <a href={`mailto:${s.email}`} style={{ fontSize: 13, color: 'var(--lime)', textDecoration: 'none' }}>✉ {s.email}</a>}
+                {s.phone && <span style={{ fontSize: 13, color: 'var(--grey)' }}>📞 {s.phone}</span>}
+                {s.instagram && <a href={`https://instagram.com/${s.instagram.replace('@', '')}`} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--lav)', textDecoration: 'none' }}>@ {s.instagram}</a>}
+              </div>
+            )}
           </div>
-
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-            {[['2021', 'Est.'], ['2', 'Studios'], ['100+', 'Students']].map(([val, label]) => (
+            {[['2021', 'Est.'], ['2', 'Studios'], [`${instructors.length || ''}+`, 'Instructors']].map(([val, label]) => (
               <div key={label} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px', textAlign: 'center' }}>
                 <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 24, color: 'var(--lime)' }}>{val}</div>
                 <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: 4 }}>{label}</div>
@@ -91,15 +146,16 @@ export default function StudentStudioInfo() {
 
       {tab === 'team' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
-          {[
-            { name: 'Mimi', role: 'Founder & Head Instructor', bio: 'Mimi started Duality in 2021 with a vision to make pole fitness accessible and empowering. She teaches Intermediate Flows and Advanced Technique.', initials: 'M', colour: 'var(--lime)' },
-            { name: 'Chloe', role: 'Senior Instructor', bio: "Chloe specialises in Pole Foundations and Flexibility & Conditioning. She's known for her warm teaching style and incredible attention to detail.", initials: 'C', colour: 'var(--lav)' },
-          ].map(person => (
-            <div key={person.name} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 18px', textAlign: 'center' }}>
-              <div style={{ width: 64, height: 64, borderRadius: '50%', background: person.colour, color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontFamily: "'Archivo Black', sans-serif", margin: '0 auto 12px' }}>{person.initials}</div>
-              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17, marginBottom: 4 }}>{person.name}</div>
-              <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 12 }}>{person.role}</div>
-              <div style={{ fontSize: 12, color: 'var(--grey)', lineHeight: 1.7 }}>{person.bio}</div>
+          {instructors.length === 0 ? (
+            <div style={{ color: 'var(--grey)', fontSize: 13, gridColumn: '1/-1' }}>No team members found.</div>
+          ) : instructors.map(person => (
+            <div key={person.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 18px', textAlign: 'center' }}>
+              <div style={{ width: 64, height: 64, borderRadius: '50%', background: avatarColor(person.display_name), color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontFamily: "'Archivo Black', sans-serif", margin: '0 auto 12px' }}>
+                {person.first_name?.[0] || '?'}
+              </div>
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17, marginBottom: 4 }}>{person.display_name}</div>
+              <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: person.pronouns ? 6 : 0, textTransform: 'capitalize' }}>Instructor</div>
+              {person.pronouns && <div style={{ fontSize: 11, color: 'var(--lav)' }}>{person.pronouns}</div>}
             </div>
           ))}
         </div>
@@ -107,14 +163,7 @@ export default function StudentStudioInfo() {
 
       {tab === 'policies' && (
         <div style={{ maxWidth: 580 }}>
-          {[
-            { title: 'Cancellation Policy', body: 'Cancellations must be made at least 24 hours before class. Late cancellations (within 24 hours) incur a $10 fee. No-shows (unannounced absences) incur a $20 fee.' },
-            { title: 'Waitlist Policy', body: 'When a spot opens, the first student on the waitlist is notified by email and has 12 hours to accept. If they don\'t respond, the next student is offered the spot.' },
-            { title: 'Makeup Credits', body: 'Approved absences (illness, injury, or emergency) may receive a makeup credit. Credits expire 60 days after issue. Maximum 2 credits per season. Credits are non-transferable.' },
-            { title: 'Membership Freeze', body: 'You can freeze your season membership for up to 8 weeks, once per season. 7 days notice required. Freeze is free of charge.' },
-            { title: 'Refund Policy', body: 'Season enrolments are non-refundable after the season commences. If you are unable to continue due to medical reasons, please contact us — we\'ll do our best to help.' },
-            { title: 'Photography & Filming', body: 'You must obtain consent from all individuals before filming or photographing in the studio. Duality may photograph or film classes for marketing purposes — let us know if you opt out.' },
-          ].map((policy, i) => (
+          {policies.map((policy, i) => (
             <div key={i} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 18px', marginBottom: 10 }}>
               <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{policy.title}</div>
               <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.7 }}>{policy.body}</div>
