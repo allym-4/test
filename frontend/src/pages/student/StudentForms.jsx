@@ -12,6 +12,21 @@ const PARQ_QUESTIONS = [
   { id: 'other', label: 'Do you know of any other reason why you should not do physical activity?' },
 ]
 
+function Modal({ title, onClose, children }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, maxWidth: 520, width: '100%', maxHeight: '85vh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>{title}</div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 18 }}>✕</button>
+        </div>
+        <div style={{ padding: '18px 20px' }}>{children}</div>
+      </div>
+    </div>
+  )
+}
+
 function ParqForm({ existing, onDone }) {
   const initAnswers = () => {
     const base = {}
@@ -30,9 +45,7 @@ function ParqForm({ existing, onDone }) {
     try {
       await forms.submit('parq', answers)
       onDone()
-    } finally {
-      setSaving(false)
-    }
+    } finally { setSaving(false) }
   }
 
   return (
@@ -42,37 +55,23 @@ function ParqForm({ existing, onDone }) {
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
         {PARQ_QUESTIONS.map(q => (
-          <div key={q.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
+          <div key={q.id} style={{ background: '#111', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
             <div style={{ fontSize: 13, marginBottom: 10, lineHeight: 1.6 }}>{q.label}</div>
             <div style={{ display: 'flex', gap: 8 }}>
               {[['Yes', true], ['No', false]].map(([label, val]) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => setAnswers(a => ({ ...a, [q.id]: val }))}
-                  style={{
-                    padding: '6px 20px',
-                    borderRadius: 8,
-                    border: `1px solid ${answers[q.id] === val ? (val ? 'var(--amber)' : 'var(--lime)') : 'var(--border)'}`,
-                    background: answers[q.id] === val ? (val ? 'rgba(255,170,0,0.12)' : 'rgba(204,255,0,0.08)') : 'transparent',
-                    color: answers[q.id] === val ? (val ? 'var(--amber)' : 'var(--lime)') : 'var(--grey)',
-                    cursor: 'pointer',
-                    fontSize: 13,
-                    fontWeight: 600,
-                  }}
+                <button key={label} type="button" onClick={() => setAnswers(a => ({ ...a, [q.id]: val }))}
+                  style={{ padding: '6px 20px', borderRadius: 8, border: `1px solid ${answers[q.id] === val ? (val ? 'var(--amber)' : 'var(--lime)') : 'var(--border)'}`, background: answers[q.id] === val ? (val ? 'rgba(255,170,0,0.12)' : 'rgba(204,255,0,0.08)') : 'transparent', color: answers[q.id] === val ? (val ? 'var(--amber)' : 'var(--lime)') : 'var(--grey)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
                 >{label}</button>
               ))}
             </div>
           </div>
         ))}
       </div>
-
       {anyYes && (
         <div style={{ background: 'rgba(255,170,0,0.08)', border: '1px solid rgba(255,170,0,0.25)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, color: 'var(--amber)', lineHeight: 1.6 }}>
           You answered YES to one or more questions. We recommend you speak with your doctor before starting or increasing physical activity. You may still attend classes — please let your instructor know.
         </div>
       )}
-
       <button type="submit" className="btn btn-lime btn-sm" disabled={!allAnswered || saving} style={{ width: '100%' }}>
         {saving ? 'Submitting…' : 'Submit PAR-Q'}
       </button>
@@ -80,28 +79,33 @@ function ParqForm({ existing, onDone }) {
   )
 }
 
+function CheckboxForm({ text, buttonLabel, onSubmit, saving }) {
+  const [checked, setChecked] = useState(false)
+  return (
+    <div>
+      <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.8, marginBottom: 20 }}>{text}</div>
+      <label style={{ display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer', marginBottom: 20 }}>
+        <input type="checkbox" checked={checked} onChange={e => setChecked(e.target.checked)} style={{ marginTop: 2, accentColor: 'var(--lime)', width: 16, height: 16, flexShrink: 0 }} />
+        <span style={{ fontSize: 13, lineHeight: 1.6 }}>I have read and agree to the above.</span>
+      </label>
+      <button className="btn btn-lime btn-sm" style={{ width: '100%' }} disabled={!checked || saving} onClick={onSubmit}>
+        {saving ? 'Submitting…' : buttonLabel}
+      </button>
+    </div>
+  )
+}
+
 const FORM_DEFS = [
-  {
-    type: 'parq',
-    title: 'PAR-Q Health Questionnaire',
-    desc: 'A standard pre-exercise health screening form. Required before your first class.',
-    icon: '🩺',
-    required: true,
-  },
-  {
-    type: 'waiver',
-    title: 'Liability Waiver',
-    desc: 'Acknowledgment of risks associated with pole fitness activities.',
-    icon: '📝',
-    required: true,
-  },
+  { type: 'parq',             title: 'PAR-Q Health Questionnaire', desc: 'A standard pre-exercise health screening form. Required before your first class.', icon: '🩺' },
+  { type: 'waiver',           title: 'Liability Waiver',           desc: 'Acknowledgment of risks associated with pole fitness activities.',                   icon: '📝' },
+  { type: 'photo_consent',    title: 'Photo & Video Consent',      desc: 'Permission for the studio to photograph or film you during classes.',                icon: '📸' },
+  { type: 'season_agreement', title: 'Season Agreement',           desc: 'Season enrolment terms including cancellation and makeup credit policy.',            icon: '📋' },
 ]
 
 export default function StudentForms() {
   const { data, loading, refetch } = useApi(() => forms.list())
   const [activeForm, setActiveForm] = useState(null)
-  const [waiverChecked, setWaiverChecked] = useState(false)
-  const [waiverSaving, setWaiverSaving] = useState(false)
+  const [saving, setSaving] = useState(false)
 
   const submitted = data || []
   function getForm(type) { return submitted.find(f => f.form_type === type) }
@@ -109,16 +113,13 @@ export default function StudentForms() {
   const pending = FORM_DEFS.filter(f => !getForm(f.type)?.completed)
   const done = FORM_DEFS.filter(f => getForm(f.type)?.completed)
 
-  async function submitWaiver(e) {
-    e.preventDefault()
-    setWaiverSaving(true)
+  async function submitSimple(type, responses) {
+    setSaving(true)
     try {
-      await forms.submit('waiver', { agreed: true, agreed_at: new Date().toISOString() })
+      await forms.submit(type, responses)
       refetch()
       setActiveForm(null)
-    } finally {
-      setWaiverSaving(false)
-    }
+    } finally { setSaving(false) }
   }
 
   return (
@@ -145,9 +146,7 @@ export default function StudentForms() {
                         <div style={{ fontSize: 12, color: 'var(--grey)', lineHeight: 1.6 }}>{f.desc}</div>
                       </div>
                     </div>
-                    <button className="btn btn-lime btn-sm" style={{ flexShrink: 0 }} onClick={() => setActiveForm(f.type)}>
-                      Complete
-                    </button>
+                    <button className="btn btn-lime btn-sm" style={{ flexShrink: 0 }} onClick={() => setActiveForm(f.type)}>Complete</button>
                   </div>
                 ))}
               </div>
@@ -179,7 +178,7 @@ export default function StudentForms() {
             </div>
           )}
 
-          {pending.length === 0 && done.length === FORM_DEFS.length && (
+          {pending.length === 0 && (
             <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--grey)' }}>
               <div style={{ fontSize: 36, marginBottom: 12 }}>✓</div>
               <div style={{ fontWeight: 600, marginBottom: 4 }}>All done!</div>
@@ -189,49 +188,51 @@ export default function StudentForms() {
         </>
       )}
 
-      {/* PAR-Q modal */}
       {activeForm === 'parq' && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
-          onClick={e => e.target === e.currentTarget && setActiveForm(null)}>
-          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, maxWidth: 520, width: '100%', maxHeight: '85vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', borderBottom: '1px solid var(--border)' }}>
-              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>🩺 PAR-Q Health Questionnaire</div>
-              <button onClick={() => setActiveForm(null)} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 18 }}>✕</button>
-            </div>
-            <div style={{ padding: '18px 20px' }}>
-              <ParqForm existing={getForm('parq')} onDone={() => { refetch(); setActiveForm(null) }} />
-            </div>
-          </div>
-        </div>
+        <Modal title="🩺 PAR-Q Health Questionnaire" onClose={() => setActiveForm(null)}>
+          <ParqForm existing={getForm('parq')} onDone={() => { refetch(); setActiveForm(null) }} />
+        </Modal>
       )}
 
-      {/* Waiver modal */}
       {activeForm === 'waiver' && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
-          onClick={e => e.target === e.currentTarget && setActiveForm(null)}>
-          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, maxWidth: 480, width: '100%', maxHeight: '85vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', borderBottom: '1px solid var(--border)' }}>
-              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>📝 Liability Waiver</div>
-              <button onClick={() => setActiveForm(null)} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 18 }}>✕</button>
-            </div>
-            <div style={{ padding: '18px 20px' }}>
-              <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.8, marginBottom: 20 }}>
-                I understand that pole fitness involves physical activity and carries inherent risks, including the possibility of personal injury. I acknowledge that I am participating voluntarily and accept all risks associated with this activity.
-                <br /><br />
-                I release Duality Pole Studio, its instructors, and staff from any liability for injury, loss, or damage arising from my participation. I confirm that I am medically fit to participate and have disclosed any relevant health conditions.
-              </div>
-              <form onSubmit={submitWaiver}>
-                <label style={{ display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer', marginBottom: 20 }}>
-                  <input type="checkbox" checked={waiverChecked} onChange={e => setWaiverChecked(e.target.checked)} style={{ marginTop: 2, accentColor: 'var(--lime)', width: 16, height: 16, flexShrink: 0 }} />
-                  <span style={{ fontSize: 13, lineHeight: 1.6 }}>I have read and agree to the liability waiver above.</span>
-                </label>
-                <button type="submit" className="btn btn-lime btn-sm" style={{ width: '100%' }} disabled={!waiverChecked || waiverSaving}>
-                  {waiverSaving ? 'Submitting…' : 'Sign & Submit'}
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
+        <Modal title="📝 Liability Waiver" onClose={() => setActiveForm(null)}>
+          <CheckboxForm
+            text="I understand that pole fitness involves physical activity and carries inherent risks, including the possibility of personal injury. I acknowledge that I am participating voluntarily and accept all risks associated with this activity.
+
+I release Duality Pole Studio, its instructors, and staff from any liability for injury, loss, or damage arising from my participation. I confirm that I am medically fit to participate and have disclosed any relevant health conditions."
+            buttonLabel="Sign & Submit"
+            saving={saving}
+            onSubmit={() => submitSimple('waiver', { agreed: true, agreed_at: new Date().toISOString() })}
+          />
+        </Modal>
+      )}
+
+      {activeForm === 'photo_consent' && (
+        <Modal title="📸 Photo & Video Consent" onClose={() => setActiveForm(null)}>
+          <CheckboxForm
+            text="I consent to being photographed and/or filmed during classes at Duality Pole Studio. I understand that photos and videos may be used on the studio's social media accounts and in marketing materials.
+
+I understand I can withdraw this consent at any time by notifying the studio in writing. Withdrawal of consent will not affect photos or videos already published."
+            buttonLabel="Give Consent"
+            saving={saving}
+            onSubmit={() => submitSimple('photo_consent', { agreed: true, agreed_at: new Date().toISOString() })}
+          />
+        </Modal>
+      )}
+
+      {activeForm === 'season_agreement' && (
+        <Modal title="📋 Season Agreement" onClose={() => setActiveForm(null)}>
+          <CheckboxForm
+            text="I understand that my season enrolment is for a fixed 8-week term and that the season fee is non-refundable except in documented medical circumstances.
+
+I agree to the studio's absence and makeup credit policy. If I miss a class with more than 24 hours notice, a makeup credit may be issued at the studio's discretion. Credits expire 60 days after issue.
+
+I understand that if I cancel my enrolment mid-season without a medical certificate, no refund will be issued. A late cancellation fee of $10 applies to cancellations within 24 hours of class."
+            buttonLabel="Agree & Sign"
+            saving={saving}
+            onSubmit={() => submitSimple('season_agreement', { agreed: true, agreed_at: new Date().toISOString() })}
+          />
+        </Modal>
       )}
     </div>
   )

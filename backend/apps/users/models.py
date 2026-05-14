@@ -227,6 +227,8 @@ class StudentForm(models.Model):
     class FormType(models.TextChoices):
         PARQ = 'parq', 'PAR-Q Health Questionnaire'
         WAIVER = 'waiver', 'Liability Waiver'
+        PHOTO_CONSENT = 'photo_consent', 'Photo & Video Consent'
+        SEASON_AGREEMENT = 'season_agreement', 'Season Agreement'
         SURVEY = 'survey', 'Survey'
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='forms')
     form_type = models.CharField(max_length=20, choices=FormType.choices)

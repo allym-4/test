@@ -441,20 +441,16 @@ function StudentDetail({ student, onClose, onRefreshList }) {
                   <div className="card" style={{ padding: '16px 18px' }}>
                     <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 16 }}>Documents & Consents</div>
                     {(() => {
-                      const parqForm = (formsData || []).find(f => f.form_type === 'parq')
-                      const waiverForm = (formsData || []).find(f => f.form_type === 'waiver')
                       function formStatus(form) {
                         if (!form) return { status: 'Not submitted', cls: 'tag-grey' }
                         if (form.completed) return { status: 'Signed', cls: 'tag-lime' }
                         return { status: 'In Progress', cls: 'tag-amber' }
                       }
-                      const parqStatus = formStatus(parqForm)
-                      const waiverStatus = formStatus(waiverForm)
                       const docs = [
-                        { name: 'Health & Medical Form (PAR-Q)', detail: 'PAR-Q pre-screening questionnaire', ...parqStatus },
-                        { name: 'Liability Waiver', detail: 'Studio liability waiver and code of conduct', ...waiverStatus },
-                        { name: 'Photo Consent', detail: 'Permission to photograph/film in class', status: 'Not required', cls: 'tag-grey' },
-                        { name: 'Season Agreement', detail: 'Season enrolment terms and conditions', status: 'Not required', cls: 'tag-grey' },
+                        { name: 'Health & Medical Form (PAR-Q)', detail: 'PAR-Q pre-screening questionnaire', ...formStatus((formsData || []).find(f => f.form_type === 'parq')) },
+                        { name: 'Liability Waiver', detail: 'Studio liability waiver and code of conduct', ...formStatus((formsData || []).find(f => f.form_type === 'waiver')) },
+                        { name: 'Photo Consent', detail: 'Permission to photograph/film in class', ...formStatus((formsData || []).find(f => f.form_type === 'photo_consent')) },
+                        { name: 'Season Agreement', detail: 'Season enrolment terms and conditions', ...formStatus((formsData || []).find(f => f.form_type === 'season_agreement')) },
                       ]
                       return docs.map(doc => (
                         <div key={doc.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 0', borderBottom: '1px solid #1a1a1a' }}>

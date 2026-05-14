@@ -6,6 +6,7 @@ from apps.classes.models import ClassSession
 class Enrolment(models.Model):
     class Status(models.TextChoices):
         ACTIVE = 'active', 'Active'
+        WAITLISTED = 'waitlisted', 'Waitlisted'
         COMPLETED = 'completed', 'Completed'
         CANCELLED = 'cancelled', 'Cancelled'
         SUSPENDED = 'suspended', 'Suspended'
