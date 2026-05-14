@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import instagram as instagram_views
 
 urlpatterns = [
     path('me/', views.MeView.as_view(), name='user-me'),
@@ -10,6 +11,7 @@ urlpatterns = [
     path('products/', views.ProductListView.as_view(), name='product-list'),
     path('products/<int:pk>/', views.ProductDetailView.as_view(), name='product-detail'),
     path('automations/', views.AutomationRuleView.as_view(), name='automation-rules'),
+    path('automations/<int:pk>/', views.AutomationRuleDetailView.as_view(), name='automation-rule-detail'),
     path('orders/', views.OrderListView.as_view(), name='order-list'),
     path('orders/<int:pk>/', views.OrderDetailView.as_view(), name='order-detail'),
     path('notifications/', views.NotificationListView.as_view(), name='notification-list'),
@@ -35,6 +37,9 @@ urlpatterns = [
     path('campaigns/<int:pk>/', views.EmailCampaignDetailView.as_view()),
     path('email-lists/', views.EmailListListView.as_view()),
     path('email-lists/<int:pk>/', views.EmailListDetailView.as_view()),
+    path('instagram/webhook/', instagram_views.InstagramWebhookView.as_view()),
+    path('instagram/auth/', instagram_views.InstagramAuthView.as_view()),
+    path('instagram/callback/', instagram_views.InstagramCallbackView.as_view()),
     path('assistant/', views.AssistantView.as_view()),
     path('', views.UserListView.as_view(), name='user-list'),
     path('<int:pk>/', views.UserDetailView.as_view(), name='user-detail'),

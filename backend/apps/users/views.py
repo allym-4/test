@@ -227,6 +227,18 @@ class AutomationRuleView(APIView):
         rules = AutomationRule.objects.all()
         return Response(AutomationRuleSerializer(rules, many=True).data)
 
+    def post(self, request):
+        data = request.data.copy()
+        data['is_custom'] = True
+        # Auto-generate a unique slug for custom rules if not provided
+        if not data.get('slug'):
+            import uuid
+            data['slug'] = f"custom_{uuid.uuid4().hex[:8]}"
+        serializer = AutomationRuleSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=201)
+
     def patch(self, request):
         slug = request.data.get('slug')
         enabled = request.data.get('enabled')
@@ -236,6 +248,12 @@ class AutomationRuleView(APIView):
         rule.enabled = enabled
         rule.save()
         return Response(AutomationRuleSerializer(rule).data)
+
+
+class AutomationRuleDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = AutomationRule.objects.all()
+    serializer_class = AutomationRuleSerializer
+    permission_classes = [IsAdminOrInstructor]
 
 
 

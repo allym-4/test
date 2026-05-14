@@ -72,6 +72,7 @@ class StudioSettingsSerializer(serializers.ModelSerializer):
             'cancellation_window_hours', 'no_show_fee', 'late_cancel_fee',
             'credit_expiry_days', 'max_freeze_weeks', 'gst_registered', 'abn',
             'kisi_api_key', 'kisi_org_id',
+            'instagram_access_token', 'instagram_page_id', 'instagram_username', 'meta_app_id',
             'price_casual', 'price_season', 'price_trial',
         )
 
@@ -95,8 +96,8 @@ class ProductSerializer(serializers.ModelSerializer):
 class AutomationRuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = AutomationRule
-        fields = ('id', 'slug', 'enabled')
-        read_only_fields = ('id', 'slug')
+        fields = ('id', 'slug', 'enabled', 'name', 'description', 'trigger_type', 'conditions', 'actions', 'is_custom', 'created_at')
+        read_only_fields = ('id', 'created_at')
 
 
 class OrderSerializer(serializers.ModelSerializer):

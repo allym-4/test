@@ -317,6 +317,38 @@ export default function AdminSettings() {
               </div>
               <button className="btn btn-ghost btn-sm" onClick={() => showIntegrationInfo('Square POS')}>Connect Square</button>
             </Section>
+            <Section title="Instagram DMs (Meta Business API)">
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 14 }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: form.instagram_access_token ? 'var(--lime)' : '#333' }} />
+                <span style={{ fontSize: 13, color: form.instagram_access_token ? 'var(--white)' : 'var(--grey)' }}>
+                  {form.instagram_access_token
+                    ? `Connected${form.instagram_username ? ` — @${form.instagram_username}` : ''}`
+                    : 'Not connected'}
+                </span>
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 14, lineHeight: 1.6 }}>
+                Set the following environment variables on your server to enable Instagram DM integration:
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+                {[
+                  ['META_APP_ID', 'Your Meta app ID from developers.facebook.com'],
+                  ['META_APP_SECRET', 'Your Meta app secret'],
+                  ['INSTAGRAM_WEBHOOK_VERIFY_TOKEN', 'A secret string you choose to verify webhook calls (default: duality_pole_verify)'],
+                ].map(([key, desc]) => (
+                  <div key={key} style={{ background: '#111', borderRadius: 6, padding: '8px 12px' }}>
+                    <div style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--lime)', marginBottom: 2 }}>{key}</div>
+                    <div style={{ fontSize: 11, color: 'var(--grey)' }}>{desc}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 8 }}>
+                Register this webhook URL with Meta:
+              </div>
+              <div style={{ background: '#111', borderRadius: 6, padding: '8px 12px', fontFamily: 'monospace', fontSize: 12, color: 'var(--lav)', marginBottom: 14, wordBreak: 'break-all' }}>
+                /api/users/instagram/webhook/
+              </div>
+              <a href="/api/users/instagram/auth/" className="btn btn-ghost btn-sm" style={{ textDecoration: 'none', display: 'inline-block' }}>Connect Instagram</a>
+            </Section>
           </div>
         </div>
       )}

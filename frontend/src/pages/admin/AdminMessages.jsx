@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useApi } from '../../hooks/useApi'
-import { helpdesk, users } from '../../api'
+import { helpdesk, users, settings } from '../../api'
 import { useAuth } from '../../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 
@@ -108,6 +108,9 @@ export default function AdminMessages() {
   const { user: me } = useAuth()
   const navigate = useNavigate()
   const { data: convData, loading, refetch } = useApi(() => helpdesk.conversations(), [])
+  const { data: studioSettings } = useApi(() => settings.get())
+  const instagramConnected = !!studioSettings?.instagram_access_token
+  const instagramUsername = studioSettings?.instagram_username
   const conversations = convData?.results || convData || []
 
   const [activeId, setActiveId] = useState(null)
@@ -169,10 +172,29 @@ export default function AdminMessages() {
       <div className="page-header" style={{ marginBottom: 0, paddingBottom: 16 }}>
         <div>
           <div className="page-title">Messages</div>
-          <div className="page-sub">Student direct messages</div>
+          <div className="page-sub">{instagramConnected ? 'Direct messages · Instagram DMs' : 'Student direct messages'}</div>
         </div>
         <button className="btn btn-lime btn-sm" onClick={() => setShowNew(true)}>+ New Message</button>
       </div>
+
+      {/* Instagram connection banner */}
+      {!instagramConnected ? (
+        <div style={{ background: 'rgba(176,160,255,0.08)', border: '1px solid rgba(176,160,255,0.2)', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, fontSize: 13 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 18 }}>📸</span>
+            <div>
+              <div style={{ fontWeight: 600, marginBottom: 2 }}>Connect Instagram DMs</div>
+              <div style={{ fontSize: 12, color: 'var(--grey)' }}>Receive and reply to Instagram DMs directly here. Requires Meta Business API approval.</div>
+            </div>
+          </div>
+          <a href="/api/users/instagram/auth/" className="btn btn-ghost btn-sm" style={{ flexShrink: 0, textDecoration: 'none' }}>Connect Instagram</a>
+        </div>
+      ) : (
+        <div style={{ background: 'rgba(204,255,0,0.06)', border: '1px solid rgba(204,255,0,0.2)', borderRadius: 10, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, fontSize: 13 }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--lime)', flexShrink: 0 }} />
+          <span>Instagram connected{instagramUsername ? ` — @${instagramUsername}` : ''}. DMs from Instagram will appear here.</span>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr 260px', gap: 0, flex: 1, border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
         {/* Left: convo list */}

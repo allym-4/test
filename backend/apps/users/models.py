@@ -96,6 +96,10 @@ class StudioSettings(models.Model):
     abn = models.CharField(max_length=30, blank=True)
     kisi_api_key = models.CharField(max_length=200, blank=True)
     kisi_org_id = models.CharField(max_length=100, blank=True)
+    instagram_access_token = models.CharField(max_length=500, blank=True)
+    instagram_page_id = models.CharField(max_length=100, blank=True)
+    instagram_username = models.CharField(max_length=100, blank=True)
+    meta_app_id = models.CharField(max_length=100, blank=True)
     price_casual = models.DecimalField(max_digits=8, decimal_places=2, default=40)
     price_season = models.DecimalField(max_digits=8, decimal_places=2, default=270)
     price_trial = models.DecimalField(max_digits=8, decimal_places=2, default=35)
@@ -152,12 +156,19 @@ class Product(models.Model):
 class AutomationRule(models.Model):
     slug = models.CharField(max_length=50, unique=True)
     enabled = models.BooleanField(default=True)
+    name = models.CharField(max_length=200, blank=True)
+    description = models.TextField(blank=True)
+    trigger_type = models.CharField(max_length=50, blank=True)
+    conditions = models.JSONField(default=list, blank=True)
+    actions = models.JSONField(default=list, blank=True)
+    is_custom = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
 
     class Meta:
         ordering = ['slug']
 
     def __str__(self):
-        return self.slug
+        return self.name or self.slug
 
 
 class Order(models.Model):
