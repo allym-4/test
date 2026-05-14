@@ -96,9 +96,9 @@ class StudioSettings(models.Model):
     abn = models.CharField(max_length=30, blank=True)
     kisi_api_key = models.CharField(max_length=200, blank=True)
     kisi_org_id = models.CharField(max_length=100, blank=True)
-    price_casual = models.DecimalField(max_digits=8, decimal_places=2, default=35)
+    price_casual = models.DecimalField(max_digits=8, decimal_places=2, default=40)
     price_season = models.DecimalField(max_digits=8, decimal_places=2, default=270)
-    price_trial = models.DecimalField(max_digits=8, decimal_places=2, default=25)
+    price_trial = models.DecimalField(max_digits=8, decimal_places=2, default=35)
 
     class Meta:
         verbose_name = 'Studio Settings'

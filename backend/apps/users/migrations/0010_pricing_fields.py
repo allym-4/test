@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='studiosettings',
             name='price_casual',
-            field=models.DecimalField(decimal_places=2, default=35, max_digits=8),
+            field=models.DecimalField(decimal_places=2, default=40, max_digits=8),
         ),
         migrations.AddField(
             model_name='studiosettings',
@@ -21,6 +21,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='studiosettings',
             name='price_trial',
-            field=models.DecimalField(decimal_places=2, default=25, max_digits=8),
+            field=models.DecimalField(decimal_places=2, default=35, max_digits=8),
         ),
     ]
