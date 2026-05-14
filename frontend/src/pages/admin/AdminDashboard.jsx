@@ -12,7 +12,7 @@ export default function AdminDashboard() {
   const { data: sessionsData, loading: loadingSessions } = useApi(() => classes.list({ active: 'true' }))
   const { data: studentsData, loading: loadingStudents } = useApi(() => users.list({ role: 'student' }))
   const { data: paymentsData, loading: loadingPayments } = useApi(() => payments.list())
-  const { data: plansData } = useApi(() => payments.plans())
+  const { data: plansData } = useApi(() => payments.plans.list())
 
   const sessions = sessionsData?.results || []
   const students = studentsData?.results || []

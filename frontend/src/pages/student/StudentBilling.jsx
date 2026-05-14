@@ -6,7 +6,7 @@ export default function StudentBilling() {
   const { user } = useAuth()
   const { data: balData, loading: loadingBal } = useApi(() => payments.balance(user?.id), [user?.id])
   const { data: paymentsData, loading: loadingPayments } = useApi(() => payments.list({ student: user?.id }), [user?.id])
-  const { data: plansData } = useApi(() => payments.plans({ student: user?.id }), [user?.id])
+  const { data: plansData } = useApi(() => payments.plans.list({ student: user?.id }), [user?.id])
 
   const bal = balData ? parseFloat(balData.balance) : 0
   const isOwing = bal < 0
