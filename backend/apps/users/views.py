@@ -6,10 +6,11 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db import transaction
 from django.db.models import Q
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification
 from .serializers import (
     UserSerializer, UserCreateSerializer, StaffNoteSerializer, LeadSerializer,
     StudioSettingsSerializer, AnnouncementSerializer, ProductSerializer, AutomationRuleSerializer,
+    OrderSerializer, NotificationSerializer,
 )
 from .permissions import IsAdminOrInstructor, IsAdminUser
 
@@ -170,7 +171,10 @@ class LeadDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class StudioSettingsView(APIView):
-    permission_classes = [IsAdminUser]
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [permissions.IsAuthenticated()]
+        return [IsAdminUser()]
 
     def get(self, request):
         settings = StudioSettings.get()
@@ -230,3 +234,41 @@ class AutomationRuleView(APIView):
         rule.save()
         return Response(AutomationRuleSerializer(rule).data)
 
+
+
+class OrderListView(generics.ListCreateAPIView):
+    serializer_class = OrderSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+    def get_queryset(self):
+        qs = Order.objects.select_related('student')
+        status_filter = self.request.query_params.get('status')
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        return qs
+
+
+class OrderDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Order.objects.select_related('student')
+    serializer_class = OrderSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class NotificationListView(generics.ListAPIView):
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(recipient=self.request.user)
+
+
+class NotificationMarkReadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        ids = request.data.get('ids')
+        qs = Notification.objects.filter(recipient=request.user)
+        if ids:
+            qs = qs.filter(id__in=ids)
+        qs.update(read=True)
+        return Response({'ok': True})

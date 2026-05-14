@@ -152,3 +152,52 @@ class AutomationRule(models.Model):
 
     def __str__(self):
         return self.slug
+
+
+class Order(models.Model):
+    class Status(models.TextChoices):
+        PENDING = 'pending_pickup', 'Pending Pickup'
+        PICKED_UP = 'picked_up', 'Picked Up'
+        CANCELLED = 'cancelled', 'Cancelled'
+
+    student = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
+    student_name = models.CharField(max_length=100, blank=True)
+    items = models.TextField()
+    total = models.DecimalField(max_digits=8, decimal_places=2)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    location = models.CharField(max_length=100, blank=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        name = self.student_name or (self.student.display_name if self.student else 'Unknown')
+        return f'Order #{self.pk} — {name}'
+
+
+class Notification(models.Model):
+    class Type(models.TextChoices):
+        REMINDER = 'reminder', 'Reminder'
+        WAITLIST = 'waitlist', 'Waitlist'
+        PAYMENT = 'payment', 'Payment'
+        FORM = 'form', 'Form'
+        INFO = 'info', 'Info'
+        MESSAGE = 'message', 'Message'
+        CANCELLATION = 'cancellation', 'Cancellation'
+
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    title = models.CharField(max_length=200)
+    body = models.TextField()
+    notification_type = models.CharField(max_length=20, choices=Type.choices, default=Type.INFO)
+    read = models.BooleanField(default=False)
+    action_label = models.CharField(max_length=50, blank=True)
+    action_url = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.recipient.display_name}: {self.title}'

@@ -122,10 +122,48 @@ export default function AdminStaff() {
       )}
 
       {tab === 'availability' && (
-        <div className="empty-state">
-          <div style={{ fontSize: 32, marginBottom: 12 }}>📅</div>
-          <div style={{ marginBottom: 8 }}>Availability grid</div>
-          <div style={{ fontSize: 12 }}>Staff can set their availability from their profile</div>
+        <div>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 20 }}>
+            Classes assigned to each instructor across the week.
+          </div>
+          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, dow) => {
+            const daySessions = sessions.filter(s => s.day_of_week === dow)
+            if (daySessions.length === 0) return null
+            return (
+              <div key={day} style={{ marginBottom: 18 }}>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 8, fontWeight: 600 }}>{day}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {[...daySessions].sort((a, b) => (a.start_time || '').localeCompare(b.start_time || '')).map(s => {
+                    const instructor = allStaff.find(st => st.id === s.instructor)
+                    return (
+                      <div key={s.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 14 }}>{s.name}</div>
+                          <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{s.start_time?.slice(0, 5)} · {s.studio_detail?.name}</div>
+                        </div>
+                        {instructor ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ width: 28, height: 28, borderRadius: '50%', background: avatarColor(instructor.display_name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#000', fontWeight: 700 }}>
+                              {instructor.first_name?.[0] || '?'}
+                            </div>
+                            <span style={{ fontSize: 13, color: 'var(--grey)' }}>{instructor.display_name}</span>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: 12, color: 'var(--amber)' }}>Unassigned</span>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
+          {sessions.length === 0 && (
+            <div className="empty-state">
+              <div style={{ fontSize: 32, marginBottom: 12 }}>📅</div>
+              <div>No classes scheduled yet</div>
+            </div>
+          )}
         </div>
       )}
 

@@ -16,6 +16,9 @@ export const classes = {
 
 export const enrolments = {
   list: (params) => client.get('/api/enrolments/', { params }),
+  create: (data) => client.post('/api/enrolments/', data),
+  update: (id, data) => client.patch(`/api/enrolments/${id}/`, data),
+  delete: (id) => client.delete(`/api/enrolments/${id}/`),
 }
 
 export const attendance = {
@@ -114,4 +117,16 @@ export const products = {
 export const automations = {
   list: () => client.get('/api/users/automations/'),
   toggle: (slug, enabled) => client.patch('/api/users/automations/', { slug, enabled }),
+}
+
+export const orders = {
+  list: (params) => client.get('/api/users/orders/', { params }),
+  create: (data) => client.post('/api/users/orders/', data),
+  update: (id, data) => client.patch(`/api/users/orders/${id}/`, data),
+  delete: (id) => client.delete(`/api/users/orders/${id}/`),
+}
+
+export const notifications = {
+  list: () => client.get('/api/users/notifications/'),
+  markRead: (ids) => client.post('/api/users/notifications/mark-read/', ids ? { ids } : {}),
 }

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification
 
 
 class UserMinimalSerializer(serializers.ModelSerializer):
@@ -95,3 +95,24 @@ class AutomationRuleSerializer(serializers.ModelSerializer):
         model = AutomationRule
         fields = ('id', 'slug', 'enabled')
         read_only_fields = ('id', 'slug')
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    student_display = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Order
+        fields = ('id', 'student', 'student_name', 'student_display', 'items', 'total', 'status', 'location', 'notes', 'created_at')
+        read_only_fields = ('id', 'created_at')
+
+    def get_student_display(self, obj):
+        if obj.student:
+            return obj.student.display_name
+        return obj.student_name
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ('id', 'title', 'body', 'notification_type', 'read', 'action_label', 'action_url', 'created_at')
+        read_only_fields = ('id', 'created_at')

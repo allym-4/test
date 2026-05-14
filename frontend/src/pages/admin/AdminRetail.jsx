@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useApi } from '../../hooks/useApi'
-import { products as productsApi } from '../../api'
+import { products as productsApi, orders as ordersApi, users } from '../../api'
 import '../StudentsPage.css'
 
 const STATUS_STYLE = {
@@ -9,12 +9,64 @@ const STATUS_STYLE = {
   cancelled: { label: 'Cancelled', cls: 'tag-grey' },
 }
 
-const ORDERS = [
-  { id: 1001, student: 'Lily Anderson', items: 'Grip Socks × 1, Grip Aid × 1', total: 32, status: 'pending_pickup', date: '12 May', location: 'The Box' },
-  { id: 1002, student: 'Priya Sharma', items: 'Crop Top (Lime, S) × 1', total: 45, status: 'pending_pickup', date: '12 May', location: 'The Box' },
-  { id: 1003, student: 'Katie Wu', items: 'Pole Shorts (M) × 1, Grip Aid × 1', total: 73, status: 'picked_up', date: '11 May', location: 'Rhapsody' },
-  { id: 1004, student: 'Bianca Forde', items: 'Water Bottle × 2', total: 44, status: 'picked_up', date: '10 May', location: 'The Box' },
-]
+function NewOrderModal({ onClose, onSaved }) {
+  const { data: studData } = useApi(() => users.list({ role: 'student' }))
+  const students = studData?.results || []
+
+  const [studentId, setStudentId] = useState('')
+  const [items, setItems] = useState('')
+  const [total, setTotal] = useState('')
+  const [location, setLocation] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  async function submit(e) {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      const chosen = students.find(s => s.id === parseInt(studentId))
+      await ordersApi.create({
+        student: studentId ? parseInt(studentId) : null,
+        student_name: chosen?.display_name || '',
+        items,
+        total: parseFloat(total),
+        location,
+        status: 'pending_pickup',
+      })
+      onSaved()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 420 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>New Order</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <form className="sd-body" onSubmit={submit}>
+          <div className="field">
+            <label>Student</label>
+            <select value={studentId} onChange={e => setStudentId(e.target.value)}>
+              <option value="">— Walk-in / no student —</option>
+              {students.map(s => <option key={s.id} value={s.id}>{s.display_name}</option>)}
+            </select>
+          </div>
+          <div className="field"><label>Items *</label><textarea rows={2} value={items} onChange={e => setItems(e.target.value)} placeholder="e.g. Grip Socks × 1, Crop Top (S) × 1" required /></div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="field"><label>Total ($) *</label><input type="number" step="0.01" min="0" value={total} onChange={e => setTotal(e.target.value)} required /></div>
+            <div className="field"><label>Location</label><input value={location} onChange={e => setLocation(e.target.value)} placeholder="The Box / Rhapsody" /></div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : 'Create Order'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
 
 function ProductModal({ existing, onClose, onSaved }) {
   const [name, setName] = useState(existing?.name || '')
@@ -121,14 +173,17 @@ function RestockModal({ product, onClose, onSaved }) {
 
 export default function AdminRetail() {
   const { data: prodData, loading, refetch } = useApi(() => productsApi.list(), [])
+  const { data: orderData, refetch: refetchOrders } = useApi(() => ordersApi.list(), [])
   const productList = prodData?.results || prodData || []
+  const orderList = orderData?.results || orderData || []
 
   const [tab, setTab] = useState('products')
   const [modal, setModal] = useState(null)
 
-  const pendingPickup = ORDERS.filter(o => o.status === 'pending_pickup')
+  const pendingPickup = orderList.filter(o => o.status === 'pending_pickup')
   const activeProducts = productList.filter(p => p.is_active)
   const lowStock = productList.filter(p => p.stock <= 6 && p.is_active)
+  const totalRevenue = orderList.filter(o => o.status === 'picked_up').reduce((s, o) => s + parseFloat(o.total || 0), 0)
 
   async function deleteProduct(id) {
     if (!confirm('Delete this product?')) return
@@ -150,7 +205,7 @@ export default function AdminRetail() {
         {[
           ['Products', loading ? '…' : activeProducts.length, 'kpi-lime'],
           ['Pending Pickup', pendingPickup.length, pendingPickup.length > 0 ? 'kpi-amber' : 'kpi-lime'],
-          ['Revenue (May)', `$${ORDERS.filter(o => o.status === 'picked_up').reduce((s, o) => s + o.total, 0)}`, 'kpi-lav'],
+          ['Revenue (All Time)', `$${totalRevenue.toFixed(0)}`, 'kpi-lav'],
           ['Low Stock', loading ? '…' : lowStock.length, lowStock.length > 0 ? 'kpi-amber' : 'kpi-lime'],
         ].map(([label, val, cls]) => (
           <div key={label} className={`kpi ${cls}`}>
@@ -166,7 +221,7 @@ export default function AdminRetail() {
       </div>
 
       <div className="subtabs" style={{ marginBottom: 20 }}>
-        {[['products', 'Products'], ['orders', 'Orders'], ['pending', `Pending Pickup (${pendingPickup.length})`]].map(([key, label]) => (
+        {[['products', 'Products'], ['orders', `Orders (${orderList.length})`], ['pending', `Pending Pickup (${pendingPickup.length})`]].map(([key, label]) => (
           <div key={key} className={`subtab ${tab === key ? 'active' : ''}`} onClick={() => setTab(key)}>{label}</div>
         ))}
       </div>
@@ -207,27 +262,40 @@ export default function AdminRetail() {
       )}
 
       {tab === 'orders' && (
-        <div className="tbl-section">
-          <table>
-            <thead><tr><th>Order #</th><th>Student</th><th>Items</th><th>Total</th><th>Location</th><th>Date</th><th>Status</th><th></th></tr></thead>
-            <tbody>
-              {ORDERS.map(o => {
-                const s = STATUS_STYLE[o.status] || { label: o.status, cls: 'tag-grey' }
-                return (
-                  <tr key={o.id}>
-                    <td style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--grey)' }}>#{o.id}</td>
-                    <td><b>{o.student}</b></td>
-                    <td style={{ fontSize: 12, color: 'var(--grey)', maxWidth: 180 }}>{o.items}</td>
-                    <td style={{ color: 'var(--lime)', fontWeight: 600 }}>${o.total}</td>
-                    <td style={{ fontSize: 12, color: 'var(--grey)' }}>{o.location}</td>
-                    <td style={{ fontSize: 12, color: 'var(--grey)' }}>{o.date}</td>
-                    <td><span className={`tag ${s.cls}`} style={{ fontSize: 10 }}>{s.label}</span></td>
-                    <td>{o.status === 'pending_pickup' && <button className="btn btn-lime btn-xs">Mark Picked Up</button>}</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+            <button className="btn btn-ghost btn-sm" onClick={() => setModal({ type: 'order' })}>+ New Order</button>
+          </div>
+          <div className="tbl-section">
+            <table>
+              <thead><tr><th>Order #</th><th>Student</th><th>Items</th><th>Total</th><th>Location</th><th>Date</th><th>Status</th><th></th></tr></thead>
+              <tbody>
+                {orderList.length === 0 && <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--grey)', padding: '32px 0' }}>No orders yet</td></tr>}
+                {orderList.map(o => {
+                  const s = STATUS_STYLE[o.status] || { label: o.status, cls: 'tag-grey' }
+                  return (
+                    <tr key={o.id}>
+                      <td style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--grey)' }}>#{o.id}</td>
+                      <td><b>{o.student_display || o.student_name || '—'}</b></td>
+                      <td style={{ fontSize: 12, color: 'var(--grey)', maxWidth: 180 }}>{o.items}</td>
+                      <td style={{ color: 'var(--lime)', fontWeight: 600 }}>${parseFloat(o.total).toFixed(2)}</td>
+                      <td style={{ fontSize: 12, color: 'var(--grey)' }}>{o.location || '—'}</td>
+                      <td style={{ fontSize: 12, color: 'var(--grey)' }}>{new Date(o.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</td>
+                      <td><span className={`tag ${s.cls}`} style={{ fontSize: 10 }}>{s.label}</span></td>
+                      <td>
+                        {o.status === 'pending_pickup' && (
+                          <button className="btn btn-lime btn-xs" onClick={async () => {
+                            await ordersApi.update(o.id, { status: 'picked_up' })
+                            refetchOrders()
+                          }}>Mark Picked Up</button>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -238,15 +306,20 @@ export default function AdminRetail() {
           ) : pendingPickup.map(o => (
             <div key={o.id} style={{ background: 'rgba(255,170,0,0.06)', border: '1px solid rgba(255,170,0,0.2)', borderRadius: 12, padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
               <div>
-                <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{o.student}</div>
+                <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{o.student_display || o.student_name || '—'}</div>
                 <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 6 }}>{o.items}</div>
                 <div style={{ display: 'flex', gap: 12, fontSize: 11, color: 'var(--grey)' }}>
-                  <span>Order #{o.id}</span><span>{o.location}</span><span>Ordered {o.date}</span>
+                  <span>Order #{o.id}</span>
+                  {o.location && <span>{o.location}</span>}
+                  <span>Ordered {new Date(o.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, color: 'var(--lime)' }}>${o.total}</div>
-                <button className="btn btn-lime btn-sm">Mark Picked Up</button>
+                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, color: 'var(--lime)' }}>${parseFloat(o.total).toFixed(2)}</div>
+                <button className="btn btn-lime btn-sm" onClick={async () => {
+                  await ordersApi.update(o.id, { status: 'picked_up' })
+                  refetchOrders()
+                }}>Mark Picked Up</button>
               </div>
             </div>
           ))}
@@ -258,6 +331,9 @@ export default function AdminRetail() {
       )}
       {modal?.type === 'restock' && (
         <RestockModal product={modal.product} onClose={() => setModal(null)} onSaved={() => { setModal(null); refetch() }} />
+      )}
+      {modal?.type === 'order' && (
+        <NewOrderModal onClose={() => setModal(null)} onSaved={() => { setModal(null); refetchOrders() }} />
       )}
     </div>
   )
