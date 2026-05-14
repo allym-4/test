@@ -63,7 +63,7 @@ function TagModal({ existing, onClose, onSaved }) {
 
 export default function AdminTags() {
   const { data, loading, refetch } = useApi(() => tagsApi.list())
-  const tags = data || []
+  const tags = data?.results || data || []
   const [modal, setModal] = useState(null)
   const [autoRemove, setAutoRemove] = useState(true)
   const [notifyAtRisk, setNotifyAtRisk] = useState(true)
