@@ -32,6 +32,8 @@ import AdminAutomations from './pages/admin/AdminAutomations'
 import AdminRetail from './pages/admin/AdminRetail'
 import AdminLockers from './pages/admin/AdminLockers'
 import AdminHelpdesk from './pages/admin/AdminHelpdesk'
+import AdminClasses from './pages/admin/AdminClasses'
+import AdminPaymentPlans from './pages/admin/AdminPaymentPlans'
 
 // Student pages
 import StudentDashboard from './pages/student/StudentDashboard'
@@ -119,6 +121,8 @@ export default function App() {
             <Route path="retail" element={<AdminRetail />} />
             <Route path="lockers" element={<AdminLockers />} />
             <Route path="helpdesk" element={<AdminHelpdesk />} />
+            <Route path="classes" element={<AdminClasses />} />
+            <Route path="payment-plans" element={<AdminPaymentPlans />} />
             <Route path="classes/:id/attendance" element={<AttendancePage />} />
           </Route>
 

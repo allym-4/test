@@ -11,34 +11,51 @@ const NAV_GROUPS = [
   },
   {
     divider: true,
+    label: 'People',
     items: [
-      { to: '/admin/timetable',  label: 'Timetable',      icon: '📅' },
-      { to: '/admin/students',   label: 'Students',       icon: '👤' },
-      { to: '/admin/staff',      label: 'Staff',          icon: '🧑‍🏫' },
-      { to: '/admin/billing',    label: 'Billing',        icon: '💳' },
-      { to: '/admin/reporting',  label: 'Analytics',      icon: '📊' },
+      { to: '/admin/students', label: 'Students',   icon: '👤' },
+      { to: '/admin/staff',    label: 'Staff',      icon: '🧑‍🏫' },
     ]
   },
   {
     divider: true,
+    label: 'Classes',
     items: [
-      { to: '/admin/messages',        label: 'Messages',       icon: '📩' },
-      { to: '/admin/community',       label: 'Community',      icon: '💬' },
-      { to: '/admin/automations',     label: 'Automations',    icon: '🔔' },
-      { to: '/admin/recommendations', label: 'Recommendations', icon: '💡' },
-      { to: '/admin/leads',           label: 'Leads',          icon: '🎯' },
-    ]
-  },
-  {
-    divider: true,
-    items: [
-      { to: '/admin/retail',    label: 'Retail',    icon: '🛍' },
+      { to: '/admin/timetable', label: 'Timetable', icon: '📅' },
+      { to: '/admin/classes',   label: 'Classes',   icon: '📚' },
       { to: '/admin/waitlist',  label: 'Waitlist',  icon: '⏳' },
-      { to: '/admin/lockers',   label: 'Lockers',   icon: '🔐' },
-      { to: '/admin/helpdesk',  label: 'Helpdesk',  icon: '🎧' },
-      { to: '/admin/bookings',  label: 'Bookings',  icon: '📋' },
-      { to: '/admin/seasons',   label: 'Seasons',   icon: '📆' },
-      { to: '/admin/settings',  label: 'Settings',  icon: '⚙️' },
+      { to: '/admin/seasons',   label: 'Seasons',   icon: '🌀' },
+    ]
+  },
+  {
+    divider: true,
+    label: 'Finance',
+    items: [
+      { to: '/admin/billing',       label: 'Billing',         icon: '💳' },
+      { to: '/admin/payment-plans', label: 'Payment Plans',   icon: '📋' },
+      { to: '/admin/bookings',      label: 'Bookings',        icon: '🎟' },
+      { to: '/admin/reporting',     label: 'Analytics',       icon: '📊' },
+    ]
+  },
+  {
+    divider: true,
+    label: 'Community',
+    items: [
+      { to: '/admin/messages',        label: 'Messages',        icon: '📩' },
+      { to: '/admin/community',       label: 'Community',       icon: '💬' },
+      { to: '/admin/recommendations', label: 'Recommendations', icon: '💡' },
+      { to: '/admin/helpdesk',        label: 'Helpdesk',        icon: '🎧' },
+    ]
+  },
+  {
+    divider: true,
+    label: 'Ops',
+    items: [
+      { to: '/admin/leads',       label: 'Leads',       icon: '🎯' },
+      { to: '/admin/retail',      label: 'Retail',      icon: '🛍' },
+      { to: '/admin/lockers',     label: 'Lockers',     icon: '🔐' },
+      { to: '/admin/automations', label: 'Automations', icon: '🔔' },
+      { to: '/admin/settings',    label: 'Settings',    icon: '⚙️' },
     ]
   },
 ]
@@ -67,6 +84,7 @@ export default function AdminShell() {
           {NAV_GROUPS.map((group, gi) => (
             <div key={gi}>
               {group.divider && <div className="admin-nav-divider" />}
+              {group.label && <div className="admin-nav-group-label">{group.label}</div>}
               {group.items.map(({ to, label, icon, end, stub }) => (
                 <NavLink
                   key={to}

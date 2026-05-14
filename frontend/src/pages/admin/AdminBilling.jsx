@@ -9,7 +9,7 @@ import WaiveModal from '../../components/WaiveModal'
 export default function AdminBilling() {
   const [tab, setTab] = useState('outstanding')
   const { data: paymentsData, loading: loadingPayments, refetch: refetchPayments } = useApi(() => payments.list())
-  const { data: plansData, loading: loadingPlans } = useApi(() => payments.plans())
+  const { data: plansData, loading: loadingPlans } = useApi(() => payments.plans.list())
   const { data: studentsData } = useApi(() => users.list({ role: 'student' }))
   const [balances, setBalances] = useState({})
   const [loadingBal, setLoadingBal] = useState(false)

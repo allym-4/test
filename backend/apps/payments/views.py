@@ -53,6 +53,12 @@ class PaymentPlanDetailView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAdminOrInstructor]
 
 
+class InstalmentListView(generics.ListCreateAPIView):
+    queryset = PaymentPlanInstalment.objects.select_related('plan')
+    serializer_class = PaymentPlanInstalmentSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
 class InstalmentDetailView(generics.RetrieveUpdateAPIView):
     queryset = PaymentPlanInstalment.objects.select_related('plan')
     serializer_class = PaymentPlanInstalmentSerializer

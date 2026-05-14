@@ -34,6 +34,7 @@ class Payment(models.Model):
 
 class PaymentPlan(models.Model):
     class Status(models.TextChoices):
+        PENDING = 'pending', 'Pending'
         ACTIVE = 'active', 'Active'
         COMPLETED = 'completed', 'Completed'
         CANCELLED = 'cancelled', 'Cancelled'

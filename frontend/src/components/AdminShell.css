@@ -45,6 +45,15 @@
   margin: 8px 6px;
 }
 
+.admin-nav-group-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--grey);
+  padding: 4px 14px 2px;
+  font-weight: 600;
+}
+
 .admin-nav-item {
   display: flex;
   align-items: center;

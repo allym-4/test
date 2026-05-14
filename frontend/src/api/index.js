@@ -10,8 +10,15 @@ export const auth = {
 export const classes = {
   list: (params) => client.get('/api/classes/sessions/', { params }),
   get: (id) => client.get(`/api/classes/sessions/${id}/`),
+  create: (data) => client.post('/api/classes/sessions/', data),
+  update: (id, data) => client.patch(`/api/classes/sessions/${id}/`, data),
+  delete: (id) => client.delete(`/api/classes/sessions/${id}/`),
   occurrences: (params) => client.get('/api/classes/occurrences/', { params }),
   getOccurrence: (id) => client.get(`/api/classes/occurrences/${id}/`),
+}
+
+export const studios = {
+  list: () => client.get('/api/classes/studios/'),
 }
 
 export const enrolments = {
@@ -24,8 +31,14 @@ export const enrolments = {
 export const payments = {
   list: (params) => client.get('/api/payments/', { params }),
   balance: (studentId) => client.get(`/api/payments/balance/${studentId}/`),
-  plans: (params) => client.get('/api/payments/plans/', { params }),
   create: (data) => client.post('/api/payments/', data),
+  plans: {
+    list: (params) => client.get('/api/payments/plans/', { params }),
+    get: (id) => client.get(`/api/payments/plans/${id}/`),
+    create: (data) => client.post('/api/payments/plans/', data),
+    update: (id, data) => client.patch(`/api/payments/plans/${id}/`, data),
+    createInstalment: (data) => client.post('/api/payments/instalments/', data),
+  },
 }
 
 export const leads = {
