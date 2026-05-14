@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord, StudentSkill
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition
 
 
 class UserMinimalSerializer(serializers.ModelSerializer):
@@ -149,3 +149,44 @@ class StudentSkillSerializer(serializers.ModelSerializer):
         model = StudentSkill
         fields = ('id', 'skill_name', 'level', 'self_assessed', 'teacher_confirmed', 'updated_at')
         read_only_fields = ('id', 'updated_at')
+
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ('id', 'name', 'colour', 'auto_rule', 'is_manual', 'created_at')
+        read_only_fields = ('id', 'created_at')
+
+
+class StudentTagSerializer(serializers.ModelSerializer):
+    tag_name = serializers.StringRelatedField(source='tag')
+
+    class Meta:
+        model = StudentTag
+        fields = ('id', 'student', 'tag', 'tag_name', 'added_at')
+        read_only_fields = ('id', 'added_at')
+
+
+class SkillDefinitionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SkillDefinition
+        fields = ('id', 'name', 'order')
+        read_only_fields = ('id',)
+
+
+class SkillGroupSerializer(serializers.ModelSerializer):
+    skills = SkillDefinitionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = SkillGroup
+        fields = ('id', 'name', 'order', 'skills')
+        read_only_fields = ('id',)
+
+
+class SkillLevelSerializer(serializers.ModelSerializer):
+    groups = SkillGroupSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = SkillLevel
+        fields = ('id', 'name', 'order', 'groups')
+        read_only_fields = ('id',)

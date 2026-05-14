@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.db.models import Sum
-from .models import Payment, PaymentPlan, PaymentPlanInstalment
+from .models import Payment, PaymentPlan, PaymentPlanInstalment, Package, StudentPackage, MembershipType, GiftCard
 from apps.users.serializers import UserMinimalSerializer
 
 
@@ -57,3 +57,36 @@ class StudentBalanceSerializer(serializers.Serializer):
     balance = serializers.DecimalField(max_digits=8, decimal_places=2)
     total_charged = serializers.DecimalField(max_digits=8, decimal_places=2)
     total_paid = serializers.DecimalField(max_digits=8, decimal_places=2)
+
+
+class PackageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Package
+        fields = ('id', 'name', 'num_classes', 'price', 'expiry_days', 'is_active', 'created_at')
+        read_only_fields = ('id', 'created_at')
+
+
+class StudentPackageSerializer(serializers.ModelSerializer):
+    package_name = serializers.StringRelatedField(source='package')
+
+    class Meta:
+        model = StudentPackage
+        fields = ('id', 'student', 'package', 'package_name', 'classes_remaining', 'purchased_at', 'expires_at', 'is_active')
+        read_only_fields = ('id', 'purchased_at')
+
+
+class MembershipTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MembershipType
+        fields = ('id', 'name', 'price', 'duration', 'classes_per_week', 'is_active', 'created_at')
+        read_only_fields = ('id', 'created_at')
+
+
+class GiftCardSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GiftCard
+        fields = (
+            'id', 'code', 'value', 'balance', 'issued_to_name', 'issued_to_email',
+            'purchased_by', 'redeemed_by', 'is_active', 'created_at', 'expires_at',
+        )
+        read_only_fields = ('id', 'created_at')

@@ -4,6 +4,8 @@ from . import views
 urlpatterns = [
     path('studios/', views.StudioListView.as_view(), name='studio-list'),
     path('studios/<int:pk>/', views.StudioDetailView.as_view(), name='studio-detail'),
+    path('categories/', views.ClassCategoryListView.as_view(), name='category-list'),
+    path('categories/<int:pk>/', views.ClassCategoryDetailView.as_view(), name='category-detail'),
     path('sessions/', views.ClassSessionListView.as_view(), name='session-list'),
     path('sessions/<int:pk>/', views.ClassSessionDetailView.as_view(), name='session-detail'),
     path('occurrences/', views.ClassOccurrenceListView.as_view(), name='occurrence-list'),

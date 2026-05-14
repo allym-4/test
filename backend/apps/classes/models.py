@@ -6,6 +6,23 @@ class Studio(models.Model):
     name = models.CharField(max_length=100)
     address = models.TextField(blank=True)
     kisi_place_id = models.CharField(max_length=100, blank=True)
+    capacity = models.CharField(max_length=50, blank=True)
+    poles = models.CharField(max_length=100, blank=True)
+    features = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+
+class ClassCategory(models.Model):
+    name = models.CharField(max_length=50)
+    colour = models.CharField(max_length=20, default='#ccff00')
+    is_visible = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
 
     def __str__(self):
         return self.name
@@ -37,6 +54,9 @@ class ClassSession(models.Model):
     capacity = models.PositiveIntegerField(default=12)
     session_type = models.CharField(max_length=10, choices=SessionType.choices, default=SessionType.COURSE)
     is_active = models.BooleanField(default=True)
+    category = models.ForeignKey(
+        ClassCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='sessions'
+    )
 
     class Meta:
         ordering = ['day_of_week', 'start_time']

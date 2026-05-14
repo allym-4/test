@@ -15,4 +15,13 @@ urlpatterns = [
     path('instalments/', views.InstalmentListView.as_view(), name='instalment-list'),
     path('plans/instalments/<int:pk>/', views.InstalmentDetailView.as_view(), name='instalment-detail'),
     path('balance/<int:student_pk>/', views.student_balance, name='student-balance'),
+
+    path('packages/', views.PackageListView.as_view(), name='package-list'),
+    path('packages/<int:pk>/', views.PackageDetailView.as_view(), name='package-detail'),
+    path('student-packages/', views.StudentPackageListView.as_view(), name='student-package-list'),
+    path('student-packages/<int:pk>/', views.StudentPackageDetailView.as_view(), name='student-package-detail'),
+    path('membership-types/', views.MembershipTypeListView.as_view(), name='membership-type-list'),
+    path('membership-types/<int:pk>/', views.MembershipTypeDetailView.as_view(), name='membership-type-detail'),
+    path('gift-cards/', views.GiftCardListView.as_view(), name='gift-card-list'),
+    path('gift-cards/<int:pk>/', views.GiftCardDetailView.as_view(), name='gift-card-detail'),
 ]

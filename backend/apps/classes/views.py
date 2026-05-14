@@ -2,8 +2,8 @@ from datetime import date
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Studio, ClassSession, ClassOccurrence, Season, Locker, KisiGrant
-from .serializers import StudioSerializer, ClassSessionSerializer, ClassOccurrenceSerializer, SeasonSerializer, LockerSerializer, KisiGrantSerializer
+from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant
+from .serializers import StudioSerializer, ClassCategorySerializer, ClassSessionSerializer, ClassOccurrenceSerializer, SeasonSerializer, LockerSerializer, KisiGrantSerializer
 from apps.users.permissions import IsAdminOrInstructor, IsAdminUser
 
 
@@ -13,9 +13,21 @@ class StudioListView(generics.ListCreateAPIView):
     permission_classes = [IsAdminOrInstructor]
 
 
-class StudioDetailView(generics.RetrieveUpdateAPIView):
+class StudioDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Studio.objects.all()
     serializer_class = StudioSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class ClassCategoryListView(generics.ListCreateAPIView):
+    queryset = ClassCategory.objects.all()
+    serializer_class = ClassCategorySerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class ClassCategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = ClassCategory.objects.all()
+    serializer_class = ClassCategorySerializer
     permission_classes = [IsAdminOrInstructor]
 
 

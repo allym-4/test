@@ -6,12 +6,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db import transaction
 from django.db.models import Q
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord, StudentSkill
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition
 from .serializers import (
     UserSerializer, UserCreateSerializer, StaffNoteSerializer, LeadSerializer,
     StudioSettingsSerializer, AnnouncementSerializer, ProductSerializer, AutomationRuleSerializer,
     OrderSerializer, NotificationSerializer, InstructorAvailabilitySerializer, StudentFormSerializer,
     InstructorPayRecordSerializer, StudentSkillSerializer,
+    TagSerializer, StudentTagSerializer, SkillLevelSerializer, SkillGroupSerializer, SkillDefinitionSerializer,
 )
 from .permissions import IsAdminOrInstructor, IsAdminUser
 
@@ -395,3 +396,87 @@ class SquareSyncView(APIView):
             return Response({'created': created, 'updated': updated, 'skipped': skipped})
         except Exception as e:
             return Response({'detail': f'Square sync failed: {e}'}, status=status.HTTP_502_BAD_GATEWAY)
+
+
+class TagListView(generics.ListCreateAPIView):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class TagDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class StudentTagView(APIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def get(self, request, user_pk):
+        student_tags = StudentTag.objects.filter(student_id=user_pk).select_related('tag')
+        return Response(StudentTagSerializer(student_tags, many=True).data)
+
+    def post(self, request, user_pk):
+        tag_id = request.data.get('tag_id')
+        if not tag_id:
+            return Response({'detail': 'tag_id required'}, status=status.HTTP_400_BAD_REQUEST)
+        student_tag, created = StudentTag.objects.get_or_create(student_id=user_pk, tag_id=tag_id)
+        return Response(StudentTagSerializer(student_tag).data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+    def delete(self, request, user_pk):
+        tag_id = request.data.get('tag_id')
+        if not tag_id:
+            return Response({'detail': 'tag_id required'}, status=status.HTTP_400_BAD_REQUEST)
+        deleted, _ = StudentTag.objects.filter(student_id=user_pk, tag_id=tag_id).delete()
+        if deleted:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({'detail': 'Tag not found on student'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class SkillLevelListView(generics.ListCreateAPIView):
+    queryset = SkillLevel.objects.all()
+    serializer_class = SkillLevelSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class SkillLevelDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = SkillLevel.objects.all()
+    serializer_class = SkillLevelSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class SkillGroupListView(generics.ListCreateAPIView):
+    serializer_class = SkillGroupSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+    def get_queryset(self):
+        qs = SkillGroup.objects.select_related('level')
+        level = self.request.query_params.get('level')
+        if level:
+            qs = qs.filter(level_id=level)
+        return qs
+
+
+class SkillGroupDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = SkillGroup.objects.select_related('level')
+    serializer_class = SkillGroupSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class SkillDefinitionListView(generics.ListCreateAPIView):
+    serializer_class = SkillDefinitionSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+    def get_queryset(self):
+        qs = SkillDefinition.objects.select_related('group')
+        group = self.request.query_params.get('group')
+        if group:
+            qs = qs.filter(group_id=group)
+        return qs
+
+
+class SkillDefinitionDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = SkillDefinition.objects.select_related('group')
+    serializer_class = SkillDefinitionSerializer
+    permission_classes = [IsAdminOrInstructor]

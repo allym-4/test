@@ -83,3 +83,71 @@ class PaymentPlanInstalment(models.Model):
 
     def __str__(self):
         return f'{self.plan} · Instalment ${self.amount} due {self.due_date}'
+
+
+class Package(models.Model):
+    name = models.CharField(max_length=100)
+    num_classes = models.PositiveIntegerField()
+    price = models.DecimalField(max_digits=8, decimal_places=2)
+    expiry_days = models.PositiveIntegerField(default=90)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return f'{self.name} ({self.num_classes} classes)'
+
+
+class StudentPackage(models.Model):
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='packages')
+    package = models.ForeignKey(Package, on_delete=models.CASCADE, related_name='purchases')
+    classes_remaining = models.PositiveIntegerField()
+    purchased_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['-purchased_at']
+
+    def __str__(self):
+        return f'{self.student} · {self.package} · {self.classes_remaining} remaining'
+
+
+class MembershipType(models.Model):
+    name = models.CharField(max_length=100)
+    price = models.DecimalField(max_digits=8, decimal_places=2)
+    duration = models.CharField(max_length=50)
+    classes_per_week = models.CharField(max_length=10)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+class GiftCard(models.Model):
+    code = models.CharField(max_length=20, unique=True)
+    value = models.DecimalField(max_digits=8, decimal_places=2)
+    balance = models.DecimalField(max_digits=8, decimal_places=2)
+    issued_to_name = models.CharField(max_length=100, blank=True)
+    issued_to_email = models.EmailField(blank=True)
+    purchased_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='gift_cards_purchased'
+    )
+    redeemed_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='gift_cards_redeemed'
+    )
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'Gift Card {self.code} (${self.balance} remaining)'

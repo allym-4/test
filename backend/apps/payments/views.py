@@ -2,10 +2,11 @@ from rest_framework import generics, permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.db.models import Sum, Q
-from .models import Payment, PaymentPlan, PaymentPlanInstalment
+from .models import Payment, PaymentPlan, PaymentPlanInstalment, Package, StudentPackage, MembershipType, GiftCard
 from .serializers import (
     PaymentSerializer, PaymentPlanSerializer,
-    PaymentPlanInstalmentSerializer, StudentBalanceSerializer
+    PaymentPlanInstalmentSerializer, StudentBalanceSerializer,
+    PackageSerializer, StudentPackageSerializer, MembershipTypeSerializer, GiftCardSerializer,
 )
 from apps.users.permissions import IsAdminOrInstructor
 from apps.users.models import User
@@ -62,6 +63,73 @@ class InstalmentListView(generics.ListCreateAPIView):
 class InstalmentDetailView(generics.RetrieveUpdateAPIView):
     queryset = PaymentPlanInstalment.objects.select_related('plan')
     serializer_class = PaymentPlanInstalmentSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class PackageListView(generics.ListCreateAPIView):
+    serializer_class = PackageSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+    def get_queryset(self):
+        qs = Package.objects.all()
+        if self.request.query_params.get('active') == 'true':
+            qs = qs.filter(is_active=True)
+        return qs
+
+
+class PackageDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Package.objects.all()
+    serializer_class = PackageSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class StudentPackageListView(generics.ListCreateAPIView):
+    serializer_class = StudentPackageSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+    def get_queryset(self):
+        qs = StudentPackage.objects.select_related('student', 'package')
+        student_id = self.request.query_params.get('student')
+        if student_id:
+            qs = qs.filter(student_id=student_id)
+        if self.request.query_params.get('active') == 'true':
+            qs = qs.filter(is_active=True)
+        return qs
+
+
+class StudentPackageDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = StudentPackage.objects.select_related('student', 'package')
+    serializer_class = StudentPackageSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class MembershipTypeListView(generics.ListCreateAPIView):
+    queryset = MembershipType.objects.all()
+    serializer_class = MembershipTypeSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class MembershipTypeDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = MembershipType.objects.all()
+    serializer_class = MembershipTypeSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class GiftCardListView(generics.ListCreateAPIView):
+    serializer_class = GiftCardSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+    def get_queryset(self):
+        qs = GiftCard.objects.all()
+        code = self.request.query_params.get('code')
+        if code:
+            qs = qs.filter(code__icontains=code)
+        return qs
+
+
+class GiftCardDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = GiftCard.objects.all()
+    serializer_class = GiftCardSerializer
     permission_classes = [IsAdminOrInstructor]
 
 

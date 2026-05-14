@@ -278,3 +278,64 @@ class StudentSkill(models.Model):
 
     def __str__(self):
         return f'{self.student.display_name} — {self.skill_name}'
+
+
+class Tag(models.Model):
+    name = models.CharField(max_length=50)
+    colour = models.CharField(max_length=20, default='#ccff00')
+    auto_rule = models.CharField(max_length=100, blank=True)
+    is_manual = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+class StudentTag(models.Model):
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='student_tags')
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name='student_tags')
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [('student', 'tag')]
+
+    def __str__(self):
+        return f'{self.student.display_name} — {self.tag.name}'
+
+
+class SkillLevel(models.Model):
+    name = models.CharField(max_length=50)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return self.name
+
+
+class SkillGroup(models.Model):
+    level = models.ForeignKey(SkillLevel, on_delete=models.CASCADE, related_name='groups')
+    name = models.CharField(max_length=100)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f'{self.level.name} — {self.name}'
+
+
+class SkillDefinition(models.Model):
+    group = models.ForeignKey(SkillGroup, on_delete=models.CASCADE, related_name='skills')
+    name = models.CharField(max_length=100)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return self.name
