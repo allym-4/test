@@ -6,15 +6,15 @@ import { tags as tagsApi } from '../../api'
 function TagModal({ existing, onClose, onSaved }) {
   const [name, setName] = useState(existing?.name || '')
   const [colour, setColour] = useState(existing?.colour || '#ccff00')
-  const [autoRule, setAutoRule] = useState(existing?.autoRule || 'Manual only')
-  const [manual, setManual] = useState(existing?.manual ?? true)
+  const [autoRule, setAutoRule] = useState(existing?.auto_rule || 'Manual only')
+  const [manual, setManual] = useState(existing?.is_manual ?? true)
   const [saving, setSaving] = useState(false)
 
   async function submit(e) {
     e.preventDefault()
     setSaving(true)
     try {
-      const payload = { name, colour, autoRule: manual ? 'Manual only' : autoRule, manual }
+      const payload = { name, colour, auto_rule: manual ? 'Manual only' : autoRule, is_manual: manual }
       if (existing?.id) {
         await tagsApi.update(existing.id, payload)
       } else {
@@ -91,6 +91,8 @@ export default function AdminTags() {
       <div className="tbl-section" style={{ marginBottom: 24 }}>
         {loading ? (
           <div style={{ padding: 32, textAlign: 'center', color: 'var(--grey)' }}>Loading…</div>
+        ) : tags.length === 0 ? (
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--grey)', fontSize: 13 }}>No tags yet — create your first tag above.</div>
         ) : (
           <table>
             <thead><tr><th>Tag</th><th>Colour</th><th>Students</th><th>Auto-rule</th><th></th></tr></thead>
@@ -103,8 +105,8 @@ export default function AdminTags() {
                     </span>
                   </td>
                   <td><span style={{ display: 'inline-block', width: 16, height: 16, background: tag.colour, borderRadius: 3 }} /></td>
-                  <td style={{ fontSize: 12, color: 'var(--grey)' }}>{tag.students}</td>
-                  <td style={{ fontSize: 12, color: tag.manual ? 'var(--grey)' : 'inherit' }}>{tag.autoRule}</td>
+                  <td style={{ fontSize: 12, color: 'var(--grey)' }}>—</td>
+                  <td style={{ fontSize: 12, color: tag.is_manual ? 'var(--grey)' : 'inherit' }}>{tag.is_manual ? 'Manual only' : tag.auto_rule}</td>
                   <td style={{ whiteSpace: 'nowrap' }}>
                     <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => setModal({ existing: tag })}>Edit</button>
                     <button className="btn btn-ghost btn-xs">View Students</button>
