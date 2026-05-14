@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm
 
 
 class UserMinimalSerializer(serializers.ModelSerializer):
@@ -115,4 +115,19 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = ('id', 'title', 'body', 'notification_type', 'read', 'action_label', 'action_url', 'created_at')
+        read_only_fields = ('id', 'created_at')
+
+
+class InstructorAvailabilitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InstructorAvailability
+        fields = ('id', 'instructor', 'day_of_week', 'slot', 'available')
+        read_only_fields = ('id',)
+
+
+class StudentFormSerializer(serializers.ModelSerializer):
+    form_type_display = serializers.CharField(source='get_form_type_display', read_only=True)
+    class Meta:
+        model = StudentForm
+        fields = ('id', 'form_type', 'form_type_display', 'completed', 'responses', 'completed_at', 'created_at')
         read_only_fields = ('id', 'created_at')

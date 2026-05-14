@@ -6,11 +6,11 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db import transaction
 from django.db.models import Q
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm
 from .serializers import (
     UserSerializer, UserCreateSerializer, StaffNoteSerializer, LeadSerializer,
     StudioSettingsSerializer, AnnouncementSerializer, ProductSerializer, AutomationRuleSerializer,
-    OrderSerializer, NotificationSerializer,
+    OrderSerializer, NotificationSerializer, InstructorAvailabilitySerializer, StudentFormSerializer,
 )
 from .permissions import IsAdminOrInstructor, IsAdminUser
 
@@ -272,3 +272,49 @@ class NotificationMarkReadView(APIView):
             qs = qs.filter(id__in=ids)
         qs.update(read=True)
         return Response({'ok': True})
+
+
+class InstructorAvailabilityView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        instructor_id = request.query_params.get('instructor', request.user.id)
+        slots = InstructorAvailability.objects.filter(instructor_id=instructor_id)
+        return Response(InstructorAvailabilitySerializer(slots, many=True).data)
+
+    def post(self, request):
+        """Bulk-save availability slots for the requesting instructor."""
+        slots_data = request.data if isinstance(request.data, list) else [request.data]
+        saved = []
+        for item in slots_data:
+            obj, _ = InstructorAvailability.objects.update_or_create(
+                instructor=request.user,
+                day_of_week=item['day_of_week'],
+                slot=item['slot'],
+                defaults={'available': item.get('available', True)},
+            )
+            saved.append(obj)
+        return Response(InstructorAvailabilitySerializer(saved, many=True).data)
+
+
+class StudentFormView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        forms = StudentForm.objects.filter(student=request.user)
+        return Response(StudentFormSerializer(forms, many=True).data)
+
+    def post(self, request):
+        from django.utils import timezone as tz
+        form_type = request.data.get('form_type')
+        responses = request.data.get('responses', {})
+        obj, _ = StudentForm.objects.update_or_create(
+            student=request.user,
+            form_type=form_type,
+            defaults={
+                'responses': responses,
+                'completed': True,
+                'completed_at': tz.now(),
+            }
+        )
+        return Response(StudentFormSerializer(obj).data)

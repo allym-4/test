@@ -201,3 +201,35 @@ class Notification(models.Model):
 
     def __str__(self):
         return f'{self.recipient.display_name}: {self.title}'
+
+
+class InstructorAvailability(models.Model):
+    DAY_CHOICES = [(i, d) for i, d in enumerate(['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'])]
+    SLOT_CHOICES = [('morning','Morning (9am–12pm)'),('afternoon','Afternoon (12pm–5pm)'),('evening','Evening (5pm–10pm)')]
+    instructor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='availability_slots')
+    day_of_week = models.IntegerField(choices=DAY_CHOICES)
+    slot = models.CharField(max_length=20, choices=SLOT_CHOICES)
+    available = models.BooleanField(default=True)
+    class Meta:
+        unique_together = [('instructor','day_of_week','slot')]
+        ordering = ['day_of_week','slot']
+    def __str__(self):
+        return f'{self.instructor.display_name} — day {self.day_of_week} {self.slot}'
+
+
+class StudentForm(models.Model):
+    class FormType(models.TextChoices):
+        PARQ = 'parq', 'PAR-Q Health Questionnaire'
+        WAIVER = 'waiver', 'Liability Waiver'
+        SURVEY = 'survey', 'Survey'
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='forms')
+    form_type = models.CharField(max_length=20, choices=FormType.choices)
+    completed = models.BooleanField(default=False)
+    responses = models.JSONField(default=dict, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        unique_together = [('student','form_type')]
+        ordering = ['completed','form_type']
+    def __str__(self):
+        return f'{self.student.display_name} — {self.form_type}'

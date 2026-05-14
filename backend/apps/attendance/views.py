@@ -61,3 +61,29 @@ def bulk_save_register(request, occurrence_pk):
     occurrence.register_saved = True
     occurrence.save(update_fields=['register_saved'])
     return Response(AttendanceRecordSerializer(saved, many=True).data, status=status.HTTP_200_OK)
+
+
+from rest_framework.views import APIView
+from django.utils import timezone
+from datetime import date
+
+class StudentMarkAwayView(APIView):
+    """Student self-service: mark away from an upcoming occurrence."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        occurrence_id = request.data.get('occurrence_id')
+        if not occurrence_id:
+            return Response({'detail': 'occurrence_id required'}, status=400)
+        try:
+            occurrence = ClassOccurrence.objects.get(pk=occurrence_id)
+        except ClassOccurrence.DoesNotExist:
+            return Response({'detail': 'Occurrence not found'}, status=404)
+        if occurrence.date < date.today():
+            return Response({'detail': 'Cannot mark away for a past class'}, status=400)
+        record, _ = AttendanceRecord.objects.update_or_create(
+            occurrence=occurrence,
+            student=request.user,
+            defaults={'status': 'absent', 'recorded_by': request.user, 'note': 'Student marked away'}
+        )
+        return Response(AttendanceRecordSerializer(record).data, status=status.HTTP_200_OK)

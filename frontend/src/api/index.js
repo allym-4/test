@@ -21,12 +21,6 @@ export const enrolments = {
   delete: (id) => client.delete(`/api/enrolments/${id}/`),
 }
 
-export const attendance = {
-  list: (params) => client.get('/api/attendance/', { params }),
-  bulkSave: (occurrenceId, records) =>
-    client.post(`/api/attendance/occurrence/${occurrenceId}/bulk/`, { records }),
-}
-
 export const payments = {
   list: (params) => client.get('/api/payments/', { params }),
   balance: (studentId) => client.get(`/api/payments/balance/${studentId}/`),
@@ -129,4 +123,20 @@ export const orders = {
 export const notifications = {
   list: () => client.get('/api/users/notifications/'),
   markRead: (ids) => client.post('/api/users/notifications/mark-read/', ids ? { ids } : {}),
+}
+
+export const availability = {
+  list: (instructorId) => client.get('/api/users/availability/', instructorId ? { params: { instructor: instructorId } } : {}),
+  save: (slots) => client.post('/api/users/availability/', slots),
+}
+
+export const forms = {
+  list: () => client.get('/api/users/forms/'),
+  submit: (form_type, responses) => client.post('/api/users/forms/', { form_type, responses }),
+}
+
+export const attendance = {
+  list: (params) => client.get('/api/attendance/', { params }),
+  bulkSave: (occurrenceId, records) => client.post(`/api/attendance/occurrence/${occurrenceId}/bulk/`, { records }),
+  markAway: (occurrence_id) => client.post('/api/attendance/mark-away/', { occurrence_id }),
 }

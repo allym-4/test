@@ -46,6 +46,12 @@ import StudentNotifications from './pages/student/StudentNotifications'
 import StudentSupport from './pages/student/StudentSupport'
 import StudentStudioInfo from './pages/student/StudentStudioInfo'
 import StudentHomework from './pages/student/StudentHomework'
+import StudentForms from './pages/student/StudentForms'
+
+// Instructor pages (extra)
+import InstructorMessages from './pages/InstructorMessages'
+import InstructorPay from './pages/InstructorPay'
+import InstructorAvailability from './pages/InstructorAvailability'
 
 // Login
 import LoginPage from './pages/LoginPage'
@@ -84,6 +90,9 @@ export default function App() {
             <Route path="classes/:id/attendance" element={<AttendancePage />} />
             <Route path="students" element={<StudentsPage />} />
             <Route path="homework" element={<HomeworkPage />} />
+            <Route path="messages" element={<InstructorMessages />} />
+            <Route path="pay" element={<InstructorPay />} />
+            <Route path="availability" element={<InstructorAvailability />} />
           </Route>
 
           {/* Admin routes */}
@@ -123,6 +132,7 @@ export default function App() {
             <Route path="support" element={<StudentSupport />} />
             <Route path="studio" element={<StudentStudioInfo />} />
             <Route path="homework" element={<StudentHomework />} />
+            <Route path="forms" element={<StudentForms />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

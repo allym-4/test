@@ -11,6 +11,7 @@ const NAV = [
   { to: '/portal/progress', label: 'Progress',     icon: '△' },
   { to: '/portal/homework', label: 'Homework',     icon: '📝' },
   { to: '/portal/billing',  label: 'Billing',      icon: '💳' },
+  { to: '/portal/forms',   label: 'Forms',        icon: '📋' },
 ]
 
 const NAV2 = [

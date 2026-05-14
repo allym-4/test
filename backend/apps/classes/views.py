@@ -1,3 +1,4 @@
+from datetime import date
 from rest_framework import generics, permissions
 from .models import Studio, ClassSession, ClassOccurrence, Season, Locker
 from .serializers import StudioSerializer, ClassSessionSerializer, ClassOccurrenceSerializer, SeasonSerializer, LockerSerializer
@@ -41,6 +42,13 @@ class ClassOccurrenceListView(generics.ListCreateAPIView):
             qs = qs.filter(session_id=session_id)
         if self.request.user.role == 'instructor':
             qs = qs.filter(session__instructor=self.request.user)
+        student_id = self.request.query_params.get('student')
+        if student_id:
+            from apps.enrolments.models import Enrolment
+            session_ids = Enrolment.objects.filter(student_id=student_id, status='active').values_list('class_session_id', flat=True)
+            qs = qs.filter(session_id__in=session_ids)
+        if self.request.query_params.get('upcoming') == 'true':
+            qs = qs.filter(date__gte=date.today()).order_by('date')
         return qs
 
 

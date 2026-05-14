@@ -1,16 +1,83 @@
+import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, attendance } from '../../api'
+import { enrolments, attendance, classes } from '../../api'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+function MarkAwayModal({ occurrence, cancellationWindowHours, onClose, onDone }) {
+  const [confirming, setConfirming] = useState(false)
+
+  const occDate = new Date(occurrence.date + 'T' + (occurrence.session_detail?.start_time || '00:00'))
+  const hoursUntil = (occDate - new Date()) / (1000 * 60 * 60)
+  const windowHours = cancellationWindowHours || 24
+  const isLate = hoursUntil < windowHours && hoursUntil > 0
+
+  async function confirm() {
+    setConfirming(true)
+    try {
+      await attendance.markAway(occurrence.id)
+      onDone()
+    } finally {
+      setConfirming(false)
+    }
+  }
+
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, maxWidth: 420, width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>Mark Away</div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 18 }}>✕</button>
+        </div>
+        <div style={{ padding: '18px 20px' }}>
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>{occurrence.session_detail?.name || occurrence.session_name}</div>
+            <div style={{ fontSize: 13, color: 'var(--grey)' }}>
+              {new Date(occurrence.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
+              {occurrence.session_detail?.start_time ? ` · ${occurrence.session_detail.start_time.slice(0, 5)}` : ''}
+            </div>
+          </div>
+
+          {isLate ? (
+            <div style={{ background: 'rgba(255,170,0,0.08)', border: '1px solid rgba(255,170,0,0.25)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, color: 'var(--amber)', lineHeight: 1.6 }}>
+              <strong>Late cancellation notice:</strong> This class is within the {windowHours}-hour cancellation window. A late cancel fee may apply. You can still mark away — just be aware.
+            </div>
+          ) : (
+            <div style={{ background: 'rgba(204,255,0,0.05)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
+              You're marking yourself as unable to attend this class. This helps your instructor plan accordingly. No late cancel fee applies.
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
+            <button className="btn btn-lime btn-sm" style={{ flex: 1 }} onClick={confirm} disabled={confirming}>
+              {confirming ? 'Saving…' : 'Confirm Away'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function StudentMyClasses() {
   const { user } = useAuth()
   const { data: enrolData, loading } = useApi(() => enrolments.list({ student: user?.id }), [user?.id])
-  const { data: attData } = useApi(() => attendance.list({ student: user?.id }), [user?.id])
+  const { data: attData, refetch: refetchAtt } = useApi(() => attendance.list({ student: user?.id }), [user?.id])
+  const { data: upcomingData, refetch: refetchUpcoming } = useApi(
+    () => classes.occurrences({ student: user?.id, upcoming: true }),
+    [user?.id]
+  )
+
+  const [markAwayOcc, setMarkAwayOcc] = useState(null)
 
   const enrolments_ = enrolData?.results || []
   const attHistory = attData?.results || []
+  const upcomingOccs = upcomingData?.results || upcomingData || []
 
   const active = enrolments_.filter(e => e.status === 'active')
   const past = enrolments_.filter(e => e.status !== 'active')
@@ -18,6 +85,17 @@ export default function StudentMyClasses() {
   function attendanceForSession(sessionId) {
     return attHistory.filter(a => a.occurrence_detail?.session_detail?.id === sessionId)
   }
+
+  function alreadyMarkedAway(occId) {
+    return attHistory.some(a => a.occurrence === occId && a.status === 'absent')
+  }
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const upcoming = upcomingOccs.filter(o => {
+    const d = new Date(o.date + 'T00:00')
+    return d >= today
+  }).slice(0, 10)
 
   return (
     <div>
@@ -32,6 +110,39 @@ export default function StudentMyClasses() {
         <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}><div className="spinner" /></div>
       ) : (
         <>
+          {upcoming.length > 0 && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 12, fontWeight: 600 }}>Upcoming Classes</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {upcoming.map(o => {
+                  const markedAway = alreadyMarkedAway(o.id)
+                  return (
+                    <div key={o.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '13px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>{o.session_detail?.name || o.session_name}</div>
+                        <div style={{ fontSize: 11, color: 'var(--grey)' }}>
+                          {new Date(o.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
+                          {o.session_detail?.start_time ? ` · ${o.session_detail.start_time.slice(0, 5)}` : ''}
+                        </div>
+                      </div>
+                      {markedAway ? (
+                        <span className="tag tag-amber" style={{ fontSize: 10 }}>Away marked</span>
+                      ) : (
+                        <button
+                          className="btn btn-ghost btn-xs"
+                          style={{ flexShrink: 0, fontSize: 11 }}
+                          onClick={() => setMarkAwayOcc(o)}
+                        >
+                          Mark Away
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
           {active.length === 0 ? (
             <div className="empty-state">
               <div style={{ marginBottom: 8 }}>No active enrolments</div>
@@ -114,6 +225,19 @@ export default function StudentMyClasses() {
             </div>
           )}
         </>
+      )}
+
+      {markAwayOcc && (
+        <MarkAwayModal
+          occurrence={markAwayOcc}
+          cancellationWindowHours={24}
+          onClose={() => setMarkAwayOcc(null)}
+          onDone={() => {
+            setMarkAwayOcc(null)
+            refetchAtt()
+            refetchUpcoming()
+          }}
+        />
       )}
     </div>
   )

@@ -3,10 +3,13 @@ import { useAuth } from '../contexts/AuthContext'
 import './Shell.css'
 
 const NAV = [
-  { to: '/',         label: 'Dashboard', icon: '◼' },
-  { to: '/classes',  label: 'Classes',   icon: '▸' },
-  { to: '/students', label: 'Students',  icon: '●' },
-  { to: '/homework', label: 'Homework',  icon: '✓' },
+  { to: '/',              label: 'Dashboard',    icon: '◼', end: true },
+  { to: '/classes',       label: 'My Classes',   icon: '▸' },
+  { to: '/students',      label: 'Students',     icon: '●' },
+  { to: '/homework',      label: 'Homework',     icon: '✓' },
+  { to: '/messages',      label: 'Messages',     icon: '○' },
+  { to: '/pay',           label: 'Pay',          icon: '💰' },
+  { to: '/availability',  label: 'Availability', icon: '📅' },
 ]
 
 export default function Shell() {
@@ -23,11 +26,11 @@ export default function Shell() {
       <nav className="sidebar">
         <div className="sidebar-logo">DUALITY</div>
         <div className="sidebar-nav">
-          {NAV.map(({ to, label, icon }) => (
+          {NAV.map(({ to, label, icon, end }) => (
             <NavLink
               key={to}
               to={to}
-              end={to === '/'}
+              end={end}
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             >
               <span className="nav-icon">{icon}</span>
