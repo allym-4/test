@@ -54,6 +54,7 @@ const NAV_GROUPS = [
       { to: '/admin/leads',       label: 'Leads',       icon: '🎯' },
       { to: '/admin/retail',      label: 'Retail',      icon: '🛍' },
       { to: '/admin/lockers',     label: 'Lockers',     icon: '🔐' },
+      { to: '/admin/kisi',        label: 'Kisi Access', icon: '🔑' },
       { to: '/admin/automations', label: 'Automations', icon: '🔔' },
       { to: '/admin/settings',    label: 'Settings',    icon: '⚙️' },
     ]

@@ -19,6 +19,15 @@ export const classes = {
 
 export const studios = {
   list: () => client.get('/api/classes/studios/'),
+  update: (id, data) => client.patch(`/api/classes/studios/${id}/`, data),
+}
+
+export const kisi = {
+  grants: {
+    list: () => client.get('/api/classes/kisi/grants/'),
+    create: (data) => client.post('/api/classes/kisi/grants/', data),
+    revoke: (id) => client.delete(`/api/classes/kisi/grants/${id}/`),
+  },
 }
 
 export const enrolments = {

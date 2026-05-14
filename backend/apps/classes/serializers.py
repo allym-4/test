@@ -1,12 +1,12 @@
 from rest_framework import serializers
-from .models import Studio, ClassSession, ClassOccurrence, Season, Locker
+from .models import Studio, ClassSession, ClassOccurrence, Season, Locker, KisiGrant
 from apps.users.serializers import UserMinimalSerializer
 
 
 class StudioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Studio
-        fields = ('id', 'name', 'address')
+        fields = ('id', 'name', 'address', 'kisi_place_id')
 
 
 class ClassSessionSerializer(serializers.ModelSerializer):
@@ -52,3 +52,17 @@ class LockerSerializer(serializers.ModelSerializer):
         model = Locker
         fields = ('id', 'number', 'assigned_to', 'assigned_to_detail', 'notes', 'expires_at', 'assigned_at')
         read_only_fields = ('id',)
+
+
+class KisiGrantSerializer(serializers.ModelSerializer):
+    student_detail = UserMinimalSerializer(source='student', read_only=True)
+    studio_name = serializers.StringRelatedField(source='studio')
+
+    class Meta:
+        model = KisiGrant
+        fields = (
+            'id', 'student', 'student_detail', 'studio', 'studio_name',
+            'valid_from', 'valid_until', 'kisi_link_id', 'link_sent', 'unlocked',
+            'revoked', 'created_at',
+        )
+        read_only_fields = ('id', 'created_at')

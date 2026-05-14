@@ -5,6 +5,7 @@ from apps.users.models import User
 class Studio(models.Model):
     name = models.CharField(max_length=100)
     address = models.TextField(blank=True)
+    kisi_place_id = models.CharField(max_length=100, blank=True)
 
     def __str__(self):
         return self.name
@@ -105,3 +106,21 @@ class Locker(models.Model):
 
     def __str__(self):
         return f'Locker #{self.number}'
+
+
+class KisiGrant(models.Model):
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='kisi_grants')
+    studio = models.ForeignKey(Studio, on_delete=models.SET_NULL, null=True, blank=True)
+    valid_from = models.DateTimeField()
+    valid_until = models.DateTimeField()
+    kisi_link_id = models.CharField(max_length=100, blank=True)
+    link_sent = models.BooleanField(default=False)
+    unlocked = models.BooleanField(default=False)
+    revoked = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.student.display_name} → {self.studio} {self.valid_from:%d %b %H:%M}–{self.valid_until:%H:%M}'

@@ -93,6 +93,8 @@ class StudioSettings(models.Model):
     max_freeze_weeks = models.PositiveIntegerField(default=8)
     gst_registered = models.BooleanField(default=True)
     abn = models.CharField(max_length=30, blank=True)
+    kisi_api_key = models.CharField(max_length=200, blank=True)
+    kisi_org_id = models.CharField(max_length=100, blank=True)
 
     class Meta:
         verbose_name = 'Studio Settings'
