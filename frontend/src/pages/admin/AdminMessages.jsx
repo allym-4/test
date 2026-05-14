@@ -50,13 +50,8 @@ function NewConvoModal({ onClose, onCreated }) {
       if (existing) {
         convId = existing.id
       } else {
-        const res = await fetch('/api/helpdesk/conversations/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('access')}` },
-          body: JSON.stringify({ student: picked.id }),
-        })
-        const created = await res.json()
-        convId = created.id
+        const res = await helpdesk.createConversation({ student: picked.id })
+        convId = res.data.id
       }
       await helpdesk.sendDm(convId, { body })
       onCreated(convId)

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
 import { users, payments, enrolments, attendance } from '../../api'
 import '../StudentsPage.css'
@@ -25,8 +26,9 @@ const ATT_STATUS_TAG = {
 }
 
 export default function AdminStudents() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const { data, loading } = useApi(() => users.list({ role: 'student' }))
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(() => searchParams.get('search') || '')
   const [selected, setSelected] = useState(null)
   const [activeTab, setActiveTab] = useState('info')
   const [balanceData, setBalanceData] = useState(null)
