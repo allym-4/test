@@ -1,20 +1,7 @@
 import { useState } from 'react'
 import '../StudentsPage.css'
-
-const DEFAULTS = [
-  {
-    id: 1, name: 'The Box', status: 'active',
-    address: 'Level 1, 88 Kippax St, Surry Hills NSW 2010',
-    capacity: '14 students', poles: '7 × 45mm chrome',
-    features: 'Crash mats, mirrors, sound system, AC', kisi: true,
-  },
-  {
-    id: 2, name: 'Rhapsody', status: 'active',
-    address: 'Level 1, 88 Kippax St, Surry Hills NSW 2010',
-    capacity: '10 students', poles: '5 × 45mm chrome + 1 × brass',
-    features: 'Crash mats, mirrors, mood lighting, AC', kisi: true,
-  },
-]
+import { useApi } from '../../hooks/useApi'
+import { studios } from '../../api'
 
 function RoomModal({ existing, onClose, onSaved }) {
   const [name, setName] = useState(existing?.name || '')
@@ -22,10 +9,22 @@ function RoomModal({ existing, onClose, onSaved }) {
   const [capacity, setCapacity] = useState(existing?.capacity || '')
   const [poles, setPoles] = useState(existing?.poles || '')
   const [features, setFeatures] = useState(existing?.features || '')
+  const [saving, setSaving] = useState(false)
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault()
-    onSaved({ ...existing, name, address, capacity, poles, features })
+    setSaving(true)
+    try {
+      const payload = { name, address, capacity, poles, features }
+      if (existing?.id) {
+        await studios.update(existing.id, payload)
+      } else {
+        await studios.create(payload)
+      }
+      onSaved()
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -45,7 +44,7 @@ function RoomModal({ existing, onClose, onSaved }) {
           <div className="field"><label>Features</label><input value={features} onChange={e => setFeatures(e.target.value)} placeholder="Crash mats, mirrors, AC" /></div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn btn-lime btn-sm">Save</button>
+            <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
           </div>
         </form>
       </div>
@@ -54,16 +53,13 @@ function RoomModal({ existing, onClose, onSaved }) {
 }
 
 export default function AdminRooms() {
-  const [rooms, setRooms] = useState(DEFAULTS)
+  const { data, loading, refetch } = useApi(() => studios.list())
+  const rooms = data || []
   const [modal, setModal] = useState(null)
 
-  function handleSaved(r) {
-    if (r.id) {
-      setRooms(rs => rs.map(x => x.id === r.id ? r : x))
-    } else {
-      setRooms(rs => [...rs, { ...r, id: Date.now(), status: 'active', kisi: false }])
-    }
+  function handleSaved() {
     setModal(null)
+    refetch()
   }
 
   return (
@@ -76,38 +72,42 @@ export default function AdminRooms() {
         <button className="btn btn-lime btn-sm" onClick={() => setModal({ existing: null })}>+ Add Room</button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-        {rooms.map(room => (
-          <div key={room.id} className="card" style={{ padding: 22 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>{room.name}</div>
-              <span className="tag tag-lime">Active</span>
-            </div>
-            {[
-              ['Address', room.address],
-              ['Capacity', room.capacity],
-              ['Poles', room.poles],
-              ['Features', room.features],
-            ].map(([label, val]) => (
-              <div key={label} style={{ display: 'flex', gap: 12, padding: '8px 0', borderBottom: '1px solid #1a1a1a', fontSize: 13 }}>
-                <div style={{ width: 90, color: 'var(--grey)', flexShrink: 0 }}>{label}</div>
-                <div>{val}</div>
+      {loading ? (
+        <div style={{ padding: 32, textAlign: 'center', color: 'var(--grey)' }}>Loading…</div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+          {rooms.map(room => (
+            <div key={room.id} className="card" style={{ padding: 22 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>{room.name}</div>
+                <span className="tag tag-lime">Active</span>
               </div>
-            ))}
-            <div style={{ display: 'flex', gap: 12, padding: '8px 0', borderBottom: '1px solid #1a1a1a', fontSize: 13 }}>
-              <div style={{ width: 90, color: 'var(--grey)', flexShrink: 0 }}>Kisi Access</div>
-              <div style={{ color: room.kisi ? 'var(--lime)' : 'var(--grey)' }}>{room.kisi ? 'Connected ✓' : 'Not configured'}</div>
+              {[
+                ['Address', room.address],
+                ['Capacity', room.capacity],
+                ['Poles', room.poles],
+                ['Features', room.features],
+              ].map(([label, val]) => (
+                <div key={label} style={{ display: 'flex', gap: 12, padding: '8px 0', borderBottom: '1px solid #1a1a1a', fontSize: 13 }}>
+                  <div style={{ width: 90, color: 'var(--grey)', flexShrink: 0 }}>{label}</div>
+                  <div>{val}</div>
+                </div>
+              ))}
+              <div style={{ display: 'flex', gap: 12, padding: '8px 0', borderBottom: '1px solid #1a1a1a', fontSize: 13 }}>
+                <div style={{ width: 90, color: 'var(--grey)', flexShrink: 0 }}>Kisi Access</div>
+                <div style={{ color: room.kisi ? 'var(--lime)' : 'var(--grey)' }}>{room.kisi ? 'Connected ✓' : 'Not configured'}</div>
+              </div>
+              <div style={{ height: 100, background: '#0a0a0a', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--grey)', fontSize: 12, cursor: 'pointer', marginTop: 14 }}>
+                📷 Add photos
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => setModal({ existing: room })}>Edit</button>
+                <button className="btn btn-ghost btn-sm">Kisi Settings</button>
+              </div>
             </div>
-            <div style={{ height: 100, background: '#0a0a0a', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--grey)', fontSize: 12, cursor: 'pointer', marginTop: 14 }}>
-              📷 Add photos
-            </div>
-            <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-              <button className="btn btn-ghost btn-sm" onClick={() => setModal({ existing: room })}>Edit</button>
-              <button className="btn btn-ghost btn-sm">Kisi Settings</button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {modal && <RoomModal existing={modal.existing} onClose={() => setModal(null)} onSaved={handleSaved} />}
     </div>

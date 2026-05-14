@@ -6,13 +6,14 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db import transaction
 from django.db.models import Q
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem
 from .serializers import (
     UserSerializer, UserCreateSerializer, StaffNoteSerializer, LeadSerializer,
     StudioSettingsSerializer, AnnouncementSerializer, ProductSerializer, AutomationRuleSerializer,
     OrderSerializer, NotificationSerializer, InstructorAvailabilitySerializer, StudentFormSerializer,
     InstructorPayRecordSerializer, StudentSkillSerializer,
     TagSerializer, StudentTagSerializer, SkillLevelSerializer, SkillGroupSerializer, SkillDefinitionSerializer,
+    MediaItemSerializer,
 )
 from .permissions import IsAdminOrInstructor, IsAdminUser
 
@@ -480,3 +481,74 @@ class SkillDefinitionDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = SkillDefinition.objects.select_related('group')
     serializer_class = SkillDefinitionSerializer
     permission_classes = [IsAdminOrInstructor]
+
+
+class MediaItemListView(generics.ListCreateAPIView):
+    serializer_class = MediaItemSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+    def get_queryset(self):
+        qs = MediaItem.objects.select_related('uploaded_by')
+        type_filter = self.request.query_params.get('type')
+        if type_filter:
+            qs = qs.filter(media_type=type_filter)
+        level_filter = self.request.query_params.get('level')
+        if level_filter:
+            qs = qs.filter(level=level_filter)
+        return qs
+
+    def perform_create(self, serializer):
+        serializer.save(uploaded_by=self.request.user)
+
+
+class MediaItemDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = MediaItem.objects.select_related('uploaded_by')
+    serializer_class = MediaItemSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class AssistantView(APIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request):
+        query = request.data.get('query', '').strip()
+        if not query:
+            return Response({'error': 'No query provided'}, status=400)
+
+        # Build context from real data
+        from apps.enrolments.models import Enrolment
+        from apps.payments.models import Payment
+
+        student_count = User.objects.filter(role='student', is_active=True).count()
+        active_enrolments = Enrolment.objects.filter(status='active').count()
+
+        # Simple keyword-based responses using real data
+        q = query.lower()
+
+        if any(w in q for w in ['how many', 'count', 'total student']):
+            return Response({'reply': f'There are currently **{student_count} active students** in the system with **{active_enrolments} active enrolments**.'})
+
+        if any(w in q for w in ['owing', 'outstanding', 'overdue', 'balance']):
+            from apps.payments.models import PaymentPlanInstalment
+            overdue = PaymentPlanInstalment.objects.filter(status='overdue').count()
+            return Response({'reply': f'There are **{overdue} overdue payment instalments** currently outstanding.'})
+
+        if any(w in q for w in ['list student', 'show student', 'all student']):
+            students = User.objects.filter(role='student', is_active=True).values('display_name', 'email')[:20]
+            lines = [f"{s['display_name']} — {s['email']}" for s in students]
+            return Response({'reply': f'**Active students** (first 20 of {student_count}):\n\n' + '\n'.join(lines)})
+
+        if any(w in q for w in ['new student', 'recent']):
+            from django.utils import timezone
+            from datetime import timedelta
+            cutoff = timezone.now() - timedelta(days=30)
+            new_count = User.objects.filter(role='student', date_joined__gte=cutoff).count()
+            return Response({'reply': f'**{new_count} new students** joined in the last 30 days.'})
+
+        if any(w in q for w in ['revenue', 'payment', 'income']):
+            from django.db.models import Sum
+            total = Payment.objects.filter(payment_type='payment').aggregate(t=Sum('amount'))['t'] or 0
+            return Response({'reply': f'Total revenue recorded: **${total:,.2f}**'})
+
+        # Default
+        return Response({'reply': f"I can help with student counts, enrolment numbers, overdue payments, and revenue. You have **{student_count} students** and **{active_enrolments} active enrolments** right now. Try asking: 'list students', 'how many students', 'revenue total', or 'overdue payments'."})

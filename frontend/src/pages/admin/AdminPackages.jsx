@@ -1,13 +1,7 @@
 import { useState } from 'react'
 import '../StudentsPage.css'
-
-const DEFAULTS = [
-  { id: 1, name: 'Class Pass 5×', classes: 5, price: 150, expiry: '90 days', activeStudents: 8, visible: true },
-  { id: 2, name: 'Class Pass 10×', classes: 10, price: 280, expiry: '180 days', activeStudents: 5, visible: true },
-  { id: 3, name: 'Makeup Package', classes: 3, price: 90, expiry: '60 days', activeStudents: 11, visible: true },
-  { id: 4, name: 'Intro Pack', classes: 4, price: 100, expiry: '60 days', activeStudents: 3, visible: true },
-  { id: 5, name: 'Pole Icon VIP Pass', classes: 20, price: 500, expiry: '12 months', activeStudents: 2, visible: false },
-]
+import { useApi } from '../../hooks/useApi'
+import { packages as packagesApi } from '../../api'
 
 function PackageModal({ existing, onClose, onSaved }) {
   const [name, setName] = useState(existing?.name || '')
@@ -15,10 +9,22 @@ function PackageModal({ existing, onClose, onSaved }) {
   const [price, setPrice] = useState(existing?.price || '')
   const [expiry, setExpiry] = useState(existing?.expiry || '90 days')
   const [visible, setVisible] = useState(existing?.visible ?? true)
+  const [saving, setSaving] = useState(false)
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault()
-    onSaved({ ...existing, name, classes: parseInt(classes), price: parseFloat(price), expiry, visible })
+    setSaving(true)
+    try {
+      const payload = { name, classes: parseInt(classes), price: parseFloat(price), expiry, visible }
+      if (existing?.id) {
+        await packagesApi.update(existing.id, payload)
+      } else {
+        await packagesApi.create(payload)
+      }
+      onSaved()
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -43,7 +49,7 @@ function PackageModal({ existing, onClose, onSaved }) {
           </div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn btn-lime btn-sm">Save</button>
+            <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
           </div>
         </form>
       </div>
@@ -52,20 +58,18 @@ function PackageModal({ existing, onClose, onSaved }) {
 }
 
 export default function AdminPackages() {
-  const [packages, setPackages] = useState(DEFAULTS)
+  const { data, loading, refetch } = useApi(() => packagesApi.list())
+  const packages = data || []
   const [modal, setModal] = useState(null)
 
-  function handleSaved(p) {
-    if (p.id) {
-      setPackages(ps => ps.map(x => x.id === p.id ? p : x))
-    } else {
-      setPackages(ps => [...ps, { ...p, id: Date.now(), activeStudents: 0 }])
-    }
+  function handleSaved() {
     setModal(null)
+    refetch()
   }
 
-  function toggleVisible(id) {
-    setPackages(ps => ps.map(p => p.id === id ? { ...p, visible: !p.visible } : p))
+  async function toggleVisible(p) {
+    await packagesApi.update(p.id, { visible: !p.visible })
+    refetch()
   }
 
   return (
@@ -79,26 +83,30 @@ export default function AdminPackages() {
       </div>
 
       <div className="tbl-section">
-        <table>
-          <thead><tr><th>Package Name</th><th>Classes</th><th>Price</th><th>Expiry</th><th>Active Students</th><th>Visible</th><th></th></tr></thead>
-          <tbody>
-            {packages.map(p => (
-              <tr key={p.id}>
-                <td style={{ fontWeight: 600 }}>{p.name}</td>
-                <td>{p.classes}</td>
-                <td style={{ color: 'var(--lime)', fontWeight: 600 }}>${p.price}</td>
-                <td style={{ color: 'var(--grey)', fontSize: 12 }}>{p.expiry}</td>
-                <td>{p.activeStudents}</td>
-                <td>
-                  <div onClick={() => toggleVisible(p.id)} style={{ width: 36, height: 20, borderRadius: 10, background: p.visible ? 'var(--lime)' : '#333', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', display: 'inline-block' }}>
-                    <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: p.visible ? 19 : 3, transition: 'left 0.2s' }} />
-                  </div>
-                </td>
-                <td><button className="btn btn-ghost btn-xs" onClick={() => setModal({ existing: p })}>Edit</button></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {loading ? (
+          <div style={{ padding: 32, textAlign: 'center', color: 'var(--grey)' }}>Loading…</div>
+        ) : (
+          <table>
+            <thead><tr><th>Package Name</th><th>Classes</th><th>Price</th><th>Expiry</th><th>Active Students</th><th>Visible</th><th></th></tr></thead>
+            <tbody>
+              {packages.map(p => (
+                <tr key={p.id}>
+                  <td style={{ fontWeight: 600 }}>{p.name}</td>
+                  <td>{p.classes}</td>
+                  <td style={{ color: 'var(--lime)', fontWeight: 600 }}>${p.price}</td>
+                  <td style={{ color: 'var(--grey)', fontSize: 12 }}>{p.expiry}</td>
+                  <td>{p.activeStudents}</td>
+                  <td>
+                    <div onClick={() => toggleVisible(p)} style={{ width: 36, height: 20, borderRadius: 10, background: p.visible ? 'var(--lime)' : '#333', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', display: 'inline-block' }}>
+                      <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: p.visible ? 19 : 3, transition: 'left 0.2s' }} />
+                    </div>
+                  </td>
+                  <td><button className="btn btn-ghost btn-xs" onClick={() => setModal({ existing: p })}>Edit</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {modal && <PackageModal existing={modal.existing} onClose={() => setModal(null)} onSaved={handleSaved} />}

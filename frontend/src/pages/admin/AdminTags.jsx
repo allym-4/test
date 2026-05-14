@@ -1,23 +1,29 @@
 import { useState } from 'react'
 import '../StudentsPage.css'
-
-const DEFAULTS = [
-  { id: 1, name: 'VIP', colour: '#b0a0ff', students: 'Ruby Kim, Mia Santos + 3 more', autoRule: 'Manual only', manual: true },
-  { id: 2, name: 'At Risk', colour: '#ffaa00', students: 'Jess Malone + 6 more', autoRule: 'No booking in 21 days', manual: false },
-  { id: 3, name: 'Blocked', colour: '#e05555', students: 'Kylie Rhodes + 1 more', autoRule: 'Manual only', manual: true },
-  { id: 4, name: 'New Student', colour: '#ccff00', students: '4 students', autoRule: 'Enrolled less than 30 days ago', manual: false },
-  { id: 5, name: 'Owing', colour: '#5ecc7b', students: '3 students', autoRule: 'Balance < $0', manual: false },
-]
+import { useApi } from '../../hooks/useApi'
+import { tags as tagsApi } from '../../api'
 
 function TagModal({ existing, onClose, onSaved }) {
   const [name, setName] = useState(existing?.name || '')
   const [colour, setColour] = useState(existing?.colour || '#ccff00')
   const [autoRule, setAutoRule] = useState(existing?.autoRule || 'Manual only')
   const [manual, setManual] = useState(existing?.manual ?? true)
+  const [saving, setSaving] = useState(false)
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault()
-    onSaved({ ...existing, name, colour, autoRule: manual ? 'Manual only' : autoRule, manual })
+    setSaving(true)
+    try {
+      const payload = { name, colour, autoRule: manual ? 'Manual only' : autoRule, manual }
+      if (existing?.id) {
+        await tagsApi.update(existing.id, payload)
+      } else {
+        await tagsApi.create(payload)
+      }
+      onSaved()
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -47,7 +53,7 @@ function TagModal({ existing, onClose, onSaved }) {
           )}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn btn-lime btn-sm">Save</button>
+            <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
           </div>
         </form>
       </div>
@@ -56,18 +62,20 @@ function TagModal({ existing, onClose, onSaved }) {
 }
 
 export default function AdminTags() {
-  const [tags, setTags] = useState(DEFAULTS)
+  const { data, loading, refetch } = useApi(() => tagsApi.list())
+  const tags = data || []
   const [modal, setModal] = useState(null)
   const [autoRemove, setAutoRemove] = useState(true)
   const [notifyAtRisk, setNotifyAtRisk] = useState(true)
 
-  function handleSaved(t) {
-    if (t.id) {
-      setTags(ts => ts.map(x => x.id === t.id ? t : x))
-    } else {
-      setTags(ts => [...ts, { ...t, id: Date.now(), students: '0 students' }])
-    }
+  async function handleDelete(id) {
+    await tagsApi.delete(id)
+    refetch()
+  }
+
+  function handleSaved() {
     setModal(null)
+    refetch()
   }
 
   return (
@@ -81,27 +89,31 @@ export default function AdminTags() {
       </div>
 
       <div className="tbl-section" style={{ marginBottom: 24 }}>
-        <table>
-          <thead><tr><th>Tag</th><th>Colour</th><th>Students</th><th>Auto-rule</th><th></th></tr></thead>
-          <tbody>
-            {tags.map(tag => (
-              <tr key={tag.id}>
-                <td>
-                  <span style={{ display: 'inline-block', background: tag.colour + '33', color: tag.colour, fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>
-                    {tag.name}
-                  </span>
-                </td>
-                <td><span style={{ display: 'inline-block', width: 16, height: 16, background: tag.colour, borderRadius: 3 }} /></td>
-                <td style={{ fontSize: 12, color: 'var(--grey)' }}>{tag.students}</td>
-                <td style={{ fontSize: 12, color: tag.manual ? 'var(--grey)' : 'inherit' }}>{tag.autoRule}</td>
-                <td style={{ whiteSpace: 'nowrap' }}>
-                  <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => setModal({ existing: tag })}>Edit</button>
-                  <button className="btn btn-ghost btn-xs">View Students</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {loading ? (
+          <div style={{ padding: 32, textAlign: 'center', color: 'var(--grey)' }}>Loading…</div>
+        ) : (
+          <table>
+            <thead><tr><th>Tag</th><th>Colour</th><th>Students</th><th>Auto-rule</th><th></th></tr></thead>
+            <tbody>
+              {tags.map(tag => (
+                <tr key={tag.id}>
+                  <td>
+                    <span style={{ display: 'inline-block', background: tag.colour + '33', color: tag.colour, fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>
+                      {tag.name}
+                    </span>
+                  </td>
+                  <td><span style={{ display: 'inline-block', width: 16, height: 16, background: tag.colour, borderRadius: 3 }} /></td>
+                  <td style={{ fontSize: 12, color: 'var(--grey)' }}>{tag.students}</td>
+                  <td style={{ fontSize: 12, color: tag.manual ? 'var(--grey)' : 'inherit' }}>{tag.autoRule}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
+                    <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => setModal({ existing: tag })}>Edit</button>
+                    <button className="btn btn-ghost btn-xs">View Students</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <div className="card" style={{ padding: '18px 20px' }}>

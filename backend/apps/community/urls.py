@@ -1,0 +1,11 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('groups/', views.CommunityGroupListView.as_view()),
+    path('groups/<int:pk>/', views.CommunityGroupDetailView.as_view()),
+    path('posts/', views.GroupPostListView.as_view()),
+    path('posts/<int:pk>/', views.GroupPostDetailView.as_view()),
+    path('posts/like/', views.PostLikeView.as_view()),
+    path('replies/', views.PostReplyListView.as_view()),
+]

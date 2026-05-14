@@ -24,7 +24,9 @@ export const classes = {
 
 export const studios = {
   list: () => client.get('/api/classes/studios/'),
+  create: (data) => client.post('/api/classes/studios/', data),
   update: (id, data) => client.patch(`/api/classes/studios/${id}/`, data),
+  delete: (id) => client.delete(`/api/classes/studios/${id}/`),
 }
 
 export const kisi = {
@@ -190,4 +192,84 @@ export const attendance = {
   list: (params) => client.get('/api/attendance/', { params }),
   bulkSave: (occurrenceId, records) => client.post(`/api/attendance/occurrence/${occurrenceId}/bulk/`, { records }),
   markAway: (occurrence_id) => client.post('/api/attendance/mark-away/', { occurrence_id }),
+}
+
+export const tags = {
+  list: () => client.get('/api/users/tags/'),
+  create: (data) => client.post('/api/users/tags/', data),
+  update: (id, data) => client.patch(`/api/users/tags/${id}/`, data),
+  delete: (id) => client.delete(`/api/users/tags/${id}/`),
+  forStudent: (userId) => client.get(`/api/users/${userId}/tags/`),
+  addToStudent: (userId, tagId) => client.post(`/api/users/${userId}/tags/`, { tag_id: tagId }),
+  removeFromStudent: (userId, tagId) => client.delete(`/api/users/${userId}/tags/`, { data: { tag_id: tagId } }),
+}
+
+export const skillLevels = {
+  list: () => client.get('/api/users/skill-levels/'),
+  create: (data) => client.post('/api/users/skill-levels/', data),
+  update: (id, data) => client.patch(`/api/users/skill-levels/${id}/`, data),
+  delete: (id) => client.delete(`/api/users/skill-levels/${id}/`),
+  groups: (levelId) => client.get('/api/users/skill-groups/', { params: { level: levelId } }),
+  createGroup: (data) => client.post('/api/users/skill-groups/', data),
+  updateGroup: (id, data) => client.patch(`/api/users/skill-groups/${id}/`, data),
+  deleteGroup: (id) => client.delete(`/api/users/skill-groups/${id}/`),
+  definitions: (groupId) => client.get('/api/users/skill-definitions/', { params: { group: groupId } }),
+  createDefinition: (data) => client.post('/api/users/skill-definitions/', data),
+  updateDefinition: (id, data) => client.patch(`/api/users/skill-definitions/${id}/`, data),
+  deleteDefinition: (id) => client.delete(`/api/users/skill-definitions/${id}/`),
+}
+
+export const packages = {
+  list: () => client.get('/api/payments/packages/'),
+  create: (data) => client.post('/api/payments/packages/', data),
+  update: (id, data) => client.patch(`/api/payments/packages/${id}/`, data),
+  delete: (id) => client.delete(`/api/payments/packages/${id}/`),
+}
+
+export const membershipTypes = {
+  list: () => client.get('/api/payments/membership-types/'),
+  create: (data) => client.post('/api/payments/membership-types/', data),
+  update: (id, data) => client.patch(`/api/payments/membership-types/${id}/`, data),
+  delete: (id) => client.delete(`/api/payments/membership-types/${id}/`),
+}
+
+export const giftCards = {
+  list: (params) => client.get('/api/payments/gift-cards/', { params }),
+  create: (data) => client.post('/api/payments/gift-cards/', data),
+  update: (id, data) => client.patch(`/api/payments/gift-cards/${id}/`, data),
+}
+
+export const categories = {
+  list: () => client.get('/api/classes/categories/'),
+  create: (data) => client.post('/api/classes/categories/', data),
+  update: (id, data) => client.patch(`/api/classes/categories/${id}/`, data),
+  delete: (id) => client.delete(`/api/classes/categories/${id}/`),
+}
+
+export const community = {
+  groups: () => client.get('/api/community/groups/'),
+  createGroup: (data) => client.post('/api/community/groups/', data),
+  updateGroup: (id, data) => client.patch(`/api/community/groups/${id}/`, data),
+  posts: (groupId) => client.get('/api/community/posts/', { params: { group: groupId } }),
+  createPost: (data) => client.post('/api/community/posts/', data),
+  likePost: (postId) => client.post('/api/community/posts/like/', { post_id: postId }),
+  replies: (postId) => client.get('/api/community/replies/', { params: { post: postId } }),
+  createReply: (data) => client.post('/api/community/replies/', data),
+}
+
+export const surveys = {
+  list: (params) => client.get('/api/surveys/', { params }),
+  get: (id) => client.get(`/api/surveys/${id}/`),
+  create: (data) => client.post('/api/surveys/', data),
+  update: (id, data) => client.patch(`/api/surveys/${id}/`, data),
+  questions: (surveyId) => client.get('/api/surveys/questions/', { params: { survey: surveyId } }),
+  respond: (data) => client.post('/api/surveys/responses/', data),
+  responses: (surveyId) => client.get('/api/surveys/responses/', { params: { survey: surveyId } }),
+}
+
+export const media = {
+  list: (params) => client.get('/api/users/media/', { params }),
+  create: (formData) => client.post('/api/users/media/', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  update: (id, data) => client.patch(`/api/users/media/${id}/`, data),
+  delete: (id) => client.delete(`/api/users/media/${id}/`),
 }

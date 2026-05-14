@@ -34,6 +34,8 @@ INSTALLED_APPS = [
     'apps.payments',
     'apps.homework',
     'apps.helpdesk',
+    'apps.community',
+    'apps.surveys',
 ]
 
 MIDDLEWARE = [

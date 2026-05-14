@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem
 
 
 class UserMinimalSerializer(serializers.ModelSerializer):
@@ -190,3 +190,12 @@ class SkillLevelSerializer(serializers.ModelSerializer):
         model = SkillLevel
         fields = ('id', 'name', 'order', 'groups')
         read_only_fields = ('id',)
+
+
+class MediaItemSerializer(serializers.ModelSerializer):
+    uploaded_by_name = serializers.StringRelatedField(source='uploaded_by')
+
+    class Meta:
+        model = MediaItem
+        fields = ('id', 'name', 'media_type', 'file', 'url', 'level', 'size_display', 'uploaded_by_name', 'created_at')
+        read_only_fields = ('id', 'created_at')

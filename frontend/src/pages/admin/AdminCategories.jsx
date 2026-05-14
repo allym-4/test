@@ -1,22 +1,28 @@
 import { useState } from 'react'
 import '../StudentsPage.css'
-
-const DEFAULTS = [
-  { id: 1, name: 'Pole', colour: '#b0a0ff', classes: 'Level 1, Level 2, Level 3, High Tricks', visible: true },
-  { id: 2, name: 'Sensual / Exotic', colour: '#ffaa00', classes: 'Dance, Strip Virgin', visible: true },
-  { id: 3, name: 'Practice', colour: '#ccff00', classes: 'Practice Time, Open Studio', visible: true },
-  { id: 4, name: 'Workshop', colour: '#5ecc7b', classes: 'Guest workshops, Intensives', visible: true },
-  { id: 5, name: 'Aerial', colour: '#e05555', classes: '(none yet)', visible: false },
-]
+import { useApi } from '../../hooks/useApi'
+import { categories as categoriesApi } from '../../api'
 
 function CategoryModal({ existing, onClose, onSaved }) {
   const [name, setName] = useState(existing?.name || '')
   const [colour, setColour] = useState(existing?.colour || '#ccff00')
   const [visible, setVisible] = useState(existing?.visible ?? true)
+  const [saving, setSaving] = useState(false)
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault()
-    onSaved({ ...existing, name, colour, visible })
+    setSaving(true)
+    try {
+      const payload = { name, colour, visible }
+      if (existing?.id) {
+        await categoriesApi.update(existing.id, payload)
+      } else {
+        await categoriesApi.create(payload)
+      }
+      onSaved()
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -43,7 +49,7 @@ function CategoryModal({ existing, onClose, onSaved }) {
           </div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn btn-lime btn-sm">Save</button>
+            <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
           </div>
         </form>
       </div>
@@ -52,20 +58,18 @@ function CategoryModal({ existing, onClose, onSaved }) {
 }
 
 export default function AdminCategories() {
-  const [categories, setCategories] = useState(DEFAULTS)
+  const { data, loading, refetch } = useApi(() => categoriesApi.list())
+  const categories = data || []
   const [modal, setModal] = useState(null)
 
-  function handleSaved(cat) {
-    if (cat.id) {
-      setCategories(cs => cs.map(c => c.id === cat.id ? cat : c))
-    } else {
-      setCategories(cs => [...cs, { ...cat, id: Date.now() }])
-    }
+  function handleSaved() {
     setModal(null)
+    refetch()
   }
 
-  function toggleVisible(id) {
-    setCategories(cs => cs.map(c => c.id === id ? { ...c, visible: !c.visible } : c))
+  async function toggleVisible(cat) {
+    await categoriesApi.update(cat.id, { visible: !cat.visible })
+    refetch()
   }
 
   return (
@@ -79,24 +83,28 @@ export default function AdminCategories() {
       </div>
 
       <div className="tbl-section">
-        <table>
-          <thead><tr><th>Category</th><th>Colour</th><th>Classes</th><th>Visible to Students</th><th></th></tr></thead>
-          <tbody>
-            {categories.map(cat => (
-              <tr key={cat.id}>
-                <td style={{ fontWeight: 600 }}>{cat.name}</td>
-                <td><span style={{ display: 'inline-block', width: 16, height: 16, background: cat.colour, borderRadius: 3 }} /></td>
-                <td style={{ color: 'var(--grey)', fontSize: 12 }}>{cat.classes}</td>
-                <td>
-                  <div onClick={() => toggleVisible(cat.id)} style={{ width: 36, height: 20, borderRadius: 10, background: cat.visible ? 'var(--lime)' : '#333', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', display: 'inline-block' }}>
-                    <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: cat.visible ? 19 : 3, transition: 'left 0.2s' }} />
-                  </div>
-                </td>
-                <td><button className="btn btn-ghost btn-xs" onClick={() => setModal({ existing: cat })}>Edit</button></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {loading ? (
+          <div style={{ padding: 32, textAlign: 'center', color: 'var(--grey)' }}>Loading…</div>
+        ) : (
+          <table>
+            <thead><tr><th>Category</th><th>Colour</th><th>Classes</th><th>Visible to Students</th><th></th></tr></thead>
+            <tbody>
+              {categories.map(cat => (
+                <tr key={cat.id}>
+                  <td style={{ fontWeight: 600 }}>{cat.name}</td>
+                  <td><span style={{ display: 'inline-block', width: 16, height: 16, background: cat.colour, borderRadius: 3 }} /></td>
+                  <td style={{ color: 'var(--grey)', fontSize: 12 }}>{cat.classes}</td>
+                  <td>
+                    <div onClick={() => toggleVisible(cat)} style={{ width: 36, height: 20, borderRadius: 10, background: cat.visible ? 'var(--lime)' : '#333', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', display: 'inline-block' }}>
+                      <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: cat.visible ? 19 : 3, transition: 'left 0.2s' }} />
+                    </div>
+                  </td>
+                  <td><button className="btn btn-ghost btn-xs" onClick={() => setModal({ existing: cat })}>Edit</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {modal && <CategoryModal existing={modal.existing} onClose={() => setModal(null)} onSaved={handleSaved} />}
