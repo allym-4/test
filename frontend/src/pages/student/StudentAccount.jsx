@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
+import { auth } from '../../api'
 
 export default function StudentAccount() {
   const { user } = useAuth()
@@ -11,11 +12,22 @@ export default function StudentAccount() {
   const [ecPhone, setEcPhone] = useState(user?.emergency_contact_phone || '')
   const [saved, setSaved] = useState(false)
 
-  function handleSave(e) {
+  async function handleSave(e) {
     e.preventDefault()
-    // TODO: wire up PATCH /api/users/me/
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+    try {
+      await auth.updateMe({
+        first_name: firstName,
+        last_name: lastName,
+        phone,
+        pronouns,
+        emergency_contact_name: ecName,
+        emergency_contact_phone: ecPhone,
+      })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    } catch {
+      alert('Failed to save. Please try again.')
+    }
   }
 
   return (

@@ -1,24 +1,7 @@
 import { useState } from 'react'
-
-const PRODUCTS = [
-  { id: 1, name: 'Pole Grip Aid', sku: 'GRP-001', price: 18, stock: 24, category: 'Accessories', active: true },
-  { id: 2, name: 'Duality Grip Socks', sku: 'SCK-001', price: 14, stock: 18, category: 'Apparel', active: true },
-  { id: 3, name: 'Duality Crop Top — Black', sku: 'TOP-BLK', price: 45, stock: 12, category: 'Apparel', active: true },
-  { id: 4, name: 'Duality Crop Top — Lime', sku: 'TOP-LIM', price: 45, stock: 6, category: 'Apparel', active: true },
-  { id: 5, name: 'Pole Shorts — Black', sku: 'SHT-BLK', price: 55, stock: 9, category: 'Apparel', active: true },
-  { id: 6, name: 'Water Bottle — 750ml', sku: 'BTL-750', price: 22, stock: 30, category: 'Accessories', active: true },
-  { id: 7, name: 'Resistance Band Set', sku: 'RBS-001', price: 28, stock: 0, category: 'Equipment', active: false },
-  { id: 8, name: 'Pole Cleaning Spray', sku: 'CLN-001', price: 12, stock: 15, category: 'Accessories', active: true },
-]
-
-const ORDERS = [
-  { id: 1001, student: 'Lily Anderson', items: 'Grip Socks × 1, Grip Aid × 1', total: 32, status: 'pending_pickup', date: '12 May', location: 'The Box' },
-  { id: 1002, student: 'Priya Sharma', items: 'Crop Top (Lime, S) × 1', total: 45, status: 'pending_pickup', date: '12 May', location: 'The Box' },
-  { id: 1003, student: 'Katie Wu', items: 'Pole Shorts (M) × 1, Grip Aid × 1', total: 73, status: 'picked_up', date: '11 May', location: 'Rhapsody' },
-  { id: 1004, student: 'Bianca Forde', items: 'Water Bottle × 2', total: 44, status: 'picked_up', date: '10 May', location: 'The Box' },
-  { id: 1005, student: 'Zara Nguyen', items: 'Crop Top (Black, XS) × 1', total: 45, status: 'cancelled', date: '9 May', location: 'The Box' },
-  { id: 1006, student: 'Mia Torres', items: 'Grip Aid × 2, Cleaning Spray × 1', total: 48, status: 'picked_up', date: '8 May', location: 'Rhapsody' },
-]
+import { useApi } from '../../hooks/useApi'
+import { products as productsApi } from '../../api'
+import '../StudentsPage.css'
 
 const STATUS_STYLE = {
   pending_pickup: { label: 'Pending Pickup', cls: 'tag-amber' },
@@ -26,11 +9,132 @@ const STATUS_STYLE = {
   cancelled: { label: 'Cancelled', cls: 'tag-grey' },
 }
 
+const ORDERS = [
+  { id: 1001, student: 'Lily Anderson', items: 'Grip Socks × 1, Grip Aid × 1', total: 32, status: 'pending_pickup', date: '12 May', location: 'The Box' },
+  { id: 1002, student: 'Priya Sharma', items: 'Crop Top (Lime, S) × 1', total: 45, status: 'pending_pickup', date: '12 May', location: 'The Box' },
+  { id: 1003, student: 'Katie Wu', items: 'Pole Shorts (M) × 1, Grip Aid × 1', total: 73, status: 'picked_up', date: '11 May', location: 'Rhapsody' },
+  { id: 1004, student: 'Bianca Forde', items: 'Water Bottle × 2', total: 44, status: 'picked_up', date: '10 May', location: 'The Box' },
+]
+
+function ProductModal({ existing, onClose, onSaved }) {
+  const [name, setName] = useState(existing?.name || '')
+  const [sku, setSku] = useState(existing?.sku || '')
+  const [price, setPrice] = useState(existing?.price || '')
+  const [stock, setStock] = useState(existing?.stock ?? '')
+  const [category, setCategory] = useState(existing?.category || 'Accessories')
+  const [isActive, setIsActive] = useState(existing?.is_active ?? true)
+  const [saving, setSaving] = useState(false)
+
+  async function submit(e) {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      const payload = { name, sku, price: parseFloat(price), stock: parseInt(stock) || 0, category, is_active: isActive }
+      if (existing) {
+        await productsApi.update(existing.id, payload)
+      } else {
+        await productsApi.create(payload)
+      }
+      onSaved()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 420 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>{existing ? 'Edit Product' : 'Add Product'}</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="sd-body">
+          <form onSubmit={submit}>
+            <div className="field"><label>Name</label><input value={name} onChange={e => setName(e.target.value)} required /></div>
+            <div className="field"><label>SKU</label><input value={sku} onChange={e => setSku(e.target.value)} placeholder="Optional" /></div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="field"><label>Price ($)</label><input type="number" step="0.01" min="0" value={price} onChange={e => setPrice(e.target.value)} required /></div>
+              <div className="field"><label>Stock</label><input type="number" min="0" value={stock} onChange={e => setStock(e.target.value)} /></div>
+            </div>
+            <div className="field">
+              <label>Category</label>
+              <select value={category} onChange={e => setCategory(e.target.value)}>
+                <option>Apparel</option>
+                <option>Accessories</option>
+                <option>Equipment</option>
+              </select>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <div onClick={() => setIsActive(v => !v)} style={{ width: 36, height: 20, borderRadius: 10, background: isActive ? 'var(--lime)' : '#333', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
+                <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: isActive ? 19 : 3, transition: 'left 0.2s' }} />
+              </div>
+              <span style={{ fontSize: 13, color: 'var(--grey)' }}>Active / for sale</span>
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+              <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : existing ? 'Save' : 'Add Product'}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function RestockModal({ product, onClose, onSaved }) {
+  const [qty, setQty] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  async function submit(e) {
+    e.preventDefault()
+    if (!qty) return
+    setSaving(true)
+    try {
+      await productsApi.update(product.id, { stock: product.stock + parseInt(qty) })
+      onSaved()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 360 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>Restock — {product.name}</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="sd-body">
+          <p style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 16 }}>Current stock: <b style={{ color: 'var(--white)' }}>{product.stock}</b></p>
+          <form onSubmit={submit}>
+            <div className="field"><label>Add quantity</label><input type="number" min="1" value={qty} onChange={e => setQty(e.target.value)} autoFocus required /></div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+              <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : 'Add Stock'}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminRetail() {
+  const { data: prodData, loading, refetch } = useApi(() => productsApi.list(), [])
+  const productList = prodData?.results || prodData || []
+
   const [tab, setTab] = useState('products')
+  const [modal, setModal] = useState(null)
 
   const pendingPickup = ORDERS.filter(o => o.status === 'pending_pickup')
-  const totalRevenue = ORDERS.filter(o => o.status === 'picked_up').reduce((s, o) => s + o.total, 0)
+  const activeProducts = productList.filter(p => p.is_active)
+  const lowStock = productList.filter(p => p.stock <= 6 && p.is_active)
+
+  async function deleteProduct(id) {
+    if (!confirm('Delete this product?')) return
+    await productsApi.delete(id)
+    refetch()
+  }
 
   return (
     <div>
@@ -39,15 +143,15 @@ export default function AdminRetail() {
           <div className="page-title">Retail</div>
           <div className="page-sub">Products, orders and in-studio pickups</div>
         </div>
-        <button className="btn btn-lime btn-sm">+ Add Product</button>
+        <button className="btn btn-lime btn-sm" onClick={() => setModal({ type: 'product', existing: null })}>+ Add Product</button>
       </div>
 
       <div className="kpi-grid" style={{ marginBottom: 24 }}>
         {[
-          ['Products', PRODUCTS.filter(p => p.active).length, 'kpi-lime'],
+          ['Products', loading ? '…' : activeProducts.length, 'kpi-lime'],
           ['Pending Pickup', pendingPickup.length, pendingPickup.length > 0 ? 'kpi-amber' : 'kpi-lime'],
-          ['Revenue (May)', `$${totalRevenue}`, 'kpi-lav'],
-          ['Low Stock', PRODUCTS.filter(p => p.stock <= 6 && p.active).length, 'kpi-amber'],
+          ['Revenue (May)', `$${ORDERS.filter(o => o.status === 'picked_up').reduce((s, o) => s + o.total, 0)}`, 'kpi-lav'],
+          ['Low Stock', loading ? '…' : lowStock.length, lowStock.length > 0 ? 'kpi-amber' : 'kpi-lime'],
         ].map(([label, val, cls]) => (
           <div key={label} className={`kpi ${cls}`}>
             <div className="kpi-label">{label}</div>
@@ -72,24 +176,31 @@ export default function AdminRetail() {
           <table>
             <thead><tr><th>Product</th><th>SKU</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr></thead>
             <tbody>
-              {PRODUCTS.map(p => (
+              {loading && <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--grey)', padding: '24px 0' }}>Loading…</td></tr>}
+              {productList.map(p => (
                 <tr key={p.id}>
                   <td><b>{p.name}</b></td>
-                  <td style={{ color: 'var(--grey)', fontSize: 11, fontFamily: 'monospace' }}>{p.sku}</td>
+                  <td style={{ color: 'var(--grey)', fontSize: 11, fontFamily: 'monospace' }}>{p.sku || '—'}</td>
                   <td style={{ color: 'var(--grey)', fontSize: 12 }}>{p.category}</td>
-                  <td style={{ color: 'var(--lime)', fontWeight: 600 }}>${p.price}</td>
+                  <td style={{ color: 'var(--lime)', fontWeight: 600 }}>${parseFloat(p.price).toFixed(2)}</td>
                   <td>
                     <span style={{ color: p.stock === 0 ? 'var(--red)' : p.stock <= 6 ? 'var(--amber)' : 'var(--white)', fontWeight: 600, fontSize: 13 }}>
                       {p.stock === 0 ? 'Out of stock' : p.stock}
                     </span>
                   </td>
-                  <td><span className={`tag ${p.active && p.stock > 0 ? 'tag-lime' : p.active && p.stock === 0 ? 'tag-red' : 'tag-grey'}`} style={{ fontSize: 10 }}>{p.active && p.stock > 0 ? 'Active' : p.active && p.stock === 0 ? 'Out of stock' : 'Inactive'}</span></td>
-                  <td>
-                    <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }}>Edit</button>
-                    <button className="btn btn-ghost btn-xs">Restock</button>
+                  <td><span className={`tag ${p.is_active && p.stock > 0 ? 'tag-lime' : p.is_active && p.stock === 0 ? 'tag-red' : 'tag-grey'}`} style={{ fontSize: 10 }}>
+                    {p.is_active && p.stock > 0 ? 'Active' : p.is_active && p.stock === 0 ? 'Out of stock' : 'Inactive'}
+                  </span></td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
+                    <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => setModal({ type: 'product', existing: p })}>Edit</button>
+                    <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => setModal({ type: 'restock', product: p })}>Restock</button>
+                    <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)' }} onClick={() => deleteProduct(p.id)}>Del</button>
                   </td>
                 </tr>
               ))}
+              {!loading && productList.length === 0 && (
+                <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--grey)', padding: '32px 0' }}>No products yet</td></tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -111,9 +222,7 @@ export default function AdminRetail() {
                     <td style={{ fontSize: 12, color: 'var(--grey)' }}>{o.location}</td>
                     <td style={{ fontSize: 12, color: 'var(--grey)' }}>{o.date}</td>
                     <td><span className={`tag ${s.cls}`} style={{ fontSize: 10 }}>{s.label}</span></td>
-                    <td>
-                      {o.status === 'pending_pickup' && <button className="btn btn-lime btn-xs">Mark Picked Up</button>}
-                    </td>
+                    <td>{o.status === 'pending_pickup' && <button className="btn btn-lime btn-xs">Mark Picked Up</button>}</td>
                   </tr>
                 )
               })}
@@ -125,19 +234,14 @@ export default function AdminRetail() {
       {tab === 'pending' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {pendingPickup.length === 0 ? (
-            <div className="empty-state">
-              <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
-              <div>No orders pending pickup</div>
-            </div>
+            <div className="empty-state"><div style={{ fontSize: 32, marginBottom: 12 }}>✓</div><div>No orders pending pickup</div></div>
           ) : pendingPickup.map(o => (
             <div key={o.id} style={{ background: 'rgba(255,170,0,0.06)', border: '1px solid rgba(255,170,0,0.2)', borderRadius: 12, padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
               <div>
                 <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{o.student}</div>
                 <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 6 }}>{o.items}</div>
                 <div style={{ display: 'flex', gap: 12, fontSize: 11, color: 'var(--grey)' }}>
-                  <span>Order #{o.id}</span>
-                  <span>{o.location}</span>
-                  <span>Ordered {o.date}</span>
+                  <span>Order #{o.id}</span><span>{o.location}</span><span>Ordered {o.date}</span>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
@@ -147,6 +251,13 @@ export default function AdminRetail() {
             </div>
           ))}
         </div>
+      )}
+
+      {modal?.type === 'product' && (
+        <ProductModal existing={modal.existing} onClose={() => setModal(null)} onSaved={() => { setModal(null); refetch() }} />
+      )}
+      {modal?.type === 'restock' && (
+        <RestockModal product={modal.product} onClose={() => setModal(null)} onSaved={() => { setModal(null); refetch() }} />
       )}
     </div>
   )

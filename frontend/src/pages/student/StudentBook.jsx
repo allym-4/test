@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useApi } from '../../hooks/useApi'
+import { useAuth } from '../../contexts/AuthContext'
 import { classes, enrolments } from '../../api'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']

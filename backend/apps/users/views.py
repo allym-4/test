@@ -6,8 +6,11 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db import transaction
 from django.db.models import Q
-from .models import User, StaffNote, Lead, StudioSettings
-from .serializers import UserSerializer, UserCreateSerializer, StaffNoteSerializer, LeadSerializer, StudioSettingsSerializer
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule
+from .serializers import (
+    UserSerializer, UserCreateSerializer, StaffNoteSerializer, LeadSerializer,
+    StudioSettingsSerializer, AnnouncementSerializer, ProductSerializer, AutomationRuleSerializer,
+)
 from .permissions import IsAdminOrInstructor, IsAdminUser
 
 
@@ -179,4 +182,51 @@ class StudioSettingsView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+
+class AnnouncementListView(generics.ListCreateAPIView):
+    serializer_class = AnnouncementSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Announcement.objects.select_related('created_by')
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+
+class AnnouncementDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Announcement.objects.select_related('created_by')
+    serializer_class = AnnouncementSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class ProductListView(generics.ListCreateAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class AutomationRuleView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        rules = AutomationRule.objects.all()
+        return Response(AutomationRuleSerializer(rules, many=True).data)
+
+    def patch(self, request):
+        slug = request.data.get('slug')
+        enabled = request.data.get('enabled')
+        if slug is None or enabled is None:
+            return Response({'detail': 'slug and enabled required'}, status=400)
+        rule, _ = AutomationRule.objects.get_or_create(slug=slug)
+        rule.enabled = enabled
+        rule.save()
+        return Response(AutomationRuleSerializer(rule).data)
 

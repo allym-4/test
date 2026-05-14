@@ -1,4 +1,5 @@
 from rest_framework import generics, permissions
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Ticket, TicketMessage, Conversation, DirectMessage
 from .serializers import (
@@ -23,6 +24,18 @@ class TicketListView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save()
+
+
+class StudentTicketCreateView(generics.CreateAPIView):
+    """Students can submit a support ticket with an optional first message."""
+    serializer_class = TicketSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        ticket = serializer.save(student=self.request.user)
+        body = self.request.data.get('body', '').strip()
+        if body:
+            TicketMessage.objects.create(ticket=ticket, sender=self.request.user, body=body)
 
 
 class TicketDetailView(generics.RetrieveUpdateAPIView):
@@ -75,3 +88,23 @@ class DirectMessageListView(generics.ListCreateAPIView):
         conv = Conversation.objects.get(pk=self.kwargs['conv_pk'])
         serializer.save(sender=self.request.user, conversation=conv)
         conv.save(update_fields=['updated_at'])
+
+
+class MyConversationView(APIView):
+    """Student gets (or creates) their own conversation with the studio."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        conv, _ = Conversation.objects.prefetch_related('messages__sender').get_or_create(
+            student=request.user
+        )
+        return Response(ConversationSerializer(conv).data)
+
+    def post(self, request):
+        conv, _ = Conversation.objects.get_or_create(student=request.user)
+        body = request.data.get('body', '').strip()
+        if not body:
+            return Response({'detail': 'body required'}, status=400)
+        msg = DirectMessage.objects.create(conversation=conv, sender=request.user, body=body)
+        conv.save(update_fields=['updated_at'])
+        return Response(DirectMessageSerializer(msg).data, status=201)

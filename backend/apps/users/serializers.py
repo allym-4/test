@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, StaffNote, Lead, StudioSettings
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule
 
 
 class UserMinimalSerializer(serializers.ModelSerializer):
@@ -72,3 +72,26 @@ class StudioSettingsSerializer(serializers.ModelSerializer):
             'cancellation_window_hours', 'no_show_fee', 'late_cancel_fee',
             'credit_expiry_days', 'max_freeze_weeks', 'gst_registered', 'abn',
         )
+
+
+class AnnouncementSerializer(serializers.ModelSerializer):
+    created_by_name = serializers.StringRelatedField(source='created_by')
+
+    class Meta:
+        model = Announcement
+        fields = ('id', 'title', 'body', 'created_by', 'created_by_name', 'is_pinned', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'created_by', 'created_at', 'updated_at')
+
+
+class ProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ('id', 'name', 'sku', 'price', 'stock', 'category', 'is_active', 'created_at')
+        read_only_fields = ('id', 'created_at')
+
+
+class AutomationRuleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AutomationRule
+        fields = ('id', 'slug', 'enabled')
+        read_only_fields = ('id', 'slug')

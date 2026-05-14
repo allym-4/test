@@ -1,52 +1,110 @@
 import { useState } from 'react'
-
-const PENDING_POSTS = [
-  { id: 1, author: 'Lily Anderson', avatar: 'LA', group: 'Season 3 Students', time: '10 min ago', text: 'Has anyone tried the new grip aid? Thinking about buying some before our next class 🤔', likes: 0, comments: 0 },
-  { id: 2, author: 'Zara Nguyen', avatar: 'ZN', group: 'Pole Foundations', time: '32 min ago', text: 'Just wanted to say how much I loved last week\'s class!! Chloe is an incredible teacher 🙌', likes: 0, comments: 0 },
-  { id: 3, author: 'Rachel Kim', avatar: 'RK', group: 'General', time: '1 hour ago', text: 'Anyone keen to do an open practice session this weekend? I\'ll be in the studio Saturday arvo', likes: 0, comments: 0 },
-]
+import { useApi } from '../../hooks/useApi'
+import { announcements } from '../../api'
+import '../StudentsPage.css'
 
 const GROUPS = [
-  { id: 1, name: 'Season 3 Students', members: 94, posts: 38, active: true, notifications: true },
-  { id: 2, name: 'Pole Foundations', members: 22, posts: 14, active: true, notifications: true },
-  { id: 3, name: 'Intermediate Flows', members: 18, posts: 21, active: true, notifications: false },
-  { id: 4, name: 'Flexibility & Conditioning', members: 15, posts: 9, active: true, notifications: true },
-  { id: 5, name: 'Advanced Technique', members: 12, posts: 17, active: true, notifications: false },
-  { id: 6, name: 'General', members: 94, posts: 102, active: true, notifications: true },
-  { id: 7, name: 'Alumni', members: 46, posts: 8, active: false, notifications: false },
+  { id: 1, name: 'Season 3 Students', members: 94, posts: 38, active: true },
+  { id: 2, name: 'Pole Foundations', members: 22, posts: 14, active: true },
+  { id: 3, name: 'Intermediate Flows', members: 18, posts: 21, active: true },
+  { id: 4, name: 'Flexibility & Conditioning', members: 15, posts: 9, active: true },
+  { id: 5, name: 'Advanced Technique', members: 12, posts: 17, active: true },
+  { id: 6, name: 'General', members: 94, posts: 102, active: true },
+  { id: 7, name: 'Alumni', members: 46, posts: 8, active: false },
 ]
 
-function Toggle({ on }) {
-  const [val, setVal] = useState(on)
+function AnnouncementModal({ existing, onClose, onSaved }) {
+  const [title, setTitle] = useState(existing?.title || '')
+  const [body, setBody] = useState(existing?.body || '')
+  const [pinned, setPinned] = useState(existing?.is_pinned || false)
+  const [saving, setSaving] = useState(false)
+
+  async function submit(e) {
+    e.preventDefault()
+    if (!title.trim() || !body.trim()) return
+    setSaving(true)
+    try {
+      if (existing) {
+        await announcements.update(existing.id, { title, body, is_pinned: pinned })
+      } else {
+        await announcements.create({ title, body, is_pinned: pinned })
+      }
+      onSaved()
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
-    <div onClick={() => setVal(v => !v)} style={{ width: 36, height: 20, borderRadius: 10, background: val ? 'var(--lime)' : '#333', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
-      <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: val ? 19 : 3, transition: 'left 0.2s' }} />
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 500 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>{existing ? 'Edit Announcement' : 'New Announcement'}</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="sd-body">
+          <form onSubmit={submit}>
+            <div className="field"><label>Title</label><input value={title} onChange={e => setTitle(e.target.value)} placeholder="Announcement title…" required /></div>
+            <div className="field">
+              <label>Message</label>
+              <textarea rows={5} value={body} onChange={e => setBody(e.target.value)} placeholder="Write your message…" required style={{ width: '100%', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <div onClick={() => setPinned(v => !v)} style={{ width: 36, height: 20, borderRadius: 10, background: pinned ? 'var(--lime)' : '#333', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
+                <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: pinned ? 19 : 3, transition: 'left 0.2s' }} />
+              </div>
+              <span style={{ fontSize: 13, color: 'var(--grey)' }}>Pin to top</span>
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+              <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : existing ? 'Save' : 'Post'}</button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   )
 }
 
-export default function AdminCommunity() {
-  const [tab, setTab] = useState('pending')
-  const [dismissed, setDismissed] = useState([])
+function timeAgo(ts) {
+  const diff = Date.now() - new Date(ts).getTime()
+  const m = Math.floor(diff / 60000)
+  if (m < 1) return 'just now'
+  if (m < 60) return `${m}m ago`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h ago`
+  return `${Math.floor(h / 24)}d ago`
+}
 
-  const visiblePending = PENDING_POSTS.filter(p => !dismissed.includes(p.id))
+export default function AdminCommunity() {
+  const { data: annData, loading, refetch } = useApi(() => announcements.list(), [])
+  const annList = annData?.results || annData || []
+
+  const [tab, setTab] = useState('announcements')
+  const [modal, setModal] = useState(null)
+
+  async function deleteAnn(id) {
+    if (!confirm('Delete this announcement?')) return
+    await announcements.delete(id)
+    refetch()
+  }
 
   return (
     <div>
       <div className="page-header">
         <div>
           <div className="page-title">Community</div>
-          <div className="page-sub">Student groups and post moderation</div>
+          <div className="page-sub">Announcements and student groups</div>
         </div>
-        <button className="btn btn-lime btn-sm">+ New Group</button>
+        <button className="btn btn-lime btn-sm" onClick={() => setModal({ existing: null })}>+ New Announcement</button>
       </div>
 
       <div className="kpi-grid" style={{ marginBottom: 24 }}>
         {[
+          ['Announcements', loading ? '…' : annList.length, 'kpi-lime'],
+          ['Pinned', loading ? '…' : annList.filter(a => a.is_pinned).length, 'kpi-lav'],
           ['Groups', GROUPS.filter(g => g.active).length, 'kpi-lime'],
-          ['Total Members', 94, 'kpi-lav'],
-          ['Pending Posts', visiblePending.length, visiblePending.length > 0 ? 'kpi-amber' : 'kpi-lime'],
-          ['Posts This Week', 24, 'kpi-lime'],
+          ['Total Members', 94, 'kpi-amber'],
         ].map(([label, val, cls]) => (
           <div key={label} className={`kpi ${cls}`}>
             <div className="kpi-label">{label}</div>
@@ -56,35 +114,36 @@ export default function AdminCommunity() {
       </div>
 
       <div className="subtabs" style={{ marginBottom: 20 }}>
-        {[['pending', `Pending Approval (${visiblePending.length})`], ['groups', 'Groups'], ['all_posts', 'All Posts']].map(([key, label]) => (
+        {[['announcements', 'Announcements'], ['groups', 'Groups']].map(([key, label]) => (
           <div key={key} className={`subtab ${tab === key ? 'active' : ''}`} onClick={() => setTab(key)}>{label}</div>
         ))}
       </div>
 
-      {tab === 'pending' && (
+      {tab === 'announcements' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {visiblePending.length === 0 ? (
+          {loading && <div style={{ color: 'var(--grey)', fontSize: 13 }}>Loading…</div>}
+          {!loading && annList.length === 0 && (
             <div className="empty-state">
-              <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
-              <div>No posts pending approval</div>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>📢</div>
+              <div>No announcements yet</div>
+              <button className="btn btn-lime btn-sm" style={{ marginTop: 12 }} onClick={() => setModal({ existing: null })}>Post First Announcement</button>
             </div>
-          ) : visiblePending.map(post => (
-            <div key={post.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 18px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--lav)', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{post.avatar}</div>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 13 }}>{post.author}</div>
-                  <div style={{ fontSize: 11, color: 'var(--grey)' }}>
-                    <span style={{ color: 'var(--lav)' }}>{post.group}</span> · {post.time}
-                  </div>
+          )}
+          {annList.map(a => (
+            <div key={a.id} style={{ background: 'var(--card)', border: `1px solid ${a.is_pinned ? 'rgba(204,255,0,0.25)' : 'var(--border)'}`, borderRadius: 12, padding: '16px 18px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {a.is_pinned && <span className="tag tag-lime" style={{ fontSize: 9 }}>Pinned</span>}
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>{a.title}</div>
                 </div>
-                <span className="tag tag-amber" style={{ fontSize: 9, marginLeft: 'auto' }}>Pending</span>
+                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  <button className="btn btn-ghost btn-xs" onClick={() => setModal({ existing: a })}>Edit</button>
+                  <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)' }} onClick={() => deleteAnn(a.id)}>Delete</button>
+                </div>
               </div>
-              <div style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 14, paddingLeft: 46 }}>{post.text}</div>
-              <div style={{ display: 'flex', gap: 8, paddingLeft: 46 }}>
-                <button className="btn btn-lime btn-sm" onClick={() => setDismissed(d => [...d, post.id])}>Approve</button>
-                <button className="btn btn-ghost btn-sm" onClick={() => setDismissed(d => [...d, post.id])}>Decline</button>
-                <button className="btn btn-ghost btn-sm">Edit & Approve</button>
+              <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.7, marginBottom: 10 }}>{a.body}</div>
+              <div style={{ fontSize: 11, color: 'var(--grey)' }}>
+                Posted by {a.created_by_name || 'Studio'} · {timeAgo(a.created_at)}
               </div>
             </div>
           ))}
@@ -94,9 +153,7 @@ export default function AdminCommunity() {
       {tab === 'groups' && (
         <div className="tbl-section">
           <table>
-            <thead>
-              <tr><th>Group</th><th>Members</th><th>Total Posts</th><th>Status</th><th>Notifications</th><th>Actions</th></tr>
-            </thead>
+            <thead><tr><th>Group</th><th>Members</th><th>Total Posts</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody>
               {GROUPS.map(g => (
                 <tr key={g.id}>
@@ -104,7 +161,6 @@ export default function AdminCommunity() {
                   <td style={{ color: 'var(--grey)', fontSize: 12 }}>{g.members}</td>
                   <td style={{ color: 'var(--grey)', fontSize: 12 }}>{g.posts}</td>
                   <td><span className={`tag ${g.active ? 'tag-lime' : 'tag-grey'}`} style={{ fontSize: 10 }}>{g.active ? 'Active' : 'Archived'}</span></td>
-                  <td><Toggle on={g.notifications} /></td>
                   <td>
                     <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }}>View</button>
                     <button className="btn btn-ghost btn-xs">Edit</button>
@@ -116,10 +172,12 @@ export default function AdminCommunity() {
         </div>
       )}
 
-      {tab === 'all_posts' && (
-        <div style={{ color: 'var(--grey)', textAlign: 'center', padding: '48px 0', fontSize: 13 }}>
-          All approved posts across all groups would appear here.
-        </div>
+      {modal && (
+        <AnnouncementModal
+          existing={modal.existing}
+          onClose={() => setModal(null)}
+          onSaved={() => { setModal(null); refetch() }}
+        />
       )}
     </div>
   )

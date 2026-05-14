@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { helpdesk } from '../../api'
 
 const FAQS = [
   {
@@ -36,13 +37,34 @@ export default function StudentSupport() {
   const [subject, setSubject] = useState('')
   const [message, setMessage] = useState('')
   const [sent, setSent] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [tab, setTab] = useState('faq')
 
-  function handleSubmit() {
-    if (subject && message) {
+  const CATEGORY_MAP = {
+    'Booking question': 'Booking',
+    'Billing or payment': 'Billing',
+    'Membership freeze': 'Membership',
+    'Technical issue': 'Technical',
+    'Feedback': 'General',
+    'Other': 'General',
+  }
+
+  async function handleSubmit() {
+    if (!subject || !message || submitting) return
+    setSubmitting(true)
+    try {
+      await helpdesk.submitTicket({
+        subject,
+        category: CATEGORY_MAP[subject] || 'General',
+        body: message,
+      })
       setSent(true)
       setSubject('')
       setMessage('')
+    } catch {
+      alert('Failed to send message. Please try again.')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -123,8 +145,8 @@ export default function StudentSupport() {
                 />
               </div>
 
-              <button className="btn btn-lime btn-sm" onClick={handleSubmit} disabled={!subject || !message} style={{ width: '100%' }}>
-                Send Message
+              <button className="btn btn-lime btn-sm" onClick={handleSubmit} disabled={!subject || !message || submitting} style={{ width: '100%' }}>
+                {submitting ? 'Sending…' : 'Send Message'}
               </button>
             </div>
           )}

@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useApi } from '../../hooks/useApi'
+import { announcements } from '../../api'
 
 const GROUPS = [
   { id: 1, name: 'Season 3 Students', members: 94, lastPost: '2 min ago', unread: 3, preview: 'Lily Anderson: Has anyone tried the new grip aid?', active: true },
@@ -17,6 +19,11 @@ const POSTS = {
 }
 
 export default function StudentCommunity() {
+  const { data: annData } = useApi(() => announcements.list(), [])
+  const annList = annData?.results || annData || []
+  const pinned = annList.filter(a => a.is_pinned)
+  const unpinned = annList.filter(a => !a.is_pinned)
+
   const [activeGroup, setActiveGroup] = useState(GROUPS[0])
   const [newPost, setNewPost] = useState('')
   const [likedPosts, setLikedPosts] = useState([])
@@ -29,6 +36,23 @@ export default function StudentCommunity() {
         <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, marginBottom: 4 }}>Community</div>
         <div style={{ fontSize: 13, color: 'var(--grey)' }}>Connect with your fellow students</div>
       </div>
+
+      {[...pinned, ...unpinned].length > 0 && (
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 10, fontWeight: 600 }}>📢 From the Studio</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[...pinned, ...unpinned].slice(0, 3).map(a => (
+              <div key={a.id} style={{ background: a.is_pinned ? 'rgba(204,255,0,0.06)' : 'var(--card)', border: `1px solid ${a.is_pinned ? 'rgba(204,255,0,0.2)' : 'var(--border)'}`, borderRadius: 10, padding: '12px 16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  {a.is_pinned && <span className="tag tag-lime" style={{ fontSize: 9 }}>Pinned</span>}
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{a.title}</div>
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--grey)', lineHeight: 1.6 }}>{a.body}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 16 }}>
         {/* Group list */}

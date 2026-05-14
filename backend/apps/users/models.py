@@ -105,3 +105,50 @@ class StudioSettings(models.Model):
     def get(cls):
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+
+class Announcement(models.Model):
+    title = models.CharField(max_length=200)
+    body = models.TextField()
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='announcements')
+    is_pinned = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-is_pinned', '-created_at']
+
+    def __str__(self):
+        return self.title
+
+
+class Product(models.Model):
+    class Category(models.TextChoices):
+        APPAREL = 'Apparel', 'Apparel'
+        ACCESSORIES = 'Accessories', 'Accessories'
+        EQUIPMENT = 'Equipment', 'Equipment'
+
+    name = models.CharField(max_length=100)
+    sku = models.CharField(max_length=50, blank=True)
+    price = models.DecimalField(max_digits=8, decimal_places=2)
+    stock = models.PositiveIntegerField(default=0)
+    category = models.CharField(max_length=20, choices=Category.choices, default=Category.ACCESSORIES)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+class AutomationRule(models.Model):
+    slug = models.CharField(max_length=50, unique=True)
+    enabled = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['slug']
+
+    def __str__(self):
+        return self.slug

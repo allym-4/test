@@ -4,6 +4,7 @@ export const auth = {
   login: (username, password) =>
     client.post('/api/auth/token/', { username, password }),
   me: () => client.get('/api/users/me/'),
+  updateMe: (data) => client.patch('/api/users/me/', data),
 }
 
 export const classes = {
@@ -62,6 +63,9 @@ export const helpdesk = {
   getConversation: (id) => client.get(`/api/helpdesk/conversations/${id}/`),
   dms: (convId) => client.get(`/api/helpdesk/conversations/${convId}/messages/`),
   sendDm: (convId, data) => client.post(`/api/helpdesk/conversations/${convId}/messages/`, data),
+  myConversation: () => client.get('/api/helpdesk/my-conversation/'),
+  sendMyDm: (data) => client.post('/api/helpdesk/my-conversation/', data),
+  submitTicket: (data) => client.post('/api/helpdesk/submit/', data),
 }
 
 export const homework = {
@@ -86,4 +90,23 @@ export const users = {
 export const settings = {
   get: () => client.get('/api/users/settings/'),
   save: (data) => client.patch('/api/users/settings/', data),
+}
+
+export const announcements = {
+  list: () => client.get('/api/users/announcements/'),
+  create: (data) => client.post('/api/users/announcements/', data),
+  update: (id, data) => client.patch(`/api/users/announcements/${id}/`, data),
+  delete: (id) => client.delete(`/api/users/announcements/${id}/`),
+}
+
+export const products = {
+  list: () => client.get('/api/users/products/'),
+  create: (data) => client.post('/api/users/products/', data),
+  update: (id, data) => client.patch(`/api/users/products/${id}/`, data),
+  delete: (id) => client.delete(`/api/users/products/${id}/`),
+}
+
+export const automations = {
+  list: () => client.get('/api/users/automations/'),
+  toggle: (slug, enabled) => client.patch('/api/users/automations/', { slug, enabled }),
 }

@@ -8,4 +8,6 @@ urlpatterns = [
     path('conversations/', views.ConversationListView.as_view(), name='conversation-list'),
     path('conversations/<int:pk>/', views.ConversationDetailView.as_view(), name='conversation-detail'),
     path('conversations/<int:conv_pk>/messages/', views.DirectMessageListView.as_view(), name='dm-list'),
+    path('my-conversation/', views.MyConversationView.as_view(), name='my-conversation'),
+    path('submit/', views.StudentTicketCreateView.as_view(), name='student-ticket-create'),
 ]
