@@ -57,6 +57,7 @@ export const helpdesk = {
   messages: (ticketId) => client.get(`/api/helpdesk/${ticketId}/messages/`),
   reply: (ticketId, data) => client.post(`/api/helpdesk/${ticketId}/messages/`, data),
   conversations: (params) => client.get('/api/helpdesk/conversations/', { params }),
+  createConversation: (data) => client.post('/api/helpdesk/conversations/', data),
   getConversation: (id) => client.get(`/api/helpdesk/conversations/${id}/`),
   dms: (convId) => client.get(`/api/helpdesk/conversations/${convId}/messages/`),
   sendDm: (convId, data) => client.post(`/api/helpdesk/conversations/${convId}/messages/`, data),

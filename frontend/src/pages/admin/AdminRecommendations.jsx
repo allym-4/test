@@ -1,19 +1,84 @@
+import { useState } from 'react'
 import { useApi } from '../../hooks/useApi'
-import { users, payments, attendance } from '../../api'
+import { users, payments, attendance, helpdesk } from '../../api'
+
+function SendMessageModal({ rec, onClose, onSent }) {
+  const [body, setBody] = useState(rec.defaultMessage || '')
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState(null)
+
+  async function send(e) {
+    e.preventDefault()
+    if (!body.trim()) return
+    setSending(true)
+    setError(null)
+    try {
+      const convsRes = await helpdesk.conversations()
+      const convs = convsRes.data?.results || convsRes.data || []
+      let conv = convs.find(c => c.student === rec.studentId)
+      if (!conv) {
+        const res = await helpdesk.createConversation({ student: rec.studentId })
+        conv = res.data
+      }
+      await helpdesk.sendDm(conv.id, { body: body.trim() })
+      onSent()
+    } catch (err) {
+      setError('Failed to send message. Please try again.')
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 440 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>{rec.action}</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="sd-body">
+          <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 12 }}>
+            Sending to <strong style={{ color: 'var(--white)' }}>{rec.student}</strong>
+          </div>
+          <form onSubmit={send}>
+            <div className="field">
+              <label>Message</label>
+              <textarea
+                rows={5}
+                value={body}
+                onChange={e => setBody(e.target.value)}
+                style={{ width: '100%', boxSizing: 'border-box' }}
+                autoFocus
+              />
+            </div>
+            {error && <div style={{ color: 'var(--red)', fontSize: 12, marginBottom: 10 }}>{error}</div>}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+              <button type="submit" className="btn btn-lime btn-sm" disabled={sending || !body.trim()}>
+                {sending ? 'Sending…' : 'Send Message'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function AdminRecommendations() {
   const { data: studentsData, loading: loadingStudents } = useApi(() => users.list({ role: 'student' }))
   const { data: paymentsData } = useApi(() => payments.list())
   const { data: attData } = useApi(() => attendance.list())
 
+  const [activeModal, setActiveModal] = useState(null)
+  const [sentIds, setSentIds] = useState(new Set())
+
   const students = studentsData?.results || []
   const allPayments = paymentsData?.results || []
   const allAtt = attData?.results || []
 
-  // Compute recommendations from real data
   const recs = []
 
-  // No-show pattern (students with 2+ no-shows)
   const noShowCount = {}
   for (const a of allAtt) {
     if (a.status === 'no_show') noShowCount[a.student] = (noShowCount[a.student] || 0) + 1
@@ -23,17 +88,18 @@ export default function AdminRecommendations() {
       const student = students.find(s => s.id === parseInt(studentId))
       if (student) recs.push({
         id: `ns-${studentId}`,
+        studentId: student.id,
         urgency: 'high',
         icon: '⚠️',
         title: `${count} no-shows — chase needed`,
         body: `${student.display_name} has missed ${count} classes without cancelling. Consider reaching out.`,
         action: 'Chase',
         student: student.display_name,
+        defaultMessage: `Hi ${student.first_name}, we noticed you've missed a few classes recently without cancelling. We just wanted to check in — is everything okay? Please let us know if there's anything we can do to help.`,
       })
     }
   }
 
-  // Outstanding balances (students owing money from payment data)
   const balanceByStudent = {}
   for (const p of allPayments) {
     if (!balanceByStudent[p.student]) balanceByStudent[p.student] = 0
@@ -48,17 +114,18 @@ export default function AdminRecommendations() {
       const student = students.find(s => s.id === parseInt(studentId))
       if (student) recs.push({
         id: `bal-${studentId}`,
+        studentId: student.id,
         urgency: 'high',
         icon: '💳',
         title: `Outstanding balance — $${Math.abs(bal).toFixed(0)} owing`,
         body: `${student.display_name} has an outstanding balance of $${Math.abs(bal).toFixed(2)}. Send a payment reminder.`,
         action: 'Send reminder',
         student: student.display_name,
+        defaultMessage: `Hi ${student.first_name}, just a friendly reminder that there's an outstanding balance of $${Math.abs(bal).toFixed(2)} on your account. Please get in touch when you get a chance and we can sort it out. Thanks!`,
       })
     }
   }
 
-  // Low attendance (students with < 50% presence out of 4+ classes)
   const attByStudent = {}
   for (const a of allAtt) {
     if (!attByStudent[a.student]) attByStudent[a.student] = { present: 0, total: 0 }
@@ -70,17 +137,18 @@ export default function AdminRecommendations() {
       const student = students.find(s => s.id === parseInt(studentId))
       if (student) recs.push({
         id: `att-${studentId}`,
+        studentId: student.id,
         urgency: 'medium',
         icon: '📉',
         title: `Low attendance — ${Math.round(stats.present / stats.total * 100)}% rate`,
         body: `${student.display_name} has only attended ${stats.present} of ${stats.total} classes. Check in with them.`,
         action: 'Welfare check-in',
         student: student.display_name,
+        defaultMessage: `Hi ${student.first_name}, we've noticed your attendance has been a little low lately and just wanted to check in. Is everything going okay? We'd love to see you back in class — let us know if there's anything we can do to help.`,
       })
     }
   }
 
-  // General insights
   const totalStudents = students.length
   const totalRevenue = allPayments.filter(p => p.payment_type === 'payment').reduce((s, p) => s + parseFloat(p.amount || 0), 0)
   const totalNoShows = allAtt.filter(a => a.status === 'no_show').length
@@ -94,8 +162,21 @@ export default function AdminRecommendations() {
 
   const urgent = recs.filter(r => r.urgency === 'high')
   const medium = recs.filter(r => r.urgency === 'medium')
-
   const loading = loadingStudents
+
+  function ActionButton({ rec, className, style }) {
+    const sent = sentIds.has(rec.id)
+    return (
+      <button
+        className={className}
+        style={style}
+        onClick={() => setActiveModal(rec)}
+        disabled={sent}
+      >
+        {sent ? '✓ Sent' : rec.action}
+      </button>
+    )
+  }
 
   return (
     <div>
@@ -121,7 +202,7 @@ export default function AdminRecommendations() {
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{r.title}</div>
                       <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 10 }}>{r.body}</div>
-                      <button className="btn btn-sm" style={{ background: 'rgba(255,68,68,0.15)', color: 'var(--red)', border: '1px solid rgba(255,68,68,0.3)', fontSize: 11 }}>{r.action}</button>
+                      <ActionButton rec={r} className="btn btn-sm" style={{ background: 'rgba(255,68,68,0.15)', color: 'var(--red)', border: '1px solid rgba(255,68,68,0.3)', fontSize: 11 }} />
                     </div>
                   </div>
                 ))}
@@ -139,7 +220,7 @@ export default function AdminRecommendations() {
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{r.title}</div>
                       <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 10 }}>{r.body}</div>
-                      <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}>{r.action}</button>
+                      <ActionButton rec={r} className="btn btn-ghost btn-sm" style={{ fontSize: 11 }} />
                     </div>
                   </div>
                 ))}
@@ -168,6 +249,17 @@ export default function AdminRecommendations() {
             </div>
           )}
         </>
+      )}
+
+      {activeModal && (
+        <SendMessageModal
+          rec={activeModal}
+          onClose={() => setActiveModal(null)}
+          onSent={() => {
+            setSentIds(s => new Set([...s, activeModal.id]))
+            setActiveModal(null)
+          }}
+        />
       )}
     </div>
   )

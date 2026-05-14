@@ -1,11 +1,13 @@
+import { useState } from 'react'
 import { useApi } from '../../hooks/useApi'
 import { enrolments, classes } from '../../api'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 export default function AdminWaitlist() {
-  const { data: enrolData, loading } = useApi(() => enrolments.list({ status: 'waitlist' }))
+  const { data: enrolData, loading, refetch } = useApi(() => enrolments.list({ status: 'waitlist' }))
   const { data: sessionsData } = useApi(() => classes.list())
+  const [acting, setActing] = useState({})
 
   const waitlisted = enrolData?.results || []
   const sessions = sessionsData?.results || []
@@ -20,6 +22,26 @@ export default function AdminWaitlist() {
   const sessionMap = {}
   for (const s of sessions) sessionMap[s.id] = s
 
+  async function promote(e) {
+    setActing(a => ({ ...a, [e.id]: 'promoting' }))
+    try {
+      await enrolments.update(e.id, { status: 'active' })
+      refetch()
+    } finally {
+      setActing(a => ({ ...a, [e.id]: null }))
+    }
+  }
+
+  async function remove(e) {
+    setActing(a => ({ ...a, [e.id]: 'removing' }))
+    try {
+      await enrolments.delete(e.id)
+      refetch()
+    } finally {
+      setActing(a => ({ ...a, [e.id]: null }))
+    }
+  }
+
   return (
     <div>
       <div className="page-header">
@@ -27,7 +49,6 @@ export default function AdminWaitlist() {
           <div className="page-title">Waitlist</div>
           <div className="page-sub">{waitlisted.length} students waiting</div>
         </div>
-        <button className="btn btn-ghost btn-sm">Notify All Eligible</button>
       </div>
 
       <div className="kpi-grid" style={{ marginBottom: 24 }}>
@@ -70,6 +91,7 @@ export default function AdminWaitlist() {
                     <tbody>
                       {students.map((e, i) => {
                         const st = e.student_detail
+                        const busy = acting[e.id]
                         return (
                           <tr key={e.id}>
                             <td>
@@ -83,8 +105,21 @@ export default function AdminWaitlist() {
                             </td>
                             <td style={{ color: 'var(--grey)', fontSize: 12 }}>—</td>
                             <td>
-                              <button className="btn btn-lime btn-xs" style={{ marginRight: 6 }}>Promote</button>
-                              <button className="btn btn-ghost btn-xs">Remove</button>
+                              <button
+                                className="btn btn-lime btn-xs"
+                                style={{ marginRight: 6 }}
+                                disabled={!!busy}
+                                onClick={() => promote(e)}
+                              >
+                                {busy === 'promoting' ? '…' : 'Promote'}
+                              </button>
+                              <button
+                                className="btn btn-ghost btn-xs"
+                                disabled={!!busy}
+                                onClick={() => remove(e)}
+                              >
+                                {busy === 'removing' ? '…' : 'Remove'}
+                              </button>
                             </td>
                           </tr>
                         )

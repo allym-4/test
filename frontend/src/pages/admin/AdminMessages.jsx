@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useApi } from '../../hooks/useApi'
 import { helpdesk, users } from '../../api'
 import { useAuth } from '../../contexts/AuthContext'
+import { useNavigate } from 'react-router-dom'
 
 const QUICK_REPLIES = [
   'Trial is $25 — just wear active wear and bring grippy socks!',
@@ -110,6 +111,7 @@ function NewConvoModal({ onClose, onCreated }) {
 
 export default function AdminMessages() {
   const { user: me } = useAuth()
+  const navigate = useNavigate()
   const { data: convData, loading, refetch } = useApi(() => helpdesk.conversations(), [])
   const conversations = convData?.results || convData || []
 
@@ -288,7 +290,7 @@ export default function AdminMessages() {
                 <span className="tag tag-lime" style={{ fontSize: 10, marginTop: 6, display: 'inline-block', textTransform: 'capitalize' }}>{student.role}</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
-                <button className="btn btn-ghost btn-xs" style={{ width: '100%' }}>View Full Profile</button>
+                <button className="btn btn-ghost btn-xs" style={{ width: '100%' }} onClick={() => navigate(`/admin/students?search=${encodeURIComponent(student.display_name || '')}`)}>View Full Profile</button>
               </div>
               <div style={{ marginTop: 14, fontSize: 11, color: 'var(--grey)' }}>
                 Conversation started {activeConvo && new Date(activeConvo.created_at).toLocaleDateString('en-AU')}
