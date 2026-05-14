@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useApi } from '../../hooks/useApi'
-import { users, payments, enrolments, attendance } from '../../api'
+import { users, payments, enrolments, attendance, helpdesk } from '../../api'
 import '../StudentsPage.css'
 import AddStudentModal from '../../components/AddStudentModal'
 import BulkImportModal from '../../components/BulkImportModal'
@@ -56,6 +56,24 @@ function StudentDetail({ student, onClose, onRefreshList }) {
   const [savingNote, setSavingNote] = useState(false)
   const [noteCatFilter, setNoteCatFilter] = useState('all')
   const [skillLevel, setSkillLevel] = useState('Level 1')
+  const [skillProgress, setSkillProgress] = useState({})
+  const [commsData, setCommsData] = useState(null)
+  const [commsFilter, setCommsFilter] = useState('all')
+  const [loadingComms, setLoadingComms] = useState(false)
+
+  useEffect(() => {
+    const saved = localStorage.getItem(`skill_progress_${student.id}`)
+    setSkillProgress(saved ? JSON.parse(saved) : {})
+  }, [student.id])
+
+  useEffect(() => {
+    if (tab !== 'comms') return
+    setLoadingComms(true)
+    helpdesk.list({ student: student.id })
+      .then(res => setCommsData(res.data.results || res.data || []))
+      .catch(() => setCommsData([]))
+      .finally(() => setLoadingComms(false))
+  }, [tab, student.id])
 
   useEffect(() => {
     setLoading(true)
@@ -82,6 +100,15 @@ function StudentDetail({ student, onClose, onRefreshList }) {
   async function reloadNotes() {
     const res = await users.notes(student.id)
     setNotesData(res.data.results || [])
+  }
+
+  function toggleSkill(skill, type) {
+    setSkillProgress(prev => {
+      const current = prev[skill] || {}
+      const updated = { ...prev, [skill]: { ...current, [type]: !current[type] } }
+      localStorage.setItem(`skill_progress_${student.id}`, JSON.stringify(updated))
+      return updated
+    })
   }
 
   async function submitNote(e) {
@@ -374,17 +401,19 @@ function StudentDetail({ student, onClose, onRefreshList }) {
                       <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: 'var(--lime)', marginRight: 4 }} />Teacher confirmed</span>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
-                      {(SKILL_LEVELS[skillLevel] || []).map(skill => (
-                        <div key={skill} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: 13 }}>{skill}</span>
-                          <div style={{ display: 'flex', gap: 6 }}>
-                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'none', border: '1px solid var(--lav)' }} title="Self-assessed" />
-                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'none', border: '1px solid var(--lime)' }} title="Teacher confirmed" />
+                      {(SKILL_LEVELS[skillLevel] || []).map(skill => {
+                        const prog = skillProgress[skill] || {}
+                        return (
+                          <div key={skill} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: 13 }}>{skill}</span>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <div onClick={() => toggleSkill(skill, 'self')} style={{ width: 10, height: 10, borderRadius: '50%', background: prog.self ? 'var(--lav)' : 'none', border: '1px solid var(--lav)', cursor: 'pointer' }} title="Self-assessed" />
+                              <div onClick={() => toggleSkill(skill, 'teacher')} style={{ width: 10, height: 10, borderRadius: '50%', background: prog.teacher ? 'var(--lime)' : 'none', border: '1px solid var(--lime)', cursor: 'pointer' }} title="Teacher confirmed" />
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
-                    <div style={{ marginTop: 20, fontSize: 12, color: 'var(--grey)' }}>Click dots to mark progress. Connect to the progress API to persist.</div>
                   </div>
                 )}
 
@@ -468,13 +497,34 @@ function StudentDetail({ student, onClose, onRefreshList }) {
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                       <div style={{ display: 'flex', gap: 6 }}>
-                        {['All', 'Emails', 'DMs', 'SMS'].map(f => (
-                          <button key={f} className="btn btn-ghost btn-xs">{f}</button>
+                        {[['all', 'All'], ['open', 'Open'], ['resolved', 'Resolved']].map(([key, label]) => (
+                          <button key={key} onClick={() => setCommsFilter(key)} className={`btn btn-xs ${commsFilter === key ? 'btn-lime' : 'btn-ghost'}`}>{label}</button>
                         ))}
                       </div>
-                      <button className="btn btn-ghost btn-sm">+ Send Message</button>
+                      <a href="/admin/helpdesk" className="btn btn-ghost btn-sm">Open Helpdesk</a>
                     </div>
-                    <div className="empty-state">No communications yet</div>
+                    {loadingComms ? (
+                      <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}><div className="spinner" /></div>
+                    ) : (commsData || []).length === 0 ? (
+                      <div className="empty-state">No support tickets for this student</div>
+                    ) : (
+                      <div className="tbl-section">
+                        <table>
+                          <thead><tr><th>#</th><th>Subject</th><th>Category</th><th>Status</th><th>Date</th></tr></thead>
+                          <tbody>
+                            {(commsData || []).filter(t => commsFilter === 'all' || t.status === commsFilter).map(t => (
+                              <tr key={t.id}>
+                                <td style={{ fontFamily: 'monospace', color: 'var(--grey)', fontSize: 11 }}>#{t.id}</td>
+                                <td style={{ fontWeight: 500 }}>{t.subject}</td>
+                                <td style={{ color: 'var(--grey)', fontSize: 12 }}>{t.category}</td>
+                                <td><span className={`tag tag-${t.status === 'open' ? 'red' : t.status === 'pending' ? 'amber' : t.status === 'resolved' ? 'lime' : 'grey'}`} style={{ fontSize: 10 }}>{t.status}</span></td>
+                                <td style={{ color: 'var(--grey)', fontSize: 12 }}>{new Date(t.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
                 )}
               </>

@@ -1,6 +1,37 @@
 import { useState, useEffect } from 'react'
 import { settings as settingsApi } from '../../api'
 
+const FORM_FIELDS = {
+  'Health / PAR-Q Questionnaire': [
+    'Do you have a heart condition that requires medical supervision during exercise?',
+    'Do you feel pain in your chest when you do physical activity?',
+    'Do you lose your balance because of dizziness, or do you ever lose consciousness?',
+    'Do you have a bone or joint problem that could be made worse by physical activity?',
+    'Are you currently taking medication for blood pressure or a heart condition?',
+    'Do you know of any other reason why you should not do physical activity?',
+  ],
+  'Photo & Video Consent': [
+    'I consent to being photographed and/or filmed during classes at Duality Pole Studio.',
+    'I consent to photos/videos being used on the studio\'s social media accounts.',
+    'I consent to photos/videos being used in the studio\'s marketing materials.',
+    'I understand I can withdraw consent at any time by notifying the studio in writing.',
+  ],
+  'Studio Waiver': [
+    'I understand that pole dancing involves physical activity with inherent risks.',
+    'I accept full responsibility for my own health and safety during classes.',
+    'I agree to follow all instructor guidance and studio safety rules.',
+    'I will not participate if I feel unwell or have an injury that may worsen.',
+    'I release Duality Pole Studio from liability for injuries sustained during normal class activity.',
+    'I agree to the studio\'s cancellation and no-show policy.',
+  ],
+  'Season Agreement': [
+    'I understand my season enrolment is for a fixed 8-week term.',
+    'I understand the season fee is non-refundable except in medical circumstances.',
+    'I agree to the studio\'s absence and makeup credit policy.',
+    'I understand that if I cancel my enrolment mid-season, no refund will be issued.',
+  ],
+}
+
 function Section({ title, children }) {
   return (
     <div style={{ marginBottom: 28 }}>
@@ -27,11 +58,71 @@ function Toggle({ checked, onChange }) {
   )
 }
 
+function LocationModal({ location, onClose, onSave }) {
+  const [name, setName] = useState(location?.name || '')
+  const [address, setAddress] = useState(location?.address || '')
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 440 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>{location ? 'Edit Location' : 'Add Location'}</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="sd-body">
+          <div className="field"><label>Location name</label><input value={name} onChange={e => setName(e.target.value)} autoFocus /></div>
+          <div className="field"><label>Address</label><input value={address} onChange={e => setAddress(e.target.value)} /></div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+            <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button className="btn btn-lime btn-sm" onClick={() => onSave({ ...location, name, address })} disabled={!name.trim()}>Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FormPreviewModal({ formName, onClose }) {
+  const fields = FORM_FIELDS[formName] || []
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 560 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>{formName}</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="sd-body">
+          <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16 }}>Students complete this form during onboarding or enrolment.</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {fields.map((q, i) => (
+              <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', background: '#1a1a1a', borderRadius: 8, padding: '12px 14px' }}>
+                <div style={{ width: 20, height: 20, borderRadius: 4, border: '1px solid var(--border)', flexShrink: 0, marginTop: 1 }} />
+                <div style={{ fontSize: 13, lineHeight: 1.5 }}>{q}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+            <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminSettings() {
   const [tab, setTab] = useState('studio')
   const [form, setForm] = useState(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [locations, setLocations] = useState([
+    { id: 1, name: 'The Box', address: 'Level 1, 88 Kippax St, Surry Hills NSW 2010' },
+    { id: 2, name: 'Rhapsody', address: 'Level 2, 12 Crown St, Surry Hills NSW 2010' },
+  ])
+  const [editingLocation, setEditingLocation] = useState(null)
+  const [showAddLocation, setShowAddLocation] = useState(false)
+  const [previewForm, setPreviewForm] = useState(null)
+  const [integrationMsg, setIntegrationMsg] = useState(null)
 
   useEffect(() => {
     settingsApi.get().then(r => setForm(r.data))
@@ -53,6 +144,21 @@ export default function AdminSettings() {
     }
   }
 
+  function saveLocation(loc) {
+    if (loc.id) {
+      setLocations(prev => prev.map(l => l.id === loc.id ? loc : l))
+    } else {
+      setLocations(prev => [...prev, { ...loc, id: Date.now() }])
+    }
+    setEditingLocation(null)
+    setShowAddLocation(false)
+  }
+
+  function showIntegrationInfo(name) {
+    setIntegrationMsg(`${name} integration is configured via environment variables on the server. Contact your developer to set up the connection.`)
+    setTimeout(() => setIntegrationMsg(null), 4000)
+  }
+
   if (!form) return <div style={{ padding: 32, color: 'var(--grey)' }}>Loading settings…</div>
 
   return (
@@ -66,6 +172,12 @@ export default function AdminSettings() {
           {saving ? 'Saving…' : saved ? 'Saved!' : 'Save All Changes'}
         </button>
       </div>
+
+      {integrationMsg && (
+        <div style={{ background: 'rgba(176,160,255,0.1)', border: '1px solid rgba(176,160,255,0.3)', borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontSize: 13, color: 'var(--lav)' }}>
+          {integrationMsg}
+        </div>
+      )}
 
       <div className="subtabs" style={{ marginBottom: 24 }}>
         {[['studio', 'Studio'], ['policies', 'Policies'], ['pricing', 'Pricing'], ['integrations', 'Integrations'], ['forms', 'Forms & Docs']].map(([key, label]) => (
@@ -91,16 +203,16 @@ export default function AdminSettings() {
             </Section>
 
             <Section title="Locations">
-              {[['The Box', 'Level 1, 88 Kippax St, Surry Hills NSW 2010'], ['Rhapsody', 'Level 2, 12 Crown St, Surry Hills NSW 2010']].map(([name, addr]) => (
-                <div key={name} style={{ padding: '10px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {locations.map(loc => (
+                <div key={loc.id} style={{ padding: '10px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{name}</div>
-                    <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{addr}</div>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>{loc.name}</div>
+                    <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{loc.address}</div>
                   </div>
-                  <button className="btn btn-ghost btn-xs">Edit</button>
+                  <button className="btn btn-ghost btn-xs" onClick={() => setEditingLocation(loc)}>Edit</button>
                 </div>
               ))}
-              <button className="btn btn-ghost btn-xs" style={{ marginTop: 12 }}>+ Add Location</button>
+              <button className="btn btn-ghost btn-xs" style={{ marginTop: 12 }} onClick={() => setShowAddLocation(true)}>+ Add Location</button>
             </Section>
           </div>
 
@@ -187,7 +299,7 @@ export default function AdminSettings() {
                 <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#333' }} />
                 <span style={{ fontSize: 13, color: 'var(--grey)' }}>Not connected</span>
               </div>
-              <button className="btn btn-ghost btn-sm">Connect Xero</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => showIntegrationInfo('Xero')}>Connect Xero</button>
             </Section>
           </div>
           <div>
@@ -196,14 +308,14 @@ export default function AdminSettings() {
                 <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#333' }} />
                 <span style={{ fontSize: 13, color: 'var(--grey)' }}>Not configured</span>
               </div>
-              <button className="btn btn-ghost btn-sm">Configure Kisi</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => showIntegrationInfo('Kisi')}>Configure Kisi</button>
             </Section>
             <Section title="Square POS">
               <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 14 }}>
                 <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#333' }} />
                 <span style={{ fontSize: 13, color: 'var(--grey)' }}>Not connected</span>
               </div>
-              <button className="btn btn-ghost btn-sm">Connect Square</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => showIntegrationInfo('Square POS')}>Connect Square</button>
             </Section>
           </div>
         </div>
@@ -224,12 +336,21 @@ export default function AdminSettings() {
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <span className={`tag ${enabled ? 'tag-lime' : 'tag-grey'}`} style={{ fontSize: 10 }}>{enabled ? 'Active' : 'Inactive'}</span>
-                <button className="btn btn-ghost btn-xs">Edit</button>
-                <button className="btn btn-ghost btn-xs">Preview</button>
+                <button className="btn btn-ghost btn-xs" onClick={() => setPreviewForm(name)}>Preview</button>
               </div>
             </div>
           ))}
         </Section>
+      )}
+
+      {editingLocation && (
+        <LocationModal location={editingLocation} onClose={() => setEditingLocation(null)} onSave={saveLocation} />
+      )}
+      {showAddLocation && (
+        <LocationModal location={null} onClose={() => setShowAddLocation(false)} onSave={saveLocation} />
+      )}
+      {previewForm && (
+        <FormPreviewModal formName={previewForm} onClose={() => setPreviewForm(null)} />
       )}
     </div>
   )
