@@ -166,6 +166,10 @@ export const instructorPay = {
   delete: (id) => client.delete(`/api/users/pay-records/${id}/`),
 }
 
+export const square = {
+  sync: () => client.post('/api/users/square-sync/', {}),
+}
+
 export const forms = {
   list: () => client.get('/api/users/forms/'),
   submit: (form_type, responses) => client.post('/api/users/forms/', { form_type, responses }),

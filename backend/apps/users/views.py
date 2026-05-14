@@ -344,3 +344,18 @@ class InstructorPayRecordDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = InstructorPayRecord.objects.select_related('instructor')
     serializer_class = InstructorPayRecordSerializer
     permission_classes = [IsAdminUser]
+
+
+class SquareSyncView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request):
+        from django.conf import settings as django_settings
+        if not django_settings.SQUARE_ACCESS_TOKEN:
+            return Response({'detail': 'Square not configured'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            from .square_service import sync_catalog_to_products
+            created, updated, skipped = sync_catalog_to_products()
+            return Response({'created': created, 'updated': updated, 'skipped': skipped})
+        except Exception as e:
+            return Response({'detail': f'Square sync failed: {e}'}, status=status.HTTP_502_BAD_GATEWAY)

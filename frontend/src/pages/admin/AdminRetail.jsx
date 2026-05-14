@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useApi } from '../../hooks/useApi'
-import { products as productsApi, orders as ordersApi, users } from '../../api'
+import { products as productsApi, orders as ordersApi, users, square as squareApi } from '../../api'
 import '../StudentsPage.css'
 
 const STATUS_STYLE = {
@@ -179,6 +179,22 @@ export default function AdminRetail() {
 
   const [tab, setTab] = useState('products')
   const [modal, setModal] = useState(null)
+  const [syncing, setSyncing] = useState(false)
+  const [syncResult, setSyncResult] = useState(null)
+
+  async function handleSquareSync() {
+    setSyncing(true)
+    setSyncResult(null)
+    try {
+      const res = await squareApi.sync()
+      setSyncResult(res.data)
+      refetch()
+    } catch (e) {
+      setSyncResult({ error: e.response?.data?.detail || 'Sync failed' })
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   const pendingPickup = orderList.filter(o => o.status === 'pending_pickup')
   const activeProducts = productList.filter(p => p.is_active)
@@ -215,9 +231,20 @@ export default function AdminRetail() {
         ))}
       </div>
 
-      <div style={{ background: 'rgba(255,170,0,0.06)', border: '1px solid rgba(255,170,0,0.2)', borderRadius: 10, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, fontSize: 13 }}>
-        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#333', flexShrink: 0 }} />
-        <span style={{ color: 'var(--grey)' }}>Square POS not connected — orders are managed manually. <button className="btn btn-ghost btn-xs" style={{ marginLeft: 8 }}>Connect Square</button></span>
+      <div style={{ background: 'rgba(176,160,255,0.06)', border: '1px solid rgba(176,160,255,0.2)', borderRadius: 10, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, fontSize: 13 }}>
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--lav)', flexShrink: 0 }} />
+        <span style={{ color: 'var(--grey)', flex: 1 }}>Square catalog sync — pull products from your Square POS into the product list.</span>
+        {syncResult && !syncResult.error && (
+          <span style={{ color: 'var(--lime)', fontSize: 12 }}>
+            ✓ {syncResult.created} created · {syncResult.updated} updated · {syncResult.skipped} skipped
+          </span>
+        )}
+        {syncResult?.error && (
+          <span style={{ color: 'var(--red)', fontSize: 12 }}>{syncResult.error}</span>
+        )}
+        <button className="btn btn-ghost btn-xs" onClick={handleSquareSync} disabled={syncing} style={{ marginLeft: 8, flexShrink: 0 }}>
+          {syncing ? 'Syncing…' : '🔄 Sync with Square'}
+        </button>
       </div>
 
       <div className="subtabs" style={{ marginBottom: 20 }}>
