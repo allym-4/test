@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useApi } from '../../hooks/useApi'
-import { users } from '../../api'
+import client from '../../api/client'
 
 const SUGGESTIONS = [
   'List all students',
@@ -13,31 +12,12 @@ const SUGGESTIONS = [
   'Who has not booked recently?',
 ]
 
-function queryStudents(query, allStudents) {
-  const q = query.toLowerCase()
-  let results = allStudents
-
-  if (q.includes('owing') || q.includes('outstanding') || q.includes('balance')) {
-    return { text: `Students with outstanding balances would be shown here. Connect the billing API to get live data.` }
-  }
-  if (q.includes('new student')) {
-    return { text: `New students this season: this requires season/enrolment data to filter accurately.` }
-  }
-  if (q.includes('how many') || q.includes('total') || q.includes('count')) {
-    return { text: `There are currently **${allStudents.length} students** in the system.` }
-  }
-  if (q.includes('email')) {
-    const list = results.slice(0, 20).map(s => `${s.display_name} — ${s.email}`).join('\n')
-    return { text: `Here are student emails (first 20):\n\n${list}` }
-  }
-  if (q.includes('list') || q.includes('show') || q.includes('all student')) {
-    return {
-      text: `Found **${results.length} students**:`,
-      students: results.slice(0, 20),
-    }
-  }
-
-  return { text: `I found **${results.length} students** matching your query. Try asking for a list, emails, or counts.` }
+function renderText(text) {
+  // Convert **bold** markdown to <strong> spans
+  const parts = text.split(/\*\*(.+?)\*\*/g)
+  return parts.map((part, i) =>
+    i % 2 === 1 ? <strong key={i}>{part}</strong> : part
+  )
 }
 
 export default function AdminAssistant() {
@@ -45,22 +25,28 @@ export default function AdminAssistant() {
     { role: 'assistant', text: `Hey! I'm your studio assistant. Ask me to pull reports, list students, find outstanding balances, or generate email lists. Try one of the suggestions above to get started.` }
   ])
   const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
   const bottomRef = useRef()
-  const { data } = useApi(() => users.list({ role: 'student' }), [])
-  const allStudents = data?.results || []
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  function ask(query) {
-    if (!query.trim()) return
+  async function ask(query) {
+    if (!query.trim() || loading) return
     setMessages(ms => [...ms, { role: 'user', text: query }])
     setInput('')
-    setTimeout(() => {
-      const result = queryStudents(query, allStudents)
-      setMessages(ms => [...ms, { role: 'assistant', ...result }])
-    }, 400)
+    setLoading(true)
+    try {
+      const res = await client.post('/api/users/assistant/', { query })
+      const reply = res.data?.reply || 'No response received.'
+      setMessages(ms => [...ms, { role: 'assistant', text: reply }])
+    } catch (err) {
+      const errMsg = err.response?.data?.error || 'Sorry, something went wrong. Please try again.'
+      setMessages(ms => [...ms, { role: 'assistant', text: errMsg }])
+    } finally {
+      setLoading(false)
+    }
   }
 
   function clear() {
@@ -95,19 +81,18 @@ export default function AdminAssistant() {
               {msg.role === 'user' ? '👤' : '🤖'}
             </div>
             <div style={{ background: '#1a1a1a', borderRadius: msg.role === 'user' ? '10px 0 10px 10px' : '0 10px 10px 10px', padding: '12px 14px', fontSize: 13, lineHeight: 1.6, maxWidth: '85%' }}>
-              {msg.text.split('\n').map((line, j) => <div key={j}>{line || <br />}</div>)}
-              {msg.students && (
-                <div style={{ marginTop: 10 }}>
-                  {msg.students.map(s => (
-                    <div key={s.id} style={{ fontSize: 12, padding: '4px 0', borderBottom: '1px solid #2a2a2a', color: 'var(--grey)' }}>
-                      <span style={{ color: 'var(--white)', fontWeight: 500 }}>{s.display_name}</span> — {s.email}
-                    </div>
-                  ))}
-                </div>
-              )}
+              {msg.text.split('\n').map((line, j) => (
+                <div key={j}>{line ? renderText(line) : <br />}</div>
+              ))}
             </div>
           </div>
         ))}
+        {loading && (
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--lime)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>🤖</div>
+            <div style={{ background: '#1a1a1a', borderRadius: '0 10px 10px 10px', padding: '12px 14px', fontSize: 13, color: 'var(--grey)' }}>Thinking…</div>
+          </div>
+        )}
         <div ref={bottomRef} />
       </div>
 
@@ -119,7 +104,7 @@ export default function AdminAssistant() {
           placeholder="Ask a question about your students or enrolments…"
           style={{ flex: 1, background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', fontFamily: 'inherit', fontSize: 14, padding: '12px 16px' }}
         />
-        <button className="btn btn-lime" onClick={() => ask(input)}>Ask →</button>
+        <button className="btn btn-lime" onClick={() => ask(input)} disabled={loading}>Ask →</button>
       </div>
     </div>
   )

@@ -1,28 +1,83 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { useApi } from '../../hooks/useApi'
+import { media } from '../../api'
+import client from '../../api/client'
 import '../StudentsPage.css'
 
-const MEDIA_ITEMS = [
-  { id: 1, type: 'video', icon: '🎬', name: 'Fireman Spin Tutorial', level: 'Level 1', size: '42 MB' },
-  { id: 2, type: 'video', icon: '🎬', name: 'Body Wave Breakdown', level: 'Level 2', size: '38 MB' },
-  { id: 3, type: 'image', icon: '🖼', name: 'Grip Technique Guide', level: 'Level 1', size: '2.1 MB' },
-  { id: 4, type: 'pdf', icon: '📄', name: 'Level 3 Skill Checklist', level: 'Level 3', size: '340 KB' },
-  { id: 5, type: 'video', icon: '🎬', name: 'Invert Entry Drill', level: 'Level 3', size: '55 MB' },
-  { id: 6, type: 'video', icon: '🎬', name: 'Pole Hold Fundamentals', level: 'Level 1', size: '28 MB' },
-  { id: 7, type: 'pdf', icon: '📄', name: 'Season 4 Waiver', level: 'All', size: '120 KB' },
-  { id: 8, type: 'image', icon: '🖼', name: 'High Trick Spotting Guide', level: 'High Tricks', size: '3.4 MB' },
-]
+const TYPE_ICON = { video: '🎬', image: '🖼', pdf: '📄' }
 
 export default function AdminMediaLibrary() {
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('All types')
   const [levelFilter, setLevelFilter] = useState('All levels')
 
-  const filtered = MEDIA_ITEMS.filter(m => {
+  // URL modal state
+  const [showUrlModal, setShowUrlModal] = useState(false)
+  const [urlForm, setUrlForm] = useState({ name: '', url: '', media_type: 'video', level: '' })
+  const [urlSubmitting, setUrlSubmitting] = useState(false)
+
+  // Upload state
+  const fileInputRef = useRef()
+  const [uploadForm, setUploadForm] = useState({ name: '', media_type: 'video', level: '' })
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [uploadSubmitting, setUploadSubmitting] = useState(false)
+
+  const { data, refetch } = useApi(() => media.list())
+  const items = data?.results || (Array.isArray(data) ? data : [])
+
+  const filtered = items.filter(m => {
     if (search && !m.name.toLowerCase().includes(search.toLowerCase())) return false
-    if (typeFilter !== 'All types' && m.type !== typeFilter.toLowerCase()) return false
+    if (typeFilter !== 'All types' && m.media_type !== typeFilter.toLowerCase()) return false
     if (levelFilter !== 'All levels' && m.level !== levelFilter) return false
     return true
   })
+
+  async function handleUrlSubmit(e) {
+    e.preventDefault()
+    if (!urlForm.name || !urlForm.url) return
+    setUrlSubmitting(true)
+    try {
+      await media.create(new URLSearchParams({ ...urlForm }))
+      setShowUrlModal(false)
+      setUrlForm({ name: '', url: '', media_type: 'video', level: '' })
+      refetch()
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setUrlSubmitting(false)
+    }
+  }
+
+  function handleFileChange(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setSelectedFile(file)
+    setUploadForm(f => ({ ...f, name: f.name || file.name.replace(/\.[^.]+$/, '') }))
+    setShowUploadModal(true)
+  }
+
+  async function handleUploadSubmit(e) {
+    e.preventDefault()
+    if (!selectedFile || !uploadForm.name) return
+    setUploadSubmitting(true)
+    try {
+      const fd = new FormData()
+      fd.append('name', uploadForm.name)
+      fd.append('media_type', uploadForm.media_type)
+      fd.append('level', uploadForm.level)
+      fd.append('file', selectedFile)
+      await media.create(fd)
+      setShowUploadModal(false)
+      setSelectedFile(null)
+      setUploadForm({ name: '', media_type: 'video', level: '' })
+      refetch()
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setUploadSubmitting(false)
+    }
+  }
 
   return (
     <div>
@@ -32,8 +87,14 @@ export default function AdminMediaLibrary() {
           <div className="page-sub">Videos, images and resources for classes and homework</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-ghost btn-sm">↑ URL</button>
-          <button className="btn btn-lime btn-sm">↑ Upload</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowUrlModal(true)}>↑ URL</button>
+          <button className="btn btn-lime btn-sm" onClick={() => fileInputRef.current?.click()}>↑ Upload</button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            style={{ display: 'none' }}
+            onChange={handleFileChange}
+          />
         </div>
       </div>
 
@@ -57,21 +118,107 @@ export default function AdminMediaLibrary() {
         <div className="empty-state">No media found</div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
-          {filtered.map(m => (
-            <div key={m.id} style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', cursor: 'pointer' }}>
-              <div style={{ height: 100, background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>
-                {m.icon}
-              </div>
-              <div style={{ padding: '10px 12px' }}>
-                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, lineHeight: 1.3 }}>{m.name}</div>
-                <div style={{ fontSize: 10, color: 'var(--grey)', marginBottom: 8 }}>{m.type.charAt(0).toUpperCase() + m.type.slice(1)} · {m.level} · {m.size}</div>
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <button className="btn btn-ghost btn-xs" onClick={e => e.stopPropagation()}>Edit</button>
-                  <button className="btn btn-ghost btn-xs" onClick={e => e.stopPropagation()}>Assign</button>
+          {filtered.map(m => {
+            const icon = TYPE_ICON[m.media_type] || '📁'
+            const sizeLabel = m.size_display || ''
+            return (
+              <div key={m.id} style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', cursor: 'pointer' }}>
+                <div style={{ height: 100, background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>
+                  {icon}
+                </div>
+                <div style={{ padding: '10px 12px' }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, lineHeight: 1.3 }}>{m.name}</div>
+                  <div style={{ fontSize: 10, color: 'var(--grey)', marginBottom: 8 }}>
+                    {m.media_type?.charAt(0).toUpperCase() + m.media_type?.slice(1)}
+                    {m.level ? ` · ${m.level}` : ''}
+                    {sizeLabel ? ` · ${sizeLabel}` : ''}
+                  </div>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <button className="btn btn-ghost btn-xs" onClick={e => e.stopPropagation()}>Edit</button>
+                    <button className="btn btn-ghost btn-xs" onClick={e => e.stopPropagation()}>Assign</button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
+        </div>
+      )}
+
+      {/* URL Modal */}
+      {showUrlModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#111', border: '1px solid var(--border)', borderRadius: 12, padding: 28, width: 400, maxWidth: '90vw' }}>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 20 }}>Add URL Media</div>
+            <form onSubmit={handleUrlSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 6 }}>Name</label>
+                <input required value={urlForm.name} onChange={e => setUrlForm(f => ({ ...f, name: e.target.value }))}
+                  style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', fontFamily: 'inherit', fontSize: 13, padding: '8px 12px', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 6 }}>URL</label>
+                <input required type="url" value={urlForm.url} onChange={e => setUrlForm(f => ({ ...f, url: e.target.value }))}
+                  style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', fontFamily: 'inherit', fontSize: 13, padding: '8px 12px', boxSizing: 'border-box' }} />
+              </div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 6 }}>Type</label>
+                  <select value={urlForm.media_type} onChange={e => setUrlForm(f => ({ ...f, media_type: e.target.value }))}
+                    style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', fontFamily: 'inherit', fontSize: 13, padding: '8px 12px' }}>
+                    <option value="video">Video</option>
+                    <option value="image">Image</option>
+                    <option value="pdf">PDF</option>
+                  </select>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 6 }}>Level</label>
+                  <input value={urlForm.level} onChange={e => setUrlForm(f => ({ ...f, level: e.target.value }))} placeholder="e.g. Level 1"
+                    style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', fontFamily: 'inherit', fontSize: 13, padding: '8px 12px', boxSizing: 'border-box' }} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowUrlModal(false)}>Cancel</button>
+                <button type="submit" className="btn btn-lime btn-sm" disabled={urlSubmitting}>{urlSubmitting ? 'Saving…' : 'Add'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#111', border: '1px solid var(--border)', borderRadius: 12, padding: 28, width: 400, maxWidth: '90vw' }}>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 20 }}>Upload File</div>
+            <form onSubmit={handleUploadSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ fontSize: 12, color: 'var(--grey)' }}>File: {selectedFile?.name}</div>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 6 }}>Name</label>
+                <input required value={uploadForm.name} onChange={e => setUploadForm(f => ({ ...f, name: e.target.value }))}
+                  style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', fontFamily: 'inherit', fontSize: 13, padding: '8px 12px', boxSizing: 'border-box' }} />
+              </div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 6 }}>Type</label>
+                  <select value={uploadForm.media_type} onChange={e => setUploadForm(f => ({ ...f, media_type: e.target.value }))}
+                    style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', fontFamily: 'inherit', fontSize: 13, padding: '8px 12px' }}>
+                    <option value="video">Video</option>
+                    <option value="image">Image</option>
+                    <option value="pdf">PDF</option>
+                  </select>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 6 }}>Level</label>
+                  <input value={uploadForm.level} onChange={e => setUploadForm(f => ({ ...f, level: e.target.value }))} placeholder="e.g. Level 1"
+                    style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', fontFamily: 'inherit', fontSize: 13, padding: '8px 12px', boxSizing: 'border-box' }} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setShowUploadModal(false); setSelectedFile(null) }}>Cancel</button>
+                <button type="submit" className="btn btn-lime btn-sm" disabled={uploadSubmitting}>{uploadSubmitting ? 'Uploading…' : 'Upload'}</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
