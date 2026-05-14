@@ -3,13 +3,15 @@ import { useAuth } from '../contexts/AuthContext'
 import './Shell.css'
 
 const NAV = [
-  { to: '/',              label: 'Dashboard',    icon: '◼', end: true },
-  { to: '/classes',       label: 'My Classes',   icon: '▸' },
-  { to: '/students',      label: 'Students',     icon: '●' },
-  { to: '/homework',      label: 'Homework',     icon: '✓' },
-  { to: '/messages',      label: 'Messages',     icon: '○' },
-  { to: '/pay',           label: 'Pay',          icon: '💰' },
-  { to: '/availability',  label: 'Availability', icon: '📅' },
+  { to: '/',             label: 'Dashboard',          icon: '⬡', end: true },
+  { to: '/classes',      label: 'My Classes',         icon: '📅' },
+  { to: '/attendance',   label: 'Attendance',         icon: '✅' },
+  { to: '/students',     label: 'Students',           icon: '👤' },
+  { to: '/homework',     label: 'Homework',           icon: '📝' },
+  { to: '/messages',     label: 'Messages',           icon: '💬' },
+  { to: '/pay',          label: 'Pay & Earnings',     icon: '💰' },
+  { to: '/availability', label: 'Availability & Cover', icon: '📆' },
+  { to: '/profile',      label: 'My Profile',         icon: '👤' },
 ]
 
 export default function Shell() {

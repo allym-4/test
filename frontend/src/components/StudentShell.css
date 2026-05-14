@@ -62,6 +62,12 @@
   margin: 12px 10px;
 }
 
+.student-nav-sub {
+  padding-left: 44px;
+  font-size: 12px;
+  color: var(--grey);
+}
+
 .student-sidebar-footer {
   padding: 12px;
   border-top: 1px solid var(--border);

@@ -6,21 +6,19 @@ import { payments } from '../api'
 import './StudentShell.css'
 
 const NAV = [
-  { to: '/portal',          label: 'Dashboard',    icon: '◆', end: true },
-  { to: '/portal/classes',  label: 'My Classes',   icon: '□' },
-  { to: '/portal/progress', label: 'Progress',     icon: '△' },
-  { to: '/portal/homework', label: 'Homework',     icon: '📝' },
-  { to: '/portal/billing',  label: 'Billing',      icon: '💳' },
-  { to: '/portal/forms',   label: 'Forms',        icon: '📋' },
+  { to: '/portal',               label: 'Dashboard',    icon: '◆', end: true },
+  { to: '/portal/book',          label: 'Book a Class', icon: '+' },
+  { to: '/portal/classes',       label: 'My Classes',   icon: '□' },
+  { to: '/portal/progress',      label: 'Progress',     icon: '△' },
+  { to: '/portal/notifications', label: 'Notifications', icon: '○', badge: true },
+  { to: '/portal/forms',         label: 'Forms',        icon: '⬛', formsBadge: true },
 ]
 
 const NAV2 = [
-  { to: '/portal/book',          label: 'Book a Class',   icon: '＋' },
-  { to: '/portal/community',     label: 'Community',      icon: '♬' },
-  { to: '/portal/chat',          label: 'Messages',       icon: '○' },
-  { to: '/portal/notifications', label: 'Notifications',  icon: '🔔' },
-  { to: '/portal/support',       label: 'Help & Support', icon: '🎧' },
-  { to: '/portal/studio',        label: 'Studio Info',    icon: '◉' },
+  { to: '/portal/chat',      label: 'Chat',           icon: '○' },
+  { to: '/portal/community', label: 'Community',      icon: '♬' },
+  { to: '/portal/support',   label: 'Help & Support', icon: '🎧' },
+  { to: '/portal/studio',    label: 'Studio Info',    icon: '●' },
 ]
 
 export default function StudentShell() {
@@ -78,8 +76,11 @@ export default function StudentShell() {
           <div className="student-nav-divider" />
 
           <NavLink to="/portal/account" className={({ isActive }) => `student-nav-item${isActive ? ' active' : ''}`} onClick={() => setMobileOpen(false)}>
-            <span className="student-nav-icon">◉</span>
+            <span className="student-nav-icon">■</span>
             <span>Account</span>
+          </NavLink>
+          <NavLink to="/portal/billing" className={({ isActive }) => `student-nav-item student-nav-sub${isActive ? ' active' : ''}`} onClick={() => setMobileOpen(false)}>
+            <span>Billing history</span>
           </NavLink>
         </div>
 
@@ -118,7 +119,13 @@ export default function StudentShell() {
 
       {/* Mobile bottom nav */}
       <nav className="student-bottom-nav">
-        {[...NAV, { to: '/portal/account', label: 'Account', icon: '◉', end: false }].map(({ to, label, icon, end }) => (
+        {[
+          { to: '/portal',          label: 'Dashboard', icon: '◆', end: true },
+          { to: '/portal/book',     label: 'Book',      icon: '+' },
+          { to: '/portal/classes',  label: 'My Classes', icon: '□' },
+          { to: '/portal/progress', label: 'Progress',  icon: '△' },
+          { to: '/portal/account',  label: 'Account',   icon: '■' },
+        ].map(({ to, label, icon, end }) => (
           <NavLink key={to} to={to} end={end} className={({ isActive }) => `student-bottom-item${isActive ? ' active' : ''}`}>
             <span className="student-bottom-icon">{icon}</span>
             <span>{label}</span>
