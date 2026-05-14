@@ -177,7 +177,13 @@ export const square = {
 
 export const forms = {
   list: () => client.get('/api/users/forms/'),
+  listForStudent: (studentId) => client.get('/api/users/forms/', { params: { student: studentId } }),
   submit: (form_type, responses) => client.post('/api/users/forms/', { form_type, responses }),
+}
+
+export const skills = {
+  list: (userId) => client.get(`/api/users/${userId}/skills/`),
+  save: (userId, data) => client.post(`/api/users/${userId}/skills/`, data),
 }
 
 export const attendance = {

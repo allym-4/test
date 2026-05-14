@@ -6,12 +6,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db import transaction
 from django.db.models import Q
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord, StudentSkill
 from .serializers import (
     UserSerializer, UserCreateSerializer, StaffNoteSerializer, LeadSerializer,
     StudioSettingsSerializer, AnnouncementSerializer, ProductSerializer, AutomationRuleSerializer,
     OrderSerializer, NotificationSerializer, InstructorAvailabilitySerializer, StudentFormSerializer,
-    InstructorPayRecordSerializer,
+    InstructorPayRecordSerializer, StudentSkillSerializer,
 )
 from .permissions import IsAdminOrInstructor, IsAdminUser
 
@@ -302,8 +302,15 @@ class StudentFormView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        forms = StudentForm.objects.filter(student=request.user)
-        return Response(StudentFormSerializer(forms, many=True).data)
+        if request.user.role in ('admin', 'instructor'):
+            student_id = request.query_params.get('student')
+            if student_id:
+                forms_qs = StudentForm.objects.filter(student_id=student_id)
+            else:
+                forms_qs = StudentForm.objects.all()
+        else:
+            forms_qs = StudentForm.objects.filter(student=request.user)
+        return Response(StudentFormSerializer(forms_qs, many=True).data)
 
     def post(self, request):
         from django.utils import timezone as tz
@@ -344,6 +351,35 @@ class InstructorPayRecordDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = InstructorPayRecord.objects.select_related('instructor')
     serializer_class = InstructorPayRecordSerializer
     permission_classes = [IsAdminUser]
+
+
+class StudentSkillView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, user_pk):
+        if request.user.role in ('admin', 'instructor') or request.user.id == int(user_pk):
+            skills = StudentSkill.objects.filter(student_id=user_pk)
+            return Response(StudentSkillSerializer(skills, many=True).data)
+        return Response({'detail': 'Not authorized'}, status=403)
+
+    def post(self, request, user_pk):
+        if request.user.role not in ('admin', 'instructor') and request.user.id != int(user_pk):
+            return Response({'detail': 'Not authorized'}, status=403)
+        skill_name = request.data.get('skill_name')
+        level = request.data.get('level', '')
+        if not skill_name:
+            return Response({'detail': 'skill_name required'}, status=400)
+        defaults = {'level': level}
+        if 'self_assessed' in request.data:
+            defaults['self_assessed'] = request.data['self_assessed']
+        if 'teacher_confirmed' in request.data and request.user.role in ('admin', 'instructor'):
+            defaults['teacher_confirmed'] = request.data['teacher_confirmed']
+        obj, _ = StudentSkill.objects.update_or_create(
+            student_id=user_pk,
+            skill_name=skill_name,
+            defaults=defaults,
+        )
+        return Response(StudentSkillSerializer(obj).data)
 
 
 class SquareSyncView(APIView):

@@ -19,6 +19,7 @@ urlpatterns = [
     path('pay-records/', views.InstructorPayRecordListView.as_view(), name='instructor-pay-records'),
     path('pay-records/<int:pk>/', views.InstructorPayRecordDetailView.as_view(), name='instructor-pay-record-detail'),
     path('square-sync/', views.SquareSyncView.as_view(), name='square-sync'),
+    path('<int:user_pk>/skills/', views.StudentSkillView.as_view(), name='student-skills'),
     path('', views.UserListView.as_view(), name='user-list'),
     path('<int:pk>/', views.UserDetailView.as_view(), name='user-detail'),
     path('<int:user_pk>/notes/', views.StaffNoteListView.as_view(), name='staff-notes'),

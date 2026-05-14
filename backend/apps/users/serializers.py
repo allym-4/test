@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord, StudentSkill
 
 
 class UserMinimalSerializer(serializers.ModelSerializer):
@@ -142,3 +142,10 @@ class InstructorPayRecordSerializer(serializers.ModelSerializer):
         model = InstructorPayRecord
         fields = ('id', 'instructor', 'instructor_name', 'amount', 'description', 'period_start', 'period_end', 'status', 'paid_at', 'created_at')
         read_only_fields = ('id', 'created_at')
+
+
+class StudentSkillSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentSkill
+        fields = ('id', 'skill_name', 'level', 'self_assessed', 'teacher_confirmed', 'updated_at')
+        read_only_fields = ('id', 'updated_at')

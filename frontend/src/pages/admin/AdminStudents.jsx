@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useApi } from '../../hooks/useApi'
-import { users, payments, enrolments, attendance, helpdesk } from '../../api'
+import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi } from '../../api'
 import '../StudentsPage.css'
 import AddStudentModal from '../../components/AddStudentModal'
 import BulkImportModal from '../../components/BulkImportModal'
@@ -57,13 +57,19 @@ function StudentDetail({ student, onClose, onRefreshList }) {
   const [noteCatFilter, setNoteCatFilter] = useState('all')
   const [skillLevel, setSkillLevel] = useState('Level 1')
   const [skillProgress, setSkillProgress] = useState({})
+  const [formsData, setFormsData] = useState(null)
   const [commsData, setCommsData] = useState(null)
   const [commsFilter, setCommsFilter] = useState('all')
   const [loadingComms, setLoadingComms] = useState(false)
 
   useEffect(() => {
-    const saved = localStorage.getItem(`skill_progress_${student.id}`)
-    setSkillProgress(saved ? JSON.parse(saved) : {})
+    skillsApi.list(student.id).then(res => {
+      const map = {}
+      for (const skill of (res.data || [])) {
+        map[skill.skill_name] = { self: skill.self_assessed, teacher: skill.teacher_confirmed, id: skill.id }
+      }
+      setSkillProgress(map)
+    }).catch(() => setSkillProgress({}))
   }, [student.id])
 
   useEffect(() => {
@@ -83,12 +89,14 @@ function StudentDetail({ student, onClose, onRefreshList }) {
       users.notes(student.id),
       attendance.list({ student: student.id }),
       payments.list({ student: student.id }),
-    ]).then(([balRes, enrolRes, notesRes, attRes, payRes]) => {
+      formsApi.listForStudent(student.id),
+    ]).then(([balRes, enrolRes, notesRes, attRes, payRes, formsRes]) => {
       setBalanceData(balRes.data)
       setEnrolData(enrolRes.data.results || [])
       setNotesData(notesRes.data.results || [])
       setAttData(attRes.data.results || [])
       setPayData(payRes.data.results || [])
+      setFormsData(formsRes.data.results || formsRes.data || [])
     }).finally(() => setLoading(false))
   }, [student.id])
 
@@ -102,11 +110,22 @@ function StudentDetail({ student, onClose, onRefreshList }) {
     setNotesData(res.data.results || [])
   }
 
-  function toggleSkill(skill, type) {
+  function toggleSkill(skillName, type) {
     setSkillProgress(prev => {
-      const current = prev[skill] || {}
-      const updated = { ...prev, [skill]: { ...current, [type]: !current[type] } }
-      localStorage.setItem(`skill_progress_${student.id}`, JSON.stringify(updated))
+      const current = prev[skillName] || {}
+      const newVal = !current[type]
+      const updated = { ...prev, [skillName]: { ...current, [type]: newVal } }
+      const payload = {
+        skill_name: skillName,
+        level: skillLevel,
+        self_assessed: type === 'self' ? newVal : (current.self || false),
+        teacher_confirmed: type === 'teacher' ? newVal : (current.teacher || false),
+      }
+      skillsApi.save(student.id, payload).then(res => {
+        setSkillProgress(p => ({ ...p, [skillName]: { self: res.data.self_assessed, teacher: res.data.teacher_confirmed, id: res.data.id } }))
+      }).catch(() => {
+        setSkillProgress(p => ({ ...p, [skillName]: current }))
+      })
       return updated
     })
   }
@@ -421,23 +440,35 @@ function StudentDetail({ student, onClose, onRefreshList }) {
                 {tab === 'documents' && (
                   <div className="card" style={{ padding: '16px 18px' }}>
                     <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 16 }}>Documents & Consents</div>
-                    {[
-                      { name: 'Liability Waiver', detail: 'Studio liability waiver and code of conduct', status: 'Signed', cls: 'tag-lime' },
-                      { name: 'Health & Medical Form', detail: 'PAR-Q pre-screening questionnaire', status: 'Complete', cls: 'tag-lime' },
-                      { name: 'Photo Consent', detail: 'Permission to photograph/film in class', status: 'Granted', cls: 'tag-lime' },
-                      { name: 'Season Agreement', detail: 'Season enrolment terms and conditions', status: 'Pending', cls: 'tag-amber' },
-                    ].map(doc => (
-                      <div key={doc.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 0', borderBottom: '1px solid #1a1a1a' }}>
-                        <div>
-                          <div style={{ fontWeight: 500, fontSize: 13 }}>{doc.name}</div>
-                          <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{doc.detail}</div>
+                    {(() => {
+                      const parqForm = (formsData || []).find(f => f.form_type === 'parq')
+                      const waiverForm = (formsData || []).find(f => f.form_type === 'waiver')
+                      function formStatus(form) {
+                        if (!form) return { status: 'Not submitted', cls: 'tag-grey' }
+                        if (form.completed) return { status: 'Signed', cls: 'tag-lime' }
+                        return { status: 'In Progress', cls: 'tag-amber' }
+                      }
+                      const parqStatus = formStatus(parqForm)
+                      const waiverStatus = formStatus(waiverForm)
+                      const docs = [
+                        { name: 'Health & Medical Form (PAR-Q)', detail: 'PAR-Q pre-screening questionnaire', ...parqStatus },
+                        { name: 'Liability Waiver', detail: 'Studio liability waiver and code of conduct', ...waiverStatus },
+                        { name: 'Photo Consent', detail: 'Permission to photograph/film in class', status: 'Not required', cls: 'tag-grey' },
+                        { name: 'Season Agreement', detail: 'Season enrolment terms and conditions', status: 'Not required', cls: 'tag-grey' },
+                      ]
+                      return docs.map(doc => (
+                        <div key={doc.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 0', borderBottom: '1px solid #1a1a1a' }}>
+                          <div>
+                            <div style={{ fontWeight: 500, fontSize: 13 }}>{doc.name}</div>
+                            <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{doc.detail}</div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+                            <span className={`tag ${doc.cls}`} style={{ fontSize: 10 }}>{doc.status}</span>
+                            <button className="btn btn-ghost btn-xs">View</button>
+                          </div>
                         </div>
-                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-                          <span className={`tag ${doc.cls}`} style={{ fontSize: 10 }}>{doc.status}</span>
-                          <button className="btn btn-ghost btn-xs">View</button>
-                        </div>
-                      </div>
-                    ))}
+                      ))
+                    })()}
                   </div>
                 )}
 

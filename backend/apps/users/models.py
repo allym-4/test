@@ -260,3 +260,19 @@ class InstructorPayRecord(models.Model):
 
     def __str__(self):
         return f'{self.instructor.display_name} — ${self.amount} ({self.status})'
+
+
+class StudentSkill(models.Model):
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='skill_records')
+    skill_name = models.CharField(max_length=100)
+    level = models.CharField(max_length=50)
+    self_assessed = models.BooleanField(default=False)
+    teacher_confirmed = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [('student', 'skill_name')]
+        ordering = ['level', 'skill_name']
+
+    def __str__(self):
+        return f'{self.student.display_name} — {self.skill_name}'
