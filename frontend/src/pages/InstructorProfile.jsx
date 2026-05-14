@@ -1,12 +1,15 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { auth } from '../api'
 
 export default function InstructorProfile() {
-  const { user } = useAuth()
+  const { user, setUser } = useAuth()
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [photoPreview, setPhotoPreview] = useState(user?.profile_photo || null)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const fileRef = useRef()
   const [form, setForm] = useState({
     first_name: user?.first_name || '',
     last_name: user?.last_name || '',
@@ -14,6 +17,19 @@ export default function InstructorProfile() {
     phone: user?.phone || '',
     pronouns: user?.pronouns || '',
   })
+
+  async function handlePhotoChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoPreview(URL.createObjectURL(file))
+    setUploadingPhoto(true)
+    try {
+      const res = await auth.uploadPhoto(file)
+      if (setUser) setUser(u => ({ ...u, profile_photo: res.data.profile_photo }))
+    } finally {
+      setUploadingPhoto(false)
+    }
+  }
 
   async function handleSave() {
     setSaving(true)
@@ -56,12 +72,23 @@ export default function InstructorProfile() {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
-        <div className="avatar" style={{ background: 'var(--lav)', width: 56, height: 56, fontSize: 20 }}>
-          {user?.first_name?.[0] || '?'}
+        <div style={{ position: 'relative', cursor: 'pointer' }} onClick={() => fileRef.current?.click()}>
+          {photoPreview ? (
+            <img src={photoPreview} alt="Profile" style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border)' }} />
+          ) : (
+            <div className="avatar" style={{ background: 'var(--lav)', width: 56, height: 56, fontSize: 20 }}>
+              {user?.first_name?.[0] || '?'}
+            </div>
+          )}
+          <div style={{ position: 'absolute', bottom: 0, right: 0, width: 18, height: 18, borderRadius: '50%', background: 'var(--lime)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#000' }}>
+            {uploadingPhoto ? '…' : '+'}
+          </div>
+          <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoChange} />
         </div>
         <div>
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18 }}>{user?.display_name}</div>
           <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 2 }}>Senior Instructor</div>
+          <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>Click photo to update</div>
         </div>
       </div>
 

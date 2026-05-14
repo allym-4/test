@@ -5,6 +5,11 @@ export const auth = {
     client.post('/api/auth/token/', { username, password }),
   me: () => client.get('/api/users/me/'),
   updateMe: (data) => client.patch('/api/users/me/', data),
+  uploadPhoto: (file) => {
+    const fd = new FormData()
+    fd.append('profile_photo', file)
+    return client.patch('/api/users/me/', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
 }
 
 export const classes = {
