@@ -45,6 +45,7 @@ import StudentChat from './pages/student/StudentChat'
 import StudentNotifications from './pages/student/StudentNotifications'
 import StudentSupport from './pages/student/StudentSupport'
 import StudentStudioInfo from './pages/student/StudentStudioInfo'
+import StudentHomework from './pages/student/StudentHomework'
 
 // Login
 import LoginPage from './pages/LoginPage'
@@ -121,6 +122,7 @@ export default function App() {
             <Route path="notifications" element={<StudentNotifications />} />
             <Route path="support" element={<StudentSupport />} />
             <Route path="studio" element={<StudentStudioInfo />} />
+            <Route path="homework" element={<StudentHomework />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

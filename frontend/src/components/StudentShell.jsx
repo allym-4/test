@@ -9,6 +9,7 @@ const NAV = [
   { to: '/portal',          label: 'Dashboard',    icon: '◆', end: true },
   { to: '/portal/classes',  label: 'My Classes',   icon: '□' },
   { to: '/portal/progress', label: 'Progress',     icon: '△' },
+  { to: '/portal/homework', label: 'Homework',     icon: '📝' },
   { to: '/portal/billing',  label: 'Billing',      icon: '💳' },
 ]
 

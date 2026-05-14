@@ -71,3 +71,34 @@ class HomeworkSubmissionDetailView(generics.RetrieveUpdateAPIView):
             serializer.save(reviewed_by=self.request.user, reviewed_at=timezone.now())
         else:
             serializer.save()
+
+
+class SubmissionItemListView(generics.ListCreateAPIView):
+    serializer_class = HomeworkSubmissionItemSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return HomeworkSubmissionItem.objects.filter(submission_id=self.kwargs['submission_pk'])
+
+    def perform_create(self, serializer):
+        submission = HomeworkSubmission.objects.get(pk=self.kwargs['submission_pk'])
+        serializer.save(submission=submission)
+
+
+class ChecklistItemBulkView(generics.CreateAPIView):
+    """Create multiple checklist items for an assignment."""
+    serializer_class = HomeworkChecklistItemSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+    def create(self, request, assignment_pk):
+        assignment = HomeworkAssignment.objects.get(pk=assignment_pk)
+        items_data = request.data if isinstance(request.data, list) else [request.data]
+        created = []
+        for i, item in enumerate(items_data):
+            obj = HomeworkChecklistItem.objects.create(
+                assignment=assignment,
+                text=item.get('text', ''),
+                order=item.get('order', i),
+            )
+            created.append(HomeworkChecklistItemSerializer(obj).data)
+        return Response(created, status=status.HTTP_201_CREATED)

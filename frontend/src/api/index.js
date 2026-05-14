@@ -72,7 +72,12 @@ export const homework = {
   list: (params) => client.get('/api/homework/', { params }),
   get: (id) => client.get(`/api/homework/${id}/`),
   create: (data) => client.post('/api/homework/', data),
+  update: (id, data) => client.patch(`/api/homework/${id}/`, data),
+  addChecklist: (assignmentId, items) => client.post(`/api/homework/${assignmentId}/checklist/`, items),
   submissions: (params) => client.get('/api/homework/submissions/', { params }),
+  getSubmission: (id) => client.get(`/api/homework/submissions/${id}/`),
+  reviewSubmission: (id, data) => client.patch(`/api/homework/submissions/${id}/`, data),
+  submitHomework: (data) => client.post('/api/homework/submissions/', data),
 }
 
 export const users = {
