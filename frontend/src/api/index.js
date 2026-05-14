@@ -131,6 +131,13 @@ export const availability = {
   save: (slots) => client.post('/api/users/availability/', slots),
 }
 
+export const instructorPay = {
+  list: (params) => client.get('/api/users/pay-records/', { params }),
+  create: (data) => client.post('/api/users/pay-records/', data),
+  update: (id, data) => client.patch(`/api/users/pay-records/${id}/`, data),
+  delete: (id) => client.delete(`/api/users/pay-records/${id}/`),
+}
+
 export const forms = {
   list: () => client.get('/api/users/forms/'),
   submit: (form_type, responses) => client.post('/api/users/forms/', { form_type, responses }),

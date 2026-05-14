@@ -6,11 +6,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db import transaction
 from django.db.models import Q
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord
 from .serializers import (
     UserSerializer, UserCreateSerializer, StaffNoteSerializer, LeadSerializer,
     StudioSettingsSerializer, AnnouncementSerializer, ProductSerializer, AutomationRuleSerializer,
     OrderSerializer, NotificationSerializer, InstructorAvailabilitySerializer, StudentFormSerializer,
+    InstructorPayRecordSerializer,
 )
 from .permissions import IsAdminOrInstructor, IsAdminUser
 
@@ -318,3 +319,28 @@ class StudentFormView(APIView):
             }
         )
         return Response(StudentFormSerializer(obj).data)
+
+
+class InstructorPayRecordListView(generics.ListCreateAPIView):
+    serializer_class = InstructorPayRecordSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAdminUser()]
+        return [permissions.IsAuthenticated()]
+
+    def get_queryset(self):
+        qs = InstructorPayRecord.objects.select_related('instructor')
+        if self.request.user.role == 'instructor':
+            qs = qs.filter(instructor=self.request.user)
+        else:
+            instructor_id = self.request.query_params.get('instructor')
+            if instructor_id:
+                qs = qs.filter(instructor_id=instructor_id)
+        return qs
+
+
+class InstructorPayRecordDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = InstructorPayRecord.objects.select_related('instructor')
+    serializer_class = InstructorPayRecordSerializer
+    permission_classes = [IsAdminUser]
