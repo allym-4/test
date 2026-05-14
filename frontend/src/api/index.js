@@ -273,3 +273,16 @@ export const media = {
   update: (id, data) => client.patch(`/api/users/media/${id}/`, data),
   delete: (id) => client.delete(`/api/users/media/${id}/`),
 }
+
+export const campaigns = {
+  list: () => client.get('/api/users/campaigns/'),
+  create: (data) => client.post('/api/users/campaigns/', data),
+  update: (id, data) => client.patch(`/api/users/campaigns/${id}/`, data),
+  delete: (id) => client.delete(`/api/users/campaigns/${id}/`),
+}
+
+export const emailLists = {
+  list: () => client.get('/api/users/email-lists/'),
+  create: (data) => client.post('/api/users/email-lists/', data),
+  update: (id, data) => client.patch(`/api/users/email-lists/${id}/`, data),
+}

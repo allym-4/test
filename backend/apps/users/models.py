@@ -341,6 +341,41 @@ class SkillDefinition(models.Model):
         return self.name
 
 
+class EmailCampaign(models.Model):
+    class Status(models.TextChoices):
+        DRAFT = 'draft', 'Draft'
+        SCHEDULED = 'scheduled', 'Scheduled'
+        SENT = 'sent', 'Sent'
+
+    name = models.CharField(max_length=200)
+    subject = models.CharField(max_length=200, blank=True)
+    list_name = models.CharField(max_length=100, blank=True)
+    status = models.CharField(max_length=15, choices=Status.choices, default=Status.DRAFT)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    open_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='campaigns')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.name
+
+
+class EmailList(models.Model):
+    name = models.CharField(max_length=100)
+    is_auto = models.BooleanField(default=False)
+    query_slug = models.CharField(max_length=50, blank=True)  # for auto lists
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
 class MediaItem(models.Model):
     class MediaType(models.TextChoices):
         VIDEO = 'video', 'Video'

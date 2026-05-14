@@ -1,26 +1,95 @@
 import { useState, useEffect } from 'react'
 import { useApi } from '../../hooks/useApi'
-import { payments, users } from '../../api'
+import { payments, users, giftCards as giftCardsApi } from '../../api'
 import TakePaymentModal from '../../components/TakePaymentModal'
 import AddChargeModal from '../../components/AddChargeModal'
 import ChaseModal from '../../components/ChaseModal'
 import WaiveModal from '../../components/WaiveModal'
+
+function GiftCardModal({ onClose, onSuccess }) {
+  const [form, setForm] = useState({ issued_to_name: '', issued_to_email: '', value: '', expires_at: '' })
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState('')
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const handleSave = async () => {
+    if (!form.issued_to_name.trim()) { setErr('Name is required'); return }
+    if (!form.value || isNaN(parseFloat(form.value)) || parseFloat(form.value) <= 0) { setErr('A valid amount is required'); return }
+    setSaving(true)
+    setErr('')
+    const code = Math.random().toString(36).substr(2, 8).toUpperCase()
+    const value = parseFloat(form.value)
+    try {
+      await giftCardsApi.create({
+        issued_to_name: form.issued_to_name.trim(),
+        issued_to_email: form.issued_to_email.trim(),
+        value,
+        balance: value,
+        code,
+        is_active: true,
+        expires_at: form.expires_at || null,
+      })
+      onSuccess()
+    } catch (e) {
+      setErr(e?.response?.data?.detail || 'Failed to create gift card')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 400 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18 }}>New Gift Card</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="sd-body">
+          <div className="field">
+            <label>Issued To (Name) *</label>
+            <input value={form.issued_to_name} onChange={e => set('issued_to_name', e.target.value)} placeholder="Recipient name" />
+          </div>
+          <div className="field">
+            <label>Issued To (Email)</label>
+            <input type="email" value={form.issued_to_email} onChange={e => set('issued_to_email', e.target.value)} placeholder="Recipient email" />
+          </div>
+          <div className="field">
+            <label>Amount ($) *</label>
+            <input type="number" min="0" step="0.01" value={form.value} onChange={e => set('value', e.target.value)} placeholder="0.00" />
+          </div>
+          <div className="field">
+            <label>Expiry Date (optional)</label>
+            <input type="date" value={form.expires_at} onChange={e => set('expires_at', e.target.value)} />
+          </div>
+          {err && <div style={{ color: 'var(--red)', fontSize: 13, marginBottom: 8 }}>{err}</div>}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button className="btn btn-lime btn-sm" disabled={saving} onClick={handleSave}>{saving ? 'Saving…' : 'Create'}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function AdminBilling() {
   const [tab, setTab] = useState('outstanding')
   const { data: paymentsData, loading: loadingPayments, refetch: refetchPayments } = useApi(() => payments.list())
   const { data: plansData, loading: loadingPlans } = useApi(() => payments.plans.list())
   const { data: studentsData } = useApi(() => users.list({ role: 'student' }))
+  const { data: gcData, loading: loadingGC, refetch: refetchGC } = useApi(() => giftCardsApi.list())
   const [balances, setBalances] = useState({})
   const [loadingBal, setLoadingBal] = useState(false)
   const [activeModal, setActiveModal] = useState(null)
   const [modalStudent, setModalStudent] = useState(null)
   const [addChargeTarget, setAddChargeTarget] = useState(null)
   const [chargePickStudent, setChargePickStudent] = useState('')
+  const [gcModal, setGcModal] = useState(false)
 
   const allPayments = paymentsData?.results || []
   const plans = plansData?.results || []
   const students = studentsData?.results || []
+  const giftCardList = gcData?.results || gcData || []
 
   useEffect(() => {
     if (students.length === 0) return
@@ -51,7 +120,11 @@ export default function AdminBilling() {
           <div className="page-title">Billing</div>
           <div className="page-sub">Invoices, payments and fees</div>
         </div>
-        <button className="btn btn-lime btn-sm" onClick={() => setAddChargeTarget('pick')}>+ Add Charge</button>
+        {tab === 'giftcards' ? (
+          <button className="btn btn-lime btn-sm" onClick={() => setGcModal(true)}>+ New Gift Card</button>
+        ) : (
+          <button className="btn btn-lime btn-sm" onClick={() => setAddChargeTarget('pick')}>+ Add Charge</button>
+        )}
       </div>
 
       <div className="kpi-grid">
@@ -78,7 +151,7 @@ export default function AdminBilling() {
       </div>
 
       <div className="subtabs">
-        {[['outstanding', 'Outstanding'], ['plans', 'Payment Plans'], ['history', 'History'], ['noshows', 'No-show Fees']].map(([key, label]) => (
+        {[['outstanding', 'Outstanding'], ['plans', 'Payment Plans'], ['history', 'History'], ['noshows', 'No-show Fees'], ['giftcards', 'Gift Cards']].map(([key, label]) => (
           <div key={key} className={`subtab ${tab === key ? 'active' : ''}`} onClick={() => setTab(key)}>{label}</div>
         ))}
       </div>
@@ -251,6 +324,55 @@ export default function AdminBilling() {
           </div>
         </div>
       )}
+
+      {tab === 'giftcards' && (
+        <div>
+          <div style={{ display: 'flex', gap: 20, marginBottom: 24 }}>
+            <div className="kpi kpi-lime" style={{ flex: 1 }}>
+              <div className="kpi-label">Total Issued</div>
+              <div className="kpi-value">{giftCardList.length}</div>
+            </div>
+            <div className="kpi kpi-lav" style={{ flex: 1 }}>
+              <div className="kpi-label">Active Cards</div>
+              <div className="kpi-value">{giftCardList.filter(g => g.is_active).length}</div>
+            </div>
+            <div className="kpi kpi-amber" style={{ flex: 1 }}>
+              <div className="kpi-label">Total Value Remaining</div>
+              <div className="kpi-value">${giftCardList.reduce((s, g) => s + parseFloat(g.balance || 0), 0).toFixed(0)}</div>
+            </div>
+          </div>
+          <div className="tbl-section">
+            <table>
+              <thead><tr><th>Code</th><th>Issued To</th><th>Value</th><th>Balance</th><th>Expires</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>
+                {loadingGC && <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--grey)' }}>Loading…</td></tr>}
+                {!loadingGC && giftCardList.length === 0 && (
+                  <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--grey)', padding: 32 }}>No gift cards yet</td></tr>
+                )}
+                {giftCardList.map(g => (
+                  <tr key={g.id}>
+                    <td><code style={{ fontSize: 12, color: 'var(--lime)' }}>{g.code}</code></td>
+                    <td>
+                      <div style={{ fontWeight: 500 }}>{g.issued_to_name || '—'}</div>
+                      <div style={{ fontSize: 11, color: 'var(--grey)' }}>{g.issued_to_email}</div>
+                    </td>
+                    <td>${parseFloat(g.value).toFixed(2)}</td>
+                    <td style={{ color: parseFloat(g.balance) > 0 ? 'var(--lime)' : 'var(--grey)' }}>${parseFloat(g.balance).toFixed(2)}</td>
+                    <td style={{ fontSize: 12, color: 'var(--grey)' }}>{g.expires_at ? new Date(g.expires_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : 'No expiry'}</td>
+                    <td><span className={`tag ${g.is_active ? 'tag-lime' : 'tag-grey'}`} style={{ fontSize: 10 }}>{g.is_active ? 'Active' : 'Used'}</span></td>
+                    <td>
+                      <button className="btn btn-ghost btn-xs" onClick={() => giftCardsApi.update(g.id, { is_active: !g.is_active }).then(refetchGC)}>
+                        {g.is_active ? 'Deactivate' : 'Reactivate'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {activeModal === 'payment' && modalStudent && (
         <TakePaymentModal
           student={modalStudent}
@@ -281,6 +403,13 @@ export default function AdminBilling() {
           description="outstanding balance"
           onClose={() => { setActiveModal(null); setModalStudent(null) }}
           onSuccess={() => { setActiveModal(null); setModalStudent(null); refetchPayments() }}
+        />
+      )}
+
+      {gcModal && (
+        <GiftCardModal
+          onClose={() => setGcModal(false)}
+          onSuccess={() => { setGcModal(false); refetchGC() }}
         />
       )}
 

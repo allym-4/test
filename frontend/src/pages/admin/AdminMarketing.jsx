@@ -1,21 +1,7 @@
 import { useState } from 'react'
 import '../StudentsPage.css'
-
-const CAMPAIGNS = [
-  { id: 1, name: 'Season 4 Opens — Existing Students', type: 'Email', list: 'All Active Students', sent: '1 Jun 2025', status: 'scheduled' },
-  { id: 2, name: 'No-show Follow-up', type: 'Email', list: 'No-shows This Week', sent: '13 May 2025', status: 'sent', opens: 68 },
-  { id: 3, name: 'Welcome — New Students', type: 'Email', list: 'New Students', sent: '10 May 2025', status: 'sent', opens: 92 },
-  { id: 4, name: 'Season 3 Wrap-up', type: 'Email', list: 'All Students', sent: '5 Apr 2025', status: 'sent', opens: 74 },
-]
-
-const LISTS = [
-  { id: 1, name: 'All Connected Students', count: 138, auto: true },
-  { id: 2, name: 'Active Season 4 Students', count: 112, auto: true },
-  { id: 3, name: 'New Students (last 30 days)', count: 14, auto: true },
-  { id: 4, name: 'At Risk Students', count: 7, auto: true },
-  { id: 5, name: 'Pole Icon Waitlist', count: 23, auto: false },
-  { id: 6, name: 'Not Re-enrolled from Season 3', count: 19, auto: true },
-]
+import { useApi } from '../../hooks/useApi'
+import { campaigns as campaignsApi, emailLists as emailListsApi, automations } from '../../api'
 
 const AUTOMATIONS = [
   { name: 'Welcome email — new student', trigger: 'Student created', active: true },
@@ -27,12 +13,80 @@ const AUTOMATIONS = [
   { name: 'Birthday message', trigger: 'Student birthday', active: false },
 ]
 
+function CreateCampaignModal({ onClose, onCreated }) {
+  const [form, setForm] = useState({ name: '', subject: '', list_name: '', status: 'draft' })
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState(null)
+
+  function set(field, value) {
+    setForm(f => ({ ...f, [field]: value }))
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!form.name.trim()) { setErr('Name is required'); return }
+    setSaving(true)
+    setErr(null)
+    try {
+      await campaignsApi.create(form)
+      onCreated()
+      onClose()
+    } catch (ex) {
+      setErr(ex.response?.data?.detail || 'Failed to create campaign')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="card" style={{ width: 480, padding: '28px 32px' }}>
+        <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 20 }}>New Campaign</div>
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 4 }}>Name *</label>
+            <input className="input" value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Season 5 Launch" style={{ width: '100%' }} />
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 4 }}>Subject</label>
+            <input className="input" value={form.subject} onChange={e => set('subject', e.target.value)} placeholder="Email subject line" style={{ width: '100%' }} />
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 4 }}>List</label>
+            <input className="input" value={form.list_name} onChange={e => set('list_name', e.target.value)} placeholder="e.g. All Active Students" style={{ width: '100%' }} />
+          </div>
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 4 }}>Status</label>
+            <select className="input" value={form.status} onChange={e => set('status', e.target.value)} style={{ width: '100%' }}>
+              <option value="draft">Draft</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="sent">Sent</option>
+            </select>
+          </div>
+          {err && <div style={{ color: 'var(--red, #f55)', fontSize: 12, marginBottom: 12 }}>{err}</div>}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : 'Create Campaign'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminMarketing() {
   const [tab, setTab] = useState('campaigns')
-  const [automations, setAutomations] = useState(AUTOMATIONS)
+  const [automationList, setAutomationList] = useState(AUTOMATIONS)
+  const [showCreateCampaign, setShowCreateCampaign] = useState(false)
+
+  const { data: campData, loading: loadingCamp, refetch: refetchCamp } = useApi(() => campaignsApi.list())
+  const campaignList = campData?.results || campData || []
+
+  const { data: listsData, refetch: refetchLists } = useApi(() => emailListsApi.list())
+  const emailListList = listsData?.results || listsData || []
 
   function toggleAutomation(name) {
-    setAutomations(as => as.map(a => a.name === name ? { ...a, active: !a.active } : a))
+    setAutomationList(as => as.map(a => a.name === name ? { ...a, active: !a.active } : a))
   }
 
   return (
@@ -42,7 +96,7 @@ export default function AdminMarketing() {
           <div className="page-title">Marketing</div>
           <div className="page-sub">Campaigns, customer lists and automations</div>
         </div>
-        {tab === 'campaigns' && <button className="btn btn-lime btn-sm">+ New Campaign</button>}
+        {tab === 'campaigns' && <button className="btn btn-lime btn-sm" onClick={() => setShowCreateCampaign(true)}>+ New Campaign</button>}
         {tab === 'lists' && <button className="btn btn-lime btn-sm">+ New List</button>}
       </div>
 
@@ -54,22 +108,31 @@ export default function AdminMarketing() {
 
       {tab === 'campaigns' && (
         <div className="tbl-section">
-          <table>
-            <thead><tr><th>Campaign</th><th>Type</th><th>List</th><th>Date</th><th>Status</th><th>Opens</th><th></th></tr></thead>
-            <tbody>
-              {CAMPAIGNS.map(c => (
-                <tr key={c.id}>
-                  <td style={{ fontWeight: 500 }}>{c.name}</td>
-                  <td style={{ color: 'var(--grey)', fontSize: 12 }}>{c.type}</td>
-                  <td style={{ color: 'var(--grey)', fontSize: 12 }}>{c.list}</td>
-                  <td style={{ color: 'var(--grey)', fontSize: 12 }}>{c.sent}</td>
-                  <td><span className={`tag ${c.status === 'sent' ? 'tag-lime' : 'tag-amber'}`} style={{ fontSize: 10 }}>{c.status}</span></td>
-                  <td style={{ color: c.opens ? 'var(--lime)' : 'var(--grey)' }}>{c.opens ? `${c.opens}%` : '—'}</td>
-                  <td><button className="btn btn-ghost btn-xs">View</button></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {loadingCamp ? (
+            <div style={{ padding: 24, color: 'var(--grey)', fontSize: 13 }}>Loading…</div>
+          ) : (
+            <table>
+              <thead><tr><th>Campaign</th><th>Type</th><th>List</th><th>Date</th><th>Status</th><th>Opens</th><th></th></tr></thead>
+              <tbody>
+                {campaignList.map(c => (
+                  <tr key={c.id}>
+                    <td style={{ fontWeight: 500 }}>{c.name}</td>
+                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>Email</td>
+                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{c.list_name || '—'}</td>
+                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{c.sent_at ? new Date(c.sent_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</td>
+                    <td>
+                      <span className={`tag ${c.status === 'sent' ? 'tag-lime' : c.status === 'scheduled' ? 'tag-amber' : 'tag-grey'}`} style={{ fontSize: 10 }}>{c.status}</span>
+                    </td>
+                    <td style={{ color: c.open_rate ? 'var(--lime)' : 'var(--grey)' }}>{c.open_rate ? `${c.open_rate}%` : '—'}</td>
+                    <td><button className="btn btn-ghost btn-xs">View</button></td>
+                  </tr>
+                ))}
+                {campaignList.length === 0 && (
+                  <tr><td colSpan={7} style={{ color: 'var(--grey)', fontSize: 13, textAlign: 'center', padding: 24 }}>No campaigns yet</td></tr>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
 
@@ -78,17 +141,20 @@ export default function AdminMarketing() {
           <table>
             <thead><tr><th>List Name</th><th>Students</th><th>Type</th><th></th></tr></thead>
             <tbody>
-              {LISTS.map(l => (
+              {emailListList.map(l => (
                 <tr key={l.id}>
                   <td style={{ fontWeight: 500 }}>{l.name}</td>
-                  <td>{l.count}</td>
-                  <td><span className={`tag ${l.auto ? 'tag-lav' : 'tag-grey'}`} style={{ fontSize: 10 }}>{l.auto ? 'Auto-updated' : 'Manual'}</span></td>
+                  <td>{l.student_count ?? 0}</td>
+                  <td><span className={`tag ${l.is_auto ? 'tag-lav' : 'tag-grey'}`} style={{ fontSize: 10 }}>{l.is_auto ? 'Auto-updated' : 'Manual'}</span></td>
                   <td style={{ whiteSpace: 'nowrap' }}>
                     <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }}>View</button>
                     <button className="btn btn-ghost btn-xs">Export</button>
                   </td>
                 </tr>
               ))}
+              {emailListList.length === 0 && (
+                <tr><td colSpan={4} style={{ color: 'var(--grey)', fontSize: 13, textAlign: 'center', padding: 24 }}>No lists yet</td></tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -96,7 +162,7 @@ export default function AdminMarketing() {
 
       {tab === 'automations' && (
         <div style={{ maxWidth: 700 }}>
-          {automations.map(a => (
+          {automationList.map(a => (
             <div key={a.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '14px 0', borderBottom: '1px solid #1a1a1a' }}>
               <div>
                 <div style={{ fontWeight: 500, fontSize: 13 }}>{a.name}</div>
@@ -123,6 +189,13 @@ export default function AdminMarketing() {
             <button className="btn btn-ghost btn-sm">Connect Mailchimp</button>
           </div>
         </div>
+      )}
+
+      {showCreateCampaign && (
+        <CreateCampaignModal
+          onClose={() => setShowCreateCampaign(false)}
+          onCreated={refetchCamp}
+        />
       )}
     </div>
   )

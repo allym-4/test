@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList
 
 
 class UserMinimalSerializer(serializers.ModelSerializer):
@@ -199,3 +199,30 @@ class MediaItemSerializer(serializers.ModelSerializer):
         model = MediaItem
         fields = ('id', 'name', 'media_type', 'file', 'url', 'level', 'size_display', 'uploaded_by_name', 'created_at')
         read_only_fields = ('id', 'created_at')
+
+
+class EmailCampaignSerializer(serializers.ModelSerializer):
+    created_by_name = serializers.StringRelatedField(source='created_by')
+
+    class Meta:
+        model = EmailCampaign
+        fields = ('id', 'name', 'subject', 'list_name', 'status', 'sent_at', 'open_rate', 'created_by_name', 'created_at')
+        read_only_fields = ('id', 'created_at')
+
+
+class EmailListSerializer(serializers.ModelSerializer):
+    student_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = EmailList
+        fields = ('id', 'name', 'is_auto', 'query_slug', 'student_count', 'created_at')
+        read_only_fields = ('id', 'created_at')
+
+    def get_student_count(self, obj):
+        if obj.query_slug == 'all_active':
+            return User.objects.filter(role='student', is_active=True).count()
+        if obj.query_slug == 'new_30days':
+            from django.utils import timezone
+            from datetime import timedelta
+            return User.objects.filter(role='student', date_joined__gte=timezone.now()-timedelta(days=30)).count()
+        return 0

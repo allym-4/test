@@ -6,14 +6,14 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db import transaction
 from django.db.models import Q
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList
 from .serializers import (
     UserSerializer, UserCreateSerializer, StaffNoteSerializer, LeadSerializer,
     StudioSettingsSerializer, AnnouncementSerializer, ProductSerializer, AutomationRuleSerializer,
     OrderSerializer, NotificationSerializer, InstructorAvailabilitySerializer, StudentFormSerializer,
     InstructorPayRecordSerializer, StudentSkillSerializer,
     TagSerializer, StudentTagSerializer, SkillLevelSerializer, SkillGroupSerializer, SkillDefinitionSerializer,
-    MediaItemSerializer,
+    MediaItemSerializer, EmailCampaignSerializer, EmailListSerializer,
 )
 from .permissions import IsAdminOrInstructor, IsAdminUser
 
@@ -504,6 +504,33 @@ class MediaItemListView(generics.ListCreateAPIView):
 class MediaItemDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = MediaItem.objects.select_related('uploaded_by')
     serializer_class = MediaItemSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class EmailCampaignListView(generics.ListCreateAPIView):
+    queryset = EmailCampaign.objects.all()
+    serializer_class = EmailCampaignSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+
+class EmailCampaignDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = EmailCampaign.objects.all()
+    serializer_class = EmailCampaignSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class EmailListListView(generics.ListCreateAPIView):
+    queryset = EmailList.objects.all()
+    serializer_class = EmailListSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class EmailListDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = EmailList.objects.all()
+    serializer_class = EmailListSerializer
     permission_classes = [IsAdminOrInstructor]
 
 
