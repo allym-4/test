@@ -35,6 +35,20 @@ import AdminHelpdesk from './pages/admin/AdminHelpdesk'
 import AdminClasses from './pages/admin/AdminClasses'
 import AdminPaymentPlans from './pages/admin/AdminPaymentPlans'
 import AdminKisi from './pages/admin/AdminKisi'
+import AdminActionLog from './pages/admin/AdminActionLog'
+import AdminActivityLog from './pages/admin/AdminActivityLog'
+import AdminAssistant from './pages/admin/AdminAssistant'
+import AdminCategories from './pages/admin/AdminCategories'
+import AdminOffers from './pages/admin/AdminOffers'
+import AdminMemberships from './pages/admin/AdminMemberships'
+import AdminPackages from './pages/admin/AdminPackages'
+import AdminTags from './pages/admin/AdminTags'
+import AdminMarketing from './pages/admin/AdminMarketing'
+import AdminMediaLibrary from './pages/admin/AdminMediaLibrary'
+import AdminRooms from './pages/admin/AdminRooms'
+import AdminSkillLists from './pages/admin/AdminSkillLists'
+import AdminStudioNotes from './pages/admin/AdminStudioNotes'
+import AdminSurveys from './pages/admin/AdminSurveys'
 
 // Student pages
 import StudentDashboard from './pages/student/StudentDashboard'
@@ -125,6 +139,20 @@ export default function App() {
             <Route path="classes" element={<AdminClasses />} />
             <Route path="payment-plans" element={<AdminPaymentPlans />} />
             <Route path="kisi" element={<AdminKisi />} />
+            <Route path="action-log" element={<AdminActionLog />} />
+            <Route path="activity-log" element={<AdminActivityLog />} />
+            <Route path="assistant" element={<AdminAssistant />} />
+            <Route path="categories" element={<AdminCategories />} />
+            <Route path="offers" element={<AdminOffers />} />
+            <Route path="memberships" element={<AdminMemberships />} />
+            <Route path="packages" element={<AdminPackages />} />
+            <Route path="tags" element={<AdminTags />} />
+            <Route path="marketing" element={<AdminMarketing />} />
+            <Route path="media" element={<AdminMediaLibrary />} />
+            <Route path="rooms" element={<AdminRooms />} />
+            <Route path="skills" element={<AdminSkillLists />} />
+            <Route path="studio-notes" element={<AdminStudioNotes />} />
+            <Route path="surveys" element={<AdminSurveys />} />
             <Route path="classes/:id/attendance" element={<AttendancePage />} />
           </Route>
 

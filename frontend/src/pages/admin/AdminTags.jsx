@@ -1,0 +1,129 @@
+import { useState } from 'react'
+import '../StudentsPage.css'
+
+const DEFAULTS = [
+  { id: 1, name: 'VIP', colour: '#b0a0ff', students: 'Ruby Kim, Mia Santos + 3 more', autoRule: 'Manual only', manual: true },
+  { id: 2, name: 'At Risk', colour: '#ffaa00', students: 'Jess Malone + 6 more', autoRule: 'No booking in 21 days', manual: false },
+  { id: 3, name: 'Blocked', colour: '#e05555', students: 'Kylie Rhodes + 1 more', autoRule: 'Manual only', manual: true },
+  { id: 4, name: 'New Student', colour: '#ccff00', students: '4 students', autoRule: 'Enrolled less than 30 days ago', manual: false },
+  { id: 5, name: 'Owing', colour: '#5ecc7b', students: '3 students', autoRule: 'Balance < $0', manual: false },
+]
+
+function TagModal({ existing, onClose, onSaved }) {
+  const [name, setName] = useState(existing?.name || '')
+  const [colour, setColour] = useState(existing?.colour || '#ccff00')
+  const [autoRule, setAutoRule] = useState(existing?.autoRule || 'Manual only')
+  const [manual, setManual] = useState(existing?.manual ?? true)
+
+  function submit(e) {
+    e.preventDefault()
+    onSaved({ ...existing, name, colour, autoRule: manual ? 'Manual only' : autoRule, manual })
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 420 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>{existing ? 'Edit Tag' : 'New Tag'}</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <form className="sd-body" onSubmit={submit}>
+          <div className="field"><label>Tag Name</label><input value={name} onChange={e => setName(e.target.value)} required /></div>
+          <div className="field">
+            <label>Colour</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <input type="color" value={colour} onChange={e => setColour(e.target.value)} style={{ width: 40, height: 36, padding: 2, background: 'none', border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer' }} />
+              <span style={{ fontSize: 12, color: 'var(--grey)' }}>{colour}</span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <div onClick={() => setManual(v => !v)} style={{ width: 36, height: 20, borderRadius: 10, background: !manual ? 'var(--lime)' : '#333', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
+              <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: !manual ? 19 : 3, transition: 'left 0.2s' }} />
+            </div>
+            <span style={{ fontSize: 13, color: 'var(--grey)' }}>Auto-assign with rule</span>
+          </div>
+          {!manual && (
+            <div className="field"><label>Auto-rule condition</label><input value={autoRule === 'Manual only' ? '' : autoRule} onChange={e => setAutoRule(e.target.value)} placeholder="e.g. No booking in 21 days" /></div>
+          )}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-lime btn-sm">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+export default function AdminTags() {
+  const [tags, setTags] = useState(DEFAULTS)
+  const [modal, setModal] = useState(null)
+  const [autoRemove, setAutoRemove] = useState(true)
+  const [notifyAtRisk, setNotifyAtRisk] = useState(true)
+
+  function handleSaved(t) {
+    if (t.id) {
+      setTags(ts => ts.map(x => x.id === t.id ? t : x))
+    } else {
+      setTags(ts => [...ts, { ...t, id: Date.now(), students: '0 students' }])
+    }
+    setModal(null)
+  }
+
+  return (
+    <div>
+      <div className="page-header">
+        <div>
+          <div className="page-title">Tags</div>
+          <div className="page-sub">Organise students with labels and automate tag rules</div>
+        </div>
+        <button className="btn btn-lime btn-sm" onClick={() => setModal({ existing: null })}>+ New Tag</button>
+      </div>
+
+      <div className="tbl-section" style={{ marginBottom: 24 }}>
+        <table>
+          <thead><tr><th>Tag</th><th>Colour</th><th>Students</th><th>Auto-rule</th><th></th></tr></thead>
+          <tbody>
+            {tags.map(tag => (
+              <tr key={tag.id}>
+                <td>
+                  <span style={{ display: 'inline-block', background: tag.colour + '33', color: tag.colour, fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>
+                    {tag.name}
+                  </span>
+                </td>
+                <td><span style={{ display: 'inline-block', width: 16, height: 16, background: tag.colour, borderRadius: 3 }} /></td>
+                <td style={{ fontSize: 12, color: 'var(--grey)' }}>{tag.students}</td>
+                <td style={{ fontSize: 12, color: tag.manual ? 'var(--grey)' : 'inherit' }}>{tag.autoRule}</td>
+                <td style={{ whiteSpace: 'nowrap' }}>
+                  <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => setModal({ existing: tag })}>Edit</button>
+                  <button className="btn btn-ghost btn-xs">View Students</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="card" style={{ padding: '18px 20px' }}>
+        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 10 }}>Auto-tag Rules</div>
+        <p style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 14 }}>Tags with rules are applied automatically and updated daily. Manual-only tags must be applied individually.</p>
+        {[
+          { label: 'Auto-remove tags when conditions no longer apply', sub: 'e.g. remove "At Risk" if student books again', val: autoRemove, set: setAutoRemove },
+          { label: 'Notify Mimi when a student gains an At Risk tag', sub: '', val: notifyAtRisk, set: setNotifyAtRisk },
+        ].map(({ label, sub, val, set }) => (
+          <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 0', borderBottom: '1px solid #1a1a1a' }}>
+            <div>
+              <div style={{ fontWeight: 500, fontSize: 13 }}>{label}</div>
+              {sub && <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{sub}</div>}
+            </div>
+            <div onClick={() => set(v => !v)} style={{ width: 36, height: 20, borderRadius: 10, background: val ? 'var(--lime)' : '#333', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+              <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: val ? 19 : 3, transition: 'left 0.2s' }} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {modal && <TagModal existing={modal.existing} onClose={() => setModal(null)} onSaved={handleSaved} />}
+    </div>
+  )
+}

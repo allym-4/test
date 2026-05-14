@@ -13,28 +13,36 @@ const NAV_GROUPS = [
     divider: true,
     label: 'People',
     items: [
-      { to: '/admin/students', label: 'Students',   icon: '👤' },
-      { to: '/admin/staff',    label: 'Staff',      icon: '🧑‍🏫' },
+      { to: '/admin/students', label: 'Students',  icon: '👤' },
+      { to: '/admin/staff',    label: 'Staff',     icon: '🧑‍🏫' },
+      { to: '/admin/leads',    label: 'Leads',     icon: '🎯' },
+      { to: '/admin/tags',     label: 'Tags',      icon: '🏷' },
     ]
   },
   {
     divider: true,
     label: 'Classes',
     items: [
-      { to: '/admin/timetable', label: 'Timetable', icon: '📅' },
-      { to: '/admin/classes',   label: 'Classes',   icon: '📚' },
-      { to: '/admin/waitlist',  label: 'Waitlist',  icon: '⏳' },
-      { to: '/admin/seasons',   label: 'Seasons',   icon: '🌀' },
+      { to: '/admin/timetable',  label: 'Timetable',   icon: '📅' },
+      { to: '/admin/classes',    label: 'Classes',     icon: '📚' },
+      { to: '/admin/waitlist',   label: 'Waitlist',    icon: '⏳' },
+      { to: '/admin/seasons',    label: 'Seasons',     icon: '🌀' },
+      { to: '/admin/categories', label: 'Categories',  icon: '🗂' },
+      { to: '/admin/skills',     label: 'Skill Lists', icon: '✅' },
+      { to: '/admin/rooms',      label: 'Rooms',       icon: '🏠' },
     ]
   },
   {
     divider: true,
     label: 'Finance',
     items: [
-      { to: '/admin/billing',       label: 'Billing',         icon: '💳' },
-      { to: '/admin/payment-plans', label: 'Payment Plans',   icon: '📋' },
-      { to: '/admin/bookings',      label: 'Bookings',        icon: '🎟' },
-      { to: '/admin/reporting',     label: 'Analytics',       icon: '📊' },
+      { to: '/admin/billing',       label: 'Billing',        icon: '💳' },
+      { to: '/admin/payment-plans', label: 'Payment Plans',  icon: '📋' },
+      { to: '/admin/bookings',      label: 'Bookings',       icon: '🎟' },
+      { to: '/admin/memberships',   label: 'Memberships',    icon: '🎫' },
+      { to: '/admin/packages',      label: 'Packages',       icon: '📦' },
+      { to: '/admin/offers',        label: 'Offers',         icon: '🏷' },
+      { to: '/admin/reporting',     label: 'Analytics',      icon: '📊' },
     ]
   },
   {
@@ -43,7 +51,9 @@ const NAV_GROUPS = [
     items: [
       { to: '/admin/messages',        label: 'Messages',        icon: '📩' },
       { to: '/admin/community',       label: 'Community',       icon: '💬' },
+      { to: '/admin/marketing',       label: 'Marketing',       icon: '📣' },
       { to: '/admin/recommendations', label: 'Recommendations', icon: '💡' },
+      { to: '/admin/surveys',         label: 'Surveys',         icon: '📝' },
       { to: '/admin/helpdesk',        label: 'Helpdesk',        icon: '🎧' },
     ]
   },
@@ -51,12 +61,16 @@ const NAV_GROUPS = [
     divider: true,
     label: 'Ops',
     items: [
-      { to: '/admin/leads',       label: 'Leads',       icon: '🎯' },
-      { to: '/admin/retail',      label: 'Retail',      icon: '🛍' },
-      { to: '/admin/lockers',     label: 'Lockers',     icon: '🔐' },
-      { to: '/admin/kisi',        label: 'Kisi Access', icon: '🔑' },
-      { to: '/admin/automations', label: 'Automations', icon: '🔔' },
-      { to: '/admin/settings',    label: 'Settings',    icon: '⚙️' },
+      { to: '/admin/retail',       label: 'Retail',        icon: '🛍' },
+      { to: '/admin/lockers',      label: 'Lockers',       icon: '🔐' },
+      { to: '/admin/kisi',         label: 'Kisi Access',   icon: '🔑' },
+      { to: '/admin/media',        label: 'Media Library', icon: '🎬' },
+      { to: '/admin/studio-notes', label: 'Studio Notes',  icon: '📌' },
+      { to: '/admin/action-log',   label: 'Action Log',    icon: '☑️' },
+      { to: '/admin/activity-log', label: 'Activity Log',  icon: '📋' },
+      { to: '/admin/assistant',    label: 'Assistant',     icon: '🤖' },
+      { to: '/admin/automations',  label: 'Automations',   icon: '🔔' },
+      { to: '/admin/settings',     label: 'Settings',      icon: '⚙️' },
     ]
   },
 ]
