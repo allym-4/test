@@ -41,6 +41,12 @@ export const payments = {
   list: (params) => client.get('/api/payments/', { params }),
   balance: (studentId) => client.get(`/api/payments/balance/${studentId}/`),
   create: (data) => client.post('/api/payments/', data),
+  stripe: {
+    config: () => client.get('/api/payments/stripe/config/'),
+    createPaymentIntent: (data) => client.post('/api/payments/stripe/payment-intent/', data),
+    createSetupIntent: () => client.post('/api/payments/stripe/setup-intent/', {}),
+    paymentMethods: () => client.get('/api/payments/stripe/payment-methods/'),
+  },
   plans: {
     list: (params) => client.get('/api/payments/plans/', { params }),
     get: (id) => client.get(`/api/payments/plans/${id}/`),

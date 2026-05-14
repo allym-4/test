@@ -17,6 +17,7 @@ class User(AbstractUser):
     emergency_contact_phone = models.CharField(max_length=20, blank=True)
     internal_notes = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
+    stripe_customer_id = models.CharField(max_length=100, blank=True)
 
     def __str__(self):
         return f'{self.get_full_name() or self.username} ({self.role})'

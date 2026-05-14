@@ -1,11 +1,14 @@
+import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { payments } from '../../api'
+import CheckoutModal from '../../components/CheckoutModal'
 
 export default function StudentBilling() {
   const { user } = useAuth()
-  const { data: balData, loading: loadingBal } = useApi(() => payments.balance(user?.id), [user?.id])
-  const { data: paymentsData, loading: loadingPayments } = useApi(() => payments.list({ student: user?.id }), [user?.id])
+  const [showCheckout, setShowCheckout] = useState(false)
+  const { data: balData, loading: loadingBal, refetch: refetchBal } = useApi(() => payments.balance(user?.id), [user?.id])
+  const { data: paymentsData, loading: loadingPayments, refetch: refetchPayments } = useApi(() => payments.list({ student: user?.id }), [user?.id])
   const { data: plansData } = useApi(() => payments.plans.list({ student: user?.id }), [user?.id])
 
   const bal = balData ? parseFloat(balData.balance) : 0
@@ -17,6 +20,15 @@ export default function StudentBilling() {
 
   return (
     <div>
+      {showCheckout && isOwing && (
+        <CheckoutModal
+          amount={Math.abs(bal)}
+          description="Outstanding balance — Duality Pole Studio"
+          saveMethod={true}
+          onSuccess={() => { setShowCheckout(false); refetchBal(); refetchPayments() }}
+          onClose={() => setShowCheckout(false)}
+        />
+      )}
       <div className="page-header">
         <div className="page-title">Billing</div>
       </div>
@@ -52,6 +64,12 @@ export default function StudentBilling() {
                 <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 10 }}>
                   Total charged: ${parseFloat(balData?.total_charged || 0).toFixed(2)} · Total paid: ${parseFloat(balData?.total_paid || 0).toFixed(2)}
                 </div>
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => setShowCheckout(true)}
+                >
+                  Pay now · ${Math.abs(bal).toFixed(2)}
+                </button>
               </div>
             )}
           </>

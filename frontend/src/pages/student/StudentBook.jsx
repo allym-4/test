@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useApi } from '../../hooks/useApi'
 import { useAuth } from '../../contexts/AuthContext'
 import { classes, enrolments } from '../../api'
+import CheckoutModal from '../../components/CheckoutModal'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -51,16 +52,44 @@ export default function StudentBook() {
   const { user } = useAuth()
   const [tab, setTab] = useState('casual')
   const [booked, setBooked] = useState([])
+  const [checkout, setCheckout] = useState(null) // { session, type, amount, description }
   const { data: sessionsData, loading } = useApi(() => classes.list())
 
   const sessions = sessionsData?.results || []
 
   function handleBook(session, type) {
+    if (type === 'waitlist') {
+      enrolments.create({ session: session.id, student: user?.id, status: 'waitlisted' })
+        .then(() => setBooked(b => [...b, session.id + '-waitlist']))
+        .catch(() => {})
+      return
+    }
+    const isCasual = type === 'casual' || session.session_type === 'casual'
+    const amount = isCasual ? 35 : 270 // TODO: pull from season pricing
+    const description = `${session.name} — ${isCasual ? 'Casual' : 'Season 4'}`
+    setCheckout({ session, type, amount, description })
+  }
+
+  async function handlePaymentSuccess() {
+    const { session, type } = checkout
+    setCheckout(null)
+    try {
+      await enrolments.create({ session: session.id, student: user?.id, status: 'active' })
+    } catch {}
     setBooked(b => [...b, session.id])
   }
 
   return (
     <div>
+      {checkout && (
+        <CheckoutModal
+          amount={checkout.amount}
+          description={checkout.description}
+          saveMethod={true}
+          onSuccess={handlePaymentSuccess}
+          onClose={() => setCheckout(null)}
+        />
+      )}
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, marginBottom: 4 }}>Book a Class</div>
         <div style={{ fontSize: 13, color: 'var(--grey)' }}>Browse available classes and secure your spot</div>
