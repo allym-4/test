@@ -147,30 +147,28 @@ export default function AdminSettings() {
 
       {tab === 'pricing' && (
         <div>
-          <Section title="Class Pricing">
-            <div className="tbl-section" style={{ border: 'none', borderRadius: 0 }}>
-              <table>
-                <thead><tr><th>Type</th><th>Price</th><th>Description</th><th></th></tr></thead>
-                <tbody>
-                  {[
-                    ['Season Enrolment', '$180–$220', 'Per student per 8-week season'],
-                    ['Trial Class', '$25', 'First class for new students'],
-                    ['Drop-in / Casual', '$35', 'Single casual class booking'],
-                    ['Class Pass 5×', '$150', '5 casual class credits'],
-                    ['Class Pass 10×', '$280', '10 casual class credits'],
-                    ['Workshop', '$45–$75', 'Special workshop events'],
-                  ].map(([type, price, desc]) => (
-                    <tr key={type}>
-                      <td><b>{type}</b></td>
-                      <td style={{ color: 'var(--lime)', fontWeight: 600 }}>{price}</td>
-                      <td style={{ color: 'var(--grey)', fontSize: 12 }}>{desc}</td>
-                      <td><button className="btn btn-ghost btn-xs">Edit</button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <button className="btn btn-ghost btn-xs" style={{ marginTop: 12 }}>+ Add Pricing Type</button>
+          <Section title="Booking Prices">
+            <FieldRow label="Casual / drop-in">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ color: 'var(--grey)' }}>$</span>
+                <input type="number" step="0.01" min="0" style={{ maxWidth: 120 }} value={form.price_casual} onChange={e => set('price_casual', e.target.value)} />
+                <span style={{ fontSize: 12, color: 'var(--grey)' }}>per class</span>
+              </div>
+            </FieldRow>
+            <FieldRow label="Season enrolment">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ color: 'var(--grey)' }}>$</span>
+                <input type="number" step="0.01" min="0" style={{ maxWidth: 120 }} value={form.price_season} onChange={e => set('price_season', e.target.value)} />
+                <span style={{ fontSize: 12, color: 'var(--grey)' }}>per season</span>
+              </div>
+            </FieldRow>
+            <FieldRow label="Trial class">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ color: 'var(--grey)' }}>$</span>
+                <input type="number" step="0.01" min="0" style={{ maxWidth: 120 }} value={form.price_trial} onChange={e => set('price_trial', e.target.value)} />
+                <span style={{ fontSize: 12, color: 'var(--grey)' }}>first class</span>
+              </div>
+            </FieldRow>
           </Section>
         </div>
       )}

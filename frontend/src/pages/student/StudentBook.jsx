@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useApi } from '../../hooks/useApi'
 import { useAuth } from '../../contexts/AuthContext'
-import { classes, enrolments } from '../../api'
+import { classes, enrolments, settings as settingsApi } from '../../api'
 import CheckoutModal from '../../components/CheckoutModal'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-function ClassCard({ session, onBook }) {
+function ClassCard({ session, onBook, priceCasual }) {
   const spotsLeft = (session.capacity || 12) - (session.enrolled_count || 0)
   const isFull = spotsLeft <= 0
 
@@ -23,7 +23,7 @@ function ClassCard({ session, onBook }) {
           )}
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, color: 'var(--lime)' }}>$35</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, color: 'var(--lime)' }}>${priceCasual}</div>
           <div style={{ fontSize: 10, color: 'var(--grey)' }}>per class</div>
         </div>
       </div>
@@ -54,6 +54,11 @@ export default function StudentBook() {
   const [booked, setBooked] = useState([])
   const [checkout, setCheckout] = useState(null) // { session, type, amount, description }
   const { data: sessionsData, loading } = useApi(() => classes.list())
+  const { data: studioSettings } = useApi(() => settingsApi.get())
+
+  const priceCasual = parseFloat(studioSettings?.price_casual || 35)
+  const priceSeason = parseFloat(studioSettings?.price_season || 270)
+  const priceTrial = parseFloat(studioSettings?.price_trial || 25)
 
   const sessions = sessionsData?.results || []
 
@@ -65,7 +70,7 @@ export default function StudentBook() {
       return
     }
     const isCasual = type === 'casual' || session.session_type === 'casual'
-    const amount = isCasual ? 35 : 270 // TODO: pull from season pricing
+    const amount = isCasual ? priceCasual : priceSeason
     const description = `${session.name} — ${isCasual ? 'Casual' : 'Season 4'}`
     setCheckout({ session, type, amount, description })
   }
@@ -120,7 +125,7 @@ export default function StudentBook() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
               {sessions.map(s => (
-                <ClassCard key={s.id} session={s} onBook={handleBook} />
+                <ClassCard key={s.id} session={s} onBook={handleBook} priceCasual={priceSeason} />
               ))}
               {sessions.length === 0 && (
                 <div style={{ color: 'var(--grey)', fontSize: 13, gridColumn: '1 / -1' }}>No classes available</div>
@@ -133,8 +138,8 @@ export default function StudentBook() {
       {tab === 'casual' && (
         <div>
           <div style={{ background: 'rgba(204,255,0,0.06)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 12, padding: '14px 18px', marginBottom: 20 }}>
-            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>Drop-in Rate: $35 per class</div>
-            <div style={{ fontSize: 12, color: 'var(--grey)' }}>Class passes available: 5× for $150, 10× for $280</div>
+            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>Drop-in Rate: ${priceCasual} per class</div>
+            <div style={{ fontSize: 12, color: 'var(--grey)' }}>Trial class for new students: ${priceTrial}</div>
           </div>
 
           {loading ? (
@@ -142,7 +147,7 @@ export default function StudentBook() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
               {sessions.map(s => (
-                <ClassCard key={s.id} session={{ ...s, type: 'casual' }} onBook={handleBook} />
+                <ClassCard key={s.id} session={{ ...s, type: 'casual' }} onBook={handleBook} priceCasual={priceCasual} />
               ))}
               {sessions.length === 0 && (
                 <div style={{ color: 'var(--grey)', fontSize: 13, gridColumn: '1 / -1' }}>No casual classes available right now</div>

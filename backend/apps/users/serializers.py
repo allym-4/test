@@ -72,6 +72,7 @@ class StudioSettingsSerializer(serializers.ModelSerializer):
             'cancellation_window_hours', 'no_show_fee', 'late_cancel_fee',
             'credit_expiry_days', 'max_freeze_weeks', 'gst_registered', 'abn',
             'kisi_api_key', 'kisi_org_id',
+            'price_casual', 'price_season', 'price_trial',
         )
 
 
