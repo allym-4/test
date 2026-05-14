@@ -44,6 +44,17 @@ export default function StudentDashboard() {
         </div>
       </div>
 
+      {/* Profile incomplete banner */}
+      {(!user?.phone || !user?.emergency_contact_name || !user?.emergency_contact_phone) && (
+        <div style={{ background: 'rgba(176,160,255,0.08)', border: '1px solid rgba(176,160,255,0.25)', borderRadius: 12, padding: '14px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--lav)', marginBottom: 4 }}>Complete your profile</div>
+            <div style={{ fontSize: 13, color: 'var(--grey)' }}>Add your phone number and emergency contact so we can reach you if needed.</div>
+          </div>
+          <Link to="/portal/account"><button className="btn btn-sm" style={{ background: 'var(--lav)', color: '#000', whiteSpace: 'nowrap' }}>Update now</button></Link>
+        </div>
+      )}
+
       {/* Balance alert */}
       {isOwing && (
         <div style={{ background: 'rgba(255,68,68,0.08)', border: '1px solid rgba(255,68,68,0.25)', borderRadius: 12, padding: '14px 18px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
