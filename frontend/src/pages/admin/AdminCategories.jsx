@@ -61,6 +61,7 @@ export default function AdminCategories() {
   const { data, loading, refetch } = useApi(() => categoriesApi.list())
   const categories = data?.results || data || []
   const [modal, setModal] = useState(null)
+  const [deleting, setDeleting] = useState(null)
 
   function handleSaved() {
     setModal(null)
@@ -70,6 +71,17 @@ export default function AdminCategories() {
   async function toggleVisible(cat) {
     await categoriesApi.update(cat.id, { visible: !cat.visible })
     refetch()
+  }
+
+  async function handleDelete(cat) {
+    if (!confirm(`Delete "${cat.name}"? This cannot be undone.`)) return
+    setDeleting(cat.id)
+    try {
+      await categoriesApi.delete(cat.id)
+      refetch()
+    } finally {
+      setDeleting(null)
+    }
   }
 
   return (
@@ -99,7 +111,12 @@ export default function AdminCategories() {
                       <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: cat.visible ? 19 : 3, transition: 'left 0.2s' }} />
                     </div>
                   </td>
-                  <td><button className="btn btn-ghost btn-xs" onClick={() => setModal({ existing: cat })}>Edit</button></td>
+                  <td>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button className="btn btn-ghost btn-xs" onClick={() => setModal({ existing: cat })}>Edit</button>
+                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} disabled={deleting === cat.id} onClick={() => handleDelete(cat)}>{deleting === cat.id ? '…' : 'Delete'}</button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>

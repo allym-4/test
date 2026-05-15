@@ -7,7 +7,7 @@ export default function StudentCommunity() {
   const { user } = useAuth()
 
   // Fetch joined groups
-  const { data: groupData } = useApi(() => client.get('/api/community/groups/'), [])
+  const { data: groupData, refetch: refetchGroups } = useApi(() => client.get('/api/community/groups/'), [])
   const allGroups = groupData?.results || groupData || []
   const joinedGroups = allGroups.filter(g => g.is_member || g.joined || g.member)
   const discoverGroups = allGroups.filter(g => !g.is_member && !g.joined && !g.member)
@@ -69,13 +69,13 @@ export default function StudentCommunity() {
   function joinGroup(groupId) {
     setJoiningId(groupId)
     client.post(`/api/community/groups/${groupId}/join/`)
-      .then(() => window.location.reload())
+      .then(() => { refetchGroups(); setJoiningId(null) })
       .catch(() => setJoiningId(null))
   }
 
   function leaveGroup(groupId) {
     client.post(`/api/community/groups/${groupId}/leave/`)
-      .then(() => window.location.reload())
+      .then(() => { refetchGroups(); setActiveGroupId(null) })
       .catch(() => {})
   }
 
