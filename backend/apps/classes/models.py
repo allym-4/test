@@ -57,6 +57,9 @@ class ClassSession(models.Model):
     category = models.ForeignKey(
         ClassCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='sessions'
     )
+    season = models.ForeignKey(
+        'Season', on_delete=models.SET_NULL, null=True, blank=True, related_name='sessions'
+    )
 
     class Meta:
         ordering = ['day_of_week', 'start_time']

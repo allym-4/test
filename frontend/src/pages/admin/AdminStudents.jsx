@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useApi } from '../../hooks/useApi'
-import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi } from '../../api'
+import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi, classes as classesApi } from '../../api'
+import client from '../../api/client'
 import '../StudentsPage.css'
 import AddStudentModal from '../../components/AddStudentModal'
 import BulkImportModal from '../../components/BulkImportModal'
@@ -59,6 +60,7 @@ function StudentDetail({ student, onClose, onRefreshList }) {
   const [skillProgress, setSkillProgress] = useState({})
   const [formsData, setFormsData] = useState(null)
   const [commsData, setCommsData] = useState(null)
+  const [notificationsData, setNotificationsData] = useState(null)
   const [commsFilter, setCommsFilter] = useState('all')
   const [loadingComms, setLoadingComms] = useState(false)
 
@@ -75,10 +77,17 @@ function StudentDetail({ student, onClose, onRefreshList }) {
   useEffect(() => {
     if (tab !== 'comms') return
     setLoadingComms(true)
-    helpdesk.list({ student: student.id })
-      .then(res => setCommsData(res.data.results || res.data || []))
-      .catch(() => setCommsData([]))
-      .finally(() => setLoadingComms(false))
+    Promise.all([
+      helpdesk.list({ student: student.id })
+        .then(res => res.data.results || res.data || [])
+        .catch(() => []),
+      client.get('/api/users/notifications/', { params: { recipient: student.id } })
+        .then(res => res.data.results || res.data || [])
+        .catch(() => []),
+    ]).then(([tickets, notifs]) => {
+      setCommsData(tickets)
+      setNotificationsData(notifs)
+    }).finally(() => setLoadingComms(false))
   }, [tab, student.id])
 
   useEffect(() => {
@@ -524,7 +533,7 @@ function StudentDetail({ student, onClose, onRefreshList }) {
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                       <div style={{ display: 'flex', gap: 6 }}>
-                        {[['all', 'All'], ['open', 'Open'], ['resolved', 'Resolved']].map(([key, label]) => (
+                        {[['all', 'All'], ['emails', 'Emails & Notifications'], ['tickets', 'Tickets']].map(([key, label]) => (
                           <button key={key} onClick={() => setCommsFilter(key)} className={`btn btn-xs ${commsFilter === key ? 'btn-lime' : 'btn-ghost'}`}>{label}</button>
                         ))}
                       </div>
@@ -532,25 +541,67 @@ function StudentDetail({ student, onClose, onRefreshList }) {
                     </div>
                     {loadingComms ? (
                       <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}><div className="spinner" /></div>
-                    ) : (commsData || []).length === 0 ? (
-                      <div className="empty-state">No support tickets for this student</div>
                     ) : (
-                      <div className="tbl-section">
-                        <table>
-                          <thead><tr><th>#</th><th>Subject</th><th>Category</th><th>Status</th><th>Date</th></tr></thead>
-                          <tbody>
-                            {(commsData || []).filter(t => commsFilter === 'all' || t.status === commsFilter).map(t => (
-                              <tr key={t.id}>
-                                <td style={{ fontFamily: 'monospace', color: 'var(--grey)', fontSize: 11 }}>#{t.id}</td>
-                                <td style={{ fontWeight: 500 }}>{t.subject}</td>
-                                <td style={{ color: 'var(--grey)', fontSize: 12 }}>{t.category}</td>
-                                <td><span className={`tag tag-${t.status === 'open' ? 'red' : t.status === 'pending' ? 'amber' : t.status === 'resolved' ? 'lime' : 'grey'}`} style={{ fontSize: 10 }}>{t.status}</span></td>
-                                <td style={{ color: 'var(--grey)', fontSize: 12 }}>{new Date(t.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                      <>
+                        {(commsFilter === 'all' || commsFilter === 'emails') && (
+                          <div style={{ marginBottom: commsFilter === 'all' ? 24 : 0 }}>
+                            {commsFilter === 'all' && (
+                              <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 10 }}>Emails & Notifications</div>
+                            )}
+                            {(notificationsData || []).length === 0 ? (
+                              <div className="empty-state">No notifications</div>
+                            ) : (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                {(notificationsData || []).map(n => (
+                                  <div key={n.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--lav)', flexShrink: 0, marginTop: 4 }} />
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                                        <div style={{ fontWeight: 500, fontSize: 13 }}>{n.title}</div>
+                                        <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
+                                          {n.notification_type && <span className="tag tag-lav" style={{ fontSize: 10 }}>{n.notification_type}</span>}
+                                          <span style={{ fontSize: 11, color: 'var(--grey)' }}>{new Date(n.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>
+                                        </div>
+                                      </div>
+                                      {n.body && <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.body}</div>}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {(commsFilter === 'all' || commsFilter === 'tickets') && (
+                          <div>
+                            {commsFilter === 'all' && (
+                              <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 10 }}>Support Tickets</div>
+                            )}
+                            {(commsData || []).length === 0 ? (
+                              <div className="empty-state">No support tickets for this student</div>
+                            ) : (
+                              <div className="tbl-section">
+                                <table>
+                                  <thead><tr><th>#</th><th>Subject</th><th>Category</th><th>Status</th><th>Date</th></tr></thead>
+                                  <tbody>
+                                    {(commsData || []).map(t => (
+                                      <tr key={t.id}>
+                                        <td style={{ fontFamily: 'monospace', color: 'var(--grey)', fontSize: 11 }}>#{t.id}</td>
+                                        <td style={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--lime)', flexShrink: 0, display: 'inline-block' }} />
+                                          {t.subject}
+                                        </td>
+                                        <td style={{ color: 'var(--grey)', fontSize: 12 }}>{t.category}</td>
+                                        <td><span className={`tag tag-${t.status === 'open' ? 'red' : t.status === 'pending' ? 'amber' : t.status === 'resolved' ? 'lime' : 'grey'}`} style={{ fontSize: 10 }}>{t.status}</span></td>
+                                        <td style={{ color: 'var(--grey)', fontSize: 12 }}>{new Date(t.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
@@ -621,8 +672,9 @@ function BulkTagModal({ onClose }) {
 
 export default function AdminStudents() {
   const { data, loading } = useApi(() => users.list({ role: 'student' }))
+  const { data: sessionsData } = useApi(() => classesApi.list({ active: 'true' }))
   const [search, setSearch] = useState('')
-  const [levelFilter, setLevelFilter] = useState('')
+  const [classFilter, setClassFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [activeChip, setActiveChip] = useState('All')
   const [selected, setSelected] = useState(null)
@@ -651,17 +703,15 @@ export default function AdminStudents() {
     const matchSearch = !search ||
       s.display_name?.toLowerCase().includes(search.toLowerCase()) ||
       s.email?.toLowerCase().includes(search.toLowerCase())
-    const matchLevel = !levelFilter || (s.level || '') === levelFilter
     const matchStatus = !statusFilter || (s.status || '').toLowerCase() === statusFilter.toLowerCase()
     const matchChip = activeChip === 'All' || (s.tags || []).some(t =>
       (typeof t === 'string' ? t : t.name || '').toLowerCase() === activeChip.toLowerCase()
     )
-    return matchSearch && matchLevel && matchStatus && matchChip
+    return matchSearch && matchStatus && matchChip
   }).sort((a, b) => {
     let av, bv
     if (sortKey === 'name') { av = a.display_name || ''; bv = b.display_name || '' }
     else if (sortKey === 'balance') { av = balances[a.id] ?? 0; bv = balances[b.id] ?? 0 }
-    else if (sortKey === 'level') { av = a.level || ''; bv = b.level || '' }
     else if (sortKey === 'last_seen') { av = a.last_login || ''; bv = b.last_login || '' }
     else { av = ''; bv = '' }
     if (av < bv) return sortDir === 'asc' ? -1 : 1
@@ -707,13 +757,11 @@ export default function AdminStudents() {
           onChange={e => setSearch(e.target.value)}
           style={{ maxWidth: 280, background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', padding: '8px 12px', fontSize: 13, outline: 'none', width: '100%' }}
         />
-        <select value={levelFilter} onChange={e => setLevelFilter(e.target.value)} style={selectStyle}>
-          <option value="">All Levels</option>
-          <option value="Beginner">Beginner</option>
-          <option value="Level 1">Level 1</option>
-          <option value="Level 2">Level 2</option>
-          <option value="Level 3">Level 3</option>
-          <option value="Level 4+">Level 4+</option>
+        <select value={classFilter} onChange={e => setClassFilter(e.target.value)} style={selectStyle}>
+          <option value="">All Classes</option>
+          {(sessionsData?.results || sessionsData || []).map(s => (
+            <option key={s.id} value={String(s.id)}>{s.name}</option>
+          ))}
         </select>
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={selectStyle}>
           <option value="">All Statuses</option>
@@ -757,7 +805,7 @@ export default function AdminStudents() {
                 <th></th>
                 <SortTh col="name" label="Name" />
                 <th>Email</th>
-                <SortTh col="level" label="Level" />
+                <th>Enrolled Classes</th>
                 <SortTh col="last_seen" label="Last Seen" />
                 <SortTh col="balance" label="Balance" />
                 <th>Status</th>
@@ -787,7 +835,26 @@ export default function AdminStudents() {
                       {s.pronouns && <div style={{ fontSize: 11, color: 'var(--grey)' }}>{s.pronouns}</div>}
                     </td>
                     <td style={{ color: 'var(--grey)', fontSize: 12 }}>{s.email}</td>
-                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{s.level || '—'}</td>
+                    <td style={{ fontSize: 11 }}>
+                      {(s.enrolled_seasons_summary || []).length === 0 ? (
+                        <span style={{ color: 'var(--grey)' }}>—</span>
+                      ) : (
+                        <span>
+                          {(s.enrolled_seasons_summary || []).map((item, i) => {
+                            const abbrev = item.season_name
+                              ? item.season_name.replace(/season\s*/i, 'S').replace(/\s+/g, '')
+                              : '?'
+                            return (
+                              <span key={i}>
+                                {i > 0 && <span style={{ color: 'var(--grey)', margin: '0 4px' }}>|</span>}
+                                <span style={{ color: 'var(--lime)', fontWeight: 600 }}>{abbrev}</span>
+                                <span style={{ color: 'var(--grey)', marginLeft: 2 }}>- {item.count}</span>
+                              </span>
+                            )
+                          })}
+                        </span>
+                      )}
+                    </td>
                     <td style={{ color: 'var(--grey)', fontSize: 12 }}>{lastSeen}</td>
                     <td>
                       {b !== undefined ? (

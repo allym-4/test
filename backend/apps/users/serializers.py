@@ -12,6 +12,7 @@ class UserMinimalSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     display_name = serializers.ReadOnlyField()
+    enrolled_seasons_summary = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -19,9 +20,30 @@ class UserSerializer(serializers.ModelSerializer):
             'id', 'username', 'email', 'first_name', 'last_name', 'display_name',
             'role', 'pronouns', 'phone', 'date_of_birth', 'profile_photo',
             'emergency_contact_name', 'emergency_contact_phone', 'internal_notes', 'is_active',
-            'last_login', 'stripe_customer_id',
+            'last_login', 'stripe_customer_id', 'enrolled_seasons_summary',
         )
         read_only_fields = ('id',)
+
+    def get_enrolled_seasons_summary(self, obj):
+        from apps.enrolments.models import Enrolment
+        enrolments = Enrolment.objects.filter(
+            student=obj, status='active'
+        ).select_related('class_session__season')
+
+        seasons = {}
+        no_season_count = 0
+        for e in enrolments:
+            season = e.class_session.season
+            if season:
+                key = season.name
+                seasons[key] = seasons.get(key, 0) + 1
+            else:
+                no_season_count += 1
+
+        result = [{'season_name': k, 'count': v} for k, v in seasons.items()]
+        if no_season_count:
+            result.append({'season_name': None, 'count': no_season_count})
+        return result
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
