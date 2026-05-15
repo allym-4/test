@@ -42,10 +42,13 @@ class PaymentPlanListView(generics.ListCreateAPIView):
     permission_classes = [IsAdminOrInstructor]
 
     def get_queryset(self):
-        qs = PaymentPlan.objects.prefetch_related('instalments')
+        qs = PaymentPlan.objects.prefetch_related('instalments').select_related('student')
         student_id = self.request.query_params.get('student')
         if student_id:
             qs = qs.filter(student_id=student_id)
+        plan_status = self.request.query_params.get('status')
+        if plan_status:
+            qs = qs.filter(status=plan_status)
         return qs
 
     def perform_create(self, serializer):

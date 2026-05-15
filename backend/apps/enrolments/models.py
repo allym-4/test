@@ -10,6 +10,7 @@ class Enrolment(models.Model):
         COMPLETED = 'completed', 'Completed'
         CANCELLED = 'cancelled', 'Cancelled'
         SUSPENDED = 'suspended', 'Suspended'
+        EXEMPTION_REQUESTED = 'exemption_requested', 'Exemption Requested'
 
     class EnrolmentType(models.TextChoices):
         COURSE = 'course', 'Course'
@@ -18,7 +19,7 @@ class Enrolment(models.Model):
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='enrolments')
     class_session = models.ForeignKey(ClassSession, on_delete=models.CASCADE, related_name='enrolments')
     enrolment_type = models.CharField(max_length=10, choices=EnrolmentType.choices, default=EnrolmentType.COURSE)
-    status = models.CharField(max_length=15, choices=Status.choices, default=Status.ACTIVE)
+    status = models.CharField(max_length=22, choices=Status.choices, default=Status.ACTIVE)
     enrolled_date = models.DateField(auto_now_add=True)
     cancelled_date = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True)

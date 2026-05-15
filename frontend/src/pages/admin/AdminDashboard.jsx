@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
 import { classes, payments, enrolments, orders } from '../../api'
+import client from '../../api/client'
 
 function todayLabel() {
   return new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -37,12 +38,12 @@ export default function AdminDashboard() {
   const [checkedItems, setCheckedItems] = useState({})
 
   const { data: sessionsData } = useApi(() => classes.list({ active: 'true' }))
-  const { data: dashData } = useApi(() => payments.dashboard())
-  const { data: plansData } = useApi(() => payments.plans.list())
+  const { data: dashData, refetch: refetchDash } = useApi(() => payments.dashboard())
+  const { data: plansData, refetch: refetchPlans } = useApi(() => payments.plans.list())
   const { data: pendingOrdersData } = useApi(() => orders.list({ status: 'pending' }))
   const { data: trialsData } = useApi(() => enrolments.list({ enrolment_type: 'trial' }))
-  const { data: pendingPlansData } = useApi(() => payments.plans.list({ status: 'pending_approval' }))
-  const { data: exemptionData } = useApi(() => enrolments.list({ status: 'exemption_requested' }))
+  const { data: pendingPlansData, refetch: refetchPendingPlans } = useApi(() => payments.plans.list({ status: 'pending_approval' }))
+  const { data: exemptionData, refetch: refetchExemptions } = useApi(() => enrolments.list({ status: 'exemption_requested' }))
   const { data: trialsAndCasualsData } = useApi(() => enrolments.list({ enrolment_type: 'trial,casual' }))
 
   const sessions = sessionsData?.results || []
@@ -76,6 +77,47 @@ export default function AdminDashboard() {
     .sort((a, b) => new Date(a.date || a.created_at) - new Date(b.date || b.created_at))
 
   const todayTrials = trials.filter(e => e.created_at?.slice(0, 10) === todayStr || e.date?.slice(0, 10) === todayStr)
+
+  async function approvePlan(plan) {
+    await payments.plans.update(plan.id, { status: 'active' })
+    refetchPendingPlans()
+    refetchPlans()
+  }
+
+  async function denyPlan(plan) {
+    await payments.plans.update(plan.id, { status: 'cancelled' })
+    refetchPendingPlans()
+  }
+
+  async function approveExemption(enrolment) {
+    await enrolments.update(enrolment.id, { status: 'active' })
+    refetchExemptions()
+  }
+
+  async function declineExemption(enrolment) {
+    await enrolments.update(enrolment.id, { status: 'cancelled' })
+    refetchExemptions()
+  }
+
+  async function coverSession(session) {
+    const today = new Date().toISOString().slice(0, 10)
+    await client.post('/api/classes/occurrences/', { session: session.id, date: today, cover_needed: true })
+  }
+
+  async function cancelSession(session) {
+    if (!window.confirm(`Cancel ${session.name} today?`)) return
+    const today = new Date().toISOString().slice(0, 10)
+    await client.post('/api/classes/occurrences/', { session: session.id, date: today, status: 'cancelled' })
+  }
+
+  async function chasePayment(studentId) {
+    await client.post('/api/users/notifications/', {
+      user: studentId,
+      title: 'Outstanding balance reminder',
+      body: 'You have an outstanding balance. Please contact the studio to arrange payment.',
+      notification_type: 'info',
+    })
+  }
 
   const actionItems = [
     ...pendingOrders.map(o => ({
@@ -244,8 +286,8 @@ export default function AdminDashboard() {
                         </td>
                         <td>
                           <div style={{ display: 'flex', gap: 4 }}>
-                            <button className="btn btn-ghost btn-xs">COVER</button>
-                            <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }}>CANCEL</button>
+                            <button className="btn btn-ghost btn-xs" onClick={() => coverSession(s)}>COVER</button>
+                            <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => cancelSession(s)}>CANCEL</button>
                           </div>
                         </td>
                       </tr>
@@ -313,9 +355,8 @@ export default function AdminDashboard() {
                     </div>
                     {e.reason && <span className="tag tag-amber" style={{ fontSize: 10 }}>{e.reason}</span>}
                     <div style={{ display: 'flex', gap: 6 }}>
-                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--lime)' }}>APPROVE</button>
-                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }}>DECLINE</button>
-                      <button className="btn btn-ghost btn-xs">CONTACT</button>
+                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--lime)' }} onClick={() => approveExemption(e)}>APPROVE</button>
+                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => declineExemption(e)}>DECLINE</button>
                     </div>
                   </div>
                 ))}
@@ -341,9 +382,8 @@ export default function AdminDashboard() {
                     <div style={{ fontSize: 13, fontWeight: 600 }}>${parseFloat(p.total_amount || 0).toFixed(2)}</div>
                     <div style={{ fontSize: 12, color: 'var(--grey)' }}>{p.instalments?.length ?? '—'} instalments</div>
                     <div style={{ display: 'flex', gap: 6 }}>
-                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--lime)' }}>APPROVE</button>
-                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }}>DENY</button>
-                      <button className="btn btn-ghost btn-xs">CONTACT</button>
+                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--lime)' }} onClick={() => approvePlan(p)}>APPROVE</button>
+                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => denyPlan(p)}>DENY</button>
                     </div>
                   </div>
                 ))}
@@ -380,7 +420,7 @@ export default function AdminDashboard() {
                     <td style={{ color: 'var(--red)', fontWeight: 600 }}>${b.owing.toFixed(2)}</td>
                     <td style={{ color: 'var(--grey)' }}>{fmtDate(b.lastDate)}</td>
                     <td>
-                      <button className="btn btn-ghost btn-xs">Chase</button>
+                      <button className="btn btn-ghost btn-xs" onClick={() => b.student_id && chasePayment(b.student_id)}>Chase</button>
                     </td>
                   </tr>
                 ))}
@@ -417,8 +457,8 @@ export default function AdminDashboard() {
                       <div style={{ fontSize: 12, color: 'var(--grey)' }}>Next: {nextDue(p)}</div>
                       <span className="tag tag-red" style={{ fontSize: 10 }}>OVERDUE</span>
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }}>CHASE</button>
-                        <button className="btn btn-ghost btn-xs">VIEW</button>
+                        <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => payments.plans.remind(p.id)}>CHASE</button>
+                        <Link to="/admin/billing" className="btn btn-ghost btn-xs">VIEW</Link>
                       </div>
                     </div>
                   )
@@ -447,8 +487,8 @@ export default function AdminDashboard() {
                       <div style={{ fontSize: 12, color: 'var(--grey)' }}>Next: {nextDue(p)}</div>
                       <span className="tag tag-lime" style={{ fontSize: 10 }}>ON TRACK</span>
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <button className="btn btn-ghost btn-xs">CHASE</button>
-                        <button className="btn btn-ghost btn-xs">VIEW</button>
+                        <button className="btn btn-ghost btn-xs" onClick={() => payments.plans.remind(p.id)}>CHASE</button>
+                        <Link to="/admin/billing" className="btn btn-ghost btn-xs">VIEW</Link>
                       </div>
                     </div>
                   )
@@ -512,9 +552,9 @@ export default function AdminDashboard() {
                       </td>
                       <td>
                         <div style={{ display: 'flex', gap: 4, flexWrap: 'nowrap' }}>
-                          <button className="btn btn-ghost btn-xs">VIEW</button>
-                          {!introSent && <button className="btn btn-ghost btn-xs">SEND NOW</button>}
-                          {!waiverSigned && <button className="btn btn-ghost btn-xs">CHASE WAIVER</button>}
+                          <Link to="/admin/students" className="btn btn-ghost btn-xs">VIEW</Link>
+                          {!introSent && e.student && <button className="btn btn-ghost btn-xs" onClick={() => client.post('/api/users/notifications/', { user: e.student, title: 'Welcome to Duality!', body: 'We\'re excited to have you. Check your inbox for your intro email.', notification_type: 'info' })}>SEND NOW</button>}
+                          {!waiverSigned && e.student && <button className="btn btn-ghost btn-xs" onClick={() => client.post('/api/users/notifications/', { user: e.student, title: 'Waiver reminder', body: 'Please complete and sign your studio waiver before your first class.', notification_type: 'info' })}>CHASE WAIVER</button>}
                         </div>
                       </td>
                     </tr>

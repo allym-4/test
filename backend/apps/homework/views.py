@@ -102,3 +102,31 @@ class ChecklistItemBulkView(generics.CreateAPIView):
             )
             created.append(HomeworkChecklistItemSerializer(obj).data)
         return Response(created, status=status.HTTP_201_CREATED)
+
+
+from rest_framework.views import APIView
+
+class HomeworkRemindView(APIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        try:
+            assignment = HomeworkAssignment.objects.select_related('class_session').get(pk=pk)
+        except HomeworkAssignment.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        from apps.users.models import Notification
+        from apps.enrolments.models import Enrolment
+        students = Enrolment.objects.filter(
+            class_session=assignment.class_session, status='active'
+        ).values_list('student_id', flat=True)
+        notifs = [
+            Notification(
+                user_id=sid,
+                title='Homework reminder',
+                body=f'Don\'t forget to complete "{assignment.title}" for {assignment.class_session.name}.',
+                notification_type='info',
+            )
+            for sid in students
+        ]
+        Notification.objects.bulk_create(notifs, ignore_conflicts=True)
+        return Response({'sent': len(notifs)})

@@ -8,4 +8,5 @@ urlpatterns = [
     path('submissions/', views.HomeworkSubmissionListView.as_view(), name='submission-list'),
     path('submissions/<int:pk>/', views.HomeworkSubmissionDetailView.as_view(), name='submission-detail'),
     path('submissions/<int:submission_pk>/items/', views.SubmissionItemListView.as_view(), name='submission-item-list'),
+    path('<int:pk>/remind/', views.HomeworkRemindView.as_view(), name='homework-remind'),
 ]

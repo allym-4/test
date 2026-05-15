@@ -34,6 +34,7 @@ class Payment(models.Model):
 
 class PaymentPlan(models.Model):
     class Status(models.TextChoices):
+        PENDING_APPROVAL = 'pending_approval', 'Pending Approval'
         PENDING = 'pending', 'Pending'
         ACTIVE = 'active', 'Active'
         COMPLETED = 'completed', 'Completed'
@@ -42,7 +43,7 @@ class PaymentPlan(models.Model):
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payment_plans')
     description = models.CharField(max_length=200)
     total_amount = models.DecimalField(max_digits=8, decimal_places=2)
-    status = models.CharField(max_length=15, choices=Status.choices, default=Status.ACTIVE)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
     created_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name='payment_plans_created'
     )

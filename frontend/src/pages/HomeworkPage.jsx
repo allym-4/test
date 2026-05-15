@@ -249,7 +249,7 @@ function HwDetailModal({ hw, onClose, onReview }) {
                           {submitted ? (
                             <button className="btn btn-lime btn-xs" onClick={() => { onClose(); onReview(sub) }}>Review</button>
                           ) : (
-                            <button className="btn btn-ghost btn-xs" onClick={() => showToast('Reminder sent')}>Remind</button>
+                            <button className="btn btn-ghost btn-xs" onClick={async () => { try { await client.post(`/api/homework/${hw.id}/remind/`); showToast('Reminder sent') } catch { showToast('Failed to send reminder') } }}>Remind</button>
                           )}
                         </td>
                       </tr>

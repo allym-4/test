@@ -31,6 +31,10 @@ class GroupPostListView(generics.ListCreateAPIView):
         group_id = self.request.query_params.get('group')
         if group_id:
             qs = qs.filter(group_id=group_id)
+        if not self.request.user.role in ('admin', 'staff', 'instructor'):
+            qs = qs.filter(is_approved=True)
+        elif self.request.query_params.get('pending') == 'true':
+            qs = qs.filter(is_approved=False)
         return qs
 
     def perform_create(self, serializer):
@@ -100,7 +104,10 @@ class GroupPostsView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return GroupPost.objects.select_related('author').filter(group_id=self.kwargs['pk'])
+        qs = GroupPost.objects.select_related('author').filter(group_id=self.kwargs['pk'])
+        if not self.request.user.role in ('admin', 'staff', 'instructor'):
+            qs = qs.filter(is_approved=True)
+        return qs
 
     def perform_create(self, serializer):
         group = CommunityGroup.objects.get(pk=self.kwargs['pk'])

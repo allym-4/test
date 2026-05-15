@@ -137,6 +137,7 @@ export const homework = {
   getSubmission: (id) => client.get(`/api/homework/submissions/${id}/`),
   reviewSubmission: (id, data) => client.patch(`/api/homework/submissions/${id}/`, data),
   submitHomework: (data) => client.post('/api/homework/submissions/', data),
+  remind: (id) => client.post(`/api/homework/${id}/remind/`),
 }
 
 export const users = {

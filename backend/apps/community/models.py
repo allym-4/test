@@ -20,6 +20,7 @@ class GroupPost(models.Model):
     group = models.ForeignKey(CommunityGroup, on_delete=models.CASCADE, related_name='posts')
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='community_posts')
     body = models.TextField()
+    is_approved = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -193,8 +193,7 @@ function RequestsTab() {
       setPosts(ps => ps.filter(p => p.id !== post.id))
       showToast('Post approved')
     } catch {
-      showToast('Approved (offline)')
-      setPosts(ps => ps.filter(p => p.id !== post.id))
+      showToast('Failed to approve post')
     }
   }
 
@@ -204,8 +203,7 @@ function RequestsTab() {
       setPosts(ps => ps.filter(p => p.id !== post.id))
       showToast('Post declined')
     } catch {
-      showToast('Declined (offline)')
-      setPosts(ps => ps.filter(p => p.id !== post.id))
+      showToast('Failed to decline post')
     }
   }
 

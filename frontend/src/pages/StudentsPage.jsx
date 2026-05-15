@@ -29,6 +29,12 @@ export default function StudentsPage() {
   const [notesData, setNotesData]   = useState(null)
   const [loadingDetail, setLoadingDetail] = useState(false)
   const [newNote, setNewNote]       = useState('')
+  const [savingNote, setSavingNote] = useState(false)
+  const [payModal, setPayModal]     = useState(false)
+  const [payAmount, setPayAmount]   = useState('')
+  const [payDesc, setPayDesc]       = useState('')
+  const [payType, setPayType]       = useState('payment')
+  const [savingPay, setSavingPay]   = useState(false)
 
   const allStudents = data?.results || []
   const filtered = allStudents.filter(s =>
@@ -58,6 +64,39 @@ export default function StudentsPage() {
       setAttData(attRes.data.results || [])
     } finally {
       setLoadingDetail(false)
+    }
+  }
+
+  async function handleAddNote() {
+    if (!newNote.trim() || !selected) return
+    setSavingNote(true)
+    try {
+      const res = await users.addNote(selected.id, { body: newNote.trim() })
+      setNotesData(prev => [res.data, ...(prev || [])])
+      setNewNote('')
+    } finally {
+      setSavingNote(false)
+    }
+  }
+
+  async function handleTakePayment() {
+    if (!payAmount || !payDesc || !selected) return
+    setSavingPay(true)
+    try {
+      await payments.create({
+        student: selected.id,
+        payment_type: payType,
+        amount: parseFloat(payAmount),
+        description: payDesc,
+      })
+      const balRes = await payments.balance(selected.id)
+      setBalanceData(balRes.data)
+      setPayModal(false)
+      setPayAmount('')
+      setPayDesc('')
+      setPayType('payment')
+    } finally {
+      setSavingPay(false)
     }
   }
 
@@ -250,7 +289,7 @@ export default function StudentsPage() {
                             <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#ff8888', marginBottom: 4 }}>Outstanding Balance</div>
                             <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color: '#ff6b6b' }}>${Math.abs(bal).toFixed(2)}</div>
                           </div>
-                          <button className="btn btn-lime btn-sm">Take Payment</button>
+                          <button className="btn btn-lime btn-sm" onClick={() => setPayModal(true)}>Take Payment</button>
                         </div>
                       )}
                       <div className="sd-section-label">Summary</div>
@@ -313,8 +352,8 @@ export default function StudentsPage() {
                           onChange={e => setNewNote(e.target.value)}
                           rows={3}
                         />
-                        <button className="btn btn-lime btn-sm" style={{ marginTop: 8 }} disabled={!newNote.trim()}>
-                          Add Note
+                        <button className="btn btn-lime btn-sm" style={{ marginTop: 8 }} disabled={!newNote.trim() || savingNote} onClick={handleAddNote}>
+                          {savingNote ? 'Saving…' : 'Add Note'}
                         </button>
                       </div>
                     </div>
@@ -322,6 +361,42 @@ export default function StudentsPage() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {payModal && (
+        <div className="sd-overlay" onClick={e => e.target === e.currentTarget && setPayModal(false)}>
+          <div className="sd-modal" style={{ maxWidth: 400 }}>
+            <div className="sd-header">
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>Take Payment — {selected?.display_name}</div>
+              <button className="modal-close-btn" onClick={() => setPayModal(false)}>✕</button>
+            </div>
+            <div className="sd-body">
+              <div className="field">
+                <label>Type</label>
+                <select value={payType} onChange={e => setPayType(e.target.value)} className="input">
+                  <option value="payment">Payment</option>
+                  <option value="charge">Charge</option>
+                  <option value="credit">Credit</option>
+                  <option value="refund">Refund</option>
+                </select>
+              </div>
+              <div className="field">
+                <label>Amount ($)</label>
+                <input type="number" min="0" step="0.01" className="input" value={payAmount} onChange={e => setPayAmount(e.target.value)} autoFocus />
+              </div>
+              <div className="field">
+                <label>Description</label>
+                <input className="input" value={payDesc} onChange={e => setPayDesc(e.target.value)} placeholder="e.g. Season fee, casual class…" />
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => setPayModal(false)}>Cancel</button>
+                <button className="btn btn-lime btn-sm" disabled={!payAmount || !payDesc || savingPay} onClick={handleTakePayment}>
+                  {savingPay ? 'Saving…' : 'Record Payment'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
