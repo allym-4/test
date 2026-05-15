@@ -157,9 +157,13 @@ export default function AdminHelpdesk() {
                   </div>
                   <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.subject}</div>
                   <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 4 }}>{t.student_detail?.display_name || 'No student'}</div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 10, color: 'var(--grey)' }}>{t.category}</span>
-                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: PRIORITY_COLOR[t.priority] || 'var(--grey)', marginTop: 4 }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 10, color: 'var(--grey)' }}>{fmtDate(t.created_at)}</span>
+                    <button
+                      className="btn btn-ghost btn-xs"
+                      style={{ fontSize: 9, padding: '2px 6px' }}
+                      onClick={e => { e.stopPropagation(); openTicket(t) }}
+                    >View</button>
                   </div>
                 </div>
               ))}
