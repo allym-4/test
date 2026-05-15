@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { classes, enrolments, attendance, payments, users } from '../api'
+import { classes, enrolments, attendance, payments, users, settings as settingsApi } from '../api'
+import { useApi } from '../hooks/useApi'
 import './AttendancePage.css'
 
 const AVATAR_COLORS = ['#b0a0ff', '#ccff00', '#ffaa00', '#ff88aa', '#44ffcc', '#ffcc88', '#b0f0b0', '#9ac4ff', '#ffb3de', '#44ff99']
@@ -19,6 +20,72 @@ const STATUS_OPTS = [
   { value: 'cancelled', label: 'Cancelled',             color: 'var(--grey)' },
 ]
 
+function ConvertTrialModal({ enrolment: e, onClose, onSuccess }) {
+  const { data: studioData } = useApi(() => settingsApi.get(), [])
+  const studio = studioData?.data || studioData || {}
+  const seasonPrice = parseFloat(studio.price_season || 270)
+  const trialPrice = parseFloat(studio.price_trial || 35)
+  const defaultAmount = Math.max(0, seasonPrice - trialPrice).toFixed(2)
+
+  const [amount, setAmount] = useState('')
+  const [paymentType, setPaymentType] = useState('payment')
+  const [reference, setReference] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+  const amountVal = amount !== '' ? amount : defaultAmount
+
+  async function handleSubmit(ev) {
+    ev.preventDefault()
+    setSaving(true)
+    setError(null)
+    try {
+      await enrolments.convertTrial(e.id, {
+        amount_paid: parseFloat(amountVal),
+        payment_type: paymentType,
+        reference,
+        description: `Season enrolment — ${e.class_session_detail?.name || 'class'} (converted from trial)`,
+      })
+      onSuccess()
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Conversion failed.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={ev => ev.target === ev.currentTarget && onClose()}>
+      <div className="modal-box" style={{ maxWidth: 420 }}>
+        <div className="modal-title">
+          Convert Trial → Full
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <form onSubmit={handleSubmit} style={{ padding: '0 0 4px' }}>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 14, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+            <b style={{ color: 'var(--white)' }}>{e.student_detail?.display_name}</b> · {e.class_session_detail?.name}
+          </div>
+          <div style={{ background: '#111', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: 'var(--grey)', marginBottom: 14 }}>
+            Season ${seasonPrice.toFixed(2)} − trial ${trialPrice.toFixed(2)} = <b style={{ color: 'var(--lime)' }}>${defaultAmount} remaining</b>
+          </div>
+          {error && <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 12 }}>{error}</div>}
+          <div className="field"><label>Amount ($)</label><input type="number" step="0.01" min="0" value={amountVal} onChange={ev => setAmount(ev.target.value)} /></div>
+          <div className="field"><label>Payment type</label>
+            <select value={paymentType} onChange={ev => setPaymentType(ev.target.value)}>
+              <option value="payment">Payment received</option>
+              <option value="charge">Charge (invoice / owing)</option>
+            </select>
+          </div>
+          <div className="field"><label>Reference <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(optional)</span></label><input value={reference} onChange={ev => setReference(ev.target.value)} placeholder="cash, Square #, etc." /></div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Converting…' : `Confirm $${parseFloat(amountVal || 0).toFixed(2)}`}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 export default function AttendancePage() {
   const { id } = useParams()
   const [session, setSession]       = useState(null)
@@ -34,6 +101,7 @@ export default function AttendancePage() {
   const [noteModal, setNoteModal]   = useState(null)
   const [noteText, setNoteText]     = useState('')
   const [saveBanner, setSaveBanner] = useState(false)
+  const [convertEnrol, setConvertEnrol] = useState(null)
 
   useEffect(() => {
     async function load() {
@@ -226,11 +294,14 @@ export default function AttendancePage() {
                     <span className="att-name-text">{st?.display_name}</span>
                     {st?.pronouns && <span className="att-pronouns">{st.pronouns}</span>}
                     {e.enrolment_type === 'trial'
-                      ? <span className="tag tag-lime" style={{ fontSize: 10 }}>Trial</span>
+                      ? <span className="tag tag-amber" style={{ fontSize: 10 }}>Trial</span>
                       : e.enrolment_type === 'casual'
                       ? <span className="tag tag-lav" style={{ fontSize: 10 }}>Today Only</span>
                       : <span className="tag tag-lav" style={{ fontSize: 10 }}>Course</span>
                     }
+                    {e.enrolment_type === 'trial' && e.status === 'active' && (
+                      <button className="btn btn-lime btn-xs" style={{ fontSize: 9, padding: '2px 7px' }} onClick={ev => { ev.stopPropagation(); setConvertEnrol(e) }}>Convert →</button>
+                    )}
                     {(e.is_first_class || e.classes_attended === 0 || e.total_attendance === 0) && (
                       <span style={{ fontSize: 10, color: 'var(--lime)', fontWeight: 700, marginLeft: 6 }}>FIRST TIME 🌟</span>
                     )}
@@ -276,6 +347,17 @@ export default function AttendancePage() {
           {saving ? <span className="spinner" style={{ width: 14, height: 14 }} /> : saved ? '✓ Saved' : 'Save Register'}
         </button>
       </div>
+
+      {convertEnrol && (
+        <ConvertTrialModal
+          enrolment={convertEnrol}
+          onClose={() => setConvertEnrol(null)}
+          onSuccess={() => {
+            setConvertEnrol(null)
+            setStudents(prev => prev.map(s => s.id === convertEnrol.id ? { ...s, enrolment_type: 'course' } : s))
+          }}
+        />
+      )}
 
       {/* Note modal */}
       {noteModal && (

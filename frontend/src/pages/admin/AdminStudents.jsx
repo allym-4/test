@@ -189,6 +189,9 @@ function StudentDetail({ student, onClose, onRefreshList, onViewForm }) {
   const [showCharge, setShowCharge] = useState(false)
   const [showAddToClass, setShowAddToClass] = useState(false)
   const [convertTrialEnrol, setConvertTrialEnrol] = useState(null)
+  const [savedCardsData, setSavedCardsData] = useState(null)
+  const [chargingSaved, setChargingSaved] = useState(false)
+  const [chargeError, setChargeError] = useState(null)
   const [noteText, setNoteText] = useState('')
   const [noteCategory, setNoteCategory] = useState('general')
   const [savingNote, setSavingNote] = useState(false)
@@ -236,13 +239,15 @@ function StudentDetail({ student, onClose, onRefreshList, onViewForm }) {
       attendance.list({ student: student.id }),
       payments.list({ student: student.id }),
       formsApi.listForStudent(student.id),
-    ]).then(([balRes, enrolRes, notesRes, attRes, payRes, formsRes]) => {
+      payments.stripe.paymentMethods({ student_id: student.id }),
+    ]).then(([balRes, enrolRes, notesRes, attRes, payRes, formsRes, cardsRes]) => {
       setBalanceData(balRes.data)
       setEnrolData(enrolRes.data.results || [])
       setNotesData(notesRes.data.results || [])
       setAttData(attRes.data.results || [])
       setPayData(payRes.data.results || [])
       setFormsData(formsRes.data.results || formsRes.data || [])
+      setSavedCardsData(cardsRes.data)
     }).finally(() => setLoading(false))
   }, [student.id])
 
@@ -537,9 +542,60 @@ function StudentDetail({ student, onClose, onRefreshList, onViewForm }) {
                         <div className="kpi-value" style={{ fontSize: 28 }}>${parseFloat(balanceData?.total_charged || 0).toFixed(2)}</div>
                       </div>
                     </div>
+                    {/* Saved card status */}
+                    {savedCardsData && (
+                      <div style={{ background: '#111', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                        {(savedCardsData.payment_methods || []).length === 0 ? (
+                          <span style={{ fontSize: 12, color: 'var(--grey)' }}>No saved card on file</span>
+                        ) : (
+                          <>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 4 }}>Saved card</div>
+                              {savedCardsData.payment_methods.map(c => (
+                                <div key={c.id} style={{ fontSize: 13, fontWeight: 500 }}>
+                                  {c.brand.charAt(0).toUpperCase() + c.brand.slice(1)} ···· {c.last4}
+                                  <span style={{ fontSize: 11, color: 'var(--grey)', marginLeft: 8 }}>exp {String(c.exp_month).padStart(2, '0')}/{String(c.exp_year).slice(-2)}</span>
+                                  {savedCardsData.default_payment_method_id === c.id && <span className="tag tag-lime" style={{ fontSize: 9, marginLeft: 8 }}>Default</span>}
+                                </div>
+                              ))}
+                            </div>
+                            {savedCardsData.auto_charge && <span className="tag tag-lime" style={{ fontSize: 10 }}>AUTO-CHARGE ON</span>}
+                          </>
+                        )}
+                      </div>
+                    )}
+                    {chargeError && <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 12 }}>{chargeError}</div>}
                     <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
                       <button className="btn btn-lime btn-sm" onClick={() => setShowPayment(true)}>+ Record Payment</button>
                       <button className="btn btn-ghost btn-sm" onClick={() => setShowCharge(true)}>+ Add Charge</button>
+                      {savedCardsData?.payment_methods?.length > 0 && savedCardsData?.default_payment_method_id && bal < 0 && (
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          style={{ color: 'var(--lime)', borderColor: 'rgba(204,255,0,0.3)' }}
+                          disabled={chargingSaved}
+                          onClick={async () => {
+                            setChargeError(null)
+                            setChargingSaved(true)
+                            try {
+                              await payments.stripe.chargeSaved({
+                                student_id: student.id,
+                                amount_cents: Math.round(Math.abs(bal) * 100),
+                                description: 'Outstanding balance — Duality Pole Studio',
+                              })
+                              const res = await payments.balance(student.id)
+                              setBalanceData(res.data)
+                              const payRes = await payments.list({ student: student.id })
+                              setPayData(payRes.data.results || [])
+                            } catch (err) {
+                              setChargeError(err.response?.data?.detail || 'Charge failed.')
+                            } finally {
+                              setChargingSaved(false)
+                            }
+                          }}
+                        >
+                          {chargingSaved ? 'Charging…' : `Charge Saved Card $${Math.abs(bal).toFixed(2)}`}
+                        </button>
+                      )}
                     </div>
                     <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 10 }}>Transaction History</div>
                     <div className="tbl-section">
