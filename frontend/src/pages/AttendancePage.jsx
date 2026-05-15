@@ -33,6 +33,7 @@ export default function AttendancePage() {
   const [filter, setFilter]         = useState('attending')
   const [noteModal, setNoteModal]   = useState(null)
   const [noteText, setNoteText]     = useState('')
+  const [saveBanner, setSaveBanner] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -114,6 +115,7 @@ export default function AttendancePage() {
       })
       await attendance.bulkSave(occurrence.id, records)
       setSaved(true)
+      setSaveBanner(true)
     } finally {
       setSaving(false)
     }
@@ -157,6 +159,19 @@ export default function AttendancePage() {
           </button>
         </div>
       </div>
+
+      {/* Post-save banner */}
+      {saveBanner && (() => {
+        const presentCount = Object.values(register).filter(v => v === 'present').length
+        const noShowCount = Object.values(register).filter(v => v === 'no_show' || v === 'no_show_waived').length
+        const lateCount = Object.values(register).filter(v => v === 'late').length
+        return (
+          <div style={{ background: 'rgba(204,255,0,0.08)', border: '1px solid rgba(204,255,0,0.25)', borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontSize: 13, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>Register saved — {presentCount} attended, {noShowCount} no-shows, {lateCount} late</span>
+            <button style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 16 }} onClick={() => setSaveBanner(false)}>✕</button>
+          </div>
+        )
+      })()}
 
       {/* Class info bar */}
       <div className="att-info-bar">
@@ -210,7 +225,15 @@ export default function AttendancePage() {
                   <div className="att-name-line">
                     <span className="att-name-text">{st?.display_name}</span>
                     {st?.pronouns && <span className="att-pronouns">{st.pronouns}</span>}
-                    <span className="tag tag-lav" style={{ fontSize: 10 }}>Course</span>
+                    {e.enrolment_type === 'trial'
+                      ? <span className="tag tag-lime" style={{ fontSize: 10 }}>Trial</span>
+                      : e.enrolment_type === 'casual'
+                      ? <span className="tag tag-lav" style={{ fontSize: 10 }}>Today Only</span>
+                      : <span className="tag tag-lav" style={{ fontSize: 10 }}>Course</span>
+                    }
+                    {(e.is_first_class || e.classes_attended === 0 || e.total_attendance === 0) && (
+                      <span style={{ fontSize: 10, color: 'var(--lime)', fontWeight: 700, marginLeft: 6 }}>FIRST TIME 🌟</span>
+                    )}
                   </div>
                   <div className="att-sub">{session?.name} · {DAYS[session?.day_of_week]?.slice(0,3)} {session?.start_time?.slice(0,5)}</div>
                   {owing > 0 && (

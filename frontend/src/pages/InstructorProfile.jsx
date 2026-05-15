@@ -16,7 +16,17 @@ export default function InstructorProfile() {
     email: user?.email || '',
     phone: user?.phone || '',
     pronouns: user?.pronouns || '',
+    date_of_birth: user?.date_of_birth || '',
   })
+
+  const [qualifications, setQualifications] = useState(user?.qualifications || '')
+  const [bio, setBio] = useState(user?.bio || '')
+
+  const [notifClassReminders, setNotifClassReminders] = useState(true)
+  const [notifNoShows, setNotifNoShows] = useState(true)
+  const [notifCoverRequests, setNotifCoverRequests] = useState(true)
+  const [notifPayNotifications, setNotifPayNotifications] = useState(true)
+  const [notifStudioAnnouncements, setNotifStudioAnnouncements] = useState(true)
 
   async function handlePhotoChange(e) {
     const file = e.target.files?.[0]
@@ -34,13 +44,56 @@ export default function InstructorProfile() {
   async function handleSave() {
     setSaving(true)
     try {
-      await auth.updateMe(form)
+      await auth.updateMe({
+        ...form,
+        qualifications,
+        bio,
+        notifications: {
+          class_reminders: notifClassReminders,
+          student_no_shows: notifNoShows,
+          cover_requests: notifCoverRequests,
+          pay_notifications: notifPayNotifications,
+          studio_announcements: notifStudioAnnouncements,
+        },
+      })
       setSaved(true)
       setEditing(false)
       setTimeout(() => setSaved(false), 2000)
     } finally {
       setSaving(false)
     }
+  }
+
+  function Toggle({ label, value, onChange }) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+        <span style={{ fontSize: 13 }}>{label}</span>
+        <button
+          onClick={() => onChange(!value)}
+          style={{
+            width: 40,
+            height: 22,
+            borderRadius: 11,
+            border: 'none',
+            background: value ? 'var(--lime)' : 'var(--border)',
+            cursor: 'pointer',
+            position: 'relative',
+            transition: 'background 0.2s',
+          }}
+        >
+          <span style={{
+            position: 'absolute',
+            top: 3,
+            left: value ? 20 : 3,
+            width: 16,
+            height: 16,
+            borderRadius: '50%',
+            background: '#000',
+            transition: 'left 0.2s',
+          }} />
+        </button>
+      </div>
+    )
   }
 
   function Field({ label, field, type = 'text' }) {
@@ -100,6 +153,7 @@ export default function InstructorProfile() {
           <Field label="Email" field="email" type="email" />
           <Field label="Phone" field="phone" />
           <Field label="Pronouns" field="pronouns" />
+          <Field label="Date of Birth" field="date_of_birth" type="date" />
         </div>
 
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
@@ -113,6 +167,56 @@ export default function InstructorProfile() {
           ) : (
             <button className="btn btn-ghost btn-sm" onClick={() => setEditing(true)}>Edit</button>
           )}
+          {saved && <span style={{ fontSize: 12, color: 'var(--lime)', alignSelf: 'center' }}>✓ Saved</span>}
+        </div>
+      </div>
+
+      {/* Qualifications */}
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 24px', marginBottom: 16 }}>
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 12 }}>Qualifications</div>
+          <textarea
+            value={qualifications}
+            onChange={e => setQualifications(e.target.value)}
+            placeholder="List your certifications and qualifications..."
+            style={{ width: '100%', minHeight: 100, background: '#111', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 13, resize: 'vertical' }}
+          />
+        </div>
+
+        {/* Bio */}
+        <div style={{ marginBottom: 8 }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 12 }}>Instructor Bio</div>
+          <textarea
+            value={bio}
+            onChange={e => setBio(e.target.value)}
+            placeholder="Your bio as shown to students..."
+            style={{ width: '100%', minHeight: 100, background: '#111', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 13, resize: 'vertical' }}
+          />
+          <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 6 }}>This bio is visible to students on your profile.</div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+          <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving}>
+            {saving ? 'Saving…' : 'Save Changes'}
+          </button>
+          {saved && <span style={{ fontSize: 12, color: 'var(--lime)', alignSelf: 'center' }}>✓ Saved</span>}
+        </div>
+      </div>
+
+      {/* Notification Preferences */}
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 24px', marginBottom: 16 }}>
+        <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 16 }}>Notification Preferences</div>
+        <Toggle label="Class reminders" value={notifClassReminders} onChange={setNotifClassReminders} />
+        <Toggle label="Student no-shows" value={notifNoShows} onChange={setNotifNoShows} />
+        <Toggle label="Cover requests" value={notifCoverRequests} onChange={setNotifCoverRequests} />
+        <Toggle label="Pay notifications" value={notifPayNotifications} onChange={setNotifPayNotifications} />
+        <div style={{ borderBottom: 'none' }}>
+          <Toggle label="Studio announcements" value={notifStudioAnnouncements} onChange={setNotifStudioAnnouncements} />
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+          <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving}>
+            {saving ? 'Saving…' : 'Save Preferences'}
+          </button>
           {saved && <span style={{ fontSize: 12, color: 'var(--lime)', alignSelf: 'center' }}>✓ Saved</span>}
         </div>
       </div>
