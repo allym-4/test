@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
-import { classes, payments, enrolments, orders } from '../../api'
+import { classes, payments, enrolments, orders, notifications } from '../../api'
 import client from '../../api/client'
 
 function todayLabel() {
@@ -111,12 +111,21 @@ export default function AdminDashboard() {
   }
 
   async function chasePayment(studentId) {
-    await client.post('/api/users/notifications/', {
-      user: studentId,
-      title: 'Outstanding balance reminder',
-      body: 'You have an outstanding balance. Please contact the studio to arrange payment.',
-      notification_type: 'info',
-    })
+    try {
+      await notifications.send(studentId, 'Outstanding balance reminder', 'You have an outstanding balance. Please contact the studio to arrange payment.')
+    } catch { /* non-critical */ }
+  }
+
+  async function sendWelcome(studentId) {
+    try {
+      await notifications.send(studentId, 'Welcome to Duality!', "We're excited to have you. Check your inbox for your intro email.")
+    } catch { /* non-critical */ }
+  }
+
+  async function chaseWaiver(studentId) {
+    try {
+      await notifications.send(studentId, 'Waiver reminder', 'Please complete and sign your studio waiver before your first class.')
+    } catch { /* non-critical */ }
   }
 
   const actionItems = [
@@ -553,8 +562,8 @@ export default function AdminDashboard() {
                       <td>
                         <div style={{ display: 'flex', gap: 4, flexWrap: 'nowrap' }}>
                           <Link to="/admin/students" className="btn btn-ghost btn-xs">VIEW</Link>
-                          {!introSent && e.student && <button className="btn btn-ghost btn-xs" onClick={() => client.post('/api/users/notifications/', { user: e.student, title: 'Welcome to Duality!', body: 'We\'re excited to have you. Check your inbox for your intro email.', notification_type: 'info' })}>SEND NOW</button>}
-                          {!waiverSigned && e.student && <button className="btn btn-ghost btn-xs" onClick={() => client.post('/api/users/notifications/', { user: e.student, title: 'Waiver reminder', body: 'Please complete and sign your studio waiver before your first class.', notification_type: 'info' })}>CHASE WAIVER</button>}
+                          {!introSent && e.student && <button className="btn btn-ghost btn-xs" onClick={() => sendWelcome(e.student)}>SEND NOW</button>}
+                          {!waiverSigned && e.student && <button className="btn btn-ghost btn-xs" onClick={() => chaseWaiver(e.student)}>CHASE WAIVER</button>}
                         </div>
                       </td>
                     </tr>

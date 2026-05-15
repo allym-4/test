@@ -334,12 +334,31 @@ class OrderDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAdminOrInstructor]
 
 
-class NotificationListView(generics.ListAPIView):
+class NotificationListView(generics.ListCreateAPIView):
     serializer_class = NotificationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         return Notification.objects.filter(recipient=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        if request.user.role not in ('admin', 'instructor', 'staff'):
+            from rest_framework.response import Response
+            return Response({'detail': 'Forbidden.'}, status=403)
+        recipient_id = request.data.get('user') or request.data.get('recipient')
+        if not recipient_id:
+            from rest_framework.response import Response
+            return Response({'detail': 'recipient required.'}, status=400)
+        notification = Notification.objects.create(
+            recipient_id=recipient_id,
+            title=request.data.get('title', ''),
+            body=request.data.get('body', ''),
+            notification_type=request.data.get('notification_type', 'info'),
+            action_label=request.data.get('action_label', ''),
+            action_url=request.data.get('action_url', ''),
+        )
+        from rest_framework.response import Response
+        return Response(NotificationSerializer(notification).data, status=201)
 
 
 class NotificationMarkReadView(APIView):

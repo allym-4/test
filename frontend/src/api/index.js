@@ -191,6 +191,8 @@ export const orders = {
 export const notifications = {
   list: () => client.get('/api/users/notifications/'),
   markRead: (ids) => client.post('/api/users/notifications/mark-read/', ids ? { ids } : {}),
+  send: (userId, title, body, notificationType = 'info') =>
+    client.post('/api/users/notifications/', { user: userId, title, body, notification_type: notificationType }),
 }
 
 export const availability = {

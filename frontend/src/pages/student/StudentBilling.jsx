@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { payments, helpdesk } from '../../api'
+import { payments, helpdesk, attendance } from '../../api'
 import CheckoutModal from '../../components/CheckoutModal'
 
 const TYPE_TAG = {
@@ -36,7 +36,7 @@ export default function StudentBilling() {
   const { data: balData, loading: loadingBal, refetch: refetchBal } = useApi(() => payments.balance(user?.id), [user?.id])
   const { data: paymentsData, loading: loadingPayments, refetch: refetchPayments } = useApi(() => payments.list({ student: user?.id }), [user?.id])
   const { data: plansData } = useApi(() => payments.plans.list({ student: user?.id }), [user?.id])
-  const { data: creditsData } = useApi(() => payments.catchupCredits ? payments.catchupCredits(user?.id) : Promise.resolve({ data: null }), [user?.id])
+  const { data: creditsData } = useApi(() => attendance.makeupCredits.list({ student: user?.id }), [user?.id])
 
   const bal = balData ? parseFloat(balData.balance) : 0
   const isOwing = bal < 0

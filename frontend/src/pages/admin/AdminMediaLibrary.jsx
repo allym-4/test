@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react'
 import { useApi } from '../../hooks/useApi'
 import { media, classes } from '../../api'
-import client from '../../api/client'
 import '../StudentsPage.css'
 
 const TYPE_ICON = { video: '🎬', image: '🖼', pdf: '📄' }
@@ -70,7 +69,7 @@ function AssignMediaModal({ item, onClose }) {
     if (!selectedSession) return
     setSaving(true)
     try {
-      await client.patch(`/api/users/media/${item.id}/`, { session: selectedSession })
+      await media.update(item.id, { session: selectedSession })
       setDone(true)
       setTimeout(onClose, 1400)
     } finally {
