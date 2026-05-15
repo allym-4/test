@@ -17,6 +17,7 @@ urlpatterns = [
     path('orders/', views.OrderListView.as_view(), name='order-list'),
     path('orders/<int:pk>/', views.OrderDetailView.as_view(), name='order-detail'),
     path('notifications/', views.NotificationListView.as_view(), name='notification-list'),
+    path('notifications/bulk/', views.BulkNotificationView.as_view(), name='notification-bulk'),
     path('notifications/mark-read/', views.NotificationMarkReadView.as_view(), name='notification-mark-read'),
     path('availability/', views.InstructorAvailabilityView.as_view(), name='instructor-availability'),
     path('unavailable-dates/', views.InstructorUnavailableDateView.as_view(), name='instructor-unavailable-dates'),

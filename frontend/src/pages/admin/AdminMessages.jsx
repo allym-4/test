@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useApi } from '../../hooks/useApi'
-import { helpdesk, users, settings } from '../../api'
+import { helpdesk, users, settings, notifications as notificationsApi, classes as classesApi } from '../../api'
 import { useAuth } from '../../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 
@@ -104,6 +104,101 @@ function NewConvoModal({ onClose, onCreated }) {
   )
 }
 
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+function BroadcastModal({ onClose }) {
+  const { data: sessData } = useApi(() => classesApi.list())
+  const sessions = sessData?.results || sessData || []
+
+  const [target, setTarget] = useState('all')
+  const [sessionId, setSessionId] = useState('')
+  const [title, setTitle] = useState('')
+  const [body, setBody] = useState('')
+  const [sendEmail, setSendEmail] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [done, setDone] = useState(null)
+  const [error, setError] = useState(null)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!title.trim() || !body.trim()) return
+    setSending(true)
+    setError(null)
+    try {
+      const targetVal = target === 'session' ? `session:${sessionId}` : target
+      const res = await notificationsApi.bulk({ title, body, target: targetVal, send_email: sendEmail })
+      setDone(res.data)
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to send.')
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 480 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>Broadcast Message</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        {done ? (
+          <div className="sd-body" style={{ textAlign: 'center', padding: '32px 24px' }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>✓</div>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17, marginBottom: 8 }}>Sent!</div>
+            <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 20 }}>
+              Notification sent to <b style={{ color: 'var(--lime)' }}>{done.count} student{done.count !== 1 ? 's' : ''}</b>
+              {done.email_sent && ' · email copy also sent'}.
+            </div>
+            <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
+          </div>
+        ) : (
+          <form className="sd-body" onSubmit={handleSubmit}>
+            <div className="field">
+              <label>Send to</label>
+              <select value={target} onChange={e => setTarget(e.target.value)}>
+                <option value="all">All active students</option>
+                <option value="session">Students in a specific class</option>
+                <option value="overdue">Students with an overdue balance</option>
+              </select>
+            </div>
+            {target === 'session' && (
+              <div className="field">
+                <label>Class</label>
+                <select value={sessionId} onChange={e => setSessionId(e.target.value)} required>
+                  <option value="">Select class…</option>
+                  {sessions.map(s => (
+                    <option key={s.id} value={s.id}>{s.name} — {DAYS[s.day_of_week]} {s.start_time?.slice(0, 5)}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className="field">
+              <label>Title</label>
+              <input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Class update, Important notice" required />
+            </div>
+            <div className="field">
+              <label>Message</label>
+              <textarea rows={4} value={body} onChange={e => setBody(e.target.value)} placeholder="Your message…" required style={{ width: '100%', boxSizing: 'border-box' }} />
+            </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', marginBottom: 18 }}>
+              <input type="checkbox" checked={sendEmail} onChange={e => setSendEmail(e.target.checked)} />
+              Also send by email
+            </label>
+            {error && <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 12 }}>{error}</div>}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+              <button type="submit" className="btn btn-lime btn-sm" disabled={sending || (target === 'session' && !sessionId)}>
+                {sending ? 'Sending…' : 'Send Broadcast'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function AdminMessages() {
   const { user: me } = useAuth()
   const navigate = useNavigate()
@@ -121,6 +216,7 @@ export default function AdminMessages() {
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState('all')
   const [showNew, setShowNew] = useState(false)
+  const [showBroadcast, setShowBroadcast] = useState(false)
   const threadRef = useRef(null)
 
   const activeConvo = conversations.find(c => c.id === activeId)
@@ -178,7 +274,10 @@ export default function AdminMessages() {
           <div className="page-title">Messages</div>
           <div className="page-sub">{instagramConnected ? 'Direct messages · Instagram DMs' : 'Student direct messages'}</div>
         </div>
-        <button className="btn btn-lime btn-sm" onClick={() => setShowNew(true)}>+ New Message</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowBroadcast(true)}>📣 Broadcast</button>
+          <button className="btn btn-lime btn-sm" onClick={() => setShowNew(true)}>+ New Message</button>
+        </div>
       </div>
 
       {/* Instagram connection banner */}
@@ -331,6 +430,7 @@ export default function AdminMessages() {
           onCreated={id => { setShowNew(false); refetch(); setActiveId(id) }}
         />
       )}
+      {showBroadcast && <BroadcastModal onClose={() => setShowBroadcast(false)} />}
     </div>
   )
 }

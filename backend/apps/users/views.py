@@ -6,7 +6,9 @@ from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db import transaction
-from django.db.models import Q, Count
+from django.db import models
+from django.db.models import Q, Count, Sum, OuterRef, Subquery
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from datetime import timedelta
 
@@ -366,6 +368,87 @@ class NotificationListView(generics.ListCreateAPIView):
         )
         from rest_framework.response import Response
         return Response(NotificationSerializer(notification).data, status=201)
+
+
+class BulkNotificationView(APIView):
+    """Send an in-app notification (+ optional email) to a group of students."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request):
+        from rest_framework.response import Response
+        from django.core.mail import send_mail
+        from django.conf import settings as django_settings
+        from apps.enrolments.models import Enrolment
+        from apps.payments.models import Payment
+
+        title = request.data.get('title', '').strip()
+        body = request.data.get('body', '').strip()
+        target = request.data.get('target')  # 'all', 'session:<id>', 'overdue', 'user_ids'
+        user_ids = request.data.get('user_ids', [])
+        send_email = request.data.get('send_email', False)
+
+        if not title or not body:
+            return Response({'detail': 'title and body required.'}, status=400)
+
+        recipients = []
+
+        if target == 'all':
+            recipients = list(User.objects.filter(role='student', is_active=True))
+        elif target and target.startswith('session:'):
+            session_id = target.split(':', 1)[1]
+            enrolled_ids = Enrolment.objects.filter(
+                class_session_id=session_id, status='active'
+            ).values_list('student_id', flat=True)
+            recipients = list(User.objects.filter(id__in=enrolled_ids))
+        elif target == 'overdue':
+            from decimal import Decimal
+            paid_subq = Payment.objects.filter(
+                student=OuterRef('pk'),
+                payment_type__in=['payment', 'credit'],
+            ).values('student').annotate(s=Sum('amount')).values('s')
+            charged_subq = Payment.objects.filter(
+                student=OuterRef('pk'),
+                payment_type__in=['charge', 'no_show_fee'],
+            ).values('student').annotate(s=Sum('amount')).values('s')
+            overdue_ids = (
+                User.objects.filter(role='student', is_active=True)
+                .annotate(
+                    total_paid=Coalesce(Subquery(paid_subq), Decimal('0')),
+                    total_charged=Coalesce(Subquery(charged_subq), Decimal('0')),
+                )
+                .filter(total_charged__gt=models.F('total_paid'))
+                .values_list('id', flat=True)
+            )
+            recipients = list(User.objects.filter(id__in=overdue_ids))
+        elif target == 'user_ids' and user_ids:
+            recipients = list(User.objects.filter(id__in=user_ids))
+
+        if not recipients:
+            return Response({'detail': 'No matching recipients.', 'count': 0})
+
+        notifications = [
+            Notification(
+                recipient=u,
+                title=title,
+                body=body,
+                notification_type=request.data.get('notification_type', 'info'),
+            )
+            for u in recipients
+        ]
+        Notification.objects.bulk_create(notifications)
+
+        if send_email:
+            emails = [u.email for u in recipients if u.email]
+            for email in emails:
+                send_mail(
+                    subject=title,
+                    message=body,
+                    from_email=django_settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[email],
+                    fail_silently=True,
+                )
+
+        return Response({'count': len(recipients), 'email_sent': send_email})
 
 
 class NotificationMarkReadView(APIView):

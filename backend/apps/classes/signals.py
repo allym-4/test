@@ -2,6 +2,50 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 
+@receiver(post_save, sender='classes.ClassOccurrence')
+def handle_occurrence_cancelled(sender, instance, created, **kwargs):
+    """Notify enrolled students when a class occurrence is cancelled."""
+    if created or instance.status != 'cancelled':
+        return
+
+    from apps.enrolments.models import Enrolment
+    from apps.users.models import Notification
+    from django.core.mail import send_mail
+    from django.conf import settings
+
+    date_str = instance.date.strftime('%-d %B %Y') if instance.date else ''
+    session = instance.session
+
+    active_enrolments = Enrolment.objects.filter(
+        class_session=session,
+        status='active',
+    ).select_related('student')
+
+    for enrolment in active_enrolments:
+        Notification.objects.create(
+            recipient=enrolment.student,
+            title=f'{session.name} cancelled — {date_str}',
+            body=(
+                f"This week's {session.name} on {date_str} has been cancelled. "
+                f"We apologise for any inconvenience. If you have a catch-up credit it will still be valid."
+            ),
+            notification_type='warning',
+        )
+        if enrolment.student.email:
+            send_mail(
+                subject=f'Class cancelled — {session.name} {date_str}',
+                message=(
+                    f'Hi {enrolment.student.first_name},\n\n'
+                    f'{session.name} on {date_str} has been cancelled.\n\n'
+                    f'We apologise for the inconvenience. Your catch-up credit (if applicable) remains valid.\n\n'
+                    f'Duality Pole Studio'
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[enrolment.student.email],
+                fail_silently=True,
+            )
+
+
 @receiver(post_save, sender='classes.Season')
 def handle_season_status_change(sender, instance, created, **kwargs):
     if created or instance.status != 'completed':

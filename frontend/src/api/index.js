@@ -199,6 +199,7 @@ export const notifications = {
   markRead: (ids) => client.post('/api/users/notifications/mark-read/', ids ? { ids } : {}),
   send: (userId, title, body, notificationType = 'info') =>
     client.post('/api/users/notifications/', { user: userId, title, body, notification_type: notificationType }),
+  bulk: (data) => client.post('/api/users/notifications/bulk/', data),
 }
 
 export const availability = {

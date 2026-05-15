@@ -252,7 +252,7 @@ class StripeWebhookView(APIView):
             }
         )
 
-        # If this was for a payment plan instalment, mark it paid
+        # If this was for a payment plan instalment, mark it paid and check plan completion
         plan_instalment_id = intent.metadata.get('instalment_id')
         if plan_instalment_id:
             try:
@@ -261,8 +261,49 @@ class StripeWebhookView(APIView):
                 inst.status = PaymentPlanInstalment.Status.PAID
                 inst.paid_date = timezone.now().date()
                 inst.save()
+                # Check if all instalments are now paid → complete the plan
+                plan = inst.plan
+                if not plan.instalments.exclude(status=PaymentPlanInstalment.Status.PAID).exists():
+                    plan.status = PaymentPlan.Status.COMPLETED
+                    plan.save(update_fields=['status'])
+                    from apps.users.models import Notification
+                    Notification.objects.create(
+                        recipient=plan.student,
+                        title='Payment plan complete!',
+                        body=f'All instalments for "{plan.description}" have been paid. Thank you!',
+                        notification_type='success',
+                    )
             except PaymentPlanInstalment.DoesNotExist:
                 pass
 
     def _handle_payment_failed(self, intent):
-        pass  # Could notify the student here
+        user_id = intent.metadata.get('user_id')
+        if not user_id:
+            return
+        try:
+            user = User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return
+        from apps.users.models import Notification
+        description = intent.description or 'a payment'
+        Notification.objects.create(
+            recipient=user,
+            title='Payment failed',
+            body=f'Your payment for {description} could not be processed. Please update your payment details or contact the studio.',
+            notification_type='billing',
+        )
+        from django.core.mail import send_mail
+        from django.conf import settings as django_settings
+        if user.email:
+            send_mail(
+                subject='Payment failed — Duality Pole Studio',
+                message=(
+                    f'Hi {user.first_name},\n\n'
+                    f'Your payment for "{description}" was declined.\n\n'
+                    f'Please contact the studio or update your payment method.\n\n'
+                    f'Duality Pole Studio'
+                ),
+                from_email=django_settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                fail_silently=True,
+            )
