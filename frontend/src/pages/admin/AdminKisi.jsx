@@ -123,7 +123,7 @@ export default function AdminKisi() {
   const grants = grantsData?.results || grantsData || []
   const studioList = studioData?.results || studioData || []
   const studentList = stuData?.results || stuData || []
-  const rules = rulesData || []
+  const rules = rulesData?.results || rulesData || []
 
   const [config, setConfig] = useState(null)
   if (settingsData && config === null) {

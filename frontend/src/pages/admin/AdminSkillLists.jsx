@@ -5,7 +5,7 @@ import { skillLevels } from '../../api'
 
 export default function AdminSkillLists() {
   const { data: levelsData, loading, refetch } = useApi(() => skillLevels.list())
-  const levels = levelsData || []
+  const levels = levelsData?.results || levelsData || []
 
   const [tab, setTab] = useState(null)
   const [modal, setModal] = useState(null)
