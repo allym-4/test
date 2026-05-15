@@ -126,8 +126,13 @@ class StudioSettings(models.Model):
 
 
 class Announcement(models.Model):
+    class NoteType(models.TextChoices):
+        ANNOUNCEMENT = 'announcement', 'Student Announcement'
+        STAFF = 'staff', 'Staff Note'
+
     title = models.CharField(max_length=200)
     body = models.TextField()
+    note_type = models.CharField(max_length=20, choices=NoteType.choices, default=NoteType.ANNOUNCEMENT)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='announcements')
     is_pinned = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

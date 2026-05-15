@@ -106,7 +106,7 @@ class AnnouncementSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Announcement
-        fields = ('id', 'title', 'body', 'created_by', 'created_by_name', 'is_pinned', 'created_at', 'updated_at')
+        fields = ('id', 'title', 'body', 'note_type', 'created_by', 'created_by_name', 'is_pinned', 'created_at', 'updated_at')
         read_only_fields = ('id', 'created_by', 'created_at', 'updated_at')
 
 

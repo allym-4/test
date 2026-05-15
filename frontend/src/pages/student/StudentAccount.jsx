@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { auth, giftCards as giftCardsApi } from '../../api'
+import { auth, giftCards as giftCardsApi, referrals as referralsApi } from '../../api'
+import { useApi } from '../../hooks/useApi'
 
 function ChangePasswordModal({ onClose }) {
   const [current, setCurrent] = useState('')
@@ -76,6 +77,11 @@ export default function StudentAccount() {
   const [referralSource, setReferralSource] = useState(user?.referral_source || '')
   const [medicalNotes, setMedicalNotes] = useState(user?.medical_notes || '')
   const [photoConsent, setPhotoConsent] = useState(user?.photo_consent || false)
+
+  const { data: referralData } = useApi(() => user?.id ? referralsApi.list({ referrer: user.id }) : null, [user?.id])
+  const myReferrals = referralData?.results || referralData || []
+  const creditedReferrals = myReferrals.filter(r => r.status === 'credited')
+  const totalCredits = creditedReferrals.reduce((sum, r) => sum + parseFloat(r.credit_amount || 0), 0)
 
   // Notification preferences
   const prefs = user?.notification_preferences || {}
@@ -383,11 +389,11 @@ export default function StudentAccount() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               <div style={{ background: '#111', borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
-                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20 }}>0</div>
+                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20 }}>{myReferrals.length}</div>
                 <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>Referrals</div>
               </div>
               <div style={{ background: '#111', borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
-                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20 }}>$0</div>
+                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20 }}>${totalCredits.toFixed(0)}</div>
                 <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>Credits Earned</div>
               </div>
             </div>

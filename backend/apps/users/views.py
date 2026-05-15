@@ -205,7 +205,11 @@ class AnnouncementListView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Announcement.objects.select_related('created_by')
+        qs = Announcement.objects.select_related('created_by')
+        note_type = self.request.query_params.get('note_type')
+        if note_type:
+            qs = qs.filter(note_type=note_type)
+        return qs
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
@@ -609,10 +613,16 @@ class EmailListDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class ReferralListView(generics.ListCreateAPIView):
     serializer_class = ReferralSerializer
-    permission_classes = [IsAdminOrInstructor]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Referral.objects.all()
+        qs = Referral.objects.all()
+        if not self.request.user.role in ('admin', 'instructor', 'staff'):
+            qs = qs.filter(referrer=self.request.user)
+        referrer_id = self.request.query_params.get('referrer')
+        if referrer_id:
+            qs = qs.filter(referrer_id=referrer_id)
+        return qs
 
 
 class AssistantView(APIView):

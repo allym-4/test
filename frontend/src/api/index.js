@@ -152,7 +152,7 @@ export const settings = {
 }
 
 export const announcements = {
-  list: () => client.get('/api/users/announcements/'),
+  list: (params) => client.get('/api/users/announcements/', { params }),
   create: (data) => client.post('/api/users/announcements/', data),
   update: (id, data) => client.patch(`/api/users/announcements/${id}/`, data),
   delete: (id) => client.delete(`/api/users/announcements/${id}/`),
