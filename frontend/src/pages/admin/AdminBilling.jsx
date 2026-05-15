@@ -75,7 +75,7 @@ function GiftCardModal({ onClose, onSuccess }) {
 export default function AdminBilling() {
   const [tab, setTab] = useState('outstanding')
   const { data: paymentsData, loading: loadingPayments, refetch: refetchPayments } = useApi(() => payments.list())
-  const { data: plansData, loading: loadingPlans } = useApi(() => payments.plans.list())
+  const { data: plansData, loading: loadingPlans, refetch: refetchPlans } = useApi(() => payments.plans.list())
   const { data: studentsData } = useApi(() => users.list({ role: 'student' }))
   const { data: gcData, loading: loadingGC, refetch: refetchGC } = useApi(() => giftCardsApi.list())
   const [balances, setBalances] = useState({})
@@ -202,44 +202,139 @@ export default function AdminBilling() {
         <div>
           {loadingPlans ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><div className="spinner" /></div>
-          ) : plans.length === 0 ? (
-            <div className="empty-state">No payment plans</div>
           ) : (
-            <div className="tbl-section">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Student</th>
-                    <th>Description</th>
-                    <th>Total</th>
-                    <th>Paid</th>
-                    <th>Remaining</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {plans.map(plan => {
-                    const paid = parseFloat(plan.amount_paid || 0)
-                    const total = parseFloat(plan.total_amount || 0)
-                    const remaining = total - paid
-                    return (
-                      <tr key={plan.id}>
-                        <td><b>{plan.student_name || plan.student}</b></td>
-                        <td style={{ color: 'var(--grey)' }}>{plan.description || 'Payment plan'}</td>
-                        <td>${total.toFixed(2)}</td>
-                        <td className="bal-pos">${paid.toFixed(2)}</td>
-                        <td className={remaining > 0 ? 'bal-neg' : 'bal-pos'}>${remaining.toFixed(2)}</td>
-                        <td>
-                          <span className={`tag ${plan.status === 'active' ? 'tag-lime' : plan.status === 'completed' ? 'tag-grey' : 'tag-amber'}`} style={{ fontSize: 10 }}>
-                            {plan.status}
-                          </span>
-                        </td>
+            <>
+              {/* Plan KPI cards */}
+              {(() => {
+                const activePlanCount = plans.filter(p => p.status === 'active').length
+                const pendingApprovalCount = plans.filter(p => p.status === 'pending_approval').length
+                const overdueCount = plans.reduce((sum, p) => sum + (p.instalments || []).filter(i => i.status === 'overdue').length, 0)
+                const now = new Date()
+                const thisMonth = plans.reduce((sum, p) => {
+                  return sum + (p.instalments || []).filter(i => {
+                    if (i.status !== 'paid' || !i.paid_at) return false
+                    const d = new Date(i.paid_at)
+                    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+                  }).reduce((s, i) => s + parseFloat(i.amount || 0), 0)
+                }, 0)
+                return (
+                  <div className="kpi-grid" style={{ marginBottom: 24 }}>
+                    <div className="kpi kpi-lime">
+                      <div className="kpi-label">Active Plans</div>
+                      <div className="kpi-value">{activePlanCount}</div>
+                    </div>
+                    <div className="kpi kpi-amber">
+                      <div className="kpi-label">Pending Approval</div>
+                      <div className="kpi-value">{pendingApprovalCount}</div>
+                    </div>
+                    <div className="kpi kpi-red">
+                      <div className="kpi-label">Overdue Instalments</div>
+                      <div className="kpi-value">{overdueCount}</div>
+                    </div>
+                    <div className="kpi kpi-lav">
+                      <div className="kpi-label">Collected This Month</div>
+                      <div className="kpi-value">${thisMonth.toFixed(0)}</div>
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* Pending Approval subsection */}
+              {plans.filter(p => p.status === 'pending_approval').length > 0 && (
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--amber)', fontWeight: 700, marginBottom: 12 }}>Pending Approval</div>
+                  <div className="tbl-section">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Student</th>
+                          <th>Description</th>
+                          <th>Total</th>
+                          <th>Instalments</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {plans.filter(p => p.status === 'pending_approval').map(plan => {
+                          const instCount = (plan.instalments || []).length
+                          const instAmt = instCount > 0
+                            ? (parseFloat(plan.total_amount || 0) / instCount).toFixed(0)
+                            : '—'
+                          return (
+                            <tr key={plan.id}>
+                              <td><b>{plan.student_name || plan.student}</b></td>
+                              <td style={{ color: 'var(--grey)' }}>{plan.description || 'Payment plan'}</td>
+                              <td>${parseFloat(plan.total_amount || 0).toFixed(2)}</td>
+                              <td style={{ color: 'var(--grey)', fontSize: 12 }}>
+                                {instCount > 0 ? `${instCount}× instalments of $${instAmt}` : '—'}
+                              </td>
+                              <td style={{ whiteSpace: 'nowrap' }}>
+                                <button
+                                  className="btn btn-lime btn-sm"
+                                  style={{ marginRight: 6 }}
+                                  onClick={() => payments.plans.update(plan.id, { status: 'active' }).then(refetchPlans)}
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  className="btn btn-ghost btn-sm"
+                                  onClick={() => payments.plans.update(plan.id, { status: 'cancelled' }).then(refetchPlans)}
+                                >
+                                  Deny &amp; Contact
+                                </button>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {plans.filter(p => p.status !== 'pending_approval').length === 0 && plans.length === 0 ? (
+                <div className="empty-state">No payment plans</div>
+              ) : (
+                <div className="tbl-section">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Student</th>
+                        <th>Description</th>
+                        <th>Total</th>
+                        <th>Paid</th>
+                        <th>Remaining</th>
+                        <th>Status</th>
                       </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+                    </thead>
+                    <tbody>
+                      {plans.map(plan => {
+                        const paid = parseFloat(plan.amount_paid || 0)
+                        const total = parseFloat(plan.total_amount || 0)
+                        const remaining = total - paid
+                        return (
+                          <tr key={plan.id}>
+                            <td><b>{plan.student_name || plan.student}</b></td>
+                            <td style={{ color: 'var(--grey)' }}>{plan.description || 'Payment plan'}</td>
+                            <td>${total.toFixed(2)}</td>
+                            <td className="bal-pos">${paid.toFixed(2)}</td>
+                            <td className={remaining > 0 ? 'bal-neg' : 'bal-pos'}>${remaining.toFixed(2)}</td>
+                            <td>
+                              <span className={`tag ${plan.status === 'active' ? 'tag-lime' : plan.status === 'completed' ? 'tag-grey' : 'tag-amber'}`} style={{ fontSize: 10 }}>
+                                {plan.status}
+                              </span>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                      {plans.length === 0 && (
+                        <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--grey)', padding: '24px 0' }}>No payment plans</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

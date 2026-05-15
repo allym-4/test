@@ -4,9 +4,9 @@ import { helpdesk, users } from '../../api'
 import '../StudentsPage.css'
 
 const STATUS_STYLE = {
-  open:     { label: 'Open',     cls: 'tag-red' },
+  open:     { label: 'Open',     cls: 'tag-lime' },
   pending:  { label: 'Pending',  cls: 'tag-amber' },
-  resolved: { label: 'Resolved', cls: 'tag-lime' },
+  resolved: { label: 'Resolved', cls: 'tag-grey' },
   closed:   { label: 'Closed',   cls: 'tag-grey' },
 }
 const PRIORITY_COLOR = { high: 'var(--red)', medium: 'var(--amber)', low: 'var(--grey)' }

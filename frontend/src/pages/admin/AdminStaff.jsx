@@ -65,6 +65,7 @@ export default function AdminStaff() {
                   <th></th>
                   <th>Name</th>
                   <th>Role</th>
+                  <th>Pay Rate</th>
                   <th>Classes</th>
                   <th>Status</th>
                   <th></th>
@@ -87,13 +88,16 @@ export default function AdminStaff() {
                         {s.role === 'admin' ? 'Admin' : 'Instructor'}
                       </span>
                     </td>
+                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>
+                      {s.pay_rate ? `$${s.pay_rate}/class` : '—'}
+                    </td>
                     <td style={{ color: 'var(--grey)', fontSize: 12 }}>{classesForInstructor(s.id)}</td>
                     <td><span className="tag tag-lime" style={{ fontSize: 10 }}>Active</span></td>
                     <td><button className="btn btn-ghost btn-xs" onClick={() => { setEditStaff(s); setShowAddStaff(true) }}>Edit</button></td>
                   </tr>
                 ))}
                 {allStaff.length === 0 && (
-                  <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--grey)', padding: '24px 0' }}>No staff yet — add your first team member above</td></tr>
+                  <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--grey)', padding: '24px 0' }}>No staff yet — add your first team member above</td></tr>
                 )}
               </tbody>
             </table>

@@ -582,16 +582,57 @@ function StudentDetail({ student, onClose, onRefreshList }) {
 
 const AVATAR_COLORS2 = AVATAR_COLORS
 
+const TAG_CHIPS = ['All', 'VIP', 'At Risk', 'Trial', 'Blocked', 'Owing', 'Frozen']
+
+function BulkTagModal({ onClose }) {
+  const { data: tagsData } = useApi(() => users.tags ? users.tags() : Promise.resolve({ data: [] }))
+  const [selectedTag, setSelectedTag] = useState('')
+  const tags = tagsData?.results || tagsData || []
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 400 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18 }}>Bulk Tag</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="sd-body">
+          <div className="field">
+            <label>Select tag</label>
+            <select
+              value={selectedTag}
+              onChange={e => setSelectedTag(e.target.value)}
+              style={{ background: '#111', color: '#fff', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 10px', fontSize: 13, width: '100%' }}
+            >
+              <option value="">— Choose tag —</option>
+              {tags.map(t => <option key={t.id || t} value={t.name || t}>{t.name || t}</option>)}
+            </select>
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16 }}>Apply to all filtered students</div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button className="btn btn-lime btn-sm" onClick={onClose}>Apply</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminStudents() {
   const { data, loading } = useApi(() => users.list({ role: 'student' }))
   const [search, setSearch] = useState('')
+  const [levelFilter, setLevelFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [activeChip, setActiveChip] = useState('All')
   const [selected, setSelected] = useState(null)
   const [balances, setBalances] = useState({})
   const [studentList, setStudentList] = useState(null)
   const [showAdd, setShowAdd] = useState(false)
   const [showImport, setShowImport] = useState(false)
+  const [showBulkTag, setShowBulkTag] = useState(false)
 
-  const allStudents = studentList ?? (data?.results || [])
+  const allStudents = studentList ?? (data?.results || data || [])
 
   useEffect(() => {
     if (allStudents.length === 0) return
@@ -604,10 +645,19 @@ export default function AdminStudents() {
     })).then(() => setBalances({ ...map }))
   }, [allStudents.length])
 
-  const filtered = allStudents.filter(s =>
-    s.display_name?.toLowerCase().includes(search.toLowerCase()) ||
-    s.email?.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = allStudents.filter(s => {
+    const matchSearch = !search ||
+      s.display_name?.toLowerCase().includes(search.toLowerCase()) ||
+      s.email?.toLowerCase().includes(search.toLowerCase())
+    const matchLevel = !levelFilter || (s.level || '') === levelFilter
+    const matchStatus = !statusFilter || (s.status || '').toLowerCase() === statusFilter.toLowerCase()
+    const matchChip = activeChip === 'All' || (s.tags || []).some(t =>
+      (typeof t === 'string' ? t : t.name || '').toLowerCase() === activeChip.toLowerCase()
+    )
+    return matchSearch && matchLevel && matchStatus && matchChip
+  })
+
+  const selectStyle = { background: '#111', color: '#fff', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 10px', fontSize: 13 }
 
   return (
     <div>
@@ -618,18 +668,57 @@ export default function AdminStudents() {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-ghost btn-sm" onClick={() => setShowImport(true)}>↑ Bulk Import</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowBulkTag(true)}>Bulk Tag</button>
           <button className="btn btn-lime btn-sm" onClick={() => setShowAdd(true)}>+ Add Student</button>
         </div>
       </div>
 
-      <div className="filter-bar">
+      <div className="filter-bar" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
         <input
           type="text"
           placeholder="Search name, email…"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          style={{ maxWidth: 320, background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', padding: '8px 12px', fontSize: 13, outline: 'none', width: '100%' }}
+          style={{ maxWidth: 280, background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', padding: '8px 12px', fontSize: 13, outline: 'none', width: '100%' }}
         />
+        <select value={levelFilter} onChange={e => setLevelFilter(e.target.value)} style={selectStyle}>
+          <option value="">All Levels</option>
+          <option value="Beginner">Beginner</option>
+          <option value="Level 1">Level 1</option>
+          <option value="Level 2">Level 2</option>
+          <option value="Level 3">Level 3</option>
+          <option value="Level 4+">Level 4+</option>
+        </select>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={selectStyle}>
+          <option value="">All Statuses</option>
+          <option value="Active">Active</option>
+          <option value="Frozen">Frozen</option>
+          <option value="Blocked">Blocked</option>
+          <option value="Owing">Owing</option>
+          <option value="Trial">Trial</option>
+        </select>
+      </div>
+
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10, marginBottom: 4 }}>
+        {TAG_CHIPS.map(chip => (
+          <button
+            key={chip}
+            onClick={() => setActiveChip(chip)}
+            style={{
+              background: activeChip === chip ? 'var(--lime)' : '#1a1a1a',
+              color: activeChip === chip ? '#000' : 'var(--grey)',
+              border: 'none',
+              borderRadius: 20,
+              padding: '4px 12px',
+              fontSize: 12,
+              cursor: 'pointer',
+              fontWeight: activeChip === chip ? 700 : 400,
+              fontFamily: 'inherit',
+            }}
+          >
+            {chip}
+          </button>
+        ))}
       </div>
 
       {loading ? (
@@ -642,6 +731,8 @@ export default function AdminStudents() {
                 <th></th>
                 <th>Name</th>
                 <th>Email</th>
+                <th>Level</th>
+                <th>Last Seen</th>
                 <th>Balance</th>
                 <th>Status</th>
                 <th></th>
@@ -651,6 +742,9 @@ export default function AdminStudents() {
               {filtered.map(s => {
                 const b = balances[s.id]
                 const isNeg = b !== undefined && b < 0
+                const lastSeen = s.last_login
+                  ? new Date(s.last_login).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
+                  : '—'
                 return (
                   <tr key={s.id} className="clickable" onClick={() => setSelected(s)}>
                     <td>
@@ -667,6 +761,8 @@ export default function AdminStudents() {
                       {s.pronouns && <div style={{ fontSize: 11, color: 'var(--grey)' }}>{s.pronouns}</div>}
                     </td>
                     <td style={{ color: 'var(--grey)', fontSize: 12 }}>{s.email}</td>
+                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{s.level || '—'}</td>
+                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{lastSeen}</td>
                     <td>
                       {b !== undefined ? (
                         <span className={isNeg ? 'bal-neg' : 'bal-pos'}>
@@ -714,6 +810,8 @@ export default function AdminStudents() {
           }}
         />
       )}
+
+      {showBulkTag && <BulkTagModal onClose={() => setShowBulkTag(false)} />}
     </div>
   )
 }
