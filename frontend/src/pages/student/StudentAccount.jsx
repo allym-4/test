@@ -64,6 +64,7 @@ export default function StudentAccount() {
   const [ecName, setEcName] = useState(user?.emergency_contact_name || '')
   const [ecPhone, setEcPhone] = useState(user?.emergency_contact_phone || '')
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState('')
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [photoPreview, setPhotoPreview] = useState(user?.profile_photo || null)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
@@ -134,7 +135,8 @@ export default function StudentAccount() {
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     } catch {
-      alert('Failed to save. Please try again.')
+      setSaveError('Failed to save — please try again.')
+      setTimeout(() => setSaveError(''), 4000)
     }
   }
 
@@ -307,6 +309,7 @@ export default function StudentAccount() {
               <input type="tel" value={ecPhone} onChange={e => setEcPhone(e.target.value)} placeholder="Phone number" />
             </div>
 
+            {saveError && <div style={{ fontSize: 12, color: 'var(--red)', marginTop: 8 }}>{saveError}</div>}
             <button type="submit" className={`btn btn-sm ${saved ? 'btn-ghost' : 'btn-lime'}`} style={{ marginTop: 8 }}>
               {saved ? '✓ Saved' : 'Save changes'}
             </button>

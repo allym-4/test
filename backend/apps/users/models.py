@@ -475,6 +475,7 @@ class MediaItem(models.Model):
     level = models.CharField(max_length=50, blank=True)
     size_display = models.CharField(max_length=20, blank=True)  # e.g. "42 MB"
     uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='media_uploads')
+    session = models.ForeignKey('classes.ClassSession', on_delete=models.SET_NULL, null=True, blank=True, related_name='media_items')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

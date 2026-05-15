@@ -314,8 +314,8 @@ export default function AdminOffers() {
     { label: '1 class/week', price: '270', discount: '$33.75 per class' },
     { label: '2 classes/week', price: '440', discount: '$27.50 per class' },
     { label: '3 classes/week', price: '580', discount: '$24.17 per class + 1 practice/week' },
-    { label: '4 classes/week', price: '700', discount: '$21.88 per class + unlimited practice' },
-    { label: '5 classes/week', price: '800', discount: '$20.00 per class + unlimited practice' },
+    { label: '4 classes/week', price: '700', discount: '$21.88 per class + unlimited practice + free locker' },
+    { label: '5 classes/week', price: '800', discount: '$20.00 per class + unlimited practice + free locker' },
     { label: '6 classes/week', price: '900', discount: '$18.75 per class + unlimited practice + free locker' },
   ]
   const DEFAULT_SPECIAL = [

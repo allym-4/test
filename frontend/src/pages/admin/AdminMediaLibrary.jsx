@@ -70,10 +70,6 @@ function AssignMediaModal({ item, onClose }) {
     if (!selectedSession) return
     setSaving(true)
     try {
-      await client.post(`/api/classes/sessions/${selectedSession}/media/`, { media_item: item.id })
-      setDone(true)
-      setTimeout(onClose, 1400)
-    } catch {
       await client.patch(`/api/users/media/${item.id}/`, { session: selectedSession })
       setDone(true)
       setTimeout(onClose, 1400)

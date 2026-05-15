@@ -192,6 +192,7 @@ export default function StudentBook() {
   const workshops = workshopsData?.results || workshopsData || []
   const [bookingWorkshopId, setBookingWorkshopId] = useState(null)
   const [workshopBooked, setWorkshopBooked] = useState({})
+  const [workshopError, setWorkshopError] = useState('')
 
   function addToCart(session, type, price) {
     if (type === 'waitlist') {
@@ -221,8 +222,9 @@ export default function StudentBook() {
       setWorkshopBooked(prev => ({ ...prev, [workshop.id]: res.data.status }))
       refetchWorkshops()
     } catch (err) {
-      const msg = err.response?.data?.detail || 'Booking failed'
-      alert(msg)
+      const msg = err.response?.data?.detail || 'Booking failed — please try again'
+      setWorkshopError(msg)
+      setTimeout(() => setWorkshopError(''), 4000)
     } finally {
       setBookingWorkshopId(null)
     }
@@ -449,6 +451,9 @@ export default function StudentBook() {
 
       {tab === 'workshop' && (
         <div>
+          {workshopError && (
+            <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 12 }}>{workshopError}</div>
+          )}
           {loadingWorkshops ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {[1, 2].map(i => <SkeletonCard key={i} />)}

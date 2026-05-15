@@ -56,6 +56,7 @@ function TicketThreadModal({ ticket, onClose }) {
   const [loading, setLoading] = useState(true)
   const [reply, setReply] = useState('')
   const [sending, setSending] = useState(false)
+  const [replyError, setReplyError] = useState('')
   const bottomRef = useRef(null)
 
   useEffect(() => {
@@ -74,7 +75,8 @@ function TicketThreadModal({ ticket, onClose }) {
       setMessages(m => [...m, res.data])
       setReply('')
     } catch {
-      alert('Failed to send reply. Please try again.')
+      setReplyError('Failed to send reply — please try again.')
+      setTimeout(() => setReplyError(''), 4000)
     } finally {
       setSending(false)
     }
@@ -129,7 +131,9 @@ function TicketThreadModal({ ticket, onClose }) {
 
         {/* Reply box */}
         {!isClosed ? (
-          <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8, flexShrink: 0 }}>
+          <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+          {replyError && <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 6 }}>{replyError}</div>}
+          <div style={{ display: 'flex', gap: 8 }}>
             <textarea
               rows={2}
               value={reply}
@@ -141,6 +145,7 @@ function TicketThreadModal({ ticket, onClose }) {
             <button className="btn btn-lime btn-sm" onClick={handleReply} disabled={sending || !reply.trim()}>
               {sending ? '…' : 'Send'}
             </button>
+          </div>
           </div>
         ) : (
           <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', textAlign: 'center', fontSize: 12, color: 'var(--grey)', flexShrink: 0 }}>
@@ -161,6 +166,7 @@ export default function StudentSupport() {
   const [message, setMessage] = useState('')
   const [sent, setSent] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
   const [tab, setTab] = useState('faq')
   const [viewTicket, setViewTicket] = useState(null)
 
@@ -177,7 +183,8 @@ export default function StudentSupport() {
       setMessage('')
       refetchTickets()
     } catch {
-      alert('Failed to send message. Please try again.')
+      setSubmitError('Failed to send message — please try again.')
+      setTimeout(() => setSubmitError(''), 4000)
     } finally {
       setSubmitting(false)
     }
@@ -265,6 +272,7 @@ export default function StudentSupport() {
                   style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', padding: '10px 12px', fontSize: 13, resize: 'vertical', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
                 />
               </div>
+              {submitError && <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 8 }}>{submitError}</div>}
               <button
                 className="btn btn-lime btn-sm"
                 onClick={handleSubmit}
