@@ -169,3 +169,23 @@ class KisiGrantDetailView(APIView):
         grant.revoked = True
         grant.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ClassStatsView(APIView):
+    """Aggregate counts for the reporting overview — bypasses pagination."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def get(self, request):
+        from django.db.models import Sum, Count
+        from apps.users.models import User
+        from apps.enrolments.models import Enrolment
+
+        student_count = User.objects.filter(role='student', is_active=True).count()
+        session_count = ClassSession.objects.filter(is_active=True).count()
+        total_enrolled = Enrolment.objects.filter(status='active').count()
+
+        return Response({
+            'student_count': student_count,
+            'session_count': session_count,
+            'total_enrolled': total_enrolled,
+        })

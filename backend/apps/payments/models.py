@@ -91,6 +91,8 @@ class Package(models.Model):
     price = models.DecimalField(max_digits=8, decimal_places=2)
     expiry_days = models.PositiveIntegerField(default=90)
     is_active = models.BooleanField(default=True)
+    is_intro = models.BooleanField(default=False)
+    description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

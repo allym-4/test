@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useApi } from '../../hooks/useApi'
-import { users, classes, payments, attendance as attendanceApi } from '../../api'
+import { classes, payments, attendance as attendanceApi } from '../../api'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   PieChart, Pie, Legend,
@@ -13,13 +13,17 @@ const CHART_COLOURS = ['#ccff00', '#b0a0ff', '#ffaa00', '#ff4444', '#00cfff', '#
 export default function AdminReporting() {
   const [tab, setTab] = useState('Overview')
 
-  const { data: studentsData } = useApi(() => users.list({ role: 'student' }))
+  const { data: classStats } = useApi(() => classes.stats(), [])
   const { data: sessionsData } = useApi(() => classes.list())
   const { data: payStats } = useApi(() => payments.stats(), [])
   const { data: attStats, loading: attLoading } = useApi(() => attendanceApi.stats(), [])
 
-  const students = studentsData?.results || []
   const sessions = sessionsData?.results || []
+
+  // ── Class / student counts (server-aggregated, no pagination cap) ──
+  const studentCount = classStats?.student_count ?? (sessionsData?.count || 0)
+  const sessionCount = classStats?.session_count ?? sessions.length
+  const totalEnrolled = classStats?.total_enrolled ?? sessions.reduce((s, c) => s + (c.enrolled_count || 0), 0)
 
   // ── Payment stats (server-aggregated) ──
   const byType = payStats?.by_type || {}
@@ -28,8 +32,6 @@ export default function AdminReporting() {
   const noShowFees = byType.no_show_fee?.total || 0
   const monthlyRevenue = payStats?.monthly || []
   const recentPayments = payStats?.recent || []
-
-  const totalEnrolled = sessions.reduce((s, c) => s + (c.enrolled_count || 0), 0)
 
   // --- Enrolments by class ---
   const enrolmentsByClass = [...sessions]
@@ -106,13 +108,13 @@ export default function AdminReporting() {
             </div>
             <div className="kpi kpi-lav">
               <div className="kpi-label">Active Students</div>
-              <div className="kpi-value">{students.length}</div>
+              <div className="kpi-value">{studentCount}</div>
               <div className="kpi-sub">Currently enrolled</div>
             </div>
             <div className="kpi kpi-amber">
               <div className="kpi-label">Total Enrolments</div>
               <div className="kpi-value">{totalEnrolled}</div>
-              <div className="kpi-sub">Across {sessions.length} classes</div>
+              <div className="kpi-sub">Across {sessionCount} classes</div>
             </div>
             <div className="kpi kpi-red">
               <div className="kpi-label">No-show Fees</div>

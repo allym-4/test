@@ -20,6 +20,7 @@ export const classes = {
   delete: (id) => client.delete(`/api/classes/sessions/${id}/`),
   occurrences: (params) => client.get('/api/classes/occurrences/', { params }),
   getOccurrence: (id) => client.get(`/api/classes/occurrences/${id}/`),
+  stats: () => client.get('/api/classes/stats/'),
 }
 
 export const studios = {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { settings as settingsApi, membershipTypes, users, studios as studiosApi } from '../../api'
+import { settings as settingsApi, membershipTypes, users, studios as studiosApi, packages as packagesApi } from '../../api'
 import { useApi } from '../../hooks/useApi'
 
 const FORM_FIELDS = {
@@ -111,11 +111,6 @@ function FormPreviewModal({ formName, onClose }) {
   )
 }
 
-const INTRO_OFFERS = [
-  { id: 'trial', name: 'Trial Class', price: '$25', desc: 'First class only' },
-  { id: 'intro2w', name: '2-Week Intro Pass', price: '$55', desc: 'Unlimited classes for 2 weeks' },
-]
-
 const STAFF_PERMISSIONS = [
   { key: 'billing', label: 'Can view billing' },
   { key: 'editProfiles', label: 'Can edit student profiles' },
@@ -123,6 +118,49 @@ const STAFF_PERMISSIONS = [
   { key: 'bulkEmail', label: 'Can send bulk emails' },
   { key: 'reports', label: 'Can view reports' },
 ]
+
+function IntroOfferModal({ offer, onClose, onSave }) {
+  const [name, setName] = useState(offer?.name || '')
+  const [price, setPrice] = useState(offer?.price != null ? String(offer.price) : '')
+  const [description, setDescription] = useState(offer?.description || '')
+  const [numClasses, setNumClasses] = useState(offer?.num_classes != null ? String(offer.num_classes) : '1')
+  const [expiryDays, setExpiryDays] = useState(offer?.expiry_days != null ? String(offer.expiry_days) : '14')
+  const [saving, setSaving] = useState(false)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      await onSave({ name, price: parseFloat(price), description, num_classes: parseInt(numClasses), expiry_days: parseInt(expiryDays), is_intro: true, is_active: true })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 440 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>{offer?.id ? 'Edit Intro Offer' : 'New Intro Offer'}</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <form className="sd-body" onSubmit={handleSubmit}>
+          <div className="field"><label>Name *</label><input value={name} onChange={e => setName(e.target.value)} required autoFocus placeholder="e.g. 2-Week Intro Pass" /></div>
+          <div className="field"><label>Price ($) *</label><input type="number" step="0.01" min="0" value={price} onChange={e => setPrice(e.target.value)} required placeholder="35.00" /></div>
+          <div className="field"><label>Description</label><input value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g. Unlimited classes for 2 weeks" /></div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="field"><label>Classes included</label><input type="number" min="1" value={numClasses} onChange={e => setNumClasses(e.target.value)} /></div>
+            <div className="field"><label>Expires after (days)</label><input type="number" min="1" value={expiryDays} onChange={e => setExpiryDays(e.target.value)} /></div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : offer?.id ? 'Save Changes' : 'Create Offer'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
 
 function MembershipModal({ membership, onClose, onSave }) {
   const [name, setName] = useState(membership?.name || '')
@@ -188,8 +226,12 @@ export default function AdminSettings() {
   // Memberships tab
   const { data: membershipData, loading: membershipLoading, refetch: refetchMemberships } = useApi(() => membershipTypes.list(), [])
   const membershipList = membershipData?.results || membershipData || []
-  const [membershipModal, setMembershipModal] = useState(null) // null | 'add' | {membership object}
-  const [introOfferMsg, setIntroOfferMsg] = useState(null)
+  const [membershipModal, setMembershipModal] = useState(null)
+
+  // Intro Offers (packages with is_intro=true)
+  const { data: introData, refetch: refetchIntro } = useApi(() => packagesApi.list(), [])
+  const introOffers = (introData?.results || introData || []).filter(p => p.is_intro)
+  const [introModal, setIntroModal] = useState(null) // null | 'add' | {package object}
 
   // Staff & Permissions tab
   const { data: staffData } = useApi(() => users.list({ role: 'staff' }), [])
@@ -272,6 +314,22 @@ export default function AdminSettings() {
   async function toggleMembershipActive(m) {
     await membershipTypes.update(m.id, { is_active: !m.is_active })
     refetchMemberships()
+  }
+
+  async function saveIntroOffer(data) {
+    if (data.id) {
+      await packagesApi.update(data.id, data)
+    } else {
+      await packagesApi.create(data)
+    }
+    setIntroModal(null)
+    refetchIntro()
+  }
+
+  async function deleteIntroOffer(offer) {
+    if (!window.confirm(`Delete "${offer.name}"?`)) return
+    await packagesApi.delete(offer.id)
+    refetchIntro()
   }
 
   function showIntegrationInfo(name) {
@@ -407,11 +465,6 @@ export default function AdminSettings() {
 
       {tab === 'memberships' && (
         <div>
-          {introOfferMsg && (
-            <div style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 10, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#f59e0b' }}>
-              {introOfferMsg}
-            </div>
-          )}
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', fontWeight: 600 }}>Membership Types</div>
@@ -445,25 +498,31 @@ export default function AdminSettings() {
 
           {/* Intro Offers */}
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: '#f59e0b', fontWeight: 600, marginBottom: 12 }}>Intro Offers</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
-              {INTRO_OFFERS.map(offer => (
-                <div key={offer.id} style={{ borderRadius: 12, border: '1px solid rgba(245,158,11,0.35)', background: 'rgba(245,158,11,0.05)', padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ fontWeight: 700, fontSize: 14 }}>{offer.name}</div>
-                    <span style={{ fontSize: 10, background: 'rgba(245,158,11,0.2)', color: '#f59e0b', borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>Intro</span>
-                  </div>
-                  <div style={{ fontSize: 13, color: 'var(--grey)' }}>{offer.desc}</div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: '#f59e0b' }}>{offer.price}</div>
-                  <div style={{ marginTop: 4 }}>
-                    <button className="btn btn-ghost btn-xs" onClick={() => {
-                      setIntroOfferMsg('Feature coming soon')
-                      setTimeout(() => setIntroOfferMsg(null), 2000)
-                    }}>Edit</button>
-                  </div>
-                </div>
-              ))}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: '#f59e0b', fontWeight: 600 }}>Intro Offers</div>
+              <button className="btn btn-ghost btn-xs" onClick={() => setIntroModal('add')}>+ Add Offer</button>
             </div>
+            {introOffers.length === 0 ? (
+              <div style={{ fontSize: 13, color: 'var(--grey)', padding: '12px 0' }}>No intro offers yet. Add one to get started.</div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
+                {introOffers.map(offer => (
+                  <div key={offer.id} style={{ borderRadius: 12, border: '1px solid rgba(245,158,11,0.35)', background: 'rgba(245,158,11,0.05)', padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ fontWeight: 700, fontSize: 14 }}>{offer.name}</div>
+                      <span style={{ fontSize: 10, background: 'rgba(245,158,11,0.2)', color: '#f59e0b', borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>Intro</span>
+                    </div>
+                    {offer.description && <div style={{ fontSize: 13, color: 'var(--grey)' }}>{offer.description}</div>}
+                    <div style={{ fontSize: 20, fontWeight: 700, color: '#f59e0b' }}>${parseFloat(offer.price).toFixed(0)}</div>
+                    <div style={{ fontSize: 11, color: 'var(--grey)' }}>{offer.num_classes} class{offer.num_classes !== 1 ? 'es' : ''} · {offer.expiry_days} day expiry</div>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                      <button className="btn btn-ghost btn-xs" onClick={() => setIntroModal(offer)}>Edit</button>
+                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => deleteIntroOffer(offer)}>Delete</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -615,6 +674,14 @@ export default function AdminSettings() {
           membership={membershipModal === 'add' ? null : membershipModal}
           onClose={() => setMembershipModal(null)}
           onSave={saveMembership}
+        />
+      )}
+
+      {introModal && (
+        <IntroOfferModal
+          offer={introModal === 'add' ? null : introModal}
+          onClose={() => setIntroModal(null)}
+          onSave={saveIntroOffer}
         />
       )}
 

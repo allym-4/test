@@ -62,7 +62,7 @@ class StudentBalanceSerializer(serializers.Serializer):
 class PackageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Package
-        fields = ('id', 'name', 'num_classes', 'price', 'expiry_days', 'is_active', 'created_at')
+        fields = ('id', 'name', 'num_classes', 'price', 'expiry_days', 'is_active', 'is_intro', 'description', 'created_at')
         read_only_fields = ('id', 'created_at')
 
 
