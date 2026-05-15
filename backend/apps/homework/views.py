@@ -121,7 +121,7 @@ class HomeworkRemindView(APIView):
         ).values_list('student_id', flat=True)
         notifs = [
             Notification(
-                user_id=sid,
+                recipient_id=sid,
                 title='Homework reminder',
                 body=f'Don\'t forget to complete "{assignment.title}" for {assignment.class_session.name}.',
                 notification_type='info',
