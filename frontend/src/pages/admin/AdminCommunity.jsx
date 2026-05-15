@@ -218,7 +218,7 @@ export default function AdminCommunity() {
                 {groups.map(g => (
                   <tr key={g.id}>
                     <td><b>{g.name}</b></td>
-                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>—</td>
+                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{g.member_count ?? 0}</td>
                     <td style={{ color: 'var(--grey)', fontSize: 12 }}>{g.post_count ?? 0}</td>
                     <td><span className={`tag ${g.is_active ? 'tag-lime' : 'tag-grey'}`} style={{ fontSize: 10 }}>{g.is_active ? 'Active' : 'Archived'}</span></td>
                     <td>

@@ -139,7 +139,7 @@ export default function AdminWaitlist() {
                               <b>{st?.display_name || `Student ${e.student}`}</b>
                               {st?.email && <div style={{ fontSize: 11, color: 'var(--grey)' }}>{st.email}</div>}
                             </td>
-                            <td style={{ color: 'var(--grey)', fontSize: 12 }}>—</td>
+                            <td style={{ color: 'var(--grey)', fontSize: 12 }}>{e.created_at ? new Date(e.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</td>
                             <td>
                               <button
                                 className="btn btn-lime btn-xs"
