@@ -306,6 +306,7 @@ export const surveys = {
   get: (id) => client.get(`/api/surveys/${id}/`),
   create: (data) => client.post('/api/surveys/', data),
   update: (id, data) => client.patch(`/api/surveys/${id}/`, data),
+  send: (id) => client.post(`/api/surveys/${id}/send/`, {}),
   questions: (surveyId) => client.get('/api/surveys/questions/', { params: { survey: surveyId } }),
   respond: (data) => client.post('/api/surveys/responses/', data),
   responses: (surveyId) => client.get('/api/surveys/responses/', { params: { survey: surveyId } }),

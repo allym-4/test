@@ -46,17 +46,37 @@ def bulk_save_register(request, occurrence_pk):
     records = request.data.get('records', [])
     saved = []
     for record in records:
-        obj, _ = AttendanceRecord.objects.update_or_create(
+        prev_status = None
+        try:
+            prev_status = AttendanceRecord.objects.get(
+                occurrence=occurrence, student_id=record['student']
+            ).status
+        except AttendanceRecord.DoesNotExist:
+            pass
+
+        new_status = record.get('status', 'present')
+        obj, created = AttendanceRecord.objects.update_or_create(
             occurrence=occurrence,
             student_id=record['student'],
             defaults={
-                'status': record.get('status', 'present'),
+                'status': new_status,
                 'no_show_fee_charged': record.get('no_show_fee_charged', False),
                 'no_show_fee_waived': record.get('no_show_fee_waived', False),
                 'note': record.get('note', ''),
                 'recorded_by': request.user,
             }
         )
+
+        # Auto-issue makeup credit for absent (proper notice) only — not no_show
+        if new_status == 'absent' and prev_status != 'absent':
+            from .models import MakeupCredit
+            session_name = occurrence.session.name if hasattr(occurrence, 'session') and occurrence.session else 'class'
+            MakeupCredit.objects.get_or_create(
+                student_id=record['student'],
+                reason=f'Absent: {session_name} on {occurrence.date}',
+                defaults={'issued_by': request.user, 'status': 'available'},
+            )
+
         saved.append(obj)
     occurrence.register_saved = True
     occurrence.save(update_fields=['register_saved'])
@@ -216,3 +236,12 @@ class MakeupCreditDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         from .models import MakeupCredit
         return MakeupCredit.objects.all()
+
+    def perform_update(self, serializer):
+        from .models import MakeupCredit
+        instance = self.get_object()
+        new_status = serializer.validated_data.get('status', instance.status)
+        if new_status == MakeupCredit.Status.USED and instance.status != MakeupCredit.Status.USED:
+            serializer.save(used_at=timezone.now())
+        else:
+            serializer.save()

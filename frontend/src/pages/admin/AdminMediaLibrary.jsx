@@ -123,6 +123,8 @@ export default function AdminMediaLibrary() {
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [selectedFile, setSelectedFile] = useState(null)
   const [uploadSubmitting, setUploadSubmitting] = useState(false)
+  const [uploadError, setUploadError] = useState(null)
+  const [urlError, setUrlError] = useState(null)
 
   const { data, refetch } = useApi(() => media.list())
   const items = data?.results || (Array.isArray(data) ? data : [])
@@ -138,13 +140,14 @@ export default function AdminMediaLibrary() {
     e.preventDefault()
     if (!urlForm.name || !urlForm.url) return
     setUrlSubmitting(true)
+    setUrlError(null)
     try {
       await media.create(new URLSearchParams({ ...urlForm }))
       setShowUrlModal(false)
       setUrlForm({ name: '', url: '', media_type: 'video', level: '' })
       refetch()
     } catch (err) {
-      console.error(err)
+      setUrlError(err?.response?.data?.detail || 'Failed to add media. Please try again.')
     } finally {
       setUrlSubmitting(false)
     }
@@ -162,6 +165,7 @@ export default function AdminMediaLibrary() {
     e.preventDefault()
     if (!selectedFile || !uploadForm.name) return
     setUploadSubmitting(true)
+    setUploadError(null)
     try {
       const fd = new FormData()
       fd.append('name', uploadForm.name)
@@ -174,7 +178,7 @@ export default function AdminMediaLibrary() {
       setUploadForm({ name: '', media_type: 'video', level: '' })
       refetch()
     } catch (err) {
-      console.error(err)
+      setUploadError(err?.response?.data?.detail || 'Upload failed. Please try again.')
     } finally {
       setUploadSubmitting(false)
     }
@@ -254,6 +258,7 @@ export default function AdminMediaLibrary() {
           <div style={{ background: '#111', border: '1px solid var(--border)', borderRadius: 12, padding: 28, width: 400, maxWidth: '90vw' }}>
             <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 20 }}>Add URL Media</div>
             <form onSubmit={handleUrlSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {urlError && <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 6, padding: '8px 12px', fontSize: 12, color: 'var(--red)' }}>{urlError}</div>}
               <div>
                 <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 6 }}>Name</label>
                 <input required value={urlForm.name} onChange={e => setUrlForm(f => ({ ...f, name: e.target.value }))}
@@ -295,6 +300,7 @@ export default function AdminMediaLibrary() {
           <div style={{ background: '#111', border: '1px solid var(--border)', borderRadius: 12, padding: 28, width: 400, maxWidth: '90vw' }}>
             <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 20 }}>Upload File</div>
             <form onSubmit={handleUploadSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {uploadError && <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 6, padding: '8px 12px', fontSize: 12, color: 'var(--red)' }}>{uploadError}</div>}
               <div style={{ fontSize: 12, color: 'var(--grey)' }}>File: {selectedFile?.name}</div>
               <div>
                 <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 6 }}>Name</label>

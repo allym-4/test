@@ -171,7 +171,9 @@ def redeem_gift_card(request):
         return Response({'detail': 'Invalid or already used gift card code.'}, status=status.HTTP_404_NOT_FOUND)
     if card.balance <= 0:
         return Response({'detail': 'This gift card has no remaining balance.'}, status=status.HTTP_400_BAD_REQUEST)
+    from django.utils import timezone
     card.redeemed_by = request.user
+    card.redeemed_at = timezone.now()
     card.is_active = False
     card.save()
     return Response({'detail': f'Gift card redeemed! ${card.balance:.2f} credit added to your account.', 'balance': str(card.balance)})

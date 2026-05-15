@@ -145,6 +145,7 @@ class GiftCard(models.Model):
     redeemed_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name='gift_cards_redeemed'
     )
+    redeemed_at = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateField(null=True, blank=True)

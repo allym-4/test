@@ -105,6 +105,7 @@ export default function StudentProgress() {
   const [chatMessages, setChatMessages] = useState({})
   const [chatInput, setChatInput] = useState('')
   const [chatLoading, setChatLoading] = useState(false)
+  const [chatError, setChatError] = useState(null)
   const chatEndRef = useRef(null)
 
   const chatEnrol = enrolList.find(e => e.id === chatClassId)
@@ -144,7 +145,15 @@ export default function StudentProgress() {
     }))
     setChatLoading(true)
     classes.chat.send(sessionId, { body: text })
-      .catch(() => {})
+      .catch(() => {
+        setChatError('Failed to send message. Please try again.')
+        setTimeout(() => setChatError(null), 4000)
+        // remove optimistic message on failure
+        setChatMessages(prev => ({
+          ...prev,
+          [chatClassId]: (prev[chatClassId] || []).filter(m => m.id !== optimistic.id),
+        }))
+      })
       .finally(() => setChatLoading(false))
   }
 
@@ -497,6 +506,9 @@ export default function StudentProgress() {
                     <div ref={chatEndRef} />
                   </div>
 
+                  {chatError && (
+                    <div style={{ fontSize: 12, color: 'var(--red)', padding: '6px 0' }}>{chatError}</div>
+                  )}
                   {/* Input */}
                   <div
                     style={{

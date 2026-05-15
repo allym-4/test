@@ -111,11 +111,27 @@ function SurveyResultsModal({ survey, onClose }) {
 
 function SurveyCard({ survey, onRefetch }) {
   const [showResults, setShowResults] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [sendError, setSendError] = useState(null)
   const pct = Math.round((survey.response_count || 0) / Math.max(survey.question_count || 1, 1) * 100)
 
   async function handleClose() {
     await surveysApi.update(survey.id, { status: 'completed' })
     onRefetch()
+  }
+
+  async function handleSend() {
+    setSending(true)
+    setSendError(null)
+    try {
+      await surveysApi.send(survey.id)
+      onRefetch()
+    } catch (err) {
+      setSendError(err?.response?.data?.detail || 'Failed to send survey')
+      setTimeout(() => setSendError(null), 4000)
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
@@ -129,12 +145,18 @@ function SurveyCard({ survey, onRefetch }) {
         </div>
         <span className={`tag ${survey.status === 'active' ? 'tag-lime' : 'tag-grey'}`} style={{ fontSize: 10 }}>{survey.status}</span>
       </div>
+      {sendError && (
+        <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 6, padding: '8px 12px', fontSize: 12, color: 'var(--red)', marginBottom: 10 }}>{sendError}</div>
+      )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
         <div className="progress-bar" style={{ flex: 1 }}><div className="progress-fill" style={{ width: `${Math.min(pct, 100)}%` }} /></div>
         <span style={{ fontSize: 11, color: 'var(--grey)', width: 36, textAlign: 'right' }}>{pct}%</span>
       </div>
       <div style={{ display: 'flex', gap: 8 }}>
         <button className="btn btn-ghost btn-xs" onClick={() => setShowResults(true)}>View Results</button>
+        {survey.status === 'draft' && (
+          <button className="btn btn-lime btn-xs" onClick={handleSend} disabled={sending}>{sending ? 'Sending…' : 'Send to All Students'}</button>
+        )}
         {survey.status === 'active' && (
           <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)' }} onClick={handleClose}>Close</button>
         )}
