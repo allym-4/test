@@ -195,6 +195,11 @@ export const notifications = {
 export const availability = {
   list: (instructorId) => client.get('/api/users/availability/', instructorId ? { params: { instructor: instructorId } } : {}),
   save: (slots) => client.post('/api/users/availability/', slots),
+  unavailableDates: {
+    list: (params) => client.get('/api/users/unavailable-dates/', { params }),
+    create: (data) => client.post('/api/users/unavailable-dates/', data),
+    delete: (id) => client.delete(`/api/users/unavailable-dates/${id}/`),
+  },
 }
 
 export const instructorPay = {

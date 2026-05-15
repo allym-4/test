@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList, Referral
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, InstructorUnavailableDate, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList, Referral
 
 
 class UserMinimalSerializer(serializers.ModelSerializer):
@@ -261,3 +261,10 @@ class ReferralSerializer(serializers.ModelSerializer):
         model = Referral
         fields = ('id', 'referrer', 'referrer_name', 'referee_email', 'referee', 'referee_name', 'credit_amount', 'status', 'created_at')
         read_only_fields = ('id', 'created_at')
+
+
+class InstructorUnavailableDateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InstructorUnavailableDate
+        fields = ('id', 'instructor', 'date_from', 'date_to', 'reason', 'created_at')
+        read_only_fields = ('id', 'instructor', 'created_at')

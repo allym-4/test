@@ -94,7 +94,7 @@ export default function InstructorAvailability() {
   async function handleDeclineCover(occ) {
     setCoverActioning(a => ({ ...a, [occ.id]: 'declining' }))
     try {
-      // Decline: just note, no specific endpoint yet
+      await client.patch(`/api/classes/occurrences/${occ.id}/`, { cover_needed: false })
       await coverRefetch()
     } finally {
       setCoverActioning(a => ({ ...a, [occ.id]: null }))
@@ -335,7 +335,9 @@ export default function InstructorAvailability() {
             </div>
             <div className="modal-footer">
               <button className="btn btn-ghost btn-sm" onClick={() => setUnavailModal(false)}>Cancel</button>
-              <button className="btn btn-lime btn-sm" onClick={() => {
+              <button className="btn btn-lime btn-sm" onClick={async () => {
+                if (!unavailFrom || !unavailTo) return
+                await availability.unavailableDates.create({ date_from: unavailFrom, date_to: unavailTo, reason: unavailReason })
                 setUnavailModal(false)
                 setUnavailFrom('')
                 setUnavailTo('')

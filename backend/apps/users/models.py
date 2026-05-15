@@ -263,6 +263,20 @@ class InstructorAvailability(models.Model):
         return f'{self.instructor.display_name} — day {self.day_of_week} {self.slot}'
 
 
+class InstructorUnavailableDate(models.Model):
+    instructor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='unavailable_dates')
+    date_from = models.DateField()
+    date_to = models.DateField()
+    reason = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['date_from']
+
+    def __str__(self):
+        return f'{self.instructor.display_name} unavailable {self.date_from} – {self.date_to}'
+
+
 class StudentForm(models.Model):
     class FormType(models.TextChoices):
         PARQ = 'parq', 'PAR-Q Health Questionnaire'

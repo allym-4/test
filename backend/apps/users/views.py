@@ -15,11 +15,11 @@ try:
     ANTHROPIC_AVAILABLE = True
 except ImportError:
     ANTHROPIC_AVAILABLE = False
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, AutomationRun, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList, Referral
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, AutomationRun, Order, Notification, InstructorAvailability, InstructorUnavailableDate, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList, Referral
 from .serializers import (
     UserSerializer, UserCreateSerializer, StaffNoteSerializer, LeadSerializer,
     StudioSettingsSerializer, AnnouncementSerializer, ProductSerializer, AutomationRuleSerializer,
-    OrderSerializer, NotificationSerializer, InstructorAvailabilitySerializer, StudentFormSerializer,
+    OrderSerializer, NotificationSerializer, InstructorAvailabilitySerializer, InstructorUnavailableDateSerializer, StudentFormSerializer,
     InstructorPayRecordSerializer, StudentSkillSerializer,
     TagSerializer, StudentTagSerializer, SkillLevelSerializer, SkillGroupSerializer, SkillDefinitionSerializer,
     MediaItemSerializer, EmailCampaignSerializer, EmailListSerializer, ReferralSerializer,
@@ -375,6 +375,29 @@ class InstructorAvailabilityView(APIView):
             )
             saved.append(obj)
         return Response(InstructorAvailabilitySerializer(saved, many=True).data)
+
+
+class InstructorUnavailableDateView(generics.ListCreateAPIView):
+    serializer_class = InstructorUnavailableDateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role in ('admin', 'instructor', 'staff'):
+            instructor_id = self.request.query_params.get('instructor', user.id)
+            return InstructorUnavailableDate.objects.filter(instructor_id=instructor_id)
+        return InstructorUnavailableDate.objects.filter(instructor=user)
+
+    def perform_create(self, serializer):
+        serializer.save(instructor=self.request.user)
+
+
+class InstructorUnavailableDateDetailView(generics.DestroyAPIView):
+    serializer_class = InstructorUnavailableDateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return InstructorUnavailableDate.objects.filter(instructor=self.request.user)
 
 
 class StudentFormView(APIView):
