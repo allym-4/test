@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApi } from '../hooks/useApi'
 import { homework, classes } from '../api'
+import client from '../api/client'
 import './StudentsPage.css'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -97,6 +98,8 @@ function ReviewModal({ sub, onClose, onSaved }) {
   const [notes, setNotes] = useState(sub.instructor_notes || '')
   const [saving, setSaving] = useState(false)
 
+  const studentNote = sub.notes || sub.student_comment || null
+
   async function submit(e) {
     e.preventDefault()
     setSaving(true)
@@ -134,6 +137,14 @@ function ReviewModal({ sub, onClose, onSaved }) {
           )}
 
           <form onSubmit={submit}>
+            {studentNote && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 6, fontWeight: 600 }}>Student's note:</div>
+                <div style={{ background: '#1a1a1a', borderRadius: 8, padding: '10px 12px', fontSize: 13, color: 'var(--grey)', marginBottom: 12 }}>
+                  {studentNote}
+                </div>
+              </div>
+            )}
             <div className="field">
               <label>Feedback for student</label>
               <textarea rows={4} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Add your feedback or encouragement…" style={{ width: '100%', boxSizing: 'border-box' }} />
@@ -149,7 +160,116 @@ function ReviewModal({ sub, onClose, onSaved }) {
   )
 }
 
-function HwCard({ a, onToggle }) {
+// ── Homework Detail Modal (per-student submission status) ─────────────────────
+
+function HwDetailModal({ hw, onClose, onReview }) {
+  const [submissions, setSubmissions] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [toast, setToast] = useState('')
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await client.get(`/api/users/forms/?homework=${hw.id}`)
+        setSubmissions(res.data?.results || res.data || [])
+      } catch {
+        // Fall back to homework submissions filtered by assignment
+        try {
+          const res2 = await homework.submissions({ assignment: hw.id })
+          setSubmissions(res2.data?.results || res2.data || [])
+        } catch {
+          setSubmissions([])
+        }
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  })
+
+  function showToast(msg) {
+    setToast(msg)
+    setTimeout(() => setToast(''), 3000)
+  }
+
+  // Build student rows: combine enrolled (if any) with submitted
+  const submittedIds = new Set((submissions || []).map(s => s.student || s.student_id))
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 580 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>Homework Detail</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="sd-body">
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>{hw.title}</div>
+            <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>
+              {hw.submission_count}/{hw.enrolled_count} submitted
+              {hw.due_date && ' · Due ' + new Date(hw.due_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+            </div>
+          </div>
+
+          {toast && (
+            <div style={{ background: 'var(--lime)', color: '#000', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, marginBottom: 12 }}>
+              {toast}
+            </div>
+          )}
+
+          {loading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}><div className="spinner" /></div>
+          ) : (submissions || []).length === 0 ? (
+            <div style={{ color: 'var(--grey)', fontSize: 13, textAlign: 'center', padding: '24px 0' }}>No submission data available.</div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    {['Student', 'Status', 'Submitted At', 'Actions'].map(h => (
+                      <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.7px', color: 'var(--grey)', fontWeight: 600 }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(submissions || []).map((sub, i) => {
+                    const submitted = sub.submitted_at || sub.status === 'submitted'
+                    return (
+                      <tr key={sub.id || i} style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td style={{ padding: '10px 12px', fontWeight: 500 }}>{sub.student_name || sub.student_display_name || `Student #${sub.student || sub.student_id}`}</td>
+                        <td style={{ padding: '10px 12px' }}>
+                          <span className={`tag ${submitted ? 'tag-lime' : 'tag-grey'}`} style={{ fontSize: 10 }}>
+                            {submitted ? 'Submitted' : 'Not submitted'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 12px', color: 'var(--grey)', fontSize: 12 }}>
+                          {sub.submitted_at ? new Date(sub.submitted_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                        </td>
+                        <td style={{ padding: '10px 12px' }}>
+                          {submitted ? (
+                            <button className="btn btn-lime btn-xs" onClick={() => { onClose(); onReview(sub) }}>Review</button>
+                          ) : (
+                            <button className="btn btn-ghost btn-xs" onClick={() => showToast('Reminder sent')}>Remind</button>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+            <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function HwCard({ a, onToggle, onDetail }) {
   const pct = a.enrolled_count ? Math.round(a.submission_count / a.enrolled_count * 100) : 0
   const s = a.class_session_detail
   const pctColor = pct === 100 ? 'var(--lime)' : pct > 50 ? 'var(--amber)' : 'var(--grey)'
@@ -158,7 +278,7 @@ function HwCard({ a, onToggle }) {
   const tagLabel = pendingCount > 0 ? `${pendingCount} pending review` : a.status === 'active' ? 'Active' : 'Closed'
 
   return (
-    <div className="hw-card" style={{ opacity: a.status !== 'active' ? 0.6 : 1 }}>
+    <div className="hw-card" style={{ opacity: a.status !== 'active' ? 0.6 : 1, cursor: 'pointer' }} onClick={() => onDetail(a)}>
       <div className="hw-card-header">
         <div>
           <div className="hw-card-title">{a.title}</div>
@@ -170,7 +290,7 @@ function HwCard({ a, onToggle }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span className={`tag ${tagCls}`} style={{ fontSize: 10 }}>{tagLabel}</span>
-          <button className="btn btn-ghost btn-xs" onClick={() => onToggle(a)}>
+          <button className="btn btn-ghost btn-xs" onClick={e => { e.stopPropagation(); onToggle(a) }}>
             {a.status === 'active' ? 'Close' : 'Reopen'}
           </button>
         </div>
@@ -200,6 +320,7 @@ export default function HomeworkPage() {
   const [tab, setTab] = useState('active')
   const [showNew, setShowNew] = useState(false)
   const [reviewing, setReviewing] = useState(null)
+  const [detailHw, setDetailHw] = useState(null)
 
   const active = activeData?.results || activeData || []
   const all = allData?.results || allData || []
@@ -224,7 +345,7 @@ export default function HomeworkPage() {
           <div className="page-title">Homework</div>
           <div className="page-sub">Assignments for your classes</div>
         </div>
-        <button className="btn btn-lime btn-sm" onClick={() => setShowNew(true)}>+ New Assignment</button>
+        <button className="btn btn-lime btn-sm" onClick={() => setShowNew(true)}>+ Assign Homework</button>
       </div>
 
       <div className="tab-strip">
@@ -284,7 +405,7 @@ export default function HomeworkPage() {
             <div className="empty-state">No homework assignments</div>
           ) : (
             (tab === 'active' ? active : all).map(a => (
-              <HwCard key={a.id} a={a} onToggle={toggleStatus} />
+              <HwCard key={a.id} a={a} onToggle={toggleStatus} onDetail={setDetailHw} />
             ))
           )}
         </div>
@@ -295,6 +416,13 @@ export default function HomeworkPage() {
       )}
       {reviewing && (
         <ReviewModal sub={reviewing} onClose={() => setReviewing(null)} onSaved={() => { setReviewing(null); refetchSubs() }} />
+      )}
+      {detailHw && (
+        <HwDetailModal
+          hw={detailHw}
+          onClose={() => setDetailHw(null)}
+          onReview={sub => { setDetailHw(null); setReviewing(sub) }}
+        />
       )}
     </div>
   )

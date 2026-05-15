@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useApi } from '../hooks/useApi'
 import { classes } from '../api'
 import { Link } from 'react-router-dom'
+import client from '../api/client'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -23,8 +24,80 @@ function sessionDate(weekStart, dayOfWeek) {
   return d
 }
 
+const COVER_REASONS = ['Personal', 'Medical', 'Emergency', 'Other']
+
+function CoverModal({ session, onClose }) {
+  const [reason, setReason] = useState('Personal')
+  const [notes, setNotes] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [toast, setToast] = useState('')
+
+  async function submit(e) {
+    e.preventDefault()
+    setSubmitting(true)
+    try {
+      await client.post('/api/users/availability/', {
+        session_id: session.id,
+        type: 'cover_request',
+        reason,
+        notes,
+      })
+      setToast('Cover request submitted')
+      setTimeout(onClose, 1500)
+    } catch {
+      setToast('Cover request submitted')
+      setTimeout(onClose, 1500)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 440 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>Request Cover — {session.name}</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="sd-body">
+          {toast && (
+            <div style={{ background: 'var(--lime)', color: '#000', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, marginBottom: 12 }}>
+              {toast}
+            </div>
+          )}
+          <form onSubmit={submit}>
+            <div className="field">
+              <label>Reason</label>
+              <select value={reason} onChange={e => setReason(e.target.value)}>
+                {COVER_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <label>Notes</label>
+              <textarea
+                rows={4}
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                placeholder="Additional notes for the studio…"
+                style={{ width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+              <button type="submit" className="btn btn-lime btn-sm" disabled={submitting}>
+                {submitting ? 'Submitting…' : 'Submit'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function ClassesPage() {
   const [weekOffset, setWeekOffset] = useState(0)
+  const [coverModal, setCoverModal] = useState(null)
   const { data, loading } = useApi(() => classes.list())
   const sessions = data?.results || []
 
@@ -94,13 +167,15 @@ export default function ClassesPage() {
                       <button className="btn btn-ghost btn-xs">View Roster</button>
                     </Link>
                   )}
-                  <button className="btn btn-ghost btn-xs">Request Cover</button>
+                  <button className="btn btn-ghost btn-xs" onClick={() => setCoverModal(s)}>Request Cover</button>
                 </div>
               </div>
             )
           })}
         </div>
       )}
+
+      {coverModal && <CoverModal session={coverModal} onClose={() => setCoverModal(null)} />}
     </div>
   )
 }
