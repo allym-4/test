@@ -456,10 +456,10 @@ function StudentDetail({ student, onClose, onRefreshList }) {
                         return { status: 'In Progress', cls: 'tag-amber' }
                       }
                       const docs = [
-                        { name: 'Health & Medical Form (PAR-Q)', detail: 'PAR-Q pre-screening questionnaire', ...formStatus((formsData || []).find(f => f.form_type === 'parq')) },
-                        { name: 'Liability Waiver', detail: 'Studio liability waiver and code of conduct', ...formStatus((formsData || []).find(f => f.form_type === 'waiver')) },
-                        { name: 'Photo Consent', detail: 'Permission to photograph/film in class', ...formStatus((formsData || []).find(f => f.form_type === 'photo_consent')) },
-                        { name: 'Season Agreement', detail: 'Season enrolment terms and conditions', ...formStatus((formsData || []).find(f => f.form_type === 'season_agreement')) },
+                        { name: 'Health & Medical Form (PAR-Q)', detail: 'PAR-Q pre-screening questionnaire', form: (formsData || []).find(f => f.form_type === 'parq'), ...formStatus((formsData || []).find(f => f.form_type === 'parq')) },
+                        { name: 'Liability Waiver', detail: 'Studio liability waiver and code of conduct', form: (formsData || []).find(f => f.form_type === 'waiver'), ...formStatus((formsData || []).find(f => f.form_type === 'waiver')) },
+                        { name: 'Photo Consent', detail: 'Permission to photograph/film in class', form: (formsData || []).find(f => f.form_type === 'photo_consent'), ...formStatus((formsData || []).find(f => f.form_type === 'photo_consent')) },
+                        { name: 'Season Agreement', detail: 'Season enrolment terms and conditions', form: (formsData || []).find(f => f.form_type === 'season_agreement'), ...formStatus((formsData || []).find(f => f.form_type === 'season_agreement')) },
                       ]
                       return docs.map(doc => (
                         <div key={doc.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 0', borderBottom: '1px solid #1a1a1a' }}>
@@ -469,7 +469,7 @@ function StudentDetail({ student, onClose, onRefreshList }) {
                           </div>
                           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
                             <span className={`tag ${doc.cls}`} style={{ fontSize: 10 }}>{doc.status}</span>
-                            <button className="btn btn-ghost btn-xs">View</button>
+                            {doc.form && <button className="btn btn-ghost btn-xs" onClick={() => setViewForm(doc)}>View</button>}
                           </div>
                         </div>
                       ))
@@ -700,6 +700,7 @@ export default function AdminStudents() {
   const [balances, setBalances] = useState({})
   const [studentList, setStudentList] = useState(null)
   const [showAdd, setShowAdd] = useState(false)
+  const [viewForm, setViewForm] = useState(null)
   const [showImport, setShowImport] = useState(false)
   const [showBulkTag, setShowBulkTag] = useState(false)
 
@@ -922,6 +923,35 @@ export default function AdminStudents() {
       )}
 
       {showBulkTag && <BulkTagModal studentIds={filtered.map(s => s.id)} onClose={() => setShowBulkTag(false)} />}
+
+      {viewForm && (
+        <div className="sd-overlay" onClick={e => e.target === e.currentTarget && setViewForm(null)}>
+          <div className="sd-modal" style={{ maxWidth: 520 }}>
+            <div className="sd-header">
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>{viewForm.name}</div>
+              <button className="modal-close-btn" onClick={() => setViewForm(null)}>✕</button>
+            </div>
+            <div className="sd-body" style={{ maxHeight: '65vh', overflowY: 'auto' }}>
+              {viewForm.form?.data && Object.keys(viewForm.form.data).length > 0 ? (
+                Object.entries(viewForm.form.data).map(([k, v]) => (
+                  <div key={k} style={{ display: 'flex', gap: 16, padding: '8px 0', borderBottom: '1px solid #1a1a1a', fontSize: 13 }}>
+                    <div style={{ width: 160, color: 'var(--grey)', flexShrink: 0, textTransform: 'capitalize' }}>{k.replace(/_/g, ' ')}</div>
+                    <div style={{ wordBreak: 'break-word' }}>{String(v)}</div>
+                  </div>
+                ))
+              ) : (
+                <div style={{ color: 'var(--grey)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>No form data recorded.</div>
+              )}
+              <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 14 }}>
+                Submitted {viewForm.form?.created_at ? new Date(viewForm.form.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
+              </div>
+            </div>
+            <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn btn-ghost btn-sm" onClick={() => setViewForm(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

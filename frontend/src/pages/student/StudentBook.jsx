@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useApi } from '../../hooks/useApi'
 import { useAuth } from '../../contexts/AuthContext'
-import { classes, enrolments, settings as settingsApi } from '../../api'
+import { classes, enrolments, settings as settingsApi, seasons as seasonsApi } from '../../api'
 import CheckoutModal from '../../components/CheckoutModal'
 
 const DAYS_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -176,10 +176,17 @@ export default function StudentBook() {
   const { data: sessionsData, loading } = useApi(() => classes.list())
   const { data: studioSettings } = useApi(() => settingsApi.get())
   const { data: workshopsData, loading: loadingWorkshops, refetch: refetchWorkshops } = useApi(() => classes.workshops.list())
+  const { data: seasonsData } = useApi(() => seasonsApi.list())
 
   const priceCasual = parseFloat(studioSettings?.price_casual || 35)
   const priceSeason = parseFloat(studioSettings?.price_season || 270)
   const priceTrial = parseFloat(studioSettings?.price_trial || 25)
+
+  const allSeasons = seasonsData?.results || seasonsData || []
+  const now = new Date()
+  const upcomingSeason = allSeasons.find(s => s.status === 'upcoming') ||
+    allSeasons.find(s => s.start_date && new Date(s.start_date) > now) ||
+    allSeasons.find(s => s.status === 'active')
 
   const sessions = sessionsData?.results || sessionsData || []
   const workshops = workshopsData?.results || workshopsData || []
@@ -274,10 +281,16 @@ export default function StudentBook() {
       {tab === 'season' && (
         <div>
           <div style={{ background: 'rgba(176,160,255,0.08)', border: '1px solid rgba(176,160,255,0.25)', borderRadius: 12, padding: '16px 18px', marginBottom: 20 }}>
-            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>Season 4 — Opens 14 July 2025</div>
+            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>
+              {upcomingSeason ? upcomingSeason.name : 'Next Season'}
+              {upcomingSeason?.enrolment_open_date ? ` — Opens ${new Date(upcomingSeason.enrolment_open_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}
+            </div>
             <div style={{ fontSize: 12, color: 'var(--grey)', lineHeight: 1.6 }}>
-              Season enrolment runs for 8 weeks and gives you a reserved spot in your class. Season 4 runs 11 Aug – 26 Sep 2025.
-              Enrolments open to current students on 14 July. Stay tuned for your reminder email!
+              Season enrolment gives you a reserved spot in your class for the full term.
+              {upcomingSeason?.start_date && upcomingSeason?.end_date
+                ? ` ${upcomingSeason.name} runs ${new Date(upcomingSeason.start_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} – ${new Date(upcomingSeason.end_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}.`
+                : ''}
+              {upcomingSeason?.enrolment_open_date ? ` Enrolments open ${new Date(upcomingSeason.enrolment_open_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'long' })}. Stay tuned for your reminder email!` : ''}
             </div>
           </div>
 

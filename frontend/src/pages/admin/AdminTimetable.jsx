@@ -435,6 +435,7 @@ export default function AdminTimetable() {
   const [sessionList, setSessionList]     = useState(null)
   const [conflictsDismissed, setConflictsDismissed] = useState(false)
   const [conflictCheckTick, setConflictCheckTick]   = useState(0)
+  const [selectedSeasonId, setSelectedSeasonId]     = useState(null)
 
   // Load active sessions
   const { data, loading } = useApi(() => classes.list({ active: true }))
@@ -444,7 +445,9 @@ export default function AdminTimetable() {
   const seasonOptions = seasonsData?.results ?? seasonsData ?? null
 
   // Derive current season from live data
-  const activeSeason = seasonOptions?.find(s => s.status === 'active') ?? null
+  const activeSeason = selectedSeasonId
+    ? (seasonOptions?.find(s => s.id === selectedSeasonId) ?? seasonOptions?.find(s => s.status === 'active') ?? null)
+    : (seasonOptions?.find(s => s.status === 'active') ?? null)
   const seasonStart = activeSeason?.start_date
     ? new Date(activeSeason.start_date + 'T00:00:00')
     : FALLBACK_SEASON_START
@@ -500,6 +503,8 @@ export default function AdminTimetable() {
 
             {/* Season selector */}
             <select
+              value={selectedSeasonId ?? activeSeason?.id ?? ''}
+              onChange={e => setSelectedSeasonId(Number(e.target.value) || null)}
               style={{
                 background: 'var(--surface, #1a1a2e)',
                 border: '1px solid var(--border, #333)',
