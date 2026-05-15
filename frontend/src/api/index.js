@@ -243,6 +243,7 @@ export const giftCards = {
   list: (params) => client.get('/api/payments/gift-cards/', { params }),
   create: (data) => client.post('/api/payments/gift-cards/', data),
   update: (id, data) => client.patch(`/api/payments/gift-cards/${id}/`, data),
+  redeem: (code) => client.post('/api/payments/gift-cards/redeem/', { code }),
 }
 
 export const categories = {

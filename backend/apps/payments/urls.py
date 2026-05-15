@@ -25,6 +25,7 @@ urlpatterns = [
     path('membership-types/<int:pk>/', views.MembershipTypeDetailView.as_view(), name='membership-type-detail'),
     path('gift-cards/', views.GiftCardListView.as_view(), name='gift-card-list'),
     path('gift-cards/<int:pk>/', views.GiftCardDetailView.as_view(), name='gift-card-detail'),
+    path('gift-cards/redeem/', views.redeem_gift_card, name='gift-card-redeem'),
     path('promo-codes/', views.PromoCodeListView.as_view(), name='promo-code-list'),
     path('promo-codes/<int:pk>/', views.PromoCodeDetailView.as_view(), name='promo-code-detail'),
 ]

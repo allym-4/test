@@ -152,6 +152,24 @@ class GiftCardDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAdminOrInstructor]
 
 
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def redeem_gift_card(request):
+    code = request.data.get('code', '').strip().upper()
+    if not code:
+        return Response({'detail': 'Code is required.'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        card = GiftCard.objects.get(code=code, is_active=True)
+    except GiftCard.DoesNotExist:
+        return Response({'detail': 'Invalid or already used gift card code.'}, status=status.HTTP_404_NOT_FOUND)
+    if card.balance <= 0:
+        return Response({'detail': 'This gift card has no remaining balance.'}, status=status.HTTP_400_BAD_REQUEST)
+    card.redeemed_by = request.user
+    card.is_active = False
+    card.save()
+    return Response({'detail': f'Gift card redeemed! ${card.balance:.2f} credit added to your account.', 'balance': str(card.balance)})
+
+
 class PromoCodeListView(generics.ListCreateAPIView):
     queryset = PromoCode.objects.all()
     serializer_class = PromoCodeSerializer

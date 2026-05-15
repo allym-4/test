@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { auth } from '../../api'
+import { auth, giftCards as giftCardsApi } from '../../api'
 
 export default function StudentAccount() {
   const { user, setUser } = useAuth()
@@ -128,14 +128,11 @@ export default function StudentAccount() {
   async function handleRedeemGiftCard() {
     if (!giftCode.trim()) return
     try {
-      await fetch('/api/payments/gift-cards/redeem/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: giftCode }),
-      })
-      setGiftMsg('Gift card redeemed successfully!')
-    } catch {
-      setGiftMsg('Feature coming soon')
+      const res = await giftCardsApi.redeem(giftCode.trim().toUpperCase())
+      setGiftMsg(res.data?.detail || 'Gift card redeemed successfully!')
+      setGiftCode('')
+    } catch (err) {
+      setGiftMsg(err.response?.data?.detail || 'Could not redeem gift card. Please check the code and try again.')
     }
   }
 
@@ -361,7 +358,7 @@ export default function StudentAccount() {
                   <label>Gift card code</label>
                   <input type="text" value={giftCode} onChange={e => setGiftCode(e.target.value)} placeholder="Enter code…" />
                 </div>
-                {giftMsg && <div style={{ fontSize: 12, color: 'var(--lime)', marginBottom: 12 }}>{giftMsg}</div>}
+                {giftMsg && <div style={{ fontSize: 12, color: giftMsg.includes('redeemed') ? 'var(--lime)' : 'var(--red)', marginBottom: 12 }}>{giftMsg}</div>}
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button className="btn btn-lime btn-sm" onClick={handleRedeemGiftCard}>Redeem</button>
                   <button className="btn btn-ghost btn-sm" onClick={() => { setShowGiftModal(false); setGiftCode(''); setGiftMsg('') }}>Cancel</button>

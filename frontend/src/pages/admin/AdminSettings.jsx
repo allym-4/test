@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { settings as settingsApi, membershipTypes, users } from '../../api'
+import { settings as settingsApi, membershipTypes, users, studios as studiosApi } from '../../api'
 import { useApi } from '../../hooks/useApi'
 
 const FORM_FIELDS = {
@@ -178,10 +178,8 @@ export default function AdminSettings() {
   const [form, setForm] = useState(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [locations, setLocations] = useState([
-    { id: 1, name: 'The Box', address: 'Level 1, 88 Kippax St, Surry Hills NSW 2010' },
-    { id: 2, name: 'Rhapsody', address: 'Level 2, 12 Crown St, Surry Hills NSW 2010' },
-  ])
+  const { data: studiosData, refetch: refetchStudios } = useApi(() => studiosApi.list(), [])
+  const locations = studiosData?.results || studiosData || []
   const [editingLocation, setEditingLocation] = useState(null)
   const [showAddLocation, setShowAddLocation] = useState(false)
   const [previewForm, setPreviewForm] = useState(null)
@@ -235,12 +233,13 @@ export default function AdminSettings() {
     }
   }
 
-  function saveLocation(loc) {
+  async function saveLocation(loc) {
     if (loc.id) {
-      setLocations(prev => prev.map(l => l.id === loc.id ? loc : l))
+      await studiosApi.update(loc.id, { name: loc.name, address: loc.address })
     } else {
-      setLocations(prev => [...prev, { ...loc, id: Date.now() }])
+      await studiosApi.create({ name: loc.name, address: loc.address })
     }
+    refetchStudios()
     setEditingLocation(null)
     setShowAddLocation(false)
   }
