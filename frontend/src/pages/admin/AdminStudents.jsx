@@ -626,6 +626,8 @@ export default function AdminStudents() {
   const [statusFilter, setStatusFilter] = useState('')
   const [activeChip, setActiveChip] = useState('All')
   const [selected, setSelected] = useState(null)
+  const [sortKey, setSortKey] = useState('name')
+  const [sortDir, setSortDir] = useState('asc')
   const [balances, setBalances] = useState({})
   const [studentList, setStudentList] = useState(null)
   const [showAdd, setShowAdd] = useState(false)
@@ -655,7 +657,31 @@ export default function AdminStudents() {
       (typeof t === 'string' ? t : t.name || '').toLowerCase() === activeChip.toLowerCase()
     )
     return matchSearch && matchLevel && matchStatus && matchChip
+  }).sort((a, b) => {
+    let av, bv
+    if (sortKey === 'name') { av = a.display_name || ''; bv = b.display_name || '' }
+    else if (sortKey === 'balance') { av = balances[a.id] ?? 0; bv = balances[b.id] ?? 0 }
+    else if (sortKey === 'level') { av = a.level || ''; bv = b.level || '' }
+    else if (sortKey === 'last_seen') { av = a.last_login || ''; bv = b.last_login || '' }
+    else { av = ''; bv = '' }
+    if (av < bv) return sortDir === 'asc' ? -1 : 1
+    if (av > bv) return sortDir === 'asc' ? 1 : -1
+    return 0
   })
+
+  function toggleSort(key) {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortKey(key); setSortDir('asc') }
+  }
+
+  function SortTh({ col, label }) {
+    const active = sortKey === col
+    return (
+      <th onClick={() => toggleSort(col)} style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
+        {label} {active ? (sortDir === 'asc' ? '↑' : '↓') : <span style={{ color: '#444' }}>↕</span>}
+      </th>
+    )
+  }
 
   const selectStyle = { background: '#111', color: '#fff', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 10px', fontSize: 13 }
 
@@ -729,11 +755,11 @@ export default function AdminStudents() {
             <thead>
               <tr>
                 <th></th>
-                <th>Name</th>
+                <SortTh col="name" label="Name" />
                 <th>Email</th>
-                <th>Level</th>
-                <th>Last Seen</th>
-                <th>Balance</th>
+                <SortTh col="level" label="Level" />
+                <SortTh col="last_seen" label="Last Seen" />
+                <SortTh col="balance" label="Balance" />
                 <th>Status</th>
                 <th></th>
               </tr>
