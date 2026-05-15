@@ -2,6 +2,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useApi } from '../hooks/useApi'
 import { classes, homework, attendance } from '../api'
 import { Link } from 'react-router-dom'
+import client from '../api/client'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const DAYS_LONG = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -21,11 +22,27 @@ export default function DashboardPage() {
   const { user } = useAuth()
   const { data: sessionsData, loading: loadingSessions } = useApi(() => classes.list({ active: 'true' }))
   const { data: hwData, loading: loadingHw } = useApi(() => homework.list({ status: 'active' }))
+  const { data: unreadData, loading: loadingUnread } = useApi(() => client.get('/api/helpdesk/conversations/', { params: { unread: true } }))
+  const { data: allSessionsData, loading: loadingAllSessions } = useApi(() => client.get('/api/classes/sessions/', { params: { active: true } }))
+
+  // No-shows this week
+  const oneWeekAgo = new Date()
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+  const { data: noShowData, loading: loadingNoShows } = useApi(() =>
+    attendance.list({ status: 'no_show', date_after: oneWeekAgo.toISOString().slice(0, 10) })
+  )
 
   const sessions = sessionsData?.results || []
   const assignments = hwData?.results || []
+  const unreadCount = unreadData?.count ?? (unreadData?.results?.length ?? 0)
+  const noShowCount = noShowData?.count ?? (noShowData?.results?.length ?? 0)
 
   const todayDow = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1
+
+  // All sessions today (all instructors)
+  const allSessions = allSessionsData?.results || allSessionsData?.data?.results || []
+  const allSessionsToday = allSessions.filter(s => s.day_of_week === todayDow)
+
   const todaySessions = sessions.filter(s => s.day_of_week === todayDow)
   const pendingReview = assignments.filter(a => a.submission_count > 0).length
 
@@ -52,15 +69,15 @@ export default function DashboardPage() {
           <div className="kpi-value">{loadingHw ? '—' : pendingReview}</div>
           <div className="kpi-sub">Submissions to review →</div>
         </Link>
-        <div className="kpi kpi-amber">
-          <div className="kpi-label">Active Assignments</div>
-          <div className="kpi-value">{loadingHw ? '—' : assignments.length}</div>
-          <div className="kpi-sub">Across your classes</div>
-        </div>
+        <Link to="/messages" className="kpi kpi-lav" style={{ textDecoration: 'none' }}>
+          <div className="kpi-label">Unread Messages</div>
+          <div className="kpi-value">{loadingUnread ? '—' : unreadCount}</div>
+          <div className="kpi-sub">In your inbox →</div>
+        </Link>
         <div className="kpi kpi-red">
-          <div className="kpi-label">Your Classes</div>
-          <div className="kpi-value">{loadingSessions ? '—' : sessions.length}</div>
-          <div className="kpi-sub">Total active →</div>
+          <div className="kpi-label">No-shows This Week</div>
+          <div className="kpi-value">{loadingNoShows ? '—' : noShowCount}</div>
+          <div className="kpi-sub">Past 7 days</div>
         </div>
       </div>
 
@@ -92,6 +109,39 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* All Classes Today (all instructors) */}
+      <div style={{ marginBottom: 28 }}>
+        <div className="section-title" style={{ fontSize: 15, marginBottom: 14 }}>All Classes Today</div>
+        {loadingAllSessions ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}><div className="spinner" /></div>
+        ) : allSessionsToday.length === 0 ? (
+          <div className="empty-state">No classes scheduled today</div>
+        ) : (
+          <div className="list-card">
+            {allSessionsToday.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || '')).map(s => {
+              const isOwn = s.instructor === user?.id || s.instructor_detail?.id === user?.id
+              return (
+                <div key={s.id} className="list-row" style={{ opacity: isOwn ? 1 : 0.7 }}>
+                  <div className="list-time">
+                    <div className="list-time-val">{s.start_time?.slice(0, 5)}</div>
+                    <div className="list-time-day">{DAYS[s.day_of_week]}</div>
+                  </div>
+                  <div className="list-body">
+                    <div className="list-title" style={{ color: isOwn ? 'inherit' : 'var(--grey)' }}>
+                      {s.name} · {s.studio_detail?.name}
+                      {isOwn && (
+                        <span style={{ marginLeft: 8, fontSize: 10, background: 'var(--lime)', color: '#000', fontWeight: 700, borderRadius: 4, padding: '1px 6px', verticalAlign: 'middle' }}>YOURS</span>
+                      )}
+                    </div>
+                    <div className="list-sub">{s.instructor_detail?.display_name || s.instructor_name || '—'}</div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
 
       {/* All classes this week */}
       <div style={{ marginBottom: 28 }}>

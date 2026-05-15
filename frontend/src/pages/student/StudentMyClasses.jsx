@@ -1,7 +1,8 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, attendance, classes } from '../../api'
+import { enrolments, attendance } from '../../api'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -44,11 +45,11 @@ function MarkAwayModal({ occurrence, cancellationWindowHours, onClose, onDone })
 
           {isLate ? (
             <div style={{ background: 'rgba(255,170,0,0.08)', border: '1px solid rgba(255,170,0,0.25)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, color: 'var(--amber)', lineHeight: 1.6 }}>
-              <strong>Late cancellation notice:</strong> This class is within the {windowHours}-hour cancellation window. A late cancel fee may apply. You can still mark away — just be aware.
+              <strong>Late cancellation notice:</strong> This class is within the {windowHours}-hour cancellation window. A late cancel fee may apply.
             </div>
           ) : (
             <div style={{ background: 'rgba(204,255,0,0.05)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
-              You're marking yourself as unable to attend this class. This helps your instructor plan accordingly. No late cancel fee applies.
+              You're marking yourself as unable to attend this class. No late cancel fee applies.
             </div>
           )}
 
@@ -68,34 +69,25 @@ export default function StudentMyClasses() {
   const { user } = useAuth()
   const { data: enrolData, loading } = useApi(() => enrolments.list({ student: user?.id }), [user?.id])
   const { data: attData, refetch: refetchAtt } = useApi(() => attendance.list({ student: user?.id }), [user?.id])
-  const { data: upcomingData, refetch: refetchUpcoming } = useApi(
-    () => classes.occurrences({ student: user?.id, upcoming: true }),
-    [user?.id]
-  )
 
   const [markAwayOcc, setMarkAwayOcc] = useState(null)
+  const [topTab, setTopTab] = useState('active')
+  const [activeSubTab, setActiveSubTab] = useState('enrolled')
 
-  const enrolments_ = enrolData?.results || []
-  const attHistory = attData?.results || []
-  const upcomingOccs = upcomingData?.results || upcomingData || []
+  const enrolments_ = enrolData?.results || enrolData || []
+  const attHistory = attData?.results || attData || []
 
   const active = enrolments_.filter(e => e.status === 'active')
-  const past = enrolments_.filter(e => e.status !== 'active')
+  const waitlisted = enrolments_.filter(e => e.status === 'waitlisted')
+  const casual = enrolments_.filter(e => ['casual', 'catchup', 'catch_up'].includes(e.enrolment_type) || ['casual', 'catchup'].includes(e.status))
+  const past = enrolments_.filter(e => ['completed', 'cancelled', 'expired'].includes(e.status))
 
-  function attendanceForSession(sessionId) {
-    return attHistory.filter(a => a.occurrence_detail?.session_detail?.id === sessionId)
-  }
+  // Pricing summary
+  const totalPrice = active.reduce((sum, e) => sum + (parseFloat(e.price || e.amount || 0)), 0)
 
   function alreadyMarkedAway(occId) {
     return attHistory.some(a => a.occurrence === occId && a.status === 'absent')
   }
-
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const upcoming = upcomingOccs.filter(o => {
-    const d = new Date(o.date + 'T00:00')
-    return d >= today
-  }).slice(0, 10)
 
   return (
     <div>
@@ -106,122 +98,166 @@ export default function StudentMyClasses() {
         </div>
       </div>
 
+      {/* Top-level tabs */}
+      <div className="subtabs" style={{ marginBottom: 20 }}>
+        {[['active', 'Active Season'], ['future', 'Future Season'], ['past', 'Past Seasons']].map(([key, label]) => (
+          <button key={key} className={`subtab${topTab === key ? ' active' : ''}`} onClick={() => setTopTab(key)}>{label}</button>
+        ))}
+      </div>
+
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}><div className="spinner" /></div>
       ) : (
         <>
-          {upcoming.length > 0 && (
-            <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 12, fontWeight: 600 }}>Upcoming Classes</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {upcoming.map(o => {
-                  const markedAway = alreadyMarkedAway(o.id)
-                  return (
-                    <div key={o.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '13px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>{o.session_detail?.name || o.session_name}</div>
-                        <div style={{ fontSize: 11, color: 'var(--grey)' }}>
-                          {new Date(o.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
-                          {o.session_detail?.start_time ? ` · ${o.session_detail.start_time.slice(0, 5)}` : ''}
-                        </div>
-                      </div>
-                      {markedAway ? (
-                        <span className="tag tag-amber" style={{ fontSize: 10 }}>Away marked</span>
-                      ) : (
-                        <button
-                          className="btn btn-ghost btn-xs"
-                          style={{ flexShrink: 0, fontSize: 11 }}
-                          onClick={() => setMarkAwayOcc(o)}
-                        >
-                          Mark Away
-                        </button>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {active.length === 0 ? (
-            <div className="empty-state">
-              <div style={{ marginBottom: 8 }}>No active enrolments</div>
-              <div style={{ fontSize: 12 }}>Contact your studio to get enrolled</div>
-            </div>
-          ) : (
+          {/* Active Season */}
+          {topTab === 'active' && (
             <div>
-              <div className="section-title" style={{ fontSize: 13, marginBottom: 12 }}>Active Enrolments</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 28 }}>
-                {active.map(e => {
-                  const s = e.class_session_detail
-                  const sessAtt = attendanceForSession(s?.id)
-                  const presentCount = sessAtt.filter(a => a.status === 'present').length
-                  const totalCount = sessAtt.length
-                  const pct = totalCount ? Math.round(presentCount / totalCount * 100) : null
-                  const recentAtt = [...sessAtt].sort((a, b) => new Date(b.occurrence_detail?.date) - new Date(a.occurrence_detail?.date)).slice(0, 5)
+              {/* Sub-tabs */}
+              <div className="subtabs" style={{ marginBottom: 18 }}>
+                {[['enrolled', 'Enrolled Classes'], ['casuals', 'Casual & Catch-ups']].map(([key, label]) => (
+                  <button key={key} className={`subtab${activeSubTab === key ? ' active' : ''}`} onClick={() => setActiveSubTab(key)}>{label}</button>
+                ))}
+              </div>
 
-                  return (
-                    <div key={e.id} className="card">
-                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
-                        <div>
-                          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 4 }}>{s?.name}</div>
+              {activeSubTab === 'enrolled' && (
+                <div>
+                  {active.length === 0 ? (
+                    <div className="empty-state">
+                      <div style={{ marginBottom: 8 }}>No active enrolments</div>
+                      <div style={{ fontSize: 12 }}>Contact your studio to get enrolled</div>
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+                        {active.map(e => {
+                          const s = e.class_session_detail
+                          const instructorName = s?.instructor_detail
+                            ? `${s.instructor_detail.first_name || ''} ${s.instructor_detail.last_name || ''}`.trim()
+                            : (s?.instructor_name || '—')
+                          return (
+                            <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 2 }}>
+                                  {DAYS[s?.day_of_week]} · {s?.start_time?.slice(0, 5)}
+                                </div>
+                                <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{s?.name} · {s?.studio_detail?.name}</div>
+                                <div style={{ fontSize: 12, color: 'var(--grey)' }}>with {instructorName}</div>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                                <span className="tag tag-lime" style={{ fontSize: 10 }}>Active</span>
+                                <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}>Cancel</button>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {/* Pricing summary strip */}
+                      <div style={{ background: 'rgba(176,160,255,0.08)', border: '1px solid rgba(176,160,255,0.2)', borderRadius: 12, padding: '14px 18px', marginBottom: 20 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: active.length === 1 ? 8 : 0 }}>
+                          {active.length} class{active.length !== 1 ? 'es' : ''} · Season{totalPrice > 0 ? ` — $${totalPrice.toFixed(0)} total` : ''}
+                        </div>
+                        {active.length === 1 && (
                           <div style={{ fontSize: 12, color: 'var(--grey)' }}>
-                            {DAYS[s?.day_of_week]} · {s?.start_time?.slice(0, 5)} · {s?.studio_detail?.name}
+                            Add a 2nd class for a better rate →{' '}
+                            <Link to="/portal/book" style={{ color: 'var(--lav)', textDecoration: 'none', fontWeight: 600 }}>Browse classes</Link>
                           </div>
-                        </div>
-                        <span className="tag tag-lav" style={{ fontSize: 10, flexShrink: 0 }}>{e.enrolment_type}</span>
+                        )}
                       </div>
+                    </>
+                  )}
 
-                      {pct !== null && (
-                        <div style={{ marginBottom: 14 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                            <span style={{ fontSize: 11, color: 'var(--grey)' }}>{presentCount}/{totalCount} classes attended</span>
-                            <span style={{ fontSize: 11, color: 'var(--lime)' }}>{pct}%</span>
-                          </div>
-                          <div className="progress-bar">
-                            <div className="progress-fill" style={{ width: `${pct}%`, background: pct >= 80 ? 'var(--lime)' : pct >= 50 ? 'var(--amber)' : 'var(--red)' }} />
-                          </div>
-                        </div>
-                      )}
-
-                      {recentAtt.length > 0 && (
-                        <div>
-                          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.7px', color: 'var(--grey)', marginBottom: 8 }}>Recent</div>
-                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                            {recentAtt.map(a => (
-                              <span key={a.id} className={`tag ${a.status === 'present' ? 'tag-lime' : a.status === 'late' ? 'tag-amber' : a.status === 'no_show' ? 'tag-red' : 'tag-grey'}`} style={{ fontSize: 10 }}>
-                                {a.occurrence_detail?.date ? new Date(a.occurrence_detail.date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : ''}
-                                {' '}·{' '}
-                                {a.status === 'present' ? 'Present' : a.status === 'late' ? 'Late' : a.status === 'no_show' ? 'No-show' : a.status}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                  {/* Waitlisted classes */}
+                  {waitlisted.length > 0 && (
+                    <div style={{ marginBottom: 20 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10, color: 'var(--grey)' }}>Waitlisted</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {waitlisted.map(e => {
+                          const s = e.class_session_detail
+                          return (
+                            <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{s?.name}</div>
+                                <div style={{ fontSize: 12, color: 'var(--grey)' }}>{DAYS[s?.day_of_week]} · {s?.studio_detail?.name}</div>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                                {e.waitlist_position != null && (
+                                  <span className="tag tag-amber" style={{ fontSize: 10 }}>#{e.waitlist_position}</span>
+                                )}
+                                <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}>Leave Waitlist</button>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
                     </div>
-                  )
-                })}
-              </div>
+                  )}
+                </div>
+              )}
+
+              {activeSubTab === 'casuals' && (
+                <div>
+                  {casual.length === 0 ? (
+                    <div className="empty-state">
+                      <div style={{ marginBottom: 8 }}>No casual bookings yet</div>
+                      <div style={{ fontSize: 12 }}>
+                        <Link to="/portal/book" style={{ color: 'var(--lav)' }}>Book a casual class</Link>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {casual.map(e => {
+                        const s = e.class_session_detail
+                        return (
+                          <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{s?.name}</div>
+                              <div style={{ fontSize: 12, color: 'var(--grey)' }}>{DAYS[s?.day_of_week]} · {s?.studio_detail?.name}</div>
+                            </div>
+                            <span className="tag tag-lav" style={{ fontSize: 10 }}>{e.enrolment_type || 'casual'}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
-          {past.length > 0 && (
+          {/* Future Season */}
+          {topTab === 'future' && (
+            <div className="empty-state">
+              <div style={{ marginBottom: 8 }}>Your next season classes will appear here once booked</div>
+              <Link to="/portal/book">
+                <button className="btn btn-lime btn-sm" style={{ marginTop: 8 }}>Browse Classes →</button>
+              </Link>
+            </div>
+          )}
+
+          {/* Past Seasons */}
+          {topTab === 'past' && (
             <div>
-              <div className="section-title" style={{ fontSize: 13, marginBottom: 12 }}>Past Enrolments</div>
-              <div className="list-card">
-                {past.map(e => {
-                  const s = e.class_session_detail
-                  return (
-                    <div key={e.id} className="list-row" style={{ opacity: 0.6 }}>
-                      <div className="list-body">
-                        <div className="list-title">{s?.name}</div>
-                        <div className="list-sub">{DAYS[s?.day_of_week]} · {s?.studio_detail?.name}</div>
+              {past.length === 0 ? (
+                <div className="empty-state">
+                  <div>No past season records</div>
+                </div>
+              ) : (
+                <div className="list-card">
+                  {past.map(e => {
+                    const s = e.class_session_detail
+                    return (
+                      <div key={e.id} className="list-row" style={{ opacity: 0.7 }}>
+                        <div className="list-body">
+                          <div className="list-title">{s?.name}</div>
+                          <div className="list-sub">{DAYS[s?.day_of_week]} · {s?.studio_detail?.name}</div>
+                        </div>
+                        <span className="tag tag-grey" style={{ fontSize: 10 }}>{e.status}</span>
                       </div>
-                      <span className="tag tag-grey" style={{ fontSize: 10 }}>{e.status}</span>
-                    </div>
-                  )
-                })}
-              </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           )}
         </>
@@ -235,7 +271,6 @@ export default function StudentMyClasses() {
           onDone={() => {
             setMarkAwayOcc(null)
             refetchAtt()
-            refetchUpcoming()
           }}
         />
       )}

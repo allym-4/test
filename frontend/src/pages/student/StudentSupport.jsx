@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useAuth } from '../../contexts/AuthContext'
+import { useApi } from '../../hooks/useApi'
 import { helpdesk } from '../../api'
 
 const FAQS = [
@@ -32,35 +34,52 @@ const FAQS = [
   },
 ]
 
+const CATEGORIES = [
+  'Attendance & Make-ups',
+  'Billing & Payments',
+  'Enrolment & Class Changes',
+  'Injury & Medical',
+  'Locker & Access',
+  'Technical Issue',
+  'Other',
+]
+
+function statusColor(status) {
+  if (!status) return 'var(--grey)'
+  const s = status.toLowerCase()
+  if (s === 'open') return 'var(--lime)'
+  if (s === 'pending') return 'var(--amber)'
+  return 'var(--grey)'
+}
+
 export default function StudentSupport() {
+  const { user } = useAuth()
+  const { data: ticketsData, refetch: refetchTickets } = useApi(() => helpdesk.list(), [])
+
   const [openFaq, setOpenFaq] = useState(null)
+  const [category, setCategory] = useState('')
   const [subject, setSubject] = useState('')
   const [message, setMessage] = useState('')
   const [sent, setSent] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [tab, setTab] = useState('faq')
 
-  const CATEGORY_MAP = {
-    'Booking question': 'Booking',
-    'Billing or payment': 'Billing',
-    'Membership freeze': 'Membership',
-    'Technical issue': 'Technical',
-    'Feedback': 'General',
-    'Other': 'General',
-  }
+  const tickets = ticketsData?.results || ticketsData || []
 
   async function handleSubmit() {
-    if (!subject || !message || submitting) return
+    if (!category || !subject || !message || submitting) return
     setSubmitting(true)
     try {
-      await helpdesk.submitTicket({
+      await helpdesk.create({
         subject,
-        category: CATEGORY_MAP[subject] || 'General',
+        category,
         body: message,
       })
       setSent(true)
+      setCategory('')
       setSubject('')
       setMessage('')
+      refetchTickets()
     } catch {
       alert('Failed to send message. Please try again.')
     } finally {
@@ -121,17 +140,22 @@ export default function StudentSupport() {
           ) : (
             <div>
               <div className="field" style={{ marginBottom: 14 }}>
-                <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 6 }}>Subject</label>
-                <select value={subject} onChange={e => setSubject(e.target.value)} style={{ width: '100%' }}>
-                  <option value="">Select a topic…</option>
-                  <option>Booking question</option>
-                  <option>Billing or payment</option>
-                  <option>Membership freeze</option>
-                  <option>Makeup credit</option>
-                  <option>Technical issue</option>
-                  <option>Feedback</option>
-                  <option>Other</option>
+                <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 6 }}>Category</label>
+                <select value={category} onChange={e => setCategory(e.target.value)} style={{ width: '100%' }}>
+                  <option value="">Select a category…</option>
+                  {CATEGORIES.map(c => <option key={c}>{c}</option>)}
                 </select>
+              </div>
+
+              <div className="field" style={{ marginBottom: 14 }}>
+                <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 6 }}>Subject</label>
+                <input
+                  type="text"
+                  placeholder="Brief description of your issue…"
+                  value={subject}
+                  onChange={e => setSubject(e.target.value)}
+                  style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', padding: '10px 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                />
               </div>
 
               <div className="field" style={{ marginBottom: 16 }}>
@@ -145,11 +169,47 @@ export default function StudentSupport() {
                 />
               </div>
 
-              <button className="btn btn-lime btn-sm" onClick={handleSubmit} disabled={!subject || !message || submitting} style={{ width: '100%' }}>
+              <button className="btn btn-lime btn-sm" onClick={handleSubmit} disabled={!category || !subject || !message || submitting} style={{ width: '100%' }}>
                 {submitting ? 'Sending…' : 'Send Message'}
               </button>
             </div>
           )}
+
+          {/* My Previous Requests */}
+          <div style={{ marginTop: 32 }}>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, marginBottom: 14 }}>My Previous Requests</div>
+            {tickets.length === 0 ? (
+              <div style={{ fontSize: 13, color: 'var(--grey)' }}>No previous requests</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {tickets.map(ticket => (
+                  <div key={ticket.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{ticket.subject}</div>
+                      <div style={{ fontSize: 11, color: 'var(--grey)' }}>
+                        {ticket.created_at ? new Date(ticket.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+                      </div>
+                    </div>
+                    <span
+                      className="tag"
+                      style={{
+                        fontSize: 10,
+                        flexShrink: 0,
+                        background: statusColor(ticket.status) === 'var(--lime)' ? 'rgba(204,255,0,0.15)' : statusColor(ticket.status) === 'var(--amber)' ? 'rgba(255,170,0,0.15)' : 'rgba(120,120,120,0.15)',
+                        color: statusColor(ticket.status),
+                        border: `1px solid ${statusColor(ticket.status) === 'var(--lime)' ? 'rgba(204,255,0,0.3)' : statusColor(ticket.status) === 'var(--amber)' ? 'rgba(255,170,0,0.3)' : 'rgba(120,120,120,0.3)'}`,
+                        padding: '3px 8px',
+                        borderRadius: 6,
+                        textTransform: 'capitalize',
+                      }}
+                    >
+                      {ticket.status || 'open'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
