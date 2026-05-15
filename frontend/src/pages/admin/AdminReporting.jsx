@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useApi } from '../../hooks/useApi'
-import { users, classes, payments } from '../../api'
+import { users, classes, payments, attendance as attendanceApi } from '../../api'
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
+  PieChart, Pie, Legend,
 } from 'recharts'
 
 const TABS = ['Overview', 'Enrolments', 'Financial', 'Attendance']
@@ -15,6 +16,7 @@ export default function AdminReporting() {
   const { data: studentsData } = useApi(() => users.list({ role: 'student' }))
   const { data: sessionsData } = useApi(() => classes.list())
   const { data: paymentsData } = useApi(() => payments.list())
+  const { data: attendanceData, loading: attLoading } = useApi(() => attendanceApi.list(), [])
 
   const students = studentsData?.results || []
   const sessions = sessionsData?.results || []
@@ -71,6 +73,74 @@ export default function AdminReporting() {
       .reduce((s, p) => s + parseFloat(p.amount || 0), 0)
     return { type, label: type === 'no_show_fee' ? 'No-show Fee' : type.charAt(0).toUpperCase() + type.slice(1), total }
   }).filter(r => r.total > 0)
+
+  // ── Attendance analytics ──
+  const allRecords = attendanceData?.results || attendanceData || []
+  const totalRecords = allRecords.length
+  const presentCount = allRecords.filter(r => r.status === 'present').length
+  const absentCount = allRecords.filter(r => r.status === 'absent').length
+  const noShowCount = allRecords.filter(r => r.status === 'no_show').length
+  const overallRate = totalRecords > 0 ? Math.round((presentCount / totalRecords) * 100) : 0
+
+  // Attendance by class (top 10)
+  const bySession = {}
+  for (const r of allRecords) {
+    const name = r.occurrence_detail?.session_detail?.name || r.occurrence_detail?.session_name || 'Unknown'
+    if (!bySession[name]) bySession[name] = { name, present: 0, absent: 0, no_show: 0, total: 0 }
+    bySession[name][r.status] = (bySession[name][r.status] || 0) + 1
+    bySession[name].total++
+  }
+  const attendanceByClass = Object.values(bySession)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 10)
+    .map(s => ({ ...s, rate: Math.round((s.present / s.total) * 100) }))
+
+  // Attendance over last 8 weeks
+  const weeklyAttendance = (() => {
+    const weeks = []
+    const now = new Date()
+    for (let i = 7; i >= 0; i--) {
+      const weekStart = new Date(now)
+      weekStart.setDate(now.getDate() - i * 7)
+      const weekEnd = new Date(weekStart)
+      weekEnd.setDate(weekStart.getDate() + 6)
+      weeks.push({
+        label: `W${8 - i}`,
+        startDate: weekStart.toISOString().slice(0, 10),
+        endDate: weekEnd.toISOString().slice(0, 10),
+        present: 0, absent: 0, no_show: 0,
+      })
+    }
+    for (const r of allRecords) {
+      const date = r.occurrence_detail?.date || r.occurrence_date
+      if (!date) continue
+      const w = weeks.find(w => date >= w.startDate && date <= w.endDate)
+      if (w) w[r.status] = (w[r.status] || 0) + 1
+    }
+    return weeks
+  })()
+
+  // Students with poor attendance (< 60%)
+  const byStudent = {}
+  for (const r of allRecords) {
+    const id = r.student
+    const name = r.student_name || r.student_detail?.display_name || `Student ${id}`
+    if (!byStudent[id]) byStudent[id] = { id, name, present: 0, total: 0 }
+    byStudent[id].total++
+    if (r.status === 'present') byStudent[id].present++
+  }
+  const atRiskStudents = Object.values(byStudent)
+    .filter(s => s.total >= 3)
+    .map(s => ({ ...s, rate: Math.round((s.present / s.total) * 100) }))
+    .filter(s => s.rate < 60)
+    .sort((a, b) => a.rate - b.rate)
+    .slice(0, 10)
+
+  const pieData = [
+    { name: 'Present', value: presentCount, fill: '#ccff00' },
+    { name: 'Absent', value: absentCount, fill: '#b0a0ff' },
+    { name: 'No-show', value: noShowCount, fill: '#ff4444' },
+  ].filter(d => d.value > 0)
 
   return (
     <div>
@@ -259,11 +329,138 @@ export default function AdminReporting() {
 
       {/* ── Attendance ── */}
       {tab === 'Attendance' && (
-        <div className="empty-state" style={{ padding: '60px 0', textAlign: 'center', color: 'var(--grey)' }}>
-          <div style={{ fontSize: 32, marginBottom: 12 }}>📊</div>
-          <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>Attendance data coming soon</div>
-          <div style={{ fontSize: 13 }}>Attendance analytics will appear here once the reporting pipeline is connected.</div>
-        </div>
+        attLoading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>
+        ) : totalRecords === 0 ? (
+          <div className="empty-state" style={{ padding: '60px 0', textAlign: 'center', color: 'var(--grey)' }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>📊</div>
+            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>No attendance data yet</div>
+            <div style={{ fontSize: 13 }}>Records will appear here once classes start being marked.</div>
+          </div>
+        ) : (
+          <>
+            {/* KPI row */}
+            <div className="kpi-grid" style={{ marginBottom: 28 }}>
+              <div className="kpi kpi-lime">
+                <div className="kpi-label">Overall Attendance Rate</div>
+                <div className="kpi-value">{overallRate}%</div>
+                <div className="kpi-sub">{presentCount} of {totalRecords} classes attended</div>
+              </div>
+              <div className="kpi kpi-lav">
+                <div className="kpi-label">Present</div>
+                <div className="kpi-value">{presentCount}</div>
+                <div className="kpi-sub">Attended</div>
+              </div>
+              <div className="kpi" style={{ border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px' }}>
+                <div className="kpi-label">Absent</div>
+                <div className="kpi-value">{absentCount}</div>
+                <div className="kpi-sub">Marked away</div>
+              </div>
+              <div className="kpi kpi-red">
+                <div className="kpi-label">No-shows</div>
+                <div className="kpi-value">{noShowCount}</div>
+                <div className="kpi-sub">Unannounced</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
+              {/* Status breakdown pie */}
+              <div className="section" style={{ padding: '20px 24px' }}>
+                <div className="section-title" style={{ fontSize: 15, marginBottom: 18 }}>Status Breakdown</div>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie data={pieData} dataKey="value" cx="50%" cy="50%" outerRadius={75} label={({ name, percent }) => `${name} ${Math.round(percent * 100)}%`} labelLine={false} fontSize={11}>
+                      {pieData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                    </Pie>
+                    <Tooltip contentStyle={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 8, fontSize: 12 }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Weekly trend */}
+              <div className="section" style={{ padding: '20px 24px' }}>
+                <div className="section-title" style={{ fontSize: 15, marginBottom: 18 }}>Weekly Trend (last 8 weeks)</div>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={weeklyAttendance} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                    <XAxis dataKey="label" tick={{ fill: '#888', fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: '#888', fontSize: 11 }} axisLine={false} tickLine={false} width={28} />
+                    <Tooltip contentStyle={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 8, fontSize: 12 }} />
+                    <Bar dataKey="present" stackId="a" fill="#ccff00" name="Present" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="absent" stackId="a" fill="#b0a0ff" name="Absent" />
+                    <Bar dataKey="no_show" stackId="a" fill="#ff4444" name="No-show" radius={[4, 4, 0, 0]} />
+                    <Legend wrapperStyle={{ fontSize: 11, color: '#888' }} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Attendance by class */}
+            {attendanceByClass.length > 0 && (
+              <div className="section" style={{ padding: '20px 24px', marginBottom: 24 }}>
+                <div className="section-title" style={{ fontSize: 15, marginBottom: 14 }}>Attendance Rate by Class</div>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                      {['Class', 'Total', 'Present', 'Absent', 'No-show', 'Rate'].map(h => (
+                        <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attendanceByClass.map((s, i) => (
+                      <tr key={i} style={{ borderBottom: i < attendanceByClass.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                        <td style={{ padding: '10px 12px', fontWeight: 600, fontSize: 13 }}>{s.name}</td>
+                        <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--grey)' }}>{s.total}</td>
+                        <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--lime)' }}>{s.present}</td>
+                        <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--lav)' }}>{s.absent}</td>
+                        <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--red)' }}>{s.no_show}</td>
+                        <td style={{ padding: '10px 12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ height: 6, width: 80, background: 'var(--border)', borderRadius: 3, overflow: 'hidden' }}>
+                              <div style={{ height: '100%', width: `${s.rate}%`, background: s.rate >= 80 ? 'var(--lime)' : s.rate >= 60 ? 'var(--amber)' : 'var(--red)', borderRadius: 3 }} />
+                            </div>
+                            <span style={{ fontSize: 12, color: s.rate >= 80 ? 'var(--lime)' : s.rate >= 60 ? 'var(--amber)' : 'var(--red)', fontWeight: 600 }}>{s.rate}%</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* At-risk students */}
+            {atRiskStudents.length > 0 && (
+              <div className="section" style={{ padding: '20px 24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                  <div className="section-title" style={{ fontSize: 15 }}>Students at Risk (&lt;60% attendance)</div>
+                  <span style={{ fontSize: 11, color: 'var(--grey)' }}>{atRiskStudents.length} student{atRiskStudents.length !== 1 ? 's' : ''}</span>
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                      {['Student', 'Classes', 'Attended', 'Rate'].map(h => (
+                        <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {atRiskStudents.map((s, i) => (
+                      <tr key={s.id} style={{ borderBottom: i < atRiskStudents.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                        <td style={{ padding: '10px 12px', fontWeight: 600, fontSize: 13 }}>{s.name}</td>
+                        <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--grey)' }}>{s.total}</td>
+                        <td style={{ padding: '10px 12px', fontSize: 12 }}>{s.present}</td>
+                        <td style={{ padding: '10px 12px' }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: s.rate < 40 ? 'var(--red)' : 'var(--amber)' }}>{s.rate}%</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )
       )}
     </div>
   )
