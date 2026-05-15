@@ -1,37 +1,151 @@
-import { useApi } from '../../hooks/useApi'
-import { classes, users, payments, attendance } from '../../api'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+import { useApi } from '../../hooks/useApi'
+import { classes, users, payments, enrolments, orders } from '../../api'
 
 function todayLabel() {
   return new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 }
 
+function fmtDate(str) {
+  if (!str) return '—'
+  return new Date(str).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
+}
+
+function fmtTime(str) {
+  if (!str) return '—'
+  return str.slice(0, 5)
+}
+
+function planStatus(plan) {
+  if (plan.status === 'completed') return 'complete'
+  if (plan.instalments?.some(i => i.status === 'overdue')) return 'overdue'
+  return 'on_track'
+}
+
+function nextDue(plan) {
+  const pending = plan.instalments?.filter(i => i.status === 'pending' || i.status === 'overdue')
+  if (!pending?.length) return '—'
+  const sorted = [...pending].sort((a, b) => a.due_date.localeCompare(b.due_date))
+  return new Date(sorted[0].due_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
+}
+
 export default function AdminDashboard() {
-  const { data: sessionsData, loading: loadingSessions } = useApi(() => classes.list({ active: 'true' }))
-  const { data: studentsData, loading: loadingStudents } = useApi(() => users.list({ role: 'student' }))
-  const { data: paymentsData, loading: loadingPayments } = useApi(() => payments.list())
+  const [actionItemsVisible, setActionItemsVisible] = useState(true)
+  const [checkedItems, setCheckedItems] = useState({})
+
+  const { data: sessionsData } = useApi(() => classes.list({ active: 'true' }))
+  const { data: studentsData } = useApi(() => users.list({ role: 'student' }))
+  const { data: paymentsData } = useApi(() => payments.list())
   const { data: plansData } = useApi(() => payments.plans.list())
+  const { data: pendingOrdersData } = useApi(() => orders.list({ status: 'pending' }))
+  const { data: trialsData } = useApi(() => enrolments.list({ enrolment_type: 'trial' }))
+  const { data: pendingPlansData } = useApi(() => payments.plans.list({ status: 'pending_approval' }))
+  const { data: exemptionData } = useApi(() => enrolments.list({ status: 'exemption_requested' }))
+  const { data: trialsAndCasualsData } = useApi(() => enrolments.list({ enrolment_type: 'trial,casual' }))
 
   const sessions = sessionsData?.results || []
   const students = studentsData?.results || []
   const allPayments = paymentsData?.results || []
   const plans = plansData?.results || []
+  const pendingOrders = pendingOrdersData?.results || pendingOrdersData || []
+  const trials = trialsData?.results || trialsData || []
+  const pendingPlans = pendingPlansData?.results || pendingPlansData || []
+  const exemptions = exemptionData?.results || exemptionData || []
+  const trialsAndCasuals = trialsAndCasualsData?.results || trialsAndCasualsData || []
 
   const todayDow = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1
   const todaySessions = sessions.filter(s => s.day_of_week === todayDow)
 
-  const thisMonthPaid = allPayments
-    .filter(p => {
-      const d = new Date(p.created_at)
-      const now = new Date()
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-        && p.payment_type === 'payment'
+  const todayStr = new Date().toISOString().slice(0, 10)
+
+  const todayRevenue = allPayments
+    .filter(p => p.payment_type === 'payment' && p.created_at?.slice(0, 10) === todayStr)
+    .reduce((s, p) => s + parseFloat(p.amount || 0), 0)
+
+  const weekStart = new Date()
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1)
+  weekStart.setHours(0, 0, 0, 0)
+  const weekBookings = (trialsAndCasualsData?.results || trialsAndCasualsData || []).filter(e => {
+    const d = new Date(e.created_at)
+    return d >= weekStart
+  }).length
+
+  const outstandingTotal = allPayments
+    .filter(p => p.payment_type === 'charge')
+    .reduce((s, p) => s + parseFloat(p.amount || 0), 0)
+  const paidTotal = allPayments
+    .filter(p => p.payment_type === 'payment')
+    .reduce((s, p) => s + parseFloat(p.amount || 0), 0)
+  const outstandingBalance = Math.max(0, outstandingTotal - paidTotal)
+
+  const todayTrials = trials.filter(e => e.created_at?.slice(0, 10) === todayStr || e.date?.slice(0, 10) === todayStr)
+
+  const actionItems = [
+    ...pendingOrders.map(o => ({
+      id: `order-${o.id}`,
+      icon: '🛍',
+      title: `New order for pickup`,
+      sub: o.student_name || o.product_name || 'Retail order',
+      time: fmtDate(o.created_at),
+      urgent: false,
+    })),
+    ...todayTrials.map(e => ({
+      id: `trial-${e.id}`,
+      icon: '⭐',
+      title: 'New student coming today',
+      sub: e.student_name || 'Trial student',
+      time: fmtTime(e.class_time || e.start_time),
+      urgent: false,
+    })),
+    ...pendingPlans.map(p => ({
+      id: `plan-${p.id}`,
+      icon: '💳',
+      title: 'Payment exemption request',
+      sub: p.student_name || 'Student',
+      time: fmtDate(p.created_at),
+      urgent: false,
+    })),
+  ]
+
+  const recentPayments = [...allPayments]
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 8)
+
+  const overdueBalances = (() => {
+    const byStudent = {}
+    allPayments.forEach(p => {
+      const key = p.student || p.student_name
+      if (!key) return
+      if (!byStudent[key]) byStudent[key] = { name: p.student_name, charged: 0, paid: 0, lastDesc: '', lastDate: '' }
+      if (p.payment_type === 'charge') {
+        byStudent[key].charged += parseFloat(p.amount || 0)
+        byStudent[key].lastDesc = p.description || 'Charge'
+        byStudent[key].lastDate = p.created_at
+      }
+      if (p.payment_type === 'payment') {
+        byStudent[key].paid += parseFloat(p.amount || 0)
+      }
     })
-    .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0)
+    return Object.entries(byStudent)
+      .map(([k, v]) => ({ key: k, ...v, owing: v.charged - v.paid }))
+      .filter(v => v.owing > 0)
+      .sort((a, b) => b.owing - a.owing)
+      .slice(0, 5)
+  })()
 
   const activePlans = plans.filter(p => p.status === 'active')
+  const overduePlans = activePlans.filter(p => p.instalments?.some(i => i.status === 'overdue'))
+  const onTrackPlans = activePlans.filter(p => !p.instalments?.some(i => i.status === 'overdue'))
+
+  const upcomingTrialsCasuals = trialsAndCasuals.filter(e => {
+    const d = new Date(e.date || e.created_at)
+    const cutoff = new Date()
+    cutoff.setDate(cutoff.getDate() - 3)
+    return d >= cutoff
+  }).sort((a, b) => new Date(a.date || a.created_at) - new Date(b.date || b.created_at))
+
+  const toggleCheck = (id) => setCheckedItems(prev => ({ ...prev, [id]: !prev[id] }))
 
   return (
     <div>
@@ -42,65 +156,123 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* KPI grid */}
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: actionItemsVisible ? 14 : 0 }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14 }}>Today's Action Items</div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <Link to="/admin/activity-log">
+              <button className="btn btn-ghost btn-xs">VIEW LOG</button>
+            </Link>
+            <button className="btn btn-ghost btn-xs">+ ADD</button>
+            <button className="btn btn-ghost btn-xs" onClick={() => setActionItemsVisible(v => !v)}>
+              {actionItemsVisible ? 'HIDE' : 'SHOW'}
+            </button>
+          </div>
+        </div>
+
+        {actionItemsVisible && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {actionItems.length === 0 && (
+              <div style={{ color: 'var(--grey)', fontSize: 13, padding: '12px 0', textAlign: 'center' }}>
+                No action items — you're all caught up
+              </div>
+            )}
+            {actionItems.map(item => (
+              <div
+                key={item.id}
+                className={`action-item${item.urgent ? ' urgent' : ''}`}
+                onClick={() => toggleCheck(item.id)}
+                style={{ opacity: checkedItems[item.id] ? 0.45 : 1 }}
+              >
+                <input
+                  type="checkbox"
+                  checked={!!checkedItems[item.id]}
+                  onChange={() => toggleCheck(item.id)}
+                  onClick={e => e.stopPropagation()}
+                  style={{ accentColor: 'var(--lime)', flexShrink: 0, marginTop: 2 }}
+                />
+                <div style={{
+                  width: 8, height: 8, borderRadius: '50%', flexShrink: 0, marginTop: 4,
+                  background: item.urgent ? 'var(--red)' : 'var(--lav)',
+                }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, textDecoration: checkedItems[item.id] ? 'line-through' : 'none' }}>
+                    {item.title}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{item.sub}</div>
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--grey)', flexShrink: 0 }}>{item.time}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="kpi-grid">
         <div className="kpi kpi-lime">
-          <div className="kpi-label">Active Students</div>
-          <div className="kpi-value">{loadingStudents ? '—' : students.length}</div>
-          <div className="kpi-sub">Enrolled this season</div>
+          <div className="kpi-label">Today's Revenue</div>
+          <div className="kpi-value">${todayRevenue.toFixed(0)}</div>
+          <div className="kpi-sub">Payments received today</div>
         </div>
         <div className="kpi kpi-lav">
-          <div className="kpi-label">Today's Classes</div>
-          <div className="kpi-value">{loadingSessions ? '—' : todaySessions.length}</div>
-          <div className="kpi-sub">{todaySessions.reduce((s, c) => s + (c.enrolled_count || 0), 0)} students attending</div>
+          <div className="kpi-label">This Week's Bookings</div>
+          <div className="kpi-value">{weekBookings}</div>
+          <div className="kpi-sub">Enrolments this week</div>
         </div>
-        <Link to="/admin/billing" className="kpi kpi-red" style={{ textDecoration: 'none' }}>
-          <div className="kpi-label">Active Plans</div>
-          <div className="kpi-value">{activePlans.length}</div>
-          <div className="kpi-sub">Payment plans running →</div>
-        </Link>
+        <div className="kpi kpi-red">
+          <div className="kpi-label">Outstanding Invoices</div>
+          <div className="kpi-value">${outstandingBalance.toFixed(0)}</div>
+          <div className="kpi-sub">Total unpaid balance</div>
+        </div>
         <div className="kpi kpi-amber">
-          <div className="kpi-label">Paid This Month</div>
-          <div className="kpi-value">${loadingPayments ? '—' : thisMonthPaid.toFixed(0)}</div>
-          <div className="kpi-sub">All payments received</div>
+          <div className="kpi-label">Active Students</div>
+          <div className="kpi-value">{students.length}</div>
+          <div className="kpi-sub">Students with role=student</div>
         </div>
       </div>
 
-      <div className="grid-2" style={{ gap: 20, marginBottom: 20 }}>
-        {/* Today's classes */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
         <div>
-          <div className="section-title" style={{ fontSize: 15, marginBottom: 14 }}>Today's Classes</div>
-          {loadingSessions ? (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}><div className="spinner" /></div>
-          ) : todaySessions.length === 0 ? (
-            <div className="empty-state" style={{ padding: '24px 0' }}>No classes today</div>
+          <div className="section-title" style={{ fontSize: 14, marginBottom: 12 }}>Today's Classes</div>
+          {todaySessions.length === 0 ? (
+            <div style={{ color: 'var(--grey)', fontSize: 13, padding: '20px 0' }}>No classes today</div>
           ) : (
             <div className="tbl-section">
               <table>
                 <thead>
                   <tr>
-                    <th>Class</th>
-                    <th>Time</th>
-                    <th>Studio</th>
-                    <th>Enrolled</th>
-                    <th>Status</th>
-                    <th>Action</th>
+                    <th>CLASS</th>
+                    <th>TIME</th>
+                    <th>INSTRUCTOR</th>
+                    <th>STUDIO</th>
+                    <th>ENROLLED</th>
+                    <th>STATUS</th>
+                    <th>ACTION</th>
                   </tr>
                 </thead>
                 <tbody>
                   {todaySessions.map(s => {
                     const isFull = s.enrolled_count >= s.capacity
+                    const isCancelled = s.is_cancelled || s.status === 'cancelled'
+                    const instrName = s.instructor_detail?.display_name || s.instructor_detail?.first_name || '—'
                     return (
-                      <tr key={s.id} className="clickable">
+                      <tr key={s.id}>
                         <td><b>{s.name}</b></td>
-                        <td style={{ color: 'var(--grey)' }}>{s.start_time?.slice(0, 5)}</td>
-                        <td>{s.studio_detail?.name}</td>
+                        <td style={{ color: 'var(--grey)' }}>{fmtTime(s.start_time)}</td>
+                        <td style={{ color: 'var(--grey)' }}>{instrName}</td>
+                        <td style={{ color: 'var(--grey)' }}>{s.studio_detail?.name || '—'}</td>
                         <td>{s.enrolled_count}/{s.capacity}</td>
-                        <td><span className={`tag ${isFull ? 'tag-amber' : 'tag-lime'}`} style={{ fontSize: 10 }}>{isFull ? 'Full' : 'Active'}</span></td>
                         <td>
-                          <Link to={`/admin/classes/${s.id}/attendance`}>
-                            <button className="btn btn-ghost btn-xs">Register</button>
-                          </Link>
+                          {isCancelled
+                            ? <span className="tag tag-red" style={{ fontSize: 10 }}>CANCELLED</span>
+                            : isFull
+                              ? <span className="tag tag-amber" style={{ fontSize: 10 }}>FULL</span>
+                              : <span className="tag tag-lime" style={{ fontSize: 10 }}>ACTIVE</span>
+                          }
+                        </td>
+                        <td style={{ display: 'flex', gap: 4 }}>
+                          <button className="btn btn-ghost btn-xs">COVER</button>
+                          <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }}>CANCEL</button>
                         </td>
                       </tr>
                     )
@@ -111,72 +283,274 @@ export default function AdminDashboard() {
           )}
         </div>
 
-        {/* Recent payments */}
         <div>
-          <div className="section-title" style={{ fontSize: 15, marginBottom: 14 }}>Recent Payments</div>
-          {loadingPayments ? (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}><div className="spinner" /></div>
-          ) : (
-            <div className="section" style={{ padding: '14px 18px' }}>
-              {allPayments.slice(0, 8).map(p => {
-                const isCharge = p.payment_type === 'charge' || p.payment_type === 'no_show_fee'
-                const isPayment = p.payment_type === 'payment'
-                return (
-                  <div key={p.id} className="feed-item">
-                    <div className={`feed-dot ${isPayment ? 'feed-dot-lime' : isCharge ? 'feed-dot-red' : 'feed-dot-lav'}`} />
-                    <div style={{ flex: 1 }}>
-                      <div className="feed-text">
-                        <b>{p.student_name || 'Student'}</b> — {p.description || p.payment_type}
-                      </div>
-                      <div className="feed-time">
-                        {new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
-                      </div>
+          <div className="section-title" style={{ fontSize: 14, marginBottom: 12 }}>Recent Activity</div>
+          <div className="card" style={{ padding: '10px 14px' }}>
+            {recentPayments.length === 0 && (
+              <div style={{ color: 'var(--grey)', fontSize: 13, textAlign: 'center', padding: '16px 0' }}>No recent activity</div>
+            )}
+            {recentPayments.map(p => {
+              const isPayment = p.payment_type === 'payment'
+              const isCharge = p.payment_type === 'charge' || p.payment_type === 'no_show_fee'
+              return (
+                <div key={p.id} className="feed-item">
+                  <div className={`feed-dot ${isPayment ? 'feed-dot-lime' : isCharge ? 'feed-dot-red' : 'feed-dot-lav'}`} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13 }}>
+                      <b>{p.student_name || 'Student'}</b> — {p.description || p.payment_type}
                     </div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: isPayment ? 'var(--lime)' : isCharge ? 'var(--red)' : 'var(--grey)', flexShrink: 0 }}>
-                      {isCharge ? '-' : '+'}${Math.abs(parseFloat(p.amount || 0)).toFixed(0)}
+                    <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>
+                      {fmtDate(p.created_at)}
                     </div>
                   </div>
-                )
-              })}
-              {allPayments.length === 0 && <div style={{ color: 'var(--grey)', fontSize: 13, textAlign: 'center', padding: '16px 0' }}>No payments yet</div>}
-            </div>
-          )}
+                  <div style={{
+                    fontSize: 13, fontWeight: 600, flexShrink: 0,
+                    color: isPayment ? 'var(--lime)' : isCharge ? 'var(--red)' : 'var(--grey)',
+                  }}>
+                    {isCharge ? '-' : '+'}${Math.abs(parseFloat(p.amount || 0)).toFixed(0)}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
 
-      {/* All active classes summary */}
-      <div className="section-title" style={{ fontSize: 15, marginBottom: 14 }}>All Active Classes</div>
-      {loadingSessions ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}><div className="spinner" /></div>
-      ) : (
-        <div className="tbl-section">
-          <table>
-            <thead>
-              <tr>
-                <th>Day</th>
-                <th>Time</th>
-                <th>Class</th>
-                <th>Studio</th>
-                <th>Enrolled</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...sessions].sort((a, b) => a.day_of_week - b.day_of_week || (a.start_time || '').localeCompare(b.start_time || '')).map(s => {
-                const isFull = s.enrolled_count >= s.capacity
-                return (
-                  <tr key={s.id}>
-                    <td style={{ color: 'var(--grey)' }}>{DAYS[s.day_of_week]}</td>
-                    <td style={{ color: 'var(--grey)' }}>{s.start_time?.slice(0, 5)}</td>
-                    <td><b>{s.name}</b></td>
-                    <td>{s.studio_detail?.name}</td>
-                    <td>{s.enrolled_count}/{s.capacity}</td>
-                    <td><span className={`tag ${isFull ? 'tag-amber' : 'tag-lime'}`} style={{ fontSize: 10 }}>{isFull ? 'Full' : 'Active'}</span></td>
+      {(exemptions.length > 0 || pendingPlans.length > 0) && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <div className="section-title" style={{ fontSize: 14, color: 'var(--amber)' }}>Pending Actions</div>
+            <span className="tag tag-amber" style={{ fontSize: 10 }}>{exemptions.length + pendingPlans.length}</span>
+          </div>
+
+          {exemptions.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 10, fontWeight: 600 }}>
+                Catch-up Exemption Requests
+              </div>
+              <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+                {exemptions.map((e, i) => (
+                  <div key={e.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+                    borderBottom: i < exemptions.length - 1 ? '1px solid var(--border)' : 'none',
+                  }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>{e.student_name || 'Student'}</div>
+                      <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{e.class_name || e.session_name || 'Class'}</div>
+                    </div>
+                    {e.reason && <span className="tag tag-amber" style={{ fontSize: 10 }}>{e.reason}</span>}
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--lime)' }}>APPROVE</button>
+                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }}>DECLINE</button>
+                      <button className="btn btn-ghost btn-xs">CONTACT</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {pendingPlans.length > 0 && (
+            <div>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 10, fontWeight: 600 }}>
+                Payment Plan Requests
+              </div>
+              <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+                {pendingPlans.map((p, i) => (
+                  <div key={p.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+                    borderBottom: i < pendingPlans.length - 1 ? '1px solid var(--border)' : 'none',
+                  }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>{p.student_name || 'Student'}</div>
+                      <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{p.description || 'Payment plan'}</div>
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>${parseFloat(p.total_amount || 0).toFixed(2)}</div>
+                    <div style={{ fontSize: 12, color: 'var(--grey)' }}>
+                      {p.instalments?.length} instalments
+                    </div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--lime)' }}>APPROVE</button>
+                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }}>DENY</button>
+                      <button className="btn btn-ghost btn-xs">CONTACT</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <div className="section-title" style={{ fontSize: 14 }}>Outstanding Invoices</div>
+          <Link to="/admin/billing" style={{ fontSize: 12, color: 'var(--grey)' }}>SEE ALL →</Link>
+        </div>
+        {overdueBalances.length === 0 ? (
+          <div style={{ color: 'var(--grey)', fontSize: 13, padding: '12px 0' }}>No outstanding invoices</div>
+        ) : (
+          <div className="tbl-section">
+            <table>
+              <thead>
+                <tr>
+                  <th>STUDENT</th>
+                  <th>DESCRIPTION</th>
+                  <th>AMOUNT</th>
+                  <th>DUE</th>
+                  <th>ACTION</th>
+                </tr>
+              </thead>
+              <tbody>
+                {overdueBalances.map(b => (
+                  <tr key={b.key}>
+                    <td><b>{b.name || '—'}</b></td>
+                    <td style={{ color: 'var(--grey)' }}>{b.lastDesc || 'Outstanding balance'}</td>
+                    <td style={{ color: 'var(--red)', fontWeight: 600 }}>${b.owing.toFixed(2)}</td>
+                    <td style={{ color: 'var(--grey)' }}>{fmtDate(b.lastDate)}</td>
+                    <td>
+                      <button className="btn btn-ghost btn-xs">Chase</button>
+                    </td>
                   </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {activePlans.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div className="section-title" style={{ fontSize: 14 }}>Payment Plans</div>
+            <Link to="/admin/billing" style={{ fontSize: 12, color: 'var(--grey)' }}>SEE ALL →</Link>
+          </div>
+
+          {overduePlans.length > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--red)', marginBottom: 8, fontWeight: 600 }}>
+                Needs Attention
+              </div>
+              <div style={{ background: 'rgba(255,68,68,0.05)', border: '1px solid rgba(255,68,68,0.2)', borderRadius: 10, overflow: 'hidden' }}>
+                {overduePlans.map((p, i) => {
+                  const paid = parseFloat(p.amount_paid || 0)
+                  const total = parseFloat(p.total_amount || 0)
+                  return (
+                    <div key={p.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+                      borderBottom: i < overduePlans.length - 1 ? '1px solid rgba(255,68,68,0.15)' : 'none',
+                    }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: 13 }}>{p.student_name || 'Student'}</div>
+                        <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{p.description || 'Payment plan'}</div>
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--grey)' }}>${paid.toFixed(0)} / ${total.toFixed(0)}</div>
+                      <div style={{ fontSize: 12, color: 'var(--grey)' }}>Next: {nextDue(p)}</div>
+                      <span className="tag tag-red" style={{ fontSize: 10 }}>OVERDUE</span>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }}>CHASE</button>
+                        <button className="btn btn-ghost btn-xs">VIEW</button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {onTrackPlans.length > 0 && (
+            <div>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 8, fontWeight: 600 }}>
+                Active & On Track
+              </div>
+              <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+                {onTrackPlans.map((p, i) => {
+                  const paid = parseFloat(p.amount_paid || 0)
+                  const total = parseFloat(p.total_amount || 0)
+                  return (
+                    <div key={p.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+                      borderBottom: i < onTrackPlans.length - 1 ? '1px solid var(--border)' : 'none',
+                    }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: 13 }}>{p.student_name || 'Student'}</div>
+                        <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{p.description || 'Payment plan'}</div>
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--grey)' }}>${paid.toFixed(0)} / ${total.toFixed(0)}</div>
+                      <div style={{ fontSize: 12, color: 'var(--grey)' }}>Next: {nextDue(p)}</div>
+                      <span className="tag tag-lime" style={{ fontSize: 10 }}>ON TRACK</span>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button className="btn btn-ghost btn-xs">CHASE</button>
+                        <button className="btn btn-ghost btn-xs">VIEW</button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {upcomingTrialsCasuals.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <div className="section-title" style={{ fontSize: 14, marginBottom: 14 }}>Upcoming Trials & Casuals</div>
+          <div className="tbl-section">
+            <table>
+              <thead>
+                <tr>
+                  <th>DATE</th>
+                  <th>STUDENT</th>
+                  <th>CLASS</th>
+                  <th>TYPE</th>
+                  <th>FIRST TIMER</th>
+                  <th>INTRO EMAIL</th>
+                  <th>WAIVER</th>
+                  <th>ACTION</th>
+                </tr>
+              </thead>
+              <tbody>
+                {upcomingTrialsCasuals.map(e => {
+                  const isTrial = e.enrolment_type === 'trial'
+                  const isFirstTimer = e.is_first_visit || e.first_timer
+                  const introSent = e.intro_email_sent
+                  const waiverSigned = e.waiver_signed
+                  return (
+                    <tr key={e.id}>
+                      <td style={{ color: 'var(--grey)', whiteSpace: 'nowrap' }}>{fmtDate(e.date || e.created_at)}</td>
+                      <td><b>{e.student_name || '—'}</b></td>
+                      <td style={{ color: 'var(--grey)' }}>{e.class_name || e.session_name || '—'}</td>
+                      <td>
+                        <span className={`tag ${isTrial ? 'tag-lav' : 'tag-amber'}`} style={{ fontSize: 10 }}>
+                          {isTrial ? 'TRIAL' : 'CASUAL'}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        {isFirstTimer ? <span style={{ color: 'var(--amber)' }}>★</span> : <span style={{ color: 'var(--grey)' }}>—</span>}
+                      </td>
+                      <td>
+                        {introSent
+                          ? <span className="tag tag-lime" style={{ fontSize: 10 }}>SENT</span>
+                          : <span className="tag tag-grey" style={{ fontSize: 10 }}>NOT SENT</span>
+                        }
+                      </td>
+                      <td>
+                        {waiverSigned
+                          ? <span className="tag tag-lime" style={{ fontSize: 10 }}>SIGNED</span>
+                          : <span className="tag tag-red" style={{ fontSize: 10 }}>NOT SIGNED</span>
+                        }
+                      </td>
+                      <td style={{ display: 'flex', gap: 4, flexWrap: 'nowrap' }}>
+                        <button className="btn btn-ghost btn-xs">VIEW</button>
+                        {!introSent && <button className="btn btn-ghost btn-xs">SEND NOW</button>}
+                        {!waiverSigned && <button className="btn btn-ghost btn-xs">CHASE WAIVER</button>}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
