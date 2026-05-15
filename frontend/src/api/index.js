@@ -26,6 +26,13 @@ export const classes = {
     list: (sessionId) => client.get(`/api/classes/sessions/${sessionId}/chat/`),
     send: (sessionId, data) => client.post(`/api/classes/sessions/${sessionId}/chat/`, data),
   },
+  workshops: {
+    list: () => client.get('/api/classes/workshops/'),
+    create: (data) => client.post('/api/classes/workshops/', data),
+    update: (id, data) => client.patch(`/api/classes/workshops/${id}/`, data),
+    delete: (id) => client.delete(`/api/classes/workshops/${id}/`),
+    book: (id) => client.post(`/api/classes/workshops/${id}/book/`),
+  },
 }
 
 export const studios = {

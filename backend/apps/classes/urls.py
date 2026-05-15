@@ -18,4 +18,7 @@ urlpatterns = [
     path('kisi/grants/<int:pk>/', views.KisiGrantDetailView.as_view(), name='kisi-grant-detail'),
     path('sessions/<int:session_pk>/chat/', views.ClassChatView.as_view(), name='class-chat'),
     path('stats/', views.ClassStatsView.as_view(), name='class-stats'),
+    path('workshops/', views.WorkshopListView.as_view(), name='workshop-list'),
+    path('workshops/<int:pk>/', views.WorkshopDetailView.as_view(), name='workshop-detail'),
+    path('workshops/<int:pk>/book/', views.WorkshopBookView.as_view(), name='workshop-book'),
 ]

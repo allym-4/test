@@ -160,3 +160,45 @@ class KisiGrant(models.Model):
 
     def __str__(self):
         return f'{self.student.display_name} → {self.studio} {self.valid_from:%d %b %H:%M}–{self.valid_until:%H:%M}'
+
+
+class Workshop(models.Model):
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    date = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    instructor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='workshops')
+    studio = models.ForeignKey('Studio', on_delete=models.SET_NULL, null=True, blank=True, related_name='workshops')
+    price = models.DecimalField(max_digits=8, decimal_places=2)
+    capacity = models.PositiveIntegerField(default=12)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['date', 'start_time']
+
+    def __str__(self):
+        return f'{self.name} — {self.date}'
+
+    @property
+    def enrolled_count(self):
+        return self.bookings.filter(status='confirmed').count()
+
+    @property
+    def spots_left(self):
+        return max(0, self.capacity - self.enrolled_count)
+
+
+class WorkshopBooking(models.Model):
+    workshop = models.ForeignKey(Workshop, on_delete=models.CASCADE, related_name='bookings')
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='workshop_bookings')
+    status = models.CharField(max_length=20, default='confirmed', choices=[('confirmed', 'Confirmed'), ('waitlisted', 'Waitlisted'), ('cancelled', 'Cancelled')])
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [('workshop', 'student')]
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.student} → {self.workshop}'

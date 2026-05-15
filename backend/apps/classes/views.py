@@ -2,8 +2,8 @@ from datetime import date
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, ClassChatMessage
-from .serializers import StudioSerializer, ClassCategorySerializer, ClassSessionSerializer, ClassOccurrenceSerializer, SeasonSerializer, LockerSerializer, KisiGrantSerializer
+from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, ClassChatMessage, Workshop, WorkshopBooking
+from .serializers import StudioSerializer, ClassCategorySerializer, ClassSessionSerializer, ClassOccurrenceSerializer, SeasonSerializer, LockerSerializer, KisiGrantSerializer, WorkshopSerializer, WorkshopBookingSerializer
 from apps.users.permissions import IsAdminOrInstructor, IsAdminUser
 
 
@@ -242,3 +242,50 @@ class ClassStatsView(APIView):
             'session_count': session_count,
             'total_enrolled': total_enrolled,
         })
+
+
+class WorkshopListView(generics.ListCreateAPIView):
+    serializer_class = WorkshopSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [permissions.IsAuthenticated()]
+        from apps.users.permissions import IsAdminOrInstructor
+        return [IsAdminOrInstructor()]
+
+    def get_queryset(self):
+        return Workshop.objects.filter(is_active=True)
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx['request'] = self.request
+        return ctx
+
+
+class WorkshopDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = WorkshopSerializer
+    queryset = Workshop.objects.all()
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [permissions.IsAuthenticated()]
+        from apps.users.permissions import IsAdminOrInstructor
+        return [IsAdminOrInstructor()]
+
+
+class WorkshopBookView(APIView):
+    """POST to book a workshop; supports status=waitlisted for full workshops."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            workshop = Workshop.objects.get(pk=pk, is_active=True)
+        except Workshop.DoesNotExist:
+            return Response({'detail': 'Workshop not found.'}, status=404)
+
+        if WorkshopBooking.objects.filter(workshop=workshop, student=request.user, status__in=['confirmed', 'waitlisted']).exists():
+            return Response({'detail': 'Already booked.'}, status=400)
+
+        book_status = 'waitlisted' if workshop.spots_left <= 0 else 'confirmed'
+        booking = WorkshopBooking.objects.create(workshop=workshop, student=request.user, status=book_status)
+        return Response({'id': booking.id, 'status': booking.status, 'workshop': workshop.name}, status=201)

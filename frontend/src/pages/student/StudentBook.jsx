@@ -4,7 +4,9 @@ import { useAuth } from '../../contexts/AuthContext'
 import { classes, enrolments, settings as settingsApi } from '../../api'
 import CheckoutModal from '../../components/CheckoutModal'
 
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const DAYS_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+const DAYS = DAYS_SHORT
 
 function getLevelBadge(name) {
   if (!name) return null
@@ -173,12 +175,16 @@ export default function StudentBook() {
   const [checkout, setCheckout] = useState(null) // { session, type, amount, description }
   const { data: sessionsData, loading } = useApi(() => classes.list())
   const { data: studioSettings } = useApi(() => settingsApi.get())
+  const { data: workshopsData, loading: loadingWorkshops, refetch: refetchWorkshops } = useApi(() => classes.workshops.list())
 
   const priceCasual = parseFloat(studioSettings?.price_casual || 35)
   const priceSeason = parseFloat(studioSettings?.price_season || 270)
   const priceTrial = parseFloat(studioSettings?.price_trial || 25)
 
   const sessions = sessionsData?.results || sessionsData || []
+  const workshops = workshopsData?.results || workshopsData || []
+  const [bookingWorkshopId, setBookingWorkshopId] = useState(null)
+  const [workshopBooked, setWorkshopBooked] = useState({})
 
   function addToCart(session, type, price) {
     if (type === 'waitlist') {
@@ -199,6 +205,20 @@ export default function StudentBook() {
       ? `Trial Class — ${session.name}`
       : `${session.name} — ${isCasual ? 'Casual' : 'Season 4'}`
     setCheckout({ session, type, amount: price, description })
+  }
+
+  async function bookWorkshop(workshop) {
+    setBookingWorkshopId(workshop.id)
+    try {
+      const res = await classes.workshops.book(workshop.id)
+      setWorkshopBooked(prev => ({ ...prev, [workshop.id]: res.data.status }))
+      refetchWorkshops()
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'Booking failed'
+      alert(msg)
+    } finally {
+      setBookingWorkshopId(null)
+    }
   }
 
   async function handlePaymentSuccess() {
@@ -416,27 +436,59 @@ export default function StudentBook() {
 
       {tab === 'workshop' && (
         <div>
-          {[
-            { name: 'Flexibility Masterclass', date: 'Sat 24 May', time: '2:00 – 4:30 PM', instructor: 'Chloe', price: 65, spots: 4, desc: 'Deep dive into flexibility and conditioning for pole athletes.' },
-            { name: 'Spins & Transitions Workshop', date: 'Sun 1 Jun', time: '11:00 AM – 1:30 PM', instructor: 'Mimi', price: 75, spots: 8, desc: 'Explore dynamic spins and seamless transitions for intermediate–advanced students.' },
-          ].map(w => (
-            <div key={w.name} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '18px 20px', marginBottom: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-                <div>
-                  <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 4 }}>{w.name}</div>
-                  <div style={{ fontSize: 12, color: 'var(--grey)' }}>{w.date} · {w.time} · Instructor: {w.instructor}</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, color: 'var(--lime)' }}>${w.price}</div>
-                </div>
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 12, lineHeight: 1.6 }}>{w.desc}</div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <SpotsLabel spotsLeft={w.spots} />
-                <button className="btn btn-lime btn-sm">Book Workshop — ${w.price}</button>
-              </div>
+          {loadingWorkshops ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[1, 2].map(i => <SkeletonCard key={i} />)}
             </div>
-          ))}
+          ) : workshops.length === 0 ? (
+            <div className="empty-state">
+              <div style={{ fontSize: 28, marginBottom: 10 }}>🎪</div>
+              <div style={{ fontWeight: 600, marginBottom: 6 }}>No workshops coming up</div>
+              <div style={{ fontSize: 12 }}>Check back soon — workshops are added regularly.</div>
+            </div>
+          ) : workshops.map(w => {
+            const dateLabel = new Date(w.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+            const timeLabel = `${w.start_time?.slice(0, 5)} – ${w.end_time?.slice(0, 5)}`
+            const instructorName = w.instructor_detail?.display_name || ''
+            const spotsFree = w.spots_left ?? Math.max(0, (w.capacity || 12) - (w.enrolled_count || 0))
+            const alreadyBooked = workshopBooked[w.id] === 'confirmed' || w.is_booked
+            const onWaitlist = workshopBooked[w.id] === 'waitlisted'
+            const booking = bookingWorkshopId === w.id
+            return (
+              <div key={w.id} style={{ background: 'var(--card)', border: `1px solid ${alreadyBooked ? 'var(--lime)' : 'var(--border)'}`, borderRadius: 12, padding: '18px 20px', marginBottom: 12, transition: 'border-color 0.2s' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                  <div>
+                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 4 }}>{w.name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--grey)' }}>
+                      {dateLabel} · {timeLabel}{instructorName ? ` · ${instructorName}` : ''}{w.studio_detail?.name ? ` · ${w.studio_detail.name}` : ''}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
+                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, color: 'var(--lime)' }}>${parseFloat(w.price).toFixed(0)}</div>
+                  </div>
+                </div>
+                {w.description && (
+                  <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 12, lineHeight: 1.6 }}>{w.description}</div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <SpotsLabel spotsLeft={spotsFree} />
+                  {alreadyBooked ? (
+                    <span style={{ fontSize: 12, color: 'var(--lime)', fontWeight: 700 }}>✓ Booked</span>
+                  ) : onWaitlist ? (
+                    <span style={{ fontSize: 12, color: 'var(--amber)', fontWeight: 700 }}>On waitlist</span>
+                  ) : (
+                    <button
+                      className="btn btn-lime btn-sm"
+                      onClick={() => bookWorkshop(w)}
+                      disabled={booking}
+                    >
+                      {booking ? 'Booking…' : spotsFree <= 0 ? `Join Waitlist` : `Book — $${parseFloat(w.price).toFixed(0)}`}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
 

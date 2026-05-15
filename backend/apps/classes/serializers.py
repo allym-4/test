@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant
+from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, Workshop, WorkshopBooking
 from apps.users.serializers import UserMinimalSerializer
 
 
@@ -86,4 +86,47 @@ class KisiGrantSerializer(serializers.ModelSerializer):
             'valid_from', 'valid_until', 'kisi_link_id', 'link_sent', 'unlocked',
             'revoked', 'created_at',
         )
+        read_only_fields = ('id', 'created_at')
+
+
+class WorkshopSerializer(serializers.ModelSerializer):
+    instructor_detail = serializers.SerializerMethodField()
+    studio_detail = serializers.SerializerMethodField()
+    enrolled_count = serializers.IntegerField(read_only=True)
+    spots_left = serializers.IntegerField(read_only=True)
+    is_booked = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Workshop
+        fields = (
+            'id', 'name', 'description', 'date', 'start_time', 'end_time',
+            'instructor', 'instructor_detail', 'studio', 'studio_detail',
+            'price', 'capacity', 'is_active', 'enrolled_count', 'spots_left',
+            'is_booked', 'created_at',
+        )
+        read_only_fields = ('id', 'created_at', 'enrolled_count', 'spots_left')
+
+    def get_instructor_detail(self, obj):
+        if not obj.instructor:
+            return None
+        return {'id': obj.instructor.id, 'display_name': getattr(obj.instructor, 'display_name', obj.instructor.get_full_name())}
+
+    def get_studio_detail(self, obj):
+        if not obj.studio:
+            return None
+        return {'id': obj.studio.id, 'name': obj.studio.name}
+
+    def get_is_booked(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.bookings.filter(student=request.user, status='confirmed').exists()
+
+
+class WorkshopBookingSerializer(serializers.ModelSerializer):
+    workshop_detail = WorkshopSerializer(source='workshop', read_only=True)
+
+    class Meta:
+        model = WorkshopBooking
+        fields = ('id', 'workshop', 'workshop_detail', 'student', 'status', 'created_at')
         read_only_fields = ('id', 'created_at')
