@@ -5,11 +5,21 @@ import { enrolments, classes, helpdesk } from '../../api'
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 export default function AdminWaitlist() {
-  const { data: enrolData, loading, refetch } = useApi(() => enrolments.list({ status: 'waitlist' }))
+  const { data: enrolData, loading, refetch } = useApi(() => enrolments.list({ status: 'waitlisted' }))
   const { data: sessionsData } = useApi(() => classes.list())
   const [acting, setActing] = useState({})
   const [notifying, setNotifying] = useState(false)
   const [notifyResult, setNotifyResult] = useState(null)
+
+  const waitlisted = enrolData?.results || enrolData || []
+  const sessions = sessionsData?.results || sessionsData || []
+
+  const bySession = {}
+  for (const e of waitlisted) {
+    const sid = e.class_session || e.class_session_detail?.id
+    if (!bySession[sid]) bySession[sid] = []
+    bySession[sid].push(e)
+  }
 
   async function notifyEligible() {
     setNotifying(true)
@@ -22,7 +32,7 @@ export default function AdminWaitlist() {
         const top = students[0]
         if (!top) continue
         const studentId = top.student
-        const sessionName = (top.class_session_detail?.name) || 'your class'
+        const sessionName = top.class_session_detail?.name || 'your class'
         let conv = convs.find(c => c.student === studentId)
         if (!conv) {
           const res = await helpdesk.createConversation({ student: studentId })
@@ -37,16 +47,6 @@ export default function AdminWaitlist() {
     } finally {
       setNotifying(false)
     }
-  }
-
-  const waitlisted = enrolData?.results || []
-  const sessions = sessionsData?.results || []
-
-  const bySession = {}
-  for (const e of waitlisted) {
-    const sid = e.class_session || e.class_session_detail?.id
-    if (!bySession[sid]) bySession[sid] = []
-    bySession[sid].push(e)
   }
 
   const sessionMap = {}

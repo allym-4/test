@@ -625,7 +625,10 @@ function StudentDetail({ student, onClose, onRefreshList, onViewForm }) {
         <AddChargeModal student={student} onClose={() => setShowCharge(false)} onSuccess={() => { setShowCharge(false); reloadBalance() }} />
       )}
       {showAddToClass && (
-        <AddToClassModal student={student} onClose={() => setShowAddToClass(false)} onSuccess={() => setShowAddToClass(false)} />
+        <AddToClassModal student={student} onClose={() => setShowAddToClass(false)} onSuccess={() => {
+          setShowAddToClass(false)
+          enrolments.list({ student: student.id }).then(r => setEnrolData(r.data.results || []))
+        }} />
       )}
     </>
   )

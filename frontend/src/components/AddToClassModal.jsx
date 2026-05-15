@@ -132,6 +132,7 @@ export default function AddToClassModal({ student, onClose, onSuccess }) {
             >
               <option value="course">Course / Season</option>
               <option value="casual">Casual / Drop-in</option>
+              <option value="trial">Trial Class</option>
             </select>
           </div>
 
