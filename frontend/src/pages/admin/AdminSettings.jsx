@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { settings as settingsApi } from '../../api'
+import { settings as settingsApi, membershipTypes, users } from '../../api'
+import { useApi } from '../../hooks/useApi'
 
 const FORM_FIELDS = {
   'Health / PAR-Q Questionnaire': [
