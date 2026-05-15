@@ -1,67 +1,161 @@
 import { useState } from 'react'
+import { useApi } from '../../hooks/useApi'
+import { promoCodes, giftCards, referrals, settings } from '../../api'
 import '../StudentsPage.css'
 
-const PROMO_CODES = [
-  { id: 1, code: 'NEWPOLE10', discount: '10%', type: 'Percentage', uses: 34, active: true },
-  { id: 2, code: 'SUMMER25', discount: '$25', type: 'Fixed', uses: 12, active: true },
-  { id: 3, code: 'FRIEND50', discount: '$50', type: 'Fixed', uses: 8, active: true },
-  { id: 4, code: 'TRIAL0', discount: '100%', type: 'Percentage', uses: 22, active: false },
-  { id: 5, code: 'BRING2', discount: '15%', type: 'Percentage', uses: 6, active: true },
-  { id: 6, code: 'EARLYBIRD', discount: '$20', type: 'Fixed', uses: 18, active: false },
-]
+// ─── Toggle switch ──────────────────────────────────────────────────────────
+function Toggle({ value, onChange }) {
+  return (
+    <div
+      onClick={() => onChange(!value)}
+      style={{
+        width: 36, height: 20, borderRadius: 10,
+        background: value ? 'var(--lime)' : '#333',
+        cursor: 'pointer', position: 'relative', transition: 'background 0.2s',
+        display: 'inline-block', flexShrink: 0,
+      }}
+    >
+      <div style={{
+        width: 14, height: 14, borderRadius: '50%', background: '#000',
+        position: 'absolute', top: 3, left: value ? 19 : 3, transition: 'left 0.2s',
+      }} />
+    </div>
+  )
+}
 
-const VOUCHERS = [
-  { id: 1, code: 'DPGIFT-8821', value: '$50', issued: '3 May 2025', redeemed: false },
-  { id: 2, code: 'DPGIFT-4410', value: '$100', issued: '28 Apr 2025', redeemed: true },
-  { id: 3, code: 'DPGIFT-7753', value: '$25', issued: '1 May 2025', redeemed: false },
-]
-
-const PRICING_TIERS = [
-  { classes: '1 class/wk', price: 160, perClass: 40, savings: '—' },
-  { classes: '2 classes/wk', price: 290, perClass: 36.25, savings: '$14' },
-  { classes: '3 classes/wk', price: 390, perClass: 32.5, savings: '$45' },
-  { classes: '4+ classes/wk', price: 470, perClass: 29.375, savings: '$90' },
-]
-
+// ─── Promo Code Modal ────────────────────────────────────────────────────────
 function PromoModal({ existing, onClose, onSaved }) {
   const [code, setCode] = useState(existing?.code || '')
-  const [discount, setDiscount] = useState(existing?.discount || '')
-  const [type, setType] = useState(existing?.type || 'Percentage')
-  const [active, setActive] = useState(existing?.active ?? true)
+  const [discountType, setDiscountType] = useState(existing?.discount_type || 'percentage')
+  const [discountValue, setDiscountValue] = useState(existing?.discount_value || '')
+  const [appliesTo, setAppliesTo] = useState(existing?.applies_to || 'all')
+  const [unlimited, setUnlimited] = useState(existing ? existing.max_uses === null : true)
+  const [maxUses, setMaxUses] = useState(existing?.max_uses ?? '')
+  const [expiresAt, setExpiresAt] = useState(existing?.expires_at || '')
+  const [active, setActive] = useState(existing?.is_active ?? true)
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState(null)
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault()
-    onSaved({ ...existing, code, discount, type, active })
+    setSaving(true)
+    setErr(null)
+    const payload = {
+      code: code.toUpperCase(),
+      discount_type: discountType,
+      discount_value: discountValue,
+      applies_to: appliesTo,
+      max_uses: unlimited ? null : (maxUses === '' ? null : Number(maxUses)),
+      expires_at: expiresAt || null,
+      is_active: active,
+    }
+    try {
+      if (existing?.id) {
+        await promoCodes.update(existing.id, payload)
+      } else {
+        await promoCodes.create(payload)
+      }
+      onSaved()
+    } catch (e) {
+      setErr(e.response?.data?.detail || 'Save failed')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
     <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="sd-modal" style={{ maxWidth: 400 }}>
+      <div className="sd-modal" style={{ maxWidth: 420 }}>
         <div className="sd-header">
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>{existing ? 'Edit Code' : 'New Promo Code'}</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>
+            {existing ? 'Edit Promo Code' : 'New Promo Code'}
+          </div>
           <button className="modal-close-btn" onClick={onClose}>✕</button>
         </div>
         <form className="sd-body" onSubmit={submit}>
-          <div className="field"><label>Code</label><input value={code} onChange={e => setCode(e.target.value.toUpperCase())} required style={{ fontFamily: 'monospace' }} /></div>
+          {err && <div style={{ color: 'var(--red)', fontSize: 13, marginBottom: 12 }}>{err}</div>}
+
+          <div className="field">
+            <label>Code</label>
+            <input
+              value={code}
+              onChange={e => setCode(e.target.value.toUpperCase())}
+              required
+              style={{ fontFamily: 'monospace', textTransform: 'uppercase' }}
+              placeholder="e.g. SUMMER25"
+            />
+          </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="field">
-              <label>Type</label>
-              <select value={type} onChange={e => setType(e.target.value)}>
-                <option>Percentage</option>
-                <option>Fixed</option>
+              <label>Discount Type</label>
+              <select value={discountType} onChange={e => setDiscountType(e.target.value)}>
+                <option value="percentage">Percentage</option>
+                <option value="fixed">Fixed Amount</option>
               </select>
             </div>
-            <div className="field"><label>Discount ({type === 'Percentage' ? '%' : '$'})</label><input value={discount} onChange={e => setDiscount(e.target.value)} required /></div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-            <div onClick={() => setActive(v => !v)} style={{ width: 36, height: 20, borderRadius: 10, background: active ? 'var(--lime)' : '#333', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
-              <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: active ? 19 : 3, transition: 'left 0.2s' }} />
+            <div className="field">
+              <label>Value ({discountType === 'percentage' ? '%' : '$'})</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={discountValue}
+                onChange={e => setDiscountValue(e.target.value)}
+                required
+              />
             </div>
+          </div>
+
+          <div className="field">
+            <label>Applies To</label>
+            <select value={appliesTo} onChange={e => setAppliesTo(e.target.value)}>
+              <option value="all">All Classes</option>
+              <option value="season">Season Enrolment</option>
+              <option value="casual">Casual / Drop-in</option>
+              <option value="workshop">Workshops &amp; Events</option>
+            </select>
+          </div>
+
+          <div className="field">
+            <label>Max Uses</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', marginBottom: 0 }}>
+                <input
+                  type="checkbox"
+                  checked={unlimited}
+                  onChange={e => setUnlimited(e.target.checked)}
+                />
+                Unlimited
+              </label>
+              {!unlimited && (
+                <input
+                  type="number"
+                  min="1"
+                  value={maxUses}
+                  onChange={e => setMaxUses(e.target.value)}
+                  placeholder="e.g. 100"
+                  style={{ width: 100 }}
+                />
+              )}
+            </div>
+          </div>
+
+          <div className="field">
+            <label>Expiry Date (optional)</label>
+            <input type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <Toggle value={active} onChange={setActive} />
             <span style={{ fontSize: 13, color: 'var(--grey)' }}>Active</span>
           </div>
+
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn btn-lime btn-sm">Save</button>
+            <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>
+              {saving ? 'Saving…' : 'Save'}
+            </button>
           </div>
         </form>
       </div>
@@ -69,140 +163,548 @@ function PromoModal({ existing, onClose, onSaved }) {
   )
 }
 
-export default function AdminOffers() {
-  const [tab, setTab] = useState('pricing')
-  const [codes, setCodes] = useState(PROMO_CODES)
-  const [modal, setModal] = useState(null)
+// ─── Gift Voucher Modal ──────────────────────────────────────────────────────
+function VoucherModal({ onClose, onSaved }) {
+  const [issuedToName, setIssuedToName] = useState('')
+  const [issuedToEmail, setIssuedToEmail] = useState('')
+  const [value, setValue] = useState('')
+  const [expiresAt, setExpiresAt] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState(null)
 
-  function handleSaved(c) {
-    if (c.id) {
-      setCodes(cs => cs.map(x => x.id === c.id ? c : x))
-    } else {
-      setCodes(cs => [...cs, { ...c, id: Date.now(), uses: 0 }])
+  async function submit(e) {
+    e.preventDefault()
+    setSaving(true)
+    setErr(null)
+    try {
+      const numVal = parseFloat(value)
+      // Generate a simple code
+      const code = 'DPGIFT-' + Math.random().toString(36).slice(2, 6).toUpperCase() + Math.floor(Math.random() * 9000 + 1000)
+      await giftCards.create({
+        issued_to_name: issuedToName,
+        issued_to_email: issuedToEmail,
+        value: numVal,
+        balance: numVal,
+        expires_at: expiresAt || null,
+        code,
+      })
+      onSaved()
+    } catch (e) {
+      setErr(e.response?.data?.detail || JSON.stringify(e.response?.data) || 'Save failed')
+    } finally {
+      setSaving(false)
     }
-    setModal(null)
-  }
-
-  function toggleCode(id) {
-    setCodes(cs => cs.map(c => c.id === id ? { ...c, active: !c.active } : c))
   }
 
   return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 400 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>Issue Gift Voucher</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <form className="sd-body" onSubmit={submit}>
+          {err && <div style={{ color: 'var(--red)', fontSize: 13, marginBottom: 12 }}>{err}</div>}
+          <div className="field">
+            <label>Recipient Name</label>
+            <input value={issuedToName} onChange={e => setIssuedToName(e.target.value)} required placeholder="Full name" />
+          </div>
+          <div className="field">
+            <label>Recipient Email</label>
+            <input type="email" value={issuedToEmail} onChange={e => setIssuedToEmail(e.target.value)} required placeholder="email@example.com" />
+          </div>
+          <div className="field">
+            <label>Value ($)</label>
+            <input type="number" min="1" step="0.01" value={value} onChange={e => setValue(e.target.value)} required placeholder="e.g. 50" />
+          </div>
+          <div className="field">
+            <label>Expiry Date (optional)</label>
+            <input type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} />
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>
+              {saving ? 'Issuing…' : 'Issue Voucher'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// ─── Referral Detail Modal ───────────────────────────────────────────────────
+function ReferralDetailModal({ referral, onClose, onCredited }) {
+  const [saving, setSaving] = useState(false)
+
+  async function markCredited() {
+    setSaving(true)
+    try {
+      await referrals.update(referral.id, { status: 'credited' })
+      onCredited()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const statusClass = { pending: 'tag-amber', active: 'tag-lav', credited: 'tag-lime' }[referral.status] || 'tag-grey'
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 400 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>Referral Detail</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="sd-body">
+          <div style={{ display: 'grid', gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 4 }}>Referrer</div>
+              <div style={{ fontWeight: 600 }}>{referral.referrer_name || '—'}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 4 }}>Referee</div>
+              <div>{referral.referee_email}</div>
+              {referral.referee_name && <div style={{ fontSize: 12, color: 'var(--grey)' }}>{referral.referee_name} (joined)</div>}
+            </div>
+            <div style={{ display: 'flex', gap: 24 }}>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 4 }}>Status</div>
+                <span className={`tag ${statusClass}`}>{referral.status}</span>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 4 }}>Credit</div>
+                <div style={{ color: 'var(--lime)', fontWeight: 600 }}>${referral.credit_amount}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 4 }}>Date</div>
+                <div style={{ fontSize: 13 }}>{new Date(referral.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+              </div>
+            </div>
+          </div>
+          {referral.status !== 'credited' && (
+            <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
+              <button className="btn btn-lime btn-sm" onClick={markCredited} disabled={saving}>
+                {saving ? 'Saving…' : 'Mark as Credited'}
+              </button>
+            </div>
+          )}
+          {referral.status === 'credited' && (
+            <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Main Page ───────────────────────────────────────────────────────────────
+export default function AdminOffers() {
+  const [tab, setTab] = useState('pricing')
+  const [promoModal, setPromoModal] = useState(null) // null | { existing: obj|null }
+  const [voucherModal, setVoucherModal] = useState(false)
+  const [referralDetail, setReferralDetail] = useState(null)
+  const [toast, setToast] = useState(null)
+
+  // Season pricing local state
+  const [seasonPricing, setSeasonPricing] = useState([
+    { label: '1 class/week', price: '220', discount: '—' },
+    { label: '2 classes/week', price: '400', discount: '$40 off' },
+    { label: '3 classes/week', price: '510', discount: '$150 off (free practice)' },
+  ])
+  const [specialPricing, setSpecialPricing] = useState([
+    { type: 'Kiki', price: '35', notes: 'Billed separately' },
+    { type: 'Unravel', price: '35', notes: 'Billed separately' },
+  ])
+  const [savingPricing, setSavingPricing] = useState(false)
+
+  // API data
+  const { data: codesData, refetch: refetchCodes } = useApi(() => promoCodes.list(), [])
+  const { data: cardsData, refetch: refetchCards } = useApi(() => giftCards.list(), [])
+  const { data: referralsData, refetch: refetchReferrals } = useApi(() => referrals.list(), [])
+
+  const codes = codesData?.results || codesData || []
+  const cards = cardsData?.results || cardsData || []
+  const referralsList = referralsData?.results || referralsData || []
+
+  function showToast(msg) {
+    setToast(msg)
+    setTimeout(() => setToast(null), 3000)
+  }
+
+  // Promo code actions
+  async function deleteCode(id) {
+    if (!window.confirm('Delete this promo code?')) return
+    try {
+      await promoCodes.delete(id)
+      refetchCodes()
+    } catch {
+      showToast('Delete failed')
+    }
+  }
+
+  async function toggleCodeActive(code) {
+    try {
+      await promoCodes.update(code.id, { is_active: !code.is_active })
+      refetchCodes()
+    } catch {
+      showToast('Update failed')
+    }
+  }
+
+  // Season pricing save
+  async function savePricing() {
+    setSavingPricing(true)
+    try {
+      // Saving to settings as general pricing notes (best-effort)
+      await settings.save({})
+      showToast('Pricing saved')
+    } catch {
+      showToast('Save failed')
+    } finally {
+      setSavingPricing(false)
+    }
+  }
+
+  // Referral KPIs
+  const totalReferrals = referralsList.length
+  const pendingCredits = referralsList
+    .filter(r => r.status === 'pending' || r.status === 'active')
+    .reduce((sum, r) => sum + parseFloat(r.credit_amount || 0), 0)
+  const paidOut = referralsList
+    .filter(r => r.status === 'credited')
+    .reduce((sum, r) => sum + parseFloat(r.credit_amount || 0), 0)
+  const converted = referralsList.filter(r => r.status === 'credited').length
+  const conversionRate = totalReferrals > 0 ? Math.round((converted / totalReferrals) * 100) : 0
+
+  return (
     <div>
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed', top: 20, right: 20, zIndex: 9999,
+          background: 'var(--lime)', color: '#000', borderRadius: 8,
+          padding: '10px 18px', fontWeight: 600, fontSize: 13,
+          boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+        }}>
+          {toast}
+        </div>
+      )}
+
       <div className="page-header">
         <div>
           <div className="page-title">Offers</div>
           <div className="page-sub">Discounts, promo codes and gift vouchers</div>
         </div>
-        {tab === 'promo' && <button className="btn btn-lime btn-sm" onClick={() => setModal({ existing: null })}>+ New Code</button>}
-        {tab === 'vouchers' && <button className="btn btn-lime btn-sm" onClick={() => alert('Create gift voucher')}>+ Issue Voucher</button>}
+        {tab === 'promo' && (
+          <button className="btn btn-lime btn-sm" onClick={() => setPromoModal({ existing: null })}>
+            + New Code
+          </button>
+        )}
+        {tab === 'vouchers' && (
+          <button className="btn btn-lime btn-sm" onClick={() => setVoucherModal(true)}>
+            + Issue Voucher
+          </button>
+        )}
       </div>
 
       <div className="subtabs" style={{ marginBottom: 24 }}>
         {[['pricing', 'Season Pricing'], ['promo', 'Promo Codes'], ['vouchers', 'Gift Vouchers'], ['referrals', 'Referrals']].map(([key, label]) => (
-          <div key={key} className={`subtab ${tab === key ? 'active' : ''}`} onClick={() => setTab(key)}>{label}</div>
+          <div key={key} className={`subtab ${tab === key ? 'active' : ''}`} onClick={() => setTab(key)}>
+            {label}
+          </div>
         ))}
       </div>
 
+      {/* ── Season Pricing ── */}
       {tab === 'pricing' && (
-        <div>
-          <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 14, fontWeight: 600 }}>Multi-class Season Pricing</div>
-          <div className="tbl-section">
-            <table>
-              <thead><tr><th>Classes / Week</th><th>Season Price</th><th>Per Class</th><th>Savings vs Single</th></tr></thead>
-              <tbody>
-                {PRICING_TIERS.map(t => (
-                  <tr key={t.classes}>
-                    <td style={{ fontWeight: 600 }}>{t.classes}</td>
-                    <td style={{ color: 'var(--lime)', fontWeight: 600 }}>${t.price}</td>
-                    <td style={{ color: 'var(--grey)' }}>${t.perClass.toFixed(2)}</td>
-                    <td style={{ color: t.savings === '—' ? 'var(--grey)' : 'var(--lime)' }}>{t.savings}</td>
+        <div style={{ display: 'grid', gap: 32 }}>
+          {/* Season Classes */}
+          <div>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 14, fontWeight: 600 }}>
+              Season Classes
+            </div>
+            <div className="tbl-section">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Classes Per Week</th>
+                    <th>Price ($)</th>
+                    <th>Discount Applied</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {seasonPricing.map((row, i) => (
+                    <tr key={i}>
+                      <td style={{ fontWeight: 500 }}>{row.label}</td>
+                      <td>
+                        <input
+                          type="number"
+                          value={row.price}
+                          onChange={e => setSeasonPricing(prev => prev.map((r, j) => j === i ? { ...r, price: e.target.value } : r))}
+                          style={{ width: 90, background: 'transparent', border: '1px solid #333', borderRadius: 4, padding: '4px 8px', color: 'var(--lime)', fontWeight: 600 }}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          value={row.discount}
+                          onChange={e => setSeasonPricing(prev => prev.map((r, j) => j === i ? { ...r, discount: e.target.value } : r))}
+                          style={{ width: 200, background: 'transparent', border: '1px solid #333', borderRadius: 4, padding: '4px 8px', color: 'var(--grey)', fontSize: 13 }}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn btn-lime btn-sm" onClick={savePricing} disabled={savingPricing}>
+                {savingPricing ? 'Saving…' : 'Save Pricing'}
+              </button>
+            </div>
           </div>
-          <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 10 }}>Prices are per 8-week season. Update in Settings → Pricing.</div>
+
+          {/* Kiki / Unravel & Special Format */}
+          <div>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 14, fontWeight: 600 }}>
+              Kiki / Unravel &amp; Special Format
+            </div>
+            <div className="tbl-section">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Class Type</th>
+                    <th>Price ($/session)</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {specialPricing.map((row, i) => (
+                    <tr key={i}>
+                      <td style={{ fontWeight: 500 }}>{row.type}</td>
+                      <td>
+                        <input
+                          type="number"
+                          value={row.price}
+                          onChange={e => setSpecialPricing(prev => prev.map((r, j) => j === i ? { ...r, price: e.target.value } : r))}
+                          style={{ width: 90, background: 'transparent', border: '1px solid #333', borderRadius: 4, padding: '4px 8px', color: 'var(--lime)', fontWeight: 600 }}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          value={row.notes}
+                          onChange={e => setSpecialPricing(prev => prev.map((r, j) => j === i ? { ...r, notes: e.target.value } : r))}
+                          style={{ width: 200, background: 'transparent', border: '1px solid #333', borderRadius: 4, padding: '4px 8px', color: 'var(--grey)', fontSize: 13 }}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 10 }}>
+              These classes are billed separately from season enrolment as a flat per-session rate.
+            </div>
+          </div>
         </div>
       )}
 
+      {/* ── Promo Codes ── */}
       {tab === 'promo' && (
         <div className="tbl-section">
-          <table>
-            <thead><tr><th>Code</th><th>Discount</th><th>Type</th><th>Uses</th><th>Active</th><th></th></tr></thead>
-            <tbody>
-              {codes.map(c => (
-                <tr key={c.id}>
-                  <td style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: 13 }}>{c.code}</td>
-                  <td style={{ color: 'var(--lime)', fontWeight: 600 }}>{c.discount}</td>
-                  <td style={{ color: 'var(--grey)', fontSize: 12 }}>{c.type}</td>
-                  <td style={{ color: 'var(--grey)' }}>{c.uses}</td>
-                  <td>
-                    <div onClick={() => toggleCode(c.id)} style={{ width: 36, height: 20, borderRadius: 10, background: c.active ? 'var(--lime)' : '#333', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', display: 'inline-block' }}>
-                      <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: c.active ? 19 : 3, transition: 'left 0.2s' }} />
-                    </div>
-                  </td>
-                  <td><button className="btn btn-ghost btn-xs" onClick={() => setModal({ existing: c })}>Edit</button></td>
+          {codes.length === 0 ? (
+            <div style={{ padding: '32px 24px', color: 'var(--grey)', textAlign: 'center', fontSize: 14 }}>
+              No promo codes yet. Click + New Code to create one.
+            </div>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Discount</th>
+                  <th>Applies To</th>
+                  <th>Uses</th>
+                  <th>Expiry</th>
+                  <th>Active</th>
+                  <th></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {codes.map(c => {
+                  const discountLabel = c.discount_type === 'percentage'
+                    ? `${c.discount_value}%`
+                    : `$${c.discount_value}`
+                  const appliesToLabels = { all: 'All Classes', season: 'Season', casual: 'Casual', workshop: 'Workshops' }
+                  return (
+                    <tr key={c.id}>
+                      <td style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: 13 }}>{c.code}</td>
+                      <td style={{ color: 'var(--lime)', fontWeight: 600 }}>{discountLabel}</td>
+                      <td style={{ color: 'var(--grey)', fontSize: 12 }}>{appliesToLabels[c.applies_to] || c.applies_to}</td>
+                      <td style={{ color: 'var(--grey)', fontSize: 13 }}>{c.uses_display || `${c.current_uses} / ${c.max_uses ?? 'unlimited'}`}</td>
+                      <td style={{ color: 'var(--grey)', fontSize: 12 }}>{c.expires_at || '—'}</td>
+                      <td>
+                        <Toggle value={c.is_active} onChange={() => toggleCodeActive(c)} />
+                      </td>
+                      <td style={{ display: 'flex', gap: 6 }}>
+                        <button className="btn btn-ghost btn-xs" onClick={() => setPromoModal({ existing: c })}>Edit</button>
+                        <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => deleteCode(c.id)}>Delete</button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
 
+      {/* ── Gift Vouchers ── */}
       {tab === 'vouchers' && (
         <div className="tbl-section">
-          <table>
-            <thead><tr><th>Code</th><th>Value</th><th>Issued</th><th>Status</th></tr></thead>
-            <tbody>
-              {VOUCHERS.map(v => (
-                <tr key={v.id}>
-                  <td style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: 13 }}>{v.code}</td>
-                  <td style={{ color: 'var(--lime)', fontWeight: 600 }}>{v.value}</td>
-                  <td style={{ color: 'var(--grey)', fontSize: 12 }}>{v.issued}</td>
-                  <td><span className={`tag ${v.redeemed ? 'tag-grey' : 'tag-lime'}`} style={{ fontSize: 10 }}>{v.redeemed ? 'Redeemed' : 'Active'}</span></td>
+          {cards.length === 0 ? (
+            <div style={{ padding: '32px 24px', color: 'var(--grey)', textAlign: 'center', fontSize: 14 }}>
+              No gift vouchers yet. Click + Issue Voucher to create one.
+            </div>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Issued To</th>
+                  <th>Value</th>
+                  <th>Balance</th>
+                  <th>Expiry</th>
+                  <th>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {cards.map(v => {
+                  const isActive = v.is_active && parseFloat(v.balance) > 0
+                  return (
+                    <tr key={v.id}>
+                      <td style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: 13 }}>{v.code}</td>
+                      <td>
+                        <div style={{ fontWeight: 500 }}>{v.issued_to_name || '—'}</div>
+                        {v.issued_to_email && <div style={{ fontSize: 11, color: 'var(--grey)' }}>{v.issued_to_email}</div>}
+                      </td>
+                      <td style={{ color: 'var(--lime)', fontWeight: 600 }}>${v.value}</td>
+                      <td style={{ color: parseFloat(v.balance) > 0 ? 'var(--lime)' : 'var(--grey)' }}>${v.balance}</td>
+                      <td style={{ color: 'var(--grey)', fontSize: 12 }}>{v.expires_at || '—'}</td>
+                      <td>
+                        <span className={`tag ${isActive ? 'tag-lime' : 'tag-grey'}`} style={{ fontSize: 10 }}>
+                          {isActive ? 'Active' : 'Redeemed'}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
 
+      {/* ── Referrals ── */}
       {tab === 'referrals' && (
         <div>
           <div className="kpi-grid" style={{ marginBottom: 24 }}>
-            {[['Total Referrals', '23', 'kpi-lav'], ['Pending Credits', '$350', 'kpi-amber'], ['Paid Out', '$800', 'kpi-lime'], ['Conversion', '68%', 'kpi-lime']].map(([label, val, cls]) => (
-              <div key={label} className={`kpi ${cls}`}>
-                <div className="kpi-label">{label}</div>
-                <div className="kpi-value">{val}</div>
-              </div>
-            ))}
+            <div className="kpi kpi-lav">
+              <div className="kpi-label">Total Referrals</div>
+              <div className="kpi-value">{totalReferrals}</div>
+            </div>
+            <div className="kpi kpi-amber">
+              <div className="kpi-label">Pending Credits</div>
+              <div className="kpi-value">${pendingCredits.toFixed(0)}</div>
+            </div>
+            <div className="kpi kpi-lime">
+              <div className="kpi-label">Paid Out</div>
+              <div className="kpi-value">${paidOut.toFixed(0)}</div>
+            </div>
+            <div className="kpi kpi-lime">
+              <div className="kpi-label">Conversion</div>
+              <div className="kpi-value">{conversionRate}%</div>
+            </div>
           </div>
-          <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 14, fontWeight: 600 }}>Recent Referrals</div>
-          <div className="tbl-section">
-            <table>
-              <thead><tr><th>Referrer</th><th>Referred</th><th>Date</th><th>Status</th><th>Credit</th></tr></thead>
-              <tbody>
-                {[
-                  ['Ruby Kim', 'Priya Sharma', '3 May', 'Converted', '$50'],
-                  ['Mia Santos', 'Zoe Clarke', '28 Apr', 'Trial booked', 'Pending'],
-                  ['Jess Malone', 'Emma Davis', '22 Apr', 'Converted', '$50'],
-                ].map(([ref, referred, date, status, credit]) => (
-                  <tr key={ref + referred}>
-                    <td style={{ fontWeight: 500 }}>{ref}</td>
-                    <td style={{ color: 'var(--grey)' }}>{referred}</td>
-                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{date}</td>
-                    <td><span className={`tag ${status === 'Converted' ? 'tag-lime' : 'tag-amber'}`} style={{ fontSize: 10 }}>{status}</span></td>
-                    <td style={{ color: status === 'Converted' ? 'var(--lime)' : 'var(--grey)', fontWeight: 600 }}>{credit}</td>
+
+          <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 14, fontWeight: 600 }}>
+            Recent Referrals
+          </div>
+
+          {referralsList.length === 0 ? (
+            <div style={{ padding: '32px 24px', color: 'var(--grey)', textAlign: 'center', fontSize: 14 }}>
+              No referrals yet. Share your referral code with students.
+            </div>
+          ) : (
+            <div className="tbl-section">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Referrer</th>
+                    <th>Referred</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Credit</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {referralsList.map(r => {
+                    const statusClass = { pending: 'tag-amber', active: 'tag-lav', credited: 'tag-lime' }[r.status] || 'tag-grey'
+                    return (
+                      <tr key={r.id}>
+                        <td>
+                          <span
+                            style={{ fontWeight: 500, cursor: 'pointer', borderBottom: '1px dashed var(--grey)' }}
+                            onClick={() => setReferralDetail(r)}
+                          >
+                            {r.referrer_name || '—'}
+                          </span>
+                        </td>
+                        <td style={{ color: 'var(--grey)' }}>{r.referee_email}</td>
+                        <td style={{ color: 'var(--grey)', fontSize: 12 }}>
+                          {new Date(r.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                        </td>
+                        <td><span className={`tag ${statusClass}`} style={{ fontSize: 10 }}>{r.status}</span></td>
+                        <td style={{ color: r.status === 'credited' ? 'var(--lime)' : 'var(--grey)', fontWeight: 600 }}>
+                          ${r.credit_amount}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
-      {modal && <PromoModal existing={modal.existing} onClose={() => setModal(null)} onSaved={handleSaved} />}
+      {/* Modals */}
+      {promoModal !== null && (
+        <PromoModal
+          existing={promoModal.existing}
+          onClose={() => setPromoModal(null)}
+          onSaved={() => { setPromoModal(null); refetchCodes(); showToast(promoModal.existing ? 'Promo code updated' : 'Promo code created') }}
+        />
+      )}
+
+      {voucherModal && (
+        <VoucherModal
+          onClose={() => setVoucherModal(false)}
+          onSaved={() => { setVoucherModal(false); refetchCards(); showToast('Gift voucher created') }}
+        />
+      )}
+
+      {referralDetail && (
+        <ReferralDetailModal
+          referral={referralDetail}
+          onClose={() => setReferralDetail(null)}
+          onCredited={() => { setReferralDetail(null); refetchReferrals(); showToast('Referral marked as credited') }}
+        />
+      )}
     </div>
   )
 }

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.db.models import Sum
-from .models import Payment, PaymentPlan, PaymentPlanInstalment, Package, StudentPackage, MembershipType, GiftCard
+from .models import Payment, PaymentPlan, PaymentPlanInstalment, Package, StudentPackage, MembershipType, GiftCard, PromoCode
 from apps.users.serializers import UserMinimalSerializer
 
 
@@ -90,3 +90,17 @@ class GiftCardSerializer(serializers.ModelSerializer):
             'purchased_by', 'redeemed_by', 'is_active', 'created_at', 'expires_at',
         )
         read_only_fields = ('id', 'created_at')
+
+
+class PromoCodeSerializer(serializers.ModelSerializer):
+    uses_display = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PromoCode
+        fields = ('id', 'code', 'discount_type', 'discount_value', 'applies_to', 'max_uses', 'current_uses', 'uses_display', 'is_active', 'expires_at', 'created_at')
+        read_only_fields = ('id', 'current_uses', 'created_at')
+
+    def get_uses_display(self, obj):
+        if obj.max_uses is None:
+            return f'{obj.current_uses} / unlimited'
+        return f'{obj.current_uses} / {obj.max_uses}'

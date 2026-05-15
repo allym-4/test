@@ -12,6 +12,7 @@ urlpatterns = [
     path('<int:pk>/', views.PaymentDetailView.as_view(), name='payment-detail'),
     path('plans/', views.PaymentPlanListView.as_view(), name='plan-list'),
     path('plans/<int:pk>/', views.PaymentPlanDetailView.as_view(), name='plan-detail'),
+    path('plans/<int:pk>/remind/', views.remind_plan, name='plan-remind'),
     path('instalments/', views.InstalmentListView.as_view(), name='instalment-list'),
     path('plans/instalments/<int:pk>/', views.InstalmentDetailView.as_view(), name='instalment-detail'),
     path('balance/<int:student_pk>/', views.student_balance, name='student-balance'),
@@ -24,4 +25,6 @@ urlpatterns = [
     path('membership-types/<int:pk>/', views.MembershipTypeDetailView.as_view(), name='membership-type-detail'),
     path('gift-cards/', views.GiftCardListView.as_view(), name='gift-card-list'),
     path('gift-cards/<int:pk>/', views.GiftCardDetailView.as_view(), name='gift-card-detail'),
+    path('promo-codes/', views.PromoCodeListView.as_view(), name='promo-code-list'),
+    path('promo-codes/<int:pk>/', views.PromoCodeDetailView.as_view(), name='promo-code-detail'),
 ]

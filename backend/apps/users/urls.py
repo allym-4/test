@@ -40,6 +40,7 @@ urlpatterns = [
     path('instagram/webhook/', instagram_views.InstagramWebhookView.as_view()),
     path('instagram/auth/', instagram_views.InstagramAuthView.as_view()),
     path('instagram/callback/', instagram_views.InstagramCallbackView.as_view()),
+    path('referrals/', views.ReferralListView.as_view()),
     path('assistant/', views.AssistantView.as_view()),
     path('', views.UserListView.as_view(), name='user-list'),
     path('<int:pk>/', views.UserDetailView.as_view(), name='user-detail'),

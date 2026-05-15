@@ -6,14 +6,14 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db import transaction
 from django.db.models import Q
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList, Referral
 from .serializers import (
     UserSerializer, UserCreateSerializer, StaffNoteSerializer, LeadSerializer,
     StudioSettingsSerializer, AnnouncementSerializer, ProductSerializer, AutomationRuleSerializer,
     OrderSerializer, NotificationSerializer, InstructorAvailabilitySerializer, StudentFormSerializer,
     InstructorPayRecordSerializer, StudentSkillSerializer,
     TagSerializer, StudentTagSerializer, SkillLevelSerializer, SkillGroupSerializer, SkillDefinitionSerializer,
-    MediaItemSerializer, EmailCampaignSerializer, EmailListSerializer,
+    MediaItemSerializer, EmailCampaignSerializer, EmailListSerializer, ReferralSerializer,
 )
 from .permissions import IsAdminOrInstructor, IsAdminUser
 
@@ -550,6 +550,14 @@ class EmailListDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = EmailList.objects.all()
     serializer_class = EmailListSerializer
     permission_classes = [IsAdminOrInstructor]
+
+
+class ReferralListView(generics.ListCreateAPIView):
+    serializer_class = ReferralSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+    def get_queryset(self):
+        return Referral.objects.all()
 
 
 class AssistantView(APIView):

@@ -387,6 +387,26 @@ class EmailList(models.Model):
         return self.name
 
 
+class Referral(models.Model):
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        ACTIVE = 'active', 'Active'
+        CREDITED = 'credited', 'Credited'
+
+    referrer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='referrals_made')
+    referee_email = models.EmailField()
+    referee = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='referred_by')
+    credit_amount = models.DecimalField(max_digits=8, decimal_places=2, default=50)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.referrer.display_name} → {self.referee_email}'
+
+
 class MediaItem(models.Model):
     class MediaType(models.TextChoices):
         VIDEO = 'video', 'Video'

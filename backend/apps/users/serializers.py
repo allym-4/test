@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList, Referral
 
 
 class UserMinimalSerializer(serializers.ModelSerializer):
@@ -250,3 +250,13 @@ class EmailListSerializer(serializers.ModelSerializer):
             from datetime import timedelta
             return User.objects.filter(role='student', date_joined__gte=timezone.now()-timedelta(days=30)).count()
         return 0
+
+
+class ReferralSerializer(serializers.ModelSerializer):
+    referrer_name = serializers.StringRelatedField(source='referrer')
+    referee_name = serializers.StringRelatedField(source='referee')
+
+    class Meta:
+        model = Referral
+        fields = ('id', 'referrer', 'referrer_name', 'referee_email', 'referee', 'referee_name', 'credit_amount', 'status', 'created_at')
+        read_only_fields = ('id', 'created_at')

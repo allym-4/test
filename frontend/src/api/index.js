@@ -60,6 +60,8 @@ export const payments = {
     create: (data) => client.post('/api/payments/plans/', data),
     update: (id, data) => client.patch(`/api/payments/plans/${id}/`, data),
     createInstalment: (data) => client.post('/api/payments/instalments/', data),
+    updateInstalment: (id, data) => client.patch(`/api/payments/plans/instalments/${id}/`, data),
+    remind: (planId) => client.post(`/api/payments/plans/${planId}/remind/`),
   },
 }
 
@@ -288,4 +290,17 @@ export const emailLists = {
   list: () => client.get('/api/users/email-lists/'),
   create: (data) => client.post('/api/users/email-lists/', data),
   update: (id, data) => client.patch(`/api/users/email-lists/${id}/`, data),
+}
+
+export const promoCodes = {
+  list: (params) => client.get('/api/payments/promo-codes/', { params }),
+  create: (data) => client.post('/api/payments/promo-codes/', data),
+  update: (id, data) => client.patch(`/api/payments/promo-codes/${id}/`, data),
+  delete: (id) => client.delete(`/api/payments/promo-codes/${id}/`),
+}
+
+export const referrals = {
+  list: (params) => client.get('/api/users/referrals/', { params }),
+  create: (data) => client.post('/api/users/referrals/', data),
+  update: (id, data) => client.patch(`/api/users/referrals/${id}/`, data),
 }

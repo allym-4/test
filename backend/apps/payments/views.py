@@ -2,11 +2,11 @@ from rest_framework import generics, permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.db.models import Sum, Q
-from .models import Payment, PaymentPlan, PaymentPlanInstalment, Package, StudentPackage, MembershipType, GiftCard
+from .models import Payment, PaymentPlan, PaymentPlanInstalment, Package, StudentPackage, MembershipType, GiftCard, PromoCode
 from .serializers import (
     PaymentSerializer, PaymentPlanSerializer,
     PaymentPlanInstalmentSerializer, StudentBalanceSerializer,
-    PackageSerializer, StudentPackageSerializer, MembershipTypeSerializer, GiftCardSerializer,
+    PackageSerializer, StudentPackageSerializer, MembershipTypeSerializer, GiftCardSerializer, PromoCodeSerializer,
 )
 from apps.users.permissions import IsAdminOrInstructor
 from apps.users.models import User
@@ -52,6 +52,25 @@ class PaymentPlanDetailView(generics.RetrieveUpdateAPIView):
     queryset = PaymentPlan.objects.prefetch_related('instalments')
     serializer_class = PaymentPlanSerializer
     permission_classes = [IsAdminOrInstructor]
+
+
+@api_view(['POST'])
+@permission_classes([IsAdminOrInstructor])
+def remind_plan(request, pk):
+    try:
+        plan = PaymentPlan.objects.get(pk=pk)
+    except PaymentPlan.DoesNotExist:
+        return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+    from apps.users.models import Notification
+    next_instalment = plan.instalments.filter(status__in=['pending', 'overdue']).order_by('due_date').first()
+    body = f'Payment reminder: your next instalment of ${next_instalment.amount} is due on {next_instalment.due_date}.' if next_instalment else f'Payment reminder for your plan: {plan.description}.'
+    Notification.objects.create(
+        recipient=plan.student,
+        title='Payment Reminder',
+        body=body,
+        notification_type='payment',
+    )
+    return Response({'status': 'reminder sent'})
 
 
 class InstalmentListView(generics.ListCreateAPIView):
@@ -130,6 +149,18 @@ class GiftCardListView(generics.ListCreateAPIView):
 class GiftCardDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = GiftCard.objects.all()
     serializer_class = GiftCardSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class PromoCodeListView(generics.ListCreateAPIView):
+    queryset = PromoCode.objects.all()
+    serializer_class = PromoCodeSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class PromoCodeDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = PromoCode.objects.all()
+    serializer_class = PromoCodeSerializer
     permission_classes = [IsAdminOrInstructor]
 
 
