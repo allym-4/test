@@ -36,6 +36,7 @@ const subsectionLabel = {
 export default function AdminDashboard() {
   const [actionItemsVisible, setActionItemsVisible] = useState(true)
   const [checkedItems, setCheckedItems] = useState({})
+  const [confirmCancelId, setConfirmCancelId] = useState(null)
 
   const { data: sessionsData } = useApi(() => classes.list({ active: 'true' }))
   const { data: dashData, refetch: refetchDash } = useApi(() => payments.dashboard())
@@ -99,15 +100,24 @@ export default function AdminDashboard() {
     refetchExemptions()
   }
 
-  async function coverSession(session) {
+  async function upsertOccurrence(session, fields) {
     const today = new Date().toISOString().slice(0, 10)
-    await client.post('/api/classes/occurrences/', { session: session.id, date: today, cover_needed: true })
+    const res = await client.get('/api/classes/occurrences/', { params: { session: session.id, date: today } })
+    const existing = (res.data?.results || res.data || [])[0]
+    if (existing) {
+      await client.patch(`/api/classes/occurrences/${existing.id}/`, fields)
+    } else {
+      await client.post('/api/classes/occurrences/', { session: session.id, date: today, ...fields })
+    }
+  }
+
+  async function coverSession(session) {
+    await upsertOccurrence(session, { cover_needed: true })
   }
 
   async function cancelSession(session) {
-    if (!window.confirm(`Cancel ${session.name} today?`)) return
-    const today = new Date().toISOString().slice(0, 10)
-    await client.post('/api/classes/occurrences/', { session: session.id, date: today, status: 'cancelled' })
+    await upsertOccurrence(session, { status: 'cancelled' })
+    setConfirmCancelId(null)
   }
 
   async function chasePayment(studentId) {
@@ -294,9 +304,16 @@ export default function AdminDashboard() {
                           }
                         </td>
                         <td>
-                          <div style={{ display: 'flex', gap: 4 }}>
+                          <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                             <button className="btn btn-ghost btn-xs" onClick={() => coverSession(s)}>COVER</button>
-                            <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => cancelSession(s)}>CANCEL</button>
+                            {confirmCancelId === s.id ? (
+                              <>
+                                <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => cancelSession(s)}>Confirm</button>
+                                <button className="btn btn-ghost btn-xs" onClick={() => setConfirmCancelId(null)}>No</button>
+                              </>
+                            ) : (
+                              <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => setConfirmCancelId(s.id)}>CANCEL</button>
+                            )}
                           </div>
                         </td>
                       </tr>

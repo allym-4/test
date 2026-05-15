@@ -308,6 +308,7 @@ export default function AdminOffers() {
   const [voucherModal, setVoucherModal] = useState(false)
   const [referralDetail, setReferralDetail] = useState(null)
   const [toast, setToast] = useState(null)
+  const [confirmDeleteCodeId, setConfirmDeleteCodeId] = useState(null)
 
   // Season pricing local state — loaded from StudioSettings.season_pricing_config
   const DEFAULT_SEASON = [
@@ -355,7 +356,7 @@ export default function AdminOffers() {
 
   // Promo code actions
   async function deleteCode(id) {
-    if (!window.confirm('Delete this promo code?')) return
+    setConfirmDeleteCodeId(null)
     try {
       await promoCodes.delete(id)
       refetchCodes()
@@ -574,7 +575,14 @@ export default function AdminOffers() {
                       </td>
                       <td style={{ display: 'flex', gap: 6 }}>
                         <button className="btn btn-ghost btn-xs" onClick={() => setPromoModal({ existing: c })}>Edit</button>
-                        <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => deleteCode(c.id)}>Delete</button>
+                        {confirmDeleteCodeId === c.id ? (
+                          <>
+                            <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => deleteCode(c.id)}>Confirm</button>
+                            <button className="btn btn-ghost btn-xs" onClick={() => setConfirmDeleteCodeId(null)}>No</button>
+                          </>
+                        ) : (
+                          <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => setConfirmDeleteCodeId(c.id)}>Delete</button>
+                        )}
                       </td>
                     </tr>
                   )

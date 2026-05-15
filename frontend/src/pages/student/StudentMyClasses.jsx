@@ -74,6 +74,7 @@ export default function StudentMyClasses() {
   const [topTab, setTopTab] = useState('active')
   const [activeSubTab, setActiveSubTab] = useState('enrolled')
   const [cancelling, setCancelling] = useState(null)
+  const [confirmCancelEnrolId, setConfirmCancelEnrolId] = useState(null)
 
   async function cancelEnrolment(enrolId) {
     setCancelling(enrolId)
@@ -156,11 +157,16 @@ export default function StudentMyClasses() {
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                                 <span className="tag tag-lime" style={{ fontSize: 10 }}>Active</span>
-                                <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)' }}
-                                  disabled={cancelling === e.id}
-                                  onClick={() => { if (window.confirm('Cancel this enrolment?')) cancelEnrolment(e.id) }}>
-                                  {cancelling === e.id ? '…' : 'Cancel'}
-                                </button>
+                                {confirmCancelEnrolId === e.id ? (
+                                  <span style={{ display: 'flex', gap: 4 }}>
+                                    <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)' }} onClick={() => { setConfirmCancelEnrolId(null); cancelEnrolment(e.id) }}>Confirm</button>
+                                    <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }} onClick={() => setConfirmCancelEnrolId(null)}>No</button>
+                                  </span>
+                                ) : (
+                                  <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)' }} disabled={cancelling === e.id} onClick={() => setConfirmCancelEnrolId(e.id)}>
+                                    {cancelling === e.id ? '…' : 'Cancel'}
+                                  </button>
+                                )}
                               </div>
                             </div>
                           )
@@ -199,11 +205,16 @@ export default function StudentMyClasses() {
                                 {e.waitlist_position != null && (
                                   <span className="tag tag-amber" style={{ fontSize: 10 }}>#{e.waitlist_position}</span>
                                 )}
-                                <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)' }}
-                                  disabled={cancelling === e.id}
-                                  onClick={() => { if (window.confirm('Leave waitlist?')) cancelEnrolment(e.id) }}>
-                                  {cancelling === e.id ? '…' : 'Leave Waitlist'}
-                                </button>
+                                {confirmCancelEnrolId === e.id ? (
+                                  <span style={{ display: 'flex', gap: 4 }}>
+                                    <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)' }} onClick={() => { setConfirmCancelEnrolId(null); cancelEnrolment(e.id) }}>Confirm</button>
+                                    <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }} onClick={() => setConfirmCancelEnrolId(null)}>No</button>
+                                  </span>
+                                ) : (
+                                  <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)' }} disabled={cancelling === e.id} onClick={() => setConfirmCancelEnrolId(e.id)}>
+                                    {cancelling === e.id ? '…' : 'Leave Waitlist'}
+                                  </button>
+                                )}
                               </div>
                             </div>
                           )

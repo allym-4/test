@@ -91,6 +91,15 @@ class InstalmentDetailView(generics.RetrieveUpdateAPIView):
     serializer_class = PaymentPlanInstalmentSerializer
     permission_classes = [IsAdminOrInstructor]
 
+    def perform_update(self, serializer):
+        from django.utils.timezone import now
+        instance = self.get_object()
+        new_status = serializer.validated_data.get('status', instance.status)
+        if new_status == 'paid' and instance.status != 'paid' and not serializer.validated_data.get('paid_date'):
+            serializer.save(paid_date=now().date())
+        else:
+            serializer.save()
+
 
 class PackageListView(generics.ListCreateAPIView):
     serializer_class = PackageSerializer

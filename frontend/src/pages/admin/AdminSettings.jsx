@@ -225,6 +225,8 @@ export default function AdminSettings() {
   const [xeroStatus, setXeroStatus] = useState(null) // null | {connected, tenant_name, error}
   const [xeroSyncing, setXeroSyncing] = useState(false)
   const [xeroConnecting, setXeroConnecting] = useState(false)
+  const [confirmDeleteOfferId, setConfirmDeleteOfferId] = useState(null)
+  const [confirmXeroDisconnect, setConfirmXeroDisconnect] = useState(false)
 
   // Memberships tab
   const { data: membershipData, loading: membershipLoading, refetch: refetchMemberships } = useApi(() => membershipTypes.list(), [])
@@ -344,7 +346,7 @@ export default function AdminSettings() {
   }
 
   async function deleteIntroOffer(offer) {
-    if (!window.confirm(`Delete "${offer.name}"?`)) return
+    setConfirmDeleteOfferId(null)
     await packagesApi.delete(offer.id)
     refetchIntro()
   }
@@ -367,7 +369,7 @@ export default function AdminSettings() {
   }
 
   async function disconnectXero() {
-    if (!window.confirm('Disconnect Xero? You will need to reconnect to sync payments again.')) return
+    setConfirmXeroDisconnect(false)
     await xeroApi.disconnect()
     setXeroStatus({ connected: false })
     setIntegrationMsg('Xero disconnected.')
@@ -567,7 +569,14 @@ export default function AdminSettings() {
                     <div style={{ fontSize: 11, color: 'var(--grey)' }}>{offer.num_classes} class{offer.num_classes !== 1 ? 'es' : ''} · {offer.expiry_days} day expiry</div>
                     <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
                       <button className="btn btn-ghost btn-xs" onClick={() => setIntroModal(offer)}>Edit</button>
-                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => deleteIntroOffer(offer)}>Delete</button>
+                      {confirmDeleteOfferId === offer.id ? (
+                        <>
+                          <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => deleteIntroOffer(offer)}>Confirm</button>
+                          <button className="btn btn-ghost btn-xs" onClick={() => setConfirmDeleteOfferId(null)}>No</button>
+                        </>
+                      ) : (
+                        <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => setConfirmDeleteOfferId(offer.id)}>Delete</button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -675,7 +684,14 @@ export default function AdminSettings() {
                   <button className="btn btn-lime btn-sm" onClick={syncXero} disabled={xeroSyncing}>
                     {xeroSyncing ? 'Syncing…' : 'Sync Payments (30 days)'}
                   </button>
-                  <button className="btn btn-ghost btn-sm" onClick={disconnectXero}>Disconnect</button>
+                  {confirmXeroDisconnect ? (
+                    <>
+                      <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }} onClick={disconnectXero}>Confirm disconnect</button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => setConfirmXeroDisconnect(false)}>Cancel</button>
+                    </>
+                  ) : (
+                    <button className="btn btn-ghost btn-sm" onClick={() => setConfirmXeroDisconnect(true)}>Disconnect</button>
+                  )}
                 </div>
               )}
             </Section>

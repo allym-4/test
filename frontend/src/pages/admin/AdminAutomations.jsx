@@ -296,6 +296,7 @@ export default function AdminAutomations() {
   const [showBuilder, setShowBuilder] = useState(false)
   const [editingFlow, setEditingFlow] = useState(null)
   const [deleteError, setDeleteError] = useState('')
+  const [confirmDeleteFlowId, setConfirmDeleteFlowId] = useState(null)
 
   const { data: stats } = useApi(() => automations.stats(), [])
   const { data: runs } = useApi(() => automations.runs(), [])
@@ -339,7 +340,7 @@ export default function AdminAutomations() {
   }
 
   async function deleteFlow(flow) {
-    if (!window.confirm(`Delete "${flow.name}"? This cannot be undone.`)) return
+    setConfirmDeleteFlowId(null)
     try {
       await automations.delete(flow.id)
       setCustomFlows(prev => prev.filter(f => f.id !== flow.id))
@@ -543,10 +544,14 @@ export default function AdminAutomations() {
                         onClick={() => { setEditingFlow(flow); setShowBuilder(true) }}
                         style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#ccc', borderRadius: 7, padding: '5px 12px', fontSize: 12, cursor: 'pointer' }}
                       >Edit</button>
-                      <button
-                        onClick={() => deleteFlow(flow)}
-                        style={{ background: 'none', border: '1px solid rgba(231,76,60,0.3)', color: '#e74c3c', borderRadius: 7, padding: '5px 12px', fontSize: 12, cursor: 'pointer' }}
-                      >Delete</button>
+                      {confirmDeleteFlowId === flow.id ? (
+                        <span style={{ display: 'flex', gap: 4 }}>
+                          <button onClick={() => deleteFlow(flow)} style={{ background: 'none', border: '1px solid rgba(231,76,60,0.5)', color: '#e74c3c', borderRadius: 7, padding: '5px 10px', fontSize: 12, cursor: 'pointer' }}>Confirm</button>
+                          <button onClick={() => setConfirmDeleteFlowId(null)} style={{ background: 'none', border: '1px solid #2a2a2a', color: '#ccc', borderRadius: 7, padding: '5px 10px', fontSize: 12, cursor: 'pointer' }}>No</button>
+                        </span>
+                      ) : (
+                        <button onClick={() => setConfirmDeleteFlowId(flow.id)} style={{ background: 'none', border: '1px solid rgba(231,76,60,0.3)', color: '#e74c3c', borderRadius: 7, padding: '5px 12px', fontSize: 12, cursor: 'pointer' }}>Delete</button>
+                      )}
                     </div>
                   </div>
                 </div>
