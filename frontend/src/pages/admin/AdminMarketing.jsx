@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import '../StudentsPage.css'
 import { useApi } from '../../hooks/useApi'
-import { campaigns as campaignsApi, emailLists as emailListsApi, automations } from '../../api'
+import { campaigns as campaignsApi, emailLists as emailListsApi } from '../../api'
+import client from '../../api/client'
 
 const AUTOMATIONS = [
   { name: 'Welcome email — new student', trigger: 'Student created', active: true },
@@ -74,10 +75,40 @@ function CreateCampaignModal({ onClose, onCreated }) {
   )
 }
 
+function CampaignViewModal({ campaign, onClose }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="card" style={{ width: 500, padding: '28px 32px', maxWidth: '90vw' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>{campaign.name}</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 13 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--grey)' }}>Status</span><span className={`tag ${campaign.status === 'sent' ? 'tag-lime' : campaign.status === 'scheduled' ? 'tag-amber' : 'tag-grey'}`} style={{ fontSize: 10 }}>{campaign.status}</span></div>
+          {campaign.subject && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--grey)' }}>Subject</span><span>{campaign.subject}</span></div>}
+          {campaign.list_name && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--grey)' }}>List</span><span>{campaign.list_name}</span></div>}
+          {campaign.sent_at && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--grey)' }}>Sent</span><span>{new Date(campaign.sent_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}</span></div>}
+          {campaign.open_rate != null && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--grey)' }}>Open rate</span><span style={{ color: 'var(--lime)' }}>{campaign.open_rate}%</span></div>}
+          {campaign.body && (
+            <div style={{ marginTop: 8, borderTop: '1px solid var(--border)', paddingTop: 14 }}>
+              <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Body</div>
+              <div style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--white)', whiteSpace: 'pre-wrap' }}>{campaign.body}</div>
+            </div>
+          )}
+        </div>
+        <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end' }}>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminMarketing() {
   const [tab, setTab] = useState('campaigns')
   const [automationList, setAutomationList] = useState(AUTOMATIONS)
   const [showCreateCampaign, setShowCreateCampaign] = useState(false)
+  const [viewCampaign, setViewCampaign] = useState(null)
 
   const { data: campData, loading: loadingCamp, refetch: refetchCamp } = useApi(() => campaignsApi.list())
   const campaignList = campData?.results || campData || []
@@ -124,7 +155,7 @@ export default function AdminMarketing() {
                       <span className={`tag ${c.status === 'sent' ? 'tag-lime' : c.status === 'scheduled' ? 'tag-amber' : 'tag-grey'}`} style={{ fontSize: 10 }}>{c.status}</span>
                     </td>
                     <td style={{ color: c.open_rate ? 'var(--lime)' : 'var(--grey)' }}>{c.open_rate ? `${c.open_rate}%` : '—'}</td>
-                    <td><button className="btn btn-ghost btn-xs">View</button></td>
+                    <td><button className="btn btn-ghost btn-xs" onClick={() => setViewCampaign(c)}>View</button></td>
                   </tr>
                 ))}
                 {campaignList.length === 0 && (
@@ -147,8 +178,7 @@ export default function AdminMarketing() {
                   <td>{l.student_count ?? 0}</td>
                   <td><span className={`tag ${l.is_auto ? 'tag-lav' : 'tag-grey'}`} style={{ fontSize: 10 }}>{l.is_auto ? 'Auto-updated' : 'Manual'}</span></td>
                   <td style={{ whiteSpace: 'nowrap' }}>
-                    <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }}>View</button>
-                    <button className="btn btn-ghost btn-xs">Export</button>
+                    <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => window.open(emailListsApi.exportUrl(l.id), '_blank')}>Export CSV</button>
                   </td>
                 </tr>
               ))}
@@ -197,6 +227,7 @@ export default function AdminMarketing() {
           onCreated={refetchCamp}
         />
       )}
+      {viewCampaign && <CampaignViewModal campaign={viewCampaign} onClose={() => setViewCampaign(null)} />}
     </div>
   )
 }

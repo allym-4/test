@@ -2,6 +2,58 @@ import { useState, useRef } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { auth, giftCards as giftCardsApi } from '../../api'
 
+function ChangePasswordModal({ onClose }) {
+  const [current, setCurrent] = useState('')
+  const [next, setNext] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState(null)
+  const [done, setDone] = useState(false)
+
+  async function submit(e) {
+    e.preventDefault()
+    if (next !== confirm) { setErr('New passwords do not match.'); return }
+    if (next.length < 8) { setErr('New password must be at least 8 characters.'); return }
+    setSaving(true); setErr(null)
+    try {
+      await auth.changePassword({ current_password: current, new_password: next })
+      setDone(true)
+      setTimeout(onClose, 1800)
+    } catch (ex) {
+      setErr(ex.response?.data?.detail || 'Failed to change password.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 400 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>Change Password</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <form className="sd-body" onSubmit={submit}>
+          {done ? (
+            <div style={{ color: 'var(--lime)', fontSize: 14, textAlign: 'center', padding: '16px 0' }}>Password changed successfully!</div>
+          ) : (
+            <>
+              <div className="field"><label>Current password</label><input type="password" value={current} onChange={e => setCurrent(e.target.value)} required autoComplete="current-password" /></div>
+              <div className="field"><label>New password</label><input type="password" value={next} onChange={e => setNext(e.target.value)} required autoComplete="new-password" /></div>
+              <div className="field"><label>Confirm new password</label><input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} required autoComplete="new-password" /></div>
+              {err && <div style={{ color: 'var(--red)', fontSize: 12, marginBottom: 12 }}>{err}</div>}
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+                <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : 'Update password'}</button>
+              </div>
+            </>
+          )}
+        </form>
+      </div>
+    </div>
+  )
+}
+
 export default function StudentAccount() {
   const { user, setUser } = useAuth()
   const [firstName, setFirstName] = useState(user?.first_name || '')
@@ -11,6 +63,7 @@ export default function StudentAccount() {
   const [ecName, setEcName] = useState(user?.emergency_contact_name || '')
   const [ecPhone, setEcPhone] = useState(user?.emergency_contact_phone || '')
   const [saved, setSaved] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [photoPreview, setPhotoPreview] = useState(user?.profile_photo || null)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const fileRef = useRef()
@@ -370,7 +423,8 @@ export default function StudentAccount() {
           <div style={{ height: 1, background: 'var(--border)', margin: '20px 0' }} />
 
           <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 16, fontWeight: 500 }}>Password</div>
-          <button className="btn btn-ghost btn-sm">Change password</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowPasswordModal(true)}>Change password</button>
+          {showPasswordModal && <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />}
         </div>
       </div>
     </div>

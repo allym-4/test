@@ -677,3 +677,41 @@ class AssistantView(APIView):
             reply_text = "I'm having trouble connecting right now — please contact the studio directly for help."
 
         return Response({'response': reply_text})
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        current = request.data.get('current_password', '')
+        new_pw = request.data.get('new_password', '')
+        if not current or not new_pw:
+            return Response({'detail': 'current_password and new_password are required.'}, status=400)
+        if len(new_pw) < 8:
+            return Response({'detail': 'New password must be at least 8 characters.'}, status=400)
+        if not request.user.check_password(current):
+            return Response({'detail': 'Current password is incorrect.'}, status=400)
+        request.user.set_password(new_pw)
+        request.user.save(update_fields=['password'])
+        return Response({'detail': 'Password changed successfully.'})
+
+
+class EmailListExportView(APIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def get(self, request, pk):
+        import csv
+        from django.http import HttpResponse
+        try:
+            email_list = EmailList.objects.get(pk=pk)
+        except EmailList.DoesNotExist:
+            return Response({'detail': 'Not found'}, status=404)
+
+        students = User.objects.filter(role='student', is_active=True).order_by('last_name', 'first_name')
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{email_list.name.replace(" ", "_")}_export.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['First Name', 'Last Name', 'Email', 'Phone'])
+        for s in students:
+            writer.writerow([s.first_name, s.last_name, s.email, getattr(s, 'phone', '') or ''])
+        return response

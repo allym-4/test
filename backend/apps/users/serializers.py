@@ -97,7 +97,7 @@ class StudioSettingsSerializer(serializers.ModelSerializer):
             'credit_expiry_days', 'max_freeze_weeks', 'gst_registered', 'abn',
             'kisi_api_key', 'kisi_org_id',
             'instagram_access_token', 'instagram_page_id', 'instagram_username', 'meta_app_id',
-            'price_casual', 'price_season', 'price_trial',
+            'price_casual', 'price_season', 'price_trial', 'season_pricing_config',
         )
 
 

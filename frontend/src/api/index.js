@@ -10,6 +10,7 @@ export const auth = {
     fd.append('profile_photo', file)
     return client.patch('/api/users/me/', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
   },
+  changePassword: (data) => client.post('/api/users/change-password/', data),
 }
 
 export const classes = {
@@ -305,6 +306,7 @@ export const emailLists = {
   list: () => client.get('/api/users/email-lists/'),
   create: (data) => client.post('/api/users/email-lists/', data),
   update: (id, data) => client.patch(`/api/users/email-lists/${id}/`, data),
+  exportUrl: (id) => `/api/users/email-lists/${id}/export/`,
 }
 
 export const promoCodes = {

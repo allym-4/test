@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApi } from '../../hooks/useApi'
 import { promoCodes, giftCards, referrals, settings } from '../../api'
 import '../StudentsPage.css'
@@ -309,22 +309,36 @@ export default function AdminOffers() {
   const [referralDetail, setReferralDetail] = useState(null)
   const [toast, setToast] = useState(null)
 
-  // Season pricing local state
-  const [seasonPricing, setSeasonPricing] = useState([
+  // Season pricing local state — loaded from StudioSettings.season_pricing_config
+  const DEFAULT_SEASON = [
     { label: '1 class/week', price: '220', discount: '—' },
     { label: '2 classes/week', price: '400', discount: '$40 off' },
     { label: '3 classes/week', price: '510', discount: '$150 off (free practice)' },
-  ])
-  const [specialPricing, setSpecialPricing] = useState([
+  ]
+  const DEFAULT_SPECIAL = [
     { type: 'Kiki', price: '35', notes: 'Billed separately' },
     { type: 'Unravel', price: '35', notes: 'Billed separately' },
-  ])
+  ]
+  const [seasonPricing, setSeasonPricing] = useState(DEFAULT_SEASON)
+  const [specialPricing, setSpecialPricing] = useState(DEFAULT_SPECIAL)
   const [savingPricing, setSavingPricing] = useState(false)
 
   // API data
+  const { data: settingsData } = useApi(() => settings.get(), [])
   const { data: codesData, refetch: refetchCodes } = useApi(() => promoCodes.list(), [])
   const { data: cardsData, refetch: refetchCards } = useApi(() => giftCards.list(), [])
   const { data: referralsData, refetch: refetchReferrals } = useApi(() => referrals.list(), [])
+
+  // Seed pricing from settings once loaded
+  useEffect(() => {
+    const cfg = settingsData?.season_pricing_config
+    if (Array.isArray(cfg) && cfg.length > 0) {
+      const season = cfg.filter(r => r.label)
+      const special = cfg.filter(r => r.type)
+      if (season.length) setSeasonPricing(season)
+      if (special.length) setSpecialPricing(special)
+    }
+  }, [settingsData])
 
   const codes = codesData?.results || codesData || []
   const cards = cardsData?.results || cardsData || []
@@ -359,8 +373,7 @@ export default function AdminOffers() {
   async function savePricing() {
     setSavingPricing(true)
     try {
-      // Saving to settings as general pricing notes (best-effort)
-      await settings.save({})
+      await settings.save({ season_pricing_config: [...seasonPricing, ...specialPricing] })
       showToast('Pricing saved')
     } catch {
       showToast('Save failed')

@@ -75,3 +75,33 @@ class PostReplyListView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+
+class GroupJoinView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        group = CommunityGroup.objects.get(pk=pk)
+        group.members.add(request.user)
+        return Response({'joined': True})
+
+
+class GroupLeaveView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        group = CommunityGroup.objects.get(pk=pk)
+        group.members.remove(request.user)
+        return Response({'left': True})
+
+
+class GroupPostsView(generics.ListCreateAPIView):
+    serializer_class = GroupPostSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return GroupPost.objects.select_related('author').filter(group_id=self.kwargs['pk'])
+
+    def perform_create(self, serializer):
+        group = CommunityGroup.objects.get(pk=self.kwargs['pk'])
+        serializer.save(author=self.request.user, group=group)

@@ -1,15 +1,120 @@
 import { useState, useRef } from 'react'
 import { useApi } from '../../hooks/useApi'
-import { media } from '../../api'
+import { media, classes } from '../../api'
 import client from '../../api/client'
 import '../StudentsPage.css'
 
 const TYPE_ICON = { video: '🎬', image: '🖼', pdf: '📄' }
+const LEVELS = ['', 'Level 1', 'Level 2', 'Level 3', 'High Tricks', 'All']
+
+function EditMediaModal({ item, onClose, onSaved }) {
+  const [name, setName] = useState(item.name || '')
+  const [mediaType, setMediaType] = useState(item.media_type || 'video')
+  const [level, setLevel] = useState(item.level || '')
+  const [saving, setSaving] = useState(false)
+
+  async function submit(e) {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      await media.update(item.id, { name, media_type: mediaType, level })
+      onSaved()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+      <div style={{ background: '#111', border: '1px solid var(--border)', borderRadius: 12, padding: 28, width: 380, maxWidth: '90vw' }}>
+        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 20 }}>Edit Media</div>
+        <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 6 }}>Name</label>
+            <input required value={name} onChange={e => setName(e.target.value)} style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', fontFamily: 'inherit', fontSize: 13, padding: '8px 12px', boxSizing: 'border-box' }} />
+          </div>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 6 }}>Type</label>
+              <select value={mediaType} onChange={e => setMediaType(e.target.value)} style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', fontFamily: 'inherit', fontSize: 13, padding: '8px 12px' }}>
+                <option value="video">Video</option>
+                <option value="image">Image</option>
+                <option value="pdf">PDF</option>
+              </select>
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 6 }}>Level</label>
+              <select value={level} onChange={e => setLevel(e.target.value)} style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', fontFamily: 'inherit', fontSize: 13, padding: '8px 12px' }}>
+                {LEVELS.map(l => <option key={l} value={l}>{l || 'All levels'}</option>)}
+              </select>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function AssignMediaModal({ item, onClose }) {
+  const { data: sessionsData } = useApi(() => classes.list({ active: true }), [])
+  const sessions = sessionsData?.results || sessionsData || []
+  const [selectedSession, setSelectedSession] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [done, setDone] = useState(false)
+
+  async function assign() {
+    if (!selectedSession) return
+    setSaving(true)
+    try {
+      await client.post(`/api/classes/sessions/${selectedSession}/media/`, { media_item: item.id })
+      setDone(true)
+      setTimeout(onClose, 1400)
+    } catch {
+      await client.patch(`/api/users/media/${item.id}/`, { session: selectedSession })
+      setDone(true)
+      setTimeout(onClose, 1400)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+      <div style={{ background: '#111', border: '1px solid var(--border)', borderRadius: 12, padding: 28, width: 400, maxWidth: '90vw' }}>
+        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Assign to Class</div>
+        <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 20 }}>{item.name}</div>
+        {done ? (
+          <div style={{ color: 'var(--lime)', fontSize: 14, textAlign: 'center', padding: '12px 0' }}>Assigned!</div>
+        ) : (
+          <>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 6 }}>Select class</label>
+              <select value={selectedSession} onChange={e => setSelectedSession(e.target.value)} style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', fontFamily: 'inherit', fontSize: 13, padding: '8px 12px' }}>
+                <option value="">— choose a class —</option>
+                {sessions.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+              <button className="btn btn-lime btn-sm" onClick={assign} disabled={saving || !selectedSession}>{saving ? 'Assigning…' : 'Assign'}</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
 
 export default function AdminMediaLibrary() {
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('All types')
   const [levelFilter, setLevelFilter] = useState('All levels')
+  const [editItem, setEditItem] = useState(null)
+  const [assignItem, setAssignItem] = useState(null)
 
   // URL modal state
   const [showUrlModal, setShowUrlModal] = useState(false)
@@ -134,8 +239,8 @@ export default function AdminMediaLibrary() {
                     {sizeLabel ? ` · ${sizeLabel}` : ''}
                   </div>
                   <div style={{ display: 'flex', gap: 4 }}>
-                    <button className="btn btn-ghost btn-xs" onClick={e => e.stopPropagation()}>Edit</button>
-                    <button className="btn btn-ghost btn-xs" onClick={e => e.stopPropagation()}>Assign</button>
+                    <button className="btn btn-ghost btn-xs" onClick={e => { e.stopPropagation(); setEditItem(m) }}>Edit</button>
+                    <button className="btn btn-ghost btn-xs" onClick={e => { e.stopPropagation(); setAssignItem(m) }}>Assign</button>
                   </div>
                 </div>
               </div>
@@ -143,6 +248,9 @@ export default function AdminMediaLibrary() {
           })}
         </div>
       )}
+
+      {editItem && <EditMediaModal item={editItem} onClose={() => setEditItem(null)} onSaved={() => { setEditItem(null); refetch() }} />}
+      {assignItem && <AssignMediaModal item={assignItem} onClose={() => setAssignItem(null)} />}
 
       {/* URL Modal */}
       {showUrlModal && (
