@@ -20,7 +20,7 @@ class UserSerializer(serializers.ModelSerializer):
             'id', 'username', 'email', 'first_name', 'last_name', 'display_name',
             'role', 'pronouns', 'phone', 'date_of_birth', 'profile_photo',
             'emergency_contact_name', 'emergency_contact_phone', 'internal_notes', 'is_active',
-            'last_login', 'stripe_customer_id', 'enrolled_seasons_summary',
+            'last_login', 'stripe_customer_id', 'enrolled_seasons_summary', 'pay_rate',
             'perm_billing', 'perm_edit_profiles', 'perm_approve_plans', 'perm_bulk_email', 'perm_reports',
         )
         read_only_fields = ('id',)

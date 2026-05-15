@@ -14,6 +14,8 @@ function CreateCampaignModal({ onClose, onCreated, existing }) {
   })
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState(null)
+  const { data: listsData } = useApi(() => emailListsApi.list())
+  const emailLists = listsData?.results || listsData || []
 
   function set(field, value) {
     setForm(f => ({ ...f, [field]: value }))
@@ -65,7 +67,10 @@ function CreateCampaignModal({ onClose, onCreated, existing }) {
           </div>
           <div style={{ marginBottom: 14 }}>
             <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 4 }}>List</label>
-            <input className="input" value={form.list_name} onChange={e => set('list_name', e.target.value)} placeholder="e.g. All Active Students" style={{ width: '100%' }} />
+            <select className="input" value={form.list_name} onChange={e => set('list_name', e.target.value)} style={{ width: '100%' }}>
+              <option value="">All active students</option>
+              {emailLists.map(l => <option key={l.id} value={l.name}>{l.name}</option>)}
+            </select>
           </div>
           <div style={{ marginBottom: 20 }}>
             <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 4 }}>Status</label>

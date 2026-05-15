@@ -783,7 +783,37 @@ class EmailCampaignSendView(APIView):
         if campaign.status == 'sent':
             return Response({'detail': 'Campaign has already been sent.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        recipients = User.objects.filter(role='student', is_active=True).exclude(email='')
+        base_qs = User.objects.filter(role='student', is_active=True).exclude(email='')
+
+        if campaign.list_name:
+            email_list = EmailList.objects.filter(name__iexact=campaign.list_name).first()
+            slug = (email_list.query_slug if email_list else '').lower()
+            if slug == 'overdue':
+                from decimal import Decimal
+                from apps.payments.models import Payment
+                paid_subq = Payment.objects.filter(
+                    student=OuterRef('pk'), payment_type__in=['payment', 'credit'],
+                ).values('student').annotate(s=Sum('amount')).values('s')
+                charged_subq = Payment.objects.filter(
+                    student=OuterRef('pk'), payment_type__in=['charge', 'no_show_fee'],
+                ).values('student').annotate(s=Sum('amount')).values('s')
+                overdue_ids = (
+                    base_qs
+                    .annotate(
+                        total_paid=Coalesce(Subquery(paid_subq), Decimal('0')),
+                        total_charged=Coalesce(Subquery(charged_subq), Decimal('0')),
+                    )
+                    .filter(total_charged__gt=models.F('total_paid'))
+                    .values_list('id', flat=True)
+                )
+                base_qs = base_qs.filter(id__in=overdue_ids)
+            elif slug == 'enrolled':
+                from apps.enrolments.models import Enrolment
+                enrolled_ids = Enrolment.objects.filter(status='active').values_list('student_id', flat=True)
+                base_qs = base_qs.filter(id__in=enrolled_ids)
+            # 'active' or unrecognised slug → keep base_qs (all active students)
+
+        recipients = base_qs
         sent = 0
         for user in recipients:
             try:

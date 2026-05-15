@@ -11,6 +11,12 @@ export default function AddEditStaffModal({ staff, onClose, onSaved }) {
     phone: staff?.phone || '',
     pronouns: staff?.pronouns || '',
     role: staff?.role || 'instructor',
+    pay_rate: staff?.pay_rate || '',
+    perm_billing: staff?.perm_billing || false,
+    perm_edit_profiles: staff?.perm_edit_profiles || false,
+    perm_approve_plans: staff?.perm_approve_plans || false,
+    perm_bulk_email: staff?.perm_bulk_email || false,
+    perm_reports: staff?.perm_reports || false,
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -64,6 +70,28 @@ export default function AddEditStaffModal({ staff, onClose, onSaved }) {
               <option value="admin">Admin / Founder</option>
             </select>
           </div>
+          <div className="field">
+            <label>Pay Rate ($/class)</label>
+            <input type="number" step="0.01" min="0" value={form.pay_rate} onChange={e => set('pay_rate', e.target.value)} placeholder="e.g. 45.00" />
+          </div>
+
+          {form.role === 'instructor' && (
+            <div style={{ background: 'rgba(176,160,255,0.06)', border: '1px solid rgba(176,160,255,0.15)', borderRadius: 8, padding: '12px 14px', marginBottom: 12 }}>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--lav)', fontWeight: 600, marginBottom: 10 }}>Extra Permissions</div>
+              {[
+                ['perm_billing', 'Billing & payments'],
+                ['perm_edit_profiles', 'Edit student profiles'],
+                ['perm_approve_plans', 'Approve payment plans'],
+                ['perm_bulk_email', 'Send bulk emails'],
+                ['perm_reports', 'View reports'],
+              ].map(([key, label]) => (
+                <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', marginBottom: 6 }}>
+                  <input type="checkbox" checked={form[key]} onChange={e => set(key, e.target.checked)} />
+                  {label}
+                </label>
+              ))}
+            </div>
+          )}
 
           {!isEdit && (
             <div style={{ background: 'rgba(204,255,0,0.06)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: 'var(--grey)', marginBottom: 12 }}>

@@ -21,6 +21,8 @@ class User(AbstractUser):
     default_payment_method_id = models.CharField(max_length=100, blank=True)
     auto_charge_saved_card = models.BooleanField(default=False)
 
+    pay_rate = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text='Per-class pay rate for instructors')
+
     # Staff permission flags (only meaningful for instructor/admin/staff roles)
     perm_billing = models.BooleanField(default=False)
     perm_edit_profiles = models.BooleanField(default=False)
