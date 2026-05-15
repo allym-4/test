@@ -2,6 +2,70 @@ import { useState } from 'react'
 import { useApi } from '../../hooks/useApi'
 import { classes, users, studios } from '../../api'
 
+function WorkshopModal({ w, instructorList, studioList, onSave, onClose }) {
+  const [form, setForm] = useState({
+    name: w?.name || '', description: w?.description || '',
+    date: w?.date || '', start_time: w?.start_time?.slice(0, 5) || '10:00',
+    end_time: w?.end_time?.slice(0, 5) || '12:00', price: w?.price || '',
+    capacity: w?.capacity || 12, instructor: w?.instructor || '', studio: w?.studio || '',
+    is_active: w?.is_active ?? true,
+  })
+  const [saving, setSaving] = useState(false)
+  function set(k, v) { setForm(f => ({ ...f, [k]: v })) }
+
+  async function submit(e) {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      if (w?.id) await classes.workshops.update(w.id, form)
+      else await classes.workshops.create(form)
+      onSave()
+    } finally { setSaving(false) }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 500 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>{w?.id ? 'Edit' : 'New'} Workshop</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <form className="sd-body" onSubmit={submit}>
+          <div className="field"><label>Name</label><input required value={form.name} onChange={e => set('name', e.target.value)} /></div>
+          <div className="field"><label>Description</label><textarea rows={2} value={form.description} onChange={e => set('description', e.target.value)} style={{ width: '100%', background: 'var(--input)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', padding: '9px 12px', fontSize: 13, resize: 'vertical' }} /></div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+            <div className="field"><label>Date</label><input required type="date" value={form.date} onChange={e => set('date', e.target.value)} /></div>
+            <div className="field"><label>Start</label><input required type="time" value={form.start_time} onChange={e => set('start_time', e.target.value)} /></div>
+            <div className="field"><label>End</label><input required type="time" value={form.end_time} onChange={e => set('end_time', e.target.value)} /></div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="field"><label>Price ($)</label><input required type="number" step="0.01" min="0" value={form.price} onChange={e => set('price', e.target.value)} /></div>
+            <div className="field"><label>Capacity</label><input required type="number" min="1" value={form.capacity} onChange={e => set('capacity', parseInt(e.target.value))} /></div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="field"><label>Instructor</label>
+              <select value={form.instructor} onChange={e => set('instructor', e.target.value)}>
+                <option value="">— none —</option>
+                {instructorList.map(i => <option key={i.id} value={i.id}>{i.display_name || i.first_name}</option>)}
+              </select>
+            </div>
+            <div className="field"><label>Studio</label>
+              <select value={form.studio} onChange={e => set('studio', e.target.value)}>
+                <option value="">— none —</option>
+                {studioList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const TYPE_LABELS = { course: 'Course', casual: 'Drop-In' }
 
@@ -105,17 +169,22 @@ function ClassModal({ cls, instructors, studios, onSave, onClose }) {
 }
 
 export default function AdminClasses() {
+  const [tab, setTab] = useState('classes')
   const [typeFilter, setTypeFilter] = useState('all')
-  const [modal, setModal] = useState(null) // null | 'create-course' | 'create-casual' | classObj
+  const [modal, setModal] = useState(null)
   const [deleting, setDeleting] = useState(null)
+  const [workshopModal, setWorkshopModal] = useState(null)
+  const [deletingWorkshop, setDeletingWorkshop] = useState(null)
 
   const { data: sessData, loading, refetch } = useApi(() => classes.list(), [])
   const { data: instrData } = useApi(() => users.list({ role: 'instructor' }), [])
   const { data: studioData } = useApi(() => studios.list(), [])
+  const { data: workshopsData, loading: loadingWorkshops, refetch: refetchWorkshops } = useApi(() => classes.workshops.list(), [])
 
   const sessions = sessData?.results || sessData || []
   const instructors = instrData?.results || instrData || []
   const studioList = studioData?.results || studioData || []
+  const workshopList = workshopsData?.results || workshopsData || []
 
   const filtered = typeFilter === 'all' ? sessions
     : sessions.filter(s => s.session_type === typeFilter)
@@ -128,6 +197,17 @@ export default function AdminClasses() {
       refetch()
     } finally {
       setDeleting(null)
+    }
+  }
+
+  async function handleDeleteWorkshop(id) {
+    if (!confirm('Delete this workshop? This cannot be undone.')) return
+    setDeletingWorkshop(id)
+    try {
+      await classes.workshops.delete(id)
+      refetchWorkshops()
+    } finally {
+      setDeletingWorkshop(null)
     }
   }
 
@@ -146,87 +226,171 @@ export default function AdminClasses() {
           onClose={() => setModal(null)}
         />
       )}
+      {workshopModal !== null && (
+        <WorkshopModal
+          w={workshopModal._new ? null : workshopModal}
+          instructorList={instructors}
+          studioList={studioList}
+          onSave={() => { setWorkshopModal(null); refetchWorkshops() }}
+          onClose={() => setWorkshopModal(null)}
+        />
+      )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
         <div>
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, marginBottom: 4 }}>Classes</div>
           <div style={{ fontSize: 13, color: 'var(--grey)' }}>Manage all class types available in your studio</div>
         </div>
-        <div style={{ position: 'relative' }}>
-          <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {tab === 'classes' && <>
             <button className="btn btn-primary btn-sm" onClick={() => openCreate('course')}>+ Course</button>
             <button className="btn btn-ghost btn-sm" onClick={() => openCreate('casual')}>+ Drop-In</button>
-          </div>
+          </>}
+          {tab === 'workshops' && (
+            <button className="btn btn-primary btn-sm" onClick={() => setWorkshopModal({ _new: true })}>+ Workshop</button>
+          )}
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
-        {[['all', 'All Types'], ['course', 'Course'], ['casual', 'Drop-In']].map(([v, l]) => (
-          <button
-            key={v}
-            onClick={() => setTypeFilter(v)}
-            style={{
-              padding: '5px 14px', borderRadius: 20, fontSize: 12, border: '1px solid var(--border)',
-              background: typeFilter === v ? 'var(--lime)' : 'transparent',
-              color: typeFilter === v ? '#000' : 'var(--grey)',
-              cursor: 'pointer',
-            }}
-          >{l}</button>
+      <div className="subtabs" style={{ marginBottom: 20 }}>
+        {[['classes', 'Recurring Classes'], ['workshops', 'Workshops']].map(([key, label]) => (
+          <div key={key} className={`subtab ${tab === key ? 'active' : ''}`} onClick={() => setTab(key)}>{label}</div>
         ))}
       </div>
 
-      {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>
-      ) : (
-        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Name</th>
-                <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Type</th>
-                <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Day / Time</th>
-                <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Instructor</th>
-                <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Cap</th>
-                <th style={{ padding: '10px 16px', textAlign: 'right', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 ? (
-                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--grey)', fontSize: 13 }}>No classes yet.</td></tr>
-              ) : filtered.map((s, i) => (
-                <tr key={s.id} style={{ borderBottom: i < filtered.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                  <td style={{ padding: '12px 16px' }}>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{s.name}</div>
-                    {s.level && <div style={{ fontSize: 11, color: 'var(--grey)' }}>{s.level}</div>}
-                  </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span className={`tag ${s.session_type === 'course' ? 'tag-lav' : 'tag-amber'}`} style={{ fontSize: 10 }}>
-                      {TYPE_LABELS[s.session_type] || s.session_type}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--grey)' }}>
-                    {DAYS[s.day_of_week]} · {s.start_time?.slice(0, 5)}
-                  </td>
-                  <td style={{ padding: '12px 16px', fontSize: 12 }}>
-                    {s.instructor_detail?.display_name || <span style={{ color: 'var(--grey)' }}>—</span>}
-                  </td>
-                  <td style={{ padding: '12px 16px', fontSize: 12 }}>{s.capacity}</td>
-                  <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                      <button className="btn btn-ghost btn-xs" onClick={() => setModal(s)}>Edit</button>
-                      <button
-                        className="btn btn-ghost btn-xs"
-                        onClick={() => handleDelete(s.id)}
-                        disabled={deleting === s.id}
-                        style={{ color: 'var(--red)' }}
-                      >{deleting === s.id ? '…' : 'Delete'}</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {tab === 'classes' && (
+        <>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+            {[['all', 'All Types'], ['course', 'Course'], ['casual', 'Drop-In']].map(([v, l]) => (
+              <button
+                key={v}
+                onClick={() => setTypeFilter(v)}
+                style={{
+                  padding: '5px 14px', borderRadius: 20, fontSize: 12, border: '1px solid var(--border)',
+                  background: typeFilter === v ? 'var(--lime)' : 'transparent',
+                  color: typeFilter === v ? '#000' : 'var(--grey)',
+                  cursor: 'pointer',
+                }}
+              >{l}</button>
+            ))}
+          </div>
+
+          {loading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>
+          ) : (
+            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Name</th>
+                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Type</th>
+                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Day / Time</th>
+                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Instructor</th>
+                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Cap</th>
+                    <th style={{ padding: '10px 16px', textAlign: 'right', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr><td colSpan={6} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--grey)', fontSize: 13 }}>No classes yet.</td></tr>
+                  ) : filtered.map((s, i) => (
+                    <tr key={s.id} style={{ borderBottom: i < filtered.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                      <td style={{ padding: '12px 16px' }}>
+                        <div style={{ fontWeight: 600, fontSize: 13 }}>{s.name}</div>
+                        {s.level && <div style={{ fontSize: 11, color: 'var(--grey)' }}>{s.level}</div>}
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <span className={`tag ${s.session_type === 'course' ? 'tag-lav' : 'tag-amber'}`} style={{ fontSize: 10 }}>
+                          {TYPE_LABELS[s.session_type] || s.session_type}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--grey)' }}>
+                        {DAYS[s.day_of_week]} · {s.start_time?.slice(0, 5)}
+                      </td>
+                      <td style={{ padding: '12px 16px', fontSize: 12 }}>
+                        {s.instructor_detail?.display_name || <span style={{ color: 'var(--grey)' }}>—</span>}
+                      </td>
+                      <td style={{ padding: '12px 16px', fontSize: 12 }}>{s.capacity}</td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                          <button className="btn btn-ghost btn-xs" onClick={() => setModal(s)}>Edit</button>
+                          <button
+                            className="btn btn-ghost btn-xs"
+                            onClick={() => handleDelete(s.id)}
+                            disabled={deleting === s.id}
+                            style={{ color: 'var(--red)' }}
+                          >{deleting === s.id ? '…' : 'Delete'}</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+
+      {tab === 'workshops' && (
+        <>
+          {loadingWorkshops ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>
+          ) : (
+            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Workshop</th>
+                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Date</th>
+                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Time</th>
+                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Instructor</th>
+                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Price</th>
+                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Spots</th>
+                    <th style={{ padding: '10px 16px', textAlign: 'right', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {workshopList.length === 0 ? (
+                    <tr><td colSpan={7} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--grey)', fontSize: 13 }}>No workshops yet. Click "+ Workshop" to create one.</td></tr>
+                  ) : workshopList.map((w, i) => (
+                    <tr key={w.id} style={{ borderBottom: i < workshopList.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                      <td style={{ padding: '12px 16px' }}>
+                        <div style={{ fontWeight: 600, fontSize: 13 }}>{w.name}</div>
+                        {!w.is_active && <span className="tag tag-grey" style={{ fontSize: 10, marginTop: 2 }}>Inactive</span>}
+                      </td>
+                      <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--grey)' }}>
+                        {w.date ? new Date(w.date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                      </td>
+                      <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--grey)' }}>
+                        {w.start_time?.slice(0, 5)} – {w.end_time?.slice(0, 5)}
+                      </td>
+                      <td style={{ padding: '12px 16px', fontSize: 12 }}>
+                        {w.instructor_detail?.display_name || <span style={{ color: 'var(--grey)' }}>—</span>}
+                      </td>
+                      <td style={{ padding: '12px 16px', fontSize: 12 }}>${parseFloat(w.price || 0).toFixed(2)}</td>
+                      <td style={{ padding: '12px 16px', fontSize: 12 }}>
+                        <span style={{ color: w.spots_left === 0 ? 'var(--red)' : 'inherit' }}>
+                          {w.enrolled_count}/{w.capacity}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                          <button className="btn btn-ghost btn-xs" onClick={() => setWorkshopModal(w)}>Edit</button>
+                          <button
+                            className="btn btn-ghost btn-xs"
+                            onClick={() => handleDeleteWorkshop(w.id)}
+                            disabled={deletingWorkshop === w.id}
+                            style={{ color: 'var(--red)' }}
+                          >{deletingWorkshop === w.id ? '…' : 'Delete'}</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
     </div>
   )
