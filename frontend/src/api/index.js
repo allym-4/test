@@ -116,6 +116,7 @@ export const helpdesk = {
   conversations: (params) => client.get('/api/helpdesk/conversations/', { params }),
   createConversation: (data) => client.post('/api/helpdesk/conversations/', data),
   getConversation: (id) => client.get(`/api/helpdesk/conversations/${id}/`),
+  updateConversation: (id, data) => client.patch(`/api/helpdesk/conversations/${id}/`, data),
   dms: (convId) => client.get(`/api/helpdesk/conversations/${convId}/messages/`),
   sendDm: (convId, data) => client.post(`/api/helpdesk/conversations/${convId}/messages/`, data),
   myConversation: () => client.get('/api/helpdesk/my-conversation/'),

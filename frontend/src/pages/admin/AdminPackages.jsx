@@ -95,7 +95,7 @@ export default function AdminPackages() {
                   <td>{p.classes}</td>
                   <td style={{ color: 'var(--lime)', fontWeight: 600 }}>${p.price}</td>
                   <td style={{ color: 'var(--grey)', fontSize: 12 }}>{p.expiry}</td>
-                  <td>{p.activeStudents}</td>
+                  <td>{p.active_count ?? 0}</td>
                   <td>
                     <div onClick={() => toggleVisible(p)} style={{ width: 36, height: 20, borderRadius: 10, background: p.visible ? 'var(--lime)' : '#333', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', display: 'inline-block' }}>
                       <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: p.visible ? 19 : 3, transition: 'left 0.2s' }} />

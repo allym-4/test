@@ -135,7 +135,11 @@ export default function AdminMessages() {
     helpdesk.dms(activeId).then(r => {
       setMessages(r.data.results || r.data)
     }).finally(() => setLoadingThread(false))
-  }, [activeId])
+    const convo = conversations.find(c => c.id === activeId)
+    if (convo?.admin_unread) {
+      helpdesk.updateConversation(activeId, { admin_unread: false }).then(() => refetch())
+    }
+  }, [activeId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (threadRef.current) threadRef.current.scrollTop = threadRef.current.scrollHeight
@@ -160,7 +164,7 @@ export default function AdminMessages() {
   }
 
   const filtered = conversations.filter(c => {
-    if (tab === 'unread') return false
+    if (tab === 'unread') return c.admin_unread === true
     if (search && !c.student_detail?.display_name?.toLowerCase().includes(search.toLowerCase())) return false
     return true
   })

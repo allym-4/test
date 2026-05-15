@@ -71,7 +71,7 @@ class ConversationListView(generics.ListCreateAPIView):
         return Conversation.objects.select_related('student').prefetch_related('messages__sender')
 
 
-class ConversationDetailView(generics.RetrieveAPIView):
+class ConversationDetailView(generics.RetrieveUpdateAPIView):
     queryset = Conversation.objects.select_related('student').prefetch_related('messages__sender')
     serializer_class = ConversationSerializer
     permission_classes = [IsAdminOrInstructor]
@@ -87,7 +87,8 @@ class DirectMessageListView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         conv = Conversation.objects.get(pk=self.kwargs['conv_pk'])
         serializer.save(sender=self.request.user, conversation=conv)
-        conv.save(update_fields=['updated_at'])
+        conv.admin_unread = False
+        conv.save(update_fields=['updated_at', 'admin_unread'])
 
 
 class MyConversationView(APIView):
@@ -106,7 +107,8 @@ class MyConversationView(APIView):
         if not body:
             return Response({'detail': 'body required'}, status=400)
         msg = DirectMessage.objects.create(conversation=conv, sender=request.user, body=body)
-        conv.save(update_fields=['updated_at'])
+        conv.admin_unread = True
+        conv.save(update_fields=['updated_at', 'admin_unread'])
         return Response(DirectMessageSerializer(msg).data, status=201)
 
 

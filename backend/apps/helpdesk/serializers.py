@@ -64,7 +64,7 @@ class ConversationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Conversation
-        fields = ('id', 'student', 'student_detail', 'messages', 'message_count', 'last_message_at', 'created_at', 'updated_at')
+        fields = ('id', 'student', 'student_detail', 'messages', 'message_count', 'last_message_at', 'admin_unread', 'created_at', 'updated_at')
         read_only_fields = ('id', 'created_at', 'updated_at')
 
     def get_last_message_at(self, obj):

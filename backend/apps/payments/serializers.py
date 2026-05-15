@@ -60,10 +60,15 @@ class StudentBalanceSerializer(serializers.Serializer):
 
 
 class PackageSerializer(serializers.ModelSerializer):
+    active_count = serializers.SerializerMethodField()
+
     class Meta:
         model = Package
-        fields = ('id', 'name', 'num_classes', 'price', 'expiry_days', 'is_active', 'is_intro', 'description', 'created_at')
-        read_only_fields = ('id', 'created_at')
+        fields = ('id', 'name', 'num_classes', 'price', 'expiry_days', 'is_active', 'is_intro', 'description', 'created_at', 'active_count')
+        read_only_fields = ('id', 'created_at', 'active_count')
+
+    def get_active_count(self, obj):
+        return obj.purchases.filter(is_active=True).count()
 
 
 class StudentPackageSerializer(serializers.ModelSerializer):
