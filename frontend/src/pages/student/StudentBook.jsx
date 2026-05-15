@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useApi } from '../../hooks/useApi'
 import { useAuth } from '../../contexts/AuthContext'
-import { classes, enrolments, settings as settingsApi, seasons as seasonsApi, payments as paymentsApi } from '../../api'
+import { classes, enrolments, settings as settingsApi, seasons as seasonsApi, payments as paymentsApi, attendance as attendanceApi } from '../../api'
 import CheckoutModal from '../../components/CheckoutModal'
 
 const DAYS_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -213,10 +213,27 @@ export default function StudentBook() {
   const { data: studioSettings } = useApi(() => settingsApi.get())
   const { data: workshopsData, loading: loadingWorkshops, refetch: refetchWorkshops } = useApi(() => classes.workshops.list())
   const { data: seasonsData } = useApi(() => seasonsApi.list())
+  const { data: activeEnrolData } = useApi(() => user?.id ? enrolments.list({ student: user.id, status: 'active' }) : null, [user?.id])
+  const { data: creditsData, refetch: refetchCredits } = useApi(() => user?.id ? attendanceApi.makeupCredits.list({ student: user.id, status: 'available' }) : null, [user?.id])
 
   const priceCasual = parseFloat(studioSettings?.price_casual || 35)
   const priceSeason = parseFloat(studioSettings?.price_season || 270)
   const priceTrial = parseFloat(studioSettings?.price_trial || 25)
+
+  // Season multi-class pricing: look up price for (current active enrolments + 1)
+  const activeSeasonCount = (activeEnrolData?.results || activeEnrolData || []).filter(e => e.enrolment_type === 'course').length
+  const seasonPricingConfig = (studioSettings?.season_pricing_config || []).filter(r => r.label)
+  function getSeasonPrice(addingCount = 1) {
+    const totalClasses = activeSeasonCount + addingCount
+    const tier = seasonPricingConfig.find(r => {
+      const n = parseInt((r.label || '').match(/(\d+)/)?.[1] || '0')
+      return n === totalClasses
+    })
+    return tier ? parseFloat(tier.price) : priceSeason
+  }
+  const seasonPrice = getSeasonPrice(1)
+
+  const availableCredits = (creditsData?.results || creditsData || []).length
 
   const allSeasons = seasonsData?.results || seasonsData || []
   const now = new Date()
@@ -266,15 +283,33 @@ export default function StudentBook() {
     }
   }
 
-  function proceedToCheckout(finalPrice) {
+  async function proceedToCheckout(finalPrice) {
     if (!cart) return
     const { session, type } = cart
+    const effectivePrice = finalPrice ?? cart.price
     const isCasual = type === 'casual'
     const isTrial = type === 'trial'
     const description = isTrial
       ? `Trial Class — ${session.name}`
-      : `${session.name} — ${isCasual ? 'Casual' : 'Season 4'}`
-    setCheckout({ session, type, amount: finalPrice ?? cart.price, description })
+      : type === 'catchup'
+      ? `Catch-up — ${session.name}`
+      : `${session.name} — ${isCasual ? 'Casual' : 'Season'}`
+
+    // Catchup = zero cost: skip Stripe, create enrolment directly
+    if (type === 'catchup' && effectivePrice === 0) {
+      try {
+        await enrolments.create({ session: session.id, status: 'active', enrolment_type: 'catchup' })
+        refetchCredits()
+        setBooked(b => [...b, session.id])
+        setCart(null)
+      } catch (err) {
+        // surface error if credit check fails on backend
+        alert(err.response?.data?.detail || 'Booking failed — please try again')
+      }
+      return
+    }
+
+    setCheckout({ session, type, amount: effectivePrice, description })
   }
 
   async function cancelWorkshop(workshop) {
@@ -316,8 +351,9 @@ export default function StudentBook() {
       setAppliedPromoCode('')
     }
     try {
-      await enrolments.create({ session: session.id, student: user?.id, status: 'active', enrolment_type: type || 'casual' })
+      await enrolments.create({ session: session.id, status: 'active', enrolment_type: type || 'casual' })
     } catch {}
+    if (type === 'catchup') refetchCredits()
     setBooked(b => [...b, session.id])
   }
 
@@ -394,7 +430,7 @@ export default function StudentBook() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
               {sessions.length === 0 ? <EmptyState /> : sessions.map(s => (
-                <ClassCard key={s.id} session={s} onAddToCart={(s) => addToCart(s, 'season', priceSeason)} priceCasual={priceSeason} cartSessionId={cartSessionId} />
+                <ClassCard key={s.id} session={s} onAddToCart={(s) => addToCart(s, 'season', seasonPrice)} priceCasual={seasonPrice} cartSessionId={cartSessionId} />
               ))}
             </div>
           )}
@@ -506,32 +542,48 @@ export default function StudentBook() {
 
       {tab === 'catchup' && (
         <div>
-          <div style={{ background: 'rgba(255,170,0,0.06)', border: '1px solid rgba(255,170,0,0.2)', borderRadius: 12, padding: '14px 18px', marginBottom: 20 }}>
-            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>Catch-up Credits</div>
+          <div style={{
+            background: availableCredits > 0 ? 'rgba(204,255,0,0.06)' : 'rgba(255,68,68,0.06)',
+            border: `1px solid ${availableCredits > 0 ? 'rgba(204,255,0,0.2)' : 'rgba(255,68,68,0.2)'}`,
+            borderRadius: 12, padding: '14px 18px', marginBottom: 20,
+          }}>
+            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>
+              {availableCredits > 0
+                ? `You have ${availableCredits} catch-up credit${availableCredits !== 1 ? 's' : ''} available`
+                : 'No catch-up credits available'}
+            </div>
             <div style={{ fontSize: 12, color: 'var(--grey)' }}>
-              If you have an approved absence this season, you may have a catch-up credit. Credits expire 60 days after issue and can be used for any equivalent or lower level class.
+              {availableCredits > 0
+                ? 'Each credit lets you attend one class at no charge. Credits expire 60 days after issue.'
+                : 'Credits are issued when you notify us of an absence within the cancellation window. Contact the studio if you believe this is incorrect.'}
             </div>
           </div>
 
-          {loading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-              {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-              {sessions.length === 0 ? <EmptyState /> : sessions.map(s => (
-                <div key={s.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 18px' }}>
-                  <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, marginBottom: 4 }}>{s.name}</div>
-                  <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 10 }}>
-                    {DAYS[s.day_of_week]} · {s.start_time?.slice(0, 5)} · {s.studio_detail?.name}
+          {availableCredits > 0 && (
+            loading ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+                {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+                {sessions.length === 0 ? <EmptyState /> : sessions.map(s => (
+                  <div key={s.id} style={{ background: 'var(--card)', border: `1px solid ${cartSessionId === s.id ? 'var(--lime)' : 'var(--border)'}`, borderRadius: 12, padding: '16px 18px' }}>
+                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, marginBottom: 4 }}>{s.name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 10 }}>
+                      {DAYS[s.day_of_week]} · {s.start_time?.slice(0, 5)} · {s.studio_detail?.name}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span className="tag tag-lime" style={{ fontSize: 10 }}>Uses 1 credit</span>
+                      {cartSessionId === s.id ? (
+                        <span style={{ fontSize: 12, color: 'var(--lime)', fontWeight: 700 }}>✓ Added</span>
+                      ) : (
+                        <button className="btn btn-lime btn-sm" onClick={() => addToCart(s, 'catchup', 0)}>Book (Credit)</button>
+                      )}
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span className="tag tag-lime" style={{ fontSize: 10 }}>Uses 1 credit</span>
-                    <button className="btn btn-lime btn-sm" onClick={() => addToCart(s, 'catchup', 0)}>Book (Credit)</button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )
           )}
         </div>
       )}

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useApi } from '../hooks/useApi'
-import { payments } from '../api'
+import { payments, notifications as notificationsApi, announcements as announcementsApi } from '../api'
 import './StudentShell.css'
 
 const NAV = [
@@ -26,9 +26,17 @@ export default function StudentShell() {
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
   const { data: balData } = useApi(() => user ? payments.balance(user.id) : null, [user?.id])
+  const { data: notifData } = useApi(() => notificationsApi.list(), [])
+  const { data: annData } = useApi(() => announcementsApi.list({ note_type: 'announcement' }), [])
 
   const bal = balData ? parseFloat(balData.balance) : null
   const isOwing = bal !== null && bal < 0
+
+  const allNotifs = notifData?.results || notifData || []
+  const allAnns = annData?.results || annData || []
+  const unreadNotifs = allNotifs.filter(n => !n.read).length
+  const unackAnns = allAnns.filter(a => a.requires_acknowledgement && !a.is_acknowledged).length
+  const notifBadge = unreadNotifs + unackAnns
 
   function handleLogout() {
     logout()
@@ -46,7 +54,7 @@ export default function StudentShell() {
         </div>
 
         <div className="student-sidebar-nav">
-          {NAV.map(({ to, label, icon, end }) => (
+          {NAV.map(({ to, label, icon, end, badge }) => (
             <NavLink
               key={to}
               to={to}
@@ -55,7 +63,13 @@ export default function StudentShell() {
               onClick={() => setMobileOpen(false)}
             >
               <span className="student-nav-icon">{icon}</span>
-              <span>{label}</span>
+              <span style={{ flex: 1 }}>{label}</span>
+              {badge && notifBadge > 0 && (
+                <span style={{
+                  background: 'var(--lime)', color: '#000', borderRadius: 10,
+                  fontSize: 10, fontWeight: 700, padding: '1px 6px', minWidth: 18, textAlign: 'center',
+                }}>{notifBadge}</span>
+              )}
             </NavLink>
           ))}
 

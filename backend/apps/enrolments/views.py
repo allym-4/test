@@ -8,30 +8,61 @@ from apps.users.permissions import IsAdminOrInstructor
 
 class EnrolmentListView(generics.ListCreateAPIView):
     serializer_class = EnrolmentSerializer
-    permission_classes = [IsAdminOrInstructor]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        user = self.request.user
         qs = Enrolment.objects.select_related('student', 'class_session__studio')
-        student_id = self.request.query_params.get('student')
-        session_id = self.request.query_params.get('session')
-        status = self.request.query_params.get('status')
-        if student_id:
-            qs = qs.filter(student_id=student_id)
-        if session_id:
-            qs = qs.filter(class_session_id=session_id)
-        if status:
-            qs = qs.filter(status=status)
+        # Students can only see their own enrolments
+        if user.role == 'student':
+            qs = qs.filter(student=user)
+        else:
+            student_id = self.request.query_params.get('student')
+            session_id = self.request.query_params.get('session')
+            status_ = self.request.query_params.get('status')
+            if student_id:
+                qs = qs.filter(student_id=student_id)
+            if session_id:
+                qs = qs.filter(class_session_id=session_id)
+            if status_:
+                qs = qs.filter(status=status_)
         enrolment_type = self.request.query_params.get('enrolment_type')
         if enrolment_type:
             types = [t.strip() for t in enrolment_type.split(',') if t.strip()]
             qs = qs.filter(enrolment_type__in=types)
         return qs
 
+    def perform_create(self, serializer):
+        user = self.request.user
+        # Students can only enrol themselves
+        if user.role == 'student':
+            enrolment = serializer.save(student=user)
+        else:
+            enrolment = serializer.save()
+
+        # Deduct a makeup credit for catchup enrolments
+        if enrolment.enrolment_type in ('catchup', 'catch_up'):
+            from apps.attendance.models import MakeupCredit
+            from django.utils import timezone
+            credit = MakeupCredit.objects.filter(
+                student=enrolment.student, status='available'
+            ).order_by('created_at').first()
+            if credit:
+                credit.status = 'used'
+                credit.used_at = timezone.now()
+                credit.save(update_fields=['status', 'used_at'])
+
 
 class EnrolmentDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Enrolment.objects.select_related('student', 'class_session__studio')
     serializer_class = EnrolmentSerializer
-    permission_classes = [IsAdminOrInstructor]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = Enrolment.objects.select_related('student', 'class_session__studio')
+        if user.role == 'student':
+            return qs.filter(student=user)
+        return qs
 
 
 class ConvertTrialView(APIView):
