@@ -1,4 +1,6 @@
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
+from rest_framework.views import APIView
+from rest_framework.response import Response
 from .models import Enrolment
 from .serializers import EnrolmentSerializer
 from apps.users.permissions import IsAdminOrInstructor
@@ -30,3 +32,53 @@ class EnrolmentDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Enrolment.objects.select_related('student', 'class_session__studio')
     serializer_class = EnrolmentSerializer
     permission_classes = [IsAdminOrInstructor]
+
+
+class ConvertTrialView(APIView):
+    """Convert a trial enrolment to a full course enrolment and record the payment."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        try:
+            enrolment = Enrolment.objects.select_related('student', 'class_session').get(pk=pk)
+        except Enrolment.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if enrolment.enrolment_type != 'trial':
+            return Response({'detail': 'Enrolment is not a trial.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        from apps.payments.models import Payment
+        from apps.users.models import StudioSettings
+
+        studio = StudioSettings.get()
+        season_price = float(studio.price_season)
+        trial_price = float(studio.price_trial)
+
+        # Amount owed = season price minus what they already paid for the trial
+        amount_paid = float(request.data.get('amount_paid', season_price - trial_price))
+        payment_type = request.data.get('payment_type', 'payment')
+        description = request.data.get(
+            'description',
+            f'Season enrolment — {enrolment.class_session.name} (converted from trial)'
+        )
+        reference = request.data.get('reference', '')
+        notes = request.data.get('notes', '')
+
+        enrolment.enrolment_type = 'course'
+        enrolment.notes = (enrolment.notes + '\n' + notes).strip() if notes else enrolment.notes
+        enrolment.save(update_fields=['enrolment_type', 'notes'])
+
+        payment = Payment.objects.create(
+            student=enrolment.student,
+            payment_type=payment_type,
+            amount=amount_paid,
+            description=description,
+            reference=reference,
+            created_by=request.user,
+        )
+
+        return Response({
+            'enrolment': EnrolmentSerializer(enrolment).data,
+            'payment_id': payment.id,
+            'amount_charged': str(payment.amount),
+        }, status=status.HTTP_200_OK)

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useApi } from '../../hooks/useApi'
-import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi, classes as classesApi, tags as tagsApi } from '../../api'
+import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi, classes as classesApi, tags as tagsApi, settings as settingsApi } from '../../api'
 import client from '../../api/client'
 import '../StudentsPage.css'
 import AddStudentModal from '../../components/AddStudentModal'
@@ -40,6 +40,97 @@ const SKILL_LEVELS = {
   'High Tricks': ['Iron X', 'Handspring', 'Deadlift Flag', 'Hollow Back', 'Pencil Drop', 'Shoulder Mount', 'Flag'],
 }
 
+function ConvertTrialModal({ enrolment, student, onClose, onSuccess }) {
+  const { data: studioData } = useApi(() => settingsApi.get(), [])
+  const studio = studioData?.data || studioData || {}
+  const seasonPrice = parseFloat(studio.price_season || 270)
+  const trialPrice = parseFloat(studio.price_trial || 35)
+  const defaultAmount = Math.max(0, seasonPrice - trialPrice).toFixed(2)
+
+  const [amount, setAmount] = useState('')
+  const [paymentType, setPaymentType] = useState('payment')
+  const [reference, setReference] = useState('')
+  const [description, setDescription] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+
+  const amountVal = amount !== '' ? amount : defaultAmount
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setSaving(true)
+    setError(null)
+    try {
+      await enrolments.convertTrial(enrolment.id, {
+        amount_paid: parseFloat(amountVal),
+        payment_type: paymentType,
+        reference,
+        description: description || `Season enrolment — ${enrolment.class_session_detail?.name} (converted from trial)`,
+      })
+      onSuccess()
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Conversion failed.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 440 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>Convert Trial to Full Enrolment</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <form className="sd-body" onSubmit={handleSubmit}>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 16, paddingBottom: 14, borderBottom: '1px solid var(--border)' }}>
+            <span style={{ color: 'var(--white)', fontWeight: 600 }}>{student.first_name} {student.last_name}</span>
+            {' '}· {enrolment.class_session_detail?.name}
+          </div>
+          <div style={{ background: '#111', borderRadius: 8, padding: '12px 14px', fontSize: 12, color: 'var(--grey)', marginBottom: 16 }}>
+            Season price: <b style={{ color: 'var(--white)' }}>${seasonPrice.toFixed(2)}</b>
+            {' '}— Trial paid: <b style={{ color: 'var(--white)' }}>${trialPrice.toFixed(2)}</b>
+            {' '}= <b style={{ color: 'var(--lime)' }}>${defaultAmount} remaining</b>
+          </div>
+          {error && <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>{error}</div>}
+          <div className="field">
+            <label>Amount to charge ($)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={amountVal}
+              onChange={e => setAmount(e.target.value)}
+              placeholder={defaultAmount}
+            />
+          </div>
+          <div className="field">
+            <label>Payment type</label>
+            <select value={paymentType} onChange={e => setPaymentType(e.target.value)}>
+              <option value="payment">Payment received</option>
+              <option value="charge">Charge (invoice / owing)</option>
+            </select>
+          </div>
+          <div className="field">
+            <label>Reference <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(optional)</span></label>
+            <input value={reference} onChange={e => setReference(e.target.value)} placeholder="e.g. cash, Square receipt #" />
+          </div>
+          <div className="field">
+            <label>Description <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(optional)</span></label>
+            <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Leave blank for default" />
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>
+              {saving ? 'Converting…' : `Confirm — $${parseFloat(amountVal || 0).toFixed(2)}`}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 function StudentDetail({ student, onClose, onRefreshList, onViewForm }) {
   const [tab, setTab] = useState('overview')
   const [balanceData, setBalanceData] = useState(null)
@@ -52,6 +143,7 @@ function StudentDetail({ student, onClose, onRefreshList, onViewForm }) {
   const [showPayment, setShowPayment] = useState(false)
   const [showCharge, setShowCharge] = useState(false)
   const [showAddToClass, setShowAddToClass] = useState(false)
+  const [convertTrialEnrol, setConvertTrialEnrol] = useState(null)
   const [noteText, setNoteText] = useState('')
   const [noteCategory, setNoteCategory] = useState('general')
   const [savingNote, setSavingNote] = useState(false)
@@ -307,7 +399,20 @@ function StudentDetail({ student, onClose, onRefreshList, onViewForm }) {
                             <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 8 }}>
                               {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][e.class_session_detail?.day_of_week]} {e.class_session_detail?.start_time?.slice(0,5)} · {e.class_session_detail?.studio_detail?.name}
                             </div>
-                            <span className="tag tag-lime" style={{ fontSize: 10 }}>Enrolled</span>
+                            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                              <span className={`tag ${e.enrolment_type === 'trial' ? 'tag-amber' : 'tag-lime'}`} style={{ fontSize: 10 }}>
+                                {e.enrolment_type === 'trial' ? 'Trial' : 'Enrolled'}
+                              </span>
+                              {e.enrolment_type === 'trial' && (
+                                <button
+                                  className="btn btn-ghost btn-xs"
+                                  style={{ fontSize: 10, color: 'var(--lime)' }}
+                                  onClick={() => setConvertTrialEnrol(e)}
+                                >
+                                  Convert to Full →
+                                </button>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -629,6 +734,18 @@ function StudentDetail({ student, onClose, onRefreshList, onViewForm }) {
           setShowAddToClass(false)
           enrolments.list({ student: student.id }).then(r => setEnrolData(r.data.results || []))
         }} />
+      )}
+      {convertTrialEnrol && (
+        <ConvertTrialModal
+          enrolment={convertTrialEnrol}
+          student={student}
+          onClose={() => setConvertTrialEnrol(null)}
+          onSuccess={() => {
+            setConvertTrialEnrol(null)
+            enrolments.list({ student: student.id }).then(r => setEnrolData(r.data.results || []))
+            payments.balance(student.id).then(r => setBalanceData(r.data))
+          }}
+        />
       )}
     </>
   )

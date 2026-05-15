@@ -4,4 +4,5 @@ from . import views
 urlpatterns = [
     path('', views.EnrolmentListView.as_view(), name='enrolment-list'),
     path('<int:pk>/', views.EnrolmentDetailView.as_view(), name='enrolment-detail'),
+    path('<int:pk>/convert-trial/', views.ConvertTrialView.as_view(), name='enrolment-convert-trial'),
 ]
