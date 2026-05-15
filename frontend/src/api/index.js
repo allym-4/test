@@ -74,6 +74,7 @@ export const leads = {
 
 export const seasons = {
   list: () => client.get('/api/classes/seasons/'),
+  get: (id) => client.get(`/api/classes/seasons/${id}/`),
   create: (data) => client.post('/api/classes/seasons/', data),
   update: (id, data) => client.patch(`/api/classes/seasons/${id}/`, data),
   delete: (id) => client.delete(`/api/classes/seasons/${id}/`),

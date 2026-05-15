@@ -42,6 +42,9 @@ class ClassSessionListView(generics.ListCreateAPIView):
         active_only = self.request.query_params.get('active')
         if active_only == 'true':
             qs = qs.filter(is_active=True)
+        season_id = self.request.query_params.get('season')
+        if season_id:
+            qs = qs.filter(season_id=season_id)
         return qs
 
 

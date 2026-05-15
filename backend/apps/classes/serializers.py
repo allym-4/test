@@ -49,10 +49,21 @@ class ClassOccurrenceSerializer(serializers.ModelSerializer):
 
 
 class SeasonSerializer(serializers.ModelSerializer):
+    session_count = serializers.SerializerMethodField()
+    enrolled_count = serializers.SerializerMethodField()
+
     class Meta:
         model = Season
-        fields = ('id', 'name', 'start_date', 'end_date', 'status', 'notes', 'created_at')
-        read_only_fields = ('id', 'created_at')
+        fields = ('id', 'name', 'start_date', 'end_date', 'status', 'notes', 'created_at', 'session_count', 'enrolled_count')
+        read_only_fields = ('id', 'created_at', 'session_count', 'enrolled_count')
+
+    def get_session_count(self, obj):
+        return obj.sessions.filter(is_active=True).count()
+
+    def get_enrolled_count(self, obj):
+        from apps.enrolments.models import Enrolment
+        session_ids = obj.sessions.values_list('id', flat=True)
+        return Enrolment.objects.filter(class_session_id__in=session_ids, status='active').count()
 
 
 class LockerSerializer(serializers.ModelSerializer):

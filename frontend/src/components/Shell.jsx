@@ -51,6 +51,13 @@ export default function Shell() {
             </div>
           </div>
           <button className="btn btn-ghost btn-xs" onClick={handleLogout}>Log out</button>
+          <button
+            className="btn btn-ghost btn-xs"
+            style={{ marginTop: 6, width: '100%', color: 'var(--lav)', borderColor: 'rgba(176,160,255,0.3)' }}
+            onClick={() => navigate('/portal')}
+          >
+            Student View →
+          </button>
         </div>
       </nav>
       <main className="main-content">
