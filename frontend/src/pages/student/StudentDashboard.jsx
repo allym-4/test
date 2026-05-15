@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, seasons, attendance as attendanceApi, classes as classesApi } from '../../api'
+import { enrolments, seasons, attendance as attendanceApi, classes as classesApi, skills as skillsApi } from '../../api'
 import { Link } from 'react-router-dom'
 
 const DAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -94,19 +94,22 @@ export default function StudentDashboard() {
   const { user } = useAuth()
   const { data: enrolData, loading: loadingEnrol } = useApi(() => enrolments.list({ student: user?.id, status: 'active' }), [user?.id])
   const { data: seasonData } = useApi(() => seasons.list(), [])
+  const { data: skillsData } = useApi(() => user?.id ? skillsApi.list(user.id) : null, [user?.id])
 
   const [markAwayEnrol, setMarkAwayEnrol] = useState(null)
 
   const enrolments_ = enrolData?.results || enrolData || []
+  const tricksUnlocked = (skillsData?.results || skillsData || []).filter(s => s.achieved).length
 
   // Current active season
   const allSeasons = seasonData?.results || seasonData || []
   const now = new Date()
-  const currentSeason = allSeasons.find(s => {
-    const start = s.start_date ? new Date(s.start_date) : null
-    const end = s.end_date ? new Date(s.end_date) : null
-    return start && end && now >= start && now <= end
-  }) || allSeasons[0]
+  const currentSeason = allSeasons.find(s => s.status === 'active') ||
+    allSeasons.find(s => {
+      const start = s.start_date ? new Date(s.start_date) : null
+      const end = s.end_date ? new Date(s.end_date) : null
+      return start && end && now >= start && now <= end
+    }) || allSeasons[0]
 
   // Weeks remaining
   let weeksRemaining = '—'
@@ -126,7 +129,7 @@ export default function StudentDashboard() {
       {/* Season open banner — shown when no active enrolments */}
       {!loadingEnrol && !hasEnrolments && (
         <div style={{ background: 'var(--lime)', borderRadius: 12, padding: '14px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: '#000' }}>Season 4 is now open — book your spot</div>
+          <div style={{ fontWeight: 700, fontSize: 14, color: '#000' }}>{currentSeason ? `${currentSeason.name} is now open` : 'New season is now open'} — book your spot</div>
           <Link to="/portal/book"><button className="btn btn-sm" style={{ background: '#000', color: 'var(--lime)', whiteSpace: 'nowrap' }}>Book Now</button></Link>
         </div>
       )}
@@ -163,11 +166,11 @@ export default function StudentDashboard() {
           <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>Classes This Season</div>
         </div>
         <div className="kpi card" style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color: 'var(--lav)' }}>0</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color: 'var(--lav)' }}>—</div>
           <Link to="/portal/billing" style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4, display: 'block', textDecoration: 'none' }}>Catch-up Credits</Link>
         </div>
         <div className="kpi card" style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color: 'var(--lime)' }}>0</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color: 'var(--lime)' }}>{skillsData ? tricksUnlocked : '—'}</div>
           <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>Tricks Unlocked in your level</div>
         </div>
         <div className="kpi card" style={{ textAlign: 'center' }}>

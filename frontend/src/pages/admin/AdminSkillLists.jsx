@@ -13,6 +13,7 @@ export default function AdminSkillLists() {
   const [newSkillGroup, setNewSkillGroup] = useState('')
   const [newLevelName, setNewLevelName] = useState('')
   const [saving, setSaving] = useState(false)
+  const [deletingSkill, setDeletingSkill] = useState(null)
 
   const activeTab = tab || levels[0]?.name || null
   const activeLevel = levels.find(l => l.name === activeTab) || null
@@ -31,6 +32,30 @@ export default function AdminSkillLists() {
       refetch()
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleEditSkill(e) {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      await skillLevels.updateDefinition(modal.skill.id, { name: newSkillName })
+      setModal(null)
+      setNewSkillName('')
+      refetch()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleDeleteSkill(skill) {
+    if (!confirm(`Delete "${skill.name}"? This cannot be undone.`)) return
+    setDeletingSkill(skill.id)
+    try {
+      await skillLevels.deleteDefinition(skill.id)
+      refetch()
+    } finally {
+      setDeletingSkill(null)
     }
   }
 
@@ -88,8 +113,8 @@ export default function AdminSkillLists() {
               <div key={skill.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #1a1a1a', fontSize: 13 }}>
                 <span>{skill.name}</span>
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <button className="btn btn-ghost btn-xs">Students</button>
-                  <button className="btn btn-ghost btn-xs">Edit</button>
+                  <button className="btn btn-ghost btn-xs" onClick={() => { setModal({ type: 'edit-skill', skill }); setNewSkillName(skill.name) }}>Edit</button>
+                  <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} disabled={deletingSkill === skill.id} onClick={() => handleDeleteSkill(skill)}>{deletingSkill === skill.id ? '…' : 'Delete'}</button>
                 </div>
               </div>
             ))}
@@ -116,6 +141,24 @@ export default function AdminSkillLists() {
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                 <button type="button" className="btn btn-ghost btn-sm" onClick={() => setModal(null)}>Cancel</button>
                 <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : 'Add'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {modal?.type === 'edit-skill' && (
+        <div className="sd-overlay" onClick={e => e.target === e.currentTarget && setModal(null)}>
+          <div className="sd-modal" style={{ maxWidth: 400 }}>
+            <div className="sd-header">
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>Edit Skill</div>
+              <button className="modal-close-btn" onClick={() => setModal(null)}>✕</button>
+            </div>
+            <form className="sd-body" onSubmit={handleEditSkill}>
+              <div className="field"><label>Skill Name</label><input value={newSkillName} onChange={e => setNewSkillName(e.target.value)} required /></div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setModal(null)}>Cancel</button>
+                <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
               </div>
             </form>
           </div>
