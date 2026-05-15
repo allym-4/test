@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import '../StudentsPage.css'
 import { useApi } from '../../hooks/useApi'
-import { campaigns as campaignsApi, emailLists as emailListsApi, automations as automationsApi } from '../../api'
+import { campaigns as campaignsApi, emailLists as emailListsApi, automations as automationsApi, settings as settingsApi, mailchimp as mailchimpApi } from '../../api'
 import client from '../../api/client'
 
 function CreateCampaignModal({ onClose, onCreated }) {
@@ -89,6 +89,137 @@ function CampaignViewModal({ campaign, onClose }) {
         <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end' }}>
           <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function MailchimpTab() {
+  const [form, setForm] = useState({ mailchimp_api_key: '', mailchimp_list_id: '' })
+  const [status, setStatus] = useState(null) // null | {connected, account_name, list_name, member_count, error}
+  const [loadingStatus, setLoadingStatus] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [syncResult, setSyncResult] = useState(null)
+  const [toast, setToast] = useState('')
+
+  function showToast(msg) {
+    setToast(msg)
+    setTimeout(() => setToast(''), 3000)
+  }
+
+  useEffect(() => {
+    settingsApi.get().then(r => {
+      setForm({ mailchimp_api_key: r.data.mailchimp_api_key || '', mailchimp_list_id: r.data.mailchimp_list_id || '' })
+    })
+    mailchimpApi.status().then(r => setStatus(r.data)).catch(() => setStatus({ connected: false })).finally(() => setLoadingStatus(false))
+  }, [])
+
+  async function save() {
+    setSaving(true)
+    try {
+      await settingsApi.save({ mailchimp_api_key: form.mailchimp_api_key, mailchimp_list_id: form.mailchimp_list_id })
+      setLoadingStatus(true)
+      const r = await mailchimpApi.status()
+      setStatus(r.data)
+      showToast(r.data.connected ? 'Connected successfully' : 'Saved — ' + (r.data.error || 'check your API key'))
+    } catch {
+      showToast('Failed to save')
+    } finally {
+      setSaving(false)
+      setLoadingStatus(false)
+    }
+  }
+
+  async function sync() {
+    setSyncing(true)
+    setSyncResult(null)
+    try {
+      const r = await mailchimpApi.sync()
+      setSyncResult(r.data)
+      showToast(`Sync complete — ${r.data.added} added, ${r.data.updated} updated`)
+    } catch {
+      showToast('Sync failed — check connection')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  return (
+    <div style={{ maxWidth: 520 }}>
+      {toast && (
+        <div style={{ background: 'var(--lime)', color: '#000', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, marginBottom: 16 }}>{toast}</div>
+      )}
+      <div className="card" style={{ padding: '20px 24px', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+          {loadingStatus ? (
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#333' }} />
+          ) : status?.connected ? (
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--lime)' }} />
+          ) : (
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#333' }} />
+          )}
+          <span style={{ fontSize: 13, color: status?.connected ? 'var(--white)' : 'var(--grey)' }}>
+            {loadingStatus ? 'Checking…' : status?.connected
+              ? `Connected — ${status.account_name}${status.list_name ? ` · ${status.list_name} (${status.member_count} members)` : ''}`
+              : status?.error ? `Error: ${status.error}` : 'Not connected'}
+          </span>
+        </div>
+
+        <div className="field" style={{ marginBottom: 12 }}>
+          <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 4 }}>API Key</label>
+          <input
+            className="input"
+            value={form.mailchimp_api_key}
+            onChange={e => setForm(f => ({ ...f, mailchimp_api_key: e.target.value }))}
+            placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-us1"
+            style={{ width: '100%', fontFamily: 'monospace', fontSize: 12 }}
+          />
+          <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>
+            Find in Mailchimp → Account → Extras → API Keys
+          </div>
+        </div>
+
+        <div className="field" style={{ marginBottom: 16 }}>
+          <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 4 }}>Audience / List ID</label>
+          <input
+            className="input"
+            value={form.mailchimp_list_id}
+            onChange={e => setForm(f => ({ ...f, mailchimp_list_id: e.target.value }))}
+            placeholder="e.g. a1b2c3d4e5"
+            style={{ width: '100%', fontFamily: 'monospace', fontSize: 12 }}
+          />
+          <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>
+            Find in Mailchimp → Audience → Manage Audience → Settings → Audience name and campaign defaults
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-lime btn-sm" onClick={save} disabled={saving}>
+            {saving ? 'Saving…' : 'Save & Test Connection'}
+          </button>
+          {status?.connected && (
+            <button className="btn btn-ghost btn-sm" onClick={sync} disabled={syncing}>
+              {syncing ? 'Syncing…' : 'Sync Members Now'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {syncResult && (
+        <div className="card" style={{ padding: '16px 20px' }}>
+          <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 8, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Last Sync</div>
+          <div style={{ display: 'flex', gap: 24, fontSize: 13 }}>
+            <div><span style={{ color: 'var(--lime)', fontWeight: 700 }}>{syncResult.added}</span> added</div>
+            <div><span style={{ color: 'var(--lav)', fontWeight: 700 }}>{syncResult.updated}</span> updated</div>
+            {syncResult.errors > 0 && <div><span style={{ color: 'var(--red)', fontWeight: 700 }}>{syncResult.errors}</span> errors</div>}
+            <div style={{ color: 'var(--grey)' }}>{syncResult.total} total students</div>
+          </div>
+        </div>
+      )}
+
+      <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 16, lineHeight: 1.6 }}>
+        Sync pushes all active students to your Mailchimp audience as subscribed contacts. Re-running sync is safe — existing members are updated, not duplicated.
       </div>
     </div>
   )
@@ -202,20 +333,7 @@ export default function AdminMarketing() {
         </div>
       )}
 
-      {tab === 'mailchimp' && (
-        <div style={{ maxWidth: 500 }}>
-          <div className="card" style={{ padding: '20px 24px', marginBottom: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#333' }} />
-              <span style={{ fontSize: 13, color: 'var(--grey)' }}>Mailchimp not connected</span>
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16, lineHeight: 1.6 }}>
-              Connect your Mailchimp account to sync student lists automatically and send campaigns from within Mailchimp.
-            </div>
-            <button className="btn btn-ghost btn-sm">Connect Mailchimp</button>
-          </div>
-        </div>
-      )}
+      {tab === 'mailchimp' && <MailchimpTab />}
 
       {showCreateCampaign && (
         <CreateCampaignModal

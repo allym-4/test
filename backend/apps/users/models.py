@@ -115,6 +115,14 @@ class StudioSettings(models.Model):
     form_photo_consent_enabled = models.BooleanField(default=True)
     form_waiver_enabled = models.BooleanField(default=True)
     form_season_agreement_enabled = models.BooleanField(default=True)
+    mailchimp_api_key = models.CharField(max_length=200, blank=True)
+    mailchimp_list_id = models.CharField(max_length=100, blank=True)
+    xero_client_id = models.CharField(max_length=200, blank=True)
+    xero_client_secret = models.CharField(max_length=200, blank=True)
+    xero_tenant_id = models.CharField(max_length=200, blank=True)
+    xero_access_token = models.TextField(blank=True)
+    xero_refresh_token = models.TextField(blank=True)
+    xero_token_expires_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = 'Studio Settings'

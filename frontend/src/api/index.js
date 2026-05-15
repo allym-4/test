@@ -355,3 +355,15 @@ export const actionItems = {
   update: (id, data) => client.patch(`/api/users/action-items/${id}/`, data),
   delete: (id) => client.delete(`/api/users/action-items/${id}/`),
 }
+
+export const mailchimp = {
+  status: () => client.get('/api/users/mailchimp/status/'),
+  sync: () => client.post('/api/users/mailchimp/sync/', {}),
+}
+
+export const xero = {
+  connect: () => client.get('/api/users/xero/connect/'),
+  status: () => client.get('/api/users/xero/status/'),
+  sync: () => client.post('/api/users/xero/sync/', {}),
+  disconnect: () => client.delete('/api/users/xero/status/'),
+}

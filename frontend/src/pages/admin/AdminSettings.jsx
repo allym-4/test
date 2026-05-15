@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { settings as settingsApi, membershipTypes, users, studios as studiosApi, packages as packagesApi } from '../../api'
+import { settings as settingsApi, membershipTypes, users, studios as studiosApi, packages as packagesApi, xero as xeroApi } from '../../api'
 import { useApi } from '../../hooks/useApi'
 
 const FORM_FIELDS = {
@@ -222,6 +222,9 @@ export default function AdminSettings() {
   const [showAddLocation, setShowAddLocation] = useState(false)
   const [previewForm, setPreviewForm] = useState(null)
   const [integrationMsg, setIntegrationMsg] = useState(null)
+  const [xeroStatus, setXeroStatus] = useState(null) // null | {connected, tenant_name, error}
+  const [xeroSyncing, setXeroSyncing] = useState(false)
+  const [xeroConnecting, setXeroConnecting] = useState(false)
 
   // Memberships tab
   const { data: membershipData, loading: membershipLoading, refetch: refetchMemberships } = useApi(() => membershipTypes.list(), [])
@@ -272,6 +275,20 @@ export default function AdminSettings() {
 
   useEffect(() => {
     settingsApi.get().then(r => setForm(r.data))
+    xeroApi.status().then(r => setXeroStatus(r.data)).catch(() => setXeroStatus({ connected: false }))
+  }, [])
+
+  // Handle Xero OAuth callback redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.hash.split('?')[1] || '')
+    if (params.get('xero') === 'connected') {
+      xeroApi.status().then(r => setXeroStatus(r.data))
+      setIntegrationMsg('Xero connected successfully!')
+      setTimeout(() => setIntegrationMsg(null), 4000)
+    } else if (params.get('xero') === 'error') {
+      setIntegrationMsg('Xero connection failed — check your Client ID and Secret.')
+      setTimeout(() => setIntegrationMsg(null), 5000)
+    }
   }, [])
 
   function set(key, val) {
@@ -335,6 +352,39 @@ export default function AdminSettings() {
   function showIntegrationInfo(name) {
     setIntegrationMsg(`${name} integration is configured via environment variables on the server. Contact your developer to set up the connection.`)
     setTimeout(() => setIntegrationMsg(null), 4000)
+  }
+
+  async function connectXero() {
+    setXeroConnecting(true)
+    try {
+      const r = await xeroApi.connect()
+      window.location.href = r.data.auth_url
+    } catch (e) {
+      setIntegrationMsg(e.response?.data?.detail || 'Failed to start Xero connection — enter Client ID and Client Secret first.')
+      setTimeout(() => setIntegrationMsg(null), 5000)
+      setXeroConnecting(false)
+    }
+  }
+
+  async function disconnectXero() {
+    if (!window.confirm('Disconnect Xero? You will need to reconnect to sync payments again.')) return
+    await xeroApi.disconnect()
+    setXeroStatus({ connected: false })
+    setIntegrationMsg('Xero disconnected.')
+    setTimeout(() => setIntegrationMsg(null), 3000)
+  }
+
+  async function syncXero() {
+    setXeroSyncing(true)
+    try {
+      const r = await xeroApi.sync()
+      setIntegrationMsg(`Xero sync complete — ${r.data.synced} invoices synced${r.data.errors ? `, ${r.data.errors} errors` : ''}.`)
+    } catch {
+      setIntegrationMsg('Xero sync failed — check connection.')
+    } finally {
+      setXeroSyncing(false)
+      setTimeout(() => setIntegrationMsg(null), 5000)
+    }
   }
 
   if (!form) return <div style={{ padding: 32, color: 'var(--grey)' }}>Loading settings…</div>
@@ -590,10 +640,44 @@ export default function AdminSettings() {
             </Section>
             <Section title="Xero">
               <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 14 }}>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#333' }} />
-                <span style={{ fontSize: 13, color: 'var(--grey)' }}>Not connected</span>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: xeroStatus?.connected ? 'var(--lime)' : '#333' }} />
+                <span style={{ fontSize: 13, color: xeroStatus?.connected ? 'var(--white)' : 'var(--grey)' }}>
+                  {xeroStatus?.connected ? `Connected — ${xeroStatus.tenant_name || 'Xero'}` : 'Not connected'}
+                </span>
               </div>
-              <button className="btn btn-ghost btn-sm" onClick={() => showIntegrationInfo('Xero')}>Connect Xero</button>
+              {!xeroStatus?.connected && (
+                <>
+                  <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 10, lineHeight: 1.5 }}>
+                    Enter your Xero app credentials, then click Connect to authorise via Xero's login page.
+                  </div>
+                  <div className="field" style={{ marginBottom: 10 }}>
+                    <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 4 }}>Client ID</label>
+                    <input className="input" value={form?.xero_client_id || ''} onChange={e => set('xero_client_id', e.target.value)} placeholder="From app.xero.com" style={{ width: '100%', fontSize: 12 }} />
+                  </div>
+                  <div className="field" style={{ marginBottom: 14 }}>
+                    <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 4 }}>Client Secret</label>
+                    <input className="input" type="password" value={form?.xero_client_secret || ''} onChange={e => set('xero_client_secret', e.target.value)} placeholder="Client secret" style={{ width: '100%', fontSize: 12 }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="btn btn-ghost btn-sm" onClick={saveAll} disabled={saving}>Save Credentials</button>
+                    <button className="btn btn-lime btn-sm" onClick={connectXero} disabled={xeroConnecting || !form?.xero_client_id}>
+                      {xeroConnecting ? 'Redirecting…' : 'Connect Xero'}
+                    </button>
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 10, lineHeight: 1.5 }}>
+                    Set this as your redirect URI in the Xero app:{' '}
+                    <span style={{ fontFamily: 'monospace', color: 'var(--lav)' }}>/api/users/xero/callback/</span>
+                  </div>
+                </>
+              )}
+              {xeroStatus?.connected && (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button className="btn btn-lime btn-sm" onClick={syncXero} disabled={xeroSyncing}>
+                    {xeroSyncing ? 'Syncing…' : 'Sync Payments (30 days)'}
+                  </button>
+                  <button className="btn btn-ghost btn-sm" onClick={disconnectXero}>Disconnect</button>
+                </div>
+              )}
             </Section>
           </div>
           <div>

@@ -88,6 +88,15 @@ class LeadSerializer(serializers.ModelSerializer):
 
 
 class StudioSettingsSerializer(serializers.ModelSerializer):
+    xero_connected = serializers.SerializerMethodField(read_only=True)
+    mailchimp_connected = serializers.SerializerMethodField(read_only=True)
+
+    def get_xero_connected(self, obj):
+        return bool(obj.xero_access_token)
+
+    def get_mailchimp_connected(self, obj):
+        return bool(obj.mailchimp_api_key)
+
     class Meta:
         model = StudioSettings
         fields = (
@@ -99,7 +108,10 @@ class StudioSettingsSerializer(serializers.ModelSerializer):
             'instagram_access_token', 'instagram_page_id', 'instagram_username', 'meta_app_id',
             'price_casual', 'price_season', 'price_trial', 'season_pricing_config',
             'form_health_enabled', 'form_photo_consent_enabled', 'form_waiver_enabled', 'form_season_agreement_enabled',
+            'mailchimp_api_key', 'mailchimp_list_id', 'mailchimp_connected',
+            'xero_client_id', 'xero_client_secret', 'xero_tenant_id', 'xero_connected',
         )
+        read_only_fields = ('xero_connected', 'mailchimp_connected')
 
 
 class AnnouncementSerializer(serializers.ModelSerializer):

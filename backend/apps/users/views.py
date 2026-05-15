@@ -750,6 +750,137 @@ class EmailListExportView(APIView):
         return response
 
 
+class MailchimpStatusView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        s = StudioSettings.get()
+        if not s.mailchimp_api_key:
+            return Response({'connected': False})
+        from .mailchimp_service import check_status, get_list_info
+        ok, info = check_status(s.mailchimp_api_key)
+        if not ok:
+            return Response({'connected': False, 'error': info.get('error')})
+        result = {'connected': True, 'account_name': info.get('account_name'), 'account_email': info.get('email')}
+        if s.mailchimp_list_id:
+            ok2, linfo = get_list_info(s.mailchimp_api_key, s.mailchimp_list_id)
+            if ok2:
+                result['list_name'] = linfo.get('name')
+                result['member_count'] = linfo.get('member_count')
+        return Response(result)
+
+
+class MailchimpSyncView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request):
+        s = StudioSettings.get()
+        if not s.mailchimp_api_key or not s.mailchimp_list_id:
+            return Response({'detail': 'Mailchimp API key and list ID required'}, status=400)
+        from .mailchimp_service import sync_members
+        students = list(
+            User.objects.filter(role='student', is_active=True)
+            .values('email', 'first_name', 'last_name')
+        )
+        added, updated, errors = sync_members(s.mailchimp_api_key, s.mailchimp_list_id, students)
+        return Response({'added': added, 'updated': updated, 'errors': errors, 'total': len(students)})
+
+
+class XeroConnectView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        s = StudioSettings.get()
+        if not s.xero_client_id:
+            return Response({'detail': 'Xero Client ID not configured in settings'}, status=400)
+        redirect_uri = request.build_absolute_uri('/api/users/xero/callback/')
+        from .xero_service import get_auth_url
+        url = get_auth_url(s.xero_client_id, redirect_uri)
+        return Response({'auth_url': url})
+
+
+class XeroCallbackView(APIView):
+    permission_classes = []
+    authentication_classes = []
+
+    def get(self, request):
+        from django.shortcuts import redirect as django_redirect
+        code = request.query_params.get('code')
+        if not code:
+            return django_redirect('/#/settings?xero=error')
+        s = StudioSettings.get()
+        redirect_uri = request.build_absolute_uri('/api/users/xero/callback/')
+        try:
+            from .xero_service import exchange_code, get_tenants
+            from django.utils import timezone as tz
+            from datetime import timedelta
+            token_data = exchange_code(s.xero_client_id, s.xero_client_secret, code, redirect_uri)
+            s.xero_access_token = token_data['access_token']
+            s.xero_refresh_token = token_data.get('refresh_token', '')
+            s.xero_token_expires_at = tz.now() + timedelta(seconds=token_data.get('expires_in', 1800))
+            # Get first tenant
+            tenants = get_tenants(s.xero_access_token)
+            if tenants:
+                s.xero_tenant_id = tenants[0]['tenantId']
+            s.save()
+            return django_redirect('/#/settings?tab=integrations&xero=connected')
+        except Exception as e:
+            return django_redirect(f'/#/settings?tab=integrations&xero=error')
+
+
+class XeroStatusView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        s = StudioSettings.get()
+        if not s.xero_access_token:
+            return Response({'connected': False})
+        try:
+            from .xero_service import get_tenants, _get_valid_token
+            token = _get_valid_token(s)
+            tenants = get_tenants(token)
+            tenant_name = tenants[0].get('tenantName') if tenants else 'Unknown'
+            return Response({'connected': True, 'tenant_name': tenant_name})
+        except Exception as e:
+            return Response({'connected': False, 'error': str(e)})
+
+    def delete(self, request):
+        s = StudioSettings.get()
+        s.xero_access_token = ''
+        s.xero_refresh_token = ''
+        s.xero_token_expires_at = None
+        s.xero_tenant_id = ''
+        s.save()
+        return Response({'disconnected': True})
+
+
+class XeroSyncView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request):
+        s = StudioSettings.get()
+        if not s.xero_access_token:
+            return Response({'detail': 'Xero not connected'}, status=400)
+        from apps.payments.models import Payment
+        from .xero_service import sync_payment
+        from django.utils import timezone as tz
+        from datetime import timedelta
+        cutoff = tz.now() - timedelta(days=30)
+        payments = Payment.objects.filter(
+            created_at__gte=cutoff,
+            payment_type=Payment.PaymentType.PAYMENT,
+        ).select_related('student')
+        synced = 0
+        errors = 0
+        for p in payments:
+            try:
+                sync_payment(s, p)
+                synced += 1
+            except Exception:
+                errors += 1
+        return Response({'synced': synced, 'errors': errors, 'total': payments.count()})
+
+
 class ActionItemListView(generics.ListCreateAPIView):
     serializer_class = ActionItemSerializer
     permission_classes = [IsAdminOrInstructor]
