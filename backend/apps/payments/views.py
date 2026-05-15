@@ -202,6 +202,63 @@ class PromoCodeDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAdminOrInstructor]
 
 
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def validate_promo_code(request):
+    code = request.data.get('code', '').strip().upper()
+    item_type = request.data.get('item_type', 'all')
+    amount = request.data.get('amount')
+
+    if not code:
+        return Response({'detail': 'Code is required.'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        promo = PromoCode.objects.get(code=code, is_active=True)
+    except PromoCode.DoesNotExist:
+        return Response({'detail': 'Invalid or expired promo code.'}, status=status.HTTP_404_NOT_FOUND)
+
+    from django.utils import timezone
+    if promo.expires_at and promo.expires_at < timezone.now().date():
+        return Response({'detail': 'This promo code has expired.'}, status=status.HTTP_400_BAD_REQUEST)
+    if promo.max_uses and promo.current_uses >= promo.max_uses:
+        return Response({'detail': 'This promo code has reached its usage limit.'}, status=status.HTTP_400_BAD_REQUEST)
+    if promo.applies_to != 'all' and item_type and promo.applies_to != item_type:
+        return Response({'detail': f'This code only applies to {promo.get_applies_to_display().lower()}.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    original = float(amount) if amount else None
+    if promo.discount_type == 'percentage':
+        discount = round(original * float(promo.discount_value) / 100, 2) if original is not None else None
+    else:
+        discount = float(promo.discount_value)
+
+    final = max(0, original - discount) if original is not None and discount is not None else None
+
+    return Response({
+        'id': promo.id,
+        'code': promo.code,
+        'discount_type': promo.discount_type,
+        'discount_value': str(promo.discount_value),
+        'applies_to': promo.applies_to,
+        'discount': discount,
+        'final_amount': final,
+        'original_amount': original,
+    })
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def use_promo_code(request):
+    code = request.data.get('code', '').strip().upper()
+    if not code:
+        return Response({'detail': 'Code is required.'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        promo = PromoCode.objects.get(code=code, is_active=True)
+    except PromoCode.DoesNotExist:
+        return Response({'detail': 'Invalid promo code.'}, status=status.HTTP_404_NOT_FOUND)
+    promo.current_uses += 1
+    promo.save(update_fields=['current_uses'])
+    return Response({'status': 'ok', 'current_uses': promo.current_uses})
+
+
 class PaymentStatsView(APIView):
     """Pre-aggregated payment analytics for the reporting dashboard."""
     permission_classes = [IsAdminOrInstructor]

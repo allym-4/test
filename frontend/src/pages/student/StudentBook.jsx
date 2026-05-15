@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useApi } from '../../hooks/useApi'
 import { useAuth } from '../../contexts/AuthContext'
-import { classes, enrolments, settings as settingsApi, seasons as seasonsApi } from '../../api'
+import { classes, enrolments, settings as settingsApi, seasons as seasonsApi, payments as paymentsApi } from '../../api'
 import CheckoutModal from '../../components/CheckoutModal'
 
 const DAYS_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -116,8 +116,9 @@ function EmptyState() {
   )
 }
 
-function StickyCart({ cart, priceCasual, onProceed, onClear }) {
+function StickyCart({ cart, priceCasual, onProceed, onClear, promoCode, promoDiscount, onPromoChange, onPromoApply, promoApplying, promoError }) {
   if (!cart) return null
+  const finalPrice = promoDiscount != null ? Math.max(0, priceCasual - promoDiscount) : priceCasual
   return (
     <div style={{
       position: 'fixed',
@@ -135,33 +136,63 @@ function StickyCart({ cart, priceCasual, onProceed, onClear }) {
         borderRadius: 16,
         padding: '12px 20px',
         display: 'flex',
-        alignItems: 'center',
-        gap: 16,
+        flexDirection: 'column',
+        gap: 10,
         boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
         pointerEvents: 'all',
         maxWidth: 440,
         width: 'calc(100% - 32px)',
       }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {cart.name}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {cart.name}
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 700 }}>
+              {promoDiscount != null ? (
+                <>
+                  <span style={{ color: 'var(--grey)', textDecoration: 'line-through', marginRight: 6 }}>${priceCasual}</span>
+                  <span style={{ color: 'var(--lime)' }}>${finalPrice.toFixed(2)}</span>
+                </>
+              ) : (
+                <span style={{ color: 'var(--lime)' }}>${priceCasual}</span>
+              )}
+            </div>
           </div>
-          <div style={{ fontSize: 12, color: 'var(--lime)', fontWeight: 700 }}>${priceCasual}</div>
+          <button
+            className="btn btn-lime btn-sm"
+            style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+            onClick={() => onProceed(finalPrice)}
+          >
+            Checkout
+          </button>
+          <button
+            onClick={onClear}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--grey)', fontSize: 18, lineHeight: 1, padding: 4, flexShrink: 0 }}
+            aria-label="Clear cart"
+          >
+            ×
+          </button>
         </div>
-        <button
-          className="btn btn-lime btn-sm"
-          style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
-          onClick={onProceed}
-        >
-          Proceed to Checkout
-        </button>
-        <button
-          onClick={onClear}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--grey)', fontSize: 18, lineHeight: 1, padding: 4, flexShrink: 0 }}
-          aria-label="Clear cart"
-        >
-          ×
-        </button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <input
+            className="input"
+            placeholder="Promo code"
+            value={promoCode}
+            onChange={e => onPromoChange(e.target.value.toUpperCase())}
+            style={{ flex: 1, fontSize: 12, padding: '6px 10px', height: 32 }}
+            onKeyDown={e => e.key === 'Enter' && onPromoApply()}
+          />
+          <button
+            className="btn btn-ghost btn-sm"
+            style={{ fontSize: 11, flexShrink: 0 }}
+            onClick={onPromoApply}
+            disabled={promoApplying || !promoCode}
+          >
+            {promoApplying ? '…' : promoDiscount != null ? '✓ Applied' : 'Apply'}
+          </button>
+        </div>
+        {promoError && <div style={{ fontSize: 11, color: 'var(--red)' }}>{promoError}</div>}
       </div>
     </div>
   )
@@ -173,6 +204,11 @@ export default function StudentBook() {
   const [booked, setBooked] = useState([])
   const [cart, setCart] = useState(null) // { session, type, price, label }
   const [checkout, setCheckout] = useState(null) // { session, type, amount, description }
+  const [promoCode, setPromoCode] = useState('')
+  const [promoDiscount, setPromoDiscount] = useState(null)
+  const [promoApplying, setPromoApplying] = useState(false)
+  const [promoError, setPromoError] = useState('')
+  const [appliedPromoCode, setAppliedPromoCode] = useState('')
   const { data: sessionsData, loading } = useApi(() => classes.list())
   const { data: studioSettings } = useApi(() => settingsApi.get())
   const { data: workshopsData, loading: loadingWorkshops, refetch: refetchWorkshops } = useApi(() => classes.workshops.list())
@@ -203,17 +239,42 @@ export default function StudentBook() {
       return
     }
     setCart({ session, type: type || 'casual', price })
+    setPromoCode('')
+    setPromoDiscount(null)
+    setPromoError('')
+    setAppliedPromoCode('')
   }
 
-  function proceedToCheckout() {
+  async function applyPromoCode() {
+    if (!promoCode) return
+    setPromoApplying(true)
+    setPromoError('')
+    try {
+      const itemType = cart?.type === 'casual' ? 'casual' : cart?.type === 'trial' ? 'casual' : 'season'
+      const res = await paymentsApi.promoCodes.validate({
+        code: promoCode,
+        item_type: itemType,
+        amount: cart?.price,
+      })
+      setPromoDiscount(res.data.discount)
+      setAppliedPromoCode(promoCode)
+    } catch (err) {
+      setPromoError(err.response?.data?.detail || 'Invalid promo code')
+      setPromoDiscount(null)
+    } finally {
+      setPromoApplying(false)
+    }
+  }
+
+  function proceedToCheckout(finalPrice) {
     if (!cart) return
-    const { session, type, price } = cart
+    const { session, type } = cart
     const isCasual = type === 'casual'
     const isTrial = type === 'trial'
     const description = isTrial
       ? `Trial Class — ${session.name}`
       : `${session.name} — ${isCasual ? 'Casual' : 'Season 4'}`
-    setCheckout({ session, type, amount: price, description })
+    setCheckout({ session, type, amount: finalPrice ?? cart.price, description })
   }
 
   async function cancelWorkshop(workshop) {
@@ -249,6 +310,11 @@ export default function StudentBook() {
     const { session, type } = checkout
     setCheckout(null)
     setCart(null)
+    setPromoDiscount(null)
+    if (appliedPromoCode) {
+      paymentsApi.promoCodes.use({ code: appliedPromoCode }).catch(() => {})
+      setAppliedPromoCode('')
+    }
     try {
       await enrolments.create({ session: session.id, student: user?.id, status: 'active', enrolment_type: type || 'casual' })
     } catch {}
@@ -281,7 +347,13 @@ export default function StudentBook() {
         cart={cart?.session}
         priceCasual={cart?.price}
         onProceed={proceedToCheckout}
-        onClear={() => setCart(null)}
+        onClear={() => { setCart(null); setPromoDiscount(null); setPromoCode(''); setPromoError('') }}
+        promoCode={promoCode}
+        promoDiscount={promoDiscount}
+        onPromoChange={code => { setPromoCode(code); setPromoDiscount(null); setPromoError('') }}
+        onPromoApply={applyPromoCode}
+        promoApplying={promoApplying}
+        promoError={promoError}
       />
 
       <div style={{ marginBottom: 20 }}>

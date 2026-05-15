@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApi } from '../../hooks/useApi'
 import { payments, users, seasons } from '../../api'
 
@@ -124,16 +124,33 @@ function RecordModal({ plan, instalment, onSave, onClose }) {
 // ─── Take Payment Modal ──────────────────────────────────────────────────────
 
 function TakePaymentModal({ plan, instalment, onSave, onClose }) {
+  const [savedCard, setSavedCard] = useState(null)
+  const [loadingCard, setLoadingCard] = useState(true)
   const [charging, setCharging] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
+
+  useEffect(() => {
+    payments.stripe.paymentMethods({ student_id: plan.student })
+      .then(res => {
+        const methods = res.data.payment_methods || []
+        const defaultId = res.data.default_payment_method_id
+        const def = methods.find(m => m.id === defaultId) || methods[0] || null
+        setSavedCard(def)
+      })
+      .catch(() => {})
+      .finally(() => setLoadingCard(false))
+  }, [plan.student])
 
   async function handleCharge() {
     setCharging(true)
     setError('')
     try {
-      // Mark instalment as paid — in a full Stripe integration this would
-      // hit a backend endpoint that charges the saved card
+      await payments.stripe.chargeSaved({
+        student_id: plan.student,
+        amount_cents: Math.round(parseFloat(instalment.amount) * 100),
+        description: `${plan.description} — instalment`,
+      })
       await payments.plans.updateInstalment(instalment.id, {
         status: 'paid',
         paid_date: new Date().toISOString().slice(0, 10),
@@ -151,7 +168,7 @@ function TakePaymentModal({ plan, instalment, onSave, onClose }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" style={{ maxWidth: 400 }} onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <div className="modal-title">Take Payment</div>
+          <div className="modal-title">Charge Saved Card</div>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
         <div style={{ padding: '8px 0 16px' }}>
@@ -167,13 +184,24 @@ function TakePaymentModal({ plan, instalment, onSave, onClose }) {
               Due {instalment?.due_date ? new Date(instalment.due_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
             </div>
           </div>
+          {loadingCard ? (
+            <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 12 }}>Loading card info…</div>
+          ) : savedCard ? (
+            <div style={{ background: 'rgba(204,255,0,0.06)', border: '1px solid rgba(204,255,0,0.2)', borderRadius: 8, padding: '10px 14px', fontSize: 13, marginBottom: 14 }}>
+              Saved card: <strong>{savedCard.brand?.toUpperCase()} ···· {savedCard.last4}</strong> (exp {savedCard.exp_month}/{savedCard.exp_year})
+            </div>
+          ) : (
+            <div style={{ background: 'rgba(255,68,68,0.07)', border: '1px solid rgba(255,68,68,0.2)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>
+              No saved card on file for this student.
+            </div>
+          )}
           {done ? (
-            <div style={{ textAlign: 'center', color: 'var(--lime)', fontSize: 14, fontWeight: 600 }}>✓ Payment recorded</div>
+            <div style={{ textAlign: 'center', color: 'var(--lime)', fontSize: 14, fontWeight: 600 }}>✓ Payment charged and recorded</div>
           ) : (
             <>
               {error && <div style={{ color: 'var(--red)', fontSize: 12, marginBottom: 12 }}>{error}</div>}
               <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleCharge} disabled={charging}>
+                <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleCharge} disabled={charging || !savedCard || loadingCard}>
                   {charging ? 'Charging…' : 'Charge Saved Card'}
                 </button>
                 <button className="btn btn-ghost" onClick={onClose}>Cancel</button>

@@ -57,3 +57,24 @@ def auto_charge_saved_card(sender, instance, created, **kwargs):
         )
     except Exception as e:
         logger.error('Auto-charge failed for payment %s: %s', instance.id, str(e))
+
+
+@receiver(post_save, sender='payments.PaymentPlanInstalment')
+def check_plan_completion(sender, instance, **kwargs):
+    """When an instalment is marked paid, auto-complete the plan if all instalments are now paid."""
+    if instance.status != 'paid':
+        return
+    plan = instance.plan
+    if plan.status == 'completed':
+        return
+    if plan.instalments.exclude(status='paid').exists():
+        return
+    plan.status = 'completed'
+    plan.save(update_fields=['status'])
+    from apps.users.models import Notification
+    Notification.objects.create(
+        recipient=plan.student,
+        title='Payment plan complete!',
+        body=f'All instalments for "{plan.description}" have been paid. Thank you!',
+        notification_type='success',
+    )

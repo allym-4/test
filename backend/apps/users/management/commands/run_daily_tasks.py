@@ -27,4 +27,7 @@ class Command(BaseCommand):
         self.stdout.write('-- Sending cover needed alerts --')
         call_command('send_cover_needed_alerts')
 
+        self.stdout.write('-- Notifying overdue balances --')
+        call_command('notify_overdue_balances')
+
         self.stdout.write('=== Done ===')

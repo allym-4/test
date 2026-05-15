@@ -31,4 +31,6 @@ urlpatterns = [
     path('gift-cards/redeem/', views.redeem_gift_card, name='gift-card-redeem'),
     path('promo-codes/', views.PromoCodeListView.as_view(), name='promo-code-list'),
     path('promo-codes/<int:pk>/', views.PromoCodeDetailView.as_view(), name='promo-code-detail'),
+    path('promo-codes/validate/', views.validate_promo_code, name='promo-code-validate'),
+    path('promo-codes/use/', views.use_promo_code, name='promo-code-use'),
 ]

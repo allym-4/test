@@ -79,6 +79,10 @@ export const payments = {
     updateAutoCharge: (data) => client.patch('/api/payments/stripe/payment-methods/', data),
     chargeSaved: (data) => client.post('/api/payments/stripe/charge-saved/', data),
   },
+  promoCodes: {
+    validate: (data) => client.post('/api/payments/promo-codes/validate/', data),
+    use: (data) => client.post('/api/payments/promo-codes/use/', data),
+  },
   plans: {
     list: (params) => client.get('/api/payments/plans/', { params }),
     get: (id) => client.get(`/api/payments/plans/${id}/`),
