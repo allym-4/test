@@ -342,7 +342,11 @@ class NotificationListView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Notification.objects.filter(recipient=self.request.user)
+        if self.request.user.role in ('admin', 'instructor', 'staff'):
+            recipient_id = self.request.query_params.get('recipient')
+            if recipient_id:
+                return Notification.objects.filter(recipient_id=recipient_id).order_by('-created_at')
+        return Notification.objects.filter(recipient=self.request.user).order_by('-created_at')
 
     def create(self, request, *args, **kwargs):
         if request.user.role not in ('admin', 'instructor', 'staff'):

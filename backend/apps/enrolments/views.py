@@ -19,6 +19,10 @@ class EnrolmentListView(generics.ListCreateAPIView):
             qs = qs.filter(class_session_id=session_id)
         if status:
             qs = qs.filter(status=status)
+        enrolment_type = self.request.query_params.get('enrolment_type')
+        if enrolment_type:
+            types = [t.strip() for t in enrolment_type.split(',') if t.strip()]
+            qs = qs.filter(enrolment_type__in=types)
         return qs
 
 

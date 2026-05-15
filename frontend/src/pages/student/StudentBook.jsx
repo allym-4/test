@@ -197,7 +197,7 @@ export default function StudentBook() {
 
   function addToCart(session, type, price) {
     if (type === 'waitlist') {
-      enrolments.create({ session: session.id, student: user?.id, status: 'waitlisted' })
+      enrolments.create({ session: session.id, student: user?.id, status: 'waitlisted', enrolment_type: 'course' })
         .then(() => setBooked(b => [...b, session.id + '-waitlist']))
         .catch(() => {})
       return
@@ -246,11 +246,11 @@ export default function StudentBook() {
   }
 
   async function handlePaymentSuccess() {
-    const { session } = checkout
+    const { session, type } = checkout
     setCheckout(null)
     setCart(null)
     try {
-      await enrolments.create({ session: session.id, student: user?.id, status: 'active' })
+      await enrolments.create({ session: session.id, student: user?.id, status: 'active', enrolment_type: type || 'casual' })
     } catch {}
     setBooked(b => [...b, session.id])
   }

@@ -45,7 +45,7 @@ export default function AdminDashboard() {
   const { data: trialsData } = useApi(() => enrolments.list({ enrolment_type: 'trial' }))
   const { data: pendingPlansData, refetch: refetchPendingPlans } = useApi(() => payments.plans.list({ status: 'pending_approval' }))
   const { data: exemptionData, refetch: refetchExemptions } = useApi(() => enrolments.list({ status: 'exemption_requested' }))
-  const { data: trialsAndCasualsData } = useApi(() => enrolments.list({ enrolment_type: 'trial,casual' }))
+  const { data: trialsAndCasualsData, refetch: refetchTrialsAndCasuals } = useApi(() => enrolments.list({ enrolment_type: 'trial,casual' }))
 
   const sessions = sessionsData?.results || []
   const plans = plansData?.results || plansData || []
@@ -135,6 +135,20 @@ export default function AdminDashboard() {
   async function chaseWaiver(studentId) {
     try {
       await notifications.send(studentId, 'Waiver reminder', 'Please complete and sign your studio waiver before your first class.')
+    } catch { /* non-critical */ }
+  }
+
+  async function markIntroSent(enrolment) {
+    try {
+      await enrolments.update(enrolment.id, { intro_email_sent: true })
+      refetchTrialsAndCasuals()
+    } catch { /* non-critical */ }
+  }
+
+  async function markWaiverSigned(enrolment) {
+    try {
+      await enrolments.update(enrolment.id, { waiver_signed: true })
+      refetchTrialsAndCasuals()
     } catch { /* non-critical */ }
   }
 
@@ -567,20 +581,18 @@ export default function AdminDashboard() {
                       <td>
                         {introSent
                           ? <span className="tag tag-lime" style={{ fontSize: 10 }}>SENT</span>
-                          : <span className="tag tag-grey" style={{ fontSize: 10 }}>NOT SENT</span>
+                          : <button className="btn btn-ghost btn-xs" style={{ fontSize: 10 }} onClick={() => { sendWelcome(e.student); markIntroSent(e) }}>SEND NOW</button>
                         }
                       </td>
                       <td>
                         {waiverSigned
                           ? <span className="tag tag-lime" style={{ fontSize: 10 }}>SIGNED</span>
-                          : <span className="tag tag-red" style={{ fontSize: 10 }}>NOT SIGNED</span>
+                          : <button className="btn btn-ghost btn-xs" style={{ fontSize: 10, color: 'var(--red)' }} onClick={() => { chaseWaiver(e.student); markWaiverSigned(e) }}>CHASE</button>
                         }
                       </td>
                       <td>
                         <div style={{ display: 'flex', gap: 4, flexWrap: 'nowrap' }}>
                           <Link to="/admin/students" className="btn btn-ghost btn-xs">VIEW</Link>
-                          {!introSent && e.student && <button className="btn btn-ghost btn-xs" onClick={() => sendWelcome(e.student)}>SEND NOW</button>}
-                          {!waiverSigned && e.student && <button className="btn btn-ghost btn-xs" onClick={() => chaseWaiver(e.student)}>CHASE WAIVER</button>}
                         </div>
                       </td>
                     </tr>

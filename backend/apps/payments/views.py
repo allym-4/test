@@ -181,6 +181,8 @@ def redeem_gift_card(request):
     if card.balance <= 0:
         return Response({'detail': 'This gift card has no remaining balance.'}, status=status.HTTP_400_BAD_REQUEST)
     from django.utils import timezone
+    if card.expires_at and card.expires_at < timezone.now().date():
+        return Response({'detail': 'This gift card has expired.'}, status=status.HTTP_400_BAD_REQUEST)
     card.redeemed_by = request.user
     card.redeemed_at = timezone.now()
     card.is_active = False

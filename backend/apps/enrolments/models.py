@@ -15,6 +15,7 @@ class Enrolment(models.Model):
     class EnrolmentType(models.TextChoices):
         COURSE = 'course', 'Course'
         CASUAL = 'casual', 'Casual'
+        TRIAL = 'trial', 'Trial'
 
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='enrolments')
     class_session = models.ForeignKey(ClassSession, on_delete=models.CASCADE, related_name='enrolments')
@@ -23,6 +24,9 @@ class Enrolment(models.Model):
     enrolled_date = models.DateField(auto_now_add=True)
     cancelled_date = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True)
+    is_first_visit = models.BooleanField(default=False)
+    intro_email_sent = models.BooleanField(default=False)
+    waiver_signed = models.BooleanField(default=False)
 
     class Meta:
         unique_together = [('student', 'class_session')]
