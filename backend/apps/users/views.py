@@ -1,12 +1,21 @@
 import csv
 import io
+import os
 import re
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db import transaction
-from django.db.models import Q
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList, Referral
+from django.db.models import Q, Count
+from django.utils import timezone
+from datetime import timedelta
+
+try:
+    import anthropic
+    ANTHROPIC_AVAILABLE = True
+except ImportError:
+    ANTHROPIC_AVAILABLE = False
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, AutomationRun, Order, Notification, InstructorAvailability, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList, Referral
 from .serializers import (
     UserSerializer, UserCreateSerializer, StaffNoteSerializer, LeadSerializer,
     StudioSettingsSerializer, AnnouncementSerializer, ProductSerializer, AutomationRuleSerializer,
@@ -255,6 +264,52 @@ class AutomationRuleDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = AutomationRuleSerializer
     permission_classes = [IsAdminOrInstructor]
 
+
+class AutomationStatsView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        cutoff = timezone.now() - timedelta(days=30)
+        runs_this_month = AutomationRun.objects.filter(created_at__gte=cutoff).count()
+        total_runs = AutomationRun.objects.count()
+
+        by_slug_qs = (
+            AutomationRun.objects
+            .values('slug')
+            .annotate(count=Count('id'))
+        )
+        by_slug = {item['slug']: item['count'] for item in by_slug_qs}
+
+        return Response({
+            'runs_this_month': runs_this_month,
+            'emails_sent': 0,
+            'total_runs': total_runs,
+            'by_slug': by_slug,
+        })
+
+
+class AutomationRunListView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        runs = (
+            AutomationRun.objects
+            .select_related('student', 'rule')
+            .order_by('-created_at')[:10]
+        )
+        data = [
+            {
+                'id': r.id,
+                'slug': r.slug,
+                'student_name': r.student.display_name if r.student else None,
+                'student_id': r.student_id,
+                'status': r.status,
+                'actions_taken': r.actions_taken,
+                'created_at': r.created_at,
+            }
+            for r in runs
+        ]
+        return Response(data)
 
 
 class OrderListView(generics.ListCreateAPIView):
@@ -561,47 +616,64 @@ class ReferralListView(generics.ListCreateAPIView):
 
 
 class AssistantView(APIView):
-    permission_classes = [IsAdminOrInstructor]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        query = request.data.get('query', '').strip()
-        if not query:
-            return Response({'error': 'No query provided'}, status=400)
+        message = request.data.get('message', '').strip()
+        if not message:
+            return Response({'error': 'No message provided'}, status=400)
 
-        # Build context from real data
+        api_key = os.environ.get('ANTHROPIC_API_KEY', '')
+        if not ANTHROPIC_AVAILABLE or not api_key:
+            return Response({'response': "I'm not fully set up yet — please contact the studio directly for help."})
+
+        # Build student context
         from apps.enrolments.models import Enrolment
-        from apps.payments.models import Payment
 
-        student_count = User.objects.filter(role='student', is_active=True).count()
-        active_enrolments = Enrolment.objects.filter(status='active').count()
+        student = request.user
+        student_name = student.display_name or student.email
 
-        # Simple keyword-based responses using real data
-        q = query.lower()
+        active_enrolments = Enrolment.objects.filter(
+            student=student,
+            status='active',
+        ).select_related('class_session')
+        class_list = ', '.join(
+            str(e.class_session) for e in active_enrolments
+        ) or 'No active enrolments'
 
-        if any(w in q for w in ['how many', 'count', 'total student']):
-            return Response({'reply': f'There are currently **{student_count} active students** in the system with **{active_enrolments} active enrolments**.'})
+        # Pull studio settings
+        studio = StudioSettings.get()
+        studio_name = studio.studio_name
+        cancellation_window_hours = studio.cancellation_window_hours
+        late_cancel_fee = studio.late_cancel_fee
+        no_show_fee = studio.no_show_fee
+        credit_expiry_days = studio.credit_expiry_days
 
-        if any(w in q for w in ['owing', 'outstanding', 'overdue', 'balance']):
-            from apps.payments.models import PaymentPlanInstalment
-            overdue = PaymentPlanInstalment.objects.filter(status='overdue').count()
-            return Response({'reply': f'There are **{overdue} overdue payment instalments** currently outstanding.'})
+        system_prompt = (
+            f"You are the helpful AI assistant for {studio_name}, a pole and aerial dance studio.\n"
+            f"You help students with questions about classes, bookings, memberships, and studio policies.\n\n"
+            f"Studio policies:\n"
+            f"- Cancellation window: {cancellation_window_hours} hours before class\n"
+            f"- Late cancellation fee: ${late_cancel_fee}\n"
+            f"- No-show fee: ${no_show_fee}\n"
+            f"- Credit expiry: {credit_expiry_days} days\n\n"
+            f"Student context:\n"
+            f"- Name: {student_name}\n"
+            f"- Active classes: {class_list}\n\n"
+            f"Be warm, helpful, and concise. If you don't know something specific, direct them to contact the studio directly.\n"
+            f"Keep responses under 3 sentences unless a longer answer is clearly needed."
+        )
 
-        if any(w in q for w in ['list student', 'show student', 'all student']):
-            students = User.objects.filter(role='student', is_active=True).values('display_name', 'email')[:20]
-            lines = [f"{s['display_name']} — {s['email']}" for s in students]
-            return Response({'reply': f'**Active students** (first 20 of {student_count}):\n\n' + '\n'.join(lines)})
+        try:
+            ai_client = anthropic.Anthropic(api_key=api_key)
+            ai_response = ai_client.messages.create(
+                model='claude-haiku-4-5-20251001',
+                max_tokens=500,
+                system=system_prompt,
+                messages=[{'role': 'user', 'content': message}],
+            )
+            reply_text = ai_response.content[0].text
+        except Exception:
+            reply_text = "I'm having trouble connecting right now — please contact the studio directly for help."
 
-        if any(w in q for w in ['new student', 'recent']):
-            from django.utils import timezone
-            from datetime import timedelta
-            cutoff = timezone.now() - timedelta(days=30)
-            new_count = User.objects.filter(role='student', date_joined__gte=cutoff).count()
-            return Response({'reply': f'**{new_count} new students** joined in the last 30 days.'})
-
-        if any(w in q for w in ['revenue', 'payment', 'income']):
-            from django.db.models import Sum
-            total = Payment.objects.filter(payment_type='payment').aggregate(t=Sum('amount'))['t'] or 0
-            return Response({'reply': f'Total revenue recorded: **${total:,.2f}**'})
-
-        # Default
-        return Response({'reply': f"I can help with student counts, enrolment numbers, overdue payments, and revenue. You have **{student_count} students** and **{active_enrolments} active enrolments** right now. Try asking: 'list students', 'how many students', 'revenue total', or 'overdue payments'."})
+        return Response({'response': reply_text})

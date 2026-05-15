@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { helpdesk } from '../../api'
+import { helpdesk, assistant } from '../../api'
 import { useAuth } from '../../contexts/AuthContext'
 
 export default function StudentChat() {
@@ -73,12 +73,7 @@ export default function StudentChat() {
     setAiLoading(true)
     const start = Date.now()
     try {
-      const r = await fetch('/api/users/assistant/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text }),
-      })
-      const data = await r.json()
+      const { data } = await assistant.chat(text)
       const elapsed = Date.now() - start
       if (elapsed < 1000) await new Promise(res => setTimeout(res, 1000 - elapsed))
       setAiMessages(prev => [...prev, { id: Date.now() + 1, role: 'bot', body: data.response || data.message || 'Sorry, I couldn\'t process that.' }])

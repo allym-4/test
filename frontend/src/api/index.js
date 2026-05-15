@@ -158,6 +158,8 @@ export const automations = {
   create: (data) => client.post('/api/users/automations/', data),
   update: (id, data) => client.patch(`/api/users/automations/${id}/`, data),
   delete: (id) => client.delete(`/api/users/automations/${id}/`),
+  stats: () => client.get('/api/users/automations/stats/'),
+  runs: () => client.get('/api/users/automation-runs/'),
 }
 
 export const orders = {
@@ -311,4 +313,8 @@ export const referrals = {
   list: (params) => client.get('/api/users/referrals/', { params }),
   create: (data) => client.post('/api/users/referrals/', data),
   update: (id, data) => client.patch(`/api/users/referrals/${id}/`, data),
+}
+
+export const assistant = {
+  chat: (message) => client.post('/api/users/assistant/', { message }),
 }

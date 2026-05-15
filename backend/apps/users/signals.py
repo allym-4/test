@@ -39,3 +39,84 @@ def send_welcome_email(sender, instance, created, **kwargs):
             recipient_list=[instance.email],
             fail_silently=True,
         )
+
+
+@receiver(post_save, sender='attendance.AttendanceRecord')
+def handle_no_show_fee(sender, instance, created, **kwargs):
+    if instance.status != 'no_show':
+        return
+    if instance.no_show_fee_charged or instance.no_show_fee_waived:
+        return
+
+    from apps.users.models import AutomationRule, Notification, StudioSettings, AutomationRun
+    from apps.payments.models import Payment
+
+    rule = AutomationRule.objects.filter(slug='noshow_fee').first()
+    if not rule or not rule.enabled:
+        return
+
+    studio_settings = StudioSettings.get()
+    fee = studio_settings.no_show_fee
+    student = instance.student
+
+    Payment.objects.create(
+        student=student,
+        payment_type='no_show_fee',
+        amount=fee,
+        description=f'No-show fee for {instance.occurrence}',
+        created_by=None,
+    )
+
+    Notification.objects.create(
+        recipient=student,
+        title='No-show Fee Applied',
+        body=f'A no-show fee of ${fee} has been applied to your account for missing your class on {instance.occurrence}.',
+        notification_type='payment',
+    )
+
+    # Mark fee as charged to avoid duplicate runs
+    type(instance).objects.filter(pk=instance.pk).update(no_show_fee_charged=True)
+
+    AutomationRun.objects.create(
+        rule=rule,
+        slug='noshow_fee',
+        student=student,
+        trigger_data={'attendance_record_id': instance.pk, 'occurrence': str(instance.occurrence)},
+        actions_taken=[f'Charged no-show fee ${fee}', 'Sent in-app notification'],
+        status='completed',
+    )
+
+
+@receiver(post_save, sender='payments.PaymentPlanInstalment')
+def handle_payment_overdue(sender, instance, created, **kwargs):
+    # Guard: only fire when status field is involved
+    update_fields = kwargs.get('update_fields')
+    if update_fields is not None and 'status' not in update_fields:
+        return
+
+    if instance.status != 'overdue':
+        return
+
+    from apps.users.models import AutomationRule, Notification, AutomationRun
+
+    rule = AutomationRule.objects.filter(slug='payment_overdue').first()
+    if not rule or not rule.enabled:
+        return
+
+    student = instance.plan.student
+
+    Notification.objects.create(
+        recipient=student,
+        title='Payment Overdue',
+        body=f'Your payment instalment of ${instance.amount} was due on {instance.due_date} and is now overdue. Please contact us to arrange payment.',
+        notification_type='payment',
+    )
+
+    AutomationRun.objects.create(
+        rule=rule,
+        slug='payment_overdue',
+        student=student,
+        trigger_data={'instalment_id': instance.pk, 'amount': str(instance.amount), 'due_date': str(instance.due_date)},
+        actions_taken=['Sent overdue payment notification'],
+        status='completed',
+    )

@@ -178,6 +178,22 @@ class AutomationRule(models.Model):
         return self.name or self.slug
 
 
+class AutomationRun(models.Model):
+    rule = models.ForeignKey(AutomationRule, on_delete=models.SET_NULL, null=True, related_name='runs')
+    slug = models.CharField(max_length=50)  # store slug directly in case rule deleted
+    student = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='automation_runs')
+    trigger_data = models.JSONField(default=dict, blank=True)
+    actions_taken = models.JSONField(default=list, blank=True)  # list of action descriptions
+    status = models.CharField(max_length=20, default='completed')  # completed | failed | skipped
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.slug} — {self.student} — {self.status}'
+
+
 class Order(models.Model):
     class Status(models.TextChoices):
         PENDING = 'pending_pickup', 'Pending Pickup'

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { automations } from '../../api'
+import { useApi } from '../../hooks/useApi'
 
 const AUTOMATION_DEFS = [
   { slug: 'noshow_fee', icon: '⚠️', name: 'No-show Fee Charge', desc: "Automatically charges a $20 fee when a student misses a class without cancelling.", trigger: 'Class marked: no-show', action: 'Charge $20 + send email', category: 'billing', defaultEnabled: true },
@@ -295,6 +296,9 @@ export default function AdminAutomations() {
   const [showBuilder, setShowBuilder] = useState(false)
   const [editingFlow, setEditingFlow] = useState(null)
 
+  const { data: stats } = useApi(() => automations.stats(), [])
+  const { data: runs } = useApi(() => automations.runs(), [])
+
   useEffect(() => {
     loadData()
   }, [])
@@ -381,8 +385,8 @@ export default function AdminAutomations() {
         {[
           ['Active', loading ? '…' : enabledCount, 'kpi-lime'],
           ['Inactive', loading ? '…' : AUTOMATION_DEFS.length - enabledCount, 'kpi-grey'],
-          ['Runs This Month', 35, 'kpi-lav'],
-          ['Emails Sent', 89, 'kpi-amber'],
+          ['Runs This Month', stats?.runs_this_month ?? '…', 'kpi-lav'],
+          ['Emails Sent', stats?.emails_sent ?? '…', 'kpi-amber'],
         ].map(([label, val, cls]) => (
           <div key={label} className={`kpi ${cls}`}>
             <div className="kpi-label">{label}</div>
@@ -405,6 +409,7 @@ export default function AdminAutomations() {
             <span style={{ marginLeft: 6, background: activeTab === 'custom' ? '#000' : '#333', color: activeTab === 'custom' ? 'var(--lime)' : '#aaa', borderRadius: 10, padding: '1px 7px', fontSize: 11 }}>{customFlows.length}</span>
           )}
         </button>
+        <button style={tabStyle(activeTab === 'history')} onClick={() => setActiveTab('history')}>Run History</button>
       </div>
 
       {/* BUILT-IN TAB */}
@@ -443,6 +448,52 @@ export default function AdminAutomations() {
             })}
           </div>
         </>
+      )}
+
+      {/* RUN HISTORY TAB */}
+      {activeTab === 'history' && (
+        <div>
+          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 16 }}>Last 10 Automation Runs</div>
+          {!runs || runs.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px', color: '#555', fontSize: 14 }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>📋</div>
+              <div>No automation runs recorded yet.</div>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #222', color: '#666', textAlign: 'left' }}>
+                    <th style={{ padding: '8px 12px', fontWeight: 600 }}>Automation</th>
+                    <th style={{ padding: '8px 12px', fontWeight: 600 }}>Student</th>
+                    <th style={{ padding: '8px 12px', fontWeight: 600 }}>Actions Taken</th>
+                    <th style={{ padding: '8px 12px', fontWeight: 600 }}>Status</th>
+                    <th style={{ padding: '8px 12px', fontWeight: 600 }}>When</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {runs.map(run => (
+                    <tr key={run.id} style={{ borderBottom: '1px solid #111' }}>
+                      <td style={{ padding: '10px 12px' }}>
+                        <span style={{ background: 'rgba(204,255,0,0.1)', color: 'var(--lime)', border: '1px solid rgba(204,255,0,0.2)', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontFamily: 'monospace' }}>{run.slug}</span>
+                      </td>
+                      <td style={{ padding: '10px 12px', color: '#ccc' }}>{run.student_name || '—'}</td>
+                      <td style={{ padding: '10px 12px', color: '#888', fontSize: 11 }}>{Array.isArray(run.actions_taken) ? run.actions_taken.join(', ') : run.actions_taken}</td>
+                      <td style={{ padding: '10px 12px' }}>
+                        <span style={{
+                          background: run.status === 'completed' ? 'rgba(204,255,0,0.1)' : run.status === 'failed' ? 'rgba(231,76,60,0.1)' : 'rgba(255,255,255,0.05)',
+                          color: run.status === 'completed' ? 'var(--lime)' : run.status === 'failed' ? '#e74c3c' : '#888',
+                          borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 600,
+                        }}>{run.status}</span>
+                      </td>
+                      <td style={{ padding: '10px 12px', color: '#666', fontSize: 11 }}>{new Date(run.created_at).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       )}
 
       {/* CUSTOM FLOWS TAB */}
