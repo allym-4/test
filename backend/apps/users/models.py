@@ -19,6 +19,13 @@ class User(AbstractUser):
     is_active = models.BooleanField(default=True)
     stripe_customer_id = models.CharField(max_length=100, blank=True)
 
+    # Staff permission flags (only meaningful for instructor/admin/staff roles)
+    perm_billing = models.BooleanField(default=False)
+    perm_edit_profiles = models.BooleanField(default=False)
+    perm_approve_plans = models.BooleanField(default=False)
+    perm_bulk_email = models.BooleanField(default=False)
+    perm_reports = models.BooleanField(default=False)
+
     def __str__(self):
         return f'{self.get_full_name() or self.username} ({self.role})'
 

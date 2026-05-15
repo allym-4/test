@@ -197,20 +197,35 @@ export default function AdminSettings() {
   const rawStaff = staffData?.results || staffData || []
   const rawInstructors = instructorData?.results || instructorData || []
   const allStaff = [...rawInstructors, ...rawStaff]
-  const [staffPerms, setStaffPerms] = useState({}) // { [userId]: { billing: bool, ... } }
-  const [staffRoles, setStaffRoles] = useState({}) // { [userId]: 'instructor'|'staff'|'admin' }
+  const [savingStaff, setSavingStaff] = useState({}) // { [userId]: true } while saving
 
-  function getPerms(userId) {
-    return staffPerms[userId] || { billing: false, editProfiles: false, approvePlans: false, bulkEmail: false, reports: false }
+  function permKey(frontendKey) {
+    return { billing: 'perm_billing', editProfiles: 'perm_edit_profiles', approvePlans: 'perm_approve_plans', bulkEmail: 'perm_bulk_email', reports: 'perm_reports' }[frontendKey]
   }
-  function setPerm(userId, key, val) {
-    setStaffPerms(prev => ({ ...prev, [userId]: { ...getPerms(userId), [key]: val } }))
+
+  function getPerms(user) {
+    return {
+      billing: !!user.perm_billing,
+      editProfiles: !!user.perm_edit_profiles,
+      approvePlans: !!user.perm_approve_plans,
+      bulkEmail: !!user.perm_bulk_email,
+      reports: !!user.perm_reports,
+    }
   }
-  function getRole(user) {
-    return staffRoles[user.id] || user.role || 'staff'
-  }
-  function setRole(userId, val) {
-    setStaffRoles(prev => ({ ...prev, [userId]: val }))
+
+  async function saveStaffField(user, field, val) {
+    setSavingStaff(prev => ({ ...prev, [user.id]: true }))
+    try {
+      await users.update(user.id, { [field]: val })
+      // Update the local list so the UI reflects the new value immediately
+      const lists = [rawInstructors, rawStaff]
+      lists.forEach(list => {
+        const found = list.find(u => u.id === user.id)
+        if (found) found[field] = val
+      })
+    } finally {
+      setSavingStaff(prev => ({ ...prev, [user.id]: false }))
+    }
   }
 
   useEffect(() => {
@@ -455,19 +470,15 @@ export default function AdminSettings() {
 
       {tab === 'staff' && (
         <div>
-          <div style={{ background: '#1a1a1a', borderRadius: 10, padding: '12px 16px', marginBottom: 24, fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
-            Full role-based permissions are coming soon. Changes here are saved locally for preview.
-          </div>
-
           {allStaff.length === 0 ? (
             <div style={{ color: 'var(--grey)', fontSize: 13, padding: 12 }}>No staff or instructors found.</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {allStaff.map(user => {
-                const perms = getPerms(user.id)
-                const role = getRole(user)
-                const initials = (user.first_name?.[0] || user.name?.[0] || user.email?.[0] || '?').toUpperCase()
-                const displayName = user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : user.name || user.email
+                const perms = getPerms(user)
+                const initials = (user.first_name?.[0] || user.email?.[0] || '?').toUpperCase()
+                const displayName = user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : user.email
+                const isSaving = !!savingStaff[user.id]
                 return (
                   <div key={user.id} className="section" style={{ padding: '18px 20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
@@ -478,16 +489,25 @@ export default function AdminSettings() {
                         <div style={{ fontWeight: 600, fontSize: 14 }}>{displayName}</div>
                         <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{user.email}</div>
                       </div>
-                      <select value={role} onChange={e => setRole(user.id, e.target.value)} style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, background: '#1a1a1a', border: '1px solid var(--border)', color: 'var(--white)', cursor: 'pointer' }}>
+                      <select
+                        value={user.role}
+                        onChange={e => saveStaffField(user, 'role', e.target.value)}
+                        disabled={isSaving}
+                        style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, background: '#1a1a1a', border: '1px solid var(--border)', color: 'var(--white)', cursor: 'pointer' }}
+                      >
                         <option value="instructor">Instructor</option>
                         <option value="staff">Staff</option>
                         <option value="admin">Admin</option>
                       </select>
+                      {isSaving && <span style={{ fontSize: 11, color: 'var(--grey)' }}>Saving…</span>}
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 10 }}>
                       {STAFF_PERMISSIONS.map(p => (
                         <div key={p.key} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <Toggle checked={!!perms[p.key]} onChange={val => setPerm(user.id, p.key, val)} />
+                          <Toggle
+                            checked={!!perms[p.key]}
+                            onChange={val => saveStaffField(user, permKey(p.key), val)}
+                          />
                           <span style={{ fontSize: 13 }}>{p.label}</span>
                         </div>
                       ))}
