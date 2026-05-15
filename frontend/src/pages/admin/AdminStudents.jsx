@@ -933,8 +933,8 @@ export default function AdminStudents() {
               <button className="modal-close-btn" onClick={() => setViewForm(null)}>✕</button>
             </div>
             <div className="sd-body" style={{ maxHeight: '65vh', overflowY: 'auto' }}>
-              {viewForm.form?.data && Object.keys(viewForm.form.data).length > 0 ? (
-                Object.entries(viewForm.form.data).map(([k, v]) => (
+              {viewForm.form?.responses && Object.keys(viewForm.form.responses).length > 0 ? (
+                Object.entries(viewForm.form.responses).map(([k, v]) => (
                   <div key={k} style={{ display: 'flex', gap: 16, padding: '8px 0', borderBottom: '1px solid #1a1a1a', fontSize: 13 }}>
                     <div style={{ width: 160, color: 'var(--grey)', flexShrink: 0, textTransform: 'capitalize' }}>{k.replace(/_/g, ' ')}</div>
                     <div style={{ wordBreak: 'break-word' }}>{String(v)}</div>

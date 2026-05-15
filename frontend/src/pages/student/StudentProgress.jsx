@@ -206,7 +206,7 @@ export default function StudentProgress() {
               {/* Class selector */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
                 {enrolList.map(e => {
-                  const name = e.session_detail?.name || e.session?.name || `Class ${e.id}`
+                  const name = e.class_session_detail?.name || `Class ${e.id}`
                   const active = e.id === activeClassId
                   return (
                     <button
@@ -235,11 +235,11 @@ export default function StudentProgress() {
                   {/* Progress card */}
                   <div className="card" style={{ marginBottom: 20 }}>
                     <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 2 }}>
-                      {activeEnrol.session_detail?.name || activeEnrol.session?.name || 'Your Class'}
+                      {activeEnrol.class_session_detail?.name || 'Your Class'}
                     </div>
-                    {activeEnrol.session_detail?.studio_detail?.name && (
+                    {activeEnrol.class_session_detail?.studio_detail?.name && (
                       <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 12 }}>
-                        {activeEnrol.session_detail.studio_detail.name}
+                        {activeEnrol.class_session_detail.studio_detail.name}
                       </div>
                     )}
                     {totalCount > 0 ? (
