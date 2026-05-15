@@ -1,7 +1,11 @@
 from rest_framework import generics, permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from django.db.models import Sum, Q
+from rest_framework.views import APIView
+from django.db.models import Sum, Q, Count
+from django.db.models.functions import TruncMonth
+from datetime import date
+from dateutil.relativedelta import relativedelta
 from .models import Payment, PaymentPlan, PaymentPlanInstalment, Package, StudentPackage, MembershipType, GiftCard, PromoCode
 from .serializers import (
     PaymentSerializer, PaymentPlanSerializer,
@@ -180,6 +184,63 @@ class PromoCodeDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = PromoCode.objects.all()
     serializer_class = PromoCodeSerializer
     permission_classes = [IsAdminOrInstructor]
+
+
+class PaymentStatsView(APIView):
+    """Pre-aggregated payment analytics for the reporting dashboard."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def get(self, request):
+        qs = Payment.objects.all()
+
+        # Totals by type
+        type_totals = {}
+        for row in (
+            qs.values('payment_type')
+            .annotate(total=Sum('amount'), count=Count('id'))
+        ):
+            type_totals[row['payment_type']] = {
+                'total': float(row['total'] or 0),
+                'count': row['count'],
+            }
+
+        # Monthly revenue (payments only) — last 12 months
+        twelve_months_ago = date.today() - relativedelta(months=12)
+        monthly_qs = (
+            qs.filter(payment_type='payment', created_at__date__gte=twelve_months_ago)
+            .annotate(month=TruncMonth('created_at'))
+            .values('month')
+            .annotate(revenue=Sum('amount'), count=Count('id'))
+            .order_by('month')
+        )
+        monthly = [
+            {
+                'month': row['month'].strftime('%Y-%m') if row['month'] else None,
+                'label': row['month'].strftime('%b %y') if row['month'] else '',
+                'revenue': float(row['revenue'] or 0),
+                'count': row['count'],
+            }
+            for row in monthly_qs
+        ]
+
+        # Recent transactions (last 20)
+        recent = list(
+            qs.select_related('student')
+            .order_by('-created_at')[:20]
+            .values('id', 'payment_type', 'amount', 'created_at',
+                    'student__first_name', 'student__last_name', 'student__email', 'note')
+        )
+        for r in recent:
+            name = f"{r.pop('student__first_name', '')} {r.pop('student__last_name', '')}".strip()
+            r['student_name'] = name or r.pop('student__email', '')
+            r['amount'] = float(r['amount'])
+            r['created_at'] = r['created_at'].isoformat() if r['created_at'] else None
+
+        return Response({
+            'by_type': type_totals,
+            'monthly': monthly,
+            'recent': recent,
+        })
 
 
 @api_view(['GET'])

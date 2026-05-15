@@ -15,49 +15,21 @@ export default function AdminReporting() {
 
   const { data: studentsData } = useApi(() => users.list({ role: 'student' }))
   const { data: sessionsData } = useApi(() => classes.list())
-  const { data: paymentsData } = useApi(() => payments.list())
+  const { data: payStats } = useApi(() => payments.stats(), [])
   const { data: attStats, loading: attLoading } = useApi(() => attendanceApi.stats(), [])
 
   const students = studentsData?.results || []
   const sessions = sessionsData?.results || []
-  const allPayments = paymentsData?.results || []
 
-  const totalRevenue = allPayments
-    .filter(p => p.payment_type === 'payment')
-    .reduce((s, p) => s + parseFloat(p.amount || 0), 0)
-
-  const totalCharged = allPayments
-    .filter(p => p.payment_type === 'charge')
-    .reduce((s, p) => s + parseFloat(p.amount || 0), 0)
-
-  const noShowFees = allPayments
-    .filter(p => p.payment_type === 'no_show_fee')
-    .reduce((s, p) => s + parseFloat(p.amount || 0), 0)
+  // ── Payment stats (server-aggregated) ──
+  const byType = payStats?.by_type || {}
+  const totalRevenue = byType.payment?.total || 0
+  const totalCharged = byType.charge?.total || 0
+  const noShowFees = byType.no_show_fee?.total || 0
+  const monthlyRevenue = payStats?.monthly || []
+  const recentPayments = payStats?.recent || []
 
   const totalEnrolled = sessions.reduce((s, c) => s + (c.enrolled_count || 0), 0)
-
-  // --- Monthly Revenue (last 6 months) ---
-  const monthlyRevenue = (() => {
-    const now = new Date()
-    const months = []
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      months.push({
-        key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
-        label: d.toLocaleString('default', { month: 'short', year: '2-digit' }),
-        revenue: 0,
-      })
-    }
-    allPayments
-      .filter(p => p.payment_type === 'payment' && p.created_at)
-      .forEach(p => {
-        const d = new Date(p.created_at)
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-        const bucket = months.find(m => m.key === key)
-        if (bucket) bucket.revenue += parseFloat(p.amount || 0)
-      })
-    return months
-  })()
 
   // --- Enrolments by class ---
   const enrolmentsByClass = [...sessions]
@@ -65,14 +37,6 @@ export default function AdminReporting() {
     .sort((a, b) => b.enrolled_count - a.enrolled_count)
     .slice(0, 10)
     .map(s => ({ name: s.name, enrolled: s.enrolled_count }))
-
-  // --- Financial breakdown by type ---
-  const financialByType = ['payment', 'charge', 'refund', 'no_show_fee'].map(type => {
-    const total = allPayments
-      .filter(p => p.payment_type === type)
-      .reduce((s, p) => s + parseFloat(p.amount || 0), 0)
-    return { type, label: type === 'no_show_fee' ? 'No-show Fee' : type.charAt(0).toUpperCase() + type.slice(1), total }
-  }).filter(r => r.total > 0)
 
   // ── Attendance analytics (from server-aggregated stats endpoint) ──
   const attTotals = attStats?.totals || {}
@@ -237,47 +201,80 @@ export default function AdminReporting() {
       {/* ── Financial ── */}
       {tab === 'Financial' && (
         <div>
-          <div className="section-title" style={{ fontSize: 15, marginBottom: 14 }}>Payments by Type</div>
-          <div className="tbl-section">
-            <table>
-              <thead>
-                <tr><th>Type</th><th>Count</th><th>Total</th></tr>
-              </thead>
-              <tbody>
-                {['payment', 'charge', 'refund', 'no_show_fee'].map(type => {
-                  const items = allPayments.filter(p => p.payment_type === type)
-                  const total = items.reduce((s, p) => s + parseFloat(p.amount || 0), 0)
-                  const label = type === 'no_show_fee' ? 'No-show Fee' : type.charAt(0).toUpperCase() + type.slice(1)
-                  return (
-                    <tr key={type}>
-                      <td><b>{label}</b></td>
-                      <td style={{ color: 'var(--grey)' }}>{items.length}</td>
-                      <td style={{ color: type === 'refund' ? 'var(--red)' : type === 'payment' ? 'var(--lime)' : 'var(--white)' }}>
-                        ${total.toFixed(2)}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="section" style={{ padding: '16px 20px', marginTop: 20 }}>
+          {/* KPI row */}
+          <div className="kpi-grid" style={{ marginBottom: 24 }}>
             {[
-              ['Total Revenue', totalRevenue, 'var(--lime)'],
-              ['Total Charged', totalCharged, 'var(--white)'],
-              ['No-show Fees', noShowFees, 'var(--red)'],
-            ].map(([label, val, color]) => (
-              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #1a1a1a' }}>
-                <span style={{ fontSize: 13, color: 'var(--grey)' }}>{label}</span>
-                <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, color }}>${val.toFixed(2)}</span>
+              ['Total Revenue', totalRevenue, 'var(--lime)', 'All payments received'],
+              ['Charges & Fees', totalCharged + noShowFees, 'var(--amber)', 'Charges + no-show fees'],
+              ['No-show Fees', noShowFees, 'var(--red)', 'Unannounced absences'],
+              ['Net', totalRevenue - totalCharged - noShowFees, totalRevenue - totalCharged - noShowFees >= 0 ? 'var(--lime)' : 'var(--red)', 'Revenue minus charges'],
+            ].map(([label, val, color, sub]) => (
+              <div key={label} className="kpi" style={{ border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px' }}>
+                <div className="kpi-label">{label}</div>
+                <div className="kpi-value" style={{ color }}>${Number(val).toFixed(2)}</div>
+                <div className="kpi-sub">{sub}</div>
               </div>
             ))}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0' }}>
-              <span style={{ fontSize: 13, color: 'var(--grey)' }}>Outstanding</span>
-              <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, color: 'var(--red)' }}>
-                ${(totalCharged + noShowFees - totalRevenue > 0 ? totalCharged + noShowFees - totalRevenue : 0).toFixed(2)}
-              </span>
+          </div>
+
+          {/* Monthly revenue chart */}
+          <div className="section" style={{ padding: '20px 24px', marginBottom: 20 }}>
+            <div className="section-title" style={{ fontSize: 15, marginBottom: 18 }}>Monthly Revenue (last 12 months)</div>
+            {monthlyRevenue.length === 0 ? (
+              <div style={{ color: 'var(--grey)', fontSize: 13 }}>No payment data yet</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={monthlyRevenue} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+                  <XAxis dataKey="label" tick={{ fill: '#888', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: '#888', fontSize: 11 }} axisLine={false} tickLine={false} width={48} tickFormatter={v => `$${v}`} />
+                  <Tooltip contentStyle={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 8, fontSize: 12 }} formatter={v => [`$${Number(v).toFixed(2)}`, 'Revenue']} />
+                  <Bar dataKey="revenue" fill="#ccff00" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            {/* By type breakdown */}
+            <div className="tbl-section">
+              <div className="section-title" style={{ fontSize: 14, marginBottom: 12 }}>Breakdown by Type</div>
+              <table>
+                <thead><tr><th>Type</th><th>Count</th><th>Total</th></tr></thead>
+                <tbody>
+                  {[['payment','Payment'],['charge','Charge'],['refund','Refund'],['no_show_fee','No-show Fee'],['credit','Credit']].map(([type, label]) => {
+                    const d = byType[type]
+                    if (!d) return null
+                    return (
+                      <tr key={type}>
+                        <td><b>{label}</b></td>
+                        <td style={{ color: 'var(--grey)' }}>{d.count}</td>
+                        <td style={{ color: type === 'refund' ? 'var(--red)' : type === 'payment' ? 'var(--lime)' : 'var(--white)' }}>
+                          ${d.total.toFixed(2)}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Recent transactions */}
+            <div className="tbl-section">
+              <div className="section-title" style={{ fontSize: 14, marginBottom: 12 }}>Recent Transactions</div>
+              <table>
+                <thead><tr><th>Student</th><th>Type</th><th>Amount</th></tr></thead>
+                <tbody>
+                  {recentPayments.slice(0, 10).map(p => (
+                    <tr key={p.id}>
+                      <td style={{ fontSize: 12 }}>{p.student_name}</td>
+                      <td style={{ color: 'var(--grey)', fontSize: 11 }}>{p.payment_type === 'no_show_fee' ? 'No-show' : p.payment_type}</td>
+                      <td style={{ color: p.payment_type === 'payment' ? 'var(--lime)' : p.payment_type === 'refund' ? 'var(--red)' : 'var(--white)', fontSize: 12 }}>
+                        ${p.amount.toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

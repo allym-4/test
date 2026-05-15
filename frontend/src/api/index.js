@@ -46,6 +46,7 @@ export const enrolments = {
 
 export const payments = {
   list: (params) => client.get('/api/payments/', { params }),
+  stats: () => client.get('/api/payments/stats/'),
   balance: (studentId) => client.get(`/api/payments/balance/${studentId}/`),
   create: (data) => client.post('/api/payments/', data),
   stripe: {
