@@ -6,6 +6,128 @@ import AddChargeModal from '../../components/AddChargeModal'
 import ChaseModal from '../../components/ChaseModal'
 import WaiveModal from '../../components/WaiveModal'
 
+function StudentDrawer({ student, onClose, onAction }) {
+  const { data: plansData, loading: loadingPlans } = useApi(() => payments.plans.list({ student: student.id }))
+  const { data: txData, loading: loadingTx } = useApi(() => payments.list({ student: student.id }))
+
+  const planList = plansData?.results || plansData || []
+  const txList = txData?.results || txData || []
+
+  return (
+    <>
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200 }} onClick={onClose} />
+      <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 440, background: 'var(--card)', borderLeft: '1px solid var(--border)', zIndex: 201, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '20px 24px 16px', borderBottom: '1px solid var(--border)' }}>
+          <div>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18 }}>{student.name}</div>
+            {student.email && <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{student.email}</div>}
+          </div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+
+        {/* Balance summary row */}
+        <div style={{ display: 'flex', gap: 12, padding: '16px 24px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ flex: 1, background: 'var(--bg)', borderRadius: 8, padding: '12px 14px' }}>
+            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.7px', color: 'var(--grey)', marginBottom: 4 }}>Total Charged</div>
+            <div style={{ fontWeight: 700, fontSize: 16 }}>${parseFloat(student.total_charged || 0).toFixed(2)}</div>
+          </div>
+          <div style={{ flex: 1, background: 'var(--bg)', borderRadius: 8, padding: '12px 14px' }}>
+            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.7px', color: 'var(--grey)', marginBottom: 4 }}>Total Paid</div>
+            <div style={{ fontWeight: 700, fontSize: 16 }}>${parseFloat(student.total_paid || 0).toFixed(2)}</div>
+          </div>
+          <div style={{ flex: 1, background: 'var(--bg)', borderRadius: 8, padding: '12px 14px' }}>
+            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.7px', color: 'var(--grey)', marginBottom: 4 }}>Owing</div>
+            <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--red)' }}>${Math.abs(parseFloat(student.balance || 0)).toFixed(2)}</div>
+          </div>
+        </div>
+
+        {/* Scrollable content */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
+          {/* Payment Plans */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 700, color: 'var(--grey)', marginBottom: 12 }}>Payment Plans</div>
+            {loadingPlans ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}><div className="spinner" /></div>
+            ) : planList.length === 0 ? (
+              <div style={{ color: 'var(--grey)', fontSize: 13 }}>No payment plans.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {planList.map(plan => {
+                  const paid = parseFloat(plan.amount_paid || 0)
+                  const total = parseFloat(plan.total_amount || 0)
+                  return (
+                    <div key={plan.id} style={{ background: 'var(--bg)', borderRadius: 8, padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 500, fontSize: 13, marginBottom: 2 }}>{plan.description || 'Payment plan'}</div>
+                        <div style={{ fontSize: 11, color: 'var(--grey)' }}>${paid.toFixed(2)} / ${total.toFixed(2)}</div>
+                      </div>
+                      <span className={`tag ${plan.status === 'active' ? 'tag-lime' : plan.status === 'completed' ? 'tag-grey' : 'tag-amber'}`} style={{ fontSize: 10, flexShrink: 0 }}>
+                        {plan.status}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Transaction History */}
+          <div>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 700, color: 'var(--grey)', marginBottom: 12 }}>Transaction History</div>
+            {loadingTx ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}><div className="spinner" /></div>
+            ) : txList.length === 0 ? (
+              <div style={{ color: 'var(--grey)', fontSize: 13 }}>No transactions.</div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    <th style={{ textAlign: 'left', padding: '6px 8px 6px 0', color: 'var(--grey)', fontWeight: 600 }}>Date</th>
+                    <th style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--grey)', fontWeight: 600 }}>Description</th>
+                    <th style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--grey)', fontWeight: 600 }}>Type</th>
+                    <th style={{ textAlign: 'right', padding: '6px 0 6px 8px', color: 'var(--grey)', fontWeight: 600 }}>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...txList].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(tx => {
+                    const isPayment = tx.payment_type === 'payment'
+                    const isCharge = tx.payment_type === 'charge' || tx.payment_type === 'no_show_fee'
+                    return (
+                      <tr key={tx.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td style={{ padding: '8px 8px 8px 0', color: 'var(--grey)', whiteSpace: 'nowrap' }}>
+                          {new Date(tx.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                        </td>
+                        <td style={{ padding: '8px' }}>{tx.description || tx.payment_type}</td>
+                        <td style={{ padding: '8px' }}>
+                          <span className={`tag ${isPayment ? 'tag-lime' : isCharge ? 'tag-red' : 'tag-grey'}`} style={{ fontSize: 10 }}>
+                            {tx.payment_type.replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td style={{ padding: '8px 0 8px 8px', textAlign: 'right', color: isPayment ? 'var(--lime)' : isCharge ? 'var(--red)' : 'inherit', fontWeight: 600 }}>
+                          {isCharge ? '-' : '+'}${Math.abs(parseFloat(tx.amount || 0)).toFixed(2)}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        {/* Quick action buttons */}
+        <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => onAction('chase')}>Chase</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => onAction('waive')}>Waive</button>
+          <button className="btn btn-lime btn-sm" onClick={() => onAction('payment')}>Mark Paid</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => onAction('charge')}>Add Charge</button>
+        </div>
+      </div>
+    </>
+  )
+}
+
 function GiftCardModal({ onClose, onSuccess }) {
   const [form, setForm] = useState({ issued_to_name: '', issued_to_email: '', value: '', expires_at: '' })
   const [saving, setSaving] = useState(false)
@@ -85,6 +207,7 @@ export default function AdminBilling() {
   const [addChargeTarget, setAddChargeTarget] = useState(null)
   const [chargePickStudent, setChargePickStudent] = useState('')
   const [gcModal, setGcModal] = useState(false)
+  const [drawerStudent, setDrawerStudent] = useState(null)
 
   const allPayments = paymentsData?.results || []
   const plans = plansData?.results || []
@@ -176,7 +299,7 @@ export default function AdminBilling() {
                 </thead>
                 <tbody>
                   {owing.map(b => (
-                    <tr key={b.name} className="clickable">
+                    <tr key={b.name} className="clickable" onClick={() => setDrawerStudent(b)}>
                       <td>
                         <b>{b.name}</b>
                         {b.email && <div style={{ fontSize: 11, color: 'var(--grey)' }}>{b.email}</div>}
@@ -184,7 +307,7 @@ export default function AdminBilling() {
                       <td className="bal-neg">${Math.abs(parseFloat(b.balance)).toFixed(2)}</td>
                       <td style={{ color: 'var(--grey)' }}>${parseFloat(b.total_charged || 0).toFixed(2)}</td>
                       <td className="bal-pos">${parseFloat(b.total_paid || 0).toFixed(2)}</td>
-                      <td style={{ whiteSpace: 'nowrap' }}>
+                      <td style={{ whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
                         <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => { setModalStudent(b); setActiveModal('chase') }}>Chase</button>
                         <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => { setModalStudent(b); setActiveModal('waive') }}>Waive</button>
                         <button className="btn btn-lime btn-xs" onClick={() => { setModalStudent(b); setActiveModal('payment') }}>Mark Paid</button>
@@ -498,6 +621,14 @@ export default function AdminBilling() {
           description="outstanding balance"
           onClose={() => { setActiveModal(null); setModalStudent(null) }}
           onSuccess={() => { setActiveModal(null); setModalStudent(null); refetchPayments() }}
+        />
+      )}
+
+      {drawerStudent && (
+        <StudentDrawer
+          student={drawerStudent}
+          onClose={() => setDrawerStudent(null)}
+          onAction={(type) => { const s = drawerStudent; setDrawerStudent(null); setModalStudent(s); setActiveModal(type) }}
         />
       )}
 
