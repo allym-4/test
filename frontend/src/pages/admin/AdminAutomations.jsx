@@ -295,6 +295,7 @@ export default function AdminAutomations() {
   const [customFlows, setCustomFlows] = useState([])
   const [showBuilder, setShowBuilder] = useState(false)
   const [editingFlow, setEditingFlow] = useState(null)
+  const [deleteError, setDeleteError] = useState('')
 
   const { data: stats } = useApi(() => automations.stats(), [])
   const { data: runs } = useApi(() => automations.runs(), [])
@@ -338,12 +339,13 @@ export default function AdminAutomations() {
   }
 
   async function deleteFlow(flow) {
-    if (!confirm(`Delete "${flow.name}"? This cannot be undone.`)) return
+    if (!window.confirm(`Delete "${flow.name}"? This cannot be undone.`)) return
     try {
       await automations.delete(flow.id)
       setCustomFlows(prev => prev.filter(f => f.id !== flow.id))
     } catch {
-      alert('Failed to delete flow.')
+      setDeleteError('Failed to delete flow — please try again.')
+      setTimeout(() => setDeleteError(''), 3000)
     }
   }
 
@@ -499,6 +501,9 @@ export default function AdminAutomations() {
       {/* CUSTOM FLOWS TAB */}
       {activeTab === 'custom' && (
         <>
+          {deleteError && (
+            <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 12 }}>{deleteError}</div>
+          )}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
             <button
               onClick={() => { setEditingFlow(null); setShowBuilder(true) }}

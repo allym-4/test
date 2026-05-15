@@ -170,7 +170,7 @@ export default function AdminDashboard() {
             <Link to="/admin/activity-log">
               <button className="btn btn-ghost btn-xs">VIEW LOG</button>
             </Link>
-            <button className="btn btn-ghost btn-xs">+ ADD</button>
+            <Link to="/admin/activity-log"><button className="btn btn-ghost btn-xs">+ ADD</button></Link>
             <button className="btn btn-ghost btn-xs" onClick={() => setActionItemsVisible(v => !v)}>
               {actionItemsVisible ? 'HIDE' : 'SHOW'}
             </button>

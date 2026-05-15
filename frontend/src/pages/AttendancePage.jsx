@@ -242,7 +242,6 @@ export default function AttendancePage() {
                     </div>
                   )}
                 </div>
-                {/* staff notes button placeholder — will wire up when notes API added */}
               </div>
               <div className="att-action-row">
                 <select

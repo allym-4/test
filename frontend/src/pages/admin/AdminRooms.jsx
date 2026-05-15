@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import '../StudentsPage.css'
 import { useApi } from '../../hooks/useApi'
 import { studios } from '../../api'
@@ -128,7 +129,7 @@ export default function AdminRooms() {
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
                 <button className="btn btn-ghost btn-sm" onClick={() => setModal({ existing: room })}>Edit</button>
-                <button className="btn btn-ghost btn-sm">Kisi Settings</button>
+                <Link to="/admin/kisi"><button className="btn btn-ghost btn-sm">Kisi Settings</button></Link>
               </div>
             </div>
           ))}
