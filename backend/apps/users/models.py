@@ -111,6 +111,10 @@ class StudioSettings(models.Model):
     price_season = models.DecimalField(max_digits=8, decimal_places=2, default=270)
     price_trial = models.DecimalField(max_digits=8, decimal_places=2, default=35)
     season_pricing_config = models.JSONField(default=list, blank=True)
+    form_health_enabled = models.BooleanField(default=True)
+    form_photo_consent_enabled = models.BooleanField(default=True)
+    form_waiver_enabled = models.BooleanField(default=True)
+    form_season_agreement_enabled = models.BooleanField(default=True)
 
     class Meta:
         verbose_name = 'Studio Settings'

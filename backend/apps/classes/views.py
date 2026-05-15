@@ -63,8 +63,13 @@ class ClassOccurrenceListView(generics.ListCreateAPIView):
         session_id = self.request.query_params.get('session')
         if session_id:
             qs = qs.filter(session_id=session_id)
-        if self.request.user.role == 'instructor':
+        if self.request.query_params.get('cover_needed') == 'true':
+            qs = qs.filter(cover_needed=True)
+        elif self.request.user.role == 'instructor' and not self.request.query_params.get('substitute_instructor'):
             qs = qs.filter(session__instructor=self.request.user)
+        sub_id = self.request.query_params.get('substitute_instructor')
+        if sub_id:
+            qs = qs.filter(substitute_instructor_id=sub_id)
         student_id = self.request.query_params.get('student')
         if student_id:
             from apps.enrolments.models import Enrolment

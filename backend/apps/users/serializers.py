@@ -98,6 +98,7 @@ class StudioSettingsSerializer(serializers.ModelSerializer):
             'kisi_api_key', 'kisi_org_id',
             'instagram_access_token', 'instagram_page_id', 'instagram_username', 'meta_app_id',
             'price_casual', 'price_season', 'price_trial', 'season_pricing_config',
+            'form_health_enabled', 'form_photo_consent_enabled', 'form_waiver_enabled', 'form_season_agreement_enabled',
         )
 
 

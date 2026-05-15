@@ -38,13 +38,16 @@ class ClassSessionSerializer(serializers.ModelSerializer):
 class ClassOccurrenceSerializer(serializers.ModelSerializer):
     session_detail = ClassSessionSerializer(source='session', read_only=True)
     substitute_instructor_detail = UserMinimalSerializer(source='substitute_instructor', read_only=True)
+    instructor_detail = UserMinimalSerializer(source='session.instructor', read_only=True)
+    studio_detail = StudioSerializer(source='session.studio', read_only=True)
 
     class Meta:
         model = ClassOccurrence
         fields = (
             'id', 'session', 'session_detail', 'date', 'status',
             'substitute_instructor', 'substitute_instructor_detail',
-            'notes', 'register_saved',
+            'instructor_detail', 'studio_detail',
+            'notes', 'register_saved', 'cover_needed',
         )
 
 
