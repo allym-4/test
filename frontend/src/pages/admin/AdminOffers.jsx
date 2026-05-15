@@ -524,8 +524,13 @@ export default function AdminOffers() {
                 </tbody>
               </table>
             </div>
-            <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 10 }}>
-              These classes are billed separately from season enrolment as a flat per-session rate.
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
+              <div style={{ fontSize: 12, color: 'var(--grey)' }}>
+                Bundled season prices including Kiki or Unravel add-on.
+              </div>
+              <button className="btn btn-lime btn-sm" onClick={savePricing} disabled={savingPricing}>
+                {savingPricing ? 'Saving…' : 'Save Pricing'}
+              </button>
             </div>
           </div>
         </div>
