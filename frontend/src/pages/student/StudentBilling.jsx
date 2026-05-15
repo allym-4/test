@@ -205,7 +205,7 @@ export default function StudentBilling() {
           Catch-up Credits
         </div>
         <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 32, color: 'var(--lav)', marginBottom: 4 }}>
-          {Array.isArray(catchupCredits) ? catchupCredits.filter(c => c.status === 'active' || !c.status).length : 0}
+          {Array.isArray(catchupCredits) ? catchupCredits.filter(c => c.status === 'available' || !c.status).length : 0}
         </div>
         <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16 }}>
           Available to use when booking a casual or catch-up class
