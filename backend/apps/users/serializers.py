@@ -110,17 +110,33 @@ class StudioSettingsSerializer(serializers.ModelSerializer):
             'form_health_enabled', 'form_photo_consent_enabled', 'form_waiver_enabled', 'form_season_agreement_enabled',
             'mailchimp_api_key', 'mailchimp_list_id', 'mailchimp_connected',
             'xero_client_id', 'xero_client_secret', 'xero_tenant_id', 'xero_connected',
+            'overdue_reminder_schedule',
         )
         read_only_fields = ('xero_connected', 'mailchimp_connected')
 
 
 class AnnouncementSerializer(serializers.ModelSerializer):
     created_by_name = serializers.StringRelatedField(source='created_by')
+    is_acknowledged = serializers.SerializerMethodField()
+    acknowledged_count = serializers.SerializerMethodField()
+
+    def get_is_acknowledged(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.acknowledged_by.filter(pk=request.user.pk).exists()
+
+    def get_acknowledged_count(self, obj):
+        return obj.acknowledged_by.count()
 
     class Meta:
         model = Announcement
-        fields = ('id', 'title', 'body', 'note_type', 'created_by', 'created_by_name', 'is_pinned', 'created_at', 'updated_at')
-        read_only_fields = ('id', 'created_by', 'created_at', 'updated_at')
+        fields = (
+            'id', 'title', 'body', 'note_type', 'created_by', 'created_by_name',
+            'is_pinned', 'requires_acknowledgement', 'is_acknowledged', 'acknowledged_count',
+            'created_at', 'updated_at',
+        )
+        read_only_fields = ('id', 'created_by', 'created_at', 'updated_at', 'is_acknowledged', 'acknowledged_count')
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -244,7 +260,7 @@ class EmailCampaignSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EmailCampaign
-        fields = ('id', 'name', 'subject', 'list_name', 'status', 'sent_at', 'open_rate', 'created_by_name', 'created_at')
+        fields = ('id', 'name', 'subject', 'list_name', 'body', 'status', 'sent_at', 'open_rate', 'created_by_name', 'created_at')
         read_only_fields = ('id', 'created_at')
 
 

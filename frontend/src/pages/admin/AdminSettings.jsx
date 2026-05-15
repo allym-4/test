@@ -483,6 +483,60 @@ export default function AdminSettings() {
               <FieldRow label="GST registered"><div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><Toggle checked={form.gst_registered} onChange={v => set('gst_registered', v)} /></div></FieldRow>
               <FieldRow label="ABN"><input value={form.abn} onChange={e => set('abn', e.target.value)} /></FieldRow>
             </Section>
+
+            <Section title="Overdue Balance Reminders">
+              <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 14, lineHeight: 1.6 }}>
+                Configure automatic reminder notifications for students with a negative balance. Each step fires after the specified number of days since the previous one (or since the balance went negative for the first).
+              </div>
+              {(form.overdue_reminder_schedule || []).map((step, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, padding: '10px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: 8 }}>
+                  <div style={{ fontSize: 12, color: 'var(--grey)', minWidth: 80 }}>Reminder {idx + 1}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
+                    <input
+                      type="number"
+                      min={0}
+                      value={step.days}
+                      onChange={e => {
+                        const updated = [...(form.overdue_reminder_schedule || [])]
+                        updated[idx] = { ...updated[idx], days: parseInt(e.target.value) || 0 }
+                        set('overdue_reminder_schedule', updated)
+                      }}
+                      style={{ width: 60, textAlign: 'center' }}
+                      className="input"
+                    />
+                    <span style={{ fontSize: 12, color: 'var(--grey)' }}>days</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Toggle
+                      checked={step.send_email}
+                      onChange={v => {
+                        const updated = [...(form.overdue_reminder_schedule || [])]
+                        updated[idx] = { ...updated[idx], send_email: v }
+                        set('overdue_reminder_schedule', updated)
+                      }}
+                    />
+                    <span style={{ fontSize: 12, color: 'var(--grey)' }}>Email</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = (form.overdue_reminder_schedule || []).filter((_, i) => i !== idx)
+                      set('overdue_reminder_schedule', updated)
+                    }}
+                    style={{ background: 'none', border: 'none', color: 'var(--red)', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 4 }}
+                  >×</button>
+                </div>
+              ))}
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                style={{ marginTop: 4 }}
+                onClick={() => {
+                  const current = form.overdue_reminder_schedule || []
+                  set('overdue_reminder_schedule', [...current, { days: 7, send_email: false }])
+                }}
+              >+ Add Reminder Step</button>
+            </Section>
           </div>
         </div>
       )}

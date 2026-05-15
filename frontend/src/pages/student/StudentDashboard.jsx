@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, seasons, attendance as attendanceApi, classes as classesApi, skills as skillsApi } from '../../api'
+import { enrolments, seasons, attendance as attendanceApi, classes as classesApi, skills as skillsApi, announcements as announcementsApi } from '../../api'
 
 import { Link } from 'react-router-dom'
 
@@ -97,8 +97,23 @@ export default function StudentDashboard() {
   const { data: seasonData } = useApi(() => seasons.list(), [])
   const { data: skillsData } = useApi(() => user?.id ? skillsApi.list(user.id) : null, [user?.id])
   const { data: creditsData } = useApi(() => attendanceApi.makeupCredits.list({ student: user?.id, status: 'available' }), [user?.id])
+  const { data: annData, refetch: refetchAnn } = useApi(() => announcementsApi.list({ note_type: 'announcement' }), [])
 
   const [markAwayEnrol, setMarkAwayEnrol] = useState(null)
+  const [acknowledging, setAcknowledging] = useState({})
+
+  const allAnnouncements = annData?.results || annData || []
+  const pendingAnnouncements = allAnnouncements.filter(a => !a.is_acknowledged)
+
+  async function acknowledgeAnn(id) {
+    setAcknowledging(s => ({ ...s, [id]: true }))
+    try {
+      await announcementsApi.acknowledge(id)
+      refetchAnn()
+    } finally {
+      setAcknowledging(s => ({ ...s, [id]: false }))
+    }
+  }
 
   const enrolments_ = enrolData?.results || enrolData || []
   const tricksUnlocked = (skillsData?.results || skillsData || []).filter(s => s.achieved).length
@@ -180,6 +195,44 @@ export default function StudentDashboard() {
           <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>Weeks Remaining</div>
         </div>
       </div>
+
+      {/* Announcements */}
+      {pendingAnnouncements.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          {pendingAnnouncements.map(a => (
+            <div key={a.id} style={{
+              background: a.requires_acknowledgement ? 'rgba(255,170,0,0.07)' : 'rgba(176,160,255,0.07)',
+              border: `1px solid ${a.requires_acknowledgement ? 'rgba(255,170,0,0.3)' : 'rgba(176,160,255,0.25)'}`,
+              borderRadius: 12,
+              padding: '14px 18px',
+              marginBottom: 10,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {a.is_pinned && <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--lime)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Pinned</span>}
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>{a.title}</div>
+                </div>
+                {a.requires_acknowledgement && (
+                  <button
+                    className="btn btn-sm"
+                    style={{ background: 'var(--amber)', color: '#000', whiteSpace: 'nowrap', flexShrink: 0, fontSize: 12 }}
+                    onClick={() => acknowledgeAnn(a.id)}
+                    disabled={acknowledging[a.id]}
+                  >
+                    {acknowledging[a.id] ? '…' : 'Acknowledge'}
+                  </button>
+                )}
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.7 }}>{a.body}</div>
+              {a.requires_acknowledgement && (
+                <div style={{ fontSize: 11, color: 'var(--amber)', marginTop: 8 }}>
+                  Please read and acknowledge this notice to dismiss it.
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Classes This Week */}
       <div style={{ marginBottom: 28 }}>

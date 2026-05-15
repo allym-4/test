@@ -125,6 +125,11 @@ class StudioSettings(models.Model):
     xero_access_token = models.TextField(blank=True)
     xero_refresh_token = models.TextField(blank=True)
     xero_token_expires_at = models.DateTimeField(null=True, blank=True)
+    overdue_reminder_schedule = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='List of {days, send_email} dicts. days=0 means first reminder; for N>0, days since prev reminder.',
+    )
 
     class Meta:
         verbose_name = 'Studio Settings'
@@ -149,6 +154,10 @@ class Announcement(models.Model):
     note_type = models.CharField(max_length=20, choices=NoteType.choices, default=NoteType.ANNOUNCEMENT)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='announcements')
     is_pinned = models.BooleanField(default=False)
+    requires_acknowledgement = models.BooleanField(default=False)
+    acknowledged_by = models.ManyToManyField(
+        User, blank=True, related_name='acknowledged_announcements',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -418,6 +427,7 @@ class EmailCampaign(models.Model):
     name = models.CharField(max_length=200)
     subject = models.CharField(max_length=200, blank=True)
     list_name = models.CharField(max_length=100, blank=True)
+    body = models.TextField(blank=True)
     status = models.CharField(max_length=15, choices=Status.choices, default=Status.DRAFT)
     sent_at = models.DateTimeField(null=True, blank=True)
     open_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)

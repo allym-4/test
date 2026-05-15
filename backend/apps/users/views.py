@@ -223,6 +223,18 @@ class AnnouncementDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAdminOrInstructor]
 
 
+class AnnouncementAcknowledgeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            ann = Announcement.objects.get(pk=pk)
+        except Announcement.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        ann.acknowledged_by.add(request.user)
+        return Response({'status': 'acknowledged'})
+
+
 class ProductListView(generics.ListCreateAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
@@ -748,6 +760,49 @@ class EmailCampaignDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = EmailCampaign.objects.all()
     serializer_class = EmailCampaignSerializer
     permission_classes = [IsAdminOrInstructor]
+
+
+class EmailCampaignSendView(APIView):
+    """Send a campaign email to all active students."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        from django.core.mail import send_mail
+        from django.conf import settings as django_settings
+        from django.utils import timezone as tz
+
+        try:
+            campaign = EmailCampaign.objects.get(pk=pk)
+        except EmailCampaign.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not campaign.subject:
+            return Response({'detail': 'Subject is required before sending.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not campaign.body:
+            return Response({'detail': 'Email body is required before sending.'}, status=status.HTTP_400_BAD_REQUEST)
+        if campaign.status == 'sent':
+            return Response({'detail': 'Campaign has already been sent.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        recipients = User.objects.filter(role='student', is_active=True).exclude(email='')
+        sent = 0
+        for user in recipients:
+            try:
+                send_mail(
+                    subject=campaign.subject,
+                    message=campaign.body,
+                    from_email=django_settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                    fail_silently=False,
+                )
+                sent += 1
+            except Exception:
+                pass
+
+        campaign.status = 'sent'
+        campaign.sent_at = tz.now()
+        campaign.save(update_fields=['status', 'sent_at'])
+
+        return Response({'status': 'sent', 'count': sent})
 
 
 class EmailListListView(generics.ListCreateAPIView):

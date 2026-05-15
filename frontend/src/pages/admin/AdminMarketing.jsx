@@ -4,8 +4,14 @@ import { useApi } from '../../hooks/useApi'
 import { campaigns as campaignsApi, emailLists as emailListsApi, automations as automationsApi, settings as settingsApi, mailchimp as mailchimpApi } from '../../api'
 import client from '../../api/client'
 
-function CreateCampaignModal({ onClose, onCreated }) {
-  const [form, setForm] = useState({ name: '', subject: '', list_name: '', status: 'draft' })
+function CreateCampaignModal({ onClose, onCreated, existing }) {
+  const [form, setForm] = useState({
+    name: existing?.name || '',
+    subject: existing?.subject || '',
+    body: existing?.body || '',
+    list_name: existing?.list_name || '',
+    status: existing?.status || 'draft',
+  })
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState(null)
 
@@ -19,20 +25,24 @@ function CreateCampaignModal({ onClose, onCreated }) {
     setSaving(true)
     setErr(null)
     try {
-      await campaignsApi.create(form)
+      if (existing) {
+        await campaignsApi.update(existing.id, form)
+      } else {
+        await campaignsApi.create(form)
+      }
       onCreated()
       onClose()
     } catch (ex) {
-      setErr(ex.response?.data?.detail || 'Failed to create campaign')
+      setErr(ex.response?.data?.detail || 'Failed to save campaign')
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="card" style={{ width: 480, padding: '28px 32px' }}>
-        <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 20 }}>New Campaign</div>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div className="card" style={{ width: 540, padding: '28px 32px', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 20 }}>{existing ? 'Edit Campaign' : 'New Campaign'}</div>
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: 14 }}>
             <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 4 }}>Name *</label>
@@ -41,6 +51,17 @@ function CreateCampaignModal({ onClose, onCreated }) {
           <div style={{ marginBottom: 14 }}>
             <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 4 }}>Subject</label>
             <input className="input" value={form.subject} onChange={e => set('subject', e.target.value)} placeholder="Email subject line" style={{ width: '100%' }} />
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 4 }}>Body</label>
+            <textarea
+              className="input"
+              rows={7}
+              value={form.body}
+              onChange={e => set('body', e.target.value)}
+              placeholder="Write the email body here…"
+              style={{ width: '100%', resize: 'vertical', fontFamily: 'inherit' }}
+            />
           </div>
           <div style={{ marginBottom: 14 }}>
             <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 4 }}>List</label>
@@ -57,7 +78,7 @@ function CreateCampaignModal({ onClose, onCreated }) {
           {err && <div style={{ color: 'var(--red, #f55)', fontSize: 12, marginBottom: 12 }}>{err}</div>}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : 'Create Campaign'}</button>
+            <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : existing ? 'Save' : 'Create Campaign'}</button>
           </div>
         </form>
       </div>
@@ -228,7 +249,11 @@ function MailchimpTab() {
 export default function AdminMarketing() {
   const [tab, setTab] = useState('campaigns')
   const [showCreateCampaign, setShowCreateCampaign] = useState(false)
+  const [editCampaign, setEditCampaign] = useState(null)
   const [viewCampaign, setViewCampaign] = useState(null)
+  const [sendingCampaignId, setSendingCampaignId] = useState(null)
+  const [confirmSendId, setConfirmSendId] = useState(null)
+  const [sendResult, setSendResult] = useState(null)
 
   const { data: campData, loading: loadingCamp, refetch: refetchCamp } = useApi(() => campaignsApi.list())
   const campaignList = campData?.results || campData || []
@@ -244,6 +269,21 @@ export default function AdminMarketing() {
     refetchAuto()
   }
 
+  async function sendCampaign(id) {
+    setSendingCampaignId(id)
+    setConfirmSendId(null)
+    setSendResult(null)
+    try {
+      const res = await campaignsApi.send(id)
+      setSendResult(`Sent to ${res.data.count} students.`)
+      refetchCamp()
+    } catch (err) {
+      setSendResult(err.response?.data?.detail || 'Send failed.')
+    } finally {
+      setSendingCampaignId(null)
+    }
+  }
+
   return (
     <div>
       <div className="page-header">
@@ -251,7 +291,7 @@ export default function AdminMarketing() {
           <div className="page-title">Marketing</div>
           <div className="page-sub">Campaigns, customer lists and automations</div>
         </div>
-        {tab === 'campaigns' && <button className="btn btn-lime btn-sm" onClick={() => setShowCreateCampaign(true)}>+ New Campaign</button>}
+        {tab === 'campaigns' && <button className="btn btn-lime btn-sm" onClick={() => { setShowCreateCampaign(true); setEditCampaign(null) }}>+ New Campaign</button>}
         {tab === 'lists' && <button className="btn btn-lime btn-sm">+ New List</button>}
       </div>
 
@@ -279,7 +319,29 @@ export default function AdminMarketing() {
                       <span className={`tag ${c.status === 'sent' ? 'tag-lime' : c.status === 'scheduled' ? 'tag-amber' : 'tag-grey'}`} style={{ fontSize: 10 }}>{c.status}</span>
                     </td>
                     <td style={{ color: c.open_rate ? 'var(--lime)' : 'var(--grey)' }}>{c.open_rate ? `${c.open_rate}%` : '—'}</td>
-                    <td><button className="btn btn-ghost btn-xs" onClick={() => setViewCampaign(c)}>View</button></td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                        <button className="btn btn-ghost btn-xs" onClick={() => setViewCampaign(c)}>View</button>
+                        {c.status !== 'sent' && (
+                          <button className="btn btn-ghost btn-xs" onClick={() => setEditCampaign(c)}>Edit</button>
+                        )}
+                        {c.status !== 'sent' && (
+                          confirmSendId === c.id ? (
+                            <span style={{ display: 'flex', gap: 4 }}>
+                              <button
+                                className="btn btn-xs"
+                                style={{ background: 'var(--lime)', color: '#000' }}
+                                onClick={() => sendCampaign(c.id)}
+                                disabled={sendingCampaignId === c.id}
+                              >{sendingCampaignId === c.id ? '…' : 'Confirm Send'}</button>
+                              <button className="btn btn-ghost btn-xs" onClick={() => setConfirmSendId(null)}>No</button>
+                            </span>
+                          ) : (
+                            <button className="btn btn-ghost btn-xs" style={{ color: 'var(--lime)' }} onClick={() => setConfirmSendId(c.id)}>Send</button>
+                          )
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
                 {campaignList.length === 0 && (
@@ -335,9 +397,17 @@ export default function AdminMarketing() {
 
       {tab === 'mailchimp' && <MailchimpTab />}
 
-      {showCreateCampaign && (
+      {sendResult && (
+        <div style={{ position: 'fixed', bottom: 24, right: 24, background: 'var(--card)', border: '1px solid var(--lime)', borderRadius: 10, padding: '12px 18px', fontSize: 13, zIndex: 2000, maxWidth: 320 }}>
+          {sendResult}
+          <button onClick={() => setSendResult(null)} style={{ marginLeft: 12, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--grey)', fontSize: 16 }}>×</button>
+        </div>
+      )}
+
+      {(showCreateCampaign || editCampaign) && (
         <CreateCampaignModal
-          onClose={() => setShowCreateCampaign(false)}
+          existing={editCampaign || null}
+          onClose={() => { setShowCreateCampaign(false); setEditCampaign(null) }}
           onCreated={refetchCamp}
         />
       )}

@@ -7,6 +7,7 @@ function AnnouncementModal({ existing, onClose, onSaved }) {
   const [title, setTitle] = useState(existing?.title || '')
   const [body, setBody] = useState(existing?.body || '')
   const [pinned, setPinned] = useState(existing?.is_pinned || false)
+  const [requiresAck, setRequiresAck] = useState(existing?.requires_acknowledgement || false)
   const [saving, setSaving] = useState(false)
 
   async function submit(e) {
@@ -14,10 +15,11 @@ function AnnouncementModal({ existing, onClose, onSaved }) {
     if (!title.trim() || !body.trim()) return
     setSaving(true)
     try {
+      const payload = { title, body, is_pinned: pinned, requires_acknowledgement: requiresAck }
       if (existing) {
-        await announcements.update(existing.id, { title, body, is_pinned: pinned })
+        await announcements.update(existing.id, payload)
       } else {
-        await announcements.create({ title, body, is_pinned: pinned })
+        await announcements.create(payload)
       }
       onSaved()
     } finally {
@@ -39,11 +41,19 @@ function AnnouncementModal({ existing, onClose, onSaved }) {
               <label>Message</label>
               <textarea rows={5} value={body} onChange={e => setBody(e.target.value)} placeholder="Write your message…" required style={{ width: '100%', boxSizing: 'border-box' }} />
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-              <div onClick={() => setPinned(v => !v)} style={{ width: 36, height: 20, borderRadius: 10, background: pinned ? 'var(--lime)' : '#333', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
-                <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: pinned ? 19 : 3, transition: 'left 0.2s' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div onClick={() => setPinned(v => !v)} style={{ width: 36, height: 20, borderRadius: 10, background: pinned ? 'var(--lime)' : '#333', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                  <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: pinned ? 19 : 3, transition: 'left 0.2s' }} />
+                </div>
+                <span style={{ fontSize: 13, color: 'var(--grey)' }}>Pin to top</span>
               </div>
-              <span style={{ fontSize: 13, color: 'var(--grey)' }}>Pin to top</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div onClick={() => setRequiresAck(v => !v)} style={{ width: 36, height: 20, borderRadius: 10, background: requiresAck ? 'var(--amber)' : '#333', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                  <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: requiresAck ? 19 : 3, transition: 'left 0.2s' }} />
+                </div>
+                <span style={{ fontSize: 13, color: 'var(--grey)' }}>Require student acknowledgement</span>
+              </div>
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
@@ -128,10 +138,11 @@ export default function AdminCommunity() {
 
   const [tab, setTab] = useState('announcements')
   const [modal, setModal] = useState(null)
+  const [confirmDeleteAnnId, setConfirmDeleteAnnId] = useState(null)
 
   async function deleteAnn(id) {
-    if (!confirm('Delete this announcement?')) return
     await announcements.delete(id)
+    setConfirmDeleteAnnId(null)
     refetch()
   }
 
@@ -183,13 +194,26 @@ export default function AdminCommunity() {
           {annList.map(a => (
             <div key={a.id} style={{ background: 'var(--card)', border: `1px solid ${a.is_pinned ? 'rgba(204,255,0,0.25)' : 'var(--border)'}`, borderRadius: 12, padding: '16px 18px' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   {a.is_pinned && <span className="tag tag-lime" style={{ fontSize: 9 }}>Pinned</span>}
+                  {a.requires_acknowledgement && <span className="tag tag-amber" style={{ fontSize: 9 }}>Requires Ack</span>}
                   <div style={{ fontWeight: 600, fontSize: 14 }}>{a.title}</div>
                 </div>
-                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
+                  {a.requires_acknowledgement && (
+                    <span style={{ fontSize: 10, color: 'var(--amber)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                      {a.acknowledged_count || 0} ack'd
+                    </span>
+                  )}
                   <button className="btn btn-ghost btn-xs" onClick={() => setModal({ type: 'announcement', existing: a })}>Edit</button>
-                  <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)' }} onClick={() => deleteAnn(a.id)}>Delete</button>
+                  {confirmDeleteAnnId === a.id ? (
+                    <span style={{ display: 'flex', gap: 4 }}>
+                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => deleteAnn(a.id)}>Confirm</button>
+                      <button className="btn btn-ghost btn-xs" onClick={() => setConfirmDeleteAnnId(null)}>No</button>
+                    </span>
+                  ) : (
+                    <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)' }} onClick={() => setConfirmDeleteAnnId(a.id)}>Delete</button>
+                  )}
                 </div>
               </div>
               <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.7, marginBottom: 10 }}>{a.body}</div>
