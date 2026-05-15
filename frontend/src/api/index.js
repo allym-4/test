@@ -102,6 +102,9 @@ export const helpdesk = {
   myConversation: () => client.get('/api/helpdesk/my-conversation/'),
   sendMyDm: (data) => client.post('/api/helpdesk/my-conversation/', data),
   submitTicket: (data) => client.post('/api/helpdesk/submit/', data),
+  myTickets: () => client.get('/api/helpdesk/my-tickets/'),
+  myTicketMessages: (ticketId) => client.get(`/api/helpdesk/my-tickets/${ticketId}/messages/`),
+  myTicketReply: (ticketId, data) => client.post(`/api/helpdesk/my-tickets/${ticketId}/messages/`, data),
 }
 
 export const homework = {
