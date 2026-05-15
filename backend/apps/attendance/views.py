@@ -65,7 +65,9 @@ def bulk_save_register(request, occurrence_pk):
 
 from rest_framework.views import APIView
 from django.utils import timezone
-from datetime import date
+from datetime import date, timedelta
+from django.db.models import Count, Q
+from django.db.models.functions import TruncWeek
 
 class StudentMarkAwayView(APIView):
     """Student self-service: mark away from an upcoming occurrence."""
@@ -87,3 +89,96 @@ class StudentMarkAwayView(APIView):
             defaults={'status': 'absent', 'recorded_by': request.user, 'note': 'Student marked away'}
         )
         return Response(AttendanceRecordSerializer(record).data, status=status.HTTP_200_OK)
+
+
+class AttendanceStatsView(APIView):
+    """Pre-aggregated attendance analytics for the reporting dashboard."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def get(self, request):
+        qs = AttendanceRecord.objects.select_related(
+            'student', 'occurrence__session'
+        )
+
+        # Overall counts
+        totals = qs.aggregate(
+            present=Count('id', filter=Q(status='present')),
+            absent=Count('id', filter=Q(status='absent')),
+            no_show=Count('id', filter=Q(status='no_show')),
+            total=Count('id'),
+        )
+
+        # By class session
+        by_session_qs = (
+            qs.values('occurrence__session__name')
+            .annotate(
+                total=Count('id'),
+                present=Count('id', filter=Q(status='present')),
+                absent=Count('id', filter=Q(status='absent')),
+                no_show=Count('id', filter=Q(status='no_show')),
+            )
+            .order_by('-total')[:10]
+        )
+        by_class = [
+            {
+                'name': row['occurrence__session__name'] or 'Unknown',
+                'total': row['total'],
+                'present': row['present'],
+                'absent': row['absent'],
+                'no_show': row['no_show'],
+                'rate': round((row['present'] / row['total']) * 100) if row['total'] else 0,
+            }
+            for row in by_session_qs
+        ]
+
+        # Weekly trend — last 8 complete weeks
+        eight_weeks_ago = date.today() - timedelta(weeks=8)
+        weekly_qs = (
+            qs.filter(occurrence__date__gte=eight_weeks_ago)
+            .annotate(week=TruncWeek('occurrence__date'))
+            .values('week')
+            .annotate(
+                present=Count('id', filter=Q(status='present')),
+                absent=Count('id', filter=Q(status='absent')),
+                no_show=Count('id', filter=Q(status='no_show')),
+            )
+            .order_by('week')
+        )
+        weekly = [
+            {
+                'week': row['week'].strftime('%Y-%m-%d') if row['week'] else None,
+                'present': row['present'],
+                'absent': row['absent'],
+                'no_show': row['no_show'],
+            }
+            for row in weekly_qs
+        ]
+
+        # At-risk students: ≥3 records, <60% attendance
+        student_qs = (
+            qs.values('student__id', 'student__first_name', 'student__last_name', 'student__email')
+            .annotate(
+                total=Count('id'),
+                present=Count('id', filter=Q(status='present')),
+            )
+            .filter(total__gte=3)
+            .order_by('student__first_name')
+        )
+        at_risk = [
+            {
+                'id': row['student__id'],
+                'name': f"{row['student__first_name']} {row['student__last_name']}".strip() or row['student__email'],
+                'total': row['total'],
+                'present': row['present'],
+                'rate': round((row['present'] / row['total']) * 100) if row['total'] else 0,
+            }
+            for row in student_qs
+            if row['total'] and round((row['present'] / row['total']) * 100) < 60
+        ]
+
+        return Response({
+            'totals': totals,
+            'by_class': by_class,
+            'weekly': weekly,
+            'at_risk': at_risk,
+        })

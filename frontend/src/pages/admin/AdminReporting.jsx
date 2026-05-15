@@ -16,7 +16,7 @@ export default function AdminReporting() {
   const { data: studentsData } = useApi(() => users.list({ role: 'student' }))
   const { data: sessionsData } = useApi(() => classes.list())
   const { data: paymentsData } = useApi(() => payments.list())
-  const { data: attendanceData, loading: attLoading } = useApi(() => attendanceApi.list(), [])
+  const { data: attStats, loading: attLoading } = useApi(() => attendanceApi.stats(), [])
 
   const students = studentsData?.results || []
   const sessions = sessionsData?.results || []
@@ -74,67 +74,23 @@ export default function AdminReporting() {
     return { type, label: type === 'no_show_fee' ? 'No-show Fee' : type.charAt(0).toUpperCase() + type.slice(1), total }
   }).filter(r => r.total > 0)
 
-  // ── Attendance analytics ──
-  const allRecords = attendanceData?.results || attendanceData || []
-  const totalRecords = allRecords.length
-  const presentCount = allRecords.filter(r => r.status === 'present').length
-  const absentCount = allRecords.filter(r => r.status === 'absent').length
-  const noShowCount = allRecords.filter(r => r.status === 'no_show').length
+  // ── Attendance analytics (from server-aggregated stats endpoint) ──
+  const attTotals = attStats?.totals || {}
+  const presentCount = attTotals.present || 0
+  const absentCount = attTotals.absent || 0
+  const noShowCount = attTotals.no_show || 0
+  const totalRecords = attTotals.total || 0
   const overallRate = totalRecords > 0 ? Math.round((presentCount / totalRecords) * 100) : 0
 
-  // Attendance by class (top 10)
-  const bySession = {}
-  for (const r of allRecords) {
-    const name = r.occurrence_detail?.session_detail?.name || r.occurrence_detail?.session_name || 'Unknown'
-    if (!bySession[name]) bySession[name] = { name, present: 0, absent: 0, no_show: 0, total: 0 }
-    bySession[name][r.status] = (bySession[name][r.status] || 0) + 1
-    bySession[name].total++
-  }
-  const attendanceByClass = Object.values(bySession)
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 10)
-    .map(s => ({ ...s, rate: Math.round((s.present / s.total) * 100) }))
+  const attendanceByClass = attStats?.by_class || []
 
-  // Attendance over last 8 weeks
-  const weeklyAttendance = (() => {
-    const weeks = []
-    const now = new Date()
-    for (let i = 7; i >= 0; i--) {
-      const weekStart = new Date(now)
-      weekStart.setDate(now.getDate() - i * 7)
-      const weekEnd = new Date(weekStart)
-      weekEnd.setDate(weekStart.getDate() + 6)
-      weeks.push({
-        label: `W${8 - i}`,
-        startDate: weekStart.toISOString().slice(0, 10),
-        endDate: weekEnd.toISOString().slice(0, 10),
-        present: 0, absent: 0, no_show: 0,
-      })
-    }
-    for (const r of allRecords) {
-      const date = r.occurrence_detail?.date || r.occurrence_date
-      if (!date) continue
-      const w = weeks.find(w => date >= w.startDate && date <= w.endDate)
-      if (w) w[r.status] = (w[r.status] || 0) + 1
-    }
-    return weeks
-  })()
+  // Add a short label to weekly data for the chart x-axis
+  const weeklyAttendance = (attStats?.weekly || []).map((w, i) => ({
+    ...w,
+    label: w.week ? new Date(w.week).toLocaleDateString('default', { month: 'short', day: 'numeric' }) : `W${i + 1}`,
+  }))
 
-  // Students with poor attendance (< 60%)
-  const byStudent = {}
-  for (const r of allRecords) {
-    const id = r.student
-    const name = r.student_name || r.student_detail?.display_name || `Student ${id}`
-    if (!byStudent[id]) byStudent[id] = { id, name, present: 0, total: 0 }
-    byStudent[id].total++
-    if (r.status === 'present') byStudent[id].present++
-  }
-  const atRiskStudents = Object.values(byStudent)
-    .filter(s => s.total >= 3)
-    .map(s => ({ ...s, rate: Math.round((s.present / s.total) * 100) }))
-    .filter(s => s.rate < 60)
-    .sort((a, b) => a.rate - b.rate)
-    .slice(0, 10)
+  const atRiskStudents = attStats?.at_risk || []
 
   const pieData = [
     { name: 'Present', value: presentCount, fill: '#ccff00' },

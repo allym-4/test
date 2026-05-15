@@ -196,6 +196,7 @@ export const skills = {
 
 export const attendance = {
   list: (params) => client.get('/api/attendance/', { params }),
+  stats: () => client.get('/api/attendance/stats/'),
   bulkSave: (occurrenceId, records) => client.post(`/api/attendance/occurrence/${occurrenceId}/bulk/`, { records }),
   markAway: (occurrence_id) => client.post('/api/attendance/mark-away/', { occurrence_id }),
 }
