@@ -70,11 +70,13 @@ def bulk_save_register(request, occurrence_pk):
         # Auto-issue makeup credit for absent (proper notice) only — not no_show
         if new_status == 'absent' and prev_status != 'absent':
             from .models import MakeupCredit
-            session_name = occurrence.session.name if hasattr(occurrence, 'session') and occurrence.session else 'class'
+            session = getattr(occurrence, 'session', None)
+            session_name = session.name if session else 'class'
+            season = getattr(session, 'season', None) if session else None
             MakeupCredit.objects.get_or_create(
                 student_id=record['student'],
                 reason=f'Absent: {session_name} on {occurrence.date}',
-                defaults={'issued_by': request.user, 'status': 'available'},
+                defaults={'issued_by': request.user, 'status': 'available', 'season': season},
             )
 
         saved.append(obj)

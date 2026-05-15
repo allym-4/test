@@ -25,5 +25,5 @@ class MakeupCreditSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MakeupCredit
-        fields = ('id', 'student', 'student_name', 'reason', 'status', 'issued_by', 'issued_by_name', 'created_at', 'used_at')
+        fields = ('id', 'student', 'student_name', 'season', 'reason', 'status', 'issued_by', 'issued_by_name', 'created_at', 'used_at')
         read_only_fields = ('id', 'issued_by', 'created_at')

@@ -1,6 +1,6 @@
 from django.db import models
 from apps.users.models import User
-from apps.classes.models import ClassOccurrence
+from apps.classes.models import ClassOccurrence, Season
 
 
 class AttendanceRecord(models.Model):
@@ -38,6 +38,7 @@ class MakeupCredit(models.Model):
         EXPIRED = 'expired', 'Expired'
 
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='makeup_credits')
+    season = models.ForeignKey(Season, on_delete=models.SET_NULL, null=True, blank=True, related_name='makeup_credits')
     reason = models.CharField(max_length=200, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.AVAILABLE)
     issued_by = models.ForeignKey(

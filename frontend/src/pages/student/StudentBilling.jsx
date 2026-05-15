@@ -220,7 +220,7 @@ export default function StudentBilling() {
                 <span>{c.issued_at ? new Date(c.issued_at).toLocaleDateString('en-AU') : '—'}</span>
                 <span>{c.for_class || c.description || '—'}</span>
                 <span>{c.expires_at ? new Date(c.expires_at).toLocaleDateString('en-AU') : '—'}</span>
-                <span><span className={`tag ${c.status === 'used' ? 'tag-grey' : 'tag-lav'}`} style={{ fontSize: 9 }}>{c.status || 'active'}</span></span>
+                <span><span className={`tag ${c.status === 'used' || c.status === 'expired' ? 'tag-grey' : 'tag-lav'}`} style={{ fontSize: 9 }}>{c.status || 'available'}</span></span>
               </div>
             ))}
           </div>
