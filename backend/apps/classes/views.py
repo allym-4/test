@@ -326,3 +326,44 @@ class WorkshopBookView(APIView):
                       recipient_list=[student.email], fail_silently=True)
 
         return Response({'id': booking.id, 'status': booking.status, 'workshop': workshop.name}, status=201)
+
+    def delete(self, request, pk):
+        """Cancel the current user's booking for this workshop."""
+        try:
+            workshop = Workshop.objects.get(pk=pk)
+        except Workshop.DoesNotExist:
+            return Response({'detail': 'Workshop not found.'}, status=404)
+        try:
+            booking = WorkshopBooking.objects.get(workshop=workshop, student=request.user, status__in=['confirmed', 'waitlisted'])
+        except WorkshopBooking.DoesNotExist:
+            return Response({'detail': 'No active booking found.'}, status=404)
+        booking.status = 'cancelled'
+        booking.save(update_fields=['status'])
+        return Response({'detail': 'Booking cancelled.'})
+
+
+class WorkshopBookingListView(APIView):
+    """Admin view: list all bookings for a workshop."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk):
+        if request.user.role not in ('admin', 'instructor', 'staff'):
+            return Response({'detail': 'Forbidden.'}, status=403)
+        try:
+            workshop = Workshop.objects.get(pk=pk)
+        except Workshop.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=404)
+        bookings = workshop.bookings.select_related('student').order_by('status', 'created_at')
+        data = [
+            {
+                'id': b.id,
+                'student_id': b.student_id,
+                'student_name': b.student.display_name,
+                'student_email': b.student.email,
+                'status': b.status,
+                'created_at': b.created_at,
+            }
+            for b in bookings
+        ]
+        return Response(data)
+

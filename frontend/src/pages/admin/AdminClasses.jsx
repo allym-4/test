@@ -168,13 +168,82 @@ function ClassModal({ cls, instructors, studios, onSave, onClose }) {
   )
 }
 
+function WorkshopBookingsModal({ workshop, onClose }) {
+  const { data, loading } = useApi(() => classes.workshops.bookings(workshop.id), [workshop.id])
+  const bookings = data || []
+  const confirmed = bookings.filter(b => b.status === 'confirmed')
+  const waitlisted = bookings.filter(b => b.status === 'waitlisted')
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 560 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>
+            Bookings — {workshop.name}
+          </div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="sd-body">
+          {loading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><div className="spinner" /></div>
+          ) : bookings.length === 0 ? (
+            <div style={{ textAlign: 'center', color: 'var(--grey)', padding: 32, fontSize: 13 }}>No bookings yet.</div>
+          ) : (
+            <>
+              {confirmed.length > 0 && (
+                <>
+                  <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600, marginBottom: 8 }}>
+                    Confirmed ({confirmed.length})
+                  </div>
+                  <div style={{ background: 'var(--input)', borderRadius: 8, overflow: 'hidden', marginBottom: 16 }}>
+                    {confirmed.map((b, i) => (
+                      <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderBottom: i < confirmed.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 500 }}>{b.student_name}</div>
+                          <div style={{ fontSize: 11, color: 'var(--grey)' }}>{b.student_email}</div>
+                        </div>
+                        <span className="tag tag-lime" style={{ fontSize: 10 }}>Confirmed</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+              {waitlisted.length > 0 && (
+                <>
+                  <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600, marginBottom: 8 }}>
+                    Waitlist ({waitlisted.length})
+                  </div>
+                  <div style={{ background: 'var(--input)', borderRadius: 8, overflow: 'hidden' }}>
+                    {waitlisted.map((b, i) => (
+                      <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderBottom: i < waitlisted.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 500 }}>{b.student_name}</div>
+                          <div style={{ fontSize: 11, color: 'var(--grey)' }}>{b.student_email}</div>
+                        </div>
+                        <span className="tag tag-amber" style={{ fontSize: 10 }}>Waitlist</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminClasses() {
   const [tab, setTab] = useState('classes')
   const [typeFilter, setTypeFilter] = useState('all')
   const [modal, setModal] = useState(null)
   const [deleting, setDeleting] = useState(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [workshopModal, setWorkshopModal] = useState(null)
   const [deletingWorkshop, setDeletingWorkshop] = useState(null)
+  const [confirmDeleteWorkshopId, setConfirmDeleteWorkshopId] = useState(null)
+  const [bookingsWorkshop, setBookingsWorkshop] = useState(null)
 
   const { data: sessData, loading, refetch } = useApi(() => classes.list(), [])
   const { data: instrData } = useApi(() => users.list({ role: 'instructor' }), [])
@@ -190,24 +259,24 @@ export default function AdminClasses() {
     : sessions.filter(s => s.session_type === typeFilter)
 
   async function handleDelete(id) {
-    if (!confirm('Delete this class? This cannot be undone.')) return
     setDeleting(id)
     try {
       await classes.delete(id)
       refetch()
     } finally {
       setDeleting(null)
+      setConfirmDeleteId(null)
     }
   }
 
   async function handleDeleteWorkshop(id) {
-    if (!confirm('Delete this workshop? This cannot be undone.')) return
     setDeletingWorkshop(id)
     try {
       await classes.workshops.delete(id)
       refetchWorkshops()
     } finally {
       setDeletingWorkshop(null)
+      setConfirmDeleteWorkshopId(null)
     }
   }
 
@@ -234,6 +303,9 @@ export default function AdminClasses() {
           onSave={() => { setWorkshopModal(null); refetchWorkshops() }}
           onClose={() => setWorkshopModal(null)}
         />
+      )}
+      {bookingsWorkshop && (
+        <WorkshopBookingsModal workshop={bookingsWorkshop} onClose={() => setBookingsWorkshop(null)} />
       )}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
@@ -314,12 +386,14 @@ export default function AdminClasses() {
                       <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                           <button className="btn btn-ghost btn-xs" onClick={() => setModal(s)}>Edit</button>
-                          <button
-                            className="btn btn-ghost btn-xs"
-                            onClick={() => handleDelete(s.id)}
-                            disabled={deleting === s.id}
-                            style={{ color: 'var(--red)' }}
-                          >{deleting === s.id ? '…' : 'Delete'}</button>
+                          {confirmDeleteId === s.id ? (
+                            <>
+                              <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => handleDelete(s.id)} disabled={deleting === s.id}>{deleting === s.id ? '…' : 'Confirm'}</button>
+                              <button className="btn btn-ghost btn-xs" onClick={() => setConfirmDeleteId(null)}>No</button>
+                            </>
+                          ) : (
+                            <button className="btn btn-ghost btn-xs" onClick={() => setConfirmDeleteId(s.id)} style={{ color: 'var(--red)' }}>Delete</button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -375,13 +449,16 @@ export default function AdminClasses() {
                       </td>
                       <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                          <button className="btn btn-ghost btn-xs" onClick={() => setBookingsWorkshop(w)}>Bookings</button>
                           <button className="btn btn-ghost btn-xs" onClick={() => setWorkshopModal(w)}>Edit</button>
-                          <button
-                            className="btn btn-ghost btn-xs"
-                            onClick={() => handleDeleteWorkshop(w.id)}
-                            disabled={deletingWorkshop === w.id}
-                            style={{ color: 'var(--red)' }}
-                          >{deletingWorkshop === w.id ? '…' : 'Delete'}</button>
+                          {confirmDeleteWorkshopId === w.id ? (
+                            <>
+                              <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => handleDeleteWorkshop(w.id)} disabled={deletingWorkshop === w.id}>{deletingWorkshop === w.id ? '…' : 'Confirm'}</button>
+                              <button className="btn btn-ghost btn-xs" onClick={() => setConfirmDeleteWorkshopId(null)}>No</button>
+                            </>
+                          ) : (
+                            <button className="btn btn-ghost btn-xs" onClick={() => setConfirmDeleteWorkshopId(w.id)} style={{ color: 'var(--red)' }}>Delete</button>
+                          )}
                         </div>
                       </td>
                     </tr>

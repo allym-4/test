@@ -40,7 +40,7 @@ const SKILL_LEVELS = {
   'High Tricks': ['Iron X', 'Handspring', 'Deadlift Flag', 'Hollow Back', 'Pencil Drop', 'Shoulder Mount', 'Flag'],
 }
 
-function StudentDetail({ student, onClose, onRefreshList }) {
+function StudentDetail({ student, onClose, onRefreshList, onViewForm }) {
   const [tab, setTab] = useState('overview')
   const [balanceData, setBalanceData] = useState(null)
   const [enrolData, setEnrolData] = useState(null)
@@ -469,7 +469,7 @@ function StudentDetail({ student, onClose, onRefreshList }) {
                           </div>
                           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
                             <span className={`tag ${doc.cls}`} style={{ fontSize: 10 }}>{doc.status}</span>
-                            {doc.form && <button className="btn btn-ghost btn-xs" onClick={() => setViewForm(doc)}>View</button>}
+                            {doc.form && <button className="btn btn-ghost btn-xs" onClick={() => onViewForm(doc)}>View</button>}
                           </div>
                         </div>
                       ))
@@ -897,6 +897,7 @@ export default function AdminStudents() {
         <StudentDetail
           student={selected}
           onClose={() => setSelected(null)}
+          onViewForm={setViewForm}
           onRefreshList={updated => {
             setSelected(updated)
             setStudentList(prev => (prev ?? allStudents).map(s => s.id === updated.id ? updated : s))

@@ -21,4 +21,5 @@ urlpatterns = [
     path('workshops/', views.WorkshopListView.as_view(), name='workshop-list'),
     path('workshops/<int:pk>/', views.WorkshopDetailView.as_view(), name='workshop-detail'),
     path('workshops/<int:pk>/book/', views.WorkshopBookView.as_view(), name='workshop-book'),
+    path('workshops/<int:pk>/bookings/', views.WorkshopBookingListView.as_view(), name='workshop-bookings'),
 ]

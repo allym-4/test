@@ -32,6 +32,8 @@ export const classes = {
     update: (id, data) => client.patch(`/api/classes/workshops/${id}/`, data),
     delete: (id) => client.delete(`/api/classes/workshops/${id}/`),
     book: (id) => client.post(`/api/classes/workshops/${id}/book/`),
+    cancel: (id) => client.delete(`/api/classes/workshops/${id}/book/`),
+    bookings: (id) => client.get(`/api/classes/workshops/${id}/bookings/`),
   },
 }
 

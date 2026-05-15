@@ -191,6 +191,7 @@ export default function StudentBook() {
   const sessions = sessionsData?.results || sessionsData || []
   const workshops = workshopsData?.results || workshopsData || []
   const [bookingWorkshopId, setBookingWorkshopId] = useState(null)
+  const [cancellingWorkshopId, setCancellingWorkshopId] = useState(null)
   const [workshopBooked, setWorkshopBooked] = useState({})
   const [workshopError, setWorkshopError] = useState('')
 
@@ -213,6 +214,20 @@ export default function StudentBook() {
       ? `Trial Class — ${session.name}`
       : `${session.name} — ${isCasual ? 'Casual' : 'Season 4'}`
     setCheckout({ session, type, amount: price, description })
+  }
+
+  async function cancelWorkshop(workshop) {
+    setCancellingWorkshopId(workshop.id)
+    try {
+      await classes.workshops.cancel(workshop.id)
+      setWorkshopBooked(prev => { const n = { ...prev }; delete n[workshop.id]; return n })
+      refetchWorkshops()
+    } catch (err) {
+      setWorkshopError(err.response?.data?.detail || 'Could not cancel — please try again')
+      setTimeout(() => setWorkshopError(''), 4000)
+    } finally {
+      setCancellingWorkshopId(null)
+    }
   }
 
   async function bookWorkshop(workshop) {
@@ -469,9 +484,11 @@ export default function StudentBook() {
             const timeLabel = `${w.start_time?.slice(0, 5)} – ${w.end_time?.slice(0, 5)}`
             const instructorName = w.instructor_detail?.display_name || ''
             const spotsFree = w.spots_left ?? Math.max(0, (w.capacity || 12) - (w.enrolled_count || 0))
-            const alreadyBooked = workshopBooked[w.id] === 'confirmed' || w.is_booked
-            const onWaitlist = workshopBooked[w.id] === 'waitlisted'
+            const liveStatus = workshopBooked[w.id] ?? w.booking_status
+            const alreadyBooked = liveStatus === 'confirmed'
+            const onWaitlist = liveStatus === 'waitlisted'
             const booking = bookingWorkshopId === w.id
+            const cancelling = cancellingWorkshopId === w.id
             return (
               <div key={w.id} style={{ background: 'var(--card)', border: `1px solid ${alreadyBooked ? 'var(--lime)' : 'var(--border)'}`, borderRadius: 12, padding: '18px 20px', marginBottom: 12, transition: 'border-color 0.2s' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
@@ -491,9 +508,15 @@ export default function StudentBook() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <SpotsLabel spotsLeft={spotsFree} />
                   {alreadyBooked ? (
-                    <span style={{ fontSize: 12, color: 'var(--lime)', fontWeight: 700 }}>✓ Booked</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 12, color: 'var(--lime)', fontWeight: 700 }}>✓ Booked</span>
+                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)', fontSize: 11 }} onClick={() => cancelWorkshop(w)} disabled={cancelling}>{cancelling ? '…' : 'Cancel'}</button>
+                    </div>
                   ) : onWaitlist ? (
-                    <span style={{ fontSize: 12, color: 'var(--amber)', fontWeight: 700 }}>On waitlist</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 12, color: 'var(--amber)', fontWeight: 700 }}>On waitlist</span>
+                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)', fontSize: 11 }} onClick={() => cancelWorkshop(w)} disabled={cancelling}>{cancelling ? '…' : 'Leave'}</button>
+                    </div>
                   ) : (
                     <button
                       className="btn btn-lime btn-sm"

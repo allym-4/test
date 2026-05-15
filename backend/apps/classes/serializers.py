@@ -98,6 +98,7 @@ class WorkshopSerializer(serializers.ModelSerializer):
     enrolled_count = serializers.IntegerField(read_only=True)
     spots_left = serializers.IntegerField(read_only=True)
     is_booked = serializers.SerializerMethodField()
+    booking_status = serializers.SerializerMethodField()
 
     class Meta:
         model = Workshop
@@ -105,7 +106,7 @@ class WorkshopSerializer(serializers.ModelSerializer):
             'id', 'name', 'description', 'date', 'start_time', 'end_time',
             'instructor', 'instructor_detail', 'studio', 'studio_detail',
             'price', 'capacity', 'is_active', 'enrolled_count', 'spots_left',
-            'is_booked', 'created_at',
+            'is_booked', 'booking_status', 'created_at',
         )
         read_only_fields = ('id', 'created_at', 'enrolled_count', 'spots_left')
 
@@ -124,6 +125,13 @@ class WorkshopSerializer(serializers.ModelSerializer):
         if not request or not request.user.is_authenticated:
             return False
         return obj.bookings.filter(student=request.user, status='confirmed').exists()
+
+    def get_booking_status(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return None
+        booking = obj.bookings.filter(student=request.user, status__in=['confirmed', 'waitlisted']).first()
+        return booking.status if booking else None
 
 
 class WorkshopBookingSerializer(serializers.ModelSerializer):
