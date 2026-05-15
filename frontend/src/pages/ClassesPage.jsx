@@ -45,8 +45,7 @@ function CoverModal({ session, onClose }) {
       setToast('Cover request submitted')
       setTimeout(onClose, 1500)
     } catch {
-      setToast('Cover request submitted')
-      setTimeout(onClose, 1500)
+      setToast('Failed to submit — please try again')
     } finally {
       setSubmitting(false)
     }
