@@ -17,17 +17,19 @@ function fmtTime(str) {
   return str.slice(0, 5)
 }
 
-function planStatus(plan) {
-  if (plan.status === 'completed') return 'complete'
-  if (plan.instalments?.some(i => i.status === 'overdue')) return 'overdue'
-  return 'on_track'
-}
-
 function nextDue(plan) {
   const pending = plan.instalments?.filter(i => i.status === 'pending' || i.status === 'overdue')
   if (!pending?.length) return '—'
   const sorted = [...pending].sort((a, b) => a.due_date.localeCompare(b.due_date))
   return new Date(sorted[0].due_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
+}
+
+const subsectionLabel = {
+  fontSize: 11,
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+  fontWeight: 600,
+  marginBottom: 8,
 }
 
 export default function AdminDashboard() {
@@ -45,9 +47,9 @@ export default function AdminDashboard() {
   const { data: trialsAndCasualsData } = useApi(() => enrolments.list({ enrolment_type: 'trial,casual' }))
 
   const sessions = sessionsData?.results || []
-  const students = studentsData?.results || []
-  const allPayments = paymentsData?.results || []
-  const plans = plansData?.results || []
+  const students = studentsData?.results || studentsData || []
+  const allPayments = paymentsData?.results || paymentsData || []
+  const plans = plansData?.results || plansData || []
   const pendingOrders = pendingOrdersData?.results || pendingOrdersData || []
   const trials = trialsData?.results || trialsData || []
   const pendingPlans = pendingPlansData?.results || pendingPlansData || []
@@ -64,53 +66,9 @@ export default function AdminDashboard() {
     .reduce((s, p) => s + parseFloat(p.amount || 0), 0)
 
   const weekStart = new Date()
-  weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1)
+  weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7))
   weekStart.setHours(0, 0, 0, 0)
-  const weekBookings = (trialsAndCasualsData?.results || trialsAndCasualsData || []).filter(e => {
-    const d = new Date(e.created_at)
-    return d >= weekStart
-  }).length
-
-  const outstandingTotal = allPayments
-    .filter(p => p.payment_type === 'charge')
-    .reduce((s, p) => s + parseFloat(p.amount || 0), 0)
-  const paidTotal = allPayments
-    .filter(p => p.payment_type === 'payment')
-    .reduce((s, p) => s + parseFloat(p.amount || 0), 0)
-  const outstandingBalance = Math.max(0, outstandingTotal - paidTotal)
-
-  const todayTrials = trials.filter(e => e.created_at?.slice(0, 10) === todayStr || e.date?.slice(0, 10) === todayStr)
-
-  const actionItems = [
-    ...pendingOrders.map(o => ({
-      id: `order-${o.id}`,
-      icon: '🛍',
-      title: `New order for pickup`,
-      sub: o.student_name || o.product_name || 'Retail order',
-      time: fmtDate(o.created_at),
-      urgent: false,
-    })),
-    ...todayTrials.map(e => ({
-      id: `trial-${e.id}`,
-      icon: '⭐',
-      title: 'New student coming today',
-      sub: e.student_name || 'Trial student',
-      time: fmtTime(e.class_time || e.start_time),
-      urgent: false,
-    })),
-    ...pendingPlans.map(p => ({
-      id: `plan-${p.id}`,
-      icon: '💳',
-      title: 'Payment exemption request',
-      sub: p.student_name || 'Student',
-      time: fmtDate(p.created_at),
-      urgent: false,
-    })),
-  ]
-
-  const recentPayments = [...allPayments]
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .slice(0, 8)
+  const weekBookings = trialsAndCasuals.filter(e => new Date(e.created_at) >= weekStart).length
 
   const overdueBalances = (() => {
     const byStudent = {}
@@ -120,8 +78,8 @@ export default function AdminDashboard() {
       if (!byStudent[key]) byStudent[key] = { name: p.student_name, charged: 0, paid: 0, lastDesc: '', lastDate: '' }
       if (p.payment_type === 'charge') {
         byStudent[key].charged += parseFloat(p.amount || 0)
-        byStudent[key].lastDesc = p.description || 'Charge'
-        byStudent[key].lastDate = p.created_at
+        if (!byStudent[key].lastDesc) byStudent[key].lastDesc = p.description || 'Charge'
+        if (!byStudent[key].lastDate) byStudent[key].lastDate = p.created_at
       }
       if (p.payment_type === 'payment') {
         byStudent[key].paid += parseFloat(p.amount || 0)
@@ -134,18 +92,57 @@ export default function AdminDashboard() {
       .slice(0, 5)
   })()
 
+  const outstandingBalance = overdueBalances.reduce((s, b) => s + b.owing, 0)
+
+  const todayTrials = trials.filter(e => e.created_at?.slice(0, 10) === todayStr || e.date?.slice(0, 10) === todayStr)
+
+  const actionItems = [
+    ...pendingOrders.map(o => ({
+      id: `order-${o.id}`,
+      dot: 'var(--lav)',
+      title: 'New order for pickup',
+      sub: o.student_name || o.product_name || 'Retail order',
+      time: fmtDate(o.created_at),
+      urgent: false,
+    })),
+    ...todayTrials.map(e => ({
+      id: `trial-${e.id}`,
+      dot: 'var(--lime)',
+      title: 'New student coming today',
+      sub: e.student_name || 'Trial student',
+      time: fmtTime(e.class_time || e.start_time),
+      urgent: false,
+    })),
+    ...pendingPlans.map(p => ({
+      id: `plan-${p.id}`,
+      dot: 'var(--amber)',
+      title: 'Payment exemption request',
+      sub: p.student_name || 'Student',
+      time: fmtDate(p.created_at),
+      urgent: false,
+    })),
+  ]
+
+  const recentPayments = [...allPayments]
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 8)
+
   const activePlans = plans.filter(p => p.status === 'active')
   const overduePlans = activePlans.filter(p => p.instalments?.some(i => i.status === 'overdue'))
   const onTrackPlans = activePlans.filter(p => !p.instalments?.some(i => i.status === 'overdue'))
 
-  const upcomingTrialsCasuals = trialsAndCasuals.filter(e => {
-    const d = new Date(e.date || e.created_at)
-    const cutoff = new Date()
-    cutoff.setDate(cutoff.getDate() - 3)
-    return d >= cutoff
-  }).sort((a, b) => new Date(a.date || a.created_at) - new Date(b.date || b.created_at))
+  const upcomingTrialsCasuals = trialsAndCasuals
+    .filter(e => {
+      const d = new Date(e.date || e.created_at)
+      const cutoff = new Date()
+      cutoff.setDate(cutoff.getDate() - 3)
+      return d >= cutoff
+    })
+    .sort((a, b) => new Date(a.date || a.created_at) - new Date(b.date || b.created_at))
 
   const toggleCheck = (id) => setCheckedItems(prev => ({ ...prev, [id]: !prev[id] }))
+
+  const pendingActionsCount = exemptions.length + pendingPlans.length
 
   return (
     <div>
@@ -157,9 +154,9 @@ export default function AdminDashboard() {
       </div>
 
       <div className="card" style={{ marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: actionItemsVisible ? 14 : 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: actionItemsVisible ? 12 : 0 }}>
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14 }}>Today's Action Items</div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <Link to="/admin/activity-log">
               <button className="btn btn-ghost btn-xs">VIEW LOG</button>
             </Link>
@@ -171,37 +168,44 @@ export default function AdminDashboard() {
         </div>
 
         {actionItemsVisible && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {actionItems.length === 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {actionItems.length === 0 ? (
               <div style={{ color: 'var(--grey)', fontSize: 13, padding: '12px 0', textAlign: 'center' }}>
                 No action items — you're all caught up
               </div>
-            )}
-            {actionItems.map(item => (
+            ) : actionItems.map(item => (
               <div
                 key={item.id}
-                className={`action-item${item.urgent ? ' urgent' : ''}`}
                 onClick={() => toggleCheck(item.id)}
-                style={{ opacity: checkedItems[item.id] ? 0.45 : 1 }}
+                style={{
+                  display: 'flex', alignItems: 'flex-start', gap: 10,
+                  padding: '8px 6px', borderRadius: 8, cursor: 'pointer',
+                  opacity: checkedItems[item.id] ? 0.4 : 1,
+                  transition: 'opacity 0.15s',
+                  background: checkedItems[item.id] ? 'transparent' : 'rgba(255,255,255,0.02)',
+                }}
               >
                 <input
                   type="checkbox"
                   checked={!!checkedItems[item.id]}
                   onChange={() => toggleCheck(item.id)}
                   onClick={e => e.stopPropagation()}
-                  style={{ accentColor: 'var(--lime)', flexShrink: 0, marginTop: 2 }}
+                  style={{ accentColor: 'var(--lime)', flexShrink: 0, marginTop: 3 }}
                 />
                 <div style={{
                   width: 8, height: 8, borderRadius: '50%', flexShrink: 0, marginTop: 4,
-                  background: item.urgent ? 'var(--red)' : 'var(--lav)',
+                  background: item.dot,
                 }} />
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, textDecoration: checkedItems[item.id] ? 'line-through' : 'none' }}>
+                  <div style={{
+                    fontSize: 13, fontWeight: 600,
+                    textDecoration: checkedItems[item.id] ? 'line-through' : 'none',
+                  }}>
                     {item.title}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{item.sub}</div>
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--grey)', flexShrink: 0 }}>{item.time}</div>
+                <div style={{ fontSize: 11, color: 'var(--grey)', flexShrink: 0, paddingTop: 2 }}>{item.time}</div>
               </div>
             ))}
           </div>
@@ -261,7 +265,7 @@ export default function AdminDashboard() {
                         <td style={{ color: 'var(--grey)' }}>{fmtTime(s.start_time)}</td>
                         <td style={{ color: 'var(--grey)' }}>{instrName}</td>
                         <td style={{ color: 'var(--grey)' }}>{s.studio_detail?.name || '—'}</td>
-                        <td>{s.enrolled_count}/{s.capacity}</td>
+                        <td>{s.enrolled_count ?? '—'}/{s.capacity ?? '—'}</td>
                         <td>
                           {isCancelled
                             ? <span className="tag tag-red" style={{ fontSize: 10 }}>CANCELLED</span>
@@ -270,9 +274,11 @@ export default function AdminDashboard() {
                               : <span className="tag tag-lime" style={{ fontSize: 10 }}>ACTIVE</span>
                           }
                         </td>
-                        <td style={{ display: 'flex', gap: 4 }}>
-                          <button className="btn btn-ghost btn-xs">COVER</button>
-                          <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }}>CANCEL</button>
+                        <td>
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            <button className="btn btn-ghost btn-xs">COVER</button>
+                            <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }}>CANCEL</button>
+                          </div>
                         </td>
                       </tr>
                     )
@@ -285,11 +291,10 @@ export default function AdminDashboard() {
 
         <div>
           <div className="section-title" style={{ fontSize: 14, marginBottom: 12 }}>Recent Activity</div>
-          <div className="card" style={{ padding: '10px 14px' }}>
-            {recentPayments.length === 0 && (
+          <div className="card" style={{ padding: '8px 14px' }}>
+            {recentPayments.length === 0 ? (
               <div style={{ color: 'var(--grey)', fontSize: 13, textAlign: 'center', padding: '16px 0' }}>No recent activity</div>
-            )}
-            {recentPayments.map(p => {
+            ) : recentPayments.map(p => {
               const isPayment = p.payment_type === 'payment'
               const isCharge = p.payment_type === 'charge' || p.payment_type === 'no_show_fee'
               return (
@@ -316,16 +321,16 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {(exemptions.length > 0 || pendingPlans.length > 0) && (
+      {pendingActionsCount > 0 && (
         <div style={{ marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
             <div className="section-title" style={{ fontSize: 14, color: 'var(--amber)' }}>Pending Actions</div>
-            <span className="tag tag-amber" style={{ fontSize: 10 }}>{exemptions.length + pendingPlans.length}</span>
+            <span className="tag tag-amber" style={{ fontSize: 10 }}>{pendingActionsCount}</span>
           </div>
 
           {exemptions.length > 0 && (
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 10, fontWeight: 600 }}>
+              <div style={{ ...subsectionLabel, color: 'var(--grey)' }}>
                 Catch-up Exemption Requests
               </div>
               <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
@@ -352,7 +357,7 @@ export default function AdminDashboard() {
 
           {pendingPlans.length > 0 && (
             <div>
-              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 10, fontWeight: 600 }}>
+              <div style={{ ...subsectionLabel, color: 'var(--grey)' }}>
                 Payment Plan Requests
               </div>
               <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
@@ -366,9 +371,7 @@ export default function AdminDashboard() {
                       <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{p.description || 'Payment plan'}</div>
                     </div>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>${parseFloat(p.total_amount || 0).toFixed(2)}</div>
-                    <div style={{ fontSize: 12, color: 'var(--grey)' }}>
-                      {p.instalments?.length} instalments
-                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--grey)' }}>{p.instalments?.length ?? '—'} instalments</div>
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button className="btn btn-ghost btn-xs" style={{ color: 'var(--lime)' }}>APPROVE</button>
                       <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }}>DENY</button>
@@ -428,9 +431,7 @@ export default function AdminDashboard() {
 
           {overduePlans.length > 0 && (
             <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--red)', marginBottom: 8, fontWeight: 600 }}>
-                Needs Attention
-              </div>
+              <div style={{ ...subsectionLabel, color: 'var(--red)' }}>Needs Attention</div>
               <div style={{ background: 'rgba(255,68,68,0.05)', border: '1px solid rgba(255,68,68,0.2)', borderRadius: 10, overflow: 'hidden' }}>
                 {overduePlans.map((p, i) => {
                   const paid = parseFloat(p.amount_paid || 0)
@@ -460,9 +461,7 @@ export default function AdminDashboard() {
 
           {onTrackPlans.length > 0 && (
             <div>
-              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 8, fontWeight: 600 }}>
-                Active & On Track
-              </div>
+              <div style={{ ...subsectionLabel, color: 'var(--grey)' }}>Active & On Track</div>
               <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
                 {onTrackPlans.map((p, i) => {
                   const paid = parseFloat(p.amount_paid || 0)
@@ -526,7 +525,10 @@ export default function AdminDashboard() {
                         </span>
                       </td>
                       <td style={{ textAlign: 'center' }}>
-                        {isFirstTimer ? <span style={{ color: 'var(--amber)' }}>★</span> : <span style={{ color: 'var(--grey)' }}>—</span>}
+                        {isFirstTimer
+                          ? <span style={{ color: 'var(--amber)' }}>★</span>
+                          : <span style={{ color: 'var(--grey)' }}>—</span>
+                        }
                       </td>
                       <td>
                         {introSent
@@ -540,10 +542,12 @@ export default function AdminDashboard() {
                           : <span className="tag tag-red" style={{ fontSize: 10 }}>NOT SIGNED</span>
                         }
                       </td>
-                      <td style={{ display: 'flex', gap: 4, flexWrap: 'nowrap' }}>
-                        <button className="btn btn-ghost btn-xs">VIEW</button>
-                        {!introSent && <button className="btn btn-ghost btn-xs">SEND NOW</button>}
-                        {!waiverSigned && <button className="btn btn-ghost btn-xs">CHASE WAIVER</button>}
+                      <td>
+                        <div style={{ display: 'flex', gap: 4, flexWrap: 'nowrap' }}>
+                          <button className="btn btn-ghost btn-xs">VIEW</button>
+                          {!introSent && <button className="btn btn-ghost btn-xs">SEND NOW</button>}
+                          {!waiverSigned && <button className="btn btn-ghost btn-xs">CHASE WAIVER</button>}
+                        </div>
                       </td>
                     </tr>
                   )
