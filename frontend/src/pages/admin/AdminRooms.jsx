@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import '../StudentsPage.css'
 import { useApi } from '../../hooks/useApi'
 import { studios } from '../../api'
@@ -56,10 +56,23 @@ export default function AdminRooms() {
   const { data, loading, refetch } = useApi(() => studios.list())
   const rooms = data?.results || data || []
   const [modal, setModal] = useState(null)
+  const [uploadingPhoto, setUploadingPhoto] = useState(null)
+  const photoRefs = useRef({})
 
   function handleSaved() {
     setModal(null)
     refetch()
+  }
+
+  async function handlePhotoChange(room, file) {
+    if (!file) return
+    setUploadingPhoto(room.id)
+    try {
+      await studios.uploadPhoto(room.id, file)
+      refetch()
+    } finally {
+      setUploadingPhoto(null)
+    }
   }
 
   return (
@@ -97,8 +110,21 @@ export default function AdminRooms() {
                 <div style={{ width: 90, color: 'var(--grey)', flexShrink: 0 }}>Kisi Access</div>
                 <div style={{ color: room.kisi ? 'var(--lime)' : 'var(--grey)' }}>{room.kisi ? 'Connected ✓' : 'Not configured'}</div>
               </div>
-              <div style={{ height: 100, background: '#0a0a0a', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--grey)', fontSize: 12, cursor: 'pointer', marginTop: 14 }}>
-                📷 Add photos
+              <div
+                style={{ height: 100, background: '#0a0a0a', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--grey)', fontSize: 12, cursor: 'pointer', marginTop: 14, overflow: 'hidden', position: 'relative' }}
+                onClick={() => photoRefs.current[room.id]?.click()}
+              >
+                {room.photo
+                  ? <img src={room.photo} alt={room.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : uploadingPhoto === room.id ? 'Uploading…' : '📷 Add photo'
+                }
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  ref={el => photoRefs.current[room.id] = el}
+                  onChange={e => handlePhotoChange(room, e.target.files[0])}
+                />
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
                 <button className="btn btn-ghost btn-sm" onClick={() => setModal({ existing: room })}>Edit</button>

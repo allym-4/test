@@ -182,3 +182,37 @@ class AttendanceStatsView(APIView):
             'weekly': weekly,
             'at_risk': at_risk,
         })
+
+
+class MakeupCreditListView(generics.ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        from .serializers import MakeupCreditSerializer
+        return MakeupCreditSerializer
+
+    def get_queryset(self):
+        from .models import MakeupCredit
+        user = self.request.user
+        if user.role in ('admin', 'instructor', 'staff'):
+            qs = MakeupCredit.objects.select_related('student', 'issued_by')
+            student_id = self.request.query_params.get('student')
+            if student_id:
+                qs = qs.filter(student_id=student_id)
+            return qs
+        return MakeupCredit.objects.filter(student=user)
+
+    def perform_create(self, serializer):
+        serializer.save(issued_by=self.request.user)
+
+
+class MakeupCreditDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def get_serializer_class(self):
+        from .serializers import MakeupCreditSerializer
+        return MakeupCreditSerializer
+
+    def get_queryset(self):
+        from .models import MakeupCredit
+        return MakeupCredit.objects.all()

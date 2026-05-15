@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { enrolments, seasons, attendance as attendanceApi, classes as classesApi, skills as skillsApi } from '../../api'
+
 import { Link } from 'react-router-dom'
 
 const DAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -95,6 +96,7 @@ export default function StudentDashboard() {
   const { data: enrolData, loading: loadingEnrol } = useApi(() => enrolments.list({ student: user?.id, status: 'active' }), [user?.id])
   const { data: seasonData } = useApi(() => seasons.list(), [])
   const { data: skillsData } = useApi(() => user?.id ? skillsApi.list(user.id) : null, [user?.id])
+  const { data: creditsData } = useApi(() => attendanceApi.makeupCredits.list({ student: user?.id, status: 'available' }), [user?.id])
 
   const [markAwayEnrol, setMarkAwayEnrol] = useState(null)
 
@@ -166,7 +168,7 @@ export default function StudentDashboard() {
           <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>Classes This Season</div>
         </div>
         <div className="kpi card" style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color: 'var(--lav)' }}>—</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color: 'var(--lav)' }}>{creditsData ? (creditsData?.results || creditsData || []).length : '—'}</div>
           <Link to="/portal/billing" style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4, display: 'block', textDecoration: 'none' }}>Catch-up Credits</Link>
         </div>
         <div className="kpi card" style={{ textAlign: 'center' }}>

@@ -39,6 +39,10 @@ export const studios = {
   list: () => client.get('/api/classes/studios/'),
   create: (data) => client.post('/api/classes/studios/', data),
   update: (id, data) => client.patch(`/api/classes/studios/${id}/`, data),
+  uploadPhoto: (id, file) => {
+    const fd = new FormData(); fd.append('photo', file)
+    return client.patch(`/api/classes/studios/${id}/`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
   delete: (id) => client.delete(`/api/classes/studios/${id}/`),
 }
 
@@ -219,6 +223,11 @@ export const attendance = {
   stats: () => client.get('/api/attendance/stats/'),
   bulkSave: (occurrenceId, records) => client.post(`/api/attendance/occurrence/${occurrenceId}/bulk/`, { records }),
   markAway: (occurrence_id) => client.post('/api/attendance/mark-away/', { occurrence_id }),
+  makeupCredits: {
+    list: (params) => client.get('/api/attendance/makeup-credits/', { params }),
+    create: (data) => client.post('/api/attendance/makeup-credits/', data),
+    update: (id, data) => client.patch(`/api/attendance/makeup-credits/${id}/`, data),
+  },
 }
 
 export const tags = {

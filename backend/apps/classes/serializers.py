@@ -6,7 +6,7 @@ from apps.users.serializers import UserMinimalSerializer
 class StudioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Studio
-        fields = ('id', 'name', 'address', 'capacity', 'poles', 'features', 'kisi_place_id', 'is_active')
+        fields = ('id', 'name', 'address', 'capacity', 'poles', 'features', 'kisi_place_id', 'photo', 'is_active')
 
 
 class ClassCategorySerializer(serializers.ModelSerializer):

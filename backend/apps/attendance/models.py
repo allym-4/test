@@ -29,3 +29,25 @@ class AttendanceRecord(models.Model):
 
     def __str__(self):
         return f'{self.student.display_name} · {self.occurrence} · {self.status}'
+
+
+class MakeupCredit(models.Model):
+    class Status(models.TextChoices):
+        AVAILABLE = 'available', 'Available'
+        USED = 'used', 'Used'
+        EXPIRED = 'expired', 'Expired'
+
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='makeup_credits')
+    reason = models.CharField(max_length=200, blank=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.AVAILABLE)
+    issued_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='credits_issued'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'Credit for {self.student.display_name} ({self.status})'

@@ -9,6 +9,7 @@ class Studio(models.Model):
     capacity = models.CharField(max_length=50, blank=True)
     poles = models.CharField(max_length=100, blank=True)
     features = models.TextField(blank=True)
+    photo = models.ImageField(upload_to='studios/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):

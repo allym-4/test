@@ -64,7 +64,53 @@ function CreateSurveyModal({ initialName = '', onClose, onSaved }) {
   )
 }
 
+function SurveyResultsModal({ survey, onClose }) {
+  const { data, loading } = useApi(() => surveysApi.responses(survey.id), [survey.id])
+  const responses = data?.results || data || []
+
+  const questionMap = {}
+  ;(survey.questions || []).forEach(q => { questionMap[q.id] = q })
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 640 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>{survey.name} — Results</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="sd-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: 32, color: 'var(--grey)' }}>Loading…</div>
+          ) : responses.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 32, color: 'var(--grey)', fontSize: 13 }}>No responses yet.</div>
+          ) : responses.map((r, i) => (
+            <div key={r.id} style={{ marginBottom: 20, paddingBottom: 20, borderBottom: i < responses.length - 1 ? '1px solid var(--border)' : 'none' }}>
+              <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>
+                {r.student_name}
+                <span style={{ fontWeight: 400, color: 'var(--grey)', fontSize: 11, marginLeft: 8 }}>
+                  {new Date(r.submitted_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </span>
+              </div>
+              {(r.answers || []).map(a => (
+                <div key={a.id} style={{ marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 2 }}>{questionMap[a.question]?.question_text || `Q${a.question}`}</div>
+                  <div style={{ fontSize: 13, background: '#111', borderRadius: 6, padding: '6px 10px' }}>{a.answer_text || <span style={{ color: 'var(--grey)' }}>—</span>}</div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+        <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: 'var(--grey)' }}>
+          <span>{responses.length} response{responses.length !== 1 ? 's' : ''}</span>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function SurveyCard({ survey, onRefetch }) {
+  const [showResults, setShowResults] = useState(false)
   const pct = Math.round((survey.response_count || 0) / Math.max(survey.question_count || 1, 1) * 100)
 
   async function handleClose() {
@@ -88,12 +134,12 @@ function SurveyCard({ survey, onRefetch }) {
         <span style={{ fontSize: 11, color: 'var(--grey)', width: 36, textAlign: 'right' }}>{pct}%</span>
       </div>
       <div style={{ display: 'flex', gap: 8 }}>
-        <button className="btn btn-ghost btn-xs">View Results</button>
-        {survey.status === 'active' && <button className="btn btn-ghost btn-xs">Send Reminder</button>}
+        <button className="btn btn-ghost btn-xs" onClick={() => setShowResults(true)}>View Results</button>
         {survey.status === 'active' && (
           <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)' }} onClick={handleClose}>Close</button>
         )}
       </div>
+      {showResults && <SurveyResultsModal survey={survey} onClose={() => setShowResults(false)} />}
     </div>
   )
 }
