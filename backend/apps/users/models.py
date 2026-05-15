@@ -474,3 +474,21 @@ class MediaItem(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class ActionItem(models.Model):
+    icon = models.CharField(max_length=10, default='📌')
+    title = models.CharField(max_length=200)
+    body = models.TextField(blank=True)
+    meta = models.CharField(max_length=100, blank=True)
+    is_urgent = models.BooleanField(default=False)
+    is_done = models.BooleanField(default=False)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='action_items_created')
+    completed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title

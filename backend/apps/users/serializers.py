@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, InstructorUnavailableDate, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList, Referral
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, InstructorUnavailableDate, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList, Referral, ActionItem
 
 
 class UserMinimalSerializer(serializers.ModelSerializer):
@@ -269,3 +269,10 @@ class InstructorUnavailableDateSerializer(serializers.ModelSerializer):
         model = InstructorUnavailableDate
         fields = ('id', 'instructor', 'date_from', 'date_to', 'reason', 'created_at')
         read_only_fields = ('id', 'instructor', 'created_at')
+
+
+class ActionItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ActionItem
+        fields = ('id', 'icon', 'title', 'body', 'meta', 'is_urgent', 'is_done', 'completed_at', 'created_at')
+        read_only_fields = ('id', 'created_at')

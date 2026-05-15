@@ -1,18 +1,8 @@
 import { useState } from 'react'
 import '../StudentsPage.css'
 import { useApi } from '../../hooks/useApi'
-import { campaigns as campaignsApi, emailLists as emailListsApi } from '../../api'
+import { campaigns as campaignsApi, emailLists as emailListsApi, automations as automationsApi } from '../../api'
 import client from '../../api/client'
-
-const AUTOMATIONS = [
-  { name: 'Welcome email — new student', trigger: 'Student created', active: true },
-  { name: 'Season booking confirmation', trigger: 'Enrolment confirmed', active: true },
-  { name: 'Class reminder', trigger: '24 hours before class', active: true },
-  { name: 'No-show follow-up', trigger: 'Marked no-show', active: true },
-  { name: 'Welfare check-in', trigger: 'Attendance < 50% over 4 classes', active: false },
-  { name: 'Season renewal reminder', trigger: '2 weeks before season end', active: true },
-  { name: 'Birthday message', trigger: 'Student birthday', active: false },
-]
 
 function CreateCampaignModal({ onClose, onCreated }) {
   const [form, setForm] = useState({ name: '', subject: '', list_name: '', status: 'draft' })
@@ -106,7 +96,6 @@ function CampaignViewModal({ campaign, onClose }) {
 
 export default function AdminMarketing() {
   const [tab, setTab] = useState('campaigns')
-  const [automationList, setAutomationList] = useState(AUTOMATIONS)
   const [showCreateCampaign, setShowCreateCampaign] = useState(false)
   const [viewCampaign, setViewCampaign] = useState(null)
 
@@ -116,8 +105,12 @@ export default function AdminMarketing() {
   const { data: listsData, refetch: refetchLists } = useApi(() => emailListsApi.list())
   const emailListList = listsData?.results || listsData || []
 
-  function toggleAutomation(name) {
-    setAutomationList(as => as.map(a => a.name === name ? { ...a, active: !a.active } : a))
+  const { data: autoData, refetch: refetchAuto } = useApi(() => automationsApi.list())
+  const automationList = autoData?.results || autoData || []
+
+  async function toggleAutomation(rule) {
+    await automationsApi.update(rule.id, { enabled: !rule.enabled })
+    refetchAuto()
   }
 
   return (
@@ -192,14 +185,17 @@ export default function AdminMarketing() {
 
       {tab === 'automations' && (
         <div style={{ maxWidth: 700 }}>
+          {automationList.length === 0 && (
+            <div className="empty-state">No automations configured</div>
+          )}
           {automationList.map(a => (
-            <div key={a.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '14px 0', borderBottom: '1px solid #1a1a1a' }}>
+            <div key={a.id || a.slug} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '14px 0', borderBottom: '1px solid #1a1a1a' }}>
               <div>
                 <div style={{ fontWeight: 500, fontSize: 13 }}>{a.name}</div>
-                <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>Trigger: {a.trigger}</div>
+                <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{a.description || `Trigger: ${a.trigger_type}`}</div>
               </div>
-              <div onClick={() => toggleAutomation(a.name)} style={{ width: 36, height: 20, borderRadius: 10, background: a.active ? 'var(--lime)' : '#333', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
-                <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: a.active ? 19 : 3, transition: 'left 0.2s' }} />
+              <div onClick={() => toggleAutomation(a)} style={{ width: 36, height: 20, borderRadius: 10, background: a.enabled ? 'var(--lime)' : '#333', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: a.enabled ? 19 : 3, transition: 'left 0.2s' }} />
               </div>
             </div>
           ))}

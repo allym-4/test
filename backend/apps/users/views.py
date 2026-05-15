@@ -15,14 +15,14 @@ try:
     ANTHROPIC_AVAILABLE = True
 except ImportError:
     ANTHROPIC_AVAILABLE = False
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, AutomationRun, Order, Notification, InstructorAvailability, InstructorUnavailableDate, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList, Referral
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, AutomationRun, Order, Notification, InstructorAvailability, InstructorUnavailableDate, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList, Referral, ActionItem
 from .serializers import (
     UserSerializer, UserCreateSerializer, StaffNoteSerializer, LeadSerializer,
     StudioSettingsSerializer, AnnouncementSerializer, ProductSerializer, AutomationRuleSerializer,
     OrderSerializer, NotificationSerializer, InstructorAvailabilitySerializer, InstructorUnavailableDateSerializer, StudentFormSerializer,
     InstructorPayRecordSerializer, StudentSkillSerializer,
     TagSerializer, StudentTagSerializer, SkillLevelSerializer, SkillGroupSerializer, SkillDefinitionSerializer,
-    MediaItemSerializer, EmailCampaignSerializer, EmailListSerializer, ReferralSerializer,
+    MediaItemSerializer, EmailCampaignSerializer, EmailListSerializer, ReferralSerializer, ActionItemSerializer,
 )
 from .permissions import IsAdminOrInstructor, IsAdminUser
 
@@ -748,3 +748,25 @@ class EmailListExportView(APIView):
         for s in students:
             writer.writerow([s.first_name, s.last_name, s.email, getattr(s, 'phone', '') or ''])
         return response
+
+
+class ActionItemListView(generics.ListCreateAPIView):
+    serializer_class = ActionItemSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+    def get_queryset(self):
+        qs = ActionItem.objects.all()
+        if self.request.query_params.get('done') == 'true':
+            qs = qs.filter(is_done=True)
+        elif self.request.query_params.get('done') == 'false':
+            qs = qs.filter(is_done=False)
+        return qs
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+
+class ActionItemDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = ActionItem.objects.all()
+    serializer_class = ActionItemSerializer
+    permission_classes = [IsAdminOrInstructor]

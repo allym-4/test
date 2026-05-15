@@ -347,3 +347,10 @@ export const referrals = {
 export const assistant = {
   chat: (message) => client.post('/api/users/assistant/', { message }),
 }
+
+export const actionItems = {
+  list: (params) => client.get('/api/users/action-items/', { params }),
+  create: (data) => client.post('/api/users/action-items/', data),
+  update: (id, data) => client.patch(`/api/users/action-items/${id}/`, data),
+  delete: (id) => client.delete(`/api/users/action-items/${id}/`),
+}
