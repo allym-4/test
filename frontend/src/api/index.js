@@ -178,7 +178,7 @@ export const automations = {
   update: (id, data) => client.patch(`/api/users/automations/${id}/`, data),
   delete: (id) => client.delete(`/api/users/automations/${id}/`),
   stats: () => client.get('/api/users/automations/stats/'),
-  runs: () => client.get('/api/users/automation-runs/'),
+  runs: (limit = 50) => client.get('/api/users/automation-runs/', { params: { limit } }),
 }
 
 export const orders = {

@@ -296,19 +296,22 @@ class AutomationRunListView(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request):
+        limit = min(int(request.query_params.get('limit', 50)), 200)
         runs = (
             AutomationRun.objects
             .select_related('student', 'rule')
-            .order_by('-created_at')[:10]
+            .order_by('-created_at')[:limit]
         )
         data = [
             {
                 'id': r.id,
                 'slug': r.slug,
+                'rule_name': r.rule.name if r.rule else r.slug,
                 'student_name': r.student.display_name if r.student else None,
                 'student_id': r.student_id,
                 'status': r.status,
                 'actions_taken': r.actions_taken,
+                'trigger_data': r.trigger_data,
                 'created_at': r.created_at,
             }
             for r in runs

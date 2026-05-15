@@ -456,7 +456,10 @@ export default function AdminAutomations() {
       {/* RUN HISTORY TAB */}
       {activeTab === 'history' && (
         <div>
-          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 16 }}>Last 10 Automation Runs</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div style={{ fontWeight: 600, fontSize: 14 }}>Automation Run History</div>
+            <span style={{ fontSize: 12, color: 'var(--grey)' }}>{runs?.length || 0} most recent</span>
+          </div>
           {!runs || runs.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: '#555', fontSize: 14 }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>📋</div>
@@ -469,7 +472,7 @@ export default function AdminAutomations() {
                   <tr style={{ borderBottom: '1px solid #222', color: '#666', textAlign: 'left' }}>
                     <th style={{ padding: '8px 12px', fontWeight: 600 }}>Automation</th>
                     <th style={{ padding: '8px 12px', fontWeight: 600 }}>Student</th>
-                    <th style={{ padding: '8px 12px', fontWeight: 600 }}>Actions Taken</th>
+                    <th style={{ padding: '8px 12px', fontWeight: 600 }}>Actions</th>
                     <th style={{ padding: '8px 12px', fontWeight: 600 }}>Status</th>
                     <th style={{ padding: '8px 12px', fontWeight: 600 }}>When</th>
                   </tr>
@@ -478,10 +481,15 @@ export default function AdminAutomations() {
                   {runs.map(run => (
                     <tr key={run.id} style={{ borderBottom: '1px solid #111' }}>
                       <td style={{ padding: '10px 12px' }}>
-                        <span style={{ background: 'rgba(204,255,0,0.1)', color: 'var(--lime)', border: '1px solid rgba(204,255,0,0.2)', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontFamily: 'monospace' }}>{run.slug}</span>
+                        <div style={{ fontWeight: 500, fontSize: 12, marginBottom: 2 }}>{run.rule_name || run.slug}</div>
+                        <span style={{ background: 'rgba(204,255,0,0.07)', color: 'var(--grey)', border: '1px solid rgba(204,255,0,0.1)', borderRadius: 4, padding: '1px 6px', fontSize: 10, fontFamily: 'monospace' }}>{run.slug}</span>
                       </td>
                       <td style={{ padding: '10px 12px', color: '#ccc' }}>{run.student_name || '—'}</td>
-                      <td style={{ padding: '10px 12px', color: '#888', fontSize: 11 }}>{Array.isArray(run.actions_taken) ? run.actions_taken.join(', ') : run.actions_taken}</td>
+                      <td style={{ padding: '10px 12px', color: '#888', fontSize: 11, maxWidth: 280 }}>
+                        {Array.isArray(run.actions_taken)
+                          ? run.actions_taken.map((a, i) => <div key={i}>{a}</div>)
+                          : run.actions_taken || '—'}
+                      </td>
                       <td style={{ padding: '10px 12px' }}>
                         <span style={{
                           background: run.status === 'completed' ? 'rgba(204,255,0,0.1)' : run.status === 'failed' ? 'rgba(231,76,60,0.1)' : 'rgba(255,255,255,0.05)',
@@ -489,7 +497,9 @@ export default function AdminAutomations() {
                           borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 600,
                         }}>{run.status}</span>
                       </td>
-                      <td style={{ padding: '10px 12px', color: '#666', fontSize: 11 }}>{new Date(run.created_at).toLocaleString()}</td>
+                      <td style={{ padding: '10px 12px', color: '#666', fontSize: 11, whiteSpace: 'nowrap' }}>
+                        {new Date(run.created_at).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
