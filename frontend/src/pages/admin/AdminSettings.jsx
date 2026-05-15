@@ -111,6 +111,68 @@ function FormPreviewModal({ formName, onClose }) {
   )
 }
 
+const INTRO_OFFERS = [
+  { id: 'trial', name: 'Trial Class', price: '$25', desc: 'First class only' },
+  { id: 'intro2w', name: '2-Week Intro Pass', price: '$55', desc: 'Unlimited classes for 2 weeks' },
+]
+
+const STAFF_PERMISSIONS = [
+  { key: 'billing', label: 'Can view billing' },
+  { key: 'editProfiles', label: 'Can edit student profiles' },
+  { key: 'approvePlans', label: 'Can approve payment plans' },
+  { key: 'bulkEmail', label: 'Can send bulk emails' },
+  { key: 'reports', label: 'Can view reports' },
+]
+
+function MembershipModal({ membership, onClose, onSave }) {
+  const [name, setName] = useState(membership?.name || '')
+  const [price, setPrice] = useState(membership?.price != null ? String(membership.price) : '')
+  const [duration, setDuration] = useState(membership?.duration || '')
+  const [classesPerWeek, setClassesPerWeek] = useState(membership?.classes_per_week || '')
+  const [isActive, setIsActive] = useState(membership?.is_active !== false)
+  const [saving, setSaving] = useState(false)
+
+  async function handleSave() {
+    setSaving(true)
+    try {
+      await onSave({ ...membership, name, price: parseFloat(price) || 0, duration, classes_per_week: classesPerWeek, is_active: isActive })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 460 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>{membership?.id ? 'Edit Membership' : 'Add Membership'}</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="sd-body">
+          <div className="field"><label>Name</label><input value={name} onChange={e => setName(e.target.value)} autoFocus /></div>
+          <div className="field">
+            <label>Price ($)</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ color: 'var(--grey)' }}>$</span>
+              <input type="number" step="0.01" min="0" value={price} onChange={e => setPrice(e.target.value)} style={{ maxWidth: 120 }} />
+            </div>
+          </div>
+          <div className="field"><label>Duration (e.g. "8 weeks")</label><input value={duration} onChange={e => setDuration(e.target.value)} /></div>
+          <div className="field"><label>Classes/Week (e.g. "1", "2", "Unlimited")</label><input value={classesPerWeek} onChange={e => setClassesPerWeek(e.target.value)} /></div>
+          <div className="field" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <label style={{ marginBottom: 0 }}>Active</label>
+            <Toggle checked={isActive} onChange={setIsActive} />
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+            <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button className="btn btn-lime btn-sm" onClick={handleSave} disabled={saving || !name.trim()}>{saving ? 'Saving…' : 'Save'}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminSettings() {
   const [tab, setTab] = useState('studio')
   const [form, setForm] = useState(null)
@@ -124,6 +186,34 @@ export default function AdminSettings() {
   const [showAddLocation, setShowAddLocation] = useState(false)
   const [previewForm, setPreviewForm] = useState(null)
   const [integrationMsg, setIntegrationMsg] = useState(null)
+
+  // Memberships tab
+  const { data: membershipData, loading: membershipLoading, refetch: refetchMemberships } = useApi(() => membershipTypes.list(), [])
+  const membershipList = membershipData?.results || membershipData || []
+  const [membershipModal, setMembershipModal] = useState(null) // null | 'add' | {membership object}
+  const [introOfferMsg, setIntroOfferMsg] = useState(null)
+
+  // Staff & Permissions tab
+  const { data: staffData } = useApi(() => users.list({ role: 'staff' }), [])
+  const { data: instructorData } = useApi(() => users.list({ role: 'instructor' }), [])
+  const rawStaff = staffData?.results || staffData || []
+  const rawInstructors = instructorData?.results || instructorData || []
+  const allStaff = [...rawInstructors, ...rawStaff]
+  const [staffPerms, setStaffPerms] = useState({}) // { [userId]: { billing: bool, ... } }
+  const [staffRoles, setStaffRoles] = useState({}) // { [userId]: 'instructor'|'staff'|'admin' }
+
+  function getPerms(userId) {
+    return staffPerms[userId] || { billing: false, editProfiles: false, approvePlans: false, bulkEmail: false, reports: false }
+  }
+  function setPerm(userId, key, val) {
+    setStaffPerms(prev => ({ ...prev, [userId]: { ...getPerms(userId), [key]: val } }))
+  }
+  function getRole(user) {
+    return staffRoles[user.id] || user.role || 'staff'
+  }
+  function setRole(userId, val) {
+    setStaffRoles(prev => ({ ...prev, [userId]: val }))
+  }
 
   useEffect(() => {
     settingsApi.get().then(r => setForm(r.data))
@@ -155,6 +245,21 @@ export default function AdminSettings() {
     setShowAddLocation(false)
   }
 
+  async function saveMembership(data) {
+    if (data.id) {
+      await membershipTypes.update(data.id, data)
+    } else {
+      await membershipTypes.create(data)
+    }
+    setMembershipModal(null)
+    refetchMemberships()
+  }
+
+  async function toggleMembershipActive(m) {
+    await membershipTypes.update(m.id, { is_active: !m.is_active })
+    refetchMemberships()
+  }
+
   function showIntegrationInfo(name) {
     setIntegrationMsg(`${name} integration is configured via environment variables on the server. Contact your developer to set up the connection.`)
     setTimeout(() => setIntegrationMsg(null), 4000)
@@ -181,7 +286,7 @@ export default function AdminSettings() {
       )}
 
       <div className="subtabs" style={{ marginBottom: 24 }}>
-        {[['studio', 'Studio'], ['policies', 'Policies'], ['pricing', 'Pricing'], ['integrations', 'Integrations'], ['forms', 'Forms & Docs']].map(([key, label]) => (
+        {[['studio', 'Studio'], ['policies', 'Policies'], ['pricing', 'Pricing'], ['memberships', 'Memberships'], ['staff', 'Staff & Permissions'], ['integrations', 'Integrations'], ['forms', 'Forms & Docs']].map(([key, label]) => (
           <div key={key} className={`subtab ${tab === key ? 'active' : ''}`} onClick={() => setTab(key)}>{label}</div>
         ))}
       </div>
@@ -286,6 +391,116 @@ export default function AdminSettings() {
         </div>
       )}
 
+      {tab === 'memberships' && (
+        <div>
+          {introOfferMsg && (
+            <div style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 10, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#f59e0b' }}>
+              {introOfferMsg}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', fontWeight: 600 }}>Membership Types</div>
+            <button className="btn btn-lime btn-sm" onClick={() => setMembershipModal('add')}>+ Add Membership</button>
+          </div>
+
+          {membershipLoading ? (
+            <div style={{ color: 'var(--grey)', fontSize: 13, padding: 12 }}>Loading…</div>
+          ) : membershipList.length === 0 ? (
+            <div style={{ color: 'var(--grey)', fontSize: 13, padding: 12 }}>No membership types yet.</div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16, marginBottom: 32 }}>
+              {membershipList.map(m => (
+                <div key={m.id} className="section" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{m.name}</div>
+                    <span className={`tag ${m.is_active ? 'tag-lime' : 'tag-grey'}`} style={{ fontSize: 10 }}>{m.is_active ? 'Active' : 'Inactive'}</span>
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--grey)' }}>
+                    {m.duration}{m.classes_per_week ? ` — ${m.classes_per_week}x/week` : ''}
+                  </div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--lime)' }}>${m.price}</div>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                    <button className="btn btn-ghost btn-xs" onClick={() => setMembershipModal(m)}>Edit</button>
+                    <button className="btn btn-ghost btn-xs" onClick={() => toggleMembershipActive(m)}>{m.is_active ? 'Deactivate' : 'Activate'}</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Intro Offers */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: '#f59e0b', fontWeight: 600, marginBottom: 12 }}>Intro Offers</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
+              {INTRO_OFFERS.map(offer => (
+                <div key={offer.id} style={{ borderRadius: 12, border: '1px solid rgba(245,158,11,0.35)', background: 'rgba(245,158,11,0.05)', padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{offer.name}</div>
+                    <span style={{ fontSize: 10, background: 'rgba(245,158,11,0.2)', color: '#f59e0b', borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>Intro</span>
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--grey)' }}>{offer.desc}</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: '#f59e0b' }}>{offer.price}</div>
+                  <div style={{ marginTop: 4 }}>
+                    <button className="btn btn-ghost btn-xs" onClick={() => {
+                      setIntroOfferMsg('Feature coming soon')
+                      setTimeout(() => setIntroOfferMsg(null), 2000)
+                    }}>Edit</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === 'staff' && (
+        <div>
+          <div style={{ background: '#1a1a1a', borderRadius: 10, padding: '12px 16px', marginBottom: 24, fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
+            Full role-based permissions are coming soon. Changes here are saved locally for preview.
+          </div>
+
+          {allStaff.length === 0 ? (
+            <div style={{ color: 'var(--grey)', fontSize: 13, padding: 12 }}>No staff or instructors found.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {allStaff.map(user => {
+                const perms = getPerms(user.id)
+                const role = getRole(user)
+                const initials = (user.first_name?.[0] || user.name?.[0] || user.email?.[0] || '?').toUpperCase()
+                const displayName = user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : user.name || user.email
+                return (
+                  <div key={user.id} className="section" style={{ padding: '18px 20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--lav)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 16, color: '#000', flexShrink: 0 }}>
+                        {initials}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{displayName}</div>
+                        <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{user.email}</div>
+                      </div>
+                      <select value={role} onChange={e => setRole(user.id, e.target.value)} style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, background: '#1a1a1a', border: '1px solid var(--border)', color: 'var(--white)', cursor: 'pointer' }}>
+                        <option value="instructor">Instructor</option>
+                        <option value="staff">Staff</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
+                      {STAFF_PERMISSIONS.map(p => (
+                        <div key={p.key} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <Toggle checked={!!perms[p.key]} onChange={val => setPerm(user.id, p.key, val)} />
+                          <span style={{ fontSize: 13 }}>{p.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {tab === 'integrations' && (
         <div className="grid-2" style={{ gap: 24 }}>
           <div>
@@ -374,6 +589,14 @@ export default function AdminSettings() {
             </div>
           ))}
         </Section>
+      )}
+
+      {membershipModal && (
+        <MembershipModal
+          membership={membershipModal === 'add' ? null : membershipModal}
+          onClose={() => setMembershipModal(null)}
+          onSave={saveMembership}
+        />
       )}
 
       {editingLocation && (
