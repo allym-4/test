@@ -311,13 +311,17 @@ export default function AdminOffers() {
 
   // Season pricing local state — loaded from StudioSettings.season_pricing_config
   const DEFAULT_SEASON = [
-    { label: '1 class/week', price: '220', discount: '—' },
-    { label: '2 classes/week', price: '400', discount: '$40 off' },
-    { label: '3 classes/week', price: '510', discount: '$150 off (free practice)' },
+    { label: '1 class/week', price: '270', discount: '$33.75 per class' },
+    { label: '2 classes/week', price: '440', discount: '$27.50 per class' },
+    { label: '3 classes/week', price: '580', discount: '$24.17 per class + 1 practice/week' },
+    { label: '4 classes/week', price: '700', discount: '$21.88 per class + unlimited practice' },
+    { label: '5 classes/week', price: '800', discount: '$20.00 per class + unlimited practice' },
+    { label: '6 classes/week', price: '900', discount: '$18.75 per class + unlimited practice + free locker' },
   ]
   const DEFAULT_SPECIAL = [
-    { type: 'Kiki', price: '35', notes: 'Billed separately' },
-    { type: 'Unravel', price: '35', notes: 'Billed separately' },
+    { type: '1 class/week + Kiki', price: '420', notes: '+ 1 Kiki or Unravel class per week' },
+    { type: '2 classes/week + Kiki', price: '560', notes: '+ 1 Kiki or Unravel class per week' },
+    { type: '3 classes/week + Kiki', price: '680', notes: '+ 1 Kiki or Unravel class per week + 1 practice' },
   ]
   const [seasonPricing, setSeasonPricing] = useState(DEFAULT_SEASON)
   const [specialPricing, setSpecialPricing] = useState(DEFAULT_SPECIAL)
