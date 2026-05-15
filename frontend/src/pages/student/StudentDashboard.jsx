@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, seasons } from '../../api'
+import { enrolments, seasons, attendance as attendanceApi, classes as classesApi } from '../../api'
 import { Link } from 'react-router-dom'
 
 const DAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -24,8 +24,34 @@ function formatDayDate(dayOfWeek) {
   return d.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
 }
 
-function MarkAwayModal({ enrolment, onClose }) {
+function MarkAwayModal({ enrolment, onClose, onDone }) {
   const s = enrolment.class_session_detail
+  const [confirming, setConfirming] = useState(false)
+  const [done, setDone] = useState(false)
+  const [error, setError] = useState('')
+
+  // Load upcoming occurrence for this session
+  const { data: occData } = useApi(
+    () => s?.id ? classesApi.occurrences({ session: s.id, upcoming: 'true' }) : null,
+    [s?.id]
+  )
+  const nextOcc = occData?.results?.[0] || occData?.[0] || null
+
+  async function handleConfirm() {
+    if (!nextOcc) { setError('No upcoming class found'); return }
+    setConfirming(true)
+    setError('')
+    try {
+      await attendanceApi.markAway(nextOcc.id)
+      setDone(true)
+      setTimeout(onDone, 1200)
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Could not mark away')
+    } finally {
+      setConfirming(false)
+    }
+  }
+
   return (
     <div
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
@@ -38,14 +64,26 @@ function MarkAwayModal({ enrolment, onClose }) {
         </div>
         <div style={{ padding: '18px 20px' }}>
           <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>{s?.name}</div>
-          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 16 }}>{DAYS_FULL[s?.day_of_week]} · {s?.start_time?.slice(0, 5)}</div>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 4 }}>{DAYS_FULL[s?.day_of_week]} · {s?.start_time?.slice(0, 5)}</div>
+          {nextOcc?.date && (
+            <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16 }}>
+              Next class: {new Date(nextOcc.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </div>
+          )}
           <div style={{ background: 'rgba(204,255,0,0.05)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
             Marking away lets your instructor plan ahead. A makeup credit may be issued if eligible.
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
-            <button className="btn btn-lime btn-sm" style={{ flex: 1 }} onClick={onClose}>Confirm Away</button>
-          </div>
+          {error && <div style={{ color: 'var(--red)', fontSize: 12, marginBottom: 12 }}>{error}</div>}
+          {done ? (
+            <div style={{ textAlign: 'center', color: 'var(--lime)', fontWeight: 600, padding: '8px 0' }}>✓ Marked as away</div>
+          ) : (
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
+              <button className="btn btn-lime btn-sm" style={{ flex: 1 }} onClick={handleConfirm} disabled={confirming || !nextOcc}>
+                {confirming ? 'Saving…' : 'Confirm Away'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -196,6 +234,7 @@ export default function StudentDashboard() {
         <MarkAwayModal
           enrolment={markAwayEnrol}
           onClose={() => setMarkAwayEnrol(null)}
+          onDone={() => setMarkAwayEnrol(null)}
         />
       )}
     </div>
