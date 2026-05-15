@@ -437,7 +437,7 @@ class StudentFormView(APIView):
         from django.utils import timezone as tz
         form_type = request.data.get('form_type')
         responses = request.data.get('responses', {})
-        obj, _ = StudentForm.objects.update_or_create(
+        obj, created = StudentForm.objects.update_or_create(
             student=request.user,
             form_type=form_type,
             defaults={
@@ -446,6 +446,25 @@ class StudentFormView(APIView):
                 'completed_at': tz.now(),
             }
         )
+
+        # Notify admins + run automations on first completion
+        if created or not obj.completed:
+            student = request.user
+            form_label = dict(StudentForm.FormType.choices).get(form_type, form_type)
+            admins = User.objects.filter(role='admin', is_active=True)
+            Notification.objects.bulk_create([
+                Notification(
+                    recipient=admin,
+                    title='Form submitted',
+                    body=f'{student.display_name} completed the {form_label}.',
+                    notification_type='form',
+                )
+                for admin in admins
+            ], ignore_conflicts=True)
+
+            from .automation_engine import run_custom_automations
+            run_custom_automations('form_submitted', student, {'form_type': form_type, 'form_label': form_label})
+
         return Response(StudentFormSerializer(obj).data)
 
 

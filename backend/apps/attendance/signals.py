@@ -51,3 +51,16 @@ def handle_no_show(sender, instance, **kwargs):
             recipient_list=[instance.student.email],
             fail_silently=True,
         )
+
+
+@receiver(post_save, sender='attendance.AttendanceRecord')
+def handle_attendance_present(sender, instance, created, **kwargs):
+    if instance.status != 'present':
+        return
+    from apps.users.automation_engine import run_custom_automations
+    context = {
+        'class_name': instance.occurrence.session.name if instance.occurrence.session else '',
+        'class_level': getattr(instance.occurrence.session, 'level', '') or '',
+        'date': str(instance.occurrence.date),
+    }
+    run_custom_automations('attendance_present', instance.student, context)

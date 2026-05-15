@@ -293,4 +293,36 @@ class WorkshopBookView(APIView):
 
         book_status = 'waitlisted' if workshop.spots_left <= 0 else 'confirmed'
         booking = WorkshopBooking.objects.create(workshop=workshop, student=request.user, status=book_status)
+
+        student = request.user
+        if student.email:
+            from django.core.mail import send_mail
+            from django.conf import settings
+            date_str = workshop.date.strftime('%-d %B %Y') if workshop.date else ''
+            time_str = workshop.start_time.strftime('%I:%M %p').lstrip('0') if workshop.start_time else ''
+            studio_name = workshop.studio.name if workshop.studio else 'our studio'
+            if book_status == 'confirmed':
+                subject = f'Booking confirmed: {workshop.name}'
+                body = (
+                    f'Hi {student.first_name},\n\n'
+                    f'Your spot in {workshop.name} is confirmed!\n\n'
+                    f'Date: {date_str}\n'
+                    f'Time: {time_str}\n'
+                    f'Location: {studio_name}\n'
+                    f'Price: ${workshop.price}\n\n'
+                    f'See you there!\n'
+                    f'Duality Pole Studio'
+                )
+            else:
+                subject = f"You're on the waitlist: {workshop.name}"
+                body = (
+                    f'Hi {student.first_name},\n\n'
+                    f"This workshop is currently full, but you've been added to the waitlist for {workshop.name}.\n\n"
+                    f'Date: {date_str}\n'
+                    f"We'll let you know as soon as a spot opens up.\n\n"
+                    f'Duality Pole Studio'
+                )
+            send_mail(subject=subject, message=body, from_email=settings.DEFAULT_FROM_EMAIL,
+                      recipient_list=[student.email], fail_silently=True)
+
         return Response({'id': booking.id, 'status': booking.status, 'workshop': workshop.name}, status=201)

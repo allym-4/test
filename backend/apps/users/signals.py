@@ -2,6 +2,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.core.mail import send_mail
 from django.conf import settings
+from .automation_engine import run_custom_automations
 
 
 @receiver(post_save, sender='users.User')
@@ -39,6 +40,8 @@ def send_welcome_email(sender, instance, created, **kwargs):
             recipient_list=[instance.email],
             fail_silently=True,
         )
+
+    run_custom_automations('student_created', instance)
 
 
 @receiver(post_save, sender='attendance.AttendanceRecord')
@@ -86,10 +89,11 @@ def handle_no_show_fee(sender, instance, created, **kwargs):
         status='completed',
     )
 
+    run_custom_automations('attendance_no_show', student, {'occurrence': str(instance.occurrence)})
+
 
 @receiver(post_save, sender='payments.PaymentPlanInstalment')
 def handle_payment_overdue(sender, instance, created, **kwargs):
-    # Guard: only fire when status field is involved
     update_fields = kwargs.get('update_fields')
     if update_fields is not None and 'status' not in update_fields:
         return
@@ -120,3 +124,5 @@ def handle_payment_overdue(sender, instance, created, **kwargs):
         actions_taken=['Sent overdue payment notification'],
         status='completed',
     )
+
+    run_custom_automations('payment_overdue', student, {'amount': str(instance.amount), 'due_date': str(instance.due_date)})
