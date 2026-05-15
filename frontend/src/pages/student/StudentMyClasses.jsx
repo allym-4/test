@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, attendance } from '../../api'
+import { enrolments as enrolmentsApi, attendance } from '../../api'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -67,12 +67,23 @@ function MarkAwayModal({ occurrence, cancellationWindowHours, onClose, onDone })
 
 export default function StudentMyClasses() {
   const { user } = useAuth()
-  const { data: enrolData, loading } = useApi(() => enrolments.list({ student: user?.id }), [user?.id])
+  const { data: enrolData, loading, refetch: refetchEnrol } = useApi(() => enrolmentsApi.list({ student: user?.id }), [user?.id])
   const { data: attData, refetch: refetchAtt } = useApi(() => attendance.list({ student: user?.id }), [user?.id])
 
   const [markAwayOcc, setMarkAwayOcc] = useState(null)
   const [topTab, setTopTab] = useState('active')
   const [activeSubTab, setActiveSubTab] = useState('enrolled')
+  const [cancelling, setCancelling] = useState(null)
+
+  async function cancelEnrolment(enrolId) {
+    setCancelling(enrolId)
+    try {
+      await enrolmentsApi.update(enrolId, { status: 'cancelled' })
+      refetchEnrol()
+    } finally {
+      setCancelling(null)
+    }
+  }
 
   const enrolments_ = enrolData?.results || enrolData || []
   const attHistory = attData?.results || attData || []
@@ -145,7 +156,11 @@ export default function StudentMyClasses() {
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                                 <span className="tag tag-lime" style={{ fontSize: 10 }}>Active</span>
-                                <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}>Cancel</button>
+                                <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)' }}
+                                  disabled={cancelling === e.id}
+                                  onClick={() => { if (window.confirm('Cancel this enrolment?')) cancelEnrolment(e.id) }}>
+                                  {cancelling === e.id ? '…' : 'Cancel'}
+                                </button>
                               </div>
                             </div>
                           )
@@ -184,7 +199,11 @@ export default function StudentMyClasses() {
                                 {e.waitlist_position != null && (
                                   <span className="tag tag-amber" style={{ fontSize: 10 }}>#{e.waitlist_position}</span>
                                 )}
-                                <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}>Leave Waitlist</button>
+                                <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)' }}
+                                  disabled={cancelling === e.id}
+                                  onClick={() => { if (window.confirm('Leave waitlist?')) cancelEnrolment(e.id) }}>
+                                  {cancelling === e.id ? '…' : 'Leave Waitlist'}
+                                </button>
                               </div>
                             </div>
                           )
