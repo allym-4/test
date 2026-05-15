@@ -11,6 +11,7 @@ const NAV = [
   { to: '/messages',     label: 'Messages',           icon: '💬' },
   { to: '/pay',          label: 'Pay & Earnings',     icon: '💰' },
   { to: '/availability', label: 'Availability & Cover', icon: '📆' },
+  { to: '/skills',       label: 'Skill Approvals',    icon: '⭐' },
   { to: '/profile',      label: 'My Profile',         icon: '👤' },
 ]
 

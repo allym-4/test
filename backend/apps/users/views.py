@@ -616,12 +616,54 @@ class StudentSkillView(APIView):
             defaults['self_assessed'] = request.data['self_assessed']
         if 'teacher_confirmed' in request.data and request.user.role in ('admin', 'instructor'):
             defaults['teacher_confirmed'] = request.data['teacher_confirmed']
+        previously_confirmed = False
+        try:
+            existing = StudentSkill.objects.get(student_id=user_pk, skill_name=skill_name)
+            previously_confirmed = existing.teacher_confirmed
+        except StudentSkill.DoesNotExist:
+            pass
+
         obj, _ = StudentSkill.objects.update_or_create(
             student_id=user_pk,
             skill_name=skill_name,
             defaults=defaults,
         )
+
+        if obj.teacher_confirmed and not previously_confirmed and request.user.role in ('admin', 'instructor'):
+            Notification.objects.create(
+                recipient_id=user_pk,
+                title='Skill unlocked!',
+                body=f'{skill_name} has been confirmed by your instructor.',
+                notification_type='success',
+            )
+
         return Response(StudentSkillSerializer(obj).data)
+
+
+class PendingSkillsView(APIView):
+    """List all self-assessed-but-unconfirmed skills across all students."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def get(self, request):
+        skills = (
+            StudentSkill.objects
+            .filter(self_assessed=True, teacher_confirmed=False)
+            .select_related('student')
+            .order_by('student__last_name', 'student__first_name', 'skill_name')
+        )
+        data = []
+        seen = {}
+        for s in skills:
+            sid = s.student_id
+            if sid not in seen:
+                seen[sid] = {
+                    'student_id': sid,
+                    'student_name': s.student.get_full_name() or s.student.username,
+                    'skills': [],
+                }
+                data.append(seen[sid])
+            seen[sid]['skills'].append(StudentSkillSerializer(s).data)
+        return Response(data)
 
 
 class SquareSyncView(APIView):

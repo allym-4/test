@@ -237,6 +237,7 @@ export const forms = {
 export const skills = {
   list: (userId) => client.get(`/api/users/${userId}/skills/`),
   save: (userId, data) => client.post(`/api/users/${userId}/skills/`, data),
+  pendingAll: () => client.get('/api/users/pending-skills/'),
 }
 
 export const attendance = {
