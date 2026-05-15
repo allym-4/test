@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useApi } from '../../hooks/useApi'
-import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi, classes as classesApi } from '../../api'
+import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi, classes as classesApi, tags as tagsApi } from '../../api'
 import client from '../../api/client'
 import '../StudentsPage.css'
 import AddStudentModal from '../../components/AddStudentModal'
@@ -635,10 +635,21 @@ const AVATAR_COLORS2 = AVATAR_COLORS
 
 const TAG_CHIPS = ['All', 'VIP', 'At Risk', 'Trial', 'Blocked', 'Owing', 'Frozen']
 
-function BulkTagModal({ onClose }) {
-  const { data: tagsData } = useApi(() => users.tags ? users.tags() : Promise.resolve({ data: [] }))
-  const [selectedTag, setSelectedTag] = useState('')
-  const tags = tagsData?.results || tagsData || []
+function BulkTagModal({ studentIds, onClose }) {
+  const { data: tagsData } = useApi(() => tagsApi.list())
+  const [selectedTagId, setSelectedTagId] = useState('')
+  const [applying, setApplying] = useState(false)
+  const [done, setDone] = useState(false)
+  const tagList = tagsData?.results || tagsData || []
+
+  async function apply() {
+    if (!selectedTagId || studentIds.length === 0) return
+    setApplying(true)
+    await Promise.allSettled(studentIds.map(id => tagsApi.addToStudent(id, selectedTagId)))
+    setApplying(false)
+    setDone(true)
+    setTimeout(onClose, 1200)
+  }
 
   return (
     <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -648,22 +659,28 @@ function BulkTagModal({ onClose }) {
           <button className="modal-close-btn" onClick={onClose}>✕</button>
         </div>
         <div className="sd-body">
-          <div className="field">
-            <label>Select tag</label>
-            <select
-              value={selectedTag}
-              onChange={e => setSelectedTag(e.target.value)}
-              style={{ background: '#111', color: '#fff', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 10px', fontSize: 13, width: '100%' }}
-            >
-              <option value="">— Choose tag —</option>
-              {tags.map(t => <option key={t.id || t} value={t.name || t}>{t.name || t}</option>)}
-            </select>
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16 }}>Apply to all filtered students</div>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-            <button className="btn btn-lime btn-sm" onClick={onClose}>Apply</button>
-          </div>
+          {done ? (
+            <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--lime)', fontSize: 13 }}>Tag applied to {studentIds.length} student{studentIds.length !== 1 ? 's' : ''}.</div>
+          ) : (
+            <>
+              <div className="field">
+                <label>Select tag</label>
+                <select
+                  value={selectedTagId}
+                  onChange={e => setSelectedTagId(e.target.value)}
+                  style={{ background: '#111', color: '#fff', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 10px', fontSize: 13, width: '100%' }}
+                >
+                  <option value="">— Choose tag —</option>
+                  {tagList.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16 }}>Apply to {studentIds.length} filtered student{studentIds.length !== 1 ? 's' : ''}</div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+                <button className="btn btn-lime btn-sm" onClick={apply} disabled={!selectedTagId || applying}>{applying ? 'Applying…' : 'Apply'}</button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -904,7 +921,7 @@ export default function AdminStudents() {
         />
       )}
 
-      {showBulkTag && <BulkTagModal onClose={() => setShowBulkTag(false)} />}
+      {showBulkTag && <BulkTagModal studentIds={filtered.map(s => s.id)} onClose={() => setShowBulkTag(false)} />}
     </div>
   )
 }

@@ -446,7 +446,7 @@ export default function StudentProgress() {
                     }}
                   >
                     {chatMessages[chatClassId] === null ? (
-                      <div className="empty-state">Class chat coming soon</div>
+                      <div className="empty-state">Loading…</div>
                     ) : (chatMessages[chatClassId] || []).length === 0 ? (
                       <div className="empty-state" style={{ marginTop: 40 }}>
                         No messages yet — say hi to your class!
