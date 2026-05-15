@@ -6,6 +6,7 @@ urlpatterns = [
     path('stripe/payment-intent/', stripe_views.StripePaymentIntentView.as_view(), name='stripe-payment-intent'),
     path('stripe/setup-intent/', stripe_views.StripeSetupIntentView.as_view(), name='stripe-setup-intent'),
     path('stripe/payment-methods/', stripe_views.StripePaymentMethodsView.as_view(), name='stripe-payment-methods'),
+    path('stripe/charge-saved/', stripe_views.StripeChargeSavedCardView.as_view(), name='stripe-charge-saved'),
     path('stripe/webhook/', stripe_views.StripeWebhookView.as_view(), name='stripe-webhook'),
 
     path('stats/', views.PaymentStatsView.as_view(), name='payment-stats'),

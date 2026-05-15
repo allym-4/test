@@ -74,7 +74,10 @@ export const payments = {
     config: () => client.get('/api/payments/stripe/config/'),
     createPaymentIntent: (data) => client.post('/api/payments/stripe/payment-intent/', data),
     createSetupIntent: () => client.post('/api/payments/stripe/setup-intent/', {}),
-    paymentMethods: () => client.get('/api/payments/stripe/payment-methods/'),
+    paymentMethods: (params) => client.get('/api/payments/stripe/payment-methods/', { params }),
+    removePaymentMethod: (data) => client.delete('/api/payments/stripe/payment-methods/', { data }),
+    updateAutoCharge: (data) => client.patch('/api/payments/stripe/payment-methods/', data),
+    chargeSaved: (data) => client.post('/api/payments/stripe/charge-saved/', data),
   },
   plans: {
     list: (params) => client.get('/api/payments/plans/', { params }),

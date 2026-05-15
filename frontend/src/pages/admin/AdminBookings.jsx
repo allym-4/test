@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApi } from '../../hooks/useApi'
 import { enrolments, classes, users, settings as settingsApi } from '../../api'
 import '../StudentsPage.css'
@@ -110,24 +110,46 @@ function ConvertTrialModal({ enrolment: e, onClose, onSuccess }) {
   const seasonPrice = parseFloat(studio.price_season || 270)
   const trialPrice = parseFloat(studio.price_trial || 35)
   const defaultAmount = Math.max(0, seasonPrice - trialPrice).toFixed(2)
+
   const [amount, setAmount] = useState('')
   const [paymentType, setPaymentType] = useState('payment')
   const [reference, setReference] = useState('')
+  const [usePlan, setUsePlan] = useState(false)
+  const [numInstalments, setNumInstalments] = useState(2)
+  const [instalments, setInstalments] = useState([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
+
   const amountVal = amount !== '' ? amount : defaultAmount
+
+  useEffect(() => {
+    if (!usePlan) return
+    const total = parseFloat(amountVal || defaultAmount)
+    const base = Math.floor((total / numInstalments) * 100) / 100
+    const remainder = parseFloat((total - base * numInstalments).toFixed(2))
+    const today = new Date()
+    setInstalments(Array.from({ length: numInstalments }, (_, i) => {
+      const due = new Date(today)
+      due.setMonth(due.getMonth() + i + 1)
+      return { amount: (i === 0 ? base + remainder : base).toFixed(2), due_date: due.toISOString().slice(0, 10) }
+    }))
+  }, [usePlan, numInstalments])
+
+  function updateInstalment(i, field, val) {
+    setInstalments(prev => prev.map((inst, idx) => idx === i ? { ...inst, [field]: val } : inst))
+  }
 
   async function handleSubmit(ev) {
     ev.preventDefault()
     setSaving(true)
     setError(null)
     try {
-      await enrolments.convertTrial(e.id, {
-        amount_paid: parseFloat(amountVal),
-        payment_type: paymentType,
-        reference,
-        description: `Season enrolment — ${e.class_session_detail?.name} (converted from trial)`,
-      })
+      const description = `Season enrolment — ${e.class_session_detail?.name} (converted from trial)`
+      if (usePlan) {
+        await enrolments.convertTrial(e.id, { payment_plan: true, instalments, description })
+      } else {
+        await enrolments.convertTrial(e.id, { amount_paid: parseFloat(amountVal), payment_type: paymentType, reference, description })
+      }
       onSuccess()
     } catch (err) {
       setError(err.response?.data?.detail || 'Conversion failed.')
@@ -136,9 +158,11 @@ function ConvertTrialModal({ enrolment: e, onClose, onSuccess }) {
     }
   }
 
+  const planTotal = instalments.reduce((s, i) => s + parseFloat(i.amount || 0), 0)
+
   return (
     <div className="sd-overlay" onClick={ev => ev.target === ev.currentTarget && onClose()}>
-      <div className="sd-modal" style={{ maxWidth: 420 }}>
+      <div className="sd-modal" style={{ maxWidth: 460 }}>
         <div className="sd-header">
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>Convert Trial → Full</div>
           <button className="modal-close-btn" onClick={onClose}>✕</button>
@@ -151,25 +175,60 @@ function ConvertTrialModal({ enrolment: e, onClose, onSuccess }) {
             Season ${seasonPrice.toFixed(2)} − trial ${trialPrice.toFixed(2)} = <b style={{ color: 'var(--lime)' }}>${defaultAmount} remaining</b>
           </div>
           {error && <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 12 }}>{error}</div>}
-          <div className="field">
-            <label>Amount ($)</label>
-            <input type="number" step="0.01" min="0" value={amountVal} onChange={ev => setAmount(ev.target.value)} />
-          </div>
-          <div className="field">
-            <label>Payment type</label>
-            <select value={paymentType} onChange={ev => setPaymentType(ev.target.value)}>
-              <option value="payment">Payment received</option>
-              <option value="charge">Charge (invoice / owing)</option>
-            </select>
-          </div>
-          <div className="field">
-            <label>Reference <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(optional)</span></label>
-            <input value={reference} onChange={ev => setReference(ev.target.value)} placeholder="cash, Square #, etc." />
-          </div>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', marginBottom: 16 }}>
+            <input type="checkbox" checked={usePlan} onChange={ev => setUsePlan(ev.target.checked)} />
+            Set up a payment plan
+          </label>
+
+          {usePlan ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                <label style={{ fontSize: 12, color: 'var(--grey)' }}>Instalments</label>
+                <select value={numInstalments} onChange={ev => setNumInstalments(parseInt(ev.target.value))} style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--white)', padding: '4px 8px', fontSize: 13 }}>
+                  {[2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </div>
+              {instalments.map((inst, i) => (
+                <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                  <div className="field" style={{ margin: 0 }}>
+                    <label style={{ fontSize: 11 }}>Instalment {i + 1} ($)</label>
+                    <input type="number" step="0.01" min="0" value={inst.amount} onChange={ev => updateInstalment(i, 'amount', ev.target.value)} />
+                  </div>
+                  <div className="field" style={{ margin: 0 }}>
+                    <label style={{ fontSize: 11 }}>Due date</label>
+                    <input type="date" value={inst.due_date} onChange={ev => updateInstalment(i, 'due_date', ev.target.value)} />
+                  </div>
+                </div>
+              ))}
+              <div style={{ fontSize: 12, color: 'var(--grey)', textAlign: 'right', marginBottom: 12 }}>
+                Total: <b style={{ color: planTotal > 0 ? 'var(--lime)' : 'var(--red)' }}>${planTotal.toFixed(2)}</b>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="field">
+                <label>Amount ($)</label>
+                <input type="number" step="0.01" min="0" value={amountVal} onChange={ev => setAmount(ev.target.value)} />
+              </div>
+              <div className="field">
+                <label>Payment type</label>
+                <select value={paymentType} onChange={ev => setPaymentType(ev.target.value)}>
+                  <option value="payment">Payment received</option>
+                  <option value="charge">Charge (invoice / owing)</option>
+                </select>
+              </div>
+              <div className="field">
+                <label>Reference <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(optional)</span></label>
+                <input value={reference} onChange={ev => setReference(ev.target.value)} placeholder="cash, Square #, etc." />
+              </div>
+            </>
+          )}
+
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
             <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>
-              {saving ? 'Converting…' : `Confirm $${parseFloat(amountVal || 0).toFixed(2)}`}
+              {saving ? 'Converting…' : usePlan ? `Create Plan $${planTotal.toFixed(2)}` : `Confirm $${parseFloat(amountVal || 0).toFixed(2)}`}
             </button>
           </div>
         </form>

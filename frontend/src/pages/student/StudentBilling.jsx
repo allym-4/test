@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { payments, helpdesk, attendance } from '../../api'
 import CheckoutModal from '../../components/CheckoutModal'
+import SetupCardModal from '../../components/SetupCardModal'
 
 const TYPE_TAG = {
   season: { label: 'Season', cls: 'tag-lime' },
@@ -37,6 +38,43 @@ export default function StudentBilling() {
   const { data: paymentsData, loading: loadingPayments, refetch: refetchPayments } = useApi(() => payments.list({ student: user?.id }), [user?.id])
   const { data: plansData } = useApi(() => payments.plans.list({ student: user?.id }), [user?.id])
   const { data: creditsData } = useApi(() => attendance.makeupCredits.list({ student: user?.id }), [user?.id])
+  const { data: cardsData, refetch: refetchCards } = useApi(() => payments.stripe.paymentMethods(), [])
+
+  const savedCards = cardsData?.payment_methods || []
+  const [autoCharge, setAutoCharge] = useState(null)
+  const [defaultPmId, setDefaultPmId] = useState(null)
+  const [showSetupCard, setShowSetupCard] = useState(false)
+  const [removingCard, setRemovingCard] = useState(null)
+  const [savingAutoCharge, setSavingAutoCharge] = useState(false)
+
+  const effectiveAutoCharge = autoCharge !== null ? autoCharge : (cardsData?.auto_charge ?? false)
+  const effectiveDefaultPm = defaultPmId !== null ? defaultPmId : (cardsData?.default_payment_method_id ?? '')
+
+  async function handleToggleAutoCharge(val) {
+    setAutoCharge(val)
+    setSavingAutoCharge(true)
+    try {
+      await payments.stripe.updateAutoCharge({ auto_charge: val, default_payment_method_id: effectiveDefaultPm })
+    } finally {
+      setSavingAutoCharge(false)
+    }
+  }
+
+  async function handleSetDefault(pmId) {
+    setDefaultPmId(pmId)
+    await payments.stripe.updateAutoCharge({ auto_charge: effectiveAutoCharge, default_payment_method_id: pmId })
+  }
+
+  async function handleRemoveCard(pmId) {
+    setRemovingCard(pmId)
+    try {
+      await payments.stripe.removePaymentMethod({ payment_method_id: pmId })
+      if (effectiveDefaultPm === pmId) setDefaultPmId('')
+      refetchCards()
+    } finally {
+      setRemovingCard(null)
+    }
+  }
 
   const bal = balData ? parseFloat(balData.balance) : 0
   const isOwing = bal < 0
@@ -278,6 +316,74 @@ export default function StudentBilling() {
             )}
           </>
         )}
+      </div>
+
+      {showSetupCard && (
+        <SetupCardModal
+          onSuccess={() => { setShowSetupCard(false); refetchCards() }}
+          onClose={() => setShowSetupCard(false)}
+        />
+      )}
+
+      {/* Saved payment methods */}
+      <div style={{ maxWidth: 700, marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>Saved Payment Methods</div>
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowSetupCard(true)}>+ Add card</button>
+        </div>
+
+        {savedCards.length === 0 ? (
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 20px', fontSize: 13, color: 'var(--grey)' }}>
+            No saved cards. Add one to enable faster checkout.
+          </div>
+        ) : (
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', marginBottom: 12 }}>
+            {savedCards.map((card, i) => {
+              const isDefault = effectiveDefaultPm === card.id
+              return (
+                <div key={card.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderBottom: i < savedCards.length - 1 ? '1px solid #1a1a1a' : 'none' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 500 }}>
+                      {card.brand.charAt(0).toUpperCase() + card.brand.slice(1)} ···· {card.last4}
+                      {isDefault && <span className="tag tag-lime" style={{ fontSize: 9, marginLeft: 8 }}>Default</span>}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>
+                      Expires {String(card.exp_month).padStart(2, '0')}/{String(card.exp_year).slice(-2)}
+                    </div>
+                  </div>
+                  {!isDefault && (
+                    <button className="btn btn-ghost btn-xs" onClick={() => handleSetDefault(card.id)}>Set default</button>
+                  )}
+                  <button
+                    className="btn btn-ghost btn-xs"
+                    style={{ color: 'var(--red)' }}
+                    disabled={removingCard === card.id}
+                    onClick={() => handleRemoveCard(card.id)}
+                  >
+                    {removingCard === card.id ? '…' : 'Remove'}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13, padding: '12px 16px', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12 }}>
+          <input
+            type="checkbox"
+            checked={effectiveAutoCharge}
+            disabled={savingAutoCharge || savedCards.length === 0 || !effectiveDefaultPm}
+            onChange={e => handleToggleAutoCharge(e.target.checked)}
+            style={{ accentColor: 'var(--lime)', width: 16, height: 16 }}
+          />
+          <div>
+            <div style={{ fontWeight: 500 }}>Auto-charge my saved card</div>
+            <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>
+              Automatically charge your default card for enrolments, casuals, fees, and retail
+              {savedCards.length === 0 ? ' (add a card to enable)' : !effectiveDefaultPm ? ' (set a default card to enable)' : ''}
+            </div>
+          </div>
+        </label>
       </div>
 
       {/* Active payment plans */}

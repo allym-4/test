@@ -47,26 +47,53 @@ class ConvertTrialView(APIView):
         if enrolment.enrolment_type != 'trial':
             return Response({'detail': 'Enrolment is not a trial.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        from apps.payments.models import Payment
+        from apps.payments.models import Payment, PaymentPlan, PaymentPlanInstalment
         from apps.users.models import StudioSettings
+        from decimal import Decimal
 
         studio = StudioSettings.get()
         season_price = float(studio.price_season)
         trial_price = float(studio.price_trial)
 
-        # Amount owed = season price minus what they already paid for the trial
-        amount_paid = float(request.data.get('amount_paid', season_price - trial_price))
-        payment_type = request.data.get('payment_type', 'payment')
         description = request.data.get(
             'description',
             f'Season enrolment — {enrolment.class_session.name} (converted from trial)'
         )
-        reference = request.data.get('reference', '')
         notes = request.data.get('notes', '')
 
         enrolment.enrolment_type = 'course'
         enrolment.notes = (enrolment.notes + '\n' + notes).strip() if notes else enrolment.notes
         enrolment.save(update_fields=['enrolment_type', 'notes'])
+
+        use_plan = request.data.get('payment_plan', False)
+        instalments_data = request.data.get('instalments', [])
+
+        if use_plan and instalments_data:
+            total = sum(float(i['amount']) for i in instalments_data)
+            plan = PaymentPlan.objects.create(
+                student=enrolment.student,
+                description=description,
+                total_amount=Decimal(str(total)),
+                status='active',
+                created_by=request.user,
+            )
+            for inst in instalments_data:
+                PaymentPlanInstalment.objects.create(
+                    plan=plan,
+                    amount=Decimal(str(inst['amount'])),
+                    due_date=inst['due_date'],
+                    status='pending',
+                )
+            return Response({
+                'enrolment': EnrolmentSerializer(enrolment).data,
+                'plan_id': plan.id,
+                'total_amount': str(plan.total_amount),
+            }, status=status.HTTP_200_OK)
+
+        # Single payment
+        amount_paid = float(request.data.get('amount_paid', season_price - trial_price))
+        payment_type = request.data.get('payment_type', 'payment')
+        reference = request.data.get('reference', '')
 
         payment = Payment.objects.create(
             student=enrolment.student,

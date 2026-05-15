@@ -84,14 +84,25 @@ class StripeSetupIntentView(APIView):
 
 
 class StripePaymentMethodsView(APIView):
-    """List saved payment methods for the current user."""
+    """List saved payment methods for the current user (or a student if admin)."""
     permission_classes = [permissions.IsAuthenticated]
 
+    def _get_target_user(self, request):
+        student_id = request.query_params.get('student_id') or request.data.get('student_id')
+        if student_id and request.user.role in ('admin', 'instructor', 'staff'):
+            return User.objects.get(pk=student_id)
+        return request.user
+
     def get(self, request):
-        if not request.user.stripe_customer_id:
-            return Response({'payment_methods': []})
+        try:
+            target = self._get_target_user(request)
+        except User.DoesNotExist:
+            return Response({'detail': 'Student not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not target.stripe_customer_id:
+            return Response({'payment_methods': [], 'auto_charge': target.auto_charge_saved_card, 'default_payment_method_id': target.default_payment_method_id})
         methods = stripe.PaymentMethod.list(
-            customer=request.user.stripe_customer_id,
+            customer=target.stripe_customer_id,
             type='card',
         )
         cards = [
@@ -104,7 +115,93 @@ class StripePaymentMethodsView(APIView):
             }
             for m in methods.data
         ]
-        return Response({'payment_methods': cards})
+        return Response({
+            'payment_methods': cards,
+            'auto_charge': target.auto_charge_saved_card,
+            'default_payment_method_id': target.default_payment_method_id,
+        })
+
+    def delete(self, request):
+        """Detach (remove) a saved payment method."""
+        pm_id = request.data.get('payment_method_id')
+        if not pm_id:
+            return Response({'detail': 'payment_method_id required.'}, status=status.HTTP_400_BAD_REQUEST)
+        stripe.PaymentMethod.detach(pm_id)
+        # Clear default if this was the default
+        if request.user.default_payment_method_id == pm_id:
+            request.user.default_payment_method_id = ''
+            request.user.save(update_fields=['default_payment_method_id'])
+        return Response({'status': 'removed'})
+
+    def patch(self, request):
+        """Update auto-charge setting and/or default payment method."""
+        user = request.user
+        if 'auto_charge' in request.data:
+            user.auto_charge_saved_card = bool(request.data['auto_charge'])
+        if 'default_payment_method_id' in request.data:
+            user.default_payment_method_id = request.data['default_payment_method_id'] or ''
+        user.save(update_fields=['auto_charge_saved_card', 'default_payment_method_id'])
+        return Response({'auto_charge': user.auto_charge_saved_card, 'default_payment_method_id': user.default_payment_method_id})
+
+
+class StripeChargeSavedCardView(APIView):
+    """Charge a student's saved default card off-session (admin-initiated)."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request):
+        student_id = request.data.get('student_id')
+        amount_cents = request.data.get('amount_cents')
+        description = request.data.get('description', 'Duality Pole Studio charge')
+        payment_id = request.data.get('payment_id')  # optionally link to existing Payment record
+
+        if not student_id or not amount_cents:
+            return Response({'detail': 'student_id and amount_cents required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            student = User.objects.get(pk=student_id)
+        except User.DoesNotExist:
+            return Response({'detail': 'Student not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not student.stripe_customer_id or not student.default_payment_method_id:
+            return Response({'detail': 'Student has no saved card.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            intent = stripe.PaymentIntent.create(
+                amount=int(amount_cents),
+                currency='aud',
+                customer=student.stripe_customer_id,
+                payment_method=student.default_payment_method_id,
+                description=description,
+                confirm=True,
+                off_session=True,
+                metadata={
+                    'user_id': student.id,
+                    'user_email': student.email,
+                    'payment_id': payment_id or '',
+                },
+            )
+        except stripe.error.CardError as e:
+            return Response({'detail': f'Card declined: {e.user_message}'}, status=status.HTTP_402_PAYMENT_REQUIRED)
+        except stripe.error.StripeError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+
+        # Record in ledger if not linking to existing payment
+        if not payment_id:
+            payment = Payment.objects.create(
+                student=student,
+                payment_type=Payment.PaymentType.PAYMENT,
+                amount=int(amount_cents) / 100,
+                description=description,
+                reference=intent.id,
+                created_by=request.user,
+            )
+            payment_id = payment.id
+
+        return Response({
+            'status': 'succeeded',
+            'payment_intent_id': intent.id,
+            'payment_id': payment_id,
+        })
 
 
 @method_decorator(csrf_exempt, name='dispatch')

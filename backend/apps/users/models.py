@@ -18,6 +18,8 @@ class User(AbstractUser):
     internal_notes = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
     stripe_customer_id = models.CharField(max_length=100, blank=True)
+    default_payment_method_id = models.CharField(max_length=100, blank=True)
+    auto_charge_saved_card = models.BooleanField(default=False)
 
     # Staff permission flags (only meaningful for instructor/admin/staff roles)
     perm_billing = models.BooleanField(default=False)
