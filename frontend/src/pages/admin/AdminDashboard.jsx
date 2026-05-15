@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
-import { classes, users, payments, enrolments, orders } from '../../api'
+import { classes, payments, enrolments, orders } from '../../api'
 
 function todayLabel() {
   return new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -37,8 +37,7 @@ export default function AdminDashboard() {
   const [checkedItems, setCheckedItems] = useState({})
 
   const { data: sessionsData } = useApi(() => classes.list({ active: 'true' }))
-  const { data: studentsData } = useApi(() => users.list({ role: 'student' }))
-  const { data: paymentsData } = useApi(() => payments.list())
+  const { data: dashData } = useApi(() => payments.dashboard())
   const { data: plansData } = useApi(() => payments.plans.list())
   const { data: pendingOrdersData } = useApi(() => orders.list({ status: 'pending' }))
   const { data: trialsData } = useApi(() => enrolments.list({ enrolment_type: 'trial' }))
@@ -47,8 +46,6 @@ export default function AdminDashboard() {
   const { data: trialsAndCasualsData } = useApi(() => enrolments.list({ enrolment_type: 'trial,casual' }))
 
   const sessions = sessionsData?.results || []
-  const students = studentsData?.results || studentsData || []
-  const allPayments = paymentsData?.results || paymentsData || []
   const plans = plansData?.results || plansData || []
   const pendingOrders = pendingOrdersData?.results || pendingOrdersData || []
   const trials = trialsData?.results || trialsData || []
@@ -61,38 +58,22 @@ export default function AdminDashboard() {
 
   const todayStr = new Date().toISOString().slice(0, 10)
 
-  const todayRevenue = allPayments
-    .filter(p => p.payment_type === 'payment' && p.created_at?.slice(0, 10) === todayStr)
-    .reduce((s, p) => s + parseFloat(p.amount || 0), 0)
+  // Server-side accurate stats
+  const todayRevenue = dashData?.today_revenue ?? 0
+  const weekBookings = dashData?.week_bookings ?? 0
+  const overdueBalances = dashData?.overdue_balances ?? []
+  const outstandingBalance = dashData?.outstanding_balance ?? 0
+  const recentPayments = dashData?.recent_payments ?? []
+  const activeStudentCount = dashData?.active_student_count ?? null
 
-  const weekStart = new Date()
-  weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7))
-  weekStart.setHours(0, 0, 0, 0)
-  const weekBookings = trialsAndCasuals.filter(e => new Date(e.created_at) >= weekStart).length
-
-  const overdueBalances = (() => {
-    const byStudent = {}
-    allPayments.forEach(p => {
-      const key = p.student || p.student_name
-      if (!key) return
-      if (!byStudent[key]) byStudent[key] = { name: p.student_name, charged: 0, paid: 0, lastDesc: '', lastDate: '' }
-      if (p.payment_type === 'charge') {
-        byStudent[key].charged += parseFloat(p.amount || 0)
-        if (!byStudent[key].lastDesc) byStudent[key].lastDesc = p.description || 'Charge'
-        if (!byStudent[key].lastDate) byStudent[key].lastDate = p.created_at
-      }
-      if (p.payment_type === 'payment') {
-        byStudent[key].paid += parseFloat(p.amount || 0)
-      }
+  const upcomingTrialsCasuals = trialsAndCasuals
+    .filter(e => {
+      const d = new Date(e.date || e.created_at)
+      const cutoff = new Date()
+      cutoff.setDate(cutoff.getDate() - 3)
+      return d >= cutoff
     })
-    return Object.entries(byStudent)
-      .map(([k, v]) => ({ key: k, ...v, owing: v.charged - v.paid }))
-      .filter(v => v.owing > 0)
-      .sort((a, b) => b.owing - a.owing)
-      .slice(0, 5)
-  })()
-
-  const outstandingBalance = overdueBalances.reduce((s, b) => s + b.owing, 0)
+    .sort((a, b) => new Date(a.date || a.created_at) - new Date(b.date || b.created_at))
 
   const todayTrials = trials.filter(e => e.created_at?.slice(0, 10) === todayStr || e.date?.slice(0, 10) === todayStr)
 
@@ -123,22 +104,9 @@ export default function AdminDashboard() {
     })),
   ]
 
-  const recentPayments = [...allPayments]
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .slice(0, 8)
-
   const activePlans = plans.filter(p => p.status === 'active')
   const overduePlans = activePlans.filter(p => p.instalments?.some(i => i.status === 'overdue'))
   const onTrackPlans = activePlans.filter(p => !p.instalments?.some(i => i.status === 'overdue'))
-
-  const upcomingTrialsCasuals = trialsAndCasuals
-    .filter(e => {
-      const d = new Date(e.date || e.created_at)
-      const cutoff = new Date()
-      cutoff.setDate(cutoff.getDate() - 3)
-      return d >= cutoff
-    })
-    .sort((a, b) => new Date(a.date || a.created_at) - new Date(b.date || b.created_at))
 
   const toggleCheck = (id) => setCheckedItems(prev => ({ ...prev, [id]: !prev[id] }))
 
@@ -230,8 +198,8 @@ export default function AdminDashboard() {
         </div>
         <div className="kpi kpi-amber">
           <div className="kpi-label">Active Students</div>
-          <div className="kpi-value">{students.length}</div>
-          <div className="kpi-sub">Students with role=student</div>
+          <div className="kpi-value">{activeStudentCount ?? '…'}</div>
+          <div className="kpi-sub">Students with active accounts</div>
         </div>
       </div>
 

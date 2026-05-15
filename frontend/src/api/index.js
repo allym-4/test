@@ -21,6 +21,10 @@ export const classes = {
   occurrences: (params) => client.get('/api/classes/occurrences/', { params }),
   getOccurrence: (id) => client.get(`/api/classes/occurrences/${id}/`),
   stats: () => client.get('/api/classes/stats/'),
+  chat: {
+    list: (sessionId) => client.get(`/api/classes/sessions/${sessionId}/chat/`),
+    send: (sessionId, data) => client.post(`/api/classes/sessions/${sessionId}/chat/`, data),
+  },
 }
 
 export const studios = {
@@ -48,6 +52,7 @@ export const enrolments = {
 export const payments = {
   list: (params) => client.get('/api/payments/', { params }),
   stats: () => client.get('/api/payments/stats/'),
+  dashboard: () => client.get('/api/payments/dashboard/'),
   balance: (studentId) => client.get(`/api/payments/balance/${studentId}/`),
   create: (data) => client.post('/api/payments/', data),
   stripe: {

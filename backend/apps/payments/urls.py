@@ -9,6 +9,7 @@ urlpatterns = [
     path('stripe/webhook/', stripe_views.StripeWebhookView.as_view(), name='stripe-webhook'),
 
     path('stats/', views.PaymentStatsView.as_view(), name='payment-stats'),
+    path('dashboard/', views.DashboardStatsView.as_view(), name='payment-dashboard'),
     path('', views.PaymentListView.as_view(), name='payment-list'),
     path('<int:pk>/', views.PaymentDetailView.as_view(), name='payment-detail'),
     path('plans/', views.PaymentPlanListView.as_view(), name='plan-list'),

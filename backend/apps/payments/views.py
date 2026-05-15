@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Sum, Q, Count
 from django.db.models.functions import TruncMonth
-from datetime import date
+from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 from .models import Payment, PaymentPlan, PaymentPlanInstalment, Package, StudentPackage, MembershipType, GiftCard, PromoCode
 from .serializers import (
@@ -269,3 +269,95 @@ def student_balance(request, student_pk):
         'total_charged': total_charged,
         'total_paid': total_paid,
     })
+
+
+class DashboardStatsView(APIView):
+    """Server-side aggregations for the admin dashboard KPIs."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def get(self, request):
+        today = date.today()
+        week_start = today - timedelta(days=today.weekday())  # Monday
+
+        # Today's revenue (payments received today)
+        today_revenue = Payment.objects.filter(
+            payment_type=Payment.PaymentType.PAYMENT,
+            created_at__date=today,
+        ).aggregate(t=Sum('amount'))['t'] or 0
+
+        # Week bookings — trial/casual enrolments created this week
+        from apps.enrolments.models import Enrolment
+        week_bookings = Enrolment.objects.filter(
+            enrolment_type__in=['trial', 'casual'],
+            created_at__date__gte=week_start,
+        ).count()
+
+        # Recent payments (last 8)
+        recent_qs = (
+            Payment.objects.select_related('student')
+            .order_by('-created_at')[:8]
+            .values('id', 'payment_type', 'amount', 'created_at', 'description',
+                    'student__first_name', 'student__last_name', 'student__email')
+        )
+        recent_payments = []
+        for r in recent_qs:
+            name = f"{r.pop('student__first_name', '')} {r.pop('student__last_name', '')}".strip()
+            r['student_name'] = name or r.pop('student__email', '')
+            r['amount'] = float(r['amount'])
+            r['created_at'] = r['created_at'].isoformat() if r['created_at'] else None
+            recent_payments.append(r)
+
+        # Overdue balances — top 5 students with net amount owing
+        credit_types = [Payment.PaymentType.PAYMENT, Payment.PaymentType.REFUND, Payment.PaymentType.CREDIT]
+        debit_types = [Payment.PaymentType.CHARGE, Payment.PaymentType.NO_SHOW_FEE]
+
+        from django.db.models import OuterRef, Subquery
+        from apps.users.models import User
+
+        credit_agg = (
+            Payment.objects.filter(student=OuterRef('pk'), payment_type__in=credit_types)
+            .values('student').annotate(t=Sum('amount')).values('t')
+        )
+        debit_agg = (
+            Payment.objects.filter(student=OuterRef('pk'), payment_type__in=debit_types)
+            .values('student').annotate(t=Sum('amount')).values('t')
+        )
+
+        students_owing = (
+            User.objects.filter(role='student')
+            .annotate(
+                total_paid=Subquery(credit_agg[:1]),
+                total_charged=Subquery(debit_agg[:1]),
+            )
+        )
+        overdue_balances = []
+        for s in students_owing:
+            paid = float(s.total_paid or 0)
+            charged = float(s.total_charged or 0)
+            owing = charged - paid
+            if owing > 0:
+                overdue_balances.append({
+                    'key': s.pk,
+                    'name': s.get_full_name() or s.email,
+                    'charged': charged,
+                    'paid': paid,
+                    'owing': owing,
+                })
+        overdue_balances.sort(key=lambda x: -x['owing'])
+        overdue_balances = overdue_balances[:5]
+
+        # Pending payment plan approvals
+        pending_plans_count = PaymentPlan.objects.filter(status='pending_approval').count()
+
+        # Active student count
+        active_student_count = User.objects.filter(role='student', is_active=True).count()
+
+        return Response({
+            'today_revenue': float(today_revenue),
+            'week_bookings': week_bookings,
+            'recent_payments': recent_payments,
+            'overdue_balances': overdue_balances,
+            'outstanding_balance': sum(b['owing'] for b in overdue_balances),
+            'pending_plans_count': pending_plans_count,
+            'active_student_count': active_student_count,
+        })

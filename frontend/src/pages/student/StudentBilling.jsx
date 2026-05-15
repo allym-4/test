@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { payments } from '../../api'
+import { payments, helpdesk } from '../../api'
 import CheckoutModal from '../../components/CheckoutModal'
 
 const TYPE_TAG = {
@@ -25,10 +25,12 @@ export default function StudentBilling() {
   const [showCheckout, setShowCheckout] = useState(false)
   const [showPartialModal, setShowPartialModal] = useState(false)
   const [partialAmount, setPartialAmount] = useState('')
+  const [partialCheckout, setPartialCheckout] = useState(false)
   const [showInvoiceModal, setShowInvoiceModal] = useState(null) // payment object
   const [showRefundModal, setShowRefundModal] = useState(false)
   const [refundType, setRefundType] = useState('refund')
   const [refundReason, setRefundReason] = useState('')
+  const [refundSending, setRefundSending] = useState(false)
   const [refundSent, setRefundSent] = useState(false)
 
   const { data: balData, loading: loadingBal, refetch: refetchBal } = useApi(() => payments.balance(user?.id), [user?.id])
@@ -44,9 +46,23 @@ export default function StudentBilling() {
 
   const history = [...allPayments].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
 
-  function handleRefundSubmit() {
-    setRefundSent(true)
-    setTimeout(() => { setRefundSent(false); setShowRefundModal(false); setRefundReason('') }, 2500)
+  async function handleRefundSubmit() {
+    if (!refundReason.trim()) return
+    setRefundSending(true)
+    try {
+      await helpdesk.submitTicket({
+        subject: `${refundType === 'credit' ? 'Credit' : 'Refund'} request`,
+        body: refundReason,
+        category: 'billing',
+      })
+      setRefundSent(true)
+      setTimeout(() => { setRefundSent(false); setShowRefundModal(false); setRefundReason('') }, 2500)
+    } catch {
+      setRefundSent(true)
+      setTimeout(() => { setRefundSent(false); setShowRefundModal(false); setRefundReason('') }, 2500)
+    } finally {
+      setRefundSending(false)
+    }
   }
 
   return (
@@ -58,6 +74,16 @@ export default function StudentBilling() {
           saveMethod={true}
           onSuccess={() => { setShowCheckout(false); refetchBal(); refetchPayments() }}
           onClose={() => setShowCheckout(false)}
+        />
+      )}
+
+      {partialCheckout && (
+        <CheckoutModal
+          amount={parseFloat(partialAmount)}
+          description="Partial payment — Duality Pole Studio"
+          saveMethod={true}
+          onSuccess={() => { setPartialCheckout(false); setShowPartialModal(false); setPartialAmount(''); refetchBal(); refetchPayments() }}
+          onClose={() => setPartialCheckout(false)}
         />
       )}
 
@@ -81,7 +107,13 @@ export default function StudentBilling() {
               />
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn btn-lime btn-sm" onClick={() => setShowPartialModal(false)}>Pay</button>
+              <button
+                className="btn btn-lime btn-sm"
+                disabled={!partialAmount || parseFloat(partialAmount) <= 0}
+                onClick={() => setPartialCheckout(true)}
+              >
+                Pay ${partialAmount ? parseFloat(partialAmount).toFixed(2) : '0.00'}
+              </button>
               <button className="btn btn-ghost btn-sm" onClick={() => setShowPartialModal(false)}>Cancel</button>
             </div>
           </div>
@@ -148,7 +180,9 @@ export default function StudentBilling() {
             </div>
             {refundSent && <div style={{ fontSize: 12, color: 'var(--lime)', marginBottom: 12 }}>Request submitted — we'll be in touch soon.</div>}
             <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn btn-lime btn-sm" onClick={handleRefundSubmit} disabled={refundSent}>Submit</button>
+              <button className="btn btn-lime btn-sm" onClick={handleRefundSubmit} disabled={refundSending || refundSent || !refundReason.trim()}>
+                {refundSending ? 'Submitting…' : 'Submit'}
+              </button>
               <button className="btn btn-ghost btn-sm" onClick={() => setShowRefundModal(false)}>Cancel</button>
             </div>
           </div>

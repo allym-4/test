@@ -14,10 +14,9 @@ const SLOT_END_HOUR   = 22       // 10:00 pm (last label)
 const SLOT_HEIGHT     = 40       // px per 30-min slot
 const TOTAL_SLOTS     = (SLOT_END_HOUR - SLOT_START_HOUR) * 2  // 32 slots
 
-const SEASON_LABEL = 'Season 4 (Current)'
-const SEASON_WEEKS = 8
-// Hardcoded season start — replace with live value from seasons API when available
-const SEASON_START = new Date('2026-04-06T00:00:00')
+const FALLBACK_SEASON_LABEL = 'Current Season'
+const FALLBACK_SEASON_WEEKS = 8
+const FALLBACK_SEASON_START = new Date('2026-04-06T00:00:00')
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -31,11 +30,11 @@ function getWeekStart(offset = 0) {
 }
 
 /** 1-based season week number, or null if outside season */
-function getSeasonWeek(weekStart) {
-  const ms = weekStart - SEASON_START
+function getSeasonWeek(weekStart, seasonStart, seasonWeeks) {
+  const ms = weekStart - seasonStart
   if (ms < 0) return null
   const week = Math.floor(ms / (7 * 24 * 60 * 60 * 1000)) + 1
-  return week > SEASON_WEEKS ? null : week
+  return week > seasonWeeks ? null : week
 }
 
 /** "HH:MM:SS" or "HH:MM" → total minutes from midnight */
@@ -444,14 +443,25 @@ export default function AdminTimetable() {
   const { data: seasonsData } = useApi(() => seasonsApi.list())
   const seasonOptions = seasonsData?.results ?? seasonsData ?? null
 
+  // Derive current season from live data
+  const activeSeason = seasonOptions?.find(s => s.status === 'active') ?? null
+  const seasonStart = activeSeason?.start_date
+    ? new Date(activeSeason.start_date + 'T00:00:00')
+    : FALLBACK_SEASON_START
+  const seasonEnd = activeSeason?.end_date ? new Date(activeSeason.end_date + 'T00:00:00') : null
+  const seasonWeeks = seasonEnd
+    ? Math.round((seasonEnd - seasonStart) / (7 * 24 * 60 * 60 * 1000))
+    : FALLBACK_SEASON_WEEKS
+  const seasonLabel = activeSeason?.name ?? FALLBACK_SEASON_LABEL
+
   const sessions = sessionList ?? (data?.results ?? [])
 
   const weekStart     = getWeekStart(weekOffset)
   const weekLabel     = 'Week of ' + weekStart.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })
-  const seasonWeek    = getSeasonWeek(weekStart)
+  const seasonWeek    = getSeasonWeek(weekStart, seasonStart, seasonWeeks)
   const seasonWeekLabel = seasonWeek
-    ? `Season 4 — Week ${seasonWeek} of ${SEASON_WEEKS}`
-    : SEASON_LABEL
+    ? `${seasonLabel} — Week ${seasonWeek} of ${seasonWeeks}`
+    : seasonLabel
 
   // Conflict detection — re-runs when sessions change or user clicks "Check"
   const conflictIds = useMemo(

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, skills as skillsApi, media, helpdesk } from '../../api'
+import { enrolments, skills as skillsApi, media, classes } from '../../api'
 import client from '../../api/client'
 
 const TYPE_BADGE = {
@@ -111,13 +111,15 @@ export default function StudentProgress() {
 
   useEffect(() => {
     if (!chatClassId) return
-    helpdesk.conversations({ class: chatClassId }).then(res => {
+    const sessionId = chatEnrol?.class_session
+    if (!sessionId) return
+    classes.chat.list(sessionId).then(res => {
       const msgs = res.data?.results || res.data || []
       setChatMessages(prev => ({ ...prev, [chatClassId]: msgs }))
     }).catch(() => {
-      setChatMessages(prev => ({ ...prev, [chatClassId]: null })) // null = endpoint unavailable
+      setChatMessages(prev => ({ ...prev, [chatClassId]: [] }))
     })
-  }, [chatClassId])
+  }, [chatClassId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -125,6 +127,8 @@ export default function StudentProgress() {
 
   function sendChatMessage() {
     if (!chatInput.trim() || !chatClassId) return
+    const sessionId = chatEnrol?.class_session
+    if (!sessionId) return
     const text = chatInput.trim()
     setChatInput('')
     const optimistic = {
@@ -139,7 +143,7 @@ export default function StudentProgress() {
       [chatClassId]: [...(prev[chatClassId] || []), optimistic],
     }))
     setChatLoading(true)
-    helpdesk.createConversation({ class: chatClassId, body: text })
+    classes.chat.send(sessionId, { body: text })
       .catch(() => {})
       .finally(() => setChatLoading(false))
   }
@@ -404,7 +408,7 @@ export default function StudentProgress() {
               {/* Class selector */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
                 {enrolList.map(e => {
-                  const name = e.session_detail?.name || e.session?.name || `Class ${e.id}`
+                  const name = e.class_session_detail?.name || `Class ${e.id}`
                   const active = e.id === chatClassId
                   return (
                     <button
@@ -505,7 +509,7 @@ export default function StudentProgress() {
                   >
                     <textarea
                       rows={2}
-                      placeholder={`Message ${chatEnrol?.session_detail?.name || 'your class'}…`}
+                      placeholder={`Message ${chatEnrol?.class_session_detail?.name || 'your class'}…`}
                       value={chatInput}
                       onChange={e => setChatInput(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage() } }}

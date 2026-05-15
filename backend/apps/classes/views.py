@@ -2,7 +2,7 @@ from datetime import date
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant
+from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, ClassChatMessage
 from .serializers import StudioSerializer, ClassCategorySerializer, ClassSessionSerializer, ClassOccurrenceSerializer, SeasonSerializer, LockerSerializer, KisiGrantSerializer
 from apps.users.permissions import IsAdminOrInstructor, IsAdminUser
 
@@ -169,6 +169,59 @@ class KisiGrantDetailView(APIView):
         grant.revoked = True
         grant.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ClassChatView(APIView):
+    """GET/POST chat messages for a given ClassSession."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _check_access(self, request, session_pk):
+        from apps.enrolments.models import Enrolment
+        if request.user.role in ('admin', 'instructor'):
+            return True
+        return Enrolment.objects.filter(
+            student=request.user,
+            class_session_id=session_pk,
+            status__in=['active', 'completed'],
+        ).exists()
+
+    def get(self, request, session_pk):
+        if not self._check_access(request, session_pk):
+            return Response({'detail': 'Forbidden.'}, status=status.HTTP_403_FORBIDDEN)
+        messages = ClassChatMessage.objects.filter(session_id=session_pk).select_related('sender')
+        data = [
+            {
+                'id': m.id,
+                'body': m.body,
+                'created_at': m.created_at,
+                'sender_id': m.sender_id,
+                'sender_name': m.sender.get_full_name() or m.sender.display_name,
+            }
+            for m in messages
+        ]
+        return Response(data)
+
+    def post(self, request, session_pk):
+        if not self._check_access(request, session_pk):
+            return Response({'detail': 'Forbidden.'}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            session = ClassSession.objects.get(pk=session_pk)
+        except ClassSession.DoesNotExist:
+            return Response({'detail': 'Session not found.'}, status=status.HTTP_404_NOT_FOUND)
+        body = request.data.get('body', '').strip()
+        if not body:
+            return Response({'detail': 'Message body is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        msg = ClassChatMessage.objects.create(session=session, sender=request.user, body=body)
+        return Response(
+            {
+                'id': msg.id,
+                'body': msg.body,
+                'created_at': msg.created_at,
+                'sender_id': msg.sender_id,
+                'sender_name': request.user.get_full_name() or request.user.display_name,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class ClassStatsView(APIView):

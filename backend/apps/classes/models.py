@@ -131,6 +131,19 @@ class Locker(models.Model):
         return f'Locker #{self.number}'
 
 
+class ClassChatMessage(models.Model):
+    session = models.ForeignKey('ClassSession', on_delete=models.CASCADE, related_name='chat_messages')
+    sender = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='class_chat_messages')
+    body = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'{self.sender} → session {self.session_id}: {self.body[:40]}'
+
+
 class KisiGrant(models.Model):
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='kisi_grants')
     studio = models.ForeignKey(Studio, on_delete=models.SET_NULL, null=True, blank=True)
