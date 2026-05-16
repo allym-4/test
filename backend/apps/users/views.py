@@ -269,10 +269,15 @@ class AutomationRuleView(APIView):
     def patch(self, request):
         slug = request.data.get('slug')
         enabled = request.data.get('enabled')
-        if slug is None or enabled is None:
-            return Response({'detail': 'slug and enabled required'}, status=400)
+        if slug is None:
+            return Response({'detail': 'slug required'}, status=400)
         rule, _ = AutomationRule.objects.get_or_create(slug=slug)
-        rule.enabled = enabled
+        if enabled is not None:
+            rule.enabled = enabled
+        if 'actions' in request.data:
+            rule.actions = request.data['actions']
+        if 'name' in request.data:
+            rule.name = request.data['name']
         rule.save()
         return Response(AutomationRuleSerializer(rule).data)
 
