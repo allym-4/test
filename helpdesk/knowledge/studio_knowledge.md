@@ -153,7 +153,7 @@ Every corner of Duality is designed to feel otherworldly. From the moment you st
 **General enquiries email:** intrigued@dualitypole.com
 **Urgent / same-day class email:** staff@dualitypole.com
 **Instagram:** @dualitypole
-**Booking platform:** Groovio (available via app)
+**Booking platform:** the Duality app
 
 ---
 
@@ -169,7 +169,7 @@ You can also **DM us on Instagram @dualitypole**. Responses are quick, but only 
 
 **Facebook group:** Students are welcome to post general questions there — the community is helpful!
 
-**Groovio chat:** Message us privately on the Groovio app homepage, or post in the group chat to connect with classmates.
+**In-app chat:** Message us privately on the app homepage, or post in the group chat to connect with classmates.
 
 **Instagram broadcast channel:** Follow and turn on notifications for general studio updates.
 
@@ -215,7 +215,7 @@ Download the **KISI app** on your phone — you'll receive an access email befor
 ### Supplementary Classes (Strip, Strip Virgin, Chair, Chair Virgin, Floor Virgin, Inter Floor, Advanced Floor, Tease, Chole)
 - **Knee pads** — highly recommended. We sell them at reception.
 - **Pleaser shoes** — recommended. Available at reception.
-- Check Groovio for specific routine requirements for Strip and Tease classes each season.
+- Check the app for specific routine requirements for Strip and Tease classes each season.
 
 ### Mat-Based Classes (Kiki & Unravel)
 - Comfortable, breathable workout clothes — no grip required.
@@ -224,7 +224,7 @@ Download the **KISI app** on your phone — you'll receive an access email befor
 
 ## Attendance & Cancellations
 
-- **Cancel at least 4 hours before class** via the Groovio app to receive a **make-up credit**.
+- **Cancel at least 4 hours before class** via the app to receive a **make-up credit**.
 - Make-up credits can only be used within the **same season** — they do not carry over to future seasons.
 - Cancelling with **less than 4 hours notice** = class forfeited, no credit.
 - **Not cancelling before the class starts** = counted as a **no-show**, which incurs a **$20 penalty**.
@@ -257,7 +257,7 @@ Not sure? Email intrigued@dualitypole.com.
 - On the timetable under "Practice Time."
 - **Free for enrolled students doing 3+ classes per week** (1 session per week included).
 - Otherwise: **$20 (or $15 cash)** for enrolled students; **$30 (or $25 cash)** for non-enrolled students.
-- Bookings are **essential** via Groovio. Select your enrolled student package at checkout for the discount.
+- Bookings are **essential** via the app. Select your enrolled student package at checkout for the discount.
 - To pay cash, use code **IWANNAPAYCASH** and pay on arrival at reception.
 - Same cancellation cut-offs apply — no-shows who don't cancel will be charged.
 
@@ -276,7 +276,7 @@ Not sure? Email intrigued@dualitypole.com.
 - Find them on the website.
 
 ### Adding Courses / Casual Bookings
-- You can add full courses or attend some classes casually — check Groovio for available options.
+- You can add full courses or attend some classes casually — check the app for available options.
 
 ---
 
@@ -322,10 +322,10 @@ A: Flexibility is not a prerequisite — it develops over time with practice.
 A: Shorts are great for Level 1. Bring bare legs for grip, a drink bottle, and two towels.
 
 **Q: How do I book a class?**
-A: Book through the Groovio app. You can also find FAQs and video tutorials on navigating Groovio on our website.
+A: Book through the Duality app. You can also find FAQs and video tutorials on navigating the app on our website.
 
 **Q: What is the cancellation policy?**
-A: Cancel at least 4 hours before class via Groovio for a make-up credit. Less than 4 hours = forfeited class. No-show without cancelling = $20 penalty.
+A: Cancel at least 4 hours before class via the app for a make-up credit. Less than 4 hours = forfeited class. No-show without cancelling = $20 penalty.
 
 **Q: Can I use my make-up credit in the next season?**
 A: No — credits are valid within the same season only and don't carry over.
@@ -357,8 +357,8 @@ A: We're in Surry Hills — street parking and paid lots are nearby. Public tran
 **Q: Are you LGBTQIA+ friendly?**
 A: Absolutely. Duality is proudly inclusive — sex-worker positive, LGBTQIA+ and neurodivergent-friendly.
 
-**Q: What is Groovio?**
-A: Groovio is our booking platform. Use the app to book classes, cancel, chat with us, and manage your account.
+**Q: How do I manage my bookings?**
+A: Use the Duality app to book classes, cancel, chat with the team, and manage your account.
 
 ---
 
@@ -489,7 +489,7 @@ The best place to start is **Level 1** — teaches basic grips, spins, floorwork
 - Deducted from your invoice if you enrol in the full season.
 
 ### Season Enrolment
-- Full 8-week season (pricing listed in Groovio — email intrigued@dualitypole.com for current pricing).
+- Full 8-week season (pricing listed in the app — email intrigued@dualitypole.com for current pricing).
 - 50% deposit required within 48 hours of booking.
 - Balance due by Sunday of Week 1.
 
@@ -544,12 +544,12 @@ Classes run in 8-week seasons. You attend the same class/time each week (e.g. Le
 
 ---
 
-## How to Book — Groovio Guide
+## How to Book
 
-Duality uses **Groovio**, a purpose-built booking system for pole studios.
+Book and manage everything through the Duality student app.
 
-### Setting Up Groovio
-1. Go to the Groovio login page (desktop or app).
+### Getting Started with the App
+1. Go to the the app login page (desktop or app).
 2. Click "Sign Up" / "Create Account" — enter your name, email, phone, password.
 3. Search for **"Duality Pole"** and click **Join / Connect**.
 4. Set up your profile (optional).
@@ -585,21 +585,21 @@ Note: Some classes cannot be joined casually after Week 3 of the season.
 
 ### Booking a Catch-Up (Make-Up) Class
 1. Make sure you cancelled your missed class before the 4-hour window (to receive the credit).
-2. In your Groovio account, find the class you want to catch up in and press **Book Now**.
+2. In your the app account, find the class you want to catch up in and press **Book Now**.
 3. Make sure **"Enrol in the rest of the term"** is NOT ticked.
 4. Scroll to "My Purchases" → Packages → select your make-up credit.
 5. Total should be $0. Press **Complete**.
 
 ### Cancelling a Class
-- **More than 4 hours before class:** Cancel in Groovio → confirm the cancellation pop-up → you'll receive a make-up credit for the season.
+- **More than 4 hours before class:** Cancel in the app → confirm the cancellation pop-up → you'll receive a make-up credit for the season.
 - **Less than 4 hours before class:** You can still cancel, but you will NOT receive a make-up credit. You will see a warning pop-up confirming this.
 - **Not cancelling at all = no-show** → class forfeited + $20 no-show fee charged.
 - After 3 no-shows, your booking access may be suspended.
 
-### Getting Help with Groovio
-- Groovio has a built-in **ChatGPT bot** for navigation questions.
+### Getting Help
+- The app has a built-in assistant for any navigation questions.
 - Video tutorials are available on the Duality website.
-- You can also **chat directly with Duality** via the Groovio app homepage (use the private/direct chat, not the class group chat).
+- You can also **chat directly with Duality** via the in-app chat (use the private/direct chat, not the class group chat).
 
 ---
 

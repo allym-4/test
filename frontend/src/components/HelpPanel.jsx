@@ -58,6 +58,11 @@ const PROMPTS = [
     answer: "Routine videos get uploaded around week 5 of the season.\n\nFind them in Progress → Resources, alongside your music playlist and warm-up guide.",
   },
   {
+    icon: '📱',
+    label: 'How do I set up Kisi (door access)?',
+    answer: "Kisi is the app we use for door access. Here's how to get set up:\n\n1. Check your email for an invitation from Kisi — it'll come from noreply@kisi.io. Check your junk/spam folder if you don't see it.\n\n2. Tap the link in the email to create your Kisi account (or log in if you already have one). Download the Kisi app from the App Store or Google Play.\n\n3. Once logged in, you'll see Duality Pole in your places. Tap it, then tap 'Unlock' to open the door.\n\n4. Make sure Bluetooth and location are enabled on your phone — Kisi needs both to unlock the door.\n\nStill having trouble? Email us at intrigued@dualitypole.com.",
+  },
+  {
     icon: '💳',
     label: 'I have a billing question',
     answer: "You can view all your charges, credits, and payment history under Account → Billing history.\n\nIf something looks wrong, email us at intrigued@dualitypole.com with the date and amount and we'll look into it.",
@@ -144,6 +149,24 @@ export default function HelpPanel({ open, onClose }) {
 
         {/* Footer CTA */}
         <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+          <a
+            href="https://www.facebook.com/groups/701359350537713"
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              background: 'rgba(24,119,242,0.1)', border: '1px solid rgba(24,119,242,0.25)',
+              borderRadius: 8, padding: '10px 14px', marginBottom: 12,
+              textDecoration: 'none', color: 'var(--white)',
+            }}
+          >
+            <span style={{ fontSize: 18 }}>👥</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 12, fontWeight: 600 }}>Join our student Facebook group</div>
+              <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 1 }}>Connect with other Duality students</div>
+            </div>
+            <span style={{ fontSize: 11, color: '#5898fb' }}>→</span>
+          </a>
           <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 10, textAlign: 'center' }}>
             Can't find what you need?
           </div>

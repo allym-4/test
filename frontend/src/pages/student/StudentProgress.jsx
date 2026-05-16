@@ -97,34 +97,9 @@ export default function StudentProgress() {
     setSelfAssessed({})
   }
 
-  // Media / Resources — fetch once; backend filters to student's enrolled sessions
+  // Media / Resources
   const { data: mediaData } = useApi(() => media.list(), [])
   const mediaList = mediaData?.results || mediaData || []
-
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  function isLocked(item) {
-    if (!item.available_from) return false
-    return new Date(item.available_from) > today
-  }
-
-  function resourceIcon(item) {
-    const n = (item.name || '').toLowerCase()
-    if (item.media_type === 'video' || n.includes('routine')) return '🎬'
-    if (n.includes('playlist') || n.includes('music')) return '🎵'
-    if (n.includes('warm') || n.includes('stretch')) return '🏃'
-    if (item.media_type === 'pdf') return '📄'
-    return '📎'
-  }
-
-  // Group media by session id
-  const mediaBySession = {}
-  for (const item of mediaList) {
-    const key = item.session || 'general'
-    if (!mediaBySession[key]) mediaBySession[key] = []
-    mediaBySession[key].push(item)
-  }
 
   // Chat
   const [chatMessages, setChatMessages] = useState({})
@@ -376,6 +351,43 @@ export default function StudentProgress() {
       {/* ── RESOURCES TAB ── */}
       {mainTab === 'resources' && (
         <div>
+          {/* Showcase banners */}
+          {enrolList.map(enrol => {
+            const startDate = enrol.class_session_detail?.season_start_date
+            if (!startDate) return null
+            const start = new Date(startDate + 'T00:00')
+            const week8start = new Date(start)
+            week8start.setDate(start.getDate() + 49)
+            const dayOfWeek = week8start.getDay()
+            const daysToFriday = (5 - dayOfWeek + 7) % 7
+            const showcaseFriday = new Date(week8start)
+            showcaseFriday.setDate(week8start.getDate() + daysToFriday)
+            showcaseFriday.setHours(0, 0, 0, 0)
+            const now = new Date()
+            now.setHours(0, 0, 0, 0)
+            const daysUntil = Math.round((showcaseFriday - now) / 86400000)
+            if (daysUntil < -14 || daysUntil > 70) return null
+            const isPast = daysUntil < 0
+            const dateStr = showcaseFriday.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
+            return (
+              <div key={enrol.id} style={{
+                background: isPast ? 'rgba(255,170,0,0.05)' : 'rgba(204,255,0,0.06)',
+                border: `1px solid ${isPast ? 'rgba(255,170,0,0.2)' : 'rgba(204,255,0,0.2)'}`,
+                borderRadius: 10, padding: '12px 16px', marginBottom: 12,
+                display: 'flex', alignItems: 'center', gap: 12,
+              }}>
+                <span style={{ fontSize: 22 }}>🎭</span>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>
+                    {isPast ? 'Showcase was' : 'Showcase'} — {enrol.class_session_detail?.name}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>
+                    {isPast ? `${dateStr}` : daysUntil === 0 ? `Today! ${dateStr}` : `${dateStr} · ${daysUntil} day${daysUntil !== 1 ? 's' : ''} away`}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
           <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 20 }}>
             Routine videos are released in Week 5 of each season. Other resources like warm-up guides and music playlists are available year-round.
           </div>
@@ -384,10 +396,9 @@ export default function StudentProgress() {
             <div className="empty-state">No resources uploaded yet</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-              {/* Group by enrolment */}
               {enrolList.map(enrol => {
                 const sessionId = enrol.class_session
-                const items = mediaBySession[sessionId] || []
+                const items = (mediaList || []).filter(m => m.session === sessionId)
                 if (!items.length) return null
                 const className = enrol.class_session_detail?.name || `Class ${enrol.id}`
                 const seasonName = enrol.class_session_detail?.season_name || ''
@@ -398,57 +409,39 @@ export default function StudentProgress() {
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {items.map(item => {
-                        const locked = isLocked(item)
-                        const icon = resourceIcon(item)
+                        const locked = item.available_from && new Date(item.available_from) > new Date(new Date().setHours(0,0,0,0))
+                        const icon = (() => {
+                          const n = (item.name || '').toLowerCase()
+                          if (item.media_type === 'video' || n.includes('routine')) return '🎬'
+                          if (n.includes('playlist') || n.includes('music')) return '🎵'
+                          if (n.includes('warm') || n.includes('stretch')) return '🏃'
+                          if (item.media_type === 'pdf') return '📄'
+                          return '📎'
+                        })()
                         const href = item.url || item.file
                         const availDate = item.available_from
                           ? new Date(item.available_from).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
                           : null
                         return (
-                          <div
-                            key={item.id}
-                            style={{
-                              background: 'var(--card)',
-                              border: `1px solid ${locked ? 'var(--border)' : 'rgba(204,255,0,0.15)'}`,
-                              borderRadius: 10,
-                              padding: '12px 16px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 12,
-                              opacity: locked ? 0.6 : 1,
-                            }}
-                          >
-                            <div style={{
-                              width: 36, height: 36, borderRadius: 8,
-                              background: locked ? '#1a1a1a' : 'rgba(204,255,0,0.08)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: 18, flexShrink: 0,
-                            }}>
+                          <div key={item.id} style={{
+                            background: 'var(--card)',
+                            border: `1px solid ${locked ? 'var(--border)' : 'rgba(204,255,0,0.15)'}`,
+                            borderRadius: 10, padding: '12px 16px',
+                            display: 'flex', alignItems: 'center', gap: 12,
+                            opacity: locked ? 0.6 : 1,
+                          }}>
+                            <div style={{ width: 36, height: 36, borderRadius: 8, background: locked ? '#1a1a1a' : 'rgba(204,255,0,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
                               {icon}
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {item.name}
-                              </div>
-                              {item.description && (
-                                <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 1 }}>{item.description}</div>
-                              )}
-                              {locked && availDate && (
-                                <div style={{ fontSize: 11, color: 'var(--amber)', marginTop: 2 }}>Available from {availDate}</div>
-                              )}
+                              <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+                              {item.description && <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 1 }}>{item.description}</div>}
+                              {locked && availDate && <div style={{ fontSize: 11, color: 'var(--amber)', marginTop: 2 }}>Available from {availDate}</div>}
                             </div>
                             {locked ? (
                               <span style={{ fontSize: 10, color: 'var(--grey)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>Locked</span>
                             ) : href ? (
-                              <a
-                                href={href}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="btn btn-sm"
-                                style={{ textDecoration: 'none', flexShrink: 0, fontSize: 11 }}
-                              >
-                                Open
-                              </a>
+                              <a href={href} target="_blank" rel="noreferrer" className="btn btn-sm" style={{ textDecoration: 'none', flexShrink: 0, fontSize: 11 }}>Open</a>
                             ) : null}
                           </div>
                         )
@@ -457,38 +450,19 @@ export default function StudentProgress() {
                   </div>
                 )
               })}
-
-              {/* Any resources not tied to a specific session */}
-              {(mediaBySession['general'] || []).length > 0 && (
+              {(mediaList || []).filter(m => !m.session).length > 0 && (
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 12 }}>
-                    General Resources
-                  </div>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 12 }}>General Resources</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {mediaBySession['general'].map(item => {
-                      const locked = isLocked(item)
-                      const icon = resourceIcon(item)
+                    {(mediaList || []).filter(m => !m.session).map(item => {
                       const href = item.url || item.file
                       return (
-                        <div
-                          key={item.id}
-                          style={{
-                            background: 'var(--card)', border: '1px solid var(--border)',
-                            borderRadius: 10, padding: '12px 16px',
-                            display: 'flex', alignItems: 'center', gap: 12,
-                            opacity: locked ? 0.6 : 1,
-                          }}
-                        >
-                          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
-                            {icon}
-                          </div>
+                        <div key={item.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 13, fontWeight: 600 }}>{item.name}</div>
                             {item.description && <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 1 }}>{item.description}</div>}
                           </div>
-                          {!locked && href && (
-                            <a href={href} target="_blank" rel="noreferrer" className="btn btn-sm" style={{ textDecoration: 'none', flexShrink: 0, fontSize: 11 }}>Open</a>
-                          )}
+                          {href && <a href={href} target="_blank" rel="noreferrer" className="btn btn-sm" style={{ textDecoration: 'none', flexShrink: 0, fontSize: 11 }}>Open</a>}
                         </div>
                       )
                     })}

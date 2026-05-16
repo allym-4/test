@@ -200,6 +200,7 @@ export default function AdminStudentDetail() {
   const [skillLevel, setSkillLevel] = useState('Level 1')
   const [skillProgress, setSkillProgress] = useState({})
   const [formsData, setFormsData] = useState(null)
+  const [lockerData, setLockerData] = useState(null)
   const [commsData, setCommsData] = useState(null)
   const [notificationsData, setNotificationsData] = useState(null)
   const [commsFilter, setCommsFilter] = useState('all')
@@ -247,7 +248,8 @@ export default function AdminStudentDetail() {
       payments.list({ student: student.id }),
       formsApi.listForStudent(student.id),
       payments.stripe.paymentMethods({ student_id: student.id }),
-    ]).then(([balRes, enrolRes, notesRes, attRes, payRes, formsRes, cardsRes]) => {
+      client.get('/api/classes/lockers/', { params: { assigned_to: student.id } }).catch(() => ({ data: [] })),
+    ]).then(([balRes, enrolRes, notesRes, attRes, payRes, formsRes, cardsRes, lockerRes]) => {
       setBalanceData(balRes.data)
       setEnrolData(enrolRes.data.results || [])
       setNotesData(notesRes.data.results || [])
@@ -255,6 +257,8 @@ export default function AdminStudentDetail() {
       setPayData(payRes.data.results || [])
       setFormsData(formsRes.data.results || formsRes.data || [])
       setSavedCardsData(cardsRes.data)
+      const lockers = lockerRes.data?.results || lockerRes.data || []
+      setLockerData(lockers[0] || null)
     }).finally(() => setLoading(false))
   }, [student?.id])
 
@@ -427,6 +431,31 @@ export default function AdminStudentDetail() {
                           <div style={{ fontSize: 12, color: 'var(--grey)' }}>{e.class_session_detail?.instructor_detail?.display_name} · {e.class_session_detail?.studio_detail?.name}</div>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                )}
+                {lockerData && (
+                  <div className="card" style={{ padding: '16px 18px' }}>
+                    <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 14 }}>Locker</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                      <span style={{ fontSize: 28 }}>🔐</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18 }}>Locker #{lockerData.number}</div>
+                        <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>
+                          {lockerData.locker_type ? lockerData.locker_type.replace(/_/g, ' ') : 'Standard'}
+                          {lockerData.expires_at ? ` · Expires ${new Date(lockerData.expires_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}
+                        </div>
+                        <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                          <span className={`tag ${lockerData.key_issued ? 'tag-lime' : 'tag-grey'}`} style={{ fontSize: 10 }}>
+                            {lockerData.key_issued ? 'Key issued' : 'No key'}
+                          </span>
+                          {lockerData.key_lost && <span className="tag tag-red" style={{ fontSize: 10 }}>Key lost</span>}
+                          <span className={`tag ${lockerData.payment_status === 'paid' ? 'tag-lime' : 'tag-amber'}`} style={{ fontSize: 10 }}>
+                            {lockerData.payment_status || 'Unpaid'}
+                          </span>
+                          {lockerData.payment_type && <span className="tag tag-grey" style={{ fontSize: 10 }}>{lockerData.payment_type}</span>}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}

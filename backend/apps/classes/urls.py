@@ -13,6 +13,7 @@ urlpatterns = [
     path('seasons/', views.SeasonListView.as_view(), name='season-list'),
     path('seasons/<int:pk>/', views.SeasonDetailView.as_view(), name='season-detail'),
     path('lockers/', views.LockerListView.as_view(), name='locker-list'),
+    path('lockers/mine/', views.MyLockerView.as_view(), name='locker-mine'),
     path('lockers/eligible/', views.LockerEligibleStudentsView.as_view(), name='locker-eligible'),
     path('lockers/<int:pk>/', views.LockerDetailView.as_view(), name='locker-detail'),
     path('lockers/<int:pk>/lost_key/', views.LockerLostKeyView.as_view(), name='locker-lost-key'),

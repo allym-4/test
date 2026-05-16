@@ -1,4 +1,5 @@
 from datetime import date
+from django.db.models import Count
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -100,15 +101,133 @@ class SeasonDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class LockerListView(generics.ListCreateAPIView):
-    queryset = Locker.objects.select_related('assigned_to')
     serializer_class = LockerSerializer
     permission_classes = [IsAdminOrInstructor]
+
+    def get_queryset(self):
+        qs = Locker.objects.select_related('assigned_to')
+        assigned_to = self.request.query_params.get('assigned_to')
+        if assigned_to:
+            qs = qs.filter(assigned_to_id=assigned_to)
+        return qs
 
 
 class LockerDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Locker.objects.select_related('assigned_to')
     serializer_class = LockerSerializer
     permission_classes = [IsAdminOrInstructor]
+
+
+class MyLockerView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from rest_framework.response import Response
+        locker = Locker.objects.filter(assigned_to=request.user).first()
+        if not locker:
+            return Response(None)
+        return Response(LockerSerializer(locker).data)
+
+
+class LockerEligibleStudentsView(APIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def get(self, request):
+        from apps.enrolments.models import Enrolment
+        from apps.users.models import User
+
+        active_season = Season.objects.filter(status='active').first()
+        if not active_season:
+            return Response({'season': None, 'eligible': [], 'paid_holders': []})
+
+        season_session_ids = ClassSession.objects.filter(
+            season=active_season, is_active=True
+        ).values_list('id', flat=True)
+
+        enrolment_counts = (
+            Enrolment.objects.filter(class_session_id__in=season_session_ids, status='active')
+            .values('student_id')
+            .annotate(count=Count('id'))
+        )
+        count_by_student = {row['student_id']: row['count'] for row in enrolment_counts}
+        eligible_student_ids = [sid for sid, cnt in count_by_student.items() if cnt >= 4]
+
+        assigned_lockers = {
+            l.assigned_to_id: l
+            for l in Locker.objects.filter(assigned_to__isnull=False).select_related('assigned_to')
+        }
+
+        eligible_students = User.objects.filter(id__in=eligible_student_ids).order_by('first_name', 'last_name')
+        eligible_data = []
+        for s in eligible_students:
+            locker = assigned_lockers.get(s.id)
+            eligible_data.append({
+                'id': s.id, 'display_name': s.display_name, 'email': s.email,
+                'enrolment_count': count_by_student.get(s.id, 0),
+                'has_locker': locker is not None,
+                'locker_number': locker.number if locker else None,
+                'locker_id': locker.id if locker else None,
+            })
+
+        paid_holder_data = []
+        for student_id, locker in assigned_lockers.items():
+            if student_id not in eligible_student_ids:
+                s = locker.assigned_to
+                paid_holder_data.append({
+                    'id': s.id, 'display_name': s.display_name, 'email': s.email,
+                    'enrolment_count': count_by_student.get(s.id, 0),
+                    'has_locker': True,
+                    'locker_number': locker.number, 'locker_id': locker.id,
+                })
+        paid_holder_data.sort(key=lambda x: x['display_name'])
+
+        return Response({
+            'season': {'id': active_season.id, 'name': active_season.name},
+            'eligible': eligible_data,
+            'paid_holders': paid_holder_data,
+        })
+
+
+class LockerLostKeyView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            locker = Locker.objects.select_related('assigned_to').get(pk=pk)
+        except Locker.DoesNotExist:
+            return Response({'detail': 'Locker not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not locker.assigned_to:
+            return Response({'detail': 'Locker is not assigned.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Students can only report their own locker
+        if request.user.role == 'student' and locker.assigned_to != request.user:
+            return Response({'detail': 'Not your locker.'}, status=status.HTTP_403_FORBIDDEN)
+
+        locker.key_lost = True
+        locker.save(update_fields=['key_lost'])
+
+        student = locker.assigned_to
+        from apps.payments.models import Payment
+        Payment.objects.create(
+            student=student,
+            payment_type=Payment.PaymentType.CHARGE,
+            amount=50,
+            description=f'Lost key fee — Locker #{locker.number}',
+            reference=f'locker-{locker.id}-lost-key',
+            created_by=request.user,
+        )
+
+        from apps.users.models import User as UserModel, Notification
+        for admin in UserModel.objects.filter(role='admin', is_active=True):
+            Notification.objects.create(
+                recipient=admin,
+                title=f'Locker #{locker.number} — Key Lost',
+                body=f'Key reported lost for {student.display_name}. Please change the lock and issue a new key.',
+                notification_type=Notification.Type.WARNING,
+            )
+
+        return Response(LockerSerializer(locker).data)
 
 
 class KisiGrantListView(APIView):
