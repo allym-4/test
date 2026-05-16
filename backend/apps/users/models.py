@@ -486,9 +486,10 @@ class MediaItem(models.Model):
     name = models.CharField(max_length=200)
     media_type = models.CharField(max_length=10, choices=MediaType.choices)
     file = models.FileField(upload_to='media/', null=True, blank=True)
-    url = models.URLField(blank=True)  # for external URLs
+    url = models.URLField(blank=True)
     level = models.CharField(max_length=50, blank=True)
-    size_display = models.CharField(max_length=20, blank=True)  # e.g. "42 MB"
+    size_display = models.CharField(max_length=20, blank=True)
+    available_from = models.DateField(null=True, blank=True)
     uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='media_uploads')
     session = models.ForeignKey('classes.ClassSession', on_delete=models.SET_NULL, null=True, blank=True, related_name='media_items')
     created_at = models.DateTimeField(auto_now_add=True)

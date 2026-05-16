@@ -251,7 +251,7 @@ class MediaItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MediaItem
-        fields = ('id', 'name', 'media_type', 'file', 'url', 'level', 'size_display', 'uploaded_by_name', 'session', 'created_at')
+        fields = ('id', 'name', 'media_type', 'file', 'url', 'level', 'size_display', 'available_from', 'uploaded_by_name', 'session', 'created_at')
         read_only_fields = ('id', 'created_at')
 
 

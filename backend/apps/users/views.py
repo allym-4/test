@@ -831,17 +831,33 @@ class SkillDefinitionDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class MediaItemListView(generics.ListCreateAPIView):
     serializer_class = MediaItemSerializer
-    permission_classes = [IsAdminOrInstructor]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         qs = MediaItem.objects.select_related('uploaded_by')
-        type_filter = self.request.query_params.get('type')
-        if type_filter:
-            qs = qs.filter(media_type=type_filter)
-        level_filter = self.request.query_params.get('level')
-        if level_filter:
-            qs = qs.filter(level=level_filter)
-        return qs
+        user = self.request.user
+        if user.role == 'student':
+            from apps.enrolments.models import Enrolment
+            session_ids = Enrolment.objects.filter(
+                student=user, status='active'
+            ).values_list('class_session_id', flat=True)
+            qs = qs.filter(session_id__in=session_ids)
+        else:
+            type_filter = self.request.query_params.get('type')
+            if type_filter:
+                qs = qs.filter(media_type=type_filter)
+            level_filter = self.request.query_params.get('level')
+            if level_filter:
+                qs = qs.filter(level=level_filter)
+        session_filter = self.request.query_params.get('session')
+        if session_filter:
+            qs = qs.filter(session_id=session_filter)
+        return qs.order_by('session', 'available_from', 'name')
+
+    def create(self, request, *args, **kwargs):
+        if request.user.role not in ('admin', 'instructor', 'staff'):
+            return Response({'detail': 'Forbidden.'}, status=403)
+        return super().create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         serializer.save(uploaded_by=self.request.user)

@@ -97,9 +97,34 @@ export default function StudentProgress() {
     setSelfAssessed({})
   }
 
-  // Media / Resources
+  // Media / Resources — fetch once; backend filters to student's enrolled sessions
   const { data: mediaData } = useApi(() => media.list(), [])
   const mediaList = mediaData?.results || mediaData || []
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  function isLocked(item) {
+    if (!item.available_from) return false
+    return new Date(item.available_from) > today
+  }
+
+  function resourceIcon(item) {
+    const n = (item.name || '').toLowerCase()
+    if (item.media_type === 'video' || n.includes('routine')) return '🎬'
+    if (n.includes('playlist') || n.includes('music')) return '🎵'
+    if (n.includes('warm') || n.includes('stretch')) return '🏃'
+    if (item.media_type === 'pdf') return '📄'
+    return '📎'
+  }
+
+  // Group media by session id
+  const mediaBySession = {}
+  for (const item of mediaList) {
+    const key = item.session || 'general'
+    if (!mediaBySession[key]) mediaBySession[key] = []
+    mediaBySession[key].push(item)
+  }
 
   // Chat
   const [chatMessages, setChatMessages] = useState({})
@@ -351,57 +376,125 @@ export default function StudentProgress() {
       {/* ── RESOURCES TAB ── */}
       {mainTab === 'resources' && (
         <div>
+          <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 20 }}>
+            Routine videos are released in Week 5 of each season. Other resources like warm-up guides and music playlists are available year-round.
+          </div>
+
           {mediaList.length === 0 ? (
             <div className="empty-state">No resources uploaded yet</div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {mediaList.map(item => {
-                const badge = TYPE_BADGE[item.media_type] || TYPE_BADGE.image
-                const label = item.media_type === 'video' ? 'Watch' : 'View'
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+              {/* Group by enrolment */}
+              {enrolList.map(enrol => {
+                const sessionId = enrol.class_session
+                const items = mediaBySession[sessionId] || []
+                if (!items.length) return null
+                const className = enrol.class_session_detail?.name || `Class ${enrol.id}`
+                const seasonName = enrol.class_session_detail?.season_name || ''
                 return (
-                  <div
-                    key={item.id}
-                    className="card"
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
-                  >
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <span
-                          style={{
-                            background: badge.color,
-                            color: badge.textColor,
-                            fontSize: 9,
-                            fontWeight: 700,
-                            padding: '2px 7px',
-                            borderRadius: 4,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px',
-                          }}
-                        >
-                          {badge.label}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: 14, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {item.title || item.name || 'Resource'}
-                      </div>
-                      {item.description && (
-                        <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{item.description}</div>
-                      )}
+                  <div key={enrol.id}>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 12 }}>
+                      {className}{seasonName ? ` · ${seasonName}` : ''}
                     </div>
-                    {(item.url || item.file) && (
-                      <a
-                        href={item.url || item.file}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="btn btn-sm"
-                        style={{ flexShrink: 0, textDecoration: 'none' }}
-                      >
-                        {label}
-                      </a>
-                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {items.map(item => {
+                        const locked = isLocked(item)
+                        const icon = resourceIcon(item)
+                        const href = item.url || item.file
+                        const availDate = item.available_from
+                          ? new Date(item.available_from).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+                          : null
+                        return (
+                          <div
+                            key={item.id}
+                            style={{
+                              background: 'var(--card)',
+                              border: `1px solid ${locked ? 'var(--border)' : 'rgba(204,255,0,0.15)'}`,
+                              borderRadius: 10,
+                              padding: '12px 16px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 12,
+                              opacity: locked ? 0.6 : 1,
+                            }}
+                          >
+                            <div style={{
+                              width: 36, height: 36, borderRadius: 8,
+                              background: locked ? '#1a1a1a' : 'rgba(204,255,0,0.08)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 18, flexShrink: 0,
+                            }}>
+                              {icon}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {item.name}
+                              </div>
+                              {item.description && (
+                                <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 1 }}>{item.description}</div>
+                              )}
+                              {locked && availDate && (
+                                <div style={{ fontSize: 11, color: 'var(--amber)', marginTop: 2 }}>Available from {availDate}</div>
+                              )}
+                            </div>
+                            {locked ? (
+                              <span style={{ fontSize: 10, color: 'var(--grey)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>Locked</span>
+                            ) : href ? (
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="btn btn-sm"
+                                style={{ textDecoration: 'none', flexShrink: 0, fontSize: 11 }}
+                              >
+                                Open
+                              </a>
+                            ) : null}
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 )
               })}
+
+              {/* Any resources not tied to a specific session */}
+              {(mediaBySession['general'] || []).length > 0 && (
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 12 }}>
+                    General Resources
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {mediaBySession['general'].map(item => {
+                      const locked = isLocked(item)
+                      const icon = resourceIcon(item)
+                      const href = item.url || item.file
+                      return (
+                        <div
+                          key={item.id}
+                          style={{
+                            background: 'var(--card)', border: '1px solid var(--border)',
+                            borderRadius: 10, padding: '12px 16px',
+                            display: 'flex', alignItems: 'center', gap: 12,
+                            opacity: locked ? 0.6 : 1,
+                          }}
+                        >
+                          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
+                            {icon}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600 }}>{item.name}</div>
+                            {item.description && <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 1 }}>{item.description}</div>}
+                          </div>
+                          {!locked && href && (
+                            <a href={href} target="_blank" rel="noreferrer" className="btn btn-sm" style={{ textDecoration: 'none', flexShrink: 0, fontSize: 11 }}>Open</a>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
