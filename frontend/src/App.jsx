@@ -1,3 +1,4 @@
+import { Component } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 
@@ -88,6 +89,29 @@ function Spinner() {
   )
 }
 
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { error: null }
+  }
+  static getDerivedStateFromError(error) {
+    return { error }
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 40, color: '#ff6666', fontFamily: 'monospace', background: '#0a0a0a', minHeight: '100dvh' }}>
+          <h2 style={{ color: '#ff6666' }}>Something went wrong</h2>
+          <p style={{ color: '#ccc', marginBottom: 16 }}>{this.state.error.message}</p>
+          <pre style={{ fontSize: 11, color: '#888', whiteSpace: 'pre-wrap' }}>{this.state.error.stack}</pre>
+          <button onClick={() => { this.setState({ error: null }); window.location.reload() }} style={{ marginTop: 20, padding: '8px 16px', background: '#ccff00', color: '#000', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Reload</button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 function RequireAuth({ children, role }) {
   const { user, loading } = useAuth()
   if (loading) return <Spinner />
@@ -102,6 +126,7 @@ function RequireAuth({ children, role }) {
 
 export default function App() {
   return (
+    <ErrorBoundary>
     <AuthProvider>
       <BrowserRouter>
         <Routes>
@@ -188,5 +213,6 @@ export default function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </ErrorBoundary>
   )
 }
