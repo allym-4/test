@@ -14,6 +14,13 @@ class UserSerializer(serializers.ModelSerializer):
     display_name = serializers.ReadOnlyField()
     enrolled_seasons_summary = serializers.SerializerMethodField()
 
+    # Fields only staff/admin/instructor should see
+    STAFF_ONLY_FIELDS = {
+        'internal_notes', 'stripe_customer_id', 'pay_rate',
+        'perm_billing', 'perm_edit_profiles', 'perm_approve_plans',
+        'perm_bulk_email', 'perm_reports', 'last_login',
+    }
+
     class Meta:
         model = User
         fields = (
@@ -25,6 +32,14 @@ class UserSerializer(serializers.ModelSerializer):
             'show_in_roster', 'roster_name', 'nickname',
         )
         read_only_fields = ('id',)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        if request and request.user.role not in ('admin', 'instructor', 'staff'):
+            for field in self.STAFF_ONLY_FIELDS:
+                data.pop(field, None)
+        return data
 
     def get_enrolled_seasons_summary(self, obj):
         from apps.enrolments.models import Enrolment
@@ -89,6 +104,7 @@ class LeadSerializer(serializers.ModelSerializer):
 
 
 class StudioSettingsSerializer(serializers.ModelSerializer):
+    """Full serializer for admin use — includes API keys and credentials."""
     xero_connected = serializers.SerializerMethodField(read_only=True)
     mailchimp_connected = serializers.SerializerMethodField(read_only=True)
 
@@ -114,6 +130,21 @@ class StudioSettingsSerializer(serializers.ModelSerializer):
             'overdue_reminder_schedule',
         )
         read_only_fields = ('xero_connected', 'mailchimp_connected')
+
+
+class StudioSettingsPublicSerializer(serializers.ModelSerializer):
+    """Safe subset of studio settings for authenticated students."""
+    class Meta:
+        model = StudioSettings
+        fields = (
+            'studio_name', 'email', 'phone', 'instagram', 'timezone', 'tagline',
+            'primary_colour', 'enquiries_email', 'urgent_email',
+            'cancellation_window_hours', 'no_show_fee', 'late_cancel_fee',
+            'credit_expiry_days', 'max_freeze_weeks', 'gst_registered', 'abn',
+            'instagram_username', 'meta_app_id',
+            'price_casual', 'price_season', 'price_trial', 'season_pricing_config',
+            'form_health_enabled', 'form_photo_consent_enabled', 'form_waiver_enabled', 'form_season_agreement_enabled',
+        )
 
 
 class AnnouncementSerializer(serializers.ModelSerializer):

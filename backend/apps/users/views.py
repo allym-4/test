@@ -25,6 +25,7 @@ from .serializers import (
     InstructorPayRecordSerializer, StudentSkillSerializer,
     TagSerializer, StudentTagSerializer, SkillLevelSerializer, SkillGroupSerializer, SkillDefinitionSerializer,
     MediaItemSerializer, EmailCampaignSerializer, EmailListSerializer, ReferralSerializer, ActionItemSerializer,
+    StudioSettingsPublicSerializer,
 )
 from .permissions import IsAdminOrInstructor, IsAdminUser
 
@@ -192,7 +193,9 @@ class StudioSettingsView(APIView):
 
     def get(self, request):
         settings = StudioSettings.get()
-        return Response(StudioSettingsSerializer(settings).data)
+        is_staff = request.user.role in ('admin', 'instructor', 'staff')
+        serializer_class = StudioSettingsSerializer if is_staff else StudioSettingsPublicSerializer
+        return Response(serializer_class(settings).data)
 
     def patch(self, request):
         settings = StudioSettings.get()
@@ -513,7 +516,8 @@ class InstructorAvailabilityView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        instructor_id = request.query_params.get('instructor', request.user.id)
+        is_staff = request.user.role in ('admin', 'instructor', 'staff')
+        instructor_id = request.query_params.get('instructor', request.user.id) if is_staff else request.user.id
         slots = InstructorAvailability.objects.filter(instructor_id=instructor_id)
         return Response(InstructorAvailabilitySerializer(slots, many=True).data)
 
@@ -610,7 +614,7 @@ class InstructorPayRecordListView(generics.ListCreateAPIView):
     def get_permissions(self):
         if self.request.method == 'POST':
             return [IsAdminUser()]
-        return [permissions.IsAuthenticated()]
+        return [IsAdminOrInstructor()]
 
     def get_queryset(self):
         qs = InstructorPayRecord.objects.select_related('instructor')
