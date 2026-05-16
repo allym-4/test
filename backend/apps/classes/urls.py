@@ -25,10 +25,4 @@ urlpatterns = [
     path('workshops/<int:pk>/', views.WorkshopDetailView.as_view(), name='workshop-detail'),
     path('workshops/<int:pk>/book/', views.WorkshopBookView.as_view(), name='workshop-book'),
     path('workshops/<int:pk>/bookings/', views.WorkshopBookingListView.as_view(), name='workshop-bookings'),
-    path('practice/', views.PracticeSlotListView.as_view(), name='practice-list'),
-    path('practice/my-bookings/', views.MyPracticeBookingsView.as_view(), name='practice-my-bookings'),
-    path('practice/all-bookings/', views.AdminPracticeBookingsView.as_view(), name='practice-all-bookings'),
-    path('practice/<int:pk>/', views.PracticeSlotDetailView.as_view(), name='practice-detail'),
-    path('practice/<int:pk>/book/', views.PracticeSlotBookView.as_view(), name='practice-book'),
-    path('practice/<int:pk>/cancel/', views.PracticeSlotCancelView.as_view(), name='practice-cancel'),
 ]
