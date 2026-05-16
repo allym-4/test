@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, seasons, attendance as attendanceApi, classes as classesApi, skills as skillsApi, announcements as announcementsApi } from '../../api'
+import { enrolments, seasons, attendance as attendanceApi, classes as classesApi, skills as skillsApi, announcements as announcementsApi, payments } from '../../api'
+import CancellationOfferPopup from '../../components/CancellationOfferPopup'
 
 import { Link } from 'react-router-dom'
 
@@ -98,6 +99,7 @@ export default function StudentDashboard() {
   const { data: skillsData } = useApi(() => user?.id ? skillsApi.list(user.id) : null, [user?.id])
   const { data: creditsData } = useApi(() => attendanceApi.makeupCredits.list({ student: user?.id, status: 'available' }), [user?.id])
   const { data: annData, refetch: refetchAnn } = useApi(() => announcementsApi.list({ note_type: 'announcement' }), [])
+  const { data: offersData, refetch: refetchOffers } = useApi(() => payments.cancellationOffers.mine(), [])
 
   const [markAwayEnrol, setMarkAwayEnrol] = useState(null)
   const [acknowledging, setAcknowledging] = useState({})
@@ -140,9 +142,16 @@ export default function StudentDashboard() {
   const enrolledNames = enrolments_.map(e => e.class_session_detail?.name).filter(Boolean)
 
   const hasEnrolments = enrolments_.length > 0
+  const pendingOffers = offersData?.results || offersData || []
 
   return (
     <div>
+      {pendingOffers.length > 0 && (
+        <CancellationOfferPopup
+          offers={pendingOffers}
+          onResolved={() => refetchOffers()}
+        />
+      )}
       {/* Season open banner — shown when no active enrolments */}
       {!loadingEnrol && !hasEnrolments && (
         <div style={{ background: 'var(--lime)', borderRadius: 12, padding: '14px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>

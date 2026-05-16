@@ -103,6 +103,12 @@ export const payments = {
     updateInstalment: (id, data) => client.patch(`/api/payments/plans/instalments/${id}/`, data),
     remind: (planId) => client.post(`/api/payments/plans/${planId}/remind/`),
   },
+  cancellationOffers: {
+    list: (params) => client.get('/api/payments/cancellation-offers/', { params }),
+    mine: () => client.get('/api/payments/cancellation-offers/mine/'),
+    resolve: (id, choice) => client.post(`/api/payments/cancellation-offers/${id}/resolve/`, { choice }),
+    sendForOccurrence: (occurrenceId) => client.post(`/api/payments/occurrences/${occurrenceId}/send-cancellation-offers/`),
+  },
 }
 
 export const leads = {

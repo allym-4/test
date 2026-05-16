@@ -6,11 +6,12 @@ from django.db.models import Sum, Q, Count
 from django.db.models.functions import TruncMonth
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
-from .models import Payment, PaymentPlan, PaymentPlanInstalment, Package, StudentPackage, MembershipType, GiftCard, PromoCode
+from .models import Payment, PaymentPlan, PaymentPlanInstalment, Package, StudentPackage, MembershipType, GiftCard, PromoCode, CancellationOffer
 from .serializers import (
     PaymentSerializer, PaymentPlanSerializer,
     PaymentPlanInstalmentSerializer, StudentBalanceSerializer,
     PackageSerializer, StudentPackageSerializer, MembershipTypeSerializer, GiftCardSerializer, PromoCodeSerializer,
+    CancellationOfferSerializer,
 )
 from apps.users.permissions import IsAdminOrInstructor
 from apps.users.models import User
@@ -342,6 +343,165 @@ def student_balance(request, student_pk):
         'total_charged': total_charged,
         'total_paid': total_paid,
     })
+
+
+@api_view(['POST'])
+@permission_classes([IsAdminOrInstructor])
+def send_cancellation_offers(request, occurrence_pk):
+    """
+    Mark an occurrence as cancelled and email every enrolled student with
+    a choice: account credit (dollar value of one class) or makeup credit.
+    Idempotent — skips students who already have an offer for this occurrence.
+    """
+    from apps.classes.models import ClassOccurrence
+    from apps.enrolments.models import Enrolment
+    from .models import per_class_credit_value
+    from apps.users.models import Notification
+    from django.core.mail import send_mail
+    from django.utils.timezone import now
+
+    try:
+        occurrence = ClassOccurrence.objects.select_related('session').get(pk=occurrence_pk)
+    except ClassOccurrence.DoesNotExist:
+        return Response({'detail': 'Occurrence not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    occurrence.status = ClassOccurrence.Status.CANCELLED
+    occurrence.save(update_fields=['status'])
+
+    # All active enrolments for this session
+    enrolments = Enrolment.objects.filter(
+        class_session=occurrence.session,
+        status='active',
+    ).select_related('student')
+
+    # Count how many active sessions each student is enrolled in (for pricing tier)
+    created_count = 0
+    for enrolment in enrolments:
+        student = enrolment.student
+        # Don't create duplicate offers
+        if CancellationOffer.objects.filter(student=student, occurrence=occurrence).exists():
+            continue
+
+        num_classes = Enrolment.objects.filter(
+            student=student, status='active'
+        ).count()
+        credit_amount = per_class_credit_value(num_classes)
+
+        offer = CancellationOffer.objects.create(
+            student=student,
+            occurrence=occurrence,
+            credit_amount=credit_amount,
+        )
+
+        # In-app notification
+        Notification.objects.create(
+            recipient=student,
+            title='Class Cancelled — Choose Your Option',
+            body=(
+                f'Your {occurrence.session.name} class on {occurrence.date} has been cancelled. '
+                f'You can choose a ${credit_amount:.2f} account credit or a makeup class credit. '
+                f'Please log in to your account to make your selection.'
+            ),
+            notification_type='payment',
+        )
+
+        # Email
+        try:
+            send_mail(
+                subject=f'Your class on {occurrence.date} has been cancelled',
+                message=(
+                    f'Hi {student.first_name or student.display_name},\n\n'
+                    f'Your {occurrence.session.name} class on {occurrence.date} has been cancelled.\n\n'
+                    f'We\'d like to offer you one of the following:\n'
+                    f'  • A ${credit_amount:.2f} account credit (the value of one class at your current enrolment)\n'
+                    f'  • A makeup class credit to use in any class\n\n'
+                    f'Please log in to your Duality account to choose your preference:\n'
+                    f'https://dualitypole.com/portal\n\n'
+                    f'If you have any questions, reply to this email or call us on (02) 9160 0223.\n\n'
+                    f'The Duality team'
+                ),
+                from_email=None,
+                recipient_list=[student.email],
+                fail_silently=True,
+            )
+            offer.email_sent = True
+            offer.save(update_fields=['email_sent'])
+        except Exception:
+            pass
+
+        created_count += 1
+
+    return Response({
+        'status': 'ok',
+        'offers_created': created_count,
+        'occurrence': str(occurrence),
+    })
+
+
+class CancellationOfferListView(generics.ListAPIView):
+    """Admin: list all cancellation offers, optionally filtered by occurrence."""
+    serializer_class = CancellationOfferSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+    def get_queryset(self):
+        qs = CancellationOffer.objects.select_related('student', 'occurrence__session')
+        occurrence_id = self.request.query_params.get('occurrence')
+        if occurrence_id:
+            qs = qs.filter(occurrence_id=occurrence_id)
+        status_filter = self.request.query_params.get('status')
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        return qs
+
+
+class MyCancellationOffersView(generics.ListAPIView):
+    """Student: list their own pending cancellation offers."""
+    serializer_class = CancellationOfferSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return CancellationOffer.objects.filter(
+            student=self.request.user,
+            status=CancellationOffer.Status.PENDING,
+        ).select_related('occurrence__session')
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def resolve_cancellation_offer(request, pk):
+    """Student chooses 'credit' or 'makeup'."""
+    from django.utils.timezone import now
+    from apps.attendance.models import MakeupCredit
+
+    choice = request.data.get('choice')
+    if choice not in ('credit', 'makeup'):
+        return Response({'detail': "choice must be 'credit' or 'makeup'."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        offer = CancellationOffer.objects.get(pk=pk, student=request.user, status=CancellationOffer.Status.PENDING)
+    except CancellationOffer.DoesNotExist:
+        return Response({'detail': 'Offer not found or already resolved.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if choice == 'credit':
+        Payment.objects.create(
+            student=request.user,
+            payment_type=Payment.PaymentType.CREDIT,
+            amount=offer.credit_amount,
+            description=f'Cancellation credit — {offer.occurrence}',
+            created_by=None,
+        )
+        offer.status = CancellationOffer.Status.ACCEPTED_CREDIT
+    else:
+        MakeupCredit.objects.create(
+            student=request.user,
+            reason=f'Cancellation makeup — {offer.occurrence}',
+            status='available',
+        )
+        offer.status = CancellationOffer.Status.ACCEPTED_MAKEUP
+
+    offer.resolved_at = now()
+    offer.save(update_fields=['status', 'resolved_at'])
+    return Response(CancellationOfferSerializer(offer).data)
 
 
 class DashboardStatsView(APIView):

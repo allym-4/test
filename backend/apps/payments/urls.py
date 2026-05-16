@@ -33,4 +33,9 @@ urlpatterns = [
     path('promo-codes/<int:pk>/', views.PromoCodeDetailView.as_view(), name='promo-code-detail'),
     path('promo-codes/validate/', views.validate_promo_code, name='promo-code-validate'),
     path('promo-codes/use/', views.use_promo_code, name='promo-code-use'),
+
+    path('cancellation-offers/', views.CancellationOfferListView.as_view(), name='cancellation-offer-list'),
+    path('cancellation-offers/mine/', views.MyCancellationOffersView.as_view(), name='cancellation-offer-mine'),
+    path('cancellation-offers/<int:pk>/resolve/', views.resolve_cancellation_offer, name='cancellation-offer-resolve'),
+    path('occurrences/<int:occurrence_pk>/send-cancellation-offers/', views.send_cancellation_offers, name='send-cancellation-offers'),
 ]
