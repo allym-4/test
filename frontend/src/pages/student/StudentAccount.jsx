@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { auth, giftCards as giftCardsApi, referrals as referralsApi } from '../../api'
+import { auth, giftCards as giftCardsApi, referrals as referralsApi, lockers as lockersApi } from '../../api'
 import { useApi } from '../../hooks/useApi'
 
 function ChangePasswordModal({ onClose }) {
@@ -80,6 +80,20 @@ export default function StudentAccount() {
   const [photoConsent, setPhotoConsent] = useState(user?.photo_consent || false)
 
   const { data: referralData } = useApi(() => user?.id ? referralsApi.list({ referrer: user.id }) : null, [user?.id])
+  const { data: lockerData, refetch: refetchLocker } = useApi(() => lockersApi.mine(), [])
+  const [keyLostMsg, setKeyLostMsg] = useState('')
+
+  async function handleLostKey() {
+    if (!lockerData?.id) return
+    try {
+      await lockersApi.lostKey(lockerData.id)
+      setKeyLostMsg('Reported — we\'ll be in touch about the replacement fee.')
+      refetchLocker()
+    } catch {
+      setKeyLostMsg('Something went wrong. Please email us.')
+    }
+    setTimeout(() => setKeyLostMsg(''), 6000)
+  }
   const myReferrals = referralData?.results || referralData || []
   const creditedReferrals = myReferrals.filter(r => r.status === 'credited')
   const totalCredits = creditedReferrals.reduce((sum, r) => sum + parseFloat(r.credit_amount || 0), 0)
@@ -434,6 +448,44 @@ export default function StudentAccount() {
           <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 16, fontWeight: 500 }}>Password</div>
           <button className="btn btn-ghost btn-sm" onClick={() => setShowPasswordModal(true)}>Change password</button>
           {showPasswordModal && <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />}
+
+          {lockerData && (
+            <>
+              <div style={{ height: 1, background: 'var(--border)', margin: '20px 0' }} />
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 16, fontWeight: 500 }}>Locker</div>
+              <div className="card">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontSize: 28 }}>🔐</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20 }}>Locker #{lockerData.number}</div>
+                    <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>
+                      {lockerData.locker_type ? lockerData.locker_type.replace(/_/g, ' ') : 'Standard'}
+                      {lockerData.expires_at ? ` · Expires ${new Date(lockerData.expires_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                      <span className={`tag ${lockerData.key_issued ? 'tag-lime' : 'tag-grey'}`} style={{ fontSize: 10 }}>
+                        {lockerData.key_issued ? 'Key issued' : 'No key issued'}
+                      </span>
+                      <span className={`tag ${lockerData.payment_status === 'paid' ? 'tag-lime' : 'tag-amber'}`} style={{ fontSize: 10 }}>
+                        {lockerData.payment_status || 'Unpaid'}
+                      </span>
+                      {lockerData.key_lost && <span className="tag tag-red" style={{ fontSize: 10 }}>Key reported lost</span>}
+                    </div>
+                    {keyLostMsg && <div style={{ fontSize: 12, color: 'var(--amber)', marginTop: 8 }}>{keyLostMsg}</div>}
+                    {lockerData.key_issued && !lockerData.key_lost && (
+                      <button
+                        className="btn btn-ghost btn-xs"
+                        style={{ marginTop: 10, color: 'var(--red)', borderColor: 'rgba(255,80,80,0.3)', fontSize: 11 }}
+                        onClick={handleLostKey}
+                      >
+                        I've lost my key
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -23,6 +23,7 @@ class ClassSessionSerializer(serializers.ModelSerializer):
     enrolled_count = serializers.ReadOnlyField()
     category_name = serializers.StringRelatedField(source='category', read_only=True)
     season_name = serializers.CharField(source='season.name', read_only=True, allow_null=True)
+    season_start_date = serializers.DateField(source='season.start_date', read_only=True, allow_null=True)
 
     class Meta:
         model = ClassSession
@@ -31,7 +32,7 @@ class ClassSessionSerializer(serializers.ModelSerializer):
             'studio', 'studio_detail', 'day_of_week', 'day_of_week_display',
             'start_time', 'duration_minutes', 'capacity', 'enrolled_count',
             'session_type', 'is_active', 'category', 'category_name',
-            'season', 'season_name',
+            'season', 'season_name', 'season_start_date',
         )
 
 

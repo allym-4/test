@@ -99,15 +99,32 @@ class SeasonDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class LockerListView(generics.ListCreateAPIView):
-    queryset = Locker.objects.select_related('assigned_to')
     serializer_class = LockerSerializer
     permission_classes = [IsAdminOrInstructor]
+
+    def get_queryset(self):
+        qs = Locker.objects.select_related('assigned_to')
+        assigned_to = self.request.query_params.get('assigned_to')
+        if assigned_to:
+            qs = qs.filter(assigned_to_id=assigned_to)
+        return qs
 
 
 class LockerDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Locker.objects.select_related('assigned_to')
     serializer_class = LockerSerializer
     permission_classes = [IsAdminOrInstructor]
+
+
+class MyLockerView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from rest_framework.response import Response
+        locker = Locker.objects.filter(assigned_to=request.user).first()
+        if not locker:
+            return Response(None)
+        return Response(LockerSerializer(locker).data)
 
 
 class KisiGrantListView(APIView):

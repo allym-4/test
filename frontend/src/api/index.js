@@ -111,6 +111,8 @@ export const seasons = {
 
 export const lockers = {
   list: () => client.get('/api/classes/lockers/'),
+  mine: () => client.get('/api/classes/lockers/mine/'),
+  byStudent: (id) => client.get('/api/classes/lockers/', { params: { assigned_to: id } }),
   create: (data) => client.post('/api/classes/lockers/', data),
   update: (id, data) => client.patch(`/api/classes/lockers/${id}/`, data),
   delete: (id) => client.delete(`/api/classes/lockers/${id}/`),
