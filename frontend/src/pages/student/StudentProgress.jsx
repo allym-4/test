@@ -270,7 +270,7 @@ export default function StudentProgress() {
                     <div
                       style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(2, 1fr)',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
                         gap: 10,
                       }}
                       className="trick-grid"
@@ -509,7 +509,7 @@ export default function StudentProgress() {
               </div>
 
               {chatClassId && (
-                <div style={{ display: 'flex', flexDirection: 'column', height: 420 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', height: 'min(420px, 60vh)' }}>
                   {/* Message list */}
                   <div
                     style={{
