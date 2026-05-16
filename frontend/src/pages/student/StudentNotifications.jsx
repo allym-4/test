@@ -12,6 +12,7 @@ const TYPE_ICONS = {
   cancellation: '⚠️',
   billing:      '💰',
   success:      '✅',
+  warning:      '🚨',
 }
 
 export default function StudentNotifications() {

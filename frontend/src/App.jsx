@@ -75,6 +75,7 @@ import InstructorAvailability from './pages/InstructorAvailability'
 import InstructorAttendance from './pages/InstructorAttendance'
 import InstructorProfile from './pages/InstructorProfile'
 import InstructorSkills from './pages/InstructorSkills'
+import InstructorNotifications from './pages/InstructorNotifications'
 
 // Login
 import LoginPage from './pages/LoginPage'
@@ -118,6 +119,7 @@ export default function App() {
             <Route path="pay" element={<InstructorPay />} />
             <Route path="availability" element={<InstructorAvailability />} />
             <Route path="skills" element={<InstructorSkills />} />
+            <Route path="notifications" element={<InstructorNotifications />} />
             <Route path="profile" element={<InstructorProfile />} />
           </Route>
 

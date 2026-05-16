@@ -475,6 +475,34 @@ class NotificationMarkReadView(APIView):
         return Response({'ok': True})
 
 
+class EscalateNotificationView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            notif = Notification.objects.get(pk=pk, recipient=request.user)
+        except Notification.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=404)
+
+        escalation_targets = User.objects.filter(
+            role='admin', is_active=True, first_name__in=['Mimi', 'Chloe']
+        )
+        if not escalation_targets.exists():
+            escalation_targets = User.objects.filter(role='admin', is_active=True)
+
+        escalated_by = request.user.display_name
+        for target in escalation_targets:
+            Notification.objects.create(
+                recipient=target,
+                title=f"[Escalated] {notif.title}",
+                body=f"{notif.body}\n\nEscalated by {escalated_by}.",
+                notification_type=Notification.Type.WARNING,
+            )
+        notif.read = True
+        notif.save(update_fields=['read'])
+        return Response({'ok': True})
+
+
 class InstructorAvailabilityView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -1589,15 +1617,19 @@ def execute_tool(tool_name, tool_input, acting_user=None):
     elif tool_name == 'contact_reception':
         message_body = tool_input.get('message', '')
         student = acting_user
-        admin_users = User.objects.filter(role='admin', is_active=True)
-        for admin in admin_users:
+        staff = User.objects.filter(role__in=('admin', 'instructor'), is_active=True)
+        for member in staff:
             Notification.objects.create(
-                recipient=admin,
-                title=f"Urgent: {student.display_name}",
+                recipient=member,
+                title=f"Access Issue: {student.display_name}",
                 body=f"{student.display_name} ({student.email}): {message_body}",
                 notification_type=Notification.Type.WARNING,
             )
-        return f"Your message has been sent to reception. They'll be with you shortly. If it's an emergency, call us on (02) 9160 0223."
+        return (
+            "Here within 5 minutes of your class starting? Please use Kisi to access the studio. "
+            "Later than that? The door is locked and you've missed your class — no exceptions. "
+            "If you have any other enquiries, please contact us below and we'll get back to you ASAP."
+        )
 
     return f"Unknown tool: {tool_name}"
 
