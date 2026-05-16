@@ -29,7 +29,6 @@ class Command(BaseCommand):
         if not lockers.exists():
             self.stdout.write('No lockers expiring in the next 7 days.')
             return
-            return
 
         sent = 0
         for locker in lockers:

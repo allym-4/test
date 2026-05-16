@@ -257,6 +257,7 @@ class Notification(models.Model):
         INFO = 'info', 'Info'
         MESSAGE = 'message', 'Message'
         CANCELLATION = 'cancellation', 'Cancellation'
+        WARNING = 'warning', 'Warning'
 
     recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
     title = models.CharField(max_length=200)
