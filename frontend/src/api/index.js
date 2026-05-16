@@ -206,6 +206,11 @@ export const products = {
   list: () => client.get('/api/users/products/'),
   create: (data) => client.post('/api/users/products/', data),
   update: (id, data) => client.patch(`/api/users/products/${id}/`, data),
+  uploadImage: (id, file) => {
+    const fd = new FormData()
+    fd.append('image', file)
+    return client.patch(`/api/users/products/${id}/`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
   delete: (id) => client.delete(`/api/users/products/${id}/`),
 }
 

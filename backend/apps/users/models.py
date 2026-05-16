@@ -190,6 +190,7 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=8, decimal_places=2)
     stock = models.PositiveIntegerField(default=0)
     category = models.CharField(max_length=20, choices=Category.choices, default=Category.ACCESSORIES)
+    image = models.ImageField(upload_to='products/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

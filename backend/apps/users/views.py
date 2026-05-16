@@ -245,11 +245,26 @@ class ProductListView(generics.ListCreateAPIView):
     serializer_class = ProductSerializer
     permission_classes = [IsAdminOrInstructor]
 
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx['request'] = self.request
+        return ctx
+
 
 class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = [IsAdminOrInstructor]
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx['request'] = self.request
+        return ctx
+
+    def update(self, request, *args, **kwargs):
+        # Support multipart for image uploads
+        kwargs['partial'] = True
+        return super().update(request, *args, **kwargs)
 
 
 class AutomationRuleView(APIView):

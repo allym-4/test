@@ -11,24 +11,37 @@ const STATUS_STYLE = {
 
 function NewOrderModal({ onClose, onSaved }) {
   const { data: studData } = useApi(() => users.list({ role: 'student' }))
+  const { data: prodData } = useApi(() => productsApi.list())
   const students = studData?.results || []
+  const allProducts = (prodData?.results || prodData || []).filter(p => p.is_active && p.stock > 0)
 
   const [studentId, setStudentId] = useState('')
-  const [items, setItems] = useState('')
-  const [total, setTotal] = useState('')
+  const [quantities, setQuantities] = useState({}) // { productId: qty }
   const [location, setLocation] = useState('')
   const [saving, setSaving] = useState(false)
+  const [search, setSearch] = useState('')
+
+  const filtered = allProducts.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
+  const lineItems = allProducts.filter(p => quantities[p.id] > 0)
+  const total = lineItems.reduce((s, p) => s + parseFloat(p.price) * (quantities[p.id] || 0), 0)
+  const itemsSummary = lineItems.map(p => `${p.name} ×${quantities[p.id]}`).join(', ')
+
+  function setQty(productId, val) {
+    const n = Math.max(0, parseInt(val) || 0)
+    setQuantities(q => ({ ...q, [productId]: n }))
+  }
 
   async function submit(e) {
     e.preventDefault()
+    if (lineItems.length === 0) return
     setSaving(true)
     try {
       const chosen = students.find(s => s.id === parseInt(studentId))
       await ordersApi.create({
         student: studentId ? parseInt(studentId) : null,
         student_name: chosen?.display_name || '',
-        items,
-        total: parseFloat(total),
+        items: itemsSummary,
+        total: total.toFixed(2),
         location,
         status: 'pending_pickup',
       })
@@ -38,29 +51,82 @@ function NewOrderModal({ onClose, onSaved }) {
     }
   }
 
+  const inputStyle = { background: '#1a1a1a', border: '1px solid var(--border)', color: 'var(--white)', borderRadius: 8, padding: '8px 12px', fontFamily: 'inherit', fontSize: 13, width: '100%', boxSizing: 'border-box' }
+
   return (
     <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="sd-modal" style={{ maxWidth: 420 }}>
+      <div className="sd-modal" style={{ maxWidth: 520 }}>
         <div className="sd-header">
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>New Order</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>New Purchase</div>
           <button className="modal-close-btn" onClick={onClose}>✕</button>
         </div>
-        <form className="sd-body" onSubmit={submit}>
+        <form className="sd-body" onSubmit={submit} style={{ maxHeight: '80vh', overflowY: 'auto' }}>
           <div className="field">
             <label>Student</label>
-            <select value={studentId} onChange={e => setStudentId(e.target.value)}>
+            <select value={studentId} onChange={e => setStudentId(e.target.value)} style={inputStyle}>
               <option value="">— Walk-in / no student —</option>
               {students.map(s => <option key={s.id} value={s.id}>{s.display_name}</option>)}
             </select>
           </div>
-          <div className="field"><label>Items *</label><textarea rows={2} value={items} onChange={e => setItems(e.target.value)} placeholder="e.g. Grip Socks × 1, Crop Top (S) × 1" required /></div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div className="field"><label>Total ($) *</label><input type="number" step="0.01" min="0" value={total} onChange={e => setTotal(e.target.value)} required /></div>
-            <div className="field"><label>Location</label><input value={location} onChange={e => setLocation(e.target.value)} placeholder="The Box / Rhapsody" /></div>
+
+          {/* Product picker */}
+          <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 8, fontWeight: 700 }}>Products</div>
+          <input
+            style={{ ...inputStyle, marginBottom: 10 }}
+            placeholder="Search products…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          {allProducts.length === 0 ? (
+            <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 16, padding: '12px 0' }}>No active products in stock. Add products first.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16, maxHeight: 260, overflowY: 'auto' }}>
+              {filtered.map(p => (
+                <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#1a1a1a', border: `1px solid ${quantities[p.id] > 0 ? 'var(--lime)' : 'var(--border)'}`, borderRadius: 8, padding: '10px 12px' }}>
+                  {p.image_url && (
+                    <img src={p.image_url} alt={p.name} style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                    <div style={{ fontSize: 11, color: 'var(--grey)' }}>${parseFloat(p.price).toFixed(2)} · {p.stock} in stock</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                    <button type="button" className="btn btn-ghost btn-xs" style={{ padding: '2px 8px', fontSize: 16 }} onClick={() => setQty(p.id, (quantities[p.id] || 0) - 1)}>−</button>
+                    <span style={{ fontSize: 14, fontWeight: 700, minWidth: 20, textAlign: 'center' }}>{quantities[p.id] || 0}</span>
+                    <button type="button" className="btn btn-ghost btn-xs" style={{ padding: '2px 8px', fontSize: 16 }} onClick={() => setQty(p.id, (quantities[p.id] || 0) + 1)}>+</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Order summary */}
+          {lineItems.length > 0 && (
+            <div style={{ background: 'rgba(204,255,0,0.06)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 8, padding: '12px 14px', marginBottom: 16 }}>
+              <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 6 }}>Order Summary</div>
+              {lineItems.map(p => (
+                <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
+                  <span>{p.name} ×{quantities[p.id]}</span>
+                  <span style={{ color: 'var(--lime)' }}>${(parseFloat(p.price) * quantities[p.id]).toFixed(2)}</span>
+                </div>
+              ))}
+              <div style={{ borderTop: '1px solid var(--border)', marginTop: 8, paddingTop: 8, display: 'flex', justifyContent: 'space-between', fontFamily: "'Archivo Black', sans-serif", fontSize: 15 }}>
+                <span>Total</span>
+                <span style={{ color: 'var(--lime)' }}>${total.toFixed(2)}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="field">
+            <label>Location</label>
+            <input style={inputStyle} value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. The Box, Rhapsody" />
           </div>
+
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : 'Create Order'}</button>
+            <button type="submit" className="btn btn-lime btn-sm" disabled={saving || lineItems.length === 0}>
+              {saving ? 'Saving…' : `Create Order${total > 0 ? ` — $${total.toFixed(2)}` : ''}`}
+            </button>
           </div>
         </form>
       </div>
@@ -75,17 +141,33 @@ function ProductModal({ existing, onClose, onSaved }) {
   const [stock, setStock] = useState(existing?.stock ?? '')
   const [category, setCategory] = useState(existing?.category || 'Accessories')
   const [isActive, setIsActive] = useState(existing?.is_active ?? true)
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState(existing?.image_url || null)
   const [saving, setSaving] = useState(false)
+
+  function handleImageChange(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
+  }
 
   async function submit(e) {
     e.preventDefault()
     setSaving(true)
     try {
       const payload = { name, sku, price: parseFloat(price), stock: parseInt(stock) || 0, category, is_active: isActive }
+      let saved
       if (existing) {
-        await productsApi.update(existing.id, payload)
+        const res = await productsApi.update(existing.id, payload)
+        saved = res.data
       } else {
-        await productsApi.create(payload)
+        const res = await productsApi.create(payload)
+        saved = res.data
+      }
+      // Upload image separately (multipart)
+      if (imageFile) {
+        await productsApi.uploadImage(saved.id, imageFile)
       }
       onSaved()
     } finally {
@@ -95,17 +177,33 @@ function ProductModal({ existing, onClose, onSaved }) {
 
   return (
     <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="sd-modal" style={{ maxWidth: 420 }}>
+      <div className="sd-modal" style={{ maxWidth: 440 }}>
         <div className="sd-header">
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>{existing ? 'Edit Product' : 'Add Product'}</div>
           <button className="modal-close-btn" onClick={onClose}>✕</button>
         </div>
         <div className="sd-body">
           <form onSubmit={submit}>
-            <div className="field"><label>Name</label><input value={name} onChange={e => setName(e.target.value)} required /></div>
+            {/* Image upload */}
+            <div className="field">
+              <label>Product Image</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {imagePreview ? (
+                  <img src={imagePreview} alt="Product" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border)' }} />
+                ) : (
+                  <div style={{ width: 64, height: 64, borderRadius: 8, border: '1px dashed var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--grey)', fontSize: 20 }}>📷</div>
+                )}
+                <label className="btn btn-ghost btn-sm" style={{ cursor: 'pointer' }}>
+                  {imagePreview ? 'Change photo' : 'Upload photo'}
+                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageChange} />
+                </label>
+              </div>
+            </div>
+
+            <div className="field"><label>Name *</label><input value={name} onChange={e => setName(e.target.value)} required /></div>
             <div className="field"><label>SKU</label><input value={sku} onChange={e => setSku(e.target.value)} placeholder="Optional" /></div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div className="field"><label>Price ($)</label><input type="number" step="0.01" min="0" value={price} onChange={e => setPrice(e.target.value)} required /></div>
+              <div className="field"><label>Price ($) *</label><input type="number" step="0.01" min="0" value={price} onChange={e => setPrice(e.target.value)} required /></div>
               <div className="field"><label>Stock</label><input type="number" min="0" value={stock} onChange={e => setStock(e.target.value)} /></div>
             </div>
             <div className="field">
@@ -124,7 +222,7 @@ function ProductModal({ existing, onClose, onSaved }) {
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-              <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : existing ? 'Save' : 'Add Product'}</button>
+              <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : existing ? 'Save Changes' : 'Add Product'}</button>
             </div>
           </form>
         </div>
@@ -236,14 +334,19 @@ export default function AdminRetail() {
       </div>
 
       <div style={{ background: 'rgba(176,160,255,0.06)', border: '1px solid rgba(176,160,255,0.2)', borderRadius: 10, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, fontSize: 13 }}>
-        <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--lav)', flexShrink: 0 }} />
-        <span style={{ color: 'var(--grey)', flex: 1 }}>Square catalog sync — pull products from your Square POS into the product list.</span>
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: syncResult?.error ? 'var(--red)' : syncResult && !syncResult.error ? 'var(--lime)' : 'var(--lav)', flexShrink: 0 }} />
+        <span style={{ color: 'var(--grey)', flex: 1 }}>
+          Square catalog sync — pull products from your Square POS.
+          {syncResult?.error === 'Square not configured' && (
+            <> <a href="/admin/settings" style={{ color: 'var(--lav)' }}>Add your Square Access Token in Settings →</a></>
+          )}
+        </span>
         {syncResult && !syncResult.error && (
           <span style={{ color: 'var(--lime)', fontSize: 12 }}>
             ✓ {syncResult.created} created · {syncResult.updated} updated · {syncResult.skipped} skipped
           </span>
         )}
-        {syncResult?.error && (
+        {syncResult?.error && syncResult.error !== 'Square not configured' && (
           <span style={{ color: 'var(--red)', fontSize: 12 }}>{syncResult.error}</span>
         )}
       </div>
@@ -262,7 +365,16 @@ export default function AdminRetail() {
               {loading && <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--grey)', padding: '24px 0' }}>Loading…</td></tr>}
               {productList.map(p => (
                 <tr key={p.id}>
-                  <td><b>{p.name}</b></td>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      {p.image_url ? (
+                        <img src={p.image_url} alt={p.name} style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />
+                      ) : (
+                        <div style={{ width: 36, height: 36, borderRadius: 6, background: '#1a1a1a', border: '1px solid var(--border)', flexShrink: 0 }} />
+                      )}
+                      <b>{p.name}</b>
+                    </div>
+                  </td>
                   <td style={{ color: 'var(--grey)', fontSize: 11, fontFamily: 'monospace' }}>{p.sku || '—'}</td>
                   <td style={{ color: 'var(--grey)', fontSize: 12 }}>{p.category}</td>
                   <td style={{ color: 'var(--lime)', fontWeight: 600 }}>${parseFloat(p.price).toFixed(2)}</td>
