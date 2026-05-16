@@ -8,9 +8,23 @@ class Survey(models.Model):
         ACTIVE = 'active', 'Active'
         COMPLETED = 'completed', 'Completed'
 
+    class Audience(models.TextChoices):
+        ALL = 'all', 'All Students'
+        TRIAL = 'trial', 'Trial Students'
+        ACTIVE_ENROLMENT = 'active_enrolment', 'Currently Enrolled'
+        LAPSED = 'lapsed', 'Lapsed Students'
+
+    class Trigger(models.TextChoices):
+        MANUAL = 'manual', 'Manual Send'
+        AFTER_FIRST_CLASS = 'after_first_class', 'After First Class'
+        AFTER_SEASON_ENDS = 'after_season_ends', 'After Season Ends'
+        SCHEDULED = 'scheduled', 'Scheduled Date'
+
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
+    target_audience = models.CharField(max_length=30, choices=Audience.choices, default=Audience.ALL)
+    trigger = models.CharField(max_length=30, choices=Trigger.choices, default=Trigger.MANUAL)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_surveys')
     created_at = models.DateTimeField(auto_now_add=True)
     sent_at = models.DateTimeField(null=True, blank=True)
@@ -24,14 +38,18 @@ class Survey(models.Model):
 
 class SurveyQuestion(models.Model):
     class QuestionType(models.TextChoices):
-        TEXT = 'text', 'Text'
-        RATING = 'rating', 'Rating'
+        TEXT = 'text', 'Free Text'
+        RATING = 'rating', 'Star Rating'
         MULTIPLE_CHOICE = 'multiple_choice', 'Multiple Choice'
+        CHECKBOX = 'checkbox', 'Checkboxes'
+        YES_NO = 'yes_no', 'Yes / No'
+        SCALE = 'scale', 'Scale (1–10)'
 
     survey = models.ForeignKey(Survey, on_delete=models.CASCADE, related_name='questions')
     question_text = models.TextField()
     question_type = models.CharField(max_length=20, choices=QuestionType.choices, default=QuestionType.TEXT)
     options = models.JSONField(default=list, blank=True)
+    required = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
 
     class Meta:

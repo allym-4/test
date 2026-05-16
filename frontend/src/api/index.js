@@ -351,10 +351,15 @@ export const surveys = {
   get: (id) => client.get(`/api/surveys/${id}/`),
   create: (data) => client.post('/api/surveys/', data),
   update: (id, data) => client.patch(`/api/surveys/${id}/`, data),
+  delete: (id) => client.delete(`/api/surveys/${id}/`),
   send: (id) => client.post(`/api/surveys/${id}/send/`, {}),
   questions: (surveyId) => client.get('/api/surveys/questions/', { params: { survey: surveyId } }),
+  createQuestion: (data) => client.post('/api/surveys/questions/', data),
+  updateQuestion: (id, data) => client.patch(`/api/surveys/questions/${id}/`, data),
+  deleteQuestion: (id) => client.delete(`/api/surveys/questions/${id}/`),
   respond: (data) => client.post('/api/surveys/responses/', data),
   responses: (surveyId) => client.get('/api/surveys/responses/', { params: { survey: surveyId } }),
+  exportCsv: (surveyId) => client.get(`/api/surveys/${surveyId}/export-csv/`, { responseType: 'blob' }),
 }
 
 export const media = {
