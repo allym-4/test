@@ -11,6 +11,8 @@ export default function AddEditClassModal({ session, onClose, onSaved }) {
     level: session?.level || '',
     instructor: session?.instructor || '',
     studio: session?.studio || '',
+    category: session?.category || '',
+    season: session?.season || '',
     day_of_week: session?.day_of_week ?? 0,
     start_time: session?.start_time?.slice(0, 5) || '18:00',
     duration_minutes: session?.duration_minutes || 90,
@@ -20,6 +22,8 @@ export default function AddEditClassModal({ session, onClose, onSaved }) {
   })
   const [instructors, setInstructors] = useState([])
   const [studios, setStudios] = useState([])
+  const [categories, setCategories] = useState([])
+  const [seasons, setSeasons] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -28,9 +32,13 @@ export default function AddEditClassModal({ session, onClose, onSaved }) {
       client.get('/api/users/?role=instructor'),
       client.get('/api/users/?role=admin'),
       client.get('/api/classes/studios/'),
-    ]).then(([instRes, adminRes, studioRes]) => {
+      client.get('/api/classes/categories/'),
+      client.get('/api/classes/seasons/'),
+    ]).then(([instRes, adminRes, studioRes, catRes, seasonRes]) => {
       setInstructors([...(instRes.data.results || []), ...(adminRes.data.results || [])])
       setStudios(studioRes.data.results || studioRes.data || [])
+      setCategories(catRes.data.results || catRes.data || [])
+      setSeasons(seasonRes.data.results || seasonRes.data || [])
     }).catch(() => {})
   }, [])
 
@@ -107,6 +115,23 @@ export default function AddEditClassModal({ session, onClose, onSaved }) {
               <option value="">— None —</option>
               {studios.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="field">
+              <label>Category</label>
+              <select value={form.category} onChange={e => set('category', e.target.value)}>
+                <option value="">— None —</option>
+                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <label>Season</label>
+              <select value={form.season} onChange={e => set('season', e.target.value)}>
+                <option value="">— None —</option>
+                {seasons.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>

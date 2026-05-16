@@ -6,7 +6,7 @@ import { categories as categoriesApi } from '../../api'
 function CategoryModal({ existing, onClose, onSaved }) {
   const [name, setName] = useState(existing?.name || '')
   const [colour, setColour] = useState(existing?.colour || '#ccff00')
-  const [visible, setVisible] = useState(existing?.visible ?? true)
+  const [visible, setVisible] = useState(existing?.is_visible ?? true)
   const [isAddonType, setIsAddonType] = useState(existing?.is_addon_type ?? false)
   const [standalonePrice, setStandalonePrice] = useState(existing?.standalone_price ?? '')
   const [saving, setSaving] = useState(false)
@@ -18,7 +18,7 @@ function CategoryModal({ existing, onClose, onSaved }) {
       const payload = {
         name,
         colour,
-        visible,
+        is_visible: visible,
         is_addon_type: isAddonType,
         standalone_price: isAddonType && standalonePrice !== '' ? standalonePrice : null,
       }
@@ -100,7 +100,7 @@ export default function AdminCategories() {
   }
 
   async function toggleVisible(cat) {
-    await categoriesApi.update(cat.id, { visible: !cat.visible })
+    await categoriesApi.update(cat.id, { is_visible: !cat.is_visible })
     refetch()
   }
 
@@ -138,8 +138,8 @@ export default function AdminCategories() {
                   <td><span style={{ display: 'inline-block', width: 16, height: 16, background: cat.colour, borderRadius: 3 }} /></td>
                   <td style={{ color: 'var(--grey)', fontSize: 12 }}>{cat.classes}</td>
                   <td>
-                    <div onClick={() => toggleVisible(cat)} style={{ width: 36, height: 20, borderRadius: 10, background: cat.visible ? 'var(--lime)' : '#333', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', display: 'inline-block' }}>
-                      <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: cat.visible ? 19 : 3, transition: 'left 0.2s' }} />
+                    <div onClick={() => toggleVisible(cat)} style={{ width: 36, height: 20, borderRadius: 10, background: cat.is_visible ? 'var(--lime)' : '#333', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', display: 'inline-block' }}>
+                      <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: cat.is_visible ? 19 : 3, transition: 'left 0.2s' }} />
                     </div>
                   </td>
                   <td>
