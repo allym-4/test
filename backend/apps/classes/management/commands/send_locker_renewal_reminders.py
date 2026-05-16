@@ -18,7 +18,7 @@ class Command(BaseCommand):
         from apps.classes.models import Locker
 
         today = timezone.now().date()
-        cutoff = today + timedelta(days=14)
+        cutoff = today + timedelta(days=7)
 
         lockers = Locker.objects.filter(
             assigned_to__isnull=False,
@@ -27,7 +27,8 @@ class Command(BaseCommand):
         ).select_related('assigned_to')
 
         if not lockers.exists():
-            self.stdout.write('No lockers expiring in the next 14 days.')
+            self.stdout.write('No lockers expiring in the next 7 days.')
+            return
             return
 
         sent = 0
