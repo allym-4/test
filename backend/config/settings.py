@@ -133,6 +133,9 @@ CORS_ALLOWED_ORIGINS = os.environ.get(
 _cors_regex_env = os.environ.get('CORS_ORIGIN_REGEX', r'https://.*\.vercel\.app')
 CORS_ALLOWED_ORIGIN_REGEXES = [p for p in _cors_regex_env.split('|') if p]
 
+# Expose Content-Disposition so browsers can read the filename on file downloads.
+CORS_EXPOSE_HEADERS = ['Content-Disposition']
+
 META_APP_ID = os.environ.get('META_APP_ID', '')
 META_APP_SECRET = os.environ.get('META_APP_SECRET', '')
 INSTAGRAM_WEBHOOK_VERIFY_TOKEN = os.environ.get('INSTAGRAM_WEBHOOK_VERIFY_TOKEN', 'duality_pole_verify')
