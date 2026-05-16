@@ -136,6 +136,7 @@ export const lockers = {
   delete: (id) => client.delete(`/api/classes/lockers/${id}/`),
   eligible: () => client.get('/api/classes/lockers/eligible/'),
   lostKey: (id) => client.post(`/api/classes/lockers/${id}/lost_key/`),
+  chase: (id) => client.post(`/api/classes/lockers/${id}/chase/`),
   markKeyIssued: (id, issued) => client.patch(`/api/classes/lockers/${id}/`, { key_issued: issued }),
 }
 

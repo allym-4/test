@@ -134,7 +134,13 @@ export default function AdminLockers() {
   const lockerList = lockerData?.results || lockerData || []
 
   const [modal, setModal] = useState(null)
-  const [busy, setBusy] = useState(null) // locker id being toggled
+  const [busy, setBusy] = useState(null)
+  const [toast, setToast] = useState(null)
+
+  function showToast(msg, type = 'ok') {
+    setToast({ msg, type })
+    setTimeout(() => setToast(null), 3500)
+  }
 
   const lockerMap = {}
   lockerList.forEach(l => { lockerMap[l.number] = l })
@@ -176,7 +182,16 @@ export default function AdminLockers() {
   async function reportLostKey(l) {
     if (!confirm(`Report key lost for Locker #${l.number} (${l.assigned_to_detail?.display_name})? This creates a $50 charge.`)) return
     setBusy(l.id + '-lk')
-    try { await lockers.lostKey(l.id); refetch() } catch { alert('Failed.') }
+    try { await lockers.lostKey(l.id); refetch(); showToast('Key marked as lost. $50 charge created.') }
+    catch (e) { showToast(e.response?.data?.detail || 'Failed to report lost key.', 'err') }
+    setBusy(null)
+  }
+
+  async function chasePayment(l) {
+    if (!confirm(`Send a payment reminder to ${l.assigned_to_detail?.display_name} for Locker #${l.number}?`)) return
+    setBusy(l.id + '-chase')
+    try { await lockers.chase(l.id); showToast(`Reminder sent to ${l.assigned_to_detail?.display_name}.`) }
+    catch (e) { showToast(e.response?.data?.detail || 'Failed to send reminder.', 'err') }
     setBusy(null)
   }
 
@@ -197,12 +212,17 @@ export default function AdminLockers() {
   function openAssignForStudent(student) {
     let freeNum = null
     for (let i = 1; i <= TOTAL_LOCKERS; i++) { if (!lockerMap[i]) { freeNum = i; break } }
-    if (!freeNum) { alert('No free lockers available.'); return }
+    if (!freeNum) { showToast('No free lockers available.', 'err'); return }
     openAssign(freeNum, student)
   }
 
   return (
     <div className="page-content">
+      {toast && (
+        <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, background: toast.type === 'err' ? 'var(--red)' : '#1a3800', border: `1px solid ${toast.type === 'err' ? 'rgba(255,68,68,0.5)' : 'var(--lime)'}`, color: toast.type === 'err' ? '#fff' : 'var(--lime)', padding: '10px 20px', borderRadius: 10, fontSize: 13, pointerEvents: 'none' }}>
+          {toast.msg}
+        </div>
+      )}
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
@@ -356,8 +376,8 @@ export default function AdminLockers() {
                           <button className="btn btn-ghost btn-xs" onClick={() => openAssign(l.number)}>Edit</button>
                           {isOverdue && (
                             <button className="btn btn-xs" style={{ background: 'var(--amber)', color: '#000', fontWeight: 700 }}
-                              onClick={() => alert(`Chase ${l.assigned_to_detail?.display_name} for $50 locker fee — coming soon.`)}>
-                              Chase
+                              onClick={() => chasePayment(l)} disabled={busy === l.id + '-chase'}>
+                              {busy === l.id + '-chase' ? '…' : 'Chase'}
                             </button>
                           )}
                           {!l.key_lost && l.key_issued && !l.key_returned && (

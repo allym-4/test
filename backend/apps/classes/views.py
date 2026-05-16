@@ -6,7 +6,6 @@ from rest_framework.response import Response
 from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, ClassChatMessage, Workshop, WorkshopBooking, PracticeSlot, PracticeBooking
 from .serializers import StudioSerializer, ClassCategorySerializer, ClassSessionSerializer, ClassOccurrenceSerializer, SeasonSerializer, LockerSerializer, KisiGrantSerializer, WorkshopSerializer, WorkshopBookingSerializer, PracticeSlotSerializer, PracticeBookingSerializer
 from apps.users.permissions import IsAdminOrInstructor, IsAdminUser
-from django.db.models import Count
 
 
 class StudioListView(generics.ListCreateAPIView):
@@ -228,6 +227,32 @@ class LockerLostKeyView(APIView):
             )
 
         return Response(LockerSerializer(locker).data)
+
+
+class LockerChaseView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, pk):
+        try:
+            locker = Locker.objects.select_related('assigned_to').get(pk=pk)
+        except Locker.DoesNotExist:
+            return Response({'detail': 'Locker not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not locker.assigned_to:
+            return Response({'detail': 'Locker is not assigned.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        student = locker.assigned_to
+        from apps.users.models import Notification
+        Notification.objects.create(
+            recipient=student,
+            title=f'Locker #{locker.number} — Payment Overdue',
+            body=(
+                f'Hi {student.first_name}, your locker fee for Locker #{locker.number} '
+                f'is overdue. Please contact the studio to arrange payment.'
+            ),
+            notification_type=Notification.Type.PAYMENT,
+        )
+        return Response({'detail': f'Chase notification sent to {student.display_name}.'})
 
 
 class KisiGrantListView(APIView):
@@ -486,138 +511,6 @@ class WorkshopBookingListView(APIView):
             for b in bookings
         ]
         return Response(data)
-
-
-class LockerEligibleStudentsView(APIView):
-    """
-    GET /api/classes/lockers/eligible/
-    Returns students eligible for a locker perk (4+ active enrolments in the current season)
-    plus any students with <4 enrolments who already hold a locker (paid holders).
-    """
-    permission_classes = [IsAdminOrInstructor]
-
-    def get(self, request):
-        from apps.enrolments.models import Enrolment
-        from apps.users.models import User
-
-        # Find the current active season
-        active_season = Season.objects.filter(status='active').first()
-        if not active_season:
-            return Response({'season': None, 'eligible': [], 'paid_holders': []})
-
-        # Get all active class sessions in this season
-        season_session_ids = ClassSession.objects.filter(
-            season=active_season, is_active=True
-        ).values_list('id', flat=True)
-
-        # Count active enrolments per student for this season
-        enrolment_counts = (
-            Enrolment.objects.filter(
-                class_session_id__in=season_session_ids,
-                status='active',
-            )
-            .values('student_id')
-            .annotate(count=Count('id'))
-        )
-        count_by_student = {row['student_id']: row['count'] for row in enrolment_counts}
-
-        # Students with 4+ enrolments
-        eligible_student_ids = [sid for sid, cnt in count_by_student.items() if cnt >= 4]
-
-        # Existing locker assignments
-        assigned_lockers = {
-            l.assigned_to_id: l
-            for l in Locker.objects.filter(assigned_to__isnull=False).select_related('assigned_to')
-        }
-
-        eligible_students = User.objects.filter(id__in=eligible_student_ids).order_by('first_name', 'last_name')
-
-        eligible_data = []
-        for s in eligible_students:
-            locker = assigned_lockers.get(s.id)
-            eligible_data.append({
-                'id': s.id,
-                'display_name': s.display_name,
-                'email': s.email,
-                'enrolment_count': count_by_student.get(s.id, 0),
-                'has_locker': locker is not None,
-                'locker_number': locker.number if locker else None,
-                'locker_id': locker.id if locker else None,
-            })
-
-        # Paid locker holders: students with a locker but fewer than 4 enrolments in current season
-        paid_holder_data = []
-        for student_id, locker in assigned_lockers.items():
-            if student_id not in eligible_student_ids:
-                s = locker.assigned_to
-                paid_holder_data.append({
-                    'id': s.id,
-                    'display_name': s.display_name,
-                    'email': s.email,
-                    'enrolment_count': count_by_student.get(s.id, 0),
-                    'has_locker': True,
-                    'locker_number': locker.number,
-                    'locker_id': locker.id,
-                })
-        paid_holder_data.sort(key=lambda x: x['display_name'])
-
-        return Response({
-            'season': {'id': active_season.id, 'name': active_season.name},
-            'eligible': eligible_data,
-            'paid_holders': paid_holder_data,
-        })
-
-
-class LockerLostKeyView(APIView):
-    """
-    POST /api/classes/lockers/{id}/lost_key/
-    Marks key as lost, creates a $50 charge, and sends an admin notification.
-    """
-    permission_classes = [IsAdminOrInstructor]
-
-    def post(self, request, pk):
-        try:
-            locker = Locker.objects.select_related('assigned_to').get(pk=pk)
-        except Locker.DoesNotExist:
-            return Response({'detail': 'Locker not found.'}, status=status.HTTP_404_NOT_FOUND)
-
-        if not locker.assigned_to:
-            return Response({'detail': 'Locker is not assigned to anyone.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        locker.key_lost = True
-        locker.save(update_fields=['key_lost'])
-
-        student = locker.assigned_to
-        student_name = student.display_name
-
-        # Create a $50 charge payment record
-        from apps.payments.models import Payment
-        Payment.objects.create(
-            student=student,
-            payment_type=Payment.PaymentType.CHARGE,
-            amount=50,
-            description=f'Lost key fee — Locker #{locker.number}',
-            reference=f'locker-{locker.id}-lost-key',
-            created_by=request.user,
-        )
-
-        # Create an admin notification for all admin users
-        from apps.users.models import User as UserModel, Notification
-        admin_users = UserModel.objects.filter(role='admin', is_active=True)
-        notification_title = f'Locker #{locker.number} — Key Lost'
-        notification_body = (
-            f'Locker #{locker.number} — key reported lost. '
-            f'Please change the lock and issue a new key for {student_name}.'
-        )
-        for admin in admin_users:
-            Notification.objects.create(
-                recipient=admin,
-                title=notification_title,
-                body=notification_body,
-                notification_type=Notification.Type.INFO,
-            )
-
-        return Response(LockerSerializer(locker).data)
 
 
 # ── Practice Time ─────────────────────────────────────────────────────────────

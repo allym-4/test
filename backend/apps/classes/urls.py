@@ -17,6 +17,7 @@ urlpatterns = [
     path('lockers/eligible/', views.LockerEligibleStudentsView.as_view(), name='locker-eligible'),
     path('lockers/<int:pk>/', views.LockerDetailView.as_view(), name='locker-detail'),
     path('lockers/<int:pk>/lost_key/', views.LockerLostKeyView.as_view(), name='locker-lost-key'),
+    path('lockers/<int:pk>/chase/', views.LockerChaseView.as_view(), name='locker-chase'),
     path('kisi/grants/', views.KisiGrantListView.as_view(), name='kisi-grant-list'),
     path('kisi/grants/<int:pk>/', views.KisiGrantDetailView.as_view(), name='kisi-grant-detail'),
     path('sessions/<int:session_pk>/chat/', views.ClassChatView.as_view(), name='class-chat'),
