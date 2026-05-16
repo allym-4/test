@@ -230,11 +230,11 @@ export default function StudentCommunity() {
                     )}
                   </div>
                   <button
-                    className="btn btn-xs"
-                    style={{ fontSize: 11 }}
+                    className="btn btn-ghost btn-sm"
+                    style={{ fontSize: 11, color: '#f87171', borderColor: '#f87171' }}
                     onClick={() => leaveGroup(activeGroup.id)}
                   >
-                    Leave
+                    Leave group
                   </button>
                 </div>
 
@@ -336,28 +336,35 @@ export default function StudentCommunity() {
                 <div
                   style={{
                     borderTop: '1px solid var(--border)',
-                    padding: '12px 16px',
+                    padding: '12px 14px',
                     display: 'flex',
                     gap: 8,
-                    alignItems: 'flex-end',
+                    alignItems: 'center',
                     flexShrink: 0,
                   }}
                 >
-                  <textarea
-                    rows={2}
+                  <label
+                    className="btn btn-ghost btn-sm"
+                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}
+                    title="Upload photo or video"
+                  >
+                    <input type="file" accept="image/*,video/*" style={{ display: 'none' }} onChange={() => {}} />
+                    📎
+                  </label>
+                  <input
+                    type="text"
                     placeholder={`Message ${activeGroup.name}…`}
                     value={msgInput}
                     onChange={e => setMsgInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); sendMessage() } }}
                     style={{
                       flex: 1,
                       background: '#111',
-                      border: '1px solid var(--border)',
+                      border: '1px solid #2a2a2a',
                       borderRadius: 8,
                       color: 'var(--white)',
-                      padding: '8px 12px',
+                      padding: '10px 14px',
                       fontSize: 13,
-                      resize: 'none',
                       outline: 'none',
                       fontFamily: 'inherit',
                     }}
