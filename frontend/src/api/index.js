@@ -222,6 +222,7 @@ export const instructorPay = {
   create: (data) => client.post('/api/users/pay-records/', data),
   update: (id, data) => client.patch(`/api/users/pay-records/${id}/`, data),
   delete: (id) => client.delete(`/api/users/pay-records/${id}/`),
+  calculatePay: (userId, params) => client.get(`/api/users/${userId}/calculate-pay/`, { params }),
 }
 
 export const square = {

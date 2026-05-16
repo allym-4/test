@@ -640,6 +640,42 @@ class StudentSkillView(APIView):
         return Response(StudentSkillSerializer(obj).data)
 
 
+class CalculatePayView(APIView):
+    """Return suggested pay amount for an instructor over a date range."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def get(self, request, user_pk):
+        from apps.classes.models import ClassOccurrence
+        from datetime import date
+
+        period_start = request.query_params.get('period_start')
+        period_end = request.query_params.get('period_end')
+
+        try:
+            instructor = User.objects.get(pk=user_pk)
+        except User.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=404)
+
+        qs = ClassOccurrence.objects.filter(class_session__instructor=instructor)
+        if period_start:
+            qs = qs.filter(date__gte=period_start)
+        if period_end:
+            qs = qs.filter(date__lte=period_end)
+
+        occurrences = list(qs.prefetch_related('attendance'))
+        class_count = len(occurrences)
+        total_students = sum(o.attendance.filter(status='present').count() for o in occurrences)
+        pay_rate = float(instructor.pay_rate or 0)
+        suggested = round(pay_rate * class_count, 2)
+
+        return Response({
+            'class_count': class_count,
+            'total_students': total_students,
+            'pay_rate': pay_rate,
+            'suggested_amount': suggested,
+        })
+
+
 class PendingSkillsView(APIView):
     """List all self-assessed-but-unconfirmed skills across all students."""
     permission_classes = [IsAdminOrInstructor]

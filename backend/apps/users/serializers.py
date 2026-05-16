@@ -300,7 +300,9 @@ class InstructorUnavailableDateSerializer(serializers.ModelSerializer):
 
 
 class ActionItemSerializer(serializers.ModelSerializer):
+    assigned_to_name = serializers.StringRelatedField(source='assigned_to')
+
     class Meta:
         model = ActionItem
-        fields = ('id', 'icon', 'title', 'body', 'meta', 'is_urgent', 'is_done', 'completed_at', 'created_at')
+        fields = ('id', 'icon', 'title', 'body', 'meta', 'due_date', 'assigned_to', 'assigned_to_name', 'is_urgent', 'is_done', 'completed_at', 'created_at')
         read_only_fields = ('id', 'created_at')

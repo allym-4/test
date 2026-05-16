@@ -504,6 +504,8 @@ class ActionItem(models.Model):
     title = models.CharField(max_length=200)
     body = models.TextField(blank=True)
     meta = models.CharField(max_length=100, blank=True)
+    due_date = models.DateField(null=True, blank=True)
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='action_items_assigned')
     is_urgent = models.BooleanField(default=False)
     is_done = models.BooleanField(default=False)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='action_items_created')
