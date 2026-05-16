@@ -428,7 +428,7 @@ export default function StudentAccount() {
           {showGiftModal && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               onClick={e => { if (e.target === e.currentTarget) { setShowGiftModal(false); setGiftCode(''); setGiftMsg('') } }}>
-              <div className="card" style={{ width: 340, padding: 24 }}>
+              <div className="card" style={{ width: 'min(340px, calc(100vw - 32px))', padding: 24 }}>
                 <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 16 }}>Redeem Gift Card</div>
                 <div className="field">
                   <label>Gift card code</label>

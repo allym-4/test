@@ -131,7 +131,7 @@ export default function StudentBilling() {
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           onClick={e => { if (e.target === e.currentTarget) setShowPartialModal(false) }}
         >
-          <div className="card" style={{ width: 340, padding: 24 }}>
+          <div className="card" style={{ width: 'min(340px, calc(100vw - 32px))', padding: 24 }}>
             <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 16 }}>Pay partial amount</div>
             <div className="field">
               <label>Amount ($)</label>
@@ -164,7 +164,7 @@ export default function StudentBilling() {
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           onClick={e => { if (e.target === e.currentTarget) setShowInvoiceModal(null) }}
         >
-          <div className="card" style={{ width: 380, padding: 24 }}>
+          <div className="card" style={{ width: 'min(380px, calc(100vw - 32px))', padding: 24 }}>
             <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 4 }}>
               Invoice #{showInvoiceModal.id}
             </div>
@@ -193,7 +193,7 @@ export default function StudentBilling() {
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           onClick={e => { if (e.target === e.currentTarget) setShowRefundModal(false) }}
         >
-          <div className="card" style={{ width: 380, padding: 24 }}>
+          <div className="card" style={{ width: 'min(380px, calc(100vw - 32px))', padding: 24 }}>
             <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 16 }}>Request a refund or credit</div>
             <div className="field">
               <label>Type</label>
@@ -249,16 +249,17 @@ export default function StudentBilling() {
           Available to use when booking a casual or catch-up class
         </div>
         {Array.isArray(catchupCredits) && catchupCredits.length > 0 ? (
-          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 80px', gap: 0, padding: '8px 14px', borderBottom: '1px solid var(--border)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--grey)' }}>
-              <span>Issued</span><span>For</span><span>Expires</span><span>Status</span>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {catchupCredits.map((c, i) => (
-              <div key={c.id || i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 80px', gap: 0, padding: '9px 14px', borderBottom: i < catchupCredits.length - 1 ? '1px solid #1a1a1a' : 'none', fontSize: 12 }}>
-                <span>{c.issued_at ? new Date(c.issued_at).toLocaleDateString('en-AU') : '—'}</span>
-                <span>{c.for_class || c.description || '—'}</span>
-                <span>{c.expires_at ? new Date(c.expires_at).toLocaleDateString('en-AU') : '—'}</span>
-                <span><span className={`tag ${c.status === 'used' || c.status === 'expired' ? 'tag-grey' : 'tag-lav'}`} style={{ fontSize: 9 }}>{c.status || 'available'}</span></span>
+              <div key={c.id || i} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
+                  <span style={{ color: 'var(--white)' }}>{c.for_class || c.description || 'Catch-up credit'}</span>
+                  <span style={{ color: 'var(--grey)', fontSize: 11 }}>
+                    Issued {c.issued_at ? new Date(c.issued_at).toLocaleDateString('en-AU') : '—'}
+                    {c.expires_at ? ` · Expires ${new Date(c.expires_at).toLocaleDateString('en-AU')}` : ''}
+                  </span>
+                </div>
+                <span className={`tag ${c.status === 'used' || c.status === 'expired' ? 'tag-grey' : 'tag-lav'}`} style={{ fontSize: 10, flexShrink: 0 }}>{c.status || 'available'}</span>
               </div>
             ))}
           </div>

@@ -280,7 +280,7 @@ export default function StudentDashboard() {
       {/* Quick Links */}
       <div style={{ marginBottom: 8 }}>
         <div className="section-title" style={{ fontSize: 15, marginBottom: 12 }}>Quick Links</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
           {[
             { emoji: '📅', label: 'Book a Casual', to: '/portal/book' },
             { emoji: '🎟️', label: 'My Catch-up Credits', to: '/portal/billing' },

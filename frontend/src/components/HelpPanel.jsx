@@ -91,7 +91,7 @@ export default function HelpPanel({ open, onClose }) {
       {/* Drawer */}
       <div style={{
         position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 301,
-        width: 360, maxWidth: '100vw',
+        width: 'min(360px, 100vw)',
         background: 'var(--bg)', borderLeft: '1px solid var(--border)',
         display: 'flex', flexDirection: 'column',
         transform: open ? 'translateX(0)' : 'translateX(100%)',

@@ -32,7 +32,7 @@ export default function InstructorNotifications() {
   }
 
   return (
-    <div style={{ maxWidth: 680 }}>
+    <div style={{ maxWidth: 680, width: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
         <div>
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, marginBottom: 4 }}>Notifications</div>
