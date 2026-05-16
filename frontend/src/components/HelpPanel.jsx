@@ -30,7 +30,17 @@ const PROMPTS = [
   {
     icon: '🤔',
     label: "I don't know what class I should do",
-    answer: "If you've never done pole before, start with Beginners — it's designed for absolute beginners and no experience or fitness level is required. Just show up.\n\nIf you've trained pole elsewhere or have some experience, message us via Chat and let us know your background. We'll place you in the right level so you're challenged but not overwhelmed.\n\nNot sure if pole is for you at all? Come to an Intro class first — it's a great low-pressure way to try it out before committing to a full season.",
+    answer: "If you've never done pole before, start with a Virgin class — these are designed for first-timers and are a great low-pressure way to try it out before committing to a season.\n\nReady to commit? Level 1 is where your pole journey begins. No experience or fitness level required.\n\nIf you've trained pole elsewhere or done a Virgin class and want to know what level to enrol in, message us via Chat and tell us a bit about your background. We'll point you in the right direction.",
+  },
+  {
+    icon: '🗓️',
+    label: 'What classes can I do casually?',
+    answer: "Virgin classes are available as casual drop-ins — no commitment needed, just book and show up.\n\nMost of our other classes run as part of a season enrolment, which means you commit to the full term. This keeps the progression consistent for everyone in the class.\n\nIf you're between seasons or want to keep moving without a full enrolment, get in touch and we'll let you know what's available.",
+  },
+  {
+    icon: '🩰',
+    label: "Why can't I book a routine class later in the season?",
+    answer: "Routine classes build week by week — each session adds to the choreography, so joining mid-season means you'd be missing the foundation everyone else has already learned.\n\nTo keep the experience great for you and the rest of the class, bookings for routine classes close once the season has started.\n\nIf you're keen to join next time, make sure you enrol when the season opens — current students get priority access for the first 48 hours.",
   },
   {
     icon: '🏋️',
