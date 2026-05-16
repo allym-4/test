@@ -302,7 +302,7 @@ class PaymentStatsView(APIView):
             qs.select_related('student')
             .order_by('-created_at')[:20]
             .values('id', 'payment_type', 'amount', 'created_at',
-                    'student__first_name', 'student__last_name', 'student__email', 'note')
+                    'student__first_name', 'student__last_name', 'student__email')
         )
         for r in recent:
             name = f"{r.pop('student__first_name', '')} {r.pop('student__last_name', '')}".strip()
@@ -522,7 +522,7 @@ class DashboardStatsView(APIView):
         from apps.enrolments.models import Enrolment
         week_bookings = Enrolment.objects.filter(
             enrolment_type__in=['trial', 'casual'],
-            created_at__date__gte=week_start,
+            enrolled_date__gte=week_start,
         ).count()
 
         # Recent payments (last 8)
