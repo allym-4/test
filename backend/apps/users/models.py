@@ -23,6 +23,8 @@ class User(AbstractUser):
 
     pay_rate = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text='Per-class pay rate for instructors')
 
+    notification_preferences = models.JSONField(default=dict, blank=True)
+
     # Staff permission flags (only meaningful for instructor/admin/staff roles)
     perm_billing = models.BooleanField(default=False)
     perm_edit_profiles = models.BooleanField(default=False)

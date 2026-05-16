@@ -101,7 +101,8 @@ export default function StudentAccount() {
   // Notification preferences
   const prefs = user?.notification_preferences || {}
   const [classReminders, setClassReminders] = useState(prefs.class_reminders ?? true)
-  const [waitlistAlerts, setWaitlistAlerts] = useState(prefs.waitlist_alerts ?? true)
+  const [waitlistEmail, setWaitlistEmail] = useState(prefs.waitlist_email ?? true)
+  const [waitlistApp, setWaitlistApp] = useState(prefs.waitlist_app ?? true)
   const [studioUpdates, setStudioUpdates] = useState(prefs.studio_updates ?? false)
   const [homework, setHomework] = useState(prefs.homework ?? true)
   const [notifSaved, setNotifSaved] = useState(false)
@@ -157,14 +158,16 @@ export default function StudentAccount() {
   async function handleNotifToggle(key, value) {
     const updated = {
       class_reminders: classReminders,
-      waitlist_alerts: waitlistAlerts,
+      waitlist_email: waitlistEmail,
+      waitlist_app: waitlistApp,
       studio_updates: studioUpdates,
       homework,
       [key]: value,
     }
     // Update local state
     if (key === 'class_reminders') setClassReminders(value)
-    if (key === 'waitlist_alerts') setWaitlistAlerts(value)
+    if (key === 'waitlist_email') setWaitlistEmail(value)
+    if (key === 'waitlist_app') setWaitlistApp(value)
     if (key === 'studio_updates') setStudioUpdates(value)
     if (key === 'homework') setHomework(value)
     try {
@@ -174,7 +177,8 @@ export default function StudentAccount() {
     } catch {
       // revert on error
       if (key === 'class_reminders') setClassReminders(!value)
-      if (key === 'waitlist_alerts') setWaitlistAlerts(!value)
+      if (key === 'waitlist_email') setWaitlistEmail(!value)
+      if (key === 'waitlist_app') setWaitlistApp(!value)
       if (key === 'studio_updates') setStudioUpdates(!value)
       if (key === 'homework') setHomework(!value)
     }
@@ -193,7 +197,8 @@ export default function StudentAccount() {
 
   const notifRows = [
     { label: 'Class reminders', desc: 'Get notified 24hrs before each class', key: 'class_reminders', value: classReminders },
-    { label: 'Waitlist alerts', desc: 'Notified when a spot opens for you', key: 'waitlist_alerts', value: waitlistAlerts },
+    { label: 'Waitlist alerts — email', desc: 'Email me when a spot opens or expires', key: 'waitlist_email', value: waitlistEmail },
+    { label: 'Waitlist alerts — in-app', desc: 'In-app notification when a spot opens', key: 'waitlist_app', value: waitlistApp },
     { label: 'Studio updates', desc: 'News and updates from the studio', key: 'studio_updates', value: studioUpdates },
     { label: 'Homework', desc: 'Notified when new homework is assigned', key: 'homework', value: homework },
   ]

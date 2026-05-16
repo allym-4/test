@@ -99,22 +99,24 @@ def _offer_waitlist_spot(session):
     expires_str = expires_at.strftime('%I:%M %p')
     for enrolment in to_offer:
         student = enrolment.student
+        prefs = student.notification_preferences or {}
 
         enrolment.waitlist_offered_at = now
         enrolment.waitlist_expires_at = expires_at
         enrolment.waitlist_urgent = urgent
         enrolment.save(update_fields=['waitlist_offered_at', 'waitlist_expires_at', 'waitlist_urgent'])
 
-        Notification.objects.create(
-            recipient=student,
-            title=f"Spot available — {session.name}",
-            body=f"A spot opened up! You have until {expires_str} to claim it. Tap to confirm.",
-            notification_type='waitlist',
-            action_label='Claim My Spot',
-            action_url='/portal/my-classes',
-        )
+        if prefs.get('waitlist_app', True):
+            Notification.objects.create(
+                recipient=student,
+                title=f"Spot available — {session.name}",
+                body=f"A spot opened up! You have until {expires_str} to claim it. Tap to confirm.",
+                notification_type='waitlist',
+                action_label='Claim My Spot',
+                action_url='/portal/my-classes',
+            )
 
-        if student.email:
+        if prefs.get('waitlist_email', True) and student.email:
             send_mail(
                 subject=email_subject,
                 message=email_body_template.format(
@@ -133,15 +135,19 @@ def _send_waitlist_reminder(enrolment):
     from apps.users.models import Notification
     student = enrolment.student
     session = enrolment.class_session
-    Notification.objects.create(
-        recipient=student,
-        title=f"⏰ 30 mins left to claim — {session.name}",
-        body="Your waitlist offer expires soon! Log in now to confirm your spot.",
-        notification_type='waitlist',
-        action_label='Claim My Spot',
-        action_url='/portal/my-classes',
-    )
-    if student.email:
+    prefs = student.notification_preferences or {}
+
+    if prefs.get('waitlist_app', True):
+        Notification.objects.create(
+            recipient=student,
+            title=f"30 mins left to claim — {session.name}",
+            body="Your waitlist offer expires soon! Log in now to confirm your spot.",
+            notification_type='waitlist',
+            action_label='Claim My Spot',
+            action_url='/portal/my-classes',
+        )
+
+    if prefs.get('waitlist_email', True) and student.email:
         send_mail(
             subject=f"Last chance to claim your spot — {session.name}",
             message=(

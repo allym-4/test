@@ -22,6 +22,7 @@ class UserSerializer(serializers.ModelSerializer):
             'emergency_contact_name', 'emergency_contact_phone', 'internal_notes', 'is_active',
             'last_login', 'stripe_customer_id', 'enrolled_seasons_summary', 'pay_rate',
             'perm_billing', 'perm_edit_profiles', 'perm_approve_plans', 'perm_bulk_email', 'perm_reports',
+            'notification_preferences',
         )
         read_only_fields = ('id',)
 
