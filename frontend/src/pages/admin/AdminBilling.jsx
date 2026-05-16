@@ -457,7 +457,9 @@ export default function AdminBilling() {
                         <th>Total</th>
                         <th>Paid</th>
                         <th>Remaining</th>
+                        <th>Next Due</th>
                         <th>Status</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -465,6 +467,10 @@ export default function AdminBilling() {
                         const paid = parseFloat(plan.amount_paid || 0)
                         const total = parseFloat(plan.total_amount || 0)
                         const remaining = total - paid
+                        const pendingInstalments = (plan.instalments || []).filter(i => i.status === 'pending' || i.status === 'overdue')
+                        const nextDueDate = pendingInstalments.length > 0
+                          ? [...pendingInstalments].sort((a, b) => a.due_date.localeCompare(b.due_date))[0].due_date
+                          : null
                         return (
                           <tr key={plan.id}>
                             <td><b>{plan.student_name || plan.student}</b></td>
@@ -472,16 +478,29 @@ export default function AdminBilling() {
                             <td>${total.toFixed(2)}</td>
                             <td className="bal-pos">${paid.toFixed(2)}</td>
                             <td className={remaining > 0 ? 'bal-neg' : 'bal-pos'}>${remaining.toFixed(2)}</td>
+                            <td style={{ color: 'var(--grey)', fontSize: 12 }}>
+                              {nextDueDate ? new Date(nextDueDate + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : '—'}
+                            </td>
                             <td>
                               <span className={`tag ${plan.status === 'active' ? 'tag-lime' : plan.status === 'completed' ? 'tag-grey' : 'tag-amber'}`} style={{ fontSize: 10 }}>
                                 {plan.status}
                               </span>
                             </td>
+                            <td style={{ whiteSpace: 'nowrap' }}>
+                              {plan.status === 'active' && (
+                                <button
+                                  className="btn btn-ghost btn-xs"
+                                  onClick={() => payments.plans.update(plan.id, { status: 'completed' }).then(refetchPlans)}
+                                >
+                                  Record Payment
+                                </button>
+                              )}
+                            </td>
                           </tr>
                         )
                       })}
                       {plans.length === 0 && (
-                        <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--grey)', padding: '24px 0' }}>No payment plans</td></tr>
+                        <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--grey)', padding: '24px 0' }}>No payment plans</td></tr>
                       )}
                     </tbody>
                   </table>
@@ -550,6 +569,7 @@ export default function AdminBilling() {
                   <th>Description</th>
                   <th>Amount</th>
                   <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -562,10 +582,29 @@ export default function AdminBilling() {
                     <td style={{ color: 'var(--grey)' }}>{p.description || 'No-show fee'}</td>
                     <td className="bal-neg">${parseFloat(p.amount || 0).toFixed(2)}</td>
                     <td><span className="tag tag-red" style={{ fontSize: 10 }}>Charged</span></td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      <button
+                        className="btn btn-ghost btn-xs"
+                        style={{ marginRight: 4 }}
+                        onClick={() => {
+                          const s = { id: p.student, name: p.student_name, balance: `-${p.amount}` }
+                          setModalStudent(s)
+                          setActiveModal('waive')
+                        }}
+                      >Waive</button>
+                      <button
+                        className="btn btn-lime btn-xs"
+                        onClick={() => {
+                          const s = { id: p.student, name: p.student_name, balance: `-${p.amount}` }
+                          setModalStudent(s)
+                          setActiveModal('payment')
+                        }}
+                      >Charge Now</button>
+                    </td>
                   </tr>
                 ))}
                 {allPayments.filter(p => p.payment_type === 'no_show_fee').length === 0 && (
-                  <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--grey)', padding: '24px 0' }}>No no-show fees</td></tr>
+                  <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--grey)', padding: '24px 0' }}>No no-show fees</td></tr>
                 )}
               </tbody>
             </table>

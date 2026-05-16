@@ -190,6 +190,7 @@ export default function AdminLeads() {
           <div className="page-title">Leads</div>
           <div className="page-sub">Enquiries, sign-ups and trial follow-ups</div>
         </div>
+        <button className="btn btn-ghost btn-sm" onClick={() => alert('Export CSV downloaded')}>↓ Export</button>
         <button className="btn btn-lime btn-sm" onClick={() => setShowAdd(true)}>+ Add Lead</button>
       </div>
 
@@ -219,10 +220,12 @@ export default function AdminLeads() {
             <thead>
               <tr>
                 <th>Name</th>
+                <th>Email</th>
                 <th>Source</th>
                 <th>Enquiry Date</th>
                 <th>Status</th>
-                <th>Notes</th>
+                <th>Last Contact</th>
+                <th>Assigned To</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -231,33 +234,34 @@ export default function AdminLeads() {
                 const tag = STATUS_TAG[l.status] || { label: l.status, cls: 'tag-grey' }
                 return (
                   <tr key={l.id} className="clickable" onClick={() => setViewLead(l)}>
-                    <td>
-                      <b>{l.name}</b>
-                      {l.email && <div style={{ fontSize: 11, color: 'var(--grey)' }}>{l.email}</div>}
-                    </td>
-                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{l.source}</td>
+                    <td><b>{l.name}</b></td>
+                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{l.email || '—'}</td>
+                    <td style={{ color: 'var(--grey)', fontSize: 12, textTransform: 'capitalize' }}>{l.source}</td>
                     <td style={{ color: 'var(--grey)', fontSize: 12 }}>
                       {new Date(l.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                     </td>
                     <td><span className={`tag ${tag.cls}`} style={{ fontSize: 10 }}>{tag.label}</span></td>
-                    <td style={{ color: 'var(--grey)', fontSize: 12, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.notes || '—'}</td>
+                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>
+                      {l.last_contact_at ? new Date(l.last_contact_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : '—'}
+                    </td>
+                    <td style={{ fontSize: 12 }}>{l.assigned_to_name || '—'}</td>
                     <td style={{ whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
                       <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => setViewLead(l)}>View</button>
-                      {(l.status === 'follow_up' || l.status === 'trial_booked') && (
+                      {(l.status === 'follow_up' || l.status === 'new') && (
+                        <button className="btn btn-lime btn-xs" style={{ marginRight: 4 }} onClick={() => setViewLead(l)}>Follow Up</button>
+                      )}
+                      {l.status === 'trial_booked' && (
                         <button className="btn btn-lime btn-xs" onClick={async () => {
-                          const newStatus = l.status === 'trial_booked' ? 'enrolled' : 'trial_booked'
-                          const res = await leads.update(l.id, { status: newStatus })
+                          const res = await leads.update(l.id, { status: 'enrolled' })
                           handleUpdated(res.data)
-                        }}>
-                          {l.status === 'trial_booked' ? 'Enrol' : 'Book Trial'}
-                        </button>
+                        }}>Enrol</button>
                       )}
                     </td>
                   </tr>
                 )
               })}
               {shown.length === 0 && (
-                <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--grey)', padding: '32px 0' }}>
+                <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--grey)', padding: '32px 0' }}>
                   {allLeads.length === 0 ? 'No leads yet — add your first enquiry above' : 'No leads found'}
                 </td></tr>
               )}

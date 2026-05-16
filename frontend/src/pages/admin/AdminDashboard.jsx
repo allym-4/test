@@ -336,16 +336,20 @@ export default function AdminDashboard() {
           <div className="kpi-value">{weekBookings}</div>
           <div className="kpi-sub">Enrolments this week</div>
         </div>
-        <div className="kpi kpi-red">
-          <div className="kpi-label">Outstanding Invoices</div>
-          <div className="kpi-value">${outstandingBalance.toFixed(0)}</div>
-          <div className="kpi-sub">Total unpaid balance</div>
-        </div>
-        <div className="kpi kpi-amber">
-          <div className="kpi-label">Active Students</div>
-          <div className="kpi-value">{activeStudentCount ?? '…'}</div>
-          <div className="kpi-sub">Students with active accounts</div>
-        </div>
+        <Link to="/admin/billing" style={{ textDecoration: 'none' }}>
+          <div className="kpi kpi-red" style={{ cursor: 'pointer' }}>
+            <div className="kpi-label">Outstanding Invoices</div>
+            <div className="kpi-value">${outstandingBalance.toFixed(0)}</div>
+            <div className="kpi-sub">Total unpaid balance · See all →</div>
+          </div>
+        </Link>
+        <Link to="/admin/students" style={{ textDecoration: 'none' }}>
+          <div className="kpi kpi-amber" style={{ cursor: 'pointer' }}>
+            <div className="kpi-label">Active Students</div>
+            <div className="kpi-value">{activeStudentCount ?? '…'}</div>
+            <div className="kpi-sub">Students with active accounts · See all →</div>
+          </div>
+        </Link>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>

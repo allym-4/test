@@ -285,8 +285,8 @@ export default function AdminStaff() {
                   <th></th>
                   <th>Name</th>
                   <th>Role</th>
-                  <th>Pay Rate</th>
                   <th>Classes</th>
+                  <th>Pay Rate</th>
                   <th>Status</th>
                   <th></th>
                 </tr>
@@ -308,10 +308,10 @@ export default function AdminStaff() {
                         {s.role === 'admin' ? 'Admin' : 'Instructor'}
                       </span>
                     </td>
+                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{classesForInstructor(s.id)}</td>
                     <td style={{ color: 'var(--grey)', fontSize: 12 }}>
                       {s.pay_rate ? `$${s.pay_rate}/class` : '—'}
                     </td>
-                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{classesForInstructor(s.id)}</td>
                     <td><span className="tag tag-lime" style={{ fontSize: 10 }}>Active</span></td>
                     <td><button className="btn btn-ghost btn-xs" onClick={() => { setEditStaff(s); setShowAddStaff(true) }}>Edit</button></td>
                   </tr>

@@ -381,7 +381,7 @@ export default function AdminAutomations() {
       <div className="page-header">
         <div>
           <div className="page-title">Automations</div>
-          <div className="page-sub">Automated workflows and triggers</div>
+          <div className="page-sub">Visual flow builder — triggers, delays, conditions and actions</div>
         </div>
       </div>
 

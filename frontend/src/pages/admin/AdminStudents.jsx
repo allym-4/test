@@ -982,7 +982,6 @@ export default function AdminStudents() {
           <div className="page-sub">{allStudents.length} active students</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-ghost btn-sm" onClick={() => setShowImport(true)}>↑ Bulk Import</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setShowBulkTag(true)}>Bulk Tag</button>
           <button className="btn btn-lime btn-sm" onClick={() => setShowAdd(true)}>+ Add Student</button>
         </div>
@@ -1043,11 +1042,11 @@ export default function AdminStudents() {
               <tr>
                 <th></th>
                 <SortTh col="name" label="Name" />
-                <th>Email</th>
-                <th>Enrolled Classes</th>
-                <SortTh col="last_seen" label="Last Seen" />
+                <th>Level</th>
+                <th>Classes</th>
                 <SortTh col="balance" label="Balance" />
                 <th>Status</th>
+                <SortTh col="last_seen" label="Last Seen" />
                 <th></th>
               </tr>
             </thead>
@@ -1071,30 +1070,12 @@ export default function AdminStudents() {
                     </td>
                     <td>
                       <b>{s.display_name}</b>
-                      {s.pronouns && <div style={{ fontSize: 11, color: 'var(--grey)' }}>{s.pronouns}</div>}
+                      <div style={{ fontSize: 11, color: 'var(--grey)' }}>{s.email}</div>
                     </td>
-                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{s.email}</td>
-                    <td style={{ fontSize: 11 }}>
-                      {(s.enrolled_seasons_summary || []).length === 0 ? (
-                        <span style={{ color: 'var(--grey)' }}>—</span>
-                      ) : (
-                        <span>
-                          {(s.enrolled_seasons_summary || []).map((item, i) => {
-                            const abbrev = item.season_name
-                              ? item.season_name.replace(/season\s*/i, 'S').replace(/\s+/g, '')
-                              : '?'
-                            return (
-                              <span key={i}>
-                                {i > 0 && <span style={{ color: 'var(--grey)', margin: '0 4px' }}>|</span>}
-                                <span style={{ color: 'var(--lime)', fontWeight: 600 }}>{abbrev}</span>
-                                <span style={{ color: 'var(--grey)', marginLeft: 2 }}>- {item.count}</span>
-                              </span>
-                            )
-                          })}
-                        </span>
-                      )}
+                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{s.level || '—'}</td>
+                    <td style={{ fontSize: 12, color: 'var(--grey)' }}>
+                      {(s.enrolled_seasons_summary || []).reduce((sum, item) => sum + (item.count || 0), 0) || '—'}
                     </td>
-                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{lastSeen}</td>
                     <td>
                       {b !== undefined ? (
                         <span className={isNeg ? 'bal-neg' : 'bal-pos'}>
@@ -1103,6 +1084,7 @@ export default function AdminStudents() {
                       ) : <span style={{ color: 'var(--grey)' }}>—</span>}
                     </td>
                     <td><span className="tag tag-lime" style={{ fontSize: 10 }}>Active</span></td>
+                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{lastSeen}</td>
                     <td onClick={e => e.stopPropagation()}>
                       <button className="btn btn-ghost btn-xs" onClick={() => navigate(`/admin/students/${s.id}`)}>View</button>
                     </td>

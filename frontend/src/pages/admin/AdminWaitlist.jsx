@@ -82,7 +82,7 @@ export default function AdminWaitlist() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {notifyResult && <span style={{ fontSize: 12, color: 'var(--lime)' }}>✓ {notifyResult}</span>}
           <button className="btn btn-ghost btn-sm" onClick={notifyEligible} disabled={notifying || waitlisted.length === 0}>
-            {notifying ? 'Notifying…' : 'Notify All Eligible'}
+            {notifying ? 'Notifying…' : 'Notify all eligible →'}
           </button>
         </div>
       </div>

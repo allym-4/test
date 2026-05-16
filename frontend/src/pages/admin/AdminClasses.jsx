@@ -237,6 +237,7 @@ function WorkshopBookingsModal({ workshop, onClose }) {
 export default function AdminClasses() {
   const [tab, setTab] = useState('classes')
   const [typeFilter, setTypeFilter] = useState('all')
+  const [search, setSearch] = useState('')
   const [modal, setModal] = useState(null)
   const [deleting, setDeleting] = useState(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
@@ -244,6 +245,7 @@ export default function AdminClasses() {
   const [deletingWorkshop, setDeletingWorkshop] = useState(null)
   const [confirmDeleteWorkshopId, setConfirmDeleteWorkshopId] = useState(null)
   const [bookingsWorkshop, setBookingsWorkshop] = useState(null)
+  const [createMenuOpen, setCreateMenuOpen] = useState(false)
 
   const { data: sessData, loading, refetch } = useApi(() => classes.list(), [])
   const { data: instrData } = useApi(() => users.list({ role: 'instructor' }), [])
@@ -255,8 +257,11 @@ export default function AdminClasses() {
   const studioList = studioData?.results || studioData || []
   const workshopList = workshopsData?.results || workshopsData || []
 
-  const filtered = typeFilter === 'all' ? sessions
-    : sessions.filter(s => s.session_type === typeFilter)
+  const filtered = sessions.filter(s => {
+    const matchType = typeFilter === 'all' || s.session_type === typeFilter
+    const matchSearch = !search || s.name.toLowerCase().includes(search.toLowerCase())
+    return matchType && matchSearch
+  })
 
   async function handleDelete(id) {
     setDeleting(id)
@@ -308,18 +313,34 @@ export default function AdminClasses() {
         <WorkshopBookingsModal workshop={bookingsWorkshop} onClose={() => setBookingsWorkshop(null)} />
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+      <div className="page-header">
         <div>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, marginBottom: 4 }}>Classes</div>
-          <div style={{ fontSize: 13, color: 'var(--grey)' }}>Manage all class types available in your studio</div>
+          <div className="page-title">Classes</div>
+          <div className="page-sub">Manage all class types available in your studio</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          {tab === 'classes' && <>
-            <button className="btn btn-primary btn-sm" onClick={() => openCreate('course')}>+ Course</button>
-            <button className="btn btn-ghost btn-sm" onClick={() => openCreate('casual')}>+ Drop-In</button>
-          </>}
+          {tab === 'classes' && (
+            <div style={{ position: 'relative' }}>
+              <button className="btn btn-lime btn-sm" onClick={() => setCreateMenuOpen(o => !o)}>
+                + Create New Class ▾
+              </button>
+              {createMenuOpen && (
+                <div style={{ position: 'absolute', right: 0, top: 36, background: 'var(--dark)', border: '1px solid var(--border)', borderRadius: 8, minWidth: 200, zIndex: 200, overflow: 'hidden' }}
+                  onMouseLeave={() => setCreateMenuOpen(false)}>
+                  <div style={{ padding: '10px 16px', fontSize: 13, cursor: 'pointer' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#1a1a1a'}
+                    onMouseLeave={e => e.currentTarget.style.background = ''}
+                    onClick={() => { setCreateMenuOpen(false); openCreate('course') }}>Create Course Class</div>
+                  <div style={{ padding: '10px 16px', fontSize: 13, cursor: 'pointer' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#1a1a1a'}
+                    onMouseLeave={e => e.currentTarget.style.background = ''}
+                    onClick={() => { setCreateMenuOpen(false); openCreate('casual') }}>Create Drop-In Class</div>
+                </div>
+              )}
+            </div>
+          )}
           {tab === 'workshops' && (
-            <button className="btn btn-primary btn-sm" onClick={() => setWorkshopModal({ _new: true })}>+ Workshop</button>
+            <button className="btn btn-lime btn-sm" onClick={() => setWorkshopModal({ _new: true })}>+ Workshop</button>
           )}
         </div>
       </div>

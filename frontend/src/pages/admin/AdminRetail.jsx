@@ -214,7 +214,11 @@ export default function AdminRetail() {
           <div className="page-title">Retail</div>
           <div className="page-sub">Products, orders and in-studio pickups</div>
         </div>
-        <button className="btn btn-lime btn-sm" onClick={() => setModal({ type: 'product', existing: null })}>+ Add Product</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-ghost btn-sm" onClick={handleSquareSync} disabled={syncing}>🔄 Sync with Square</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => setModal({ type: 'product', existing: null })}>+ Add Product</button>
+          <button className="btn btn-lime btn-sm" onClick={() => setModal({ type: 'order' })}>🛒 New Purchase</button>
+        </div>
       </div>
 
       <div className="kpi-grid" style={{ marginBottom: 24 }}>
@@ -242,9 +246,6 @@ export default function AdminRetail() {
         {syncResult?.error && (
           <span style={{ color: 'var(--red)', fontSize: 12 }}>{syncResult.error}</span>
         )}
-        <button className="btn btn-ghost btn-xs" onClick={handleSquareSync} disabled={syncing} style={{ marginLeft: 8, flexShrink: 0 }}>
-          {syncing ? 'Syncing…' : '🔄 Sync with Square'}
-        </button>
       </div>
 
       <div className="subtabs" style={{ marginBottom: 20 }}>
@@ -276,7 +277,7 @@ export default function AdminRetail() {
                   <td style={{ whiteSpace: 'nowrap' }}>
                     <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => setModal({ type: 'product', existing: p })}>Edit</button>
                     <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => setModal({ type: 'restock', product: p })}>Restock</button>
-                    <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)' }} onClick={() => deleteProduct(p.id)}>Del</button>
+                    <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)' }} onClick={() => deleteProduct(p.id)}>Archive</button>
                   </td>
                 </tr>
               ))}
