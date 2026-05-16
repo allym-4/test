@@ -414,23 +414,30 @@ export default function InstructorMessages() {
 
       {/* Direct Messages tab */}
       {tab === 'direct' && (
-        <div style={{ display: 'grid', gridTemplateColumns: selected ? '280px 1fr' : '1fr', gap: 0, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', minHeight: 480 }}>
-          <div style={{ borderRight: selected ? '1px solid var(--border)' : 'none', overflowY: 'auto' }}>
+        <div className="split-layout" style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, minHeight: 480 }}>
+          <div className={`split-sidebar${selected ? ' mobile-panel-open' : ''}`} style={{ width: 280, borderRight: '1px solid var(--border)' }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.7px', color: 'var(--grey)', fontWeight: 600 }}>
               Conversations
             </div>
             <ConversationList selected={selected} onSelect={setSelected} />
           </div>
 
-          {selected && (
-            <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-              <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', fontWeight: 600, fontSize: 14 }}>
-                {selected.student_name || `Student #${selected.student}`}
-                <button onClick={() => setSelected(null)} style={{ float: 'right', background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 16 }}>✕</button>
+          <div className={`split-main${!selected ? ' mobile-list-showing' : ''}`}>
+            {selected ? (
+              <>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <button className="mobile-back-btn" onClick={() => setSelected(null)}>← Back</button>
+                  <span style={{ fontWeight: 600, fontSize: 14, flex: 1 }}>{selected.student_name || `Student #${selected.student}`}</span>
+                  <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 16 }}>✕</button>
+                </div>
+                <Thread conv={selected} />
+              </>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--grey)', fontSize: 13 }}>
+                Select a conversation
               </div>
-              <Thread conv={selected} />
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
 
