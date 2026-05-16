@@ -1133,35 +1133,6 @@ export default function AdminStudents() {
       )}
 
       {showBulkTag && <BulkTagModal studentIds={filtered.map(s => s.id)} onClose={() => setShowBulkTag(false)} />}
-
-      {viewForm && (
-        <div className="sd-overlay" onClick={e => e.target === e.currentTarget && setViewForm(null)}>
-          <div className="sd-modal" style={{ maxWidth: 520 }}>
-            <div className="sd-header">
-              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>{viewForm.name}</div>
-              <button className="modal-close-btn" onClick={() => setViewForm(null)}>✕</button>
-            </div>
-            <div className="sd-body" style={{ maxHeight: '65vh', overflowY: 'auto' }}>
-              {viewForm.form?.responses && Object.keys(viewForm.form.responses).length > 0 ? (
-                Object.entries(viewForm.form.responses).map(([k, v]) => (
-                  <div key={k} style={{ display: 'flex', gap: 16, padding: '8px 0', borderBottom: '1px solid #1a1a1a', fontSize: 13 }}>
-                    <div style={{ width: 160, color: 'var(--grey)', flexShrink: 0, textTransform: 'capitalize' }}>{k.replace(/_/g, ' ')}</div>
-                    <div style={{ wordBreak: 'break-word' }}>{String(v)}</div>
-                  </div>
-                ))
-              ) : (
-                <div style={{ color: 'var(--grey)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>No form data recorded.</div>
-              )}
-              <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 14 }}>
-                Submitted {viewForm.form?.created_at ? new Date(viewForm.form.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
-              </div>
-            </div>
-            <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
-              <button className="btn btn-ghost btn-sm" onClick={() => setViewForm(null)}>Close</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
