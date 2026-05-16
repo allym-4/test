@@ -939,10 +939,32 @@ class ReferralListView(generics.ListCreateAPIView):
         return qs
 
 
-ASSISTANT_TOOLS = [
+ADMIN_TOOLS = [
+    {
+        "name": "get_student_info",
+        "description": "Look up a student by name and get their enrolments, balance, and recent attendance.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "Student name (partial match ok)"},
+            },
+            "required": ["name"],
+        },
+    },
+    {
+        "name": "list_class_students",
+        "description": "List all students enrolled in a specific class.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "class_name": {"type": "string", "description": "Class name (partial match ok)"},
+            },
+            "required": ["class_name"],
+        },
+    },
     {
         "name": "update_attendance",
-        "description": "Update a student's attendance record for a specific class occurrence. Use this to mark a student present, absent, or undo a marked absence.",
+        "description": "Update a student's attendance record for a specific class occurrence. Use this to mark present, absent, late, no_show, or undo a marked absence.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -961,26 +983,99 @@ ASSISTANT_TOOLS = [
             "type": "object",
             "properties": {
                 "student_name": {"type": "string", "description": "Student's name (partial match ok)"},
-                "from_class": {"type": "string", "description": "Current class name"},
-                "to_class": {"type": "string", "description": "New class name to move to"},
+                "from_class": {"type": "string", "description": "Current class name (optional)"},
+                "to_class": {"type": "string", "description": "Target class name (partial match ok)"},
             },
             "required": ["student_name", "to_class"],
         },
     },
     {
-        "name": "get_student_info",
-        "description": "Look up a student by name and get their enrolments, balance, and recent attendance.",
+        "name": "enrol_student",
+        "description": "Enrol a student in a class session.",
         "input_schema": {
             "type": "object",
             "properties": {
-                "name": {"type": "string", "description": "Student name to search for"},
+                "student_name": {"type": "string", "description": "Student's name (partial match ok)"},
+                "class_name": {"type": "string", "description": "Class to enrol in (partial match ok)"},
+                "enrolment_type": {"type": "string", "enum": ["full", "trial", "casual"], "description": "Type of enrolment, default full"},
             },
-            "required": ["name"],
+            "required": ["student_name", "class_name"],
         },
     },
     {
-        "name": "list_class_students",
-        "description": "List all students enrolled in a specific class.",
+        "name": "cancel_enrolment",
+        "description": "Cancel a student's enrolment in a class.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "student_name": {"type": "string", "description": "Student's name (partial match ok)"},
+                "class_name": {"type": "string", "description": "Class name (partial match ok)"},
+            },
+            "required": ["student_name", "class_name"],
+        },
+    },
+    {
+        "name": "take_payment",
+        "description": "Record a payment made by a student (cash, card, etc).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "student_name": {"type": "string", "description": "Student's name (partial match ok)"},
+                "amount": {"type": "number", "description": "Payment amount in dollars"},
+                "description": {"type": "string", "description": "What the payment is for"},
+                "method": {"type": "string", "description": "Payment method: cash, card, eftpos, bank_transfer"},
+            },
+            "required": ["student_name", "amount", "description"],
+        },
+    },
+    {
+        "name": "add_charge",
+        "description": "Add a charge to a student's account (e.g. late cancel fee, no-show fee, lost key fee).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "student_name": {"type": "string", "description": "Student's name (partial match ok)"},
+                "amount": {"type": "number", "description": "Charge amount in dollars"},
+                "description": {"type": "string", "description": "What the charge is for"},
+            },
+            "required": ["student_name", "amount", "description"],
+        },
+    },
+    {
+        "name": "issue_makeup_credit",
+        "description": "Issue a makeup credit to a student for an approved absence.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "student_name": {"type": "string", "description": "Student's name (partial match ok)"},
+                "reason": {"type": "string", "description": "Reason for the makeup credit"},
+            },
+            "required": ["student_name"],
+        },
+    },
+    {
+        "name": "list_todays_classes",
+        "description": "List all class occurrences happening today with enrolled student counts.",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+    },
+    {
+        "name": "list_upcoming_classes",
+        "description": "List class occurrences for the next 7 days.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "days": {"type": "integer", "description": "How many days ahead to look, default 7"},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "check_waitlist",
+        "description": "Check who is on the waitlist for a specific class.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -989,14 +1084,102 @@ ASSISTANT_TOOLS = [
             "required": ["class_name"],
         },
     },
+    {
+        "name": "cancel_away",
+        "description": "Undo a student's marked absence — restore them to a class they marked away from. If the class is full, adds them to the waitlist.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "student_name": {"type": "string", "description": "Student's name (partial match ok)"},
+                "class_name": {"type": "string", "description": "Class name (partial match ok)"},
+                "date": {"type": "string", "description": "Date in YYYY-MM-DD format"},
+            },
+            "required": ["student_name"],
+        },
+    },
+    {
+        "name": "book_practice_for_student",
+        "description": "Book a practice time slot for a student.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "student_name": {"type": "string", "description": "Student's name (partial match ok)"},
+                "date": {"type": "string", "description": "Date in YYYY-MM-DD format"},
+                "studio_name": {"type": "string", "description": "Studio name (partial match ok, optional)"},
+            },
+            "required": ["student_name", "date"],
+        },
+    },
+    {
+        "name": "send_student_notification",
+        "description": "Send an in-app notification to a student.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "student_name": {"type": "string", "description": "Student's name (partial match ok)"},
+                "title": {"type": "string", "description": "Notification title"},
+                "body": {"type": "string", "description": "Notification message body"},
+            },
+            "required": ["student_name", "title", "body"],
+        },
+    },
 ]
 
+STUDENT_TOOLS = [
+    {
+        "name": "get_my_schedule",
+        "description": "Get the student's upcoming class schedule with dates, times and studios.",
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "get_season_info",
+        "description": "Get current and upcoming season dates and pricing information.",
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "get_practice_slots",
+        "description": "Get available open practice time slots the student can book.",
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "book_practice",
+        "description": "Book a practice time slot for the current student.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "slot_id": {"type": "integer", "description": "The ID of the practice slot to book"},
+            },
+            "required": ["slot_id"],
+        },
+    },
+    {
+        "name": "get_my_balance",
+        "description": "Get the student's current account balance and recent transactions.",
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "contact_reception",
+        "description": "Send an urgent message to reception staff. Use this for lockouts, emergencies, or anything needing immediate human attention.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "message": {"type": "string", "description": "The urgent message to send to reception"},
+            },
+            "required": ["message"],
+        },
+    },
+]
 
-def execute_tool(tool_name, tool_input):
+# Keep backwards-compatible alias
+ASSISTANT_TOOLS = ADMIN_TOOLS
+
+
+def execute_tool(tool_name, tool_input, acting_user=None):
     """Execute an assistant tool and return a readable result string."""
+    import datetime as dt
     from apps.attendance.models import AttendanceRecord
     from apps.enrolments.models import Enrolment
-    from apps.classes.models import ClassSession, ClassOccurrence
+    from apps.classes.models import ClassSession, ClassOccurrence, PracticeSlot, PracticeBooking, Season
     from apps.payments.models import Payment
 
     if tool_name == 'get_student_info':
@@ -1101,6 +1284,321 @@ def execute_tool(tool_name, tool_input):
         enrolment.save(update_fields=['class_session'])
         return f"Moved {student.display_name} from '{old_session_name}' to '{new_session.name}'."
 
+    elif tool_name == 'enrol_student':
+        student_name = tool_input.get('student_name', '')
+        class_name = tool_input.get('class_name', '')
+        enrolment_type = tool_input.get('enrolment_type', 'full')
+        students = User.objects.filter(
+            Q(first_name__icontains=student_name) | Q(last_name__icontains=student_name) | Q(display_name__icontains=student_name),
+            role='student',
+        )
+        if not students.exists():
+            return f"No student found matching '{student_name}'."
+        student = students.first()
+        sessions = ClassSession.objects.filter(name__icontains=class_name, is_active=True)
+        if not sessions.exists():
+            return f"No active class found matching '{class_name}'."
+        session = sessions.first()
+        if Enrolment.objects.filter(student=student, class_session=session, status='active').exists():
+            return f"{student.display_name} is already enrolled in {session.name}."
+        Enrolment.objects.create(
+            student=student,
+            class_session=session,
+            status='active',
+            enrolment_type=enrolment_type,
+        )
+        return f"Enrolled {student.display_name} in {session.name} ({enrolment_type})."
+
+    elif tool_name == 'cancel_enrolment':
+        student_name = tool_input.get('student_name', '')
+        class_name = tool_input.get('class_name', '')
+        students = User.objects.filter(
+            Q(first_name__icontains=student_name) | Q(last_name__icontains=student_name) | Q(display_name__icontains=student_name),
+            role='student',
+        )
+        if not students.exists():
+            return f"No student found matching '{student_name}'."
+        student = students.first()
+        enrolments = Enrolment.objects.filter(student=student, status='active', class_session__name__icontains=class_name)
+        if not enrolments.exists():
+            return f"No active enrolment found for {student.display_name} in '{class_name}'."
+        enrolment = enrolments.first()
+        class_label = str(enrolment.class_session)
+        enrolment.status = 'cancelled'
+        enrolment.save(update_fields=['status'])
+        return f"Cancelled {student.display_name}'s enrolment in {class_label}."
+
+    elif tool_name == 'take_payment':
+        student_name = tool_input.get('student_name', '')
+        amount = tool_input.get('amount', 0)
+        description = tool_input.get('description', 'Payment')
+        method = tool_input.get('method', 'cash')
+        students = User.objects.filter(
+            Q(first_name__icontains=student_name) | Q(last_name__icontains=student_name) | Q(display_name__icontains=student_name),
+            role='student',
+        )
+        if not students.exists():
+            return f"No student found matching '{student_name}'."
+        student = students.first()
+        Payment.objects.create(
+            student=student,
+            payment_type=Payment.PaymentType.PAYMENT,
+            amount=amount,
+            description=description,
+            reference=method,
+            created_by=acting_user,
+        )
+        return f"Recorded ${amount:.2f} payment from {student.display_name} ({method}) for: {description}."
+
+    elif tool_name == 'add_charge':
+        student_name = tool_input.get('student_name', '')
+        amount = tool_input.get('amount', 0)
+        description = tool_input.get('description', 'Charge')
+        students = User.objects.filter(
+            Q(first_name__icontains=student_name) | Q(last_name__icontains=student_name) | Q(display_name__icontains=student_name),
+            role='student',
+        )
+        if not students.exists():
+            return f"No student found matching '{student_name}'."
+        student = students.first()
+        Payment.objects.create(
+            student=student,
+            payment_type=Payment.PaymentType.CHARGE,
+            amount=amount,
+            description=description,
+            created_by=acting_user,
+        )
+        return f"Added ${amount:.2f} charge to {student.display_name}'s account for: {description}."
+
+    elif tool_name == 'issue_makeup_credit':
+        student_name = tool_input.get('student_name', '')
+        reason = tool_input.get('reason', 'Approved absence')
+        students = User.objects.filter(
+            Q(first_name__icontains=student_name) | Q(last_name__icontains=student_name) | Q(display_name__icontains=student_name),
+            role='student',
+        )
+        if not students.exists():
+            return f"No student found matching '{student_name}'."
+        student = students.first()
+        from apps.attendance.models import MakeupCredit
+        credit = MakeupCredit.objects.create(
+            student=student,
+            reason=reason,
+            status='available',
+            issued_by=acting_user,
+        )
+        return f"Issued a makeup credit to {student.display_name} (reason: {reason}). Credit ID: {credit.id}."
+
+    elif tool_name == 'list_todays_classes':
+        today = dt.date.today()
+        occurrences = ClassOccurrence.objects.filter(date=today).select_related('session', 'session__studio').prefetch_related('attendance')
+        if not occurrences.exists():
+            return f"No classes scheduled for today ({today})."
+        lines = [f"Classes today ({today}):"]
+        for occ in occurrences:
+            enrolled = Enrolment.objects.filter(class_session=occ.session, status='active').count()
+            present = occ.attendance.filter(status='present').count()
+            lines.append(f"  - {occ.session.name} @ {occ.session.start_time:%H:%M} in {occ.session.studio} — {enrolled} enrolled, {present} checked in")
+        return '\n'.join(lines)
+
+    elif tool_name == 'list_upcoming_classes':
+        days = tool_input.get('days', 7)
+        today = dt.date.today()
+        end = today + dt.timedelta(days=days)
+        occurrences = ClassOccurrence.objects.filter(date__range=[today, end]).select_related('session', 'session__studio').order_by('date', 'session__start_time')
+        if not occurrences.exists():
+            return f"No classes in the next {days} days."
+        lines = [f"Upcoming classes (next {days} days):"]
+        for occ in occurrences:
+            enrolled = Enrolment.objects.filter(class_session=occ.session, status='active').count()
+            lines.append(f"  - {occ.date} {occ.session.name} @ {occ.session.start_time:%H:%M} ({enrolled}/{occ.session.capacity}) in {occ.session.studio}")
+        return '\n'.join(lines)
+
+    elif tool_name == 'check_waitlist':
+        class_name = tool_input.get('class_name', '')
+        sessions = ClassSession.objects.filter(name__icontains=class_name, is_active=True)
+        if not sessions.exists():
+            return f"No class found matching '{class_name}'."
+        session = sessions.first()
+        waitlisted = Enrolment.objects.filter(class_session=session, status='waitlisted').select_related('student')
+        if not waitlisted.exists():
+            return f"No one is on the waitlist for {session.name}."
+        names = [f"  {i+1}. {e.student.display_name} ({e.student.email})" for i, e in enumerate(waitlisted)]
+        return f"Waitlist for {session.name} ({len(names)} people):\n" + '\n'.join(names)
+
+    elif tool_name == 'cancel_away':
+        student_name = tool_input.get('student_name', '')
+        class_name = tool_input.get('class_name', '')
+        date_str = tool_input.get('date', '')
+        students = User.objects.filter(
+            Q(first_name__icontains=student_name) | Q(last_name__icontains=student_name) | Q(display_name__icontains=student_name),
+            role='student',
+        )
+        if not students.exists():
+            return f"No student found matching '{student_name}'."
+        student = students.first()
+        att_qs = AttendanceRecord.objects.filter(student=student, status='absent')
+        if class_name:
+            att_qs = att_qs.filter(occurrence__session__name__icontains=class_name)
+        if date_str:
+            att_qs = att_qs.filter(occurrence__date=date_str)
+        att_qs = att_qs.select_related('occurrence__session')
+        if not att_qs.exists():
+            return f"No marked absence found for {student.display_name}" + (f" in '{class_name}'" if class_name else '') + "."
+        record = att_qs.order_by('occurrence__date').first()
+        occ = record.occurrence
+        capacity = occ.session.capacity
+        confirmed = AttendanceRecord.objects.filter(occurrence=occ).exclude(status='absent').exclude(student=student).count()
+        if confirmed < capacity:
+            record.delete()
+            return f"Restored {student.display_name} to {occ.session.name} on {occ.date}. They're back in!"
+        else:
+            record.delete()
+            Enrolment.objects.get_or_create(student=student, class_session=occ.session, status='waitlisted')
+            return f"Class is full — added {student.display_name} to the waitlist for {occ.session.name} on {occ.date}."
+
+    elif tool_name == 'book_practice_for_student':
+        student_name = tool_input.get('student_name', '')
+        date_str = tool_input.get('date', '')
+        studio_name = tool_input.get('studio_name', '')
+        students = User.objects.filter(
+            Q(first_name__icontains=student_name) | Q(last_name__icontains=student_name) | Q(display_name__icontains=student_name),
+            role='student',
+        )
+        if not students.exists():
+            return f"No student found matching '{student_name}'."
+        student = students.first()
+        slots_qs = PracticeSlot.objects.filter(date=date_str, is_active=True)
+        if studio_name:
+            slots_qs = slots_qs.filter(studio__name__icontains=studio_name)
+        available = [s for s in slots_qs if s.spots_left > 0 and not PracticeBooking.objects.filter(slot=s, student=student, status='confirmed').exists()]
+        if not available:
+            return f"No available practice slots on {date_str}" + (f" at '{studio_name}'" if studio_name else '') + "."
+        slot = available[0]
+        PracticeBooking.objects.create(slot=slot, student=student, price_charged=0, is_free=False)
+        return f"Booked {student.display_name} into practice at {slot.studio} on {slot.date} {slot.start_time:%H:%M}–{slot.end_time:%H:%M}."
+
+    elif tool_name == 'send_student_notification':
+        student_name = tool_input.get('student_name', '')
+        title = tool_input.get('title', '')
+        body = tool_input.get('body', '')
+        students = User.objects.filter(
+            Q(first_name__icontains=student_name) | Q(last_name__icontains=student_name) | Q(display_name__icontains=student_name),
+            role='student',
+        )
+        if not students.exists():
+            return f"No student found matching '{student_name}'."
+        student = students.first()
+        Notification.objects.create(recipient=student, title=title, body=body, notification_type=Notification.Type.INFO)
+        return f"Notification sent to {student.display_name}: '{title}'."
+
+    # ── Student tools ──────────────────────────────────────────────────────────
+
+    elif tool_name == 'get_my_schedule':
+        student = acting_user
+        today = dt.date.today()
+        enrolments = Enrolment.objects.filter(student=student, status='active').select_related('class_session', 'class_session__studio')
+        if not enrolments.exists():
+            return "You have no active enrolments."
+        lines = ["Your enrolled classes:"]
+        days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        for e in enrolments:
+            s = e.class_session
+            lines.append(f"  - {s.name} — {days[s.day_of_week]} {s.start_time:%H:%M} at {s.studio} ({s.duration_minutes} min)")
+        # Upcoming occurrences
+        upcoming = ClassOccurrence.objects.filter(
+            session__enrolments__student=student,
+            session__enrolments__status='active',
+            date__gte=today,
+            date__lte=today + dt.timedelta(days=14),
+        ).select_related('session').order_by('date')[:6]
+        if upcoming.exists():
+            lines.append("\nNext 2 weeks:")
+            for occ in upcoming:
+                lines.append(f"  - {occ.date} {occ.session.name} @ {occ.session.start_time:%H:%M}")
+        return '\n'.join(lines)
+
+    elif tool_name == 'get_season_info':
+        today = dt.date.today()
+        seasons = Season.objects.filter(end_date__gte=today).order_by('start_date')[:3]
+        if not seasons.exists():
+            return "No upcoming seasons found. Contact the studio for schedule information."
+        lines = []
+        for s in seasons:
+            status = "ACTIVE" if s.start_date <= today <= s.end_date else "UPCOMING"
+            lines.append(f"{s.name} [{status}]: {s.start_date} to {s.end_date}")
+            if s.notes:
+                lines.append(f"  Notes: {s.notes}")
+        lines.append("\nSeason pricing (pole classes):")
+        lines.append("  1 class/week: $270 · 2: $440 · 3: $580 · 4: $700 · 5: $800 · 6: $900")
+        lines.append("  Kiki/Unravel standalone: $250 · Add-on to pole: from $150 extra")
+        return '\n'.join(lines)
+
+    elif tool_name == 'get_practice_slots':
+        today = dt.date.today()
+        student = acting_user
+        slots = PracticeSlot.objects.filter(date__gte=today, is_active=True).select_related('studio').order_by('date', 'start_time')[:10]
+        if not slots.exists():
+            return "No practice slots are currently available. Check back soon or contact the studio."
+        lines = ["Available practice slots:"]
+        for slot in slots:
+            booked = slot.booked_count
+            if slot.spots_left > 0:
+                already = PracticeBooking.objects.filter(slot=slot, student=student, status='confirmed').exists()
+                lines.append(f"  ID {slot.id}: {slot.date} {slot.start_time:%H:%M}–{slot.end_time:%H:%M} at {slot.studio} — {slot.spots_left} spots left{'  ✓ YOU ARE BOOKED' if already else ''}")
+        return '\n'.join(lines) if len(lines) > 1 else "No available slots right now."
+
+    elif tool_name == 'book_practice':
+        slot_id = tool_input.get('slot_id')
+        student = acting_user
+        try:
+            slot = PracticeSlot.objects.get(pk=slot_id, is_active=True)
+        except PracticeSlot.DoesNotExist:
+            return f"Practice slot {slot_id} not found."
+        if slot.spots_left <= 0:
+            return "That slot is fully booked."
+        if PracticeBooking.objects.filter(slot=slot, student=student, status='confirmed').exists():
+            return "You're already booked into that slot."
+        today = dt.date.today()
+        week_start = today - dt.timedelta(days=today.weekday())
+        week_end = week_start + dt.timedelta(days=6)
+        from apps.attendance.models import AttendanceRecord
+        attended = AttendanceRecord.objects.filter(student=student, status='present', occurrence__date__range=[week_start, week_end]).count()
+        is_free = attended >= 3
+        from apps.enrolments.models import Enrolment as EnrolmentModel
+        is_enrolled = EnrolmentModel.objects.filter(student=student, status='active').exists()
+        rate = slot.ENROLLED_RATE if is_enrolled else slot.NON_ENROLLED_RATE
+        price = 0 if is_free else round(slot.duration_hours * rate, 2)
+        PracticeBooking.objects.create(slot=slot, student=student, price_charged=price, is_free=is_free)
+        price_str = "free (3+ classes this week!)" if is_free else f"${price:.0f} — pay at reception"
+        return f"Booked! {slot.date} {slot.start_time:%H:%M}–{slot.end_time:%H:%M} at {slot.studio}. Cost: {price_str}."
+
+    elif tool_name == 'get_my_balance':
+        student = acting_user
+        paid = Payment.objects.filter(student=student, payment_type='payment').aggregate(total=Sum('amount'))['total'] or 0
+        charged = Payment.objects.filter(student=student, payment_type__in=['charge', 'no_show_fee']).aggregate(total=Sum('amount'))['total'] or 0
+        balance = float(paid) - float(charged)
+        recent = Payment.objects.filter(student=student).order_by('-created_at')[:5]
+        lines = [f"Account balance: ${balance:+.2f}"]
+        if recent.exists():
+            lines.append("Recent activity:")
+            for p in recent:
+                lines.append(f"  - {p.created_at.date()} {p.description or p.payment_type}: ${p.amount:.2f}")
+        return '\n'.join(lines)
+
+    elif tool_name == 'contact_reception':
+        message_body = tool_input.get('message', '')
+        student = acting_user
+        admin_users = User.objects.filter(role='admin', is_active=True)
+        for admin in admin_users:
+            Notification.objects.create(
+                recipient=admin,
+                title=f"Urgent: {student.display_name}",
+                body=f"{student.display_name} ({student.email}): {message_body}",
+                notification_type=Notification.Type.WARNING,
+            )
+        return f"Your message has been sent to reception. They'll be with you shortly. If it's an emergency, call us on (02) 9160 0223."
+
     return f"Unknown tool: {tool_name}"
 
 
@@ -1108,86 +1606,96 @@ class AssistantView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        message = request.data.get('message', '').strip()
+        # Accept both 'message' and 'query' from different frontend callers
+        message = (request.data.get('message') or request.data.get('query') or '').strip()
         if not message:
             return Response({'error': 'No message provided'}, status=400)
 
         api_key = os.environ.get('ANTHROPIC_API_KEY', '')
         if not ANTHROPIC_AVAILABLE or not api_key:
-            return Response({'response': "I'm not fully set up yet — please contact the studio directly for help."})
+            return Response({'response': "I'm not fully set up yet — please contact the studio directly for help.", 'reply': "I'm not fully set up yet — please contact the studio directly for help."})
 
-        # Build student context
+        import datetime as dt
         from apps.enrolments.models import Enrolment
+        from apps.classes.models import Season
 
-        student = request.user
-        student_name = student.display_name or student.email
-
-        active_enrolments = Enrolment.objects.filter(
-            student=student,
-            status='active',
-        ).select_related('class_session')
-        class_list = ', '.join(
-            str(e.class_session) for e in active_enrolments
-        ) or 'No active enrolments'
-
-        # Pull studio settings
+        user = request.user
+        is_admin = user.role in ('admin', 'instructor', 'staff')
         studio = StudioSettings.get()
-        studio_name = studio.studio_name
-        cancellation_window_hours = studio.cancellation_window_hours
-        late_cancel_fee = studio.late_cancel_fee
-        no_show_fee = studio.no_show_fee
-        credit_expiry_days = studio.credit_expiry_days
 
-        is_admin = student.role in ('admin', 'instructor', 'staff')
+        # ── Admin system prompt ────────────────────────────────────────────────
+        if is_admin:
+            system_prompt = (
+                f"You are the studio management assistant for {studio.studio_name}, a pole dance studio in Surry Hills, Sydney.\n"
+                f"You help reception staff and admins manage the studio quickly — especially useful mid-class or behind the desk.\n\n"
+                f"Studio: {studio.studio_name} · Level 1, 88 Kippax St, Surry Hills NSW 2010 · (02) 9160 0223\n"
+                f"Studios: Rhapsody (14 poles), The Box (11 poles), Janitor's Closet (3 poles, private lessons)\n\n"
+                f"You have tools to: look up students, view/update attendance, enrol/cancel students, move between classes, "
+                f"take payments, add charges, issue makeup credits, book practice time, check waitlists, send notifications, and more.\n\n"
+                f"Always use tools to get live data rather than guessing. Be concise — reception is busy.\n"
+                f"Confirm what you've done after taking an action. If something is ambiguous, ask one clarifying question.\n"
+                f"Today is {dt.date.today()}."
+            )
+            tools = ADMIN_TOOLS
 
-        system_prompt = (
-            f"You are the helpful AI assistant for {studio_name}, a pole and aerial dance studio.\n"
-            f"You help {'admins and instructors manage the studio' if is_admin else 'students with questions about classes, bookings, memberships, and studio policies'}.\n\n"
-            f"Studio policies:\n"
-            f"- Cancellation window: {cancellation_window_hours} hours before class\n"
-            f"- Late cancellation fee: ${late_cancel_fee}\n"
-            f"- No-show fee: ${no_show_fee}\n"
-            f"- Credit expiry: {credit_expiry_days} days\n\n"
-            f"{'User' if is_admin else 'Student'} context:\n"
-            f"- Name: {student_name}\n"
-            f"- Role: {student.role}\n"
-            + (f"- Active classes: {class_list}\n\n" if not is_admin else "\n")
-            + f"Be warm, helpful, and concise. If you don't know something specific, direct them to contact the studio directly.\n"
-            f"Keep responses under 3 sentences unless a longer answer is clearly needed.\n"
-            + ("You have access to tools to look up and update student data. Use them when asked." if is_admin else "")
-        )
+        # ── Student system prompt ──────────────────────────────────────────────
+        else:
+            active_enrolments = Enrolment.objects.filter(student=user, status='active').select_related('class_session', 'class_session__studio')
+            class_list = ', '.join(str(e.class_session) for e in active_enrolments) or 'none'
+            today = dt.date.today()
+            active_seasons = Season.objects.filter(start_date__lte=today, end_date__gte=today)
+            season_str = ', '.join(f"{s.name} ({s.start_date} – {s.end_date})" for s in active_seasons) or 'no active season right now'
+            upcoming_seasons = Season.objects.filter(start_date__gt=today).order_by('start_date')[:2]
+            upcoming_str = ', '.join(f"{s.name} starts {s.start_date}" for s in upcoming_seasons) or 'none announced yet'
+
+            system_prompt = (
+                f"You are the friendly assistant for {studio.studio_name}, a pole dance studio. You're talking to {user.display_name}.\n\n"
+                f"STUDIO INFO:\n"
+                f"Address: Level 1, 88 Kippax St, Surry Hills NSW 2010\n"
+                f"Phone: (02) 9160 0223 · Email: intrigued@dualitypole.com\n"
+                f"Studios: Rhapsody (14 poles), The Box (11 poles), Janitor's Closet (3 poles — private lessons & comp prep)\n\n"
+                f"SEASONS:\n"
+                f"Current: {season_str}\n"
+                f"Upcoming: {upcoming_str}\n\n"
+                f"PRICING (per season):\n"
+                f"1 class/week: $270 · 2: $440 · 3: $580 · 4: $700 · 5: $800 · 6: $900\n"
+                f"Kiki/Unravel standalone: $250 · Add Kiki/Unravel to a pole package: from $150 extra\n\n"
+                f"PRACTICE TIME:\n"
+                f"Open practice bookable through the app. $20/hr if enrolled, $30/hr if not. FREE if you attend 3+ classes that week.\n\n"
+                f"POLICIES:\n"
+                f"Cancel {studio.cancellation_window_hours}+ hours before class (free). Late cancel: ${studio.late_cancel_fee}. No-show: ${studio.no_show_fee}.\n"
+                f"Makeup credits last {studio.credit_expiry_days} days. Membership freeze: up to 8 weeks once per season.\n\n"
+                f"{user.display_name}'s classes: {class_list}\n\n"
+                f"IMPORTANT: If someone is locked out, can't get in, or has an urgent issue, use the contact_reception tool immediately.\n"
+                f"Be warm, friendly, and concise. Use tools to get live data (schedule, balance, practice slots). "
+                f"For anything you can't help with, direct them to call (02) 9160 0223 or email intrigued@dualitypole.com.\n"
+                f"Today is {today}."
+            )
+            tools = STUDENT_TOOLS
 
         try:
             ai_client = anthropic.Anthropic(api_key=api_key)
             messages = [{'role': 'user', 'content': message}]
-
-            # Use tools for admin/staff users
-            tools = ASSISTANT_TOOLS if is_admin else []
 
             ai_response = ai_client.messages.create(
                 model='claude-haiku-4-5-20251001',
                 max_tokens=1024,
                 system=system_prompt,
                 messages=messages,
-                tools=tools if tools else anthropic.NOT_GIVEN,
+                tools=tools,
             )
 
-            # Handle tool_use responses
-            tool_results_text = []
-            while ai_response.stop_reason == 'tool_use' and tools:
+            while ai_response.stop_reason == 'tool_use':
                 tool_uses = [b for b in ai_response.content if b.type == 'tool_use']
                 messages.append({'role': 'assistant', 'content': ai_response.content})
-
                 tool_results = []
                 for tool_use in tool_uses:
-                    result = execute_tool(tool_use.name, tool_use.input)
-                    tool_results_text.append(result)
+                    result = execute_tool(tool_use.name, tool_use.input, acting_user=user)
                     tool_results.append({
                         'type': 'tool_result',
                         'tool_use_id': tool_use.id,
                         'content': result,
                     })
-
                 messages.append({'role': 'user', 'content': tool_results})
                 ai_response = ai_client.messages.create(
                     model='claude-haiku-4-5-20251001',
@@ -1200,10 +1708,11 @@ class AssistantView(APIView):
             text_blocks = [b for b in ai_response.content if hasattr(b, 'text')]
             reply_text = text_blocks[0].text if text_blocks else "Done."
 
-        except Exception:
+        except Exception as e:
             reply_text = "I'm having trouble connecting right now — please contact the studio directly for help."
 
-        return Response({'response': reply_text})
+        # Return both keys so both frontend callers work
+        return Response({'response': reply_text, 'reply': reply_text})
 
 
 class ChangePasswordView(APIView):
