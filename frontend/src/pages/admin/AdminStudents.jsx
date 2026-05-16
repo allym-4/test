@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
 import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi, classes as classesApi, tags as tagsApi, settings as settingsApi } from '../../api'
 import client from '../../api/client'
@@ -909,19 +910,18 @@ function BulkTagModal({ studentIds, onClose }) {
 }
 
 export default function AdminStudents() {
+  const navigate = useNavigate()
   const { data, loading } = useApi(() => users.list({ role: 'student' }))
   const { data: sessionsData } = useApi(() => classesApi.list({ active: 'true' }))
   const [search, setSearch] = useState('')
   const [classFilter, setClassFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [activeChip, setActiveChip] = useState('All')
-  const [selected, setSelected] = useState(null)
   const [sortKey, setSortKey] = useState('name')
   const [sortDir, setSortDir] = useState('asc')
   const [balances, setBalances] = useState({})
   const [studentList, setStudentList] = useState(null)
   const [showAdd, setShowAdd] = useState(false)
-  const [viewForm, setViewForm] = useState(null)
   const [showImport, setShowImport] = useState(false)
   const [showBulkTag, setShowBulkTag] = useState(false)
 
@@ -1059,7 +1059,7 @@ export default function AdminStudents() {
                   ? new Date(s.last_login).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
                   : '—'
                 return (
-                  <tr key={s.id} className="clickable" onClick={() => setSelected(s)}>
+                  <tr key={s.id} className="clickable" onClick={() => navigate(`/admin/students/${s.id}`)}>
                     <td>
                       {s.profile_photo ? (
                         <img src={s.profile_photo} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
@@ -1104,7 +1104,7 @@ export default function AdminStudents() {
                     </td>
                     <td><span className="tag tag-lime" style={{ fontSize: 10 }}>Active</span></td>
                     <td onClick={e => e.stopPropagation()}>
-                      <button className="btn btn-ghost btn-xs" onClick={() => setSelected(s)}>View</button>
+                      <button className="btn btn-ghost btn-xs" onClick={() => navigate(`/admin/students/${s.id}`)}>View</button>
                     </td>
                   </tr>
                 )
@@ -1112,18 +1112,6 @@ export default function AdminStudents() {
             </tbody>
           </table>
         </div>
-      )}
-
-      {selected && (
-        <StudentDetail
-          student={selected}
-          onClose={() => setSelected(null)}
-          onViewForm={setViewForm}
-          onRefreshList={updated => {
-            setSelected(updated)
-            setStudentList(prev => (prev ?? allStudents).map(s => s.id === updated.id ? updated : s))
-          }}
-        />
       )}
 
       {showAdd && (

@@ -16,6 +16,7 @@ import HomeworkPage from './pages/HomeworkPage'
 // Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminStudents from './pages/admin/AdminStudents'
+import AdminStudentDetail from './pages/admin/AdminStudentDetail'
 import AdminBilling from './pages/admin/AdminBilling'
 import AdminStaff from './pages/admin/AdminStaff'
 import AdminTimetable from './pages/admin/AdminTimetable'
@@ -122,6 +123,7 @@ export default function App() {
           <Route path="/admin" element={<RequireAuth role="admin"><AdminShell /></RequireAuth>}>
             <Route index element={<AdminDashboard />} />
             <Route path="students" element={<AdminStudents />} />
+            <Route path="students/:id" element={<AdminStudentDetail />} />
             <Route path="billing" element={<AdminBilling />} />
             <Route path="staff" element={<AdminStaff />} />
             <Route path="timetable" element={<AdminTimetable />} />
