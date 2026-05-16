@@ -55,7 +55,7 @@ const PROMPTS = [
   {
     icon: '🎬',
     label: 'Where are the routine videos?',
-    answer: "Routine videos get uploaded around week 5 of the season.\n\nYou can find them at the link in the Student Handbook — the password is markthesheet.",
+    answer: "Routine videos get uploaded around week 5 of the season.\n\nYou can find them in the app under your class resources.",
   },
   {
     icon: '💳',
