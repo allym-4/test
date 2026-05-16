@@ -213,11 +213,10 @@ class StripeWebhookView(APIView):
         sig_header = request.META.get('HTTP_STRIPE_SIGNATURE', '')
         webhook_secret = settings.STRIPE_WEBHOOK_SECRET
 
+        if not webhook_secret:
+            return Response({'detail': 'Webhook secret not configured.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         try:
-            if webhook_secret:
-                event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
-            else:
-                event = stripe.Event.construct_from(json.loads(payload), stripe.api_key)
+            event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
         except (ValueError, stripe.error.SignatureVerificationError):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 

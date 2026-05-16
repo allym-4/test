@@ -180,7 +180,12 @@ export default function StudentBilling() {
               <span>{new Date(showInvoiceModal.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn btn-lime btn-sm" onClick={() => window.print()}>Download</button>
+              <button className="btn btn-lime btn-sm" onClick={() => {
+                const w = window.open('', '_blank')
+                w.document.write(`<html><head><title>Invoice #${showInvoiceModal.id}</title><style>body{font-family:sans-serif;padding:32px;max-width:400px}h2{margin-bottom:24px}table{width:100%;border-collapse:collapse}td{padding:8px 0;border-bottom:1px solid #eee}td:last-child{text-align:right}</style></head><body><h2>Invoice #${showInvoiceModal.id}</h2><table><tr><td>Description</td><td>${showInvoiceModal.description || showInvoiceModal.payment_type?.replace(/_/g, ' ')}</td></tr><tr><td>Amount</td><td>$${Math.abs(parseFloat(showInvoiceModal.amount || 0)).toFixed(2)}</td></tr><tr><td>Date</td><td>${new Date(showInvoiceModal.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}</td></tr></table></body></html>`)
+                w.document.close()
+                w.print()
+              }}>Download</button>
               <button className="btn btn-ghost btn-sm" onClick={() => setShowInvoiceModal(null)}>Close</button>
             </div>
           </div>
@@ -460,7 +465,13 @@ export default function StudentBilling() {
 
       {/* Footer actions */}
       <div style={{ maxWidth: 700, display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button className="btn btn-ghost btn-sm" onClick={() => window.print()}>
+        <button className="btn btn-ghost btn-sm" onClick={() => {
+          const rows = (paymentsData?.results || []).map(p => `<tr><td>#${p.id}</td><td>${p.description || p.payment_type?.replace(/_/g, ' ')}</td><td>$${Math.abs(parseFloat(p.amount || 0)).toFixed(2)}</td><td>${new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}</td></tr>`).join('')
+          const w = window.open('', '_blank')
+          w.document.write(`<html><head><title>All Invoices</title><style>body{font-family:sans-serif;padding:32px}h2{margin-bottom:24px}table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}th{font-weight:bold}</style></head><body><h2>All Invoices</h2><table><thead><tr><th>#</th><th>Description</th><th>Amount</th><th>Date</th></tr></thead><tbody>${rows}</tbody></table></body></html>`)
+          w.document.close()
+          w.print()
+        }}>
           Download all invoices
         </button>
         <button
