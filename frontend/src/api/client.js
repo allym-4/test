@@ -10,6 +10,8 @@ client.interceptors.request.use(config => {
   return config
 })
 
+let refreshPromise = null
+
 client.interceptors.response.use(
   res => res,
   async err => {
@@ -19,7 +21,12 @@ client.interceptors.response.use(
       const refresh = localStorage.getItem('refresh_token')
       if (refresh) {
         try {
-          const { data } = await axios.post(`${BASE_URL}/api/auth/token/refresh/`, { refresh })
+          if (!refreshPromise) {
+            refreshPromise = axios
+              .post(`${BASE_URL}/api/auth/token/refresh/`, { refresh })
+              .finally(() => { refreshPromise = null })
+          }
+          const { data } = await refreshPromise
           localStorage.setItem('access_token', data.access)
           original.headers.Authorization = `Bearer ${data.access}`
           return client(original)

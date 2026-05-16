@@ -298,9 +298,13 @@ class AutomationStatsView(APIView):
         )
         by_slug = {item['slug']: item['count'] for item in by_slug_qs}
 
+        emails_sent = AutomationRun.objects.filter(
+            actions_taken__contains='email'
+        ).count()
+
         return Response({
             'runs_this_month': runs_this_month,
-            'emails_sent': 0,
+            'emails_sent': emails_sent,
             'total_runs': total_runs,
             'by_slug': by_slug,
         })

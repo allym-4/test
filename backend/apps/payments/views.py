@@ -19,16 +19,21 @@ from apps.users.models import User
 
 class PaymentListView(generics.ListCreateAPIView):
     serializer_class = PaymentSerializer
-    permission_classes = [IsAdminOrInstructor]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         qs = Payment.objects.select_related('student', 'created_by')
+        user = self.request.user
+        if user.role not in ('admin', 'instructor'):
+            return qs.filter(student=user)
         student_id = self.request.query_params.get('student')
         if student_id:
             qs = qs.filter(student_id=student_id)
         return qs
 
     def perform_create(self, serializer):
+        if self.request.user.role not in ('admin', 'instructor'):
+            raise permissions.PermissionDenied
         serializer.save(created_by=self.request.user)
 
 
@@ -40,10 +45,13 @@ class PaymentDetailView(generics.RetrieveAPIView):
 
 class PaymentPlanListView(generics.ListCreateAPIView):
     serializer_class = PaymentPlanSerializer
-    permission_classes = [IsAdminOrInstructor]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         qs = PaymentPlan.objects.prefetch_related('instalments').select_related('student')
+        user = self.request.user
+        if user.role not in ('admin', 'instructor'):
+            return qs.filter(student=user)
         student_id = self.request.query_params.get('student')
         if student_id:
             qs = qs.filter(student_id=student_id)
@@ -53,6 +61,8 @@ class PaymentPlanListView(generics.ListCreateAPIView):
         return qs
 
     def perform_create(self, serializer):
+        if self.request.user.role not in ('admin', 'instructor'):
+            raise permissions.PermissionDenied
         serializer.save(created_by=self.request.user)
 
 
@@ -188,6 +198,14 @@ def redeem_gift_card(request):
     card.redeemed_at = timezone.now()
     card.is_active = False
     card.save()
+    Payment.objects.create(
+        student=request.user,
+        payment_type=Payment.PaymentType.CREDIT,
+        amount=card.balance,
+        description=f'Gift card redeemed ({card.code})',
+        reference=card.code,
+        created_by=request.user,
+    )
     return Response({'detail': f'Gift card redeemed! ${card.balance:.2f} credit added to your account.', 'balance': str(card.balance)})
 
 
@@ -318,8 +336,10 @@ class PaymentStatsView(APIView):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminOrInstructor])
+@permission_classes([permissions.IsAuthenticated])
 def student_balance(request, student_pk):
+    if request.user.role not in ('admin', 'instructor') and request.user.pk != int(student_pk):
+        return Response({'detail': 'Forbidden.'}, status=status.HTTP_403_FORBIDDEN)
     """Return running balance for a student."""
     student = User.objects.get(pk=student_pk)
     payments = Payment.objects.filter(student=student)
