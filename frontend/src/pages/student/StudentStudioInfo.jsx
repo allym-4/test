@@ -76,27 +76,25 @@ export default function StudentStudioInfo() {
         <div style={{ maxWidth: 600 }}>
           <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '24px 24px', marginBottom: 16 }}>
             <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, marginBottom: 14, color: 'var(--lime)' }}>
-              {s.tagline || 'Move your body. Find your power.'}
+              {s.tagline || 'Our purpose-built playground for all things pole.'}
             </div>
             <div style={{ fontSize: 14, color: 'var(--grey)', lineHeight: 1.8, marginBottom: 14 }}>
-              {s.studio_name || 'Duality Pole Studio'} is Surry Hills' home for pole fitness, founded in 2021. We believe pole dance is for every body — and that moving your body is one of the most powerful things you can do.
+              Welcome to Duality, our purpose-built playground for all things pole. Tucked high in the trees on vibrant Gadigal Land in Surry Hills, our dreamy studio is designed for one thing: the ultimate pole experience.
             </div>
             <div style={{ fontSize: 14, color: 'var(--grey)', lineHeight: 1.8, marginBottom: 14 }}>
-              We run structured season programmes as well as casual classes, workshops, and open practice sessions. Our two studios — The Box and Rhapsody — are fully equipped with professional-grade poles in multiple diameters.
+              Inside you will find not one, not two, but three stunning pole studios ready to set the stage for your spins, flips and hair flicks. The reception is spacious and luxe, perfect for a pre-class catch-up or post-class debrief. We have change rooms to slip into your duality with ease, gender-neutral bathrooms with two stalls and a shower, a Dyson tap-and-dryer because we love looking good while staying sustainable. You can also grab a locker for the season to stash your grip, shoes or secret snacks.
             </div>
             <div style={{ fontSize: 14, color: 'var(--grey)', lineHeight: 1.8 }}>
-              Whether you're just starting out or looking to push your technique, there's a place for you at Duality.
+              Every corner of Duality is designed to feel otherworldly. From the moment you step inside you leave the everyday behind. The lights, the mirrors, the music, the energy — it is dreamy, a little cheeky and completely transportive. Think of it as stepping into another dimension — one where you are powerful, playful and free to move however you want.
             </div>
-            {(s.email || s.phone || s.instagram) && (
-              <div style={{ marginTop: 18, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                {s.email && <a href={`mailto:${s.email}`} style={{ fontSize: 13, color: 'var(--lime)', textDecoration: 'none' }}>✉ {s.email}</a>}
-                {s.phone && <span style={{ fontSize: 13, color: 'var(--grey)' }}>📞 {s.phone}</span>}
-                {s.instagram && <a href={`https://instagram.com/${s.instagram.replace('@', '')}`} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--lav)', textDecoration: 'none' }}>@ {s.instagram}</a>}
-              </div>
-            )}
+            <div style={{ marginTop: 18, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <a href="mailto:intrigued@dualitypole.com" style={{ fontSize: 13, color: 'var(--lime)', textDecoration: 'none' }}>✉ intrigued@dualitypole.com</a>
+              <span style={{ fontSize: 13, color: 'var(--grey)' }}>📞 (02) 9160 0223</span>
+              <a href="https://instagram.com/dualitypole" target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--lav)', textDecoration: 'none' }}>@ dualitypole</a>
+            </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-            {[['2021', 'Est.'], ['2', 'Studios'], [`${instructors.length || ''}+`, 'Instructors']].map(([val, label]) => (
+            {[['2021', 'Est.'], ['3', 'Studios'], [`${instructors.length || ''}+`, 'Instructors']].map(([val, label]) => (
               <div key={label} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px', textAlign: 'center' }}>
                 <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 24, color: 'var(--lime)' }}>{val}</div>
                 <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: 4 }}>{label}</div>
@@ -107,40 +105,77 @@ export default function StudentStudioInfo() {
       )}
 
       {tab === 'locations' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 600 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 640 }}>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 4 }}>
+            📍 Level 1, 88 Kippax St, Surry Hills NSW 2010 · (02) 9160 0223
+          </div>
           {[
             {
-              name: 'The Box',
-              address: 'Level 1, 88 Kippax St, Surry Hills NSW 2010',
-              desc: 'Our original studio. Fitted with 6 professional poles across 2 rooms. Easy access from Central Station.',
-              hours: 'Mon–Sat: 9am–9pm, Sun: 10am–6pm',
-              poles: 6,
-              access: 'Stairs only',
+              name: 'RHAPSODY',
+              poles: 14,
+              features: [
+                '14 × 38mm brass 3.4m spin/static poles',
+                'Every pole in the view of a mirror and teacher',
+                '2.6m high mirrors',
+                'Cushioned, shock absorbing, specialist torquet flooring',
+                'Custom, colour controlled lighting',
+                'Holographic windows',
+                'Super spacious with at least 2.4m between each pole',
+                'Ducted air conditioning',
+                'State of the art speakers for crisp audio',
+                'Branded Duality mats and blocks for use',
+              ],
             },
             {
-              name: 'Rhapsody',
-              address: 'Level 2, 12 Crown St, Surry Hills NSW 2010',
-              desc: 'Our newer, larger space. 8 poles, a dedicated stretch area, and a beautiful rooftop for post-class hangs.',
-              hours: 'Mon–Sat: 7am–9pm, Sun: 9am–7pm',
-              poles: 8,
-              access: 'Lift + stairs',
+              name: 'THE BOX',
+              poles: 11,
+              features: [
+                '11 × 38mm brass 3.4m spin/static poles',
+                'Every pole in the view of a mirror and teacher',
+                '2.6m high mirrors',
+                'Cushioned, shock absorbing, specialist hybrid flooring',
+                'Custom, colour controlled lighting',
+                'Complete blackout allowing full lighting control',
+                'Super spacious with at least 2.1m between each pole',
+                'Ducted air conditioning',
+                'State of the art speakers for crisp audio',
+                'Branded Duality mats and blocks for use',
+              ],
+            },
+            {
+              name: "JANITOR'S CLOSET",
+              poles: 3,
+              features: [
+                '3 × 38mm brass 3.4m spin/static poles',
+                'Perfect for private lessons and competition practice',
+                '2.6m high mirrors',
+                'Cushioned, shock absorbing, specialist hybrid flooring',
+                'Custom, colour controlled lighting',
+                'Holographic windows',
+                'Super spacious with at least 2.1m between each pole',
+                'Ducted air conditioning',
+                'Branded Duality mats and blocks for use',
+              ],
             },
           ].map(loc => (
             <div key={loc.name} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 22px' }}>
-              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, marginBottom: 4 }}>{loc.name}</div>
-              <div style={{ fontSize: 12, color: 'var(--lime)', marginBottom: 12 }}>{loc.address}</div>
-              <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.7, marginBottom: 14 }}>{loc.desc}</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 14 }}>
-                {[['Poles', loc.poles], ['Hours', 'See below'], ['Access', loc.access]].map(([label, val]) => (
-                  <div key={label} style={{ background: '#111', borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 13, fontWeight: 700 }}>{val}</div>
-                    <div style={{ fontSize: 10, color: 'var(--grey)', marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
-                  </div>
-                ))}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20 }}>{loc.name}</div>
+                <div style={{ background: 'rgba(204,255,0,0.12)', border: '1px solid rgba(204,255,0,0.3)', borderRadius: 6, padding: '4px 10px', fontSize: 12, color: 'var(--lime)', fontWeight: 700 }}>
+                  {loc.poles} poles
+                </div>
               </div>
-              <div style={{ fontSize: 11, color: 'var(--grey)' }}>🕐 {loc.hours}</div>
+              <ul style={{ margin: 0, padding: '0 0 0 16px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {loc.features.map(f => (
+                  <li key={f} style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.5 }}>{f}</li>
+                ))}
+              </ul>
             </div>
           ))}
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 18px', fontSize: 13, color: 'var(--grey)', lineHeight: 1.7 }}>
+            <div style={{ fontWeight: 700, color: '#fff', marginBottom: 6 }}>Shared spaces</div>
+            Spacious and luxe reception area · Change rooms · Gender-neutral bathrooms with shower · Dyson tap-and-dryer · Locker room for season storage
+          </div>
         </div>
       )}
 
