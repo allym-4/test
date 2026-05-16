@@ -440,16 +440,27 @@ class BulkNotificationView(APIView):
             recipients = list(User.objects.filter(id__in=overdue_ids))
         elif target == 'user_ids' and user_ids:
             recipients = list(User.objects.filter(id__in=user_ids))
+        elif target == 'tags':
+            tag_ids = request.data.get('tag_ids', [])
+            if tag_ids:
+                student_ids = StudentTag.objects.filter(
+                    tag_id__in=tag_ids
+                ).values_list('student_id', flat=True).distinct()
+                recipients = list(User.objects.filter(id__in=student_ids, is_active=True))
 
         if not recipients:
             return Response({'detail': 'No matching recipients.', 'count': 0})
 
+        action_label = request.data.get('action_label', '')
+        action_url = request.data.get('action_url', '')
         notifications = [
             Notification(
                 recipient=u,
                 title=title,
                 body=body,
                 notification_type=request.data.get('notification_type', 'info'),
+                action_label=action_label,
+                action_url=action_url,
             )
             for u in recipients
         ]
