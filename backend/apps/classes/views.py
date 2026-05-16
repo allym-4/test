@@ -570,20 +570,19 @@ class PracticeSlotBookView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def _calc_price(self, slot, user):
-        import datetime as dt
-        from apps.attendance.models import AttendanceRecord
         from apps.enrolments.models import Enrolment
-        slot_date = slot.date
-        week_start = slot_date - dt.timedelta(days=slot_date.weekday())
-        week_end = week_start + dt.timedelta(days=6)
-        attended = AttendanceRecord.objects.filter(
+        from apps.classes.models import Season
+        # Free if enrolled in 3+ course classes in the current/active season
+        active_season = Season.objects.filter(status__in=['active', 'upcoming']).order_by('-start_date').first()
+        course_enrolments = Enrolment.objects.filter(
             student=user,
-            status='present',
-            occurrence__date__range=[week_start, week_end],
-        ).count()
-        if attended >= 3:
+            status='active',
+            enrolment_type='course',
+            class_session__season=active_season,
+        ).count() if active_season else 0
+        if course_enrolments >= 3:
             return 0, True
-        is_enrolled = Enrolment.objects.filter(student=user, status='active').exists()
+        is_enrolled = course_enrolments > 0
         rate = slot.ENROLLED_RATE if is_enrolled else slot.NON_ENROLLED_RATE
         return round(slot.duration_hours * rate, 2), False
 

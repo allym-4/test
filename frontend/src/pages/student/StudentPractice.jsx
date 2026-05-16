@@ -61,7 +61,7 @@ export default function StudentPractice() {
     <div style={{ padding: '24px 16px', maxWidth: 700, margin: '0 auto' }}>
       <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, marginBottom: 4 }}>Practice Time</div>
       <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 24 }}>
-        Book open practice sessions in the studio. Enrolled students $20/hr · Non-enrolled $30/hr · Free if you attend 3+ classes this week.
+        Book open practice sessions in the studio. Enrolled students $20/hr · Non-enrolled $30/hr · Free if enrolled in 3+ classes this season.
       </div>
 
       {/* My upcoming bookings */}
@@ -76,7 +76,7 @@ export default function StudentPractice() {
                   {fmtDate(b.slot?.date)} · {fmt(b.slot?.start_time)}–{fmt(b.slot?.end_time)}
                 </div>
                 <div style={{ fontSize: 12, marginTop: 4, color: b.is_free ? 'var(--lime)' : 'var(--lav)' }}>
-                  {b.is_free ? '✓ Free (3+ classes this week)' : `$${parseFloat(b.price_charged).toFixed(0)}`}
+                  {b.is_free ? '✓ Free (3+ classes this season)' : `$${parseFloat(b.price_charged).toFixed(0)}`}
                 </div>
               </div>
               <button
@@ -136,7 +136,7 @@ export default function StudentPractice() {
             <div style={{ fontSize: 14, color: 'var(--grey)', marginBottom: 4 }}>{booking.studio_detail?.name}</div>
             <div style={{ fontSize: 14, marginBottom: 4 }}>{fmtDate(booking.date)} · {fmt(booking.start_time)}–{fmt(booking.end_time)}</div>
             <div style={{ fontSize: 15, fontWeight: 700, color: booking.price_for_me === 0 ? 'var(--lime)' : 'var(--lav)', marginBottom: 16 }}>
-              {booking.price_for_me === 0 ? 'Free — 3+ classes this week!' : `$${booking.price_for_me} to pay at reception`}
+              {booking.price_for_me === 0 ? 'Free — 3+ classes this season!' : `$${booking.price_for_me} to pay at reception`}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={() => setBooking(null)}>Cancel</button>

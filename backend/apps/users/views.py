@@ -1625,7 +1625,7 @@ def execute_tool(tool_name, tool_input, acting_user=None):
         rate = slot.ENROLLED_RATE if is_enrolled else slot.NON_ENROLLED_RATE
         price = 0 if is_free else round(slot.duration_hours * rate, 2)
         PracticeBooking.objects.create(slot=slot, student=student, price_charged=price, is_free=is_free)
-        price_str = "free (3+ classes this week!)" if is_free else f"${price:.0f} — pay at reception"
+        price_str = "free (3+ course classes this season!)" if is_free else f"${price:.0f} — pay at reception"
         return f"Booked! {slot.date} {slot.start_time:%H:%M}–{slot.end_time:%H:%M} at {slot.studio}. Cost: {price_str}."
 
     elif tool_name == 'get_my_balance':
@@ -1720,7 +1720,7 @@ class AssistantView(APIView):
                 f"1 class/week: $270 · 2: $440 · 3: $580 · 4: $700 · 5: $800 · 6: $900\n"
                 f"Kiki/Unravel standalone: $250 · Add Kiki/Unravel to a pole package: from $150 extra\n\n"
                 f"PRACTICE TIME:\n"
-                f"Open practice bookable through the app. $20/hr if enrolled, $30/hr if not. FREE if you attend 3+ classes that week.\n\n"
+                f"Open practice bookable through the app. $20/hr if enrolled, $30/hr if not. FREE if enrolled in 3+ course classes this season.\n\n"
                 f"POLICIES:\n"
                 f"Cancel {studio.cancellation_window_hours}+ hours before class (free). Late cancel: ${studio.late_cancel_fee}. No-show: ${studio.no_show_fee}.\n"
                 f"Makeup credits last {studio.credit_expiry_days} days. Membership freeze: up to 8 weeks once per season.\n\n"

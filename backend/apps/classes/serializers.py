@@ -184,20 +184,19 @@ class PracticeSlotSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'created_at')
 
     def _get_price(self, obj, user):
-        from datetime import date
-        from apps.attendance.models import AttendanceRecord
         from apps.enrolments.models import Enrolment
-        slot_date = obj.date
-        week_start = slot_date - __import__('datetime').timedelta(days=slot_date.weekday())
-        week_end = week_start + __import__('datetime').timedelta(days=6)
-        attended_this_week = AttendanceRecord.objects.filter(
+        from apps.classes.models import Season
+        # Free if enrolled in 3+ course classes in the current/active season
+        active_season = Season.objects.filter(status__in=['active', 'upcoming']).order_by('-start_date').first()
+        course_enrolments = Enrolment.objects.filter(
             student=user,
-            status='present',
-            occurrence__date__range=[week_start, week_end],
-        ).count()
-        if attended_this_week >= 3:
+            status='active',
+            enrolment_type='course',
+            class_session__season=active_season,
+        ).count() if active_season else 0
+        if course_enrolments >= 3:
             return 0
-        is_enrolled = Enrolment.objects.filter(student=user, status='active').exists()
+        is_enrolled = course_enrolments > 0
         rate = obj.ENROLLED_RATE if is_enrolled else obj.NON_ENROLLED_RATE
         return round(obj.duration_hours * rate, 2)
 
