@@ -69,13 +69,33 @@ class SeasonSerializer(serializers.ModelSerializer):
         return Enrolment.objects.filter(class_session_id__in=session_ids, status='active').count()
 
 
+class LockerAssignedToDetailSerializer(serializers.ModelSerializer):
+    display_name = serializers.ReadOnlyField()
+
+    class Meta:
+        from apps.users.models import User
+        model = User
+        fields = ('id', 'display_name', 'email')
+
+
 class LockerSerializer(serializers.ModelSerializer):
-    assigned_to_detail = UserMinimalSerializer(source='assigned_to', read_only=True)
+    assigned_to_detail = serializers.SerializerMethodField()
 
     class Meta:
         model = Locker
-        fields = ('id', 'number', 'assigned_to', 'assigned_to_detail', 'notes', 'expires_at', 'assigned_at')
+        fields = (
+            'id', 'number', 'assigned_to', 'assigned_to_detail', 'notes',
+            'expires_at', 'assigned_at',
+            'key_issued', 'key_lost', 'locker_type', 'payment_type',
+            'payment_status', 'key_lost_fee_paid',
+        )
         read_only_fields = ('id',)
+
+    def get_assigned_to_detail(self, obj):
+        if not obj.assigned_to:
+            return None
+        u = obj.assigned_to
+        return {'id': u.id, 'display_name': u.display_name, 'email': u.email}
 
 
 class KisiGrantSerializer(serializers.ModelSerializer):

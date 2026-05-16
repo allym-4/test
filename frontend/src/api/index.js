@@ -114,6 +114,9 @@ export const lockers = {
   create: (data) => client.post('/api/classes/lockers/', data),
   update: (id, data) => client.patch(`/api/classes/lockers/${id}/`, data),
   delete: (id) => client.delete(`/api/classes/lockers/${id}/`),
+  eligible: () => client.get('/api/classes/lockers/eligible/'),
+  lostKey: (id) => client.post(`/api/classes/lockers/${id}/lost_key/`),
+  markKeyIssued: (id, issued) => client.patch(`/api/classes/lockers/${id}/`, { key_issued: issued }),
 }
 
 export const helpdesk = {
@@ -246,6 +249,7 @@ export const attendance = {
   stats: () => client.get('/api/attendance/stats/'),
   bulkSave: (occurrenceId, records) => client.post(`/api/attendance/occurrence/${occurrenceId}/bulk/`, { records }),
   markAway: (occurrence_id) => client.post('/api/attendance/mark-away/', { occurrence_id }),
+  cancelAway: (occurrence_id) => client.post('/api/attendance/cancel-away/', { occurrence_id }),
   makeupCredits: {
     list: (params) => client.get('/api/attendance/makeup-credits/', { params }),
     create: (data) => client.post('/api/attendance/makeup-credits/', data),

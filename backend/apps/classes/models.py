@@ -120,11 +120,32 @@ class Season(models.Model):
 
 
 class Locker(models.Model):
+    LOCKER_TYPE_CHOICES = [
+        ('complimentary', 'Complimentary'),
+        ('paid', 'Paid'),
+    ]
+    PAYMENT_TYPE_CHOICES = [
+        ('4_class_perk', '4-Class Perk'),
+        ('cash', 'Cash'),
+        ('card', 'Card'),
+    ]
+    PAYMENT_STATUS_CHOICES = [
+        ('paid', 'Paid'),
+        ('unpaid', 'Unpaid'),
+        ('waived', 'Waived'),
+    ]
+
     number = models.PositiveIntegerField(unique=True)
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='lockers')
     notes = models.TextField(blank=True)
     expires_at = models.DateField(null=True, blank=True)
     assigned_at = models.DateField(null=True, blank=True)
+    key_issued = models.BooleanField(default=False)
+    key_lost = models.BooleanField(default=False)
+    locker_type = models.CharField(max_length=20, choices=LOCKER_TYPE_CHOICES, default='complimentary')
+    payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPE_CHOICES, blank=True)
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='unpaid')
+    key_lost_fee_paid = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['number']
