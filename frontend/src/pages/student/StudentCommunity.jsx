@@ -13,6 +13,7 @@ export default function StudentCommunity() {
   const discoverGroups = allGroups.filter(g => !g.is_member && !g.joined && !g.member)
 
   const [activeGroupId, setActiveGroupId] = useState(null)
+  const [mobilePanelOpen, setMobilePanelOpen] = useState(false)
   const [posts, setPosts] = useState({})
   const [msgInput, setMsgInput] = useState('')
   const [sending, setSending] = useState(false)
@@ -94,17 +95,15 @@ export default function StudentCommunity() {
       {joinedGroups.length === 0 && discoverGroups.length === 0 ? (
         <div className="empty-state">No groups yet — your studio will set these up</div>
       ) : (
-        <div style={{ display: 'flex', gap: 0, minHeight: 520, border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+        <div className="split-layout" style={{ minHeight: 520, border: '1px solid var(--border)', borderRadius: 12 }}>
 
           {/* Left sidebar */}
           <div
+            className={`split-sidebar${mobilePanelOpen ? ' mobile-panel-open' : ''}`}
             style={{
               width: 240,
               minWidth: 240,
               borderRight: '1px solid var(--border)',
-              display: 'flex',
-              flexDirection: 'column',
-              overflowY: 'auto',
             }}
           >
             {/* Joined groups */}
@@ -123,7 +122,7 @@ export default function StudentCommunity() {
                   return (
                     <div
                       key={g.id}
-                      onClick={() => setActiveGroupId(g.id)}
+                      onClick={() => { setActiveGroupId(g.id); setMobilePanelOpen(true) }}
                       style={{
                         padding: '10px 12px',
                         borderRadius: 8,
@@ -205,7 +204,7 @@ export default function StudentCommunity() {
           </div>
 
           {/* Right pane */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          <div className={`split-main${!mobilePanelOpen ? ' mobile-list-showing' : ''}`}>
             {!activeGroup ? (
               <div className="empty-state" style={{ margin: 'auto' }}>Select a group to start chatting</div>
             ) : (
@@ -221,6 +220,7 @@ export default function StudentCommunity() {
                     flexShrink: 0,
                   }}
                 >
+                  <button className="mobile-back-btn" onClick={() => setMobilePanelOpen(false)}>← Back</button>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 15 }}>{activeGroup.name}</div>
                     {(activeGroup.member_count ?? activeGroup.members_count ?? activeGroup.members) != null && (
