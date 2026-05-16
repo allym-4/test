@@ -141,7 +141,10 @@ class StripePaymentMethodsView(APIView):
 
     def patch(self, request):
         """Update auto-charge setting and/or default payment method."""
-        user = request.user
+        try:
+            user = self._get_target_user(request)
+        except User.DoesNotExist:
+            return Response({'detail': 'Student not found.'}, status=status.HTTP_404_NOT_FOUND)
         if 'auto_charge' in request.data:
             user.auto_charge_saved_card = bool(request.data['auto_charge'])
         if 'default_payment_method_id' in request.data:

@@ -282,7 +282,7 @@ class AutomationRuleView(APIView):
 class AutomationRuleDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = AutomationRule.objects.all()
     serializer_class = AutomationRuleSerializer
-    permission_classes = [IsAdminOrInstructor]
+    permission_classes = [IsAdminUser]
 
 
 class AutomationStatsView(APIView):
@@ -981,8 +981,9 @@ class ReferralListView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         qs = Referral.objects.all()
-        if not self.request.user.role in ('admin', 'instructor', 'staff'):
-            qs = qs.filter(referrer=self.request.user)
+        is_staff = self.request.user.role in ('admin', 'instructor', 'staff')
+        if not is_staff:
+            return qs.filter(referrer=self.request.user)
         referrer_id = self.request.query_params.get('referrer')
         if referrer_id:
             qs = qs.filter(referrer_id=referrer_id)
