@@ -20,6 +20,8 @@ class ClassCategory(models.Model):
     name = models.CharField(max_length=50)
     colour = models.CharField(max_length=20, default='#ccff00')
     is_visible = models.BooleanField(default=True)
+    is_addon_type = models.BooleanField(default=False)  # True for Kiki, Unravel, etc.
+    standalone_price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)  # e.g. 250 for Kiki/Unravel
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

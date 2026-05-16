@@ -464,6 +464,18 @@ export default function AdminStudentDetail() {
                     ))}
                   </div>
                 )}
+                {(() => {
+                  const SEASON_PRICES = {1: 270, 2: 440, 3: 580, 4: 700, 5: 800, 6: 900}
+                  const n = activeEnrolments.length
+                  const nextClassPrice = n === 0 ? 270 : (SEASON_PRICES[Math.min(n + 1, 6)] - SEASON_PRICES[Math.min(n, 5)])
+                  return (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, padding: '8px 12px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }}>
+                      <span style={{ fontSize: 12, color: 'var(--grey)' }}>
+                        <strong>Add-on pricing:</strong> Adding a class to this student's schedule costs <strong>${nextClassPrice}</strong>
+                      </span>
+                    </div>
+                  )
+                })()}
                 <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 10 }}>Waitlisted</div>
                 {(enrolData || []).filter(e => e.status === 'waitlisted').length === 0 ? (
                   <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 20 }}>None</div>

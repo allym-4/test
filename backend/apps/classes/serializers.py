@@ -12,7 +12,7 @@ class StudioSerializer(serializers.ModelSerializer):
 class ClassCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = ClassCategory
-        fields = ('id', 'name', 'colour', 'is_visible', 'created_at')
+        fields = ('id', 'name', 'colour', 'is_visible', 'is_addon_type', 'standalone_price', 'created_at')
         read_only_fields = ('id', 'created_at')
 
 

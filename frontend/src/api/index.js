@@ -73,6 +73,7 @@ export const enrolments = {
   update: (id, data) => client.patch(`/api/enrolments/${id}/`, data),
   delete: (id) => client.delete(`/api/enrolments/${id}/`),
   convertTrial: (id, data) => client.post(`/api/enrolments/${id}/convert-trial/`, data),
+  pricing: (student, session) => client.get('/api/enrolments/pricing/', { params: { student, session } }),
 }
 
 export const payments = {

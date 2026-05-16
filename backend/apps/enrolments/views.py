@@ -1,9 +1,53 @@
+from decimal import Decimal
 from rest_framework import generics, permissions, status
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Enrolment
 from .serializers import EnrolmentSerializer
 from apps.users.permissions import IsAdminOrInstructor
+
+
+SEASON_PRICES = {1: 270, 2: 440, 3: 580, 4: 700, 5: 800, 6: 900}
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminOrInstructor])
+def enrolment_pricing(request):
+    """Return the price for adding a class to a student's schedule.
+
+    GET /api/enrolments/pricing/?student=X&session=Y
+    """
+    student_id = request.query_params.get('student')
+    session_id = request.query_params.get('session')
+
+    if not student_id or not session_id:
+        return Response({'detail': 'student and session params are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    from apps.classes.models import ClassSession
+
+    try:
+        session = ClassSession.objects.select_related('category').get(pk=session_id)
+    except ClassSession.DoesNotExist:
+        return Response({'detail': 'Session not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    count = Enrolment.objects.filter(student_id=student_id, status='active').count()
+
+    if count == 0:
+        # First class — use standalone price or $270 default
+        if session.category and session.category.standalone_price:
+            price = Decimal(str(session.category.standalone_price))
+        else:
+            price = Decimal(str(SEASON_PRICES[1]))
+    else:
+        n = min(count, 5)  # cap at 6 classes total
+        price = Decimal(str(SEASON_PRICES[n + 1] - SEASON_PRICES[n]))
+
+    return Response({
+        'price': price,
+        'num_enrolments': count,
+        'is_addon': count > 0,
+    })
 
 
 class EnrolmentListView(generics.ListCreateAPIView):
