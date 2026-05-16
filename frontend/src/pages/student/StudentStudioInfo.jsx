@@ -93,13 +93,52 @@ export default function StudentStudioInfo() {
               <a href="https://instagram.com/dualitypole" target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--lav)', textDecoration: 'none' }}>@ dualitypole</a>
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 10, marginBottom: 16 }}>
             {[['2021', 'Est.'], ['3', 'Studios'], [`${instructors.length || ''}+`, 'Instructors']].map(([val, label]) => (
               <div key={label} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px', textAlign: 'center' }}>
                 <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 24, color: 'var(--lime)' }}>{val}</div>
                 <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: 4 }}>{label}</div>
               </div>
             ))}
+          </div>
+
+          {/* Get in Touch */}
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '22px 24px', marginBottom: 16 }}>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 16 }}>Get in Touch</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                <div style={{ minWidth: 180 }}>
+                  <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 4 }}>General enquiries</div>
+                  <a href="mailto:intrigued@dualitypole.com" style={{ fontSize: 14, color: 'var(--lime)', textDecoration: 'none' }}>intrigued@dualitypole.com</a>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 4 }}>Urgent (same-day class issues)</div>
+                  <a href="mailto:staff@dualitypole.com" style={{ fontSize: 14, color: 'var(--lime)', textDecoration: 'none' }}>staff@dualitypole.com</a>
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 4 }}>Phone</div>
+                <a href="tel:0291600223" style={{ fontSize: 14, color: 'var(--white)', textDecoration: 'none' }}>(02) 9160 0223</a>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 4 }}>Instagram</div>
+                <a href="https://instagram.com/dualitypole" target="_blank" rel="noreferrer" style={{ fontSize: 14, color: 'var(--lav)', textDecoration: 'none' }}>@dualitypole</a>
+              </div>
+              <div style={{ padding: '12px 14px', background: '#111', borderRadius: 8, fontSize: 12, color: 'var(--grey)', lineHeight: 1.6 }}>
+                For same-day issues (e.g. can't access Kisi, running late) please email <span style={{ color: 'var(--white)' }}>staff@dualitypole.com</span> — this inbox is monitored before and during class time. The general inbox may not be checked until the next business day.
+              </div>
+            </div>
+          </div>
+
+          {/* Acknowledgements */}
+          <div style={{ background: '#050000', border: '1px solid #333', borderRadius: 14, padding: '22px 24px' }}>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 10 }}>Acknowledgements</div>
+            <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.8, marginBottom: 14, borderBottom: '1px solid #1a1a1a', paddingBottom: 14 }}>
+              We acknowledge the Traditional Custodians of the land on which we dance, the Gadigal People. We pay our respects to their Elders past and present. We dance on stolen land.
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.8 }}>
+              We honour and respect the pioneers of pole dance — the past and present sex workers whose artistry, resilience, and innovation built the foundation of this industry. Their courage and creativity carved a path that allows us to move, express, and connect through pole today. We dance freely because of their work, and we remain grateful for the legacy they continue to shape.
+            </div>
           </div>
         </div>
       )}
