@@ -30,7 +30,7 @@ const PROMPTS = [
   {
     icon: '🤔',
     label: "I don't know what class I should do",
-    answer: "Not sure where to start? We've got you.\n\nIf you're brand new to pole, our Beginners classes are the place to start — no experience needed.\n\nIf you've trained before (at Duality or elsewhere), get in touch via Chat and tell us a bit about your experience. We'll point you in the right direction.",
+    answer: "If you've never done pole before, start with Beginners — it's designed for absolute beginners and no experience or fitness level is required. Just show up.\n\nIf you've trained pole elsewhere or have some experience, message us via Chat and let us know your background. We'll place you in the right level so you're challenged but not overwhelmed.\n\nNot sure if pole is for you at all? Come to an Intro class first — it's a great low-pressure way to try it out before committing to a full season.",
   },
   {
     icon: '🏋️',
