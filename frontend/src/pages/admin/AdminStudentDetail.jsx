@@ -193,6 +193,17 @@ export default function AdminStudentDetail() {
   const [savedCardsData, setSavedCardsData] = useState(null)
   const [chargingSaved, setChargingSaved] = useState(false)
   const [chargeError, setChargeError] = useState(null)
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false)
+  const [showRefundCredit, setShowRefundCredit] = useState(false)
+  const [showAccountCredit, setShowAccountCredit] = useState(false)
+  const [showTransferCancel, setShowTransferCancel] = useState(false)
+  const [refundAmount, setRefundAmount] = useState('')
+  const [refundDesc, setRefundDesc] = useState('')
+  const [refundType, setRefundType] = useState('refund')
+  const [creditAmount, setCreditAmount] = useState('')
+  const [creditDesc, setCreditDesc] = useState('')
+  const [savingRefund, setSavingRefund] = useState(false)
+  const [savingCredit, setSavingCredit] = useState(false)
   const [noteText, setNoteText] = useState('')
   const [noteCategory, setNoteCategory] = useState('general')
   const [savingNote, setSavingNote] = useState(false)
@@ -355,10 +366,18 @@ export default function AdminStudentDetail() {
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
               <button className="btn btn-ghost btn-xs" onClick={() => setShowEdit(true)}>Edit Profile</button>
+              <button className="btn btn-ghost btn-xs" onClick={() => navigate(`/admin/messages?student=${student.id}`)}>Send Message</button>
               <button className="btn btn-ghost btn-xs" onClick={() => setTab('notes')}>Add Note</button>
               <button className="btn btn-lime btn-xs" onClick={() => setShowCharge(true)}>+ Charge</button>
               <button className="btn btn-lime btn-xs" onClick={() => setShowPayment(true)}>Take Payment</button>
               <button className="btn btn-ghost btn-xs" onClick={() => setShowAddToClass(true)}>+ Add to Class</button>
+              <button
+                className="btn btn-ghost btn-xs"
+                style={{ color: student.is_active ? 'var(--red)' : 'var(--lime)', borderColor: student.is_active ? 'rgba(255,68,68,0.4)' : 'rgba(204,255,0,0.4)' }}
+                onClick={() => setShowBlockConfirm(true)}
+              >
+                {student.is_active ? 'Block Account' : 'Unblock Account'}
+              </button>
             </div>
           </div>
         </div>
@@ -567,17 +586,25 @@ export default function AdminStudentDetail() {
             {tab === 'payments' && (
               <div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
-                  <div className={`kpi ${isOwing ? 'kpi-red' : 'kpi-lime'}`} style={{ textAlign: 'center' }}>
-                    <div className="kpi-label">Balance</div>
-                    <div className="kpi-value" style={{ fontSize: 28 }}>{isOwing ? `-$${Math.abs(bal).toFixed(2)}` : bal > 0 ? `$${bal.toFixed(2)} cr` : '$0'}</div>
+                  <div className={`kpi ${isOwing ? 'kpi-red' : ''}`} style={{ textAlign: 'center' }}>
+                    <div className="kpi-label">Outstanding</div>
+                    <div className="kpi-value" style={{ fontSize: 28 }}>{isOwing ? `$${Math.abs(bal).toFixed(2)}` : '$0'}</div>
+                    <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>
+                      {(() => {
+                        const overduePlan = (enrolData || []).find(e => e.plan?.instalments?.some(i => i.status === 'overdue'))
+                        return overduePlan ? 'Instalment plan overdue' : isOwing ? 'Balance owing' : 'No outstanding balance'
+                      })()}
+                    </div>
                   </div>
                   <div className="kpi kpi-lime" style={{ textAlign: 'center' }}>
-                    <div className="kpi-label">Total Paid</div>
+                    <div className="kpi-label">Paid This Term</div>
                     <div className="kpi-value" style={{ fontSize: 28 }}>${parseFloat(balanceData?.total_paid || 0).toFixed(2)}</div>
+                    <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>Total payments received</div>
                   </div>
                   <div className="kpi" style={{ textAlign: 'center' }}>
-                    <div className="kpi-label">Total Charged</div>
-                    <div className="kpi-value" style={{ fontSize: 28 }}>${parseFloat(balanceData?.total_charged || 0).toFixed(2)}</div>
+                    <div className="kpi-label">Account Credit</div>
+                    <div className="kpi-value" style={{ fontSize: 28 }}>{bal > 0 ? `$${bal.toFixed(2)}` : '$0'}</div>
+                    <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>{bal > 0 ? 'Available credit' : 'No credit on account'}</div>
                   </div>
                 </div>
                 {savedCardsData && (
@@ -604,7 +631,9 @@ export default function AdminStudentDetail() {
                 {chargeError && <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 12 }}>{chargeError}</div>}
                 <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
                   <button className="btn btn-lime btn-sm" onClick={() => setShowPayment(true)}>+ Record Payment</button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => setShowCharge(true)}>+ Add Charge</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setShowRefundCredit(true)}>Issue Refund / Credit</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setShowAccountCredit(true)}>Add Account Credit</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setShowTransferCancel(true)}>Transfer / Cancel Enrolment</button>
                   {savedCardsData?.payment_methods?.length > 0 && savedCardsData?.default_payment_method_id && bal < 0 && (
                     <button
                       className="btn btn-ghost btn-sm"
@@ -637,22 +666,46 @@ export default function AdminStudentDetail() {
                 <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 10 }}>Transaction History</div>
                 <div className="tbl-section">
                   <table>
-                    <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Amount</th></tr></thead>
+                    <thead><tr><th>Date</th><th>Description</th><th>Season</th><th>Type</th><th style={{ textAlign: 'right' }}>Debit</th><th style={{ textAlign: 'right' }}>Credit</th><th style={{ textAlign: 'right' }}>Balance</th></tr></thead>
                     <tbody>
-                      {(payData || []).length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--grey)', padding: '24px 0' }}>No transactions</td></tr>}
-                      {(payData || []).map(p => {
-                        const isCredit = p.payment_type === 'payment' || p.payment_type === 'credit'
-                        return (
-                          <tr key={p.id}>
-                            <td style={{ color: 'var(--grey)', whiteSpace: 'nowrap' }}>{new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</td>
-                            <td style={{ fontSize: 13 }}>{p.description || p.payment_type.replace(/_/g, ' ')}</td>
-                            <td><span className={`tag ${isCredit ? 'tag-lime' : 'tag-red'}`} style={{ fontSize: 10 }}>{p.payment_type.replace(/_/g, ' ')}</span></td>
-                            <td style={{ color: isCredit ? 'var(--lime)' : 'var(--red)', fontWeight: 600 }}>
-                              {isCredit ? '+' : '-'}${Math.abs(parseFloat(p.amount || 0)).toFixed(2)}
-                            </td>
-                          </tr>
-                        )
-                      })}
+                      {(payData || []).length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--grey)', padding: '24px 0' }}>No transactions</td></tr>}
+                      {(() => {
+                        const rows = [...(payData || [])].reverse()
+                        let running = 0
+                        const withBalance = rows.map(p => {
+                          const isCredit = p.payment_type === 'payment' || p.payment_type === 'credit' || p.payment_type === 'refund'
+                          const amt = parseFloat(p.amount || 0)
+                          if (isCredit) running += amt; else running -= amt
+                          return { ...p, _running: running, _isCredit: isCredit }
+                        })
+                        return withBalance.reverse().map(p => {
+                          const seasonMatch = (p.description || '').match(/season\s*(\d+)/i)
+                          const seasonLabel = seasonMatch ? `S${seasonMatch[1]}` : '—'
+                          const TYPE_STYLE = {
+                            payment:     { label: 'PAYMENT',  cls: 'tag-lime' },
+                            credit:      { label: 'CREDIT',   cls: 'tag-lime' },
+                            refund:      { label: 'REFUND',   cls: 'tag-amber' },
+                            charge:      { label: 'INVOICE',  cls: 'tag-lav' },
+                            no_show_fee: { label: 'FEE',      cls: 'tag-red' },
+                          }
+                          const ts = TYPE_STYLE[p.payment_type] || { label: p.payment_type, cls: 'tag-grey' }
+                          const amt = parseFloat(p.amount || 0)
+                          const runBal = p._running
+                          return (
+                            <tr key={p.id}>
+                              <td style={{ color: 'var(--grey)', whiteSpace: 'nowrap', fontSize: 12 }}>{new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                              <td style={{ fontSize: 13 }}>{p.description || p.payment_type.replace(/_/g, ' ')}</td>
+                              <td style={{ fontSize: 12, color: 'var(--grey)' }}>{seasonLabel}</td>
+                              <td><span className={`tag ${ts.cls}`} style={{ fontSize: 10 }}>{ts.label}</span></td>
+                              <td style={{ textAlign: 'right', color: 'var(--red)', fontWeight: 600, fontSize: 13 }}>{p._isCredit ? '—' : `$${amt.toFixed(2)}`}</td>
+                              <td style={{ textAlign: 'right', color: 'var(--lime)', fontWeight: 600, fontSize: 13 }}>{p._isCredit ? `$${amt.toFixed(2)}` : '—'}</td>
+                              <td style={{ textAlign: 'right', fontWeight: 600, fontSize: 13, color: runBal < 0 ? 'var(--red)' : runBal > 0 ? 'var(--lime)' : 'var(--grey)' }}>
+                                {runBal < 0 ? `-$${Math.abs(runBal).toFixed(2)}` : runBal > 0 ? `$${runBal.toFixed(2)}` : '$0'}
+                              </td>
+                            </tr>
+                          )
+                        })
+                      })()}
                     </tbody>
                   </table>
                 </div>
@@ -885,6 +938,174 @@ export default function AdminStudentDetail() {
             </div>
             <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
               <button className="btn btn-ghost btn-sm" onClick={() => setViewForm(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Block / Unblock Account */}
+      {showBlockConfirm && (
+        <div className="sd-overlay" onClick={e => e.target === e.currentTarget && setShowBlockConfirm(false)}>
+          <div className="sd-modal" style={{ maxWidth: 400 }}>
+            <div className="sd-header">
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>{student.is_active ? 'Block Account' : 'Unblock Account'}</div>
+              <button className="modal-close-btn" onClick={() => setShowBlockConfirm(false)}>✕</button>
+            </div>
+            <div className="sd-body">
+              <p style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 20 }}>
+                {student.is_active
+                  ? `This will prevent ${student.first_name} from logging in. They will not be notified.`
+                  : `This will restore ${student.first_name}'s access to the student portal.`}
+              </p>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => setShowBlockConfirm(false)}>Cancel</button>
+                <button
+                  className="btn btn-sm"
+                  style={{ background: student.is_active ? 'var(--red)' : 'var(--lime)', color: student.is_active ? '#fff' : '#000' }}
+                  onClick={async () => {
+                    await users.update(student.id, { is_active: !student.is_active })
+                    setStudent(s => ({ ...s, is_active: !s.is_active }))
+                    setShowBlockConfirm(false)
+                  }}
+                >
+                  {student.is_active ? 'Block Account' : 'Unblock Account'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Issue Refund / Credit */}
+      {showRefundCredit && (
+        <div className="sd-overlay" onClick={e => e.target === e.currentTarget && setShowRefundCredit(false)}>
+          <div className="sd-modal" style={{ maxWidth: 420 }}>
+            <div className="sd-header">
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>Issue Refund / Credit</div>
+              <button className="modal-close-btn" onClick={() => setShowRefundCredit(false)}>✕</button>
+            </div>
+            <div className="sd-body">
+              <div className="field">
+                <label>Type</label>
+                <select value={refundType} onChange={e => setRefundType(e.target.value)} style={{ background: '#111', color: '#fff', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 10px', fontSize: 13, width: '100%' }}>
+                  <option value="refund">Refund (money back)</option>
+                  <option value="credit">Account Credit</option>
+                </select>
+              </div>
+              <div className="field">
+                <label>Amount ($)</label>
+                <input type="number" min="0" step="0.01" value={refundAmount} onChange={e => setRefundAmount(e.target.value)} placeholder="0.00" />
+              </div>
+              <div className="field">
+                <label>Description</label>
+                <input value={refundDesc} onChange={e => setRefundDesc(e.target.value)} placeholder="Reason for refund / credit" />
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => setShowRefundCredit(false)}>Cancel</button>
+                <button
+                  className="btn btn-lime btn-sm"
+                  disabled={savingRefund || !refundAmount}
+                  onClick={async () => {
+                    setSavingRefund(true)
+                    try {
+                      await payments.create({ student: student.id, payment_type: refundType, amount: parseFloat(refundAmount), description: refundDesc || `${refundType === 'refund' ? 'Refund' : 'Account credit'} issued` })
+                      const [balRes, payRes] = await Promise.all([payments.balance(student.id), payments.list({ student: student.id })])
+                      setBalanceData(balRes.data)
+                      setPayData(payRes.data.results || [])
+                      setRefundAmount('')
+                      setRefundDesc('')
+                      setShowRefundCredit(false)
+                    } finally { setSavingRefund(false) }
+                  }}
+                >
+                  {savingRefund ? 'Saving…' : 'Issue'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Account Credit */}
+      {showAccountCredit && (
+        <div className="sd-overlay" onClick={e => e.target === e.currentTarget && setShowAccountCredit(false)}>
+          <div className="sd-modal" style={{ maxWidth: 400 }}>
+            <div className="sd-header">
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>Add Account Credit</div>
+              <button className="modal-close-btn" onClick={() => setShowAccountCredit(false)}>✕</button>
+            </div>
+            <div className="sd-body">
+              <div className="field">
+                <label>Credit Amount ($)</label>
+                <input type="number" min="0" step="0.01" value={creditAmount} onChange={e => setCreditAmount(e.target.value)} placeholder="0.00" />
+              </div>
+              <div className="field">
+                <label>Description</label>
+                <input value={creditDesc} onChange={e => setCreditDesc(e.target.value)} placeholder="Reason for credit" />
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => setShowAccountCredit(false)}>Cancel</button>
+                <button
+                  className="btn btn-lime btn-sm"
+                  disabled={savingCredit || !creditAmount}
+                  onClick={async () => {
+                    setSavingCredit(true)
+                    try {
+                      await payments.create({ student: student.id, payment_type: 'credit', amount: parseFloat(creditAmount), description: creditDesc || 'Account credit added' })
+                      const [balRes, payRes] = await Promise.all([payments.balance(student.id), payments.list({ student: student.id })])
+                      setBalanceData(balRes.data)
+                      setPayData(payRes.data.results || [])
+                      setCreditAmount('')
+                      setCreditDesc('')
+                      setShowAccountCredit(false)
+                    } finally { setSavingCredit(false) }
+                  }}
+                >
+                  {savingCredit ? 'Saving…' : 'Add Credit'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transfer / Cancel Enrolment */}
+      {showTransferCancel && (
+        <div className="sd-overlay" onClick={e => e.target === e.currentTarget && setShowTransferCancel(false)}>
+          <div className="sd-modal" style={{ maxWidth: 480 }}>
+            <div className="sd-header">
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>Transfer / Cancel Enrolment</div>
+              <button className="modal-close-btn" onClick={() => setShowTransferCancel(false)}>✕</button>
+            </div>
+            <div className="sd-body">
+              {(enrolData || []).filter(e => e.status === 'active').length === 0 ? (
+                <div style={{ color: 'var(--grey)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>No active enrolments to cancel.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {(enrolData || []).filter(e => e.status === 'active').map(e => (
+                    <div key={e.id} style={{ background: '#111', borderRadius: 8, padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 13 }}>{e.class_session_name || 'Class'}</div>
+                        <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{e.enrolment_type}</div>
+                      </div>
+                      <button
+                        className="btn btn-ghost btn-xs"
+                        style={{ color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)', flexShrink: 0 }}
+                        onClick={async () => {
+                          await enrolments.update(e.id, { status: 'cancelled' })
+                          const r = await enrolments.list({ student: student.id })
+                          setEnrolData(r.data.results || [])
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => setShowTransferCancel(false)}>Close</button>
+              </div>
             </div>
           </div>
         </div>
