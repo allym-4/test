@@ -442,7 +442,7 @@ export default function AdminTimetable() {
 
   // Load seasons for the dropdown (best-effort; falls back to hardcoded)
   const { data: seasonsData } = useApi(() => seasonsApi.list())
-  const seasonOptions = seasonsData?.results ?? seasonsData ?? null
+  const seasonOptions = seasonsData?.results ?? []
 
   // Derive current season from live data
   const activeSeason = selectedSeasonId
@@ -517,7 +517,7 @@ export default function AdminTimetable() {
             >
               {seasonOptions && seasonOptions.length > 0
                 ? seasonOptions.map(s => (
-                    <option key={s.id} value={s.id}>{s.name ?? `Season ${s.number}`}</option>
+                    <option key={s.id} value={s.id}>{s.name}</option>
                   ))
                 : <option>{FALLBACK_SEASON_LABEL}</option>
               }
