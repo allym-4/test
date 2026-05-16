@@ -519,7 +519,7 @@ export default function AdminTimetable() {
                 ? seasonOptions.map(s => (
                     <option key={s.id} value={s.id}>{s.name ?? `Season ${s.number}`}</option>
                   ))
-                : <option>{SEASON_LABEL}</option>
+                : <option>{FALLBACK_SEASON_LABEL}</option>
               }
             </select>
 
