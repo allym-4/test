@@ -35,6 +35,17 @@ export const classes = {
     cancel: (id) => client.delete(`/api/classes/workshops/${id}/book/`),
     bookings: (id) => client.get(`/api/classes/workshops/${id}/bookings/`),
   },
+  practice: {
+    list: (params) => client.get('/api/classes/practice/', { params }),
+    get: (id) => client.get(`/api/classes/practice/${id}/`),
+    create: (data) => client.post('/api/classes/practice/', data),
+    update: (id, data) => client.patch(`/api/classes/practice/${id}/`, data),
+    delete: (id) => client.delete(`/api/classes/practice/${id}/`),
+    book: (id) => client.post(`/api/classes/practice/${id}/book/`),
+    cancel: (id) => client.post(`/api/classes/practice/${id}/cancel/`),
+    myBookings: () => client.get('/api/classes/practice/my-bookings/'),
+    allBookings: (params) => client.get('/api/classes/practice/all-bookings/', { params }),
+  },
 }
 
 export const studios = {

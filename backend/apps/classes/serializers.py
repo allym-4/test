@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, Workshop, WorkshopBooking
+from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, Workshop, WorkshopBooking, PracticeSlot, PracticeBooking
 from apps.users.serializers import UserMinimalSerializer
 
 
@@ -86,7 +86,7 @@ class LockerSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'number', 'assigned_to', 'assigned_to_detail', 'notes',
             'expires_at', 'assigned_at',
-            'key_issued', 'key_lost', 'locker_type', 'payment_type',
+            'key_issued', 'key_returned', 'key_lost', 'locker_type', 'payment_type',
             'payment_status', 'key_lost_fee_paid',
         )
         read_only_fields = ('id',)
@@ -160,4 +160,74 @@ class WorkshopBookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkshopBooking
         fields = ('id', 'workshop', 'workshop_detail', 'student', 'status', 'created_at')
+        read_only_fields = ('id', 'created_at')
+
+
+class PracticeSlotSerializer(serializers.ModelSerializer):
+    studio_detail = StudioSerializer(source='studio', read_only=True)
+    booked_count = serializers.ReadOnlyField()
+    spots_left = serializers.ReadOnlyField()
+    duration_hours = serializers.ReadOnlyField()
+    is_booked = serializers.SerializerMethodField()
+    my_booking_status = serializers.SerializerMethodField()
+    price_for_me = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PracticeSlot
+        fields = (
+            'id', 'studio', 'studio_detail', 'date', 'start_time', 'end_time',
+            'capacity', 'booked_count', 'spots_left', 'duration_hours',
+            'is_active', 'notes', 'created_at',
+            'is_booked', 'my_booking_status', 'price_for_me',
+        )
+        read_only_fields = ('id', 'created_at')
+
+    def _get_price(self, obj, user):
+        from datetime import date
+        from apps.attendance.models import AttendanceRecord
+        from apps.enrolments.models import Enrolment
+        slot_date = obj.date
+        week_start = slot_date - __import__('datetime').timedelta(days=slot_date.weekday())
+        week_end = week_start + __import__('datetime').timedelta(days=6)
+        attended_this_week = AttendanceRecord.objects.filter(
+            student=user,
+            status='present',
+            occurrence__date__range=[week_start, week_end],
+        ).count()
+        if attended_this_week >= 3:
+            return 0
+        is_enrolled = Enrolment.objects.filter(student=user, status='active').exists()
+        rate = obj.ENROLLED_RATE if is_enrolled else obj.NON_ENROLLED_RATE
+        return round(obj.duration_hours * rate, 2)
+
+    def get_is_booked(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.bookings.filter(student=request.user, status='confirmed').exists()
+
+    def get_my_booking_status(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return None
+        b = obj.bookings.filter(student=request.user).first()
+        return b.status if b else None
+
+    def get_price_for_me(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return None
+        return self._get_price(obj, request.user)
+
+
+class PracticeBookingSerializer(serializers.ModelSerializer):
+    slot_detail = PracticeSlotSerializer(source='slot', read_only=True)
+    student_detail = UserMinimalSerializer(source='student', read_only=True)
+
+    class Meta:
+        model = PracticeBooking
+        fields = (
+            'id', 'slot', 'slot_detail', 'student', 'student_detail',
+            'status', 'price_charged', 'is_free', 'payment_type', 'created_at',
+        )
         read_only_fields = ('id', 'created_at')

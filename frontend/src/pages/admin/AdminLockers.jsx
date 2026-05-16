@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useApi } from '../../hooks/useApi'
 import { lockers, users } from '../../api'
-import '../StudentsPage.css'
 
 const TOTAL_LOCKERS = 36
 
@@ -52,323 +51,77 @@ function AssignModal({ locker, onClose, onSaved }) {
   }
 
   const isEdit = !!(locker?.assigned_to)
-  const title = isEdit ? `Edit Locker #${locker.number}` : `Assign Locker #${locker?.number}`
 
   return (
-    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="sd-modal" style={{ maxWidth: 420 }}>
-        <div className="sd-header">
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>{title}</div>
-          <button className="modal-close-btn" onClick={onClose}>✕</button>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: 24, width: '100%', maxWidth: 420 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>
+            {isEdit ? `Edit Locker #${String(locker.number).padStart(2,'0')}` : `Assign Locker #${String(locker?.number || '').padStart(2,'0')}`}
+          </div>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
         </div>
-        <div className="sd-body">
-          <form onSubmit={submit}>
-            {/* Student */}
-            <div className="field">
-              <label>Student</label>
-              {picked ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 13 }}>{picked.display_name || picked.first_name}</span>
-                  <button type="button" className="btn btn-ghost btn-xs" onClick={() => { setPicked(null); setStudentSearch('') }}>Change</button>
-                </div>
-              ) : (
-                <>
-                  <input value={studentSearch} onChange={e => setStudentSearch(e.target.value)} placeholder="Search by name…" />
-                  {studentList.length > 0 && (
-                    <div style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, marginTop: 4, maxHeight: 180, overflowY: 'auto' }}>
-                      {studentList.slice(0, 6).map(s => (
-                        <div key={s.id} onClick={() => { setPicked(s); setStudentSearch('') }} style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13 }}>
-                          {s.display_name || `${s.first_name} ${s.last_name}`}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-
-            {/* Locker Type */}
-            <div className="field">
-              <label>Locker Type</label>
-              <select value={lockerType} onChange={e => setLockerType(e.target.value)}>
-                <option value="complimentary">Complimentary</option>
-                <option value="paid">Paid ($50)</option>
-              </select>
-            </div>
-
-            {/* Payment Type — only for paid */}
-            {lockerType === 'paid' && (
-              <div className="field">
-                <label>Payment Type</label>
-                <select value={paymentType} onChange={e => setPaymentType(e.target.value)}>
-                  <option value="">Select…</option>
-                  <option value="4_class_perk">4-Class Perk</option>
-                  <option value="cash">Cash</option>
-                  <option value="card">Card</option>
-                </select>
+        <form onSubmit={submit}>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Student</div>
+            {picked ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 13 }}>{picked.display_name || picked.first_name}</span>
+                <button type="button" className="btn btn-ghost btn-xs" onClick={() => { setPicked(null); setStudentSearch('') }}>Change</button>
               </div>
-            )}
-
-            {/* Payment Status */}
-            <div className="field">
-              <label>Payment Status</label>
-              <select value={paymentStatus} onChange={e => setPaymentStatus(e.target.value)}>
-                <option value="unpaid">Unpaid</option>
-                <option value="paid">Paid</option>
-                <option value="waived">Waived</option>
-              </select>
-            </div>
-
-            {/* Key Issued */}
-            <div className="field" style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <input
-                type="checkbox"
-                id="keyIssued"
-                checked={keyIssued}
-                onChange={e => setKeyIssued(e.target.checked)}
-                style={{ width: 16, height: 16, cursor: 'pointer' }}
-              />
-              <label htmlFor="keyIssued" style={{ marginBottom: 0, cursor: 'pointer' }}>Key Issued</label>
-            </div>
-
-            <div className="field"><label>Expiry Date</label><input type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} /></div>
-            <div className="field"><label>Notes</label><input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Optional notes…" /></div>
-
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-              <button type="submit" className="btn btn-lime btn-sm" disabled={saving || !picked}>{saving ? 'Saving…' : isEdit ? 'Save' : 'Assign'}</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Selected Locker Detail Panel ────────────────────────────────────────────
-
-function LockerDetailPanel({ locker, number, onEdit, onUnassign, onAssign, onRefetch }) {
-  const [togglingKey, setTogglingKey] = useState(false)
-  const [lostKeyPending, setLostKeyPending] = useState(false)
-
-  async function toggleKeyIssued() {
-    setTogglingKey(true)
-    try {
-      await lockers.markKeyIssued(locker.id, !locker.key_issued)
-      onRefetch()
-    } finally {
-      setTogglingKey(false)
-    }
-  }
-
-  async function reportLostKey() {
-    if (!confirm(`Report the key for Locker #${number} as lost? This will create a $50 charge for ${locker.assigned_to_detail?.display_name}.`)) return
-    setLostKeyPending(true)
-    try {
-      await lockers.lostKey(locker.id)
-      onRefetch()
-    } catch (err) {
-      alert('Failed to report lost key.')
-    } finally {
-      setLostKeyPending(false)
-    }
-  }
-
-  const paymentTypeLabel = {
-    '4_class_perk': '4-Class Perk',
-    cash: 'Cash',
-    card: 'Card',
-  }
-
-  const paymentStatusColor = {
-    paid: 'var(--lime)',
-    unpaid: 'var(--amber)',
-    waived: 'var(--lav)',
-  }
-
-  return (
-    <div style={{ marginTop: 16, background: 'var(--card)', border: `1px solid ${locker ? 'rgba(176,160,255,0.3)' : 'var(--border)'}`, borderRadius: 12, padding: '14px 16px' }}>
-      <div style={{ fontWeight: 600, marginBottom: 8 }}>Locker #{number}</div>
-      {locker ? (
-        <>
-          <div style={{ fontSize: 13, marginBottom: 2, fontWeight: 600 }}>{locker.assigned_to_detail?.display_name}</div>
-          <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 6 }}>{locker.assigned_to_detail?.email}</div>
-
-          {/* Badges row */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
-            {locker.key_lost && (
-              <span style={{ fontSize: 10, fontWeight: 700, background: 'rgba(255,68,68,0.15)', color: 'var(--red)', border: '1px solid rgba(255,68,68,0.4)', borderRadius: 4, padding: '2px 7px', letterSpacing: '0.5px' }}>
-                KEY LOST
-              </span>
-            )}
-            <span style={{ fontSize: 10, fontWeight: 700, background: 'rgba(255,255,255,0.06)', color: 'var(--grey)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 7px' }}>
-              {locker.locker_type === 'paid' ? 'Paid $50' : 'Complimentary'}
-            </span>
-            {locker.payment_type && (
-              <span style={{ fontSize: 10, fontWeight: 700, background: 'rgba(176,160,255,0.1)', color: 'var(--lav)', border: '1px solid rgba(176,160,255,0.3)', borderRadius: 4, padding: '2px 7px' }}>
-                {paymentTypeLabel[locker.payment_type] || locker.payment_type}
-              </span>
-            )}
-            {locker.payment_status && (
-              <span style={{ fontSize: 10, fontWeight: 700, background: `${paymentStatusColor[locker.payment_status]}18`, color: paymentStatusColor[locker.payment_status], border: `1px solid ${paymentStatusColor[locker.payment_status]}44`, borderRadius: 4, padding: '2px 7px' }}>
-                {locker.payment_status.charAt(0).toUpperCase() + locker.payment_status.slice(1)}
-              </span>
+            ) : (
+              <>
+                <input value={studentSearch} onChange={e => setStudentSearch(e.target.value)} placeholder="Search by name…" />
+                {studentList.length > 0 && (
+                  <div style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, marginTop: 4, maxHeight: 180, overflowY: 'auto' }}>
+                    {studentList.slice(0, 6).map(s => (
+                      <div key={s.id} onClick={() => { setPicked(s); setStudentSearch('') }}
+                        style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13 }}>
+                        {s.display_name || `${s.first_name} ${s.last_name}`}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
-
-          {locker.expires_at && (
-            <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 4 }}>Expires {locker.expires_at}</div>
-          )}
-          {locker.notes && (
-            <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 10 }}>{locker.notes}</div>
-          )}
-
-          {/* Key Issued toggle */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <span style={{ fontSize: 12, color: 'var(--grey)' }}>Key issued:</span>
-            <button
-              className={`btn btn-xs ${locker.key_issued ? 'btn-lime' : 'btn-ghost'}`}
-              onClick={toggleKeyIssued}
-              disabled={togglingKey}
-              style={{ minWidth: 52 }}
-            >
-              {togglingKey ? '…' : locker.key_issued ? 'Yes' : 'No'}
+          {[
+            ['Locker Type', <select value={lockerType} onChange={e => setLockerType(e.target.value)}>
+              <option value="complimentary">Complimentary (4-class perk)</option>
+              <option value="paid">Paid ($50/season)</option>
+            </select>],
+            ...(lockerType === 'paid' ? [['Payment method', <select value={paymentType} onChange={e => setPaymentType(e.target.value)}>
+              <option value="">Select…</option>
+              <option value="cash">Cash</option>
+              <option value="card">Card</option>
+              <option value="eftpos">EFTPOS</option>
+            </select>]] : []),
+            ['Payment Status', <select value={paymentStatus} onChange={e => setPaymentStatus(e.target.value)}>
+              <option value="unpaid">Unpaid</option>
+              <option value="paid">Paid</option>
+              <option value="waived">Waived</option>
+            </select>],
+            ['Expiry Date', <input type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} />],
+            ['Notes', <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Optional…" />],
+          ].map(([label, field]) => (
+            <div key={label} style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
+              {field}
+            </div>
+          ))}
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, cursor: 'pointer', fontSize: 13 }}>
+            <input type="checkbox" checked={keyIssued} onChange={e => setKeyIssued(e.target.checked)} style={{ width: 15, height: 15 }} />
+            Key issued to student
+          </label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="button" className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-lime btn-sm" style={{ flex: 1 }} disabled={saving || !picked}>
+              {saving ? 'Saving…' : isEdit ? 'Save' : 'Assign'}
             </button>
           </div>
-
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            <button className="btn btn-ghost btn-xs" onClick={onEdit}>Edit</button>
-            <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)' }} onClick={onUnassign}>Unassign</button>
-            {!locker.key_lost && (
-              <button
-                className="btn btn-ghost btn-xs"
-                style={{ color: 'var(--amber)', borderColor: 'rgba(255,165,0,0.3)' }}
-                onClick={reportLostKey}
-                disabled={lostKeyPending}
-              >
-                {lostKeyPending ? 'Reporting…' : 'Report Lost Key'}
-              </button>
-            )}
-          </div>
-        </>
-      ) : (
-        <>
-          <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 10 }}>This locker is available.</div>
-          <button className="btn btn-lime btn-xs" onClick={onAssign}>Assign to Student</button>
-        </>
-      )}
-    </div>
-  )
-}
-
-// ─── Eligible Students Tab ───────────────────────────────────────────────────
-
-function EligibleStudentsTab({ onAssign }) {
-  const { data, loading, error } = useApi(() => lockers.eligible(), [])
-
-  if (loading) return <div style={{ fontSize: 13, color: 'var(--grey)', padding: '24px 0' }}>Loading…</div>
-  if (error) return <div style={{ fontSize: 13, color: 'var(--red)', padding: '24px 0' }}>Failed to load eligible students.</div>
-  if (!data) return null
-
-  const { season, eligible = [], paid_holders = [] } = data
-
-  return (
-    <div>
-      {season ? (
-        <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16 }}>
-          Current season: <strong style={{ color: 'var(--lav)' }}>{season.name}</strong>
-        </div>
-      ) : (
-        <div style={{ fontSize: 13, color: 'var(--amber)', marginBottom: 16 }}>No active season found.</div>
-      )}
-
-      {/* Eligible Students — 4+ classes */}
-      <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 10, fontWeight: 600 }}>
-        4-Class Perk Eligible ({eligible.length})
+        </form>
       </div>
-
-      {eligible.length === 0 ? (
-        <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 24 }}>No students with 4+ classes this season.</div>
-      ) : (
-        <div className="tbl-section" style={{ border: 'none', borderRadius: 0, marginBottom: 32 }}>
-          <table>
-            <thead>
-              <tr>
-                <th>Student</th>
-                <th>Email</th>
-                <th>Classes</th>
-                <th>Locker</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {eligible.map(s => (
-                <tr key={s.id}>
-                  <td><b>{s.display_name}</b></td>
-                  <td style={{ fontSize: 12, color: 'var(--grey)' }}>{s.email}</td>
-                  <td style={{ fontSize: 13, color: 'var(--lav)', fontWeight: 600 }}>{s.enrolment_count}</td>
-                  <td>
-                    {s.has_locker ? (
-                      <span style={{ fontSize: 10, fontWeight: 700, background: 'rgba(176, 255, 100, 0.12)', color: 'var(--lime)', border: '1px solid rgba(176, 255, 100, 0.35)', borderRadius: 4, padding: '2px 8px' }}>
-                        Locker #{s.locker_number}
-                      </span>
-                    ) : (
-                      <span style={{ fontSize: 10, fontWeight: 700, background: 'rgba(255,165,0,0.1)', color: 'var(--amber)', border: '1px solid rgba(255,165,0,0.3)', borderRadius: 4, padding: '2px 8px' }}>
-                        No locker
-                      </span>
-                    )}
-                  </td>
-                  <td>
-                    {!s.has_locker && (
-                      <button
-                        className="btn btn-ghost btn-xs"
-                        onClick={() => onAssign(s)}
-                      >
-                        Assign
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Paid Locker Holders — fewer than 4 classes */}
-      {paid_holders.length > 0 && (
-        <>
-          <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 10, fontWeight: 600 }}>
-            Paid Locker Holders ({paid_holders.length})
-          </div>
-          <div className="tbl-section" style={{ border: 'none', borderRadius: 0 }}>
-            <table>
-              <thead>
-                <tr>
-                  <th>Student</th>
-                  <th>Email</th>
-                  <th>Classes This Season</th>
-                  <th>Locker</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paid_holders.map(s => (
-                  <tr key={s.id}>
-                    <td><b>{s.display_name}</b></td>
-                    <td style={{ fontSize: 12, color: 'var(--grey)' }}>{s.email}</td>
-                    <td style={{ fontSize: 13, color: 'var(--grey)' }}>{s.enrolment_count}</td>
-                    <td>
-                      <span style={{ fontSize: 10, fontWeight: 700, background: 'rgba(176,160,255,0.1)', color: 'var(--lav)', border: '1px solid rgba(176,160,255,0.3)', borderRadius: 4, padding: '2px 8px' }}>
-                        Locker #{s.locker_number}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
     </div>
   )
 }
@@ -377,234 +130,259 @@ function EligibleStudentsTab({ onAssign }) {
 
 export default function AdminLockers() {
   const { data: lockerData, loading, refetch } = useApi(() => lockers.list(), [])
+  const { data: eligibleData, refetch: refetchEligible } = useApi(() => lockers.eligible(), [])
   const lockerList = lockerData?.results || lockerData || []
 
-  const [activeTab, setActiveTab] = useState('grid')
-  const [selected, setSelected] = useState(null)
   const [modal, setModal] = useState(null)
+  const [busy, setBusy] = useState(null) // locker id being toggled
 
   const lockerMap = {}
   lockerList.forEach(l => { lockerMap[l.number] = l })
 
-  const occupied = lockerList.length
-  const free = TOTAL_LOCKERS - occupied
+  const eligible = eligibleData?.eligible || []
+  const eligibleWithoutLocker = eligible.filter(s => !s.has_locker)
+  const seasonName = eligibleData?.season?.name || 'Current Season'
 
-  const selectedLocker = selected ? lockerMap[selected] : null
+  // Stats
+  const freeLockers = lockerList.filter(l => l.locker_type === 'complimentary').length
+  const paidLockers = lockerList.filter(l => l.locker_type === 'paid').length
+  const overdue = lockerList.filter(l => l.locker_type === 'paid' && l.payment_status === 'unpaid').length
+  const available = TOTAL_LOCKERS - lockerList.length
 
-  async function unassign(lockerId) {
-    if (!confirm('Unassign this locker?')) return
-    await lockers.update(lockerId, { assigned_to: null, expires_at: null, assigned_at: null })
+  // Grid color per locker
+  function gridStyle(num) {
+    const l = lockerMap[num]
+    if (!l) return { bg: '#181818', border: 'var(--border)', color: '#444' }
+    if (l.key_lost) return { bg: 'rgba(255,68,68,0.15)', border: 'rgba(255,68,68,0.5)', color: 'var(--red)' }
+    if (l.locker_type === 'paid' && l.payment_status === 'unpaid')
+      return { bg: 'rgba(255,68,68,0.12)', border: 'rgba(255,68,68,0.35)', color: 'var(--red)' }
+    if (l.locker_type === 'paid')
+      return { bg: 'rgba(100,220,100,0.12)', border: 'rgba(100,220,100,0.4)', color: '#7cf07c' }
+    return { bg: 'rgba(255,165,0,0.1)', border: 'rgba(255,165,0,0.4)', color: 'var(--amber)' }
+  }
+
+  async function toggleKeyIssued(l) {
+    setBusy(l.id + '-ki')
+    await lockers.update(l.id, { key_issued: !l.key_issued })
+    refetch(); setBusy(null)
+  }
+
+  async function toggleKeyReturned(l) {
+    setBusy(l.id + '-kr')
+    await lockers.update(l.id, { key_returned: !l.key_returned })
+    refetch(); setBusy(null)
+  }
+
+  async function reportLostKey(l) {
+    if (!confirm(`Report key lost for Locker #${l.number} (${l.assigned_to_detail?.display_name})? This creates a $50 charge.`)) return
+    setBusy(l.id + '-lk')
+    try { await lockers.lostKey(l.id); refetch() } catch { alert('Failed.') }
+    setBusy(null)
+  }
+
+  async function unassign(l) {
+    if (!confirm(`Unassign Locker #${l.number}?`)) return
+    await lockers.update(l.id, { assigned_to: null, expires_at: null, assigned_at: null })
     refetch()
-    setSelected(null)
   }
 
-  function openAssign(number) {
+  function openAssign(number, prefillStudent) {
     const existing = lockerMap[number]
-    setModal({ locker: existing || { number }, mode: existing ? 'edit' : 'assign' })
+    const locker = prefillStudent
+      ? { number, assigned_to_detail: prefillStudent, locker_type: 'complimentary', payment_status: 'waived' }
+      : existing || { number }
+    setModal(locker)
   }
 
-  // Called from Eligible Students tab to pre-fill a student
   function openAssignForStudent(student) {
-    // Find first free locker number
     let freeNum = null
-    for (let i = 1; i <= TOTAL_LOCKERS; i++) {
-      if (!lockerMap[i]) { freeNum = i; break }
-    }
-    if (!freeNum) {
-      alert('No free lockers available.')
-      return
-    }
-    setModal({
-      locker: {
-        number: freeNum,
-        assigned_to_detail: student,
-        locker_type: 'complimentary',
-        payment_type: '4_class_perk',
-        payment_status: 'waived',
-      },
-      mode: 'assign',
-    })
-    setActiveTab('grid')
+    for (let i = 1; i <= TOTAL_LOCKERS; i++) { if (!lockerMap[i]) { freeNum = i; break } }
+    if (!freeNum) { alert('No free lockers available.'); return }
+    openAssign(freeNum, student)
   }
-
-  const tabs = [
-    { key: 'grid', label: 'Locker Grid' },
-    { key: 'eligible', label: 'Eligible Students' },
-  ]
 
   return (
-    <div>
-      <div className="page-header">
+    <div className="page-content">
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <div className="page-title">Lockers</div>
-          <div className="page-sub">Locker assignments — Reception Area</div>
+          <h1 className="page-title">Lockers</h1>
+          <div className="page-sub">{TOTAL_LOCKERS} lockers · {seasonName} · Reception Area</div>
         </div>
-        <button className="btn btn-lime btn-sm" onClick={() => {
+        <button className="btn btn-lime" onClick={() => {
           const num = parseInt(prompt('Enter locker number (1–36):'))
           if (num >= 1 && num <= TOTAL_LOCKERS) openAssign(num)
         }}>+ Assign Locker</button>
       </div>
 
-      {/* KPI Strip */}
-      <div className="kpi-grid" style={{ marginBottom: 24 }}>
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12, marginBottom: 24 }}>
         {[
-          ['Total Lockers', TOTAL_LOCKERS, 'kpi-lime'],
-          ['Occupied', loading ? '…' : occupied, 'kpi-lav'],
-          ['Available', loading ? '…' : free, free > 0 ? 'kpi-lime' : 'kpi-amber'],
-          ['Occupancy', loading ? '…' : `${Math.round(occupied / TOTAL_LOCKERS * 100)}%`, 'kpi-amber'],
-        ].map(([label, val, cls]) => (
-          <div key={label} className={`kpi ${cls}`}>
-            <div className="kpi-label">{label}</div>
-            <div className="kpi-value">{val}</div>
+          { label: 'FREE LOCKERS', val: loading ? '…' : freeLockers, sub: 'Auto — 4+ classes/season', color: 'var(--amber)' },
+          { label: 'PAID LOCKERS', val: loading ? '…' : paidLockers, sub: '$50/season', color: 'var(--lime)' },
+          { label: 'AVAILABLE', val: loading ? '…' : available, sub: 'Unassigned', color: '#fff' },
+          { label: 'OVERDUE', val: loading ? '…' : overdue, sub: 'Chase needed', color: overdue > 0 ? 'var(--red)' : 'var(--grey)' },
+        ].map(s => (
+          <div key={s.label} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
+            <div style={{ fontSize: 10, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>{s.label}</div>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color: s.color, lineHeight: 1 }}>{s.val}</div>
+            <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>{s.sub}</div>
           </div>
         ))}
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid var(--border)', paddingBottom: 0 }}>
-        {tabs.map(t => (
-          <button
-            key={t.key}
-            onClick={() => setActiveTab(t.key)}
-            style={{
-              background: 'none',
-              border: 'none',
-              borderBottom: activeTab === t.key ? '2px solid var(--lime)' : '2px solid transparent',
-              color: activeTab === t.key ? 'var(--lime)' : 'var(--grey)',
-              fontFamily: "'Archivo Black', sans-serif",
-              fontSize: 13,
-              padding: '8px 16px',
-              cursor: 'pointer',
-              marginBottom: -1,
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Locker Grid Tab */}
-      {activeTab === 'grid' && (
-        <div className="grid-2" style={{ gap: 24 }}>
-          <div>
-            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 12, fontWeight: 600 }}>Locker Grid — Reception Area</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8 }}>
-              {Array.from({ length: TOTAL_LOCKERS }, (_, i) => {
-                const num = i + 1
-                const locker = lockerMap[num]
-                const isAssigned = !!locker
-                const isSelected = selected === num
-                const hasLostKey = isAssigned && locker.key_lost
-                return (
-                  <div
-                    key={num}
-                    onClick={() => setSelected(isSelected ? null : num)}
-                    title={isAssigned ? locker.assigned_to_detail?.display_name : 'Available'}
-                    style={{
-                      aspectRatio: '1',
-                      borderRadius: 8,
-                      background: isSelected
-                        ? 'var(--lime)'
-                        : hasLostKey
-                          ? 'rgba(255,68,68,0.15)'
-                          : isAssigned
-                            ? 'rgba(176,160,255,0.2)'
-                            : '#1a1a1a',
-                      border: `1px solid ${isSelected
-                        ? 'var(--lime)'
-                        : hasLostKey
-                          ? 'rgba(255,68,68,0.4)'
-                          : isAssigned
-                            ? 'rgba(176,160,255,0.4)'
-                            : 'var(--border)'}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: isSelected ? '#000' : hasLostKey ? 'var(--red)' : isAssigned ? 'var(--lav)' : 'var(--grey)',
-                      transition: 'all 0.15s',
-                    }}
-                  >
-                    {num}
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* Legend */}
-            <div style={{ display: 'flex', gap: 16, marginTop: 14, fontSize: 11, flexWrap: 'wrap' }}>
-              {[
-                ['rgba(176,160,255,0.2)', 'rgba(176,160,255,0.4)', 'Occupied'],
-                ['#1a1a1a', 'var(--border)', 'Available'],
-                ['var(--lime)', 'var(--lime)', 'Selected'],
-                ['rgba(255,68,68,0.15)', 'rgba(255,68,68,0.4)', 'Key Lost'],
-              ].map(([bg, border, label]) => (
-                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div style={{ width: 12, height: 12, borderRadius: 3, background: bg, border: `1px solid ${border}` }} />
-                  <span style={{ color: 'var(--grey)' }}>{label}</span>
-                </div>
-              ))}
-            </div>
-
-            {selected && (
-              <LockerDetailPanel
-                locker={selectedLocker}
-                number={selected}
-                onEdit={() => openAssign(selected)}
-                onUnassign={() => selectedLocker && unassign(selectedLocker.id)}
-                onAssign={() => openAssign(selected)}
-                onRefetch={refetch}
-              />
-            )}
+      {/* Auto-Assign Required banner */}
+      {eligibleWithoutLocker.length > 0 && (
+        <div style={{ background: 'rgba(255,165,0,0.08)', border: '1px solid rgba(255,165,0,0.3)', borderRadius: 10, padding: '14px 18px', marginBottom: 24 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--amber)', marginBottom: 12 }}>
+            ⚡ Auto-Assign Required — students in 4+ classes without a locker
           </div>
-
-          {/* Assignments Table */}
-          <div>
-            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 12, fontWeight: 600 }}>Assignments</div>
-            {loading ? (
-              <div style={{ fontSize: 13, color: 'var(--grey)' }}>Loading…</div>
-            ) : (
-              <div className="tbl-section" style={{ border: 'none', borderRadius: 0 }}>
-                <table>
-                  <thead><tr><th>#</th><th>Student</th><th>Type</th><th>Expires</th><th></th></tr></thead>
-                  <tbody>
-                    {lockerList.map(l => (
-                      <tr key={l.id} onClick={() => setSelected(l.number)} style={{ cursor: 'pointer' }}>
-                        <td style={{ fontFamily: "'Archivo Black', sans-serif", color: selected === l.number ? 'var(--lime)' : l.key_lost ? 'var(--red)' : 'var(--lav)' }}>{l.number}</td>
-                        <td>
-                          <b>{l.assigned_to_detail?.display_name || '—'}</b>
-                          {l.key_lost && <span style={{ marginLeft: 6, fontSize: 9, fontWeight: 700, color: 'var(--red)', background: 'rgba(255,68,68,0.12)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 3, padding: '1px 5px' }}>KEY LOST</span>}
-                        </td>
-                        <td style={{ fontSize: 11, color: 'var(--grey)' }}>
-                          {l.locker_type === 'paid' ? 'Paid' : 'Comp'}
-                        </td>
-                        <td style={{ fontSize: 12, color: 'var(--grey)' }}>{l.expires_at || '—'}</td>
-                        <td><button className="btn btn-ghost btn-xs" onClick={e => { e.stopPropagation(); openAssign(l.number) }}>Edit</button></td>
-                      </tr>
-                    ))}
-                    {lockerList.length === 0 && (
-                      <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--grey)', padding: '24px 0' }}>No lockers assigned yet</td></tr>
-                    )}
-                  </tbody>
-                </table>
+          {eligibleWithoutLocker.map(s => (
+            <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 10, marginBottom: 10, borderBottom: '1px solid rgba(255,165,0,0.15)' }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>{s.display_name}</div>
+                <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{s.enrolment_count} classes this season — entitled to a free locker</div>
               </div>
-            )}
-          </div>
+              <button className="btn btn-sm" style={{ background: 'var(--amber)', color: '#000', fontWeight: 700, flexShrink: 0 }}
+                onClick={() => openAssignForStudent(s)}>
+                Assign Locker
+              </button>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Eligible Students Tab */}
-      {activeTab === 'eligible' && (
-        <EligibleStudentsTab onAssign={openAssignForStudent} />
-      )}
+      {/* Locker Map */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 10 }}>Locker Map</div>
+        <div style={{ display: 'flex', gap: 16, marginBottom: 12, flexWrap: 'wrap' }}>
+          {[
+            ['rgba(255,165,0,0.1)', 'rgba(255,165,0,0.4)', 'Free (auto)'],
+            ['rgba(100,220,100,0.12)', 'rgba(100,220,100,0.4)', 'Paid'],
+            ['rgba(255,68,68,0.12)', 'rgba(255,68,68,0.35)', 'Overdue / Key Lost'],
+            ['#181818', 'var(--border)', 'Available'],
+          ].map(([bg, border, label]) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--grey)' }}>
+              <div style={{ width: 12, height: 12, borderRadius: 3, background: bg, border: `1px solid ${border}` }} />
+              {label}
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, maxWidth: 480 }}>
+          {Array.from({ length: TOTAL_LOCKERS }, (_, i) => {
+            const num = i + 1
+            const s = gridStyle(num)
+            const l = lockerMap[num]
+            return (
+              <div key={num}
+                onClick={() => l ? openAssign(num) : openAssign(num)}
+                title={l ? `${l.assigned_to_detail?.display_name}` : 'Available'}
+                style={{ aspectRatio: '1', borderRadius: 8, background: s.bg, border: `1px solid ${s.border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s' }}>
+                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 13, color: s.color }}>{String(num).padStart(2, '0')}</div>
+                {l && <div style={{ fontSize: 9, color: s.color, opacity: 0.8 }}>{l.locker_type === 'paid' ? 'Paid' : 'Free'}</div>}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Assignments Table */}
+      <div>
+        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 14 }}>Assignments</div>
+        {loading ? (
+          <div style={{ color: 'var(--grey)', fontSize: 13 }}>Loading…</div>
+        ) : lockerList.length === 0 ? (
+          <div style={{ color: 'var(--grey)', fontSize: 13, padding: '24px', textAlign: 'center', background: 'var(--card)', borderRadius: 10, border: '1px solid var(--border)' }}>
+            No lockers assigned yet.
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  {['LOCKER', 'STUDENT', 'TYPE', 'SEASON FEE', 'PAID', 'KEY STATUS', 'ACTIONS'].map(h => (
+                    <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, color: 'var(--grey)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {lockerList.map(l => {
+                  const isOverdue = l.locker_type === 'paid' && l.payment_status === 'unpaid'
+                  const isPaid = l.locker_type === 'paid' && l.payment_status === 'paid'
+                  return (
+                    <tr key={l.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      <td style={{ padding: '12px 12px', fontFamily: "'Archivo Black', sans-serif", color: isOverdue ? 'var(--red)' : 'var(--lav)', whiteSpace: 'nowrap' }}>
+                        #{String(l.number).padStart(2, '0')}
+                      </td>
+                      <td style={{ padding: '12px 12px' }}>
+                        <div style={{ fontWeight: 600 }}>{l.assigned_to_detail?.display_name}</div>
+                        <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 1 }}>{l.assigned_to_detail?.email}</div>
+                      </td>
+                      <td style={{ padding: '12px 12px' }}>
+                        <span style={{
+                          fontSize: 11, fontWeight: 700, borderRadius: 4, padding: '3px 8px', border: '1px solid',
+                          ...(l.locker_type === 'paid'
+                            ? { color: '#7cf07c', borderColor: 'rgba(100,220,100,0.5)', background: 'rgba(100,220,100,0.1)' }
+                            : { color: 'var(--amber)', borderColor: 'rgba(255,165,0,0.5)', background: 'rgba(255,165,0,0.1)' })
+                        }}>
+                          {l.locker_type === 'paid' ? 'PAID' : 'FREE'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 12px', color: isOverdue ? 'var(--red)' : l.locker_type === 'paid' ? '#fff' : 'var(--grey)', fontWeight: isOverdue ? 700 : 400 }}>
+                        {l.locker_type === 'paid' ? (isOverdue ? '$50 OVERDUE' : '$50') : '—'}
+                      </td>
+                      <td style={{ padding: '12px 12px', color: isOverdue ? 'var(--red)' : isPaid ? 'var(--lime)' : l.locker_type === 'paid' ? 'var(--amber)' : 'var(--lime)', fontWeight: 600 }}>
+                        {isOverdue ? 'Overdue' : isPaid ? 'Paid' : l.locker_type === 'paid' ? 'Unpaid' : seasonName}
+                      </td>
+                      <td style={{ padding: '12px 12px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 12, whiteSpace: 'nowrap' }}>
+                            <input type="checkbox" checked={l.key_issued} disabled={busy === l.id + '-ki'}
+                              onChange={() => toggleKeyIssued(l)} style={{ width: 13, height: 13 }} />
+                            Key given
+                          </label>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 12, whiteSpace: 'nowrap' }}>
+                            <input type="checkbox" checked={l.key_returned} disabled={busy === l.id + '-kr'}
+                              onChange={() => toggleKeyReturned(l)} style={{ width: 13, height: 13 }} />
+                            Key returned
+                          </label>
+                          {l.key_lost && (
+                            <span style={{ fontSize: 10, color: 'var(--red)', fontWeight: 700 }}>⚠ KEY LOST</span>
+                          )}
+                        </div>
+                      </td>
+                      <td style={{ padding: '12px 12px', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          <button className="btn btn-ghost btn-xs" onClick={() => openAssign(l.number)}>Edit</button>
+                          {isOverdue && (
+                            <button className="btn btn-xs" style={{ background: 'var(--amber)', color: '#000', fontWeight: 700 }}
+                              onClick={() => alert(`Chase ${l.assigned_to_detail?.display_name} for $50 locker fee — coming soon.`)}>
+                              Chase
+                            </button>
+                          )}
+                          {!l.key_lost && l.key_issued && !l.key_returned && (
+                            <button className="btn btn-ghost btn-xs" style={{ color: 'var(--amber)', fontSize: 10 }}
+                              onClick={() => reportLostKey(l)} disabled={busy === l.id + '-lk'}>
+                              Lost Key
+                            </button>
+                          )}
+                          <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => unassign(l)}>Unassign</button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {modal && (
         <AssignModal
-          locker={modal.locker}
+          locker={modal}
           onClose={() => setModal(null)}
-          onSaved={() => { setModal(null); refetch(); setSelected(null) }}
+          onSaved={() => { setModal(null); refetch(); refetchEligible() }}
         />
       )}
     </div>

@@ -141,6 +141,7 @@ class Locker(models.Model):
     expires_at = models.DateField(null=True, blank=True)
     assigned_at = models.DateField(null=True, blank=True)
     key_issued = models.BooleanField(default=False)
+    key_returned = models.BooleanField(default=False)
     key_lost = models.BooleanField(default=False)
     locker_type = models.CharField(max_length=20, choices=LOCKER_TYPE_CHOICES, default='complimentary')
     payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPE_CHOICES, blank=True)
@@ -152,6 +153,65 @@ class Locker(models.Model):
 
     def __str__(self):
         return f'Locker #{self.number}'
+
+
+class PracticeSlot(models.Model):
+    """A bookable practice time slot in a studio."""
+
+    studio = models.ForeignKey(Studio, on_delete=models.CASCADE, related_name='practice_slots')
+    date = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    capacity = models.PositiveIntegerField(default=6)
+    is_active = models.BooleanField(default=True)
+    notes = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    ENROLLED_RATE = 20   # $/hr for enrolled students
+    NON_ENROLLED_RATE = 30  # $/hr for non-enrolled
+
+    class Meta:
+        ordering = ['date', 'start_time']
+        unique_together = [('studio', 'date', 'start_time')]
+
+    def __str__(self):
+        return f'{self.studio} practice — {self.date} {self.start_time:%H:%M}–{self.end_time:%H:%M}'
+
+    @property
+    def duration_hours(self):
+        from datetime import datetime
+        start = datetime.combine(self.date, self.start_time)
+        end = datetime.combine(self.date, self.end_time)
+        return (end - start).seconds / 3600
+
+    @property
+    def booked_count(self):
+        return self.bookings.filter(status='confirmed').count()
+
+    @property
+    def spots_left(self):
+        return max(0, self.capacity - self.booked_count)
+
+
+class PracticeBooking(models.Model):
+    class Status(models.TextChoices):
+        CONFIRMED = 'confirmed', 'Confirmed'
+        CANCELLED = 'cancelled', 'Cancelled'
+
+    slot = models.ForeignKey(PracticeSlot, on_delete=models.CASCADE, related_name='bookings')
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='practice_bookings')
+    status = models.CharField(max_length=15, choices=Status.choices, default=Status.CONFIRMED)
+    price_charged = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    is_free = models.BooleanField(default=False)
+    payment_type = models.CharField(max_length=20, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [('slot', 'student')]
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.student.display_name} → {self.slot}'
 
 
 class ClassChatMessage(models.Model):

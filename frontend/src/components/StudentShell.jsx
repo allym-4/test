@@ -9,6 +9,7 @@ const NAV = [
   { to: '/portal',               label: 'Dashboard',    icon: '◆', end: true },
   { to: '/portal/book',          label: 'Book a Class', icon: '+' },
   { to: '/portal/classes',       label: 'My Classes',   icon: '□' },
+  { to: '/portal/practice',      label: 'Practice Time', icon: '🏋️' },
   { to: '/portal/progress',      label: 'Progress',     icon: '△' },
   { to: '/portal/notifications', label: 'Notifications', icon: '○', badge: true },
   { to: '/portal/forms',         label: 'Forms',        icon: '⬛', formsBadge: true },

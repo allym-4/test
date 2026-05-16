@@ -35,6 +35,7 @@ const FLAT_NAV_ITEMS = [
   { to: '/admin/activity-log',   label: 'Activity Log',   icon: '📋' },
   { to: '/admin/leads',          label: 'Leads',          icon: '🎯' },
   { to: '/admin/retail',         label: 'Retail',         icon: '🛍' },
+  { to: '/admin/practice',       label: 'Practice Time',  icon: '🏋️' },
   { to: '/admin/lockers',        label: 'Lockers',        icon: '🔐' },
   { to: '/admin/kisi',           label: 'Kisi Access',    icon: '🔑' },
   { to: '/admin/marketing',      label: 'Marketing',      icon: '📣' },
