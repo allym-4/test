@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, InstructorUnavailableDate, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList, Referral, ActionItem
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, Order, Notification, InstructorAvailability, InstructorUnavailableDate, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList, Referral, ActionItem, Challenge, ChallengeProgress
 
 
 class UserMinimalSerializer(serializers.ModelSerializer):
@@ -307,3 +307,45 @@ class ActionItemSerializer(serializers.ModelSerializer):
         model = ActionItem
         fields = ('id', 'icon', 'title', 'body', 'meta', 'due_date', 'assigned_to', 'assigned_to_name', 'is_urgent', 'is_done', 'completed_at', 'created_at')
         read_only_fields = ('id', 'created_at')
+
+
+class ChallengeProgressSerializer(serializers.ModelSerializer):
+    student_name = serializers.CharField(source='student.display_name', read_only=True)
+    student_id = serializers.IntegerField(source='student.id', read_only=True)
+
+    class Meta:
+        model = ChallengeProgress
+        fields = ('id', 'student_id', 'student_name', 'current_value', 'completed', 'completed_at')
+        read_only_fields = ('id', 'completed_at')
+
+
+class ChallengeSerializer(serializers.ModelSerializer):
+    my_progress = serializers.SerializerMethodField()
+    participant_count = serializers.SerializerMethodField()
+    completion_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Challenge
+        fields = (
+            'id', 'title', 'description', 'challenge_type', 'target_value',
+            'start_date', 'end_date', 'reward_type', 'reward_badge_name',
+            'reward_credit_amount', 'is_active', 'created_at',
+            'my_progress', 'participant_count', 'completion_count',
+        )
+        read_only_fields = ('id', 'created_at')
+
+    def get_my_progress(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return None
+        try:
+            p = obj.progress.get(student=request.user)
+            return {'current_value': p.current_value, 'completed': p.completed, 'completed_at': p.completed_at}
+        except ChallengeProgress.DoesNotExist:
+            return {'current_value': 0, 'completed': False, 'completed_at': None}
+
+    def get_participant_count(self, obj):
+        return obj.progress.count()
+
+    def get_completion_count(self, obj):
+        return obj.progress.filter(completed=True).count()

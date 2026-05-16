@@ -57,6 +57,7 @@ const NAV_GROUPS = [
       { to: '/admin/marketing',       label: 'Marketing',       icon: '📣' },
       { to: '/admin/recommendations', label: 'Recommendations', icon: '💡' },
       { to: '/admin/surveys',         label: 'Surveys',         icon: '📝' },
+      { to: '/admin/challenges',      label: 'Challenges',      icon: '🏆' },
       { to: '/admin/helpdesk',        label: 'Helpdesk',        icon: '🎧', badge: 'helpdesk' },
     ]
   },

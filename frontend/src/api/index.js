@@ -389,3 +389,15 @@ export const xero = {
   sync: () => client.post('/api/users/xero/sync/', {}),
   disconnect: () => client.delete('/api/users/xero/status/'),
 }
+
+export const challenges = {
+  list: (params) => client.get('/api/users/challenges/', { params }),
+  get: (id) => client.get(`/api/users/challenges/${id}/`),
+  create: (data) => client.post('/api/users/challenges/', data),
+  update: (id, data) => client.patch(`/api/users/challenges/${id}/`, data),
+  delete: (id) => client.delete(`/api/users/challenges/${id}/`),
+  leaderboard: (id) => client.get(`/api/users/challenges/${id}/leaderboard/`),
+  optIn: (id) => client.post(`/api/users/challenges/${id}/opt-in/`, { action: 'in' }),
+  optOut: (id) => client.post(`/api/users/challenges/${id}/opt-in/`, { action: 'out' }),
+  recalculate: (id) => client.post(`/api/users/challenges/${id}/recalculate/`, {}),
+}

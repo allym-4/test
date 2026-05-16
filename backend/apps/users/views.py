@@ -17,7 +17,7 @@ try:
     ANTHROPIC_AVAILABLE = True
 except ImportError:
     ANTHROPIC_AVAILABLE = False
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, AutomationRun, Order, Notification, InstructorAvailability, InstructorUnavailableDate, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList, Referral, ActionItem
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, AutomationRun, Order, Notification, InstructorAvailability, InstructorUnavailableDate, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList, Referral, ActionItem, Challenge, ChallengeProgress
 from .serializers import (
     UserSerializer, UserCreateSerializer, StaffNoteSerializer, LeadSerializer,
     StudioSettingsSerializer, AnnouncementSerializer, ProductSerializer, AutomationRuleSerializer,
@@ -25,6 +25,7 @@ from .serializers import (
     InstructorPayRecordSerializer, StudentSkillSerializer,
     TagSerializer, StudentTagSerializer, SkillLevelSerializer, SkillGroupSerializer, SkillDefinitionSerializer,
     MediaItemSerializer, EmailCampaignSerializer, EmailListSerializer, ReferralSerializer, ActionItemSerializer,
+    ChallengeSerializer, ChallengeProgressSerializer,
 )
 from .permissions import IsAdminOrInstructor, IsAdminUser
 
@@ -1197,3 +1198,175 @@ class ActionItemDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = ActionItem.objects.all()
     serializer_class = ActionItemSerializer
     permission_classes = [IsAdminOrInstructor]
+
+
+class ChallengeListView(generics.ListCreateAPIView):
+    serializer_class = ChallengeSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAdminUser()]
+        return [permissions.IsAuthenticated()]
+
+    def get_queryset(self):
+        qs = Challenge.objects.all()
+        if self.request.query_params.get('active') == 'true':
+            qs = qs.filter(is_active=True)
+        return qs
+
+
+class ChallengeDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Challenge.objects.all()
+    serializer_class = ChallengeSerializer
+    permission_classes = [IsAdminUser]
+
+
+class ChallengeLeaderboardView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            challenge = Challenge.objects.get(pk=pk)
+        except Challenge.DoesNotExist:
+            return Response({'detail': 'Not found'}, status=404)
+        entries = ChallengeProgress.objects.filter(
+            challenge=challenge
+        ).select_related('student').order_by('-current_value', 'id')[:50]
+        data = ChallengeProgressSerializer(entries, many=True).data
+        return Response(data)
+
+
+class ChallengeOptInView(APIView):
+    """Student opts in or out of a challenge."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            challenge = Challenge.objects.get(pk=pk, is_active=True)
+        except Challenge.DoesNotExist:
+            return Response({'detail': 'Challenge not found'}, status=404)
+        action = request.data.get('action', 'in')
+        if action == 'out':
+            ChallengeProgress.objects.filter(challenge=challenge, student=request.user).delete()
+            return Response({'status': 'opted_out'})
+        # Opt in
+        progress, created = ChallengeProgress.objects.get_or_create(
+            challenge=challenge,
+            student=request.user,
+            defaults={'current_value': 0, 'completed': False},
+        )
+        # Recalculate immediately so existing attendance counts
+        _recalculate_challenge_progress(challenge, request.user)
+        progress.refresh_from_db()
+        return Response({
+            'status': 'opted_in',
+            'current_value': progress.current_value,
+            'completed': progress.completed,
+        })
+
+
+class ChallengeBulkProgressView(APIView):
+    """Admin: recalculate progress for all opted-in students on a challenge."""
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, pk):
+        try:
+            challenge = Challenge.objects.get(pk=pk)
+        except Challenge.DoesNotExist:
+            return Response({'detail': 'Not found'}, status=404)
+        entries = ChallengeProgress.objects.filter(challenge=challenge).select_related('student')
+        for entry in entries:
+            _recalculate_challenge_progress(challenge, entry.student)
+        return Response({'recalculated': entries.count()})
+
+
+def _recalculate_challenge_progress(challenge, student):
+    """Recalculate and save a student's progress on a challenge."""
+    from apps.attendance.models import AttendanceRecord
+    progress, _ = ChallengeProgress.objects.get_or_create(
+        challenge=challenge, student=student, defaults={'current_value': 0}
+    )
+
+    if challenge.challenge_type == 'attendance_count':
+        value = AttendanceRecord.objects.filter(
+            student=student,
+            status__in=('present', 'late'),
+            occurrence__date__gte=challenge.start_date,
+            occurrence__date__lte=challenge.end_date,
+        ).count()
+
+    elif challenge.challenge_type == 'style_variety':
+        levels = AttendanceRecord.objects.filter(
+            student=student,
+            status__in=('present', 'late'),
+            occurrence__date__gte=challenge.start_date,
+            occurrence__date__lte=challenge.end_date,
+        ).values_list('occurrence__session__level', flat=True).distinct()
+        value = len([l for l in levels if l])
+
+    elif challenge.challenge_type == 'streak':
+        # Count consecutive weeks with at least one attendance
+        from datetime import date, timedelta as td
+        records = AttendanceRecord.objects.filter(
+            student=student,
+            status__in=('present', 'late'),
+            occurrence__date__gte=challenge.start_date,
+            occurrence__date__lte=challenge.end_date,
+        ).values_list('occurrence__date', flat=True)
+        weeks = set()
+        for d in records:
+            # ISO week number
+            weeks.add(d.isocalendar()[:2])  # (year, week)
+        # Count max consecutive weeks
+        sorted_weeks = sorted(weeks)
+        max_streak = streak = 0
+        prev = None
+        for yw in sorted_weeks:
+            if prev is None:
+                streak = 1
+            else:
+                # Check if consecutive
+                prev_date = date.fromisocalendar(prev[0], prev[1], 1)
+                curr_date = date.fromisocalendar(yw[0], yw[1], 1)
+                if (curr_date - prev_date).days == 7:
+                    streak += 1
+                else:
+                    streak = 1
+            max_streak = max(max_streak, streak)
+            prev = yw
+        value = max_streak
+
+    else:
+        # custom — don't auto-update
+        return
+
+    progress.current_value = value
+    if value >= challenge.target_value and not progress.completed:
+        from django.utils import timezone as tz
+        progress.completed = True
+        progress.completed_at = tz.now()
+        # Grant reward
+        _grant_challenge_reward(challenge, student)
+    progress.save()
+
+
+def _grant_challenge_reward(challenge, student):
+    if challenge.reward_type == 'credit' and challenge.reward_credit_amount:
+        from apps.payments.models import Payment
+        Payment.objects.create(
+            student=student,
+            payment_type='credit',
+            amount=-abs(challenge.reward_credit_amount),
+            description=f'Challenge reward: {challenge.title}',
+        )
+    from .models import Notification
+    Notification.objects.create(
+        recipient=student,
+        title=f'Challenge complete — {challenge.title}!',
+        body=(
+            f'You completed the challenge! '
+            + (f'You\'ve earned the "{challenge.reward_badge_name}" badge.' if challenge.reward_type == 'badge' and challenge.reward_badge_name else '')
+            + (f'${challenge.reward_credit_amount} credit added to your account.' if challenge.reward_type == 'credit' else '')
+        ),
+        notification_type='challenge',
+    )

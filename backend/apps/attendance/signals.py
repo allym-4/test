@@ -55,7 +55,7 @@ def handle_no_show(sender, instance, **kwargs):
 
 @receiver(post_save, sender='attendance.AttendanceRecord')
 def handle_attendance_present(sender, instance, created, **kwargs):
-    if instance.status != 'present':
+    if instance.status not in ('present', 'late'):
         return
     from apps.users.automation_engine import run_custom_automations
     context = {
@@ -63,4 +63,26 @@ def handle_attendance_present(sender, instance, created, **kwargs):
         'class_level': getattr(instance.occurrence.session, 'level', '') or '',
         'date': str(instance.occurrence.date),
     }
-    run_custom_automations('attendance_present', instance.student, context)
+    if instance.status == 'present':
+        run_custom_automations('attendance_present', instance.student, context)
+
+    # Update challenge progress for all active challenges the student is opted into
+    try:
+        from django.utils import timezone as tz
+        from apps.users.models import Challenge, ChallengeProgress
+        from apps.users.views import _recalculate_challenge_progress
+        today = instance.occurrence.date
+        active_challenges = Challenge.objects.filter(
+            is_active=True,
+            start_date__lte=today,
+            end_date__gte=today,
+            challenge_type__in=('attendance_count', 'style_variety', 'streak'),
+        )
+        opted_in = ChallengeProgress.objects.filter(
+            challenge__in=active_challenges,
+            student=instance.student,
+        ).values_list('challenge_id', flat=True)
+        for challenge in active_challenges.filter(id__in=opted_in):
+            _recalculate_challenge_progress(challenge, instance.student)
+    except Exception:
+        pass

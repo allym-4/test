@@ -49,6 +49,7 @@ import AdminRooms from './pages/admin/AdminRooms'
 import AdminSkillLists from './pages/admin/AdminSkillLists'
 import AdminStudioNotes from './pages/admin/AdminStudioNotes'
 import AdminSurveys from './pages/admin/AdminSurveys'
+import AdminChallenges from './pages/admin/AdminChallenges'
 
 // Student pages
 import StudentDashboard from './pages/student/StudentDashboard'
@@ -155,6 +156,7 @@ export default function App() {
             <Route path="skills" element={<AdminSkillLists />} />
             <Route path="studio-notes" element={<AdminStudioNotes />} />
             <Route path="surveys" element={<AdminSurveys />} />
+            <Route path="challenges" element={<AdminChallenges />} />
             <Route path="classes/:id/attendance" element={<AttendancePage />} />
           </Route>
 
