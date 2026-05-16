@@ -28,6 +28,7 @@ class Enrolment(models.Model):
     is_first_visit = models.BooleanField(default=False)
     intro_email_sent = models.BooleanField(default=False)
     waiver_signed = models.BooleanField(default=False)
+    flag_dismissed = models.BooleanField(default=False)
 
     class Meta:
         unique_together = [('student', 'class_session')]
