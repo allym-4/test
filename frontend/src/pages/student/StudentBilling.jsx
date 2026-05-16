@@ -238,39 +238,46 @@ export default function StudentBilling() {
 
       {/* Catch-up Credits card */}
       <div style={{
+        background: 'rgba(26,16,40,0.6)',
         border: '1px solid var(--lav)',
         borderRadius: 14,
-        padding: '20px 24px',
+        padding: '20px 26px',
         marginBottom: 24,
-        maxWidth: 700,
+        maxWidth: 820,
       }}>
-        <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--lav)', marginBottom: 8, fontWeight: 500 }}>
-          Make-up Credits
-        </div>
-        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 32, color: 'var(--lav)', marginBottom: 4 }}>
-          {Array.isArray(catchupCredits) ? catchupCredits.filter(c => c.status === 'available' || !c.status).length : 0}
-        </div>
-        <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16 }}>
-          Credits expire 60 days from issue · Use when booking a casual or catch-up class
-        </div>
-        {Array.isArray(catchupCredits) && catchupCredits.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {catchupCredits.map((c, i) => (
-              <div key={c.id || i} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
-                  <span style={{ color: 'var(--white)' }}>{c.for_class || c.description || 'Catch-up credit'}</span>
-                  <span style={{ color: 'var(--grey)', fontSize: 11 }}>
-                    Issued {c.issued_at ? new Date(c.issued_at).toLocaleDateString('en-AU') : '—'}
-                    {c.expires_at ? ` · Expires ${new Date(c.expires_at).toLocaleDateString('en-AU')}` : ''}
-                  </span>
-                </div>
-                <span className={`tag ${c.status === 'used' || c.status === 'expired' ? 'tag-grey' : 'tag-lav'}`} style={{ fontSize: 10, flexShrink: 0 }}>{c.status || 'available'}</span>
-              </div>
-            ))}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 4 }}>
+          <div>
+            <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--lav)', marginBottom: 8 }}>
+              Make-up Credits
+            </div>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 32, color: 'var(--lav)' }}>
+              {Array.isArray(catchupCredits) ? catchupCredits.filter(c => c.status === 'available' || !c.status).length : 0}{' '}
+              <span style={{ fontSize: 16, fontWeight: 'normal', fontFamily: "'Archivo', sans-serif", color: 'var(--grey)' }}>credits available</span>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 4 }}>
+              Credits expire 60 days from issue &nbsp;·&nbsp; <span style={{ color: 'var(--lav)' }}>Use when booking a casual or catch-up class</span>
+            </div>
           </div>
-        ) : (
-          <div style={{ fontSize: 12, color: 'var(--grey)' }}>No catch-up credits available</div>
-        )}
+        </div>
+
+        {/* Tabular credit list */}
+        <div style={{ marginTop: 18, borderTop: '1px solid #2a1a44', paddingTop: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr 130px 80px', gap: 10, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--grey)', marginBottom: 8 }}>
+            <span>Issued</span><span>For</span><span>Expires</span><span>Status</span>
+          </div>
+          {Array.isArray(catchupCredits) && catchupCredits.length > 0 ? (
+            catchupCredits.map((c, i) => (
+              <div key={c.id || i} style={{ display: 'grid', gridTemplateColumns: '110px 1fr 130px 80px', gap: 10, fontSize: 13, padding: '8px 0', borderBottom: i < catchupCredits.length - 1 ? '1px solid rgba(42,26,68,0.5)' : 'none', alignItems: 'center' }}>
+                <span style={{ color: 'var(--grey)' }}>{c.issued_at ? new Date(c.issued_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span>
+                <span>{c.for_class || c.description || 'Catch-up credit'}</span>
+                <span style={{ color: 'var(--grey)' }}>{c.expires_at ? new Date(c.expires_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span>
+                <span className={`tag ${c.status === 'used' || c.status === 'expired' ? 'tag-grey' : 'tag-lav'}`} style={{ fontSize: 10, padding: '2px 8px' }}>{c.status || 'active'}</span>
+              </div>
+            ))
+          ) : (
+            <div style={{ fontSize: 12, color: 'var(--grey)', padding: '8px 0' }}>No catch-up credits available</div>
+          )}
+        </div>
       </div>
 
       {/* Balance card */}
@@ -430,32 +437,34 @@ export default function StudentBilling() {
           <div className="empty-state">No payment history yet</div>
         ) : (
           <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+            {/* Table header */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 120px 90px 100px', gap: 12, padding: '10px 16px', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--grey)', borderBottom: '1px solid var(--border)' }}>
+              <span>Description</span><span>Date</span><span>Type</span><span style={{ textAlign: 'right' }}>Amount</span><span></span>
+            </div>
             {history.map(p => {
               const isPayment = p.payment_type === 'payment'
               const isCharge = p.payment_type === 'charge' || p.payment_type === 'no_show_fee'
               const isCredit = p.payment_type === 'credit'
               const tag = typeTag(p.payment_type)
               return (
-                <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderBottom: '1px solid #1a1a1a' }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500 }}>{p.description || p.payment_type.replace(/_/g, ' ')}</div>
-                    <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>
-                      {new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}
-                    </div>
-                  </div>
-                  <span className={`tag ${tag.cls}`} style={{ fontSize: 9, flexShrink: 0 }}>{tag.label}</span>
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, color: isPayment || isCredit ? 'var(--lime)' : isCharge ? 'var(--red)' : 'var(--grey)' }}>
-                      {isCharge ? '-' : '+'}${Math.abs(parseFloat(p.amount || 0)).toFixed(2)}
-                    </div>
-                  </div>
-                  <button
-                    className="btn btn-ghost btn-xs"
-                    style={{ flexShrink: 0, fontSize: 11 }}
-                    onClick={() => setShowInvoiceModal(p)}
-                  >
-                    View Invoice
-                  </button>
+                <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 120px 90px 100px', gap: 12, padding: '15px 16px', fontSize: 14, borderBottom: '1px solid var(--border)', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.description || p.payment_type.replace(/_/g, ' ')}</span>
+                  <span style={{ color: 'var(--grey)', fontSize: 13 }}>
+                    {new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </span>
+                  <span><span className={`tag ${tag.cls}`} style={{ fontSize: 11 }}>{tag.label}</span></span>
+                  <span style={{ textAlign: 'right', fontWeight: 600, color: isPayment || isCredit ? 'var(--lime)' : isCharge ? 'var(--red)' : 'var(--grey)' }}>
+                    {isCharge ? '-' : '+'}${Math.abs(parseFloat(p.amount || 0)).toFixed(2)}
+                  </span>
+                  <span>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ fontSize: 11, padding: '5px 10px', whiteSpace: 'nowrap' }}
+                      onClick={() => setShowInvoiceModal(p)}
+                    >
+                      View Invoice
+                    </button>
+                  </span>
                 </div>
               )
             })}

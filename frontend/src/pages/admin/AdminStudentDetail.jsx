@@ -431,17 +431,33 @@ export default function AdminStudentDetail() {
                       ['Lifetime Spend', `$${parseFloat(balanceData?.total_paid || 0).toFixed(2)}`],
                       ['Balance', <span className={isOwing ? 'bal-neg' : 'bal-pos'}>{isOwing ? `-$${Math.abs(bal).toFixed(2)}` : bal > 0 ? `$${bal.toFixed(2)} cr` : '$0'}</span>],
                       ['Enrolments', activeEnrolments.length + ' active'],
+                      ['Source', student.source || '—'],
                     ].map(([label, val]) => (
                       <div key={label} className="info-row">
                         <div className="info-label">{label}</div>
                         <div className="info-val" style={{ fontSize: 13 }}>{val}</div>
                       </div>
                     ))}
+                    <div className="info-row" style={{ borderBottom: 'none' }}>
+                      <div className="info-label">Tags</div>
+                      <div className="info-val" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                        {(student.tags || []).map((t, i) => (
+                          <span key={i} className="tag tag-amber" style={{ fontSize: 10 }}>{typeof t === 'string' ? t : t.name}</span>
+                        ))}
+                        <button className="btn btn-ghost btn-xs" onClick={() => alert('Add tag')}>+ Tag</button>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 {activeEnrolments.length > 0 && (
                   <div className="card" style={{ padding: '16px 18px' }}>
-                    <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 14 }}>Membership Status</div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                      <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px' }}>Membership Status</div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button className="btn btn-ghost btn-xs" onClick={() => alert('Account frozen')}>Freeze</button>
+                        <button className="btn btn-ghost btn-xs" onClick={() => setShowTransferCancel(true)}>Cancel Enrolment</button>
+                      </div>
+                    </div>
                     <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
                       {activeEnrolments.slice(0, 3).map(e => (
                         <div key={e.id}>

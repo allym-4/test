@@ -213,7 +213,7 @@ export default function StudentMyClasses() {
 
       {/* Top-level tabs */}
       <div className="subtabs" style={{ marginBottom: 20 }}>
-        {[['active', 'Active Season'], ['future', 'Future Season'], ['past', 'Past Seasons'], ['history', 'Attendance History']].map(([key, label]) => (
+        {[['active', 'Active Season'], ['future', 'Future Season'], ['past', 'Past Seasons']].map(([key, label]) => (
           <button key={key} className={`subtab${topTab === key ? ' active' : ''}`} onClick={() => setTopTab(key)}>{label}</button>
         ))}
       </div>
@@ -330,7 +330,7 @@ export default function StudentMyClasses() {
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                                 {e.waitlist_position != null && (
-                                  <span className="tag tag-amber" style={{ fontSize: 10 }}>#{e.waitlist_position}</span>
+                                  <span className="tag tag-lav" style={{ fontSize: 10 }}>Waitlist position: #{e.waitlist_position}</span>
                                 )}
                                 {confirmCancelEnrolId === e.id ? (
                                   <span style={{ display: 'flex', gap: 4 }}>
@@ -357,9 +357,6 @@ export default function StudentMyClasses() {
                   {casual.length === 0 ? (
                     <div className="empty-state">
                       <div style={{ marginBottom: 8 }}>No casual bookings yet</div>
-                      <div style={{ fontSize: 12 }}>
-                        <Link to="/portal/book" style={{ color: 'var(--lav)' }}>Book a casual class</Link>
-                      </div>
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -377,6 +374,11 @@ export default function StudentMyClasses() {
                       })}
                     </div>
                   )}
+                  <div style={{ marginTop: 16 }}>
+                    <Link to="/portal/book">
+                      <button className="btn btn-lav btn-sm" style={{ background: 'var(--lav)', color: '#000' }}>Book a casual or catch-up →</button>
+                    </Link>
+                  </div>
                 </div>
               )}
             </div>
@@ -418,41 +420,6 @@ export default function StudentMyClasses() {
             </div>
           )}
 
-          {/* Attendance History */}
-          {topTab === 'history' && (
-            <div>
-              {attHistory.length === 0 ? (
-                <div className="empty-state">
-                  <div>No attendance records yet</div>
-                </div>
-              ) : (
-                <div className="list-card">
-                  {[...attHistory].sort((a, b) => new Date(b.date || b.created_at) - new Date(a.date || a.created_at)).map(rec => {
-                    const sessionName = rec.session_detail?.name || rec.session_name || rec.class_name || '—'
-                    const recDate = rec.date || rec.created_at?.slice(0, 10)
-                    const displayDate = recDate
-                      ? new Date(recDate + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
-                      : '—'
-                    const statusColor = rec.status === 'present' ? 'var(--lime)'
-                      : rec.status === 'absent' ? 'var(--red)'
-                      : rec.status === 'late' ? 'var(--amber)'
-                      : 'var(--grey)'
-                    return (
-                      <div key={rec.id} className="list-row">
-                        <div className="list-body">
-                          <div className="list-title">{sessionName}</div>
-                          <div className="list-sub">{displayDate}</div>
-                        </div>
-                        <span style={{ fontSize: 11, fontWeight: 600, color: statusColor, textTransform: 'capitalize' }}>
-                          {rec.status || 'recorded'}
-                        </span>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )}
         </>
       )}
 

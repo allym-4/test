@@ -277,25 +277,74 @@ export default function StudentDashboard() {
         )}
       </div>
 
+      {/* Level Progression Tracker */}
+      {hasEnrolments && skillsData && (() => {
+        const allSkills = skillsData?.results || skillsData || []
+        const nextLevelSkills = allSkills.filter(s => !s.achieved && s.required_for_next_level)
+        if (nextLevelSkills.length === 0) return null
+        const doneSelf = nextLevelSkills.filter(s => s.self_marked).length
+        const allDone = doneSelf === nextLevelSkills.length
+        return (
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 22px', marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14, gap: 12 }}>
+              <div>
+                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 4 }}>Ready for the next level?</div>
+                <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>Tick off these moves as you nail them. Your instructor signs you off when you're ready to move up.</div>
+              </div>
+              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--grey)', flexShrink: 0 }}>
+                {doneSelf} / {nextLevelSkills.length}
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {nextLevelSkills.map(skill => (
+                <div key={skill.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 10px', borderRadius: 8, background: skill.self_marked ? 'rgba(204,255,0,0.05)' : 'transparent' }}>
+                  <div style={{ width: 22, height: 22, borderRadius: '50%', border: `2px solid ${skill.self_marked ? 'var(--lime)' : 'var(--border)'}`, background: skill.self_marked ? 'rgba(204,255,0,0.15)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 12, color: 'var(--lime)' }}>
+                    {skill.self_marked ? '✓' : ''}
+                  </div>
+                  <div style={{ fontSize: 13, color: skill.self_marked ? 'var(--white)' : 'var(--grey)' }}>{skill.name}</div>
+                </div>
+              ))}
+            </div>
+            {allDone && (
+              <div style={{ marginTop: 12, padding: '14px 16px', background: 'rgba(204,255,0,0.05)', border: '1px solid var(--lime)', borderRadius: 8 }}>
+                <div style={{ fontSize: 13, color: 'var(--lime)', marginBottom: 10 }}>🎉 Looking good! Your instructor will do a formal check-off when they're happy you're ready — tap below to flag it to them.</div>
+                <button className="btn btn-lime btn-sm">Notify instructor</button>
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
       {/* Quick Links */}
-      <div style={{ marginBottom: 8 }}>
-        <div className="section-title" style={{ fontSize: 15, marginBottom: 12 }}>Quick Links</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
+      <div style={{ marginBottom: 24 }}>
+        <div className="section-title" style={{ fontSize: 15, marginBottom: 12 }}>Quick links</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
           {[
-            { emoji: '📅', label: 'Book a Casual', to: '/portal/book' },
-            { emoji: '🎟️', label: 'My Catch-up Credits', to: '/portal/billing' },
-            { emoji: '🤝', label: 'Refer a Friend', to: '/portal/account' },
-            { emoji: '🏢', label: 'Studio Info', to: '/portal/studio' },
-          ].map(({ emoji, label, to }) => (
-            <Link key={to} to={to} style={{ textDecoration: 'none' }}>
-              <div className="card" style={{ textAlign: 'center', cursor: 'pointer', padding: '18px 12px' }}>
-                <div style={{ fontSize: 28, marginBottom: 8 }}>{emoji}</div>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>{label}</div>
+            { symbol: '○', label: 'Makeup or casual class', sub: 'Drop into any eligible class', to: '/portal/book' },
+            { symbol: '■', label: 'Book practice time', sub: 'Open studio - $20', to: '/portal/book' },
+            { symbol: '△', label: 'See my progress', sub: 'Tricks, levels and resources', to: '/portal/progress' },
+          ].map(({ symbol, label, sub, to }) => (
+            <Link key={label} to={to} style={{ textDecoration: 'none' }}>
+              <div className="card" style={{ textAlign: 'center', cursor: 'pointer', padding: '22px 16px', borderColor: '#2a2a2a' }}>
+                <div style={{ fontSize: 26, marginBottom: 10, color: 'var(--lime)' }}>{symbol}</div>
+                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 5 }}>{label}</div>
+                <div style={{ fontSize: 13, color: 'var(--grey)' }}>{sub}</div>
               </div>
             </Link>
           ))}
         </div>
       </div>
+
+      {/* Upsell strip */}
+      {hasEnrolments && (
+        <div style={{ background: '#0d0d0d', border: '1px solid var(--border)', borderRadius: 12, padding: '22px 26px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, marginBottom: 8, flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 6 }}>You're on {enrolments_.length} class{enrolments_.length !== 1 ? 'es' : ''} per week</div>
+            <div style={{ fontSize: 14, color: 'var(--grey)' }}>Add a 3rd class to unlock <span style={{ color: 'var(--lime)' }}>1 free practice session per week</span>.</div>
+          </div>
+          <Link to="/portal/book"><button className="btn btn-ghost btn-sm" style={{ whiteSpace: 'nowrap' }}>Add a class</button></Link>
+        </div>
+      )}
 
       {markAwayEnrol && (
         <MarkAwayModal

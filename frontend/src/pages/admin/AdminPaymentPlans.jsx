@@ -627,6 +627,9 @@ export default function AdminPaymentPlans() {
                       <button className="btn btn-primary btn-xs" onClick={() => approvePlan(p.id)} disabled={acting[p.id]}>
                         {acting[p.id] === 'approving' ? '…' : 'Approve'}
                       </button>
+                      <button className="btn btn-ghost btn-xs" onClick={() => setDetailPlan(p)}>
+                        Query
+                      </button>
                       <button className="btn btn-ghost btn-xs" onClick={() => declinePlan(p.id)} disabled={acting[p.id]} style={{ color: 'var(--red)' }}>
                         {acting[p.id] === 'declining' ? '…' : 'Decline'}
                       </button>
@@ -669,8 +672,11 @@ export default function AdminPaymentPlans() {
                           <td style={{ padding: '12px 14px' }}>
                             <span style={{ fontSize: 11, fontWeight: 600, color: st.color }}>{st.label}</span>
                           </td>
-                          <td style={{ padding: '12px 14px', textAlign: 'right' }}>
-                            <span style={{ fontSize: 12, color: 'var(--grey)' }}>View →</span>
+                          <td style={{ padding: '12px 14px', textAlign: 'right' }} onClick={e => e.stopPropagation()}>
+                            <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                              <button className="btn btn-ghost btn-xs" onClick={() => setDetailPlan(p)}>Record</button>
+                              <button className="btn btn-ghost btn-xs" onClick={() => payments.plans.remind && payments.plans.remind(p.id)}>Remind</button>
+                            </div>
                           </td>
                         </tr>
                       )

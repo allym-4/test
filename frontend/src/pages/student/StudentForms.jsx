@@ -126,7 +126,7 @@ export default function StudentForms() {
     <div>
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, marginBottom: 4 }}>Forms</div>
-        <div style={{ fontSize: 13, color: 'var(--grey)' }}>Surveys and documents from the studio</div>
+        <div style={{ fontSize: 13, color: 'var(--grey)' }}>Surveys and requests from the studio</div>
       </div>
 
       {loading ? (
@@ -135,10 +135,10 @@ export default function StudentForms() {
         <>
           {pending.length > 0 && (
             <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--red)', marginBottom: 12, fontWeight: 600 }}>Action Required ({pending.length})</div>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--lime)', marginBottom: 12, fontWeight: 600 }}>Action Required ({pending.length})</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {pending.map(f => (
-                  <div key={f.type} style={{ background: 'rgba(255,68,68,0.05)', border: '1px solid rgba(255,68,68,0.2)', borderRadius: 12, padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                  <div key={f.type} style={{ background: 'rgba(204,255,0,0.04)', border: '1px solid rgba(204,255,0,0.25)', borderLeft: '3px solid var(--lime)', borderRadius: 12, padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
                     <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                       <span style={{ fontSize: 24, flexShrink: 0 }}>{f.icon}</span>
                       <div>
