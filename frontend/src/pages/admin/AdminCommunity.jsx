@@ -151,7 +151,7 @@ export default function AdminCommunity() {
       <div className="page-header">
         <div>
           <div className="page-title">Community</div>
-          <div className="page-sub">Announcements and student groups</div>
+          <div className="page-sub">Manage groups, posts and broadcasts</div>
         </div>
         {tab === 'announcements' && (
           <button className="btn btn-lime btn-sm" onClick={() => setModal({ type: 'announcement', existing: null })}>+ New Announcement</button>

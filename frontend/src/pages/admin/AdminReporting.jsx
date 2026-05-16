@@ -93,6 +93,23 @@ export default function AdminReporting() {
           <div className="page-title">Analytics</div>
           <div className="page-sub">Revenue, enrolments and capacity insights</div>
         </div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <input type="date" defaultValue={new Date().toISOString().slice(0, 8) + '01'} style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--white)', fontFamily: 'inherit', fontSize: 12, padding: '6px 10px' }} />
+          <input type="date" defaultValue={new Date().toISOString().slice(0, 10)} style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--white)', fontFamily: 'inherit', fontSize: 12, padding: '6px 10px' }} />
+          <button className="btn btn-lime btn-sm">Filter</button>
+        </div>
+      </div>
+
+      {/* Period Summary bar */}
+      <div style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 16px', marginBottom: 20, display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ fontSize: 11, color: 'var(--grey)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginRight: 4 }}>Period Summary</div>
+        <span style={{ fontSize: 12, color: '#5ecc7b' }}>↑ Revenue up 22%</span>
+        <span style={{ fontSize: 12, color: '#5ecc7b' }}>↑ Enrolments up 24%</span>
+        <span style={{ fontSize: 12, color: 'var(--amber)' }}>↓ Attendance down 8%</span>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+          <button className="btn btn-lime btn-sm" style={{ fontSize: 11 }}>Previous Period</button>
+          <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}>Same Period Last Year</button>
+        </div>
       </div>
 
       {/* Tab nav */}

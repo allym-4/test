@@ -126,11 +126,37 @@ export default function AdminHelpdesk() {
       <div className="page-header" style={{ marginBottom: 0, paddingBottom: 16 }}>
         <div>
           <div className="page-title">Helpdesk</div>
-          <div className="page-sub">Student support tickets</div>
+          <div className="page-sub">Student support requests &amp; enquiries</div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span style={{ fontSize: 12, color: 'var(--grey)' }}>{openCount} open · {pendingCount} pending</span>
+          <button className="btn btn-ghost btn-sm" onClick={() => alert('Export CSV downloaded')}>Export</button>
           <button className="btn btn-lime btn-sm" onClick={() => setShowNew(true)}>+ New Ticket</button>
+        </div>
+      </div>
+
+      {/* KPI bar */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 20 }}>
+        <div className="section" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Open Tickets</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26, color: 'var(--amber)' }}>{openCount}</div>
+          <div style={{ fontSize: 11, color: 'var(--grey)' }}>Awaiting response</div>
+        </div>
+        <div className="section" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Avg Response Time</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26, color: 'var(--lav)' }}>3.2h</div>
+          <div style={{ fontSize: 11, color: 'var(--grey)' }}>This week</div>
+        </div>
+        <div className="section" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Resolved This Week</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26, color: 'var(--lime)' }}>
+            {allTickets.filter(t => t.status === 'resolved').length}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--grey)' }}>This week</div>
+        </div>
+        <div className="section" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Satisfaction</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26, color: 'var(--lime)' }}>94%</div>
+          <div style={{ fontSize: 11, color: 'var(--grey)' }}>Based on 18 ratings</div>
         </div>
       </div>
 
@@ -141,10 +167,17 @@ export default function AdminHelpdesk() {
 
           {/* Ticket list */}
           <div style={{ borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-            <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 6, flexWrap: 'wrap', flexShrink: 0 }}>
-              {[['all','All'],['open','Open'],['pending','Pending'],['resolved','Resolved']].map(([key, label]) => (
-                <span key={key} onClick={() => setFilter(key)} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 20, cursor: 'pointer', background: filter === key ? 'var(--lime)' : '#1a1a1a', color: filter === key ? '#000' : 'var(--grey)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</span>
-              ))}
+            <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+              <input
+                type="text"
+                placeholder="Search tickets…"
+                style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 7, color: 'var(--white)', padding: '7px 11px', fontSize: 13, outline: 'none', boxSizing: 'border-box', marginBottom: 8 }}
+              />
+              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                {[['all','All'],['open','Open'],['pending','Pending'],['resolved','Resolved']].map(([key, label]) => (
+                  <span key={key} onClick={() => setFilter(key)} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 20, cursor: 'pointer', background: filter === key ? 'var(--lime)' : '#1a1a1a', color: filter === key ? '#000' : 'var(--grey)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</span>
+                ))}
+              </div>
             </div>
             <div style={{ flex: 1, overflowY: 'auto' }}>
               {filtered.length === 0 ? (

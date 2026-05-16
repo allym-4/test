@@ -119,9 +119,11 @@ export default function InstructorProfile() {
 
   return (
     <div>
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, marginBottom: 4 }}>My Profile</div>
-        <div style={{ fontSize: 13, color: 'var(--grey)' }}>Personal details, qualifications and preferences</div>
+      <div className="page-header">
+        <div>
+          <div className="page-title">My Profile</div>
+          <div className="page-sub">Personal details, qualifications and preferences</div>
+        </div>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>

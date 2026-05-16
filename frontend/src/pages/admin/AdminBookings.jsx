@@ -427,13 +427,30 @@ export default function AdminBookings() {
                     </td>
                     <td>
                       <b>{s?.name}</b>
-                      <div style={{ fontSize: 11, color: 'var(--grey)' }}>{DAYS[s?.day_of_week]} {s?.start_time?.slice(0, 5)}</div>
+                      <div style={{ fontSize: 11, color: 'var(--grey)' }}>{s?.name && `${DAYS[s?.day_of_week] || ''} ${s?.start_time?.slice(0, 5) || ''}`}</div>
                     </td>
-                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{s?.studio_detail?.name}</td>
+                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>
+                      {e.season_detail?.name || (e.enrolled_date ? new Date(e.enrolled_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—')}
+                    </td>
                     <td><span className={`tag ${TYPE_TAG[e.enrolment_type] || 'tag-grey'}`} style={{ fontSize: 10 }}>{e.enrolment_type}</span></td>
                     <td><span className={`tag ${STATUS_TAG[e.status] || 'tag-grey'}`} style={{ fontSize: 10 }}>{e.status}</span></td>
+                    <td style={{ fontSize: 12, color: e.amount_paid ? 'inherit' : 'var(--grey)' }}>
+                      {e.amount_paid != null ? `$${parseFloat(e.amount_paid).toFixed(0)}` : '—'}
+                    </td>
                     <td style={{ whiteSpace: 'nowrap' }} onClick={ev => ev.stopPropagation()}>
                       <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => setViewing(e)}>View</button>
+                      {e.status === 'active' && e.enrolment_type === 'trial' && (
+                        <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => setViewing(e)}>Convert to Season</button>
+                      )}
+                      {e.status === 'active' && e.enrolment_type !== 'trial' && (
+                        <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => alert('Transfer booking')}>Transfer</button>
+                      )}
+                      {e.status === 'cancelled' && (
+                        <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={async () => {
+                          await enrolments.update(e.id, { status: 'active' })
+                          refetch()
+                        }}>Reinstate</button>
+                      )}
                       {e.status === 'active' && (
                         confirmCancel === e.id ? (
                           <>
@@ -453,7 +470,7 @@ export default function AdminBookings() {
                 )
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--grey)', padding: '32px 0' }}>No bookings found</td></tr>
+                <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--grey)', padding: '32px 0' }}>No bookings found</td></tr>
               )}
             </tbody>
           </table>

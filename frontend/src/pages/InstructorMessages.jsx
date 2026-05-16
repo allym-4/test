@@ -390,10 +390,10 @@ export default function InstructorMessages() {
 
   return (
     <div>
-      <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="page-header">
         <div>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, marginBottom: 4 }}>Messages</div>
-          <div style={{ fontSize: 13, color: 'var(--grey)' }}>Student conversations</div>
+          <div className="page-title">Messages</div>
+          <div className="page-sub">Student conversations</div>
         </div>
         <button className="btn btn-lime btn-sm" onClick={() => setComposing(true)}>+ New Message</button>
       </div>

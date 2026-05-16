@@ -45,9 +45,11 @@ export default function InstructorAttendance() {
 
   return (
     <div>
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, marginBottom: 4 }}>Attendance</div>
-        <div style={{ fontSize: 13, color: 'var(--grey)' }}>Select a class to take the register</div>
+      <div className="page-header">
+        <div>
+          <div className="page-title">Attendance</div>
+          <div className="page-sub">Select a class to take the register</div>
+        </div>
       </div>
 
       {loading ? (

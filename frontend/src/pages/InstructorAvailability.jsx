@@ -112,10 +112,10 @@ export default function InstructorAvailability() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+      <div className="page-header">
         <div>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, marginBottom: 4 }}>Availability</div>
-          <div style={{ fontSize: 13, color: 'var(--grey)' }}>Set your weekly teaching availability</div>
+          <div className="page-title">Availability &amp; Cover</div>
+          <div className="page-sub">Manage your schedule and cover requests</div>
         </div>
       </div>
 

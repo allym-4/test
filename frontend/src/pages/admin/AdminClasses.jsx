@@ -375,12 +375,12 @@ export default function AdminClasses() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Name</th>
+                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Action</th>
+                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Name of Class</th>
+                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Cost</th>
                     <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Type</th>
-                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Day / Time</th>
-                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Instructor</th>
-                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Cap</th>
-                    <th style={{ padding: '10px 16px', textAlign: 'right', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Actions</th>
+                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Date Created</th>
+                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Seq / No.</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -388,35 +388,37 @@ export default function AdminClasses() {
                     <tr><td colSpan={6} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--grey)', fontSize: 13 }}>No classes yet.</td></tr>
                   ) : filtered.map((s, i) => (
                     <tr key={s.id} style={{ borderBottom: i < filtered.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                      <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <button className="btn btn-ghost btn-xs" title="View" onClick={() => setModal(s)}>👁</button>
+                          <button className="btn btn-ghost btn-xs" title="Edit" onClick={() => setModal(s)}>✏</button>
+                          <button className="btn btn-ghost btn-xs" title="Duplicate" onClick={() => { const copy = { ...s, id: undefined, name: s.name + ' (copy)' }; setModal(copy) }}>⧉</button>
+                          {confirmDeleteId === s.id ? (
+                            <>
+                              <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => handleDelete(s.id)} disabled={deleting === s.id}>{deleting === s.id ? '…' : '✓'}</button>
+                              <button className="btn btn-ghost btn-xs" onClick={() => setConfirmDeleteId(null)}>✕</button>
+                            </>
+                          ) : (
+                            <button className="btn btn-ghost btn-xs" style={{ color: '#e05555' }} onClick={() => setConfirmDeleteId(s.id)} title="Delete">🗑</button>
+                          )}
+                        </div>
+                      </td>
                       <td style={{ padding: '12px 16px' }}>
                         <div style={{ fontWeight: 600, fontSize: 13 }}>{s.name}</div>
                         {s.level && <div style={{ fontSize: 11, color: 'var(--grey)' }}>{s.level}</div>}
                       </td>
+                      <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--grey)' }}>
+                        {s.price != null ? `$${parseFloat(s.price).toFixed(0)}` : '—'}
+                      </td>
                       <td style={{ padding: '12px 16px' }}>
-                        <span className={`tag ${s.session_type === 'course' ? 'tag-lav' : 'tag-amber'}`} style={{ fontSize: 10 }}>
+                        <span className={`tag ${s.session_type === 'course' ? 'tag-lav' : 'tag-grey'}`} style={{ fontSize: 10 }}>
                           {TYPE_LABELS[s.session_type] || s.session_type}
                         </span>
                       </td>
                       <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--grey)' }}>
-                        {DAYS[s.day_of_week]} · {s.start_time?.slice(0, 5)}
+                        {s.created_at ? new Date(s.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                       </td>
-                      <td style={{ padding: '12px 16px', fontSize: 12 }}>
-                        {s.instructor_detail?.display_name || <span style={{ color: 'var(--grey)' }}>—</span>}
-                      </td>
-                      <td style={{ padding: '12px 16px', fontSize: 12 }}>{s.capacity}</td>
-                      <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                          <button className="btn btn-ghost btn-xs" onClick={() => setModal(s)}>Edit</button>
-                          {confirmDeleteId === s.id ? (
-                            <>
-                              <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => handleDelete(s.id)} disabled={deleting === s.id}>{deleting === s.id ? '…' : 'Confirm'}</button>
-                              <button className="btn btn-ghost btn-xs" onClick={() => setConfirmDeleteId(null)}>No</button>
-                            </>
-                          ) : (
-                            <button className="btn btn-ghost btn-xs" onClick={() => setConfirmDeleteId(s.id)} style={{ color: 'var(--red)' }}>Delete</button>
-                          )}
-                        </div>
-                      </td>
+                      <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--grey)' }}>#{i + 1}</td>
                     </tr>
                   ))}
                 </tbody>

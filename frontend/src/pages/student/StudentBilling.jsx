@@ -245,13 +245,13 @@ export default function StudentBilling() {
         maxWidth: 700,
       }}>
         <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--lav)', marginBottom: 8, fontWeight: 500 }}>
-          Catch-up Credits
+          Make-up Credits
         </div>
         <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 32, color: 'var(--lav)', marginBottom: 4 }}>
           {Array.isArray(catchupCredits) ? catchupCredits.filter(c => c.status === 'available' || !c.status).length : 0}
         </div>
         <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16 }}>
-          Available to use when booking a casual or catch-up class
+          Credits expire 60 days from issue · Use when booking a casual or catch-up class
         </div>
         {Array.isArray(catchupCredits) && catchupCredits.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
