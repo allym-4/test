@@ -20,6 +20,7 @@ urlpatterns = [
     path('lockers/<int:pk>/chase/', views.LockerChaseView.as_view(), name='locker-chase'),
     path('kisi/grants/', views.KisiGrantListView.as_view(), name='kisi-grant-list'),
     path('kisi/grants/<int:pk>/', views.KisiGrantDetailView.as_view(), name='kisi-grant-detail'),
+    path('sessions/<int:session_pk>/roster/', views.ClassRosterView.as_view(), name='class-roster'),
     path('sessions/<int:session_pk>/chat/', views.ClassChatView.as_view(), name='class-chat'),
     path('stats/', views.ClassStatsView.as_view(), name='class-stats'),
     path('workshops/', views.WorkshopListView.as_view(), name='workshop-list'),

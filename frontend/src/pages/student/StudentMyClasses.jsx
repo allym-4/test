@@ -1,10 +1,43 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { enrolments as enrolmentsApi, attendance, classes as classesApi } from '../../api'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+function ClassRoster({ sessionId }) {
+  const [names, setNames] = useState(null)
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (!open || names !== null) return
+    classesApi.roster(sessionId).then(r => setNames(r.data.names || [])).catch(() => setNames([]))
+  }, [open, sessionId, names])
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 11, color: 'var(--grey)', textDecoration: 'underline', textDecorationStyle: 'dotted', marginTop: 6 }}>
+        Who's coming?
+      </button>
+    )
+  }
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Who's coming</div>
+      {names === null ? (
+        <div style={{ fontSize: 11, color: 'var(--grey)' }}>…</div>
+      ) : names.length === 0 ? (
+        <div style={{ fontSize: 11, color: 'var(--grey)' }}>No one's opted in yet</div>
+      ) : (
+        <div style={{ fontSize: 12, color: 'var(--white)', display: 'flex', flexWrap: 'wrap', gap: '4px 8px' }}>
+          {names.map((n, i) => <span key={i}>{n}</span>)}
+        </div>
+      )}
+    </div>
+  )
+}
 
 function MarkAwayModal({ occurrence, cancellationWindowHours, onClose, onDone }) {
   const [confirming, setConfirming] = useState(false)
@@ -238,27 +271,30 @@ export default function StudentMyClasses() {
                             ? `${s.instructor_detail.first_name || ''} ${s.instructor_detail.last_name || ''}`.trim()
                             : (s?.instructor_name || '—')
                           return (
-                            <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 2 }}>
-                                  {DAYS[s?.day_of_week]} · {s?.start_time?.slice(0, 5)}
+                            <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 2 }}>
+                                    {DAYS[s?.day_of_week]} · {s?.start_time?.slice(0, 5)}
+                                  </div>
+                                  <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{s?.name} · {s?.studio_detail?.name}</div>
+                                  <div style={{ fontSize: 12, color: 'var(--grey)' }}>with {instructorName}</div>
                                 </div>
-                                <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{s?.name} · {s?.studio_detail?.name}</div>
-                                <div style={{ fontSize: 12, color: 'var(--grey)' }}>with {instructorName}</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                                  <span className="tag tag-lime" style={{ fontSize: 10 }}>Active</span>
+                                  {confirmCancelEnrolId === e.id ? (
+                                    <span style={{ display: 'flex', gap: 4 }}>
+                                      <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)' }} onClick={() => { setConfirmCancelEnrolId(null); cancelEnrolment(e.id) }}>Confirm</button>
+                                      <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }} onClick={() => setConfirmCancelEnrolId(null)}>No</button>
+                                    </span>
+                                  ) : (
+                                    <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)' }} disabled={cancelling === e.id} onClick={() => setConfirmCancelEnrolId(e.id)}>
+                                      {cancelling === e.id ? '…' : 'Cancel'}
+                                    </button>
+                                  )}
+                                </div>
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                                <span className="tag tag-lime" style={{ fontSize: 10 }}>Active</span>
-                                {confirmCancelEnrolId === e.id ? (
-                                  <span style={{ display: 'flex', gap: 4 }}>
-                                    <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)' }} onClick={() => { setConfirmCancelEnrolId(null); cancelEnrolment(e.id) }}>Confirm</button>
-                                    <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }} onClick={() => setConfirmCancelEnrolId(null)}>No</button>
-                                  </span>
-                                ) : (
-                                  <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)' }} disabled={cancelling === e.id} onClick={() => setConfirmCancelEnrolId(e.id)}>
-                                    {cancelling === e.id ? '…' : 'Cancel'}
-                                  </button>
-                                )}
-                              </div>
+                              {e.class_session && <ClassRoster sessionId={e.class_session} />}
                             </div>
                           )
                         })}

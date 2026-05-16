@@ -55,6 +55,26 @@ class ClassSessionDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAdminOrInstructor]
 
 
+class ClassRosterView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, session_pk):
+        from apps.enrolments.models import Enrolment
+        enrolled = Enrolment.objects.filter(
+            class_session_id=session_pk,
+            status='active',
+            student__show_in_roster=True,
+        ).select_related('student')
+        names = []
+        for e in enrolled:
+            s = e.student
+            if s.roster_name == 'nickname' and s.nickname:
+                names.append(s.nickname)
+            else:
+                names.append(s.first_name or s.display_name)
+        return Response({'names': names})
+
+
 class ClassOccurrenceListView(generics.ListCreateAPIView):
     serializer_class = ClassOccurrenceSerializer
     permission_classes = [permissions.IsAuthenticated]

@@ -23,6 +23,15 @@ class User(AbstractUser):
 
     pay_rate = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text='Per-class pay rate for instructors')
 
+    # Class roster visibility
+    show_in_roster = models.BooleanField(default=False)
+    roster_name = models.CharField(
+        max_length=20,
+        choices=[('first_name', 'First name'), ('nickname', 'Nickname')],
+        default='first_name',
+    )
+    nickname = models.CharField(max_length=50, blank=True)
+
     # Staff permission flags (only meaningful for instructor/admin/staff roles)
     perm_billing = models.BooleanField(default=False)
     perm_edit_profiles = models.BooleanField(default=False)

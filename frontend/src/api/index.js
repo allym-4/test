@@ -22,6 +22,7 @@ export const classes = {
   occurrences: (params) => client.get('/api/classes/occurrences/', { params }),
   getOccurrence: (id) => client.get(`/api/classes/occurrences/${id}/`),
   stats: () => client.get('/api/classes/stats/'),
+  roster: (sessionId) => client.get(`/api/classes/sessions/${sessionId}/roster/`),
   chat: {
     list: (sessionId) => client.get(`/api/classes/sessions/${sessionId}/chat/`),
     send: (sessionId, data) => client.post(`/api/classes/sessions/${sessionId}/chat/`, data),

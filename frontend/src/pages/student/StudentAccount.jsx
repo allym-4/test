@@ -98,6 +98,29 @@ export default function StudentAccount() {
   const creditedReferrals = myReferrals.filter(r => r.status === 'credited')
   const totalCredits = creditedReferrals.reduce((sum, r) => sum + parseFloat(r.credit_amount || 0), 0)
 
+  // Roster visibility
+  const [showInRoster, setShowInRoster] = useState(user?.show_in_roster ?? false)
+  const [rosterName, setRosterName] = useState(user?.roster_name || 'first_name')
+  const [nickname, setNickname] = useState(user?.nickname || '')
+  const [rosterSaved, setRosterSaved] = useState(false)
+
+  async function handleRosterChange(updates) {
+    const merged = {
+      show_in_roster: showInRoster,
+      roster_name: rosterName,
+      nickname,
+      ...updates,
+    }
+    if ('show_in_roster' in updates) setShowInRoster(updates.show_in_roster)
+    if ('roster_name' in updates) setRosterName(updates.roster_name)
+    if ('nickname' in updates) setNickname(updates.nickname)
+    try {
+      await auth.updateMe(merged)
+      setRosterSaved(true)
+      setTimeout(() => setRosterSaved(false), 2500)
+    } catch { /* silent */ }
+  }
+
   // Notification preferences
   const prefs = user?.notification_preferences || {}
   const [classReminders, setClassReminders] = useState(prefs.class_reminders ?? true)
@@ -354,6 +377,52 @@ export default function StudentAccount() {
               <Toggle value={value} onChange={v => handleNotifToggle(key, v)} />
             </div>
           ))}
+
+          <div style={{ height: 1, background: 'var(--border)', margin: '20px 0' }} />
+
+          {/* Class roster */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', fontWeight: 500 }}>Who's Coming</div>
+            {rosterSaved && <span style={{ fontSize: 11, color: 'var(--lime)' }}>Saved</span>}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, paddingBottom: 14, marginBottom: 14, borderBottom: '1px solid #1a1a1a' }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 500 }}>Show my name to classmates</div>
+              <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>Other students in your class can see who's coming</div>
+            </div>
+            <Toggle value={showInRoster} onChange={v => handleRosterChange({ show_in_roster: v })} />
+          </div>
+          {showInRoster && (
+            <>
+              <div style={{ paddingBottom: 14, marginBottom: 14, borderBottom: '1px solid #1a1a1a' }}>
+                <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 10 }}>Show me as</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {[['first_name', 'First name'], ['nickname', 'Nickname']].map(([val, label]) => (
+                    <button
+                      key={val}
+                      onClick={() => handleRosterChange({ roster_name: val })}
+                      className={`btn btn-sm ${rosterName === val ? 'btn-lime' : 'btn-ghost'}`}
+                      style={{ fontSize: 12 }}
+                    >{label}</button>
+                  ))}
+                </div>
+              </div>
+              {rosterName === 'nickname' && (
+                <div style={{ paddingBottom: 14, marginBottom: 14, borderBottom: '1px solid #1a1a1a' }}>
+                  <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 8 }}>Your nickname</div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input
+                      value={nickname}
+                      onChange={e => setNickname(e.target.value)}
+                      placeholder="e.g. Mia"
+                      style={{ flex: 1, maxWidth: 200 }}
+                    />
+                    <button className="btn btn-ghost btn-sm" style={{ fontSize: 12 }} onClick={() => handleRosterChange({ nickname })}>Save</button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
 
           <div style={{ height: 1, background: 'var(--border)', margin: '20px 0' }} />
 
