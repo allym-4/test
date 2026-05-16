@@ -1,7 +1,135 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useApi } from '../../hooks/useApi'
 import { seasons, classes as classesApi } from '../../api'
 import '../StudentsPage.css'
+
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+const DAY_NAMES = ['Su','Mo','Tu','We','Th','Fr','Sa']
+
+function SeasonCalendarPicker({ value, onChange, existingSeasons = [], label }) {
+  const today = new Date()
+  const [viewYear, setViewYear] = useState(value ? new Date(value + 'T00:00').getFullYear() : today.getFullYear())
+  const [viewMonth, setViewMonth] = useState(value ? new Date(value + 'T00:00').getMonth() : today.getMonth())
+  const [open, setOpen] = useState(false)
+
+  const selectedDate = value ? new Date(value + 'T00:00') : null
+
+  // Build days for the current month view
+  const days = useMemo(() => {
+    const first = new Date(viewYear, viewMonth, 1)
+    const last = new Date(viewYear, viewMonth + 1, 0)
+    const result = []
+    // Leading blanks
+    for (let i = 0; i < first.getDay(); i++) result.push(null)
+    for (let d = 1; d <= last.getDate(); d++) result.push(new Date(viewYear, viewMonth, d))
+    return result
+  }, [viewYear, viewMonth])
+
+  function isInSeason(date) {
+    if (!date) return false
+    return existingSeasons.some(s => {
+      if (!s.start_date || !s.end_date) return false
+      const start = new Date(s.start_date + 'T00:00')
+      const end = new Date(s.end_date + 'T00:00')
+      return date >= start && date <= end
+    })
+  }
+
+  function isSame(a, b) {
+    if (!a || !b) return false
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+  }
+
+  function pickDate(date) {
+    const iso = date.toISOString().slice(0, 10)
+    onChange(iso)
+    setOpen(false)
+  }
+
+  function prevMonth() {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1) }
+    else setViewMonth(m => m - 1)
+  }
+  function nextMonth() {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1) }
+    else setViewMonth(m => m + 1)
+  }
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <label style={{ display: 'block', fontSize: 12, color: 'var(--grey)', marginBottom: 4 }}>{label}</label>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: '100%', textAlign: 'left', background: '#1a1a1a', border: '1px solid var(--border)',
+          borderRadius: 8, padding: '8px 12px', fontSize: 13, color: value ? 'var(--white)' : 'var(--grey)',
+          cursor: 'pointer', fontFamily: 'inherit',
+        }}
+      >
+        {value ? new Date(value + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Pick a date…'}
+      </button>
+
+      {open && (
+        <div style={{
+          position: 'absolute', top: '100%', left: 0, zIndex: 500, marginTop: 4,
+          background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 10,
+          padding: 12, width: 240, boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+        }}>
+          {/* Month nav */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <button type="button" onClick={prevMonth} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 16, padding: '0 6px' }}>‹</button>
+            <div style={{ fontSize: 13, fontWeight: 700 }}>{MONTH_NAMES[viewMonth]} {viewYear}</div>
+            <button type="button" onClick={nextMonth} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 16, padding: '0 6px' }}>›</button>
+          </div>
+          {/* Day headers */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 4 }}>
+            {DAY_NAMES.map(d => (
+              <div key={d} style={{ textAlign: 'center', fontSize: 10, color: 'var(--grey)', padding: '2px 0' }}>{d}</div>
+            ))}
+          </div>
+          {/* Days */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+            {days.map((date, i) => {
+              if (!date) return <div key={`blank-${i}`} />
+              const inSeason = isInSeason(date)
+              const isSelected = isSame(date, selectedDate)
+              const isToday = isSame(date, today)
+              return (
+                <button
+                  key={date.toISOString()}
+                  type="button"
+                  onClick={() => pickDate(date)}
+                  title={inSeason ? 'A season already runs on this date' : ''}
+                  style={{
+                    padding: '4px 0', border: 'none', borderRadius: 4, cursor: 'pointer',
+                    fontSize: 11, fontWeight: isSelected || isToday ? 700 : 400,
+                    background: isSelected ? 'var(--lime)' : inSeason ? 'rgba(176,160,255,0.25)' : 'transparent',
+                    color: isSelected ? '#000' : inSeason ? 'var(--lav)' : isToday ? 'var(--lime)' : 'var(--white)',
+                    outline: isToday && !isSelected ? '1px solid rgba(204,255,0,0.4)' : 'none',
+                  }}
+                >
+                  {date.getDate()}
+                </button>
+              )
+            })}
+          </div>
+          {/* Legend */}
+          <div style={{ display: 'flex', gap: 12, marginTop: 8, fontSize: 10, color: 'var(--grey)' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 2, background: 'rgba(176,160,255,0.25)', display: 'inline-block' }} />
+              Season active
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--lime)', display: 'inline-block' }} />
+              Selected
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -17,8 +145,10 @@ function weeksRemaining(endDate) {
   return Math.ceil(ms / (1000 * 60 * 60 * 24 * 7))
 }
 
-function SeasonModal({ season, onClose, onSaved }) {
+function SeasonModal({ season, onClose, onSaved, allSeasons = [] }) {
   const isEdit = !!season
+  const otherSeasons = allSeasons.filter(s => !season || s.id !== season.id)
+
   const [form, setForm] = useState({
     name: season?.name || '',
     start_date: season?.start_date || '',
@@ -29,6 +159,16 @@ function SeasonModal({ season, onClose, onSaved }) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   function set(f, v) { setForm(x => ({ ...x, [f]: v })) }
+
+  function handleStartDate(val) {
+    set('start_date', val)
+    // Auto-set end date to 8 weeks later if not already manually set
+    if (val) {
+      const end = new Date(val + 'T00:00')
+      end.setDate(end.getDate() + 56)
+      set('end_date', end.toISOString().slice(0, 10))
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -49,7 +189,7 @@ function SeasonModal({ season, onClose, onSaved }) {
 
   return (
     <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="sd-modal" style={{ maxWidth: 480 }}>
+      <div className="sd-modal" style={{ maxWidth: 500 }}>
         <div className="sd-header">
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18 }}>{isEdit ? 'Edit Season' : 'New Season'}</div>
           <button className="modal-close-btn" onClick={onClose}>✕</button>
@@ -57,10 +197,25 @@ function SeasonModal({ season, onClose, onSaved }) {
         <form className="sd-body" onSubmit={handleSubmit}>
           {error && <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>{error}</div>}
           <div className="field"><label>Season Name *</label><input value={form.name} onChange={e => set('name', e.target.value)} required autoFocus placeholder="e.g. Season 4" /></div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div className="field"><label>Start Date *</label><input type="date" value={form.start_date} onChange={e => set('start_date', e.target.value)} required /></div>
-            <div className="field"><label>End Date *</label><input type="date" value={form.end_date} onChange={e => set('end_date', e.target.value)} required /></div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+            <SeasonCalendarPicker
+              label="Start Date *"
+              value={form.start_date}
+              onChange={handleStartDate}
+              existingSeasons={otherSeasons}
+            />
+            <div>
+              <SeasonCalendarPicker
+                label="End Date *"
+                value={form.end_date}
+                onChange={v => set('end_date', v)}
+                existingSeasons={otherSeasons}
+              />
+              <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>Auto-set to 8 weeks · override if needed</div>
+            </div>
           </div>
+
           <div className="field">
             <label>Status</label>
             <select value={form.status} onChange={e => set('status', e.target.value)}>
@@ -327,6 +482,7 @@ export default function AdminSeasons() {
           season={editSeason}
           onClose={() => { setShowModal(false); setEditSeason(null) }}
           onSaved={handleSaved}
+          allSeasons={allSeasons}
         />
       )}
     </div>

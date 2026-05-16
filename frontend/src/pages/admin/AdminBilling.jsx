@@ -120,7 +120,7 @@ function StudentDrawer({ student, onClose, onAction }) {
         <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button className="btn btn-ghost btn-sm" onClick={() => onAction('chase')}>Chase</button>
           <button className="btn btn-ghost btn-sm" onClick={() => onAction('waive')}>Waive</button>
-          <button className="btn btn-lime btn-sm" onClick={() => onAction('payment')}>Mark Paid</button>
+          <button className="btn btn-lime btn-sm" onClick={() => onAction('payment')}>Take Payment</button>
           <button className="btn btn-ghost btn-sm" onClick={() => onAction('charge')}>Add Charge</button>
         </div>
       </div>
@@ -129,14 +129,22 @@ function StudentDrawer({ student, onClose, onAction }) {
 }
 
 function GiftCardModal({ onClose, onSuccess }) {
-  const [form, setForm] = useState({ issued_to_name: '', issued_to_email: '', value: '', expires_at: '' })
+  const [form, setForm] = useState({
+    issued_to_name: '',
+    issued_to_email: '',
+    value: '',
+    expires_at: '',
+    purchased_by_name: '',
+    purchased_by_phone: '',
+    payment_type: 'cash',
+  })
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   const handleSave = async () => {
-    if (!form.issued_to_name.trim()) { setErr('Name is required'); return }
+    if (!form.issued_to_name.trim()) { setErr('Recipient name is required'); return }
     if (!form.value || isNaN(parseFloat(form.value)) || parseFloat(form.value) <= 0) { setErr('A valid amount is required'); return }
     setSaving(true)
     setErr('')
@@ -146,6 +154,9 @@ function GiftCardModal({ onClose, onSuccess }) {
       await giftCardsApi.create({
         issued_to_name: form.issued_to_name.trim(),
         issued_to_email: form.issued_to_email.trim(),
+        purchased_by_name: form.purchased_by_name.trim(),
+        purchased_by_phone: form.purchased_by_phone.trim(),
+        payment_type: form.payment_type,
         value,
         balance: value,
         code,
@@ -161,23 +172,42 @@ function GiftCardModal({ onClose, onSuccess }) {
 
   return (
     <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="sd-modal" style={{ maxWidth: 400 }}>
+      <div className="sd-modal" style={{ maxWidth: 420 }}>
         <div className="sd-header">
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18 }}>New Gift Card</div>
           <button className="modal-close-btn" onClick={onClose}>✕</button>
         </div>
         <div className="sd-body">
+          <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.7px', color: 'var(--grey)', fontWeight: 700, marginBottom: 8 }}>Recipient</div>
           <div className="field">
             <label>Issued To (Name) *</label>
             <input value={form.issued_to_name} onChange={e => set('issued_to_name', e.target.value)} placeholder="Recipient name" />
           </div>
           <div className="field">
             <label>Issued To (Email)</label>
-            <input type="email" value={form.issued_to_email} onChange={e => set('issued_to_email', e.target.value)} placeholder="Recipient email" />
+            <input type="email" value={form.issued_to_email} onChange={e => set('issued_to_email', e.target.value)} placeholder="Recipient email (optional)" />
           </div>
+          <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.7px', color: 'var(--grey)', fontWeight: 700, marginBottom: 8, marginTop: 4 }}>Purchased By</div>
+          <div className="field">
+            <label>Purchaser Name</label>
+            <input value={form.purchased_by_name} onChange={e => set('purchased_by_name', e.target.value)} placeholder="Name of person buying the card" />
+          </div>
+          <div className="field">
+            <label>Purchaser Phone / Contact</label>
+            <input value={form.purchased_by_phone} onChange={e => set('purchased_by_phone', e.target.value)} placeholder="Phone or contact" />
+          </div>
+          <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.7px', color: 'var(--grey)', fontWeight: 700, marginBottom: 8, marginTop: 4 }}>Payment</div>
           <div className="field">
             <label>Amount ($) *</label>
             <input type="number" min="0" step="0.01" value={form.value} onChange={e => set('value', e.target.value)} placeholder="0.00" />
+          </div>
+          <div className="field">
+            <label>Payment Method</label>
+            <select value={form.payment_type} onChange={e => set('payment_type', e.target.value)}>
+              <option value="cash">Cash</option>
+              <option value="card">Card</option>
+              <option value="eftpos">EFTPOS</option>
+            </select>
           </div>
           <div className="field">
             <label>Expiry Date (optional)</label>
@@ -310,7 +340,7 @@ export default function AdminBilling() {
                       <td style={{ whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
                         <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => { setModalStudent(b); setActiveModal('chase') }}>Chase</button>
                         <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => { setModalStudent(b); setActiveModal('waive') }}>Waive</button>
-                        <button className="btn btn-lime btn-xs" onClick={() => { setModalStudent(b); setActiveModal('payment') }}>Mark Paid</button>
+                        <button className="btn btn-lime btn-xs" onClick={() => { setModalStudent(b); setActiveModal('payment') }}>Take Payment</button>
                       </td>
                     </tr>
                   ))}
@@ -561,19 +591,24 @@ export default function AdminBilling() {
           </div>
           <div className="tbl-section">
             <table>
-              <thead><tr><th>Code</th><th>Issued To</th><th>Value</th><th>Balance</th><th>Expires</th><th>Status</th><th>Actions</th></tr></thead>
+              <thead><tr><th>Code</th><th>Issued To</th><th>Purchased By</th><th>Payment</th><th>Value</th><th>Balance</th><th>Expires</th><th>Status</th><th>Actions</th></tr></thead>
               <tbody>
-                {loadingGC && <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--grey)' }}>Loading…</td></tr>}
+                {loadingGC && <tr><td colSpan={9} style={{ textAlign: 'center', color: 'var(--grey)' }}>Loading…</td></tr>}
                 {!loadingGC && giftCardList.length === 0 && (
-                  <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--grey)', padding: 32 }}>No gift cards yet</td></tr>
+                  <tr><td colSpan={9} style={{ textAlign: 'center', color: 'var(--grey)', padding: 32 }}>No gift cards yet</td></tr>
                 )}
                 {giftCardList.map(g => (
                   <tr key={g.id}>
                     <td><code style={{ fontSize: 12, color: 'var(--lime)' }}>{g.code}</code></td>
                     <td>
                       <div style={{ fontWeight: 500 }}>{g.issued_to_name || '—'}</div>
-                      <div style={{ fontSize: 11, color: 'var(--grey)' }}>{g.issued_to_email}</div>
+                      {g.issued_to_email && <div style={{ fontSize: 11, color: 'var(--grey)' }}>{g.issued_to_email}</div>}
                     </td>
+                    <td>
+                      <div style={{ fontSize: 12 }}>{g.purchased_by_name || '—'}</div>
+                      {g.purchased_by_phone && <div style={{ fontSize: 11, color: 'var(--grey)' }}>{g.purchased_by_phone}</div>}
+                    </td>
+                    <td style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase' }}>{g.payment_type || '—'}</td>
                     <td>${parseFloat(g.value).toFixed(2)}</td>
                     <td style={{ color: parseFloat(g.balance) > 0 ? 'var(--lime)' : 'var(--grey)' }}>${parseFloat(g.balance).toFixed(2)}</td>
                     <td style={{ fontSize: 12, color: 'var(--grey)' }}>{g.expires_at ? new Date(g.expires_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : 'No expiry'}</td>

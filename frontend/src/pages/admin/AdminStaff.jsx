@@ -209,7 +209,7 @@ function PayTab({ allStaff }) {
                   </td>
                   <td>
                     {r.status === 'pending' && (
-                      <button className="btn btn-ghost btn-xs" onClick={() => markPaid(r)}>Mark Paid</button>
+                      <button className="btn btn-ghost btn-xs" onClick={() => markPaid(r)}>Take Payment</button>
                     )}
                   </td>
                 </tr>

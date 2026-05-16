@@ -6,76 +6,41 @@ import client from '../api/client'
 import { helpdesk, users } from '../api'
 import './AdminShell.css'
 
-const NAV_GROUPS = [
-  {
-    items: [
-      { to: '/admin', label: 'Dashboard', icon: '⬡', end: true },
-    ]
-  },
-  {
-    divider: true,
-    label: 'People',
-    items: [
-      { to: '/admin/students', label: 'Students',  icon: '👤' },
-      { to: '/admin/staff',    label: 'Staff',     icon: '🧑‍🏫' },
-      { to: '/admin/leads',    label: 'Leads',     icon: '🎯' },
-      { to: '/admin/tags',     label: 'Tags',      icon: '🏷' },
-    ]
-  },
-  {
-    divider: true,
-    label: 'Classes',
-    items: [
-      { to: '/admin/timetable',  label: 'Timetable',   icon: '📅' },
-      { to: '/admin/classes',    label: 'Classes',     icon: '📚' },
-      { to: '/admin/waitlist',   label: 'Waitlist',    icon: '⏳' },
-      { to: '/admin/seasons',    label: 'Seasons',     icon: '🌀' },
-      { to: '/admin/categories', label: 'Categories',  icon: '🗂' },
-      { to: '/admin/skills',     label: 'Skill Lists', icon: '✅' },
-      { to: '/admin/rooms',      label: 'Rooms',       icon: '🏠' },
-    ]
-  },
-  {
-    divider: true,
-    label: 'Finance',
-    items: [
-      { to: '/admin/billing',       label: 'Billing',        icon: '💳' },
-      { to: '/admin/payment-plans', label: 'Payment Plans',  icon: '📋' },
-      { to: '/admin/bookings',      label: 'Bookings',       icon: '🎟' },
-      { to: '/admin/memberships',   label: 'Memberships',    icon: '🎫' },
-      { to: '/admin/packages',      label: 'Packages',       icon: '📦' },
-      { to: '/admin/offers',        label: 'Offers',         icon: '🏷' },
-      { to: '/admin/reporting',     label: 'Analytics',      icon: '📊' },
-    ]
-  },
-  {
-    divider: true,
-    label: 'Community',
-    items: [
-      { to: '/admin/messages',        label: 'Messages',        icon: '📩', badge: 'messages' },
-      { to: '/admin/community',       label: 'Community',       icon: '💬' },
-      { to: '/admin/marketing',       label: 'Marketing',       icon: '📣' },
-      { to: '/admin/recommendations', label: 'Recommendations', icon: '💡' },
-      { to: '/admin/surveys',         label: 'Surveys',         icon: '📝' },
-      { to: '/admin/helpdesk',        label: 'Helpdesk',        icon: '🎧', badge: 'helpdesk' },
-    ]
-  },
-  {
-    divider: true,
-    label: 'Ops',
-    items: [
-      { to: '/admin/retail',       label: 'Retail',        icon: '🛍' },
-      { to: '/admin/lockers',      label: 'Lockers',       icon: '🔐' },
-      { to: '/admin/kisi',         label: 'Kisi Access',   icon: '🔑' },
-      { to: '/admin/media',        label: 'Media Library', icon: '🎬' },
-      { to: '/admin/studio-notes', label: 'Studio Notes',  icon: '📌' },
-      { to: '/admin/action-log',   label: 'Action Log',    icon: '☑️' },
-      { to: '/admin/activity-log', label: 'Activity Log',  icon: '📋' },
-      { to: '/admin/assistant',    label: 'Assistant',     icon: '🤖' },
-      { to: '/admin/automations',  label: 'Automations',   icon: '🔔' },
-      { to: '/admin/settings',     label: 'Settings',      icon: '⚙️' },
-    ]
-  },
+const MANAGE_STUDIO_ITEMS = [
+  { to: '/admin/students',   label: 'Students',   icon: '👤' },
+  { to: '/admin/staff',      label: 'Staff',      icon: '🧑‍🏫' },
+  { to: '/admin/tags',       label: 'Tags',       icon: '🏷' },
+  { to: '/admin/skills',     label: 'Skill Lists', icon: '✅' },
+  { to: '/admin/rooms',      label: 'Rooms',      icon: '🏢' },
+  { to: '/admin/categories', label: 'Categories', icon: '🗂' },
+  { to: '/admin/timetable',  label: 'Timetable',  icon: '📅' },
+  { to: '/admin/classes',    label: 'Classes',    icon: '📚' },
+  { to: '/admin/waitlist',   label: 'Waitlist',   icon: '⏳' },
+  { to: '/admin/seasons',    label: 'Seasons',    icon: '🌀' },
+  { to: '/admin/packages',   label: 'Packages',   icon: '📦' },
+]
+
+const FLAT_NAV_ITEMS = [
+  { to: '/admin/timetable',      label: 'Timetable',      icon: '📅', dividerBefore: true },
+  { to: '/admin/bookings',       label: 'Bookings',       icon: '🎟' },
+  { to: '/admin/billing',        label: 'Billing',        icon: '💳' },
+  { to: '/admin/payment-plans',  label: 'Payment Plans',  icon: '📋' },
+  { to: '/admin/offers',         label: 'Offers',         icon: '🏷' },
+  { to: '/admin/community',      label: 'Community',      icon: '💬' },
+  { to: '/admin/messages',       label: 'Messages',       icon: '📩', badge: 'messages' },
+  { to: '/admin/surveys',        label: 'Surveys',        icon: '📝' },
+  { to: '/admin/recommendations',label: 'Recommendations',icon: '💡', dividerBefore: true },
+  { to: '/admin/assistant',      label: 'Assistant',      icon: '🤖' },
+  { to: '/admin/reporting',      label: 'Analytics',      icon: '📊' },
+  { to: '/admin/activity-log',   label: 'Activity Log',   icon: '📋' },
+  { to: '/admin/leads',          label: 'Leads',          icon: '🎯' },
+  { to: '/admin/retail',         label: 'Retail',         icon: '🛍' },
+  { to: '/admin/lockers',        label: 'Lockers',        icon: '🔐' },
+  { to: '/admin/kisi',           label: 'Kisi Access',    icon: '🔑' },
+  { to: '/admin/marketing',      label: 'Marketing',      icon: '📣' },
+  { to: '/admin/automations',    label: 'Automations',    icon: '🔔' },
+  { to: '/admin/helpdesk',       label: 'Helpdesk',       icon: '🎧', badge: 'helpdesk' },
+  { to: '/admin/settings',       label: 'Settings',       icon: '⚙️' },
 ]
 
 const BADGE_STYLE = {
@@ -98,6 +63,7 @@ export default function AdminShell() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [manageOpen, setManageOpen] = useState(true)
 
   // ── Feature 1: Global Search ─────────────────────────────────────────────
   const [searchOpen, setSearchOpen] = useState(false)
@@ -224,32 +190,54 @@ export default function AdminShell() {
         </div>
 
         <div className="admin-sidebar-nav">
-          {NAV_GROUPS.map((group, gi) => (
-            <div key={gi}>
-              {group.divider && <div className="admin-nav-divider" />}
-              {group.label && <div className="admin-nav-group-label">{group.label}</div>}
-              {group.items.map(({ to, label, icon, end, stub, badge }) => {
-                const count = badge ? badgeCounts[badge] : 0
-                return (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    end={end}
-                    className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}${stub ? ' stub' : ''}`}
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    <span className="admin-nav-icon">{icon}</span>
-                    <span style={{ position: 'relative' }}>
-                      {label}
-                      {count > 0 && (
-                        <span style={BADGE_STYLE}>{count > 99 ? '99+' : count}</span>
-                      )}
-                    </span>
-                  </NavLink>
-                )
-              })}
-            </div>
+          {/* Dashboard */}
+          <NavLink to="/admin" end className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`} onClick={() => setMobileOpen(false)}>
+            <span className="admin-nav-icon">⬡</span>
+            <span>Dashboard</span>
+          </NavLink>
+
+          {/* MANAGE STUDIO collapsible */}
+          <div className="admin-nav-divider" />
+          <button
+            className="admin-nav-group-label"
+            onClick={() => setManageOpen(o => !o)}
+            style={{ all: 'unset', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', cursor: 'pointer', padding: '6px 16px', boxSizing: 'border-box', color: 'var(--grey)', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}
+          >
+            MANAGE STUDIO
+            <span style={{ fontSize: 9, transition: 'transform 0.2s', transform: manageOpen ? 'rotate(0deg)' : 'rotate(-90deg)', display: 'inline-block' }}>▼</span>
+          </button>
+          {manageOpen && MANAGE_STUDIO_ITEMS.map(({ to, label, icon }) => (
+            <NavLink
+              key={to + label}
+              to={to}
+              className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
+              onClick={() => setMobileOpen(false)}
+            >
+              <span className="admin-nav-icon">{icon}</span>
+              <span>{label}</span>
+            </NavLink>
           ))}
+
+          {/* Flat nav items */}
+          {FLAT_NAV_ITEMS.map(({ to, label, icon, badge, dividerBefore }) => {
+            const count = badge ? badgeCounts[badge] : 0
+            return (
+              <div key={to + label}>
+                {dividerBefore && <div className="admin-nav-divider" />}
+                <NavLink
+                  to={to}
+                  className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <span className="admin-nav-icon">{icon}</span>
+                  <span style={{ position: 'relative' }}>
+                    {label}
+                    {count > 0 && <span style={BADGE_STYLE}>{count > 99 ? '99+' : count}</span>}
+                  </span>
+                </NavLink>
+              </div>
+            )
+          })}
         </div>
 
         <div className="admin-sidebar-footer">

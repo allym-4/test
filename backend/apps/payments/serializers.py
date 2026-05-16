@@ -92,6 +92,7 @@ class GiftCardSerializer(serializers.ModelSerializer):
         model = GiftCard
         fields = (
             'id', 'code', 'value', 'balance', 'issued_to_name', 'issued_to_email',
+            'purchased_by_name', 'purchased_by_phone', 'payment_type',
             'purchased_by', 'redeemed_by', 'redeemed_at', 'is_active', 'created_at', 'expires_at',
         )
         read_only_fields = ('id', 'created_at')

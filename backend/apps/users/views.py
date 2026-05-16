@@ -939,6 +939,171 @@ class ReferralListView(generics.ListCreateAPIView):
         return qs
 
 
+ASSISTANT_TOOLS = [
+    {
+        "name": "update_attendance",
+        "description": "Update a student's attendance record for a specific class occurrence. Use this to mark a student present, absent, or undo a marked absence.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "student_name": {"type": "string", "description": "Student's name (partial match ok)"},
+                "class_name": {"type": "string", "description": "Class name (partial match ok)"},
+                "date": {"type": "string", "description": "Date in YYYY-MM-DD format"},
+                "status": {"type": "string", "enum": ["present", "absent", "late", "no_show"], "description": "New attendance status"},
+            },
+            "required": ["student_name", "date", "status"],
+        },
+    },
+    {
+        "name": "move_student_class",
+        "description": "Move a student from one class to another by updating their enrolment.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "student_name": {"type": "string", "description": "Student's name (partial match ok)"},
+                "from_class": {"type": "string", "description": "Current class name"},
+                "to_class": {"type": "string", "description": "New class name to move to"},
+            },
+            "required": ["student_name", "to_class"],
+        },
+    },
+    {
+        "name": "get_student_info",
+        "description": "Look up a student by name and get their enrolments, balance, and recent attendance.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "Student name to search for"},
+            },
+            "required": ["name"],
+        },
+    },
+    {
+        "name": "list_class_students",
+        "description": "List all students enrolled in a specific class.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "class_name": {"type": "string", "description": "Class name (partial match ok)"},
+            },
+            "required": ["class_name"],
+        },
+    },
+]
+
+
+def execute_tool(tool_name, tool_input):
+    """Execute an assistant tool and return a readable result string."""
+    from apps.attendance.models import AttendanceRecord
+    from apps.enrolments.models import Enrolment
+    from apps.classes.models import ClassSession, ClassOccurrence
+    from apps.payments.models import Payment
+
+    if tool_name == 'get_student_info':
+        name = tool_input.get('name', '')
+        students = User.objects.filter(
+            Q(first_name__icontains=name) | Q(last_name__icontains=name) | Q(display_name__icontains=name),
+            role='student',
+        )
+        if not students.exists():
+            return f"No student found matching '{name}'."
+        student = students.first()
+        # Active enrolments
+        enrolments = Enrolment.objects.filter(student=student, status='active').select_related('class_session')
+        enrolment_list = ', '.join(str(e.class_session) for e in enrolments) or 'None'
+        # Balance
+        paid = Payment.objects.filter(student=student, payment_type='payment').aggregate(total=Sum('amount'))['total'] or 0
+        charged = Payment.objects.filter(student=student, payment_type__in=['charge', 'no_show_fee']).aggregate(total=Sum('amount'))['total'] or 0
+        balance = float(paid) - float(charged)
+        # Recent attendance
+        recent_att = AttendanceRecord.objects.filter(student=student).select_related('occurrence__class_session').order_by('-occurrence__date')[:5]
+        att_lines = [f"  - {r.occurrence.date} {r.occurrence.class_session}: {r.status}" for r in recent_att]
+        att_str = '\n'.join(att_lines) if att_lines else '  None'
+        return (
+            f"Student: {student.display_name} ({student.email})\n"
+            f"Active enrolments: {enrolment_list}\n"
+            f"Balance: ${balance:.2f}\n"
+            f"Recent attendance:\n{att_str}"
+        )
+
+    elif tool_name == 'list_class_students':
+        class_name = tool_input.get('class_name', '')
+        sessions = ClassSession.objects.filter(name__icontains=class_name)
+        if not sessions.exists():
+            return f"No class found matching '{class_name}'."
+        session = sessions.first()
+        enrolments = Enrolment.objects.filter(class_session=session, status='active').select_related('student')
+        if not enrolments.exists():
+            return f"No students enrolled in '{session.name}'."
+        names = [f"  - {e.student.display_name} ({e.student.email})" for e in enrolments]
+        return f"Students in {session.name} ({len(names)} enrolled):\n" + '\n'.join(names)
+
+    elif tool_name == 'update_attendance':
+        student_name = tool_input.get('student_name', '')
+        class_name = tool_input.get('class_name', '')
+        date_str = tool_input.get('date', '')
+        new_status = tool_input.get('status', '')
+
+        students = User.objects.filter(
+            Q(first_name__icontains=student_name) | Q(last_name__icontains=student_name) | Q(display_name__icontains=student_name),
+            role='student',
+        )
+        if not students.exists():
+            return f"No student found matching '{student_name}'."
+        student = students.first()
+
+        occ_qs = ClassOccurrence.objects.filter(date=date_str)
+        if class_name:
+            occ_qs = occ_qs.filter(class_session__name__icontains=class_name)
+        if not occ_qs.exists():
+            return f"No class occurrence found for date {date_str}" + (f" matching '{class_name}'" if class_name else '') + "."
+
+        occurrence = occ_qs.first()
+        record, created = AttendanceRecord.objects.get_or_create(
+            occurrence=occurrence,
+            student=student,
+            defaults={'status': new_status},
+        )
+        if not created:
+            old_status = record.status
+            record.status = new_status
+            record.save(update_fields=['status', 'updated_at'])
+            return f"Updated {student.display_name}'s attendance for {occurrence} on {date_str}: {old_status} → {new_status}."
+        return f"Created attendance record for {student.display_name} in {occurrence} on {date_str}: {new_status}."
+
+    elif tool_name == 'move_student_class':
+        student_name = tool_input.get('student_name', '')
+        from_class = tool_input.get('from_class', '')
+        to_class = tool_input.get('to_class', '')
+
+        students = User.objects.filter(
+            Q(first_name__icontains=student_name) | Q(last_name__icontains=student_name) | Q(display_name__icontains=student_name),
+            role='student',
+        )
+        if not students.exists():
+            return f"No student found matching '{student_name}'."
+        student = students.first()
+
+        enrolment_qs = Enrolment.objects.filter(student=student, status='active')
+        if from_class:
+            enrolment_qs = enrolment_qs.filter(class_session__name__icontains=from_class)
+        if not enrolment_qs.exists():
+            return f"No active enrolment found for {student.display_name}" + (f" in class matching '{from_class}'" if from_class else '') + "."
+        enrolment = enrolment_qs.first()
+
+        new_sessions = ClassSession.objects.filter(name__icontains=to_class)
+        if not new_sessions.exists():
+            return f"No class found matching '{to_class}'."
+        new_session = new_sessions.first()
+
+        old_session_name = str(enrolment.class_session)
+        enrolment.class_session = new_session
+        enrolment.save(update_fields=['class_session'])
+        return f"Moved {student.display_name} from '{old_session_name}' to '{new_session.name}'."
+
+    return f"Unknown tool: {tool_name}"
+
+
 class AssistantView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -973,30 +1138,68 @@ class AssistantView(APIView):
         no_show_fee = studio.no_show_fee
         credit_expiry_days = studio.credit_expiry_days
 
+        is_admin = student.role in ('admin', 'instructor', 'staff')
+
         system_prompt = (
             f"You are the helpful AI assistant for {studio_name}, a pole and aerial dance studio.\n"
-            f"You help students with questions about classes, bookings, memberships, and studio policies.\n\n"
+            f"You help {'admins and instructors manage the studio' if is_admin else 'students with questions about classes, bookings, memberships, and studio policies'}.\n\n"
             f"Studio policies:\n"
             f"- Cancellation window: {cancellation_window_hours} hours before class\n"
             f"- Late cancellation fee: ${late_cancel_fee}\n"
             f"- No-show fee: ${no_show_fee}\n"
             f"- Credit expiry: {credit_expiry_days} days\n\n"
-            f"Student context:\n"
+            f"{'User' if is_admin else 'Student'} context:\n"
             f"- Name: {student_name}\n"
-            f"- Active classes: {class_list}\n\n"
-            f"Be warm, helpful, and concise. If you don't know something specific, direct them to contact the studio directly.\n"
-            f"Keep responses under 3 sentences unless a longer answer is clearly needed."
+            f"- Role: {student.role}\n"
+            + (f"- Active classes: {class_list}\n\n" if not is_admin else "\n")
+            + f"Be warm, helpful, and concise. If you don't know something specific, direct them to contact the studio directly.\n"
+            f"Keep responses under 3 sentences unless a longer answer is clearly needed.\n"
+            + ("You have access to tools to look up and update student data. Use them when asked." if is_admin else "")
         )
 
         try:
             ai_client = anthropic.Anthropic(api_key=api_key)
+            messages = [{'role': 'user', 'content': message}]
+
+            # Use tools for admin/staff users
+            tools = ASSISTANT_TOOLS if is_admin else []
+
             ai_response = ai_client.messages.create(
                 model='claude-haiku-4-5-20251001',
-                max_tokens=500,
+                max_tokens=1024,
                 system=system_prompt,
-                messages=[{'role': 'user', 'content': message}],
+                messages=messages,
+                tools=tools if tools else anthropic.NOT_GIVEN,
             )
-            reply_text = ai_response.content[0].text
+
+            # Handle tool_use responses
+            tool_results_text = []
+            while ai_response.stop_reason == 'tool_use' and tools:
+                tool_uses = [b for b in ai_response.content if b.type == 'tool_use']
+                messages.append({'role': 'assistant', 'content': ai_response.content})
+
+                tool_results = []
+                for tool_use in tool_uses:
+                    result = execute_tool(tool_use.name, tool_use.input)
+                    tool_results_text.append(result)
+                    tool_results.append({
+                        'type': 'tool_result',
+                        'tool_use_id': tool_use.id,
+                        'content': result,
+                    })
+
+                messages.append({'role': 'user', 'content': tool_results})
+                ai_response = ai_client.messages.create(
+                    model='claude-haiku-4-5-20251001',
+                    max_tokens=1024,
+                    system=system_prompt,
+                    messages=messages,
+                    tools=tools,
+                )
+
+            text_blocks = [b for b in ai_response.content if hasattr(b, 'text')]
+            reply_text = text_blocks[0].text if text_blocks else "Done."
+
         except Exception:
             reply_text = "I'm having trouble connecting right now — please contact the studio directly for help."
 
