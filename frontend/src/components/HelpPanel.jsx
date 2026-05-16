@@ -28,9 +28,9 @@ const PROMPTS = [
     answer: "New season enrolments usually open around 4 weeks before the season starts. Current students get 48 hours of priority access before spots open to the public.\n\nKeep an eye on your notifications and email — we'll let you know as soon as enrolments are live.",
   },
   {
-    icon: '🤕',
-    label: "I'm injured — what should I do?",
-    answer: "Your safety comes first. Please don't train through pain.\n\nLet your instructor know before class and they'll modify moves for you, or advise sitting out.\n\nFor longer injuries, message us via Chat. Depending on circumstances, we may be able to freeze your enrolment or issue makeup credits.",
+    icon: '🤔',
+    label: "I don't know what class I should do",
+    answer: "Not sure where to start? We've got you.\n\nIf you're brand new to pole, our Beginners classes are the place to start — no experience needed.\n\nIf you've trained before (at Duality or elsewhere), get in touch via Chat and tell us a bit about your experience. We'll point you in the right direction.",
   },
   {
     icon: '🏋️',
