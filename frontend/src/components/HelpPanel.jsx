@@ -35,12 +35,12 @@ const PROMPTS = [
   {
     icon: '🗓️',
     label: 'What classes can I do casually?',
-    answer: "Loads, actually! The following classes change week to week or have no routine, so you can drop in whenever:\n\n• All conditioning classes — Kiki, Unravel, Spin Virgin, Invert Tech, 3-4 Tech, 5 Foundations, Adv Tech, High Tricks\n• Dance Tech\n• Dance Virgin and Dance (fresh routine every week)\n\nIf you're an enrolled student, you can also drop into any levelled class below your current level — great for extra practice or trying something new.\n\nFor everything else (Strip, Chair, Floor, Chole, and your enrolled level), those build toward a routine over the season, so they need a full enrolment.",
+    answer: "Loads, actually! The following classes change week to week or have no routine, so you can drop in whenever:\n\n• All conditioning classes — Kiki, Unravel, Spin Virgin, Invert Tech, 3-4 Tech, 5 Foundations, Adv Tech, High Tricks\n• Dance Tech\n• Dance Virgin and Dance (fresh routine every week)\n\nLevelled classes and routine-based specialty classes (Strip, Chair, Floor, Chole) are open to drop-ins for the first 3 weeks of the season only — after that the routine is too far along to catch up.",
   },
   {
     icon: '🩰',
     label: "Why can't I book a routine class later in the season?",
-    answer: "Classes like Strip, Chair, Floor, Chole, and your core level all build toward a full routine over the season. Each week adds to what you learned the week before — so jumping in halfway means you'd be missing the foundation everyone else has already built up.\n\nTo keep it fun for you and fair for the rest of the class, these close to new bookings once the season starts.\n\nWant to join next season? Current students get 48 hours of priority access when enrolments open — keep an eye on your notifications.\n\nIn the meantime, there are plenty of classes you can drop into — check out 'What classes can I do casually?' above.",
+    answer: "Levelled classes and routine-based specialty classes (Strip, Chair, Floor, Chole) all build toward a full routine over the season. After week 3, there's just too much choreography to catch up on — so these close to new bookings at that point.\n\nIf you're already enrolled and missed a week, that's fine — you can pick back up. But if you're trying to join fresh after week 3, you'll need to wait for the next season.\n\nWant in next time? Current students get 48 hours of priority access when enrolments open — keep an eye on your notifications.\n\nIn the meantime, plenty of classes are open for drop-ins any time — see 'What classes can I do casually?' above.",
   },
   {
     icon: '🏋️',
