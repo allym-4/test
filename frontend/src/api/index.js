@@ -62,6 +62,7 @@ export const enrolments = {
   update: (id, data) => client.patch(`/api/enrolments/${id}/`, data),
   delete: (id) => client.delete(`/api/enrolments/${id}/`),
   convertTrial: (id, data) => client.post(`/api/enrolments/${id}/convert-trial/`, data),
+  claimSpot: (id) => client.post(`/api/enrolments/${id}/claim-spot/`),
 }
 
 export const payments = {

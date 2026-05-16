@@ -4,6 +4,60 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { enrolments as enrolmentsApi, attendance } from '../../api'
 
+function WaitlistOfferBanner({ enrolment, onClaimed }) {
+  const [claiming, setClaiming] = useState(false)
+  const [error, setError] = useState('')
+  const expiresAt = enrolment.waitlist_expires_at ? new Date(enrolment.waitlist_expires_at) : null
+  const now = new Date()
+  const minutesLeft = expiresAt ? Math.max(0, Math.round((expiresAt - now) / 60000)) : null
+  const session = enrolment.class_session_detail
+
+  async function claim() {
+    setClaiming(true)
+    setError('')
+    try {
+      await enrolmentsApi.claimSpot(enrolment.id)
+      onClaimed()
+    } catch (e) {
+      setError(e.response?.data?.detail || 'Failed to claim spot. Please try again.')
+    } finally {
+      setClaiming(false)
+    }
+  }
+
+  return (
+    <div style={{ background: 'rgba(204,255,0,0.08)', border: '2px solid var(--lime)', borderRadius: 14, padding: '16px 18px', marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: 'var(--lime)', marginBottom: 4 }}>
+            🎉 A spot opened up!
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>{session?.name}</div>
+          {enrolment.waitlist_urgent ? (
+            <div style={{ fontSize: 12, color: 'var(--grey)', lineHeight: 1.5 }}>
+              Class starts soon — all waitlisted students were notified. First to confirm gets it!
+            </div>
+          ) : (
+            <div style={{ fontSize: 12, color: 'var(--grey)', lineHeight: 1.5 }}>
+              {minutesLeft !== null ? (
+                minutesLeft > 60
+                  ? `You have ${Math.round(minutesLeft / 60)}h ${minutesLeft % 60}m to claim your spot.`
+                  : minutesLeft > 0
+                    ? `⏰ Only ${minutesLeft} minutes left to claim!`
+                    : 'Your offer may have expired — try claiming and we\'ll check.'
+              ) : 'Claim your spot before it\'s offered to the next person.'}
+            </div>
+          )}
+          {error && <div style={{ fontSize: 12, color: 'var(--red)', marginTop: 6 }}>{error}</div>}
+        </div>
+        <button className="btn btn-lime btn-sm" onClick={claim} disabled={claiming} style={{ flexShrink: 0, fontWeight: 700 }}>
+          {claiming ? 'Claiming…' : 'Claim My Spot →'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 function MarkAwayModal({ occurrence, cancellationWindowHours, onClose, onDone }) {
@@ -108,6 +162,26 @@ export default function StudentMyClasses() {
           <div className="page-title">My Classes</div>
           <div className="page-sub">{active.length} active enrolment{active.length !== 1 ? 's' : ''}</div>
         </div>
+        <button
+          className="btn btn-ghost btn-sm"
+          style={{ fontSize: 12 }}
+          onClick={async () => {
+            try {
+              const token = localStorage.getItem('access_token')
+              const baseUrl = import.meta.env.VITE_API_URL || ''
+              const res = await fetch(`${baseUrl}/api/enrolments/calendar.ics`, {
+                headers: { Authorization: `Bearer ${token}` }
+              })
+              const blob = await res.blob()
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url; a.download = 'duality-pole-classes.ics'; a.click()
+              URL.revokeObjectURL(url)
+            } catch { alert('Failed to download calendar file.') }
+          }}
+        >
+          📅 Add to Calendar
+        </button>
       </div>
 
       {/* Top-level tabs */}
@@ -133,6 +207,11 @@ export default function StudentMyClasses() {
 
               {activeSubTab === 'enrolled' && (
                 <div>
+                  {/* Waitlist offer banners */}
+                  {waitlisted.filter(e => e.waitlist_offered_at).map(e => (
+                    <WaitlistOfferBanner key={e.id} enrolment={e} onClaimed={refetchEnrol} />
+                  ))}
+
                   {active.length === 0 ? (
                     <div className="empty-state">
                       <div style={{ marginBottom: 8 }}>No active enrolments</div>

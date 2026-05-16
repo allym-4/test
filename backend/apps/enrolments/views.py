@@ -1,3 +1,6 @@
+import datetime
+from django.http import HttpResponse
+from django.utils import timezone
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -140,3 +143,126 @@ class ConvertTrialView(APIView):
             'payment_id': payment.id,
             'amount_charged': str(payment.amount),
         }, status=status.HTTP_200_OK)
+
+
+class ClaimWaitlistSpotView(APIView):
+    """Student claims their offered waitlist spot before it expires."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            enrolment = Enrolment.objects.select_related('student', 'class_session').get(
+                pk=pk, student=request.user, status='waitlisted'
+            )
+        except Enrolment.DoesNotExist:
+            return Response({'detail': 'Waitlist enrolment not found.'}, status=404)
+
+        if not enrolment.waitlist_offered_at:
+            return Response({'detail': 'No spot offer active for this enrolment.'}, status=400)
+
+        if enrolment.waitlist_expires_at and timezone.now() > enrolment.waitlist_expires_at:
+            return Response({'detail': 'This offer has expired. We\'ll let you know when the next spot opens.'}, status=400)
+
+        session = enrolment.class_session
+
+        # If urgent (all notified), check if spot still available (capacity)
+        if enrolment.waitlist_urgent:
+            active_count = Enrolment.objects.filter(
+                class_session=session, status='active'
+            ).count()
+            capacity = getattr(session, 'max_students', None)
+            if capacity and active_count >= capacity:
+                # Spot taken by someone else
+                enrolment.waitlist_offered_at = None
+                enrolment.waitlist_expires_at = None
+                enrolment.save(update_fields=['waitlist_offered_at', 'waitlist_expires_at'])
+                return Response({'detail': 'Sorry — this spot was just taken by another student. We\'ll notify you if another opens.'}, status=409)
+
+        # Promote to active
+        enrolment.status = 'active'
+        enrolment.waitlist_offered_at = None
+        enrolment.waitlist_expires_at = None
+        enrolment.waitlist_urgent = False
+        enrolment.save(update_fields=['status', 'waitlist_offered_at', 'waitlist_expires_at', 'waitlist_urgent'])
+
+        # Cancel pending offers for other students on the same session (urgent mode)
+        Enrolment.objects.filter(
+            class_session=session, status='waitlisted', waitlist_offered_at__isnull=False
+        ).exclude(pk=pk).update(
+            waitlist_offered_at=None, waitlist_expires_at=None, waitlist_urgent=False
+        )
+
+        return Response(EnrolmentSerializer(enrolment).data, status=200)
+
+
+class CalendarIcsView(APIView):
+    """Generate an ICS calendar feed for the authenticated student's active enrolments."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        student = request.user
+        enrolments = Enrolment.objects.filter(
+            student=student, status='active'
+        ).select_related('class_session', 'class_session__season', 'class_session__studio')
+
+        lines = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//Duality Pole Studio//Schedule//EN',
+            'CALSCALE:GREGORIAN',
+            'METHOD:PUBLISH',
+            f'X-WR-CALNAME:Duality Pole — {student.first_name}\'s Classes',
+            'X-WR-TIMEZONE:Australia/Sydney',
+        ]
+
+        for enrolment in enrolments:
+            session = enrolment.class_session
+            season = session.season
+            if not season:
+                continue
+
+            # Generate weekly recurring events for the season
+            # day_of_week: 0=Monday, 6=Sunday
+            start_date = season.start_date
+            end_date = season.end_date
+
+            # Find the first occurrence on or after start_date
+            days_ahead = (session.day_of_week - start_date.weekday()) % 7
+            first_date = start_date + datetime.timedelta(days=days_ahead)
+
+            current = first_date
+            rrule_days = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU']
+            rrule_day = rrule_days[session.day_of_week]
+            until_str = end_date.strftime('%Y%m%d') + 'T235959Z'
+
+            if current <= end_date:
+                duration_mins = getattr(session, 'duration_minutes', 60)
+                start_dt = datetime.datetime.combine(current, session.start_time)
+                end_dt = start_dt + datetime.timedelta(minutes=duration_mins)
+
+                uid = f'enrolment-{enrolment.id}-{session.id}@dualitypole.com'
+                dtstart = start_dt.strftime('%Y%m%dT%H%M%S')
+                dtend = end_dt.strftime('%Y%m%dT%H%M%S')
+                dtstamp = timezone.now().strftime('%Y%m%dT%H%M%SZ')
+                location = session.studio.name if session.studio else 'Duality Pole Studio'
+                summary = session.name
+
+                lines += [
+                    'BEGIN:VEVENT',
+                    f'UID:{uid}',
+                    f'DTSTAMP:{dtstamp}',
+                    f'DTSTART;TZID=Australia/Sydney:{dtstart}',
+                    f'DTEND;TZID=Australia/Sydney:{dtend}',
+                    f'RRULE:FREQ=WEEKLY;BYDAY={rrule_day};UNTIL={until_str}',
+                    f'SUMMARY:{summary}',
+                    f'LOCATION:{location}',
+                    f'DESCRIPTION:with {session.instructor.display_name if session.instructor else "instructor"}',
+                    'END:VEVENT',
+                ]
+
+        lines.append('END:VCALENDAR')
+
+        ics_content = '\r\n'.join(lines) + '\r\n'
+        response = HttpResponse(ics_content, content_type='text/calendar; charset=utf-8')
+        response['Content-Disposition'] = 'attachment; filename="duality-pole-classes.ics"'
+        return response
