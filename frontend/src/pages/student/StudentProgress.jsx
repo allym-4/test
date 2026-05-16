@@ -314,14 +314,7 @@ export default function StudentProgress() {
                   {classSkills.length === 0 ? (
                     <div className="empty-state">Your instructor will track tricks here</div>
                   ) : (
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(2, 1fr)',
-                        gap: 10,
-                      }}
-                      className="trick-grid"
-                    >
+                    <div className="trick-grid">
                       {classSkills.map(def => {
                         const prog = skillProgress[def.name] || {}
                         const unlocked = prog.teacher
@@ -617,7 +610,7 @@ export default function StudentProgress() {
               </div>
 
               {chatClassId && (
-                <div style={{ display: 'flex', flexDirection: 'column', height: 420 }}>
+                <div className="chat-container">
                   {/* Message list */}
                   <div
                     style={{

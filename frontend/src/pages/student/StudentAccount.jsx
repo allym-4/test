@@ -222,7 +222,7 @@ export default function StudentAccount() {
         <div className="page-title">Account</div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, maxWidth: 820 }}>
+      <div className="two-col-grid" style={{ maxWidth: 820 }}>
         {/* Left column */}
         <div>
           <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 16, fontWeight: 500 }}>Profile</div>
@@ -409,7 +409,7 @@ export default function StudentAccount() {
                 {codeCopied ? '✓ Copied' : 'Copy'}
               </button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div className="two-col-grid" style={{ gap: 10 }}>
               <div style={{ background: '#111', borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
                 <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20 }}>{myReferrals.length}</div>
                 <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>Referrals</div>

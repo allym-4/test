@@ -173,3 +173,40 @@ select option { background: #1a1a1a; }
   background: #111; border-radius: 8px; cursor: pointer;
 }
 .action-item.urgent { background: #1a0a0a; border: 1px solid #3a1a1a; }
+
+/* Responsive two-column grid — collapses to single column on mobile */
+.two-col-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+@media (max-width: 640px) {
+  .two-col-grid { grid-template-columns: 1fr; gap: 16px; }
+}
+
+/* Responsive trick/card grid — 2 cols always but smaller gap on mobile */
+.trick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+@media (max-width: 360px) {
+  .trick-grid { grid-template-columns: 1fr; }
+}
+
+/* Modal safe width — never overflows viewport */
+.sd-modal {
+  width: calc(100vw - 32px) !important;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Chat container — flexible height, min on mobile */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 420px;
+}
+@media (max-width: 640px) {
+  .chat-container { height: calc(100vh - 280px); min-height: 300px; }
+}
