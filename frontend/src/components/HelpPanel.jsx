@@ -35,12 +35,12 @@ const PROMPTS = [
   {
     icon: '🗓️',
     label: 'What classes can I do casually?',
-    answer: "Virgin classes are available as casual drop-ins — no commitment needed, just book and show up.\n\nMost of our other classes run as part of a season enrolment, which means you commit to the full term. This keeps the progression consistent for everyone in the class.\n\nIf you're between seasons or want to keep moving without a full enrolment, get in touch and we'll let you know what's available.",
+    answer: "Loads, actually! The following classes change week to week or have no routine, so you can drop in whenever:\n\n• All conditioning classes — Kiki, Unravel, Spin Virgin, Invert Tech, 3-4 Tech, 5 Foundations, Adv Tech, High Tricks\n• Dance Tech\n• Dance Virgin and Dance (fresh routine every week)\n\nIf you're an enrolled student, you can also drop into any levelled class below your current level — great for extra practice or trying something new.\n\nFor everything else (Strip, Chair, Floor, Chole, and your enrolled level), those build toward a routine over the season, so they need a full enrolment.",
   },
   {
     icon: '🩰',
     label: "Why can't I book a routine class later in the season?",
-    answer: "Routine classes build week by week — each session adds to the choreography, so joining mid-season means you'd be missing the foundation everyone else has already learned.\n\nTo keep the experience great for you and the rest of the class, bookings for routine classes close once the season has started.\n\nIf you're keen to join next time, make sure you enrol when the season opens — current students get priority access for the first 48 hours.",
+    answer: "Classes like Strip, Chair, Floor, Chole, and your core level all build toward a full routine over the season. Each week adds to what you learned the week before — so jumping in halfway means you'd be missing the foundation everyone else has already built up.\n\nTo keep it fun for you and fair for the rest of the class, these close to new bookings once the season starts.\n\nWant to join next season? Current students get 48 hours of priority access when enrolments open — keep an eye on your notifications.\n\nIn the meantime, there are plenty of classes you can drop into — check out 'What classes can I do casually?' above.",
   },
   {
     icon: '🏋️',
