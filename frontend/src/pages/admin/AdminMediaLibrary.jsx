@@ -113,12 +113,12 @@ export default function AdminMediaLibrary() {
 
   // URL modal state
   const [showUrlModal, setShowUrlModal] = useState(false)
-  const [urlForm, setUrlForm] = useState({ name: '', url: '', media_type: 'video', level: '' })
+  const [urlForm, setUrlForm] = useState({ name: '', url: '', media_type: 'video', level: '', session: '', available_from: '' })
   const [urlSubmitting, setUrlSubmitting] = useState(false)
 
   // Upload state
   const fileInputRef = useRef()
-  const [uploadForm, setUploadForm] = useState({ name: '', media_type: 'video', level: '' })
+  const [uploadForm, setUploadForm] = useState({ name: '', media_type: 'video', level: '', session: '', available_from: '' })
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [selectedFile, setSelectedFile] = useState(null)
   const [uploadSubmitting, setUploadSubmitting] = useState(false)
@@ -141,9 +141,12 @@ export default function AdminMediaLibrary() {
     setUrlSubmitting(true)
     setUrlError(null)
     try {
-      await media.create(new URLSearchParams({ ...urlForm }))
+      const payload = { ...urlForm }
+      if (!payload.session) delete payload.session
+      if (!payload.available_from) delete payload.available_from
+      await media.create(new URLSearchParams(payload))
       setShowUrlModal(false)
-      setUrlForm({ name: '', url: '', media_type: 'video', level: '' })
+      setUrlForm({ name: '', url: '', media_type: 'video', level: '', session: '', available_from: '' })
       refetch()
     } catch (err) {
       setUrlError(err?.response?.data?.detail || 'Failed to add media. Please try again.')
@@ -170,11 +173,13 @@ export default function AdminMediaLibrary() {
       fd.append('name', uploadForm.name)
       fd.append('media_type', uploadForm.media_type)
       fd.append('level', uploadForm.level)
+      if (uploadForm.session) fd.append('session', uploadForm.session)
+      if (uploadForm.available_from) fd.append('available_from', uploadForm.available_from)
       fd.append('file', selectedFile)
       await media.create(fd)
       setShowUploadModal(false)
       setSelectedFile(null)
-      setUploadForm({ name: '', media_type: 'video', level: '' })
+      setUploadForm({ name: '', media_type: 'video', level: '', session: '', available_from: '' })
       refetch()
     } catch (err) {
       setUploadError(err?.response?.data?.detail || 'Upload failed. Please try again.')
@@ -284,6 +289,19 @@ export default function AdminMediaLibrary() {
                     style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', fontFamily: 'inherit', fontSize: 13, padding: '8px 12px', boxSizing: 'border-box' }} />
                 </div>
               </div>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 6 }}>Class (optional)</label>
+                <select value={urlForm.session} onChange={e => setUrlForm(f => ({ ...f, session: e.target.value }))}
+                  style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', fontFamily: 'inherit', fontSize: 13, padding: '8px 12px' }}>
+                  <option value="">Not linked to a class</option>
+                  {sessions.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 6 }}>Available from (optional — leave blank to show immediately)</label>
+                <input type="date" value={urlForm.available_from} onChange={e => setUrlForm(f => ({ ...f, available_from: e.target.value }))}
+                  style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', fontFamily: 'inherit', fontSize: 13, padding: '8px 12px', boxSizing: 'border-box' }} />
+              </div>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
                 <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowUrlModal(false)}>Cancel</button>
                 <button type="submit" className="btn btn-lime btn-sm" disabled={urlSubmitting}>{urlSubmitting ? 'Saving…' : 'Add'}</button>
@@ -321,6 +339,19 @@ export default function AdminMediaLibrary() {
                   <input value={uploadForm.level} onChange={e => setUploadForm(f => ({ ...f, level: e.target.value }))} placeholder="e.g. Level 1"
                     style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', fontFamily: 'inherit', fontSize: 13, padding: '8px 12px', boxSizing: 'border-box' }} />
                 </div>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 6 }}>Class (optional)</label>
+                <select value={uploadForm.session} onChange={e => setUploadForm(f => ({ ...f, session: e.target.value }))}
+                  style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', fontFamily: 'inherit', fontSize: 13, padding: '8px 12px' }}>
+                  <option value="">Not linked to a class</option>
+                  {sessions.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 6 }}>Available from (optional — leave blank to show immediately)</label>
+                <input type="date" value={uploadForm.available_from} onChange={e => setUploadForm(f => ({ ...f, available_from: e.target.value }))}
+                  style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', fontFamily: 'inherit', fontSize: 13, padding: '8px 12px', boxSizing: 'border-box' }} />
               </div>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
                 <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setShowUploadModal(false); setSelectedFile(null) }}>Cancel</button>
