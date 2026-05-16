@@ -112,7 +112,8 @@ export default function App() {
             <Route index element={<DashboardPage />} />
             <Route path="classes" element={<ClassesPage />} />
             <Route path="classes/:id/attendance" element={<AttendancePage />} />
-            <Route path="students" element={<StudentsPage />} />
+            <Route path="students" element={<AdminStudents />} />
+            <Route path="students/:id" element={<AdminStudentDetail />} />
             <Route path="homework" element={<HomeworkPage />} />
             <Route path="attendance" element={<InstructorAttendance />} />
             <Route path="messages" element={<InstructorMessages />} />
