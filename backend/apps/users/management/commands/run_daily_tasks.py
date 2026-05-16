@@ -30,4 +30,10 @@ class Command(BaseCommand):
         self.stdout.write('-- Notifying overdue balances --')
         call_command('notify_overdue_balances')
 
+        self.stdout.write('-- Sending locker renewal reminders --')
+        call_command('send_locker_renewal_reminders')
+
+        self.stdout.write('-- Running built-in automations (reengagement, welfare, birthday, PAR-Q) --')
+        call_command('run_built_in_automations')
+
         self.stdout.write('=== Done ===')

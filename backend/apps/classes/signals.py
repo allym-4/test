@@ -1,5 +1,69 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
+
+
+@receiver(pre_save, sender='classes.Season')
+def capture_old_season_status(sender, instance, **kwargs):
+    """Stash the previous status so post_save can detect transitions."""
+    if instance.pk:
+        try:
+            instance._old_status = sender.objects.get(pk=instance.pk).status
+        except sender.DoesNotExist:
+            instance._old_status = None
+    else:
+        instance._old_status = None
+
+
+@receiver(post_save, sender='classes.Season')
+def handle_season_enrol_open(sender, instance, created, **kwargs):
+    """Notify all active students when a season is moved to 'upcoming'."""
+    if created:
+        return
+    old_status = getattr(instance, '_old_status', None)
+    if old_status == instance.status or instance.status != 'upcoming':
+        return
+
+    from apps.users.models import AutomationRule, Notification, AutomationRun, User
+    from django.core.mail import send_mail
+    from django.conf import settings
+
+    rule = AutomationRule.objects.filter(slug='season_enrol_open').first()
+    if rule and not rule.enabled:
+        return
+
+    students = User.objects.filter(role='student', is_active=True)
+    for student in students:
+        Notification.objects.create(
+            recipient=student,
+            title=f'{instance.name} — enrolments now open!',
+            body=f'Enrolments for {instance.name} are now open. Book your spot before classes fill up!',
+            notification_type='info',
+            action_label='Book Now',
+            action_url='/portal/book',
+        )
+        if student.email:
+            send_mail(
+                subject=f'Enrolments open — {instance.name}',
+                message=(
+                    f'Hi {student.first_name},\n\n'
+                    f'Enrolments for {instance.name} are now open!\n\n'
+                    f'Head to your student portal to book your spot before classes fill up.\n\n'
+                    f'See you in class!\n'
+                    f'Duality Pole Studio'
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[student.email],
+                fail_silently=True,
+            )
+
+    if rule:
+        AutomationRun.objects.create(
+            rule=rule, slug='season_enrol_open',
+            student=None,
+            trigger_data={'season': instance.name, 'status': 'upcoming'},
+            actions_taken=[f'Notified {students.count()} active students'],
+            status='completed',
+        )
 
 
 @receiver(post_save, sender='classes.ClassOccurrence')
