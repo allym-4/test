@@ -126,6 +126,12 @@ class StripePaymentMethodsView(APIView):
         pm_id = request.data.get('payment_method_id')
         if not pm_id:
             return Response({'detail': 'payment_method_id required.'}, status=status.HTTP_400_BAD_REQUEST)
+        target = self._get_target_user(request)
+        saved_ids = [
+            pm['id'] for pm in stripe.PaymentMethod.list(customer=target.stripe_customer_id, type='card').get('data', [])
+        ] if target.stripe_customer_id else []
+        if pm_id not in saved_ids:
+            return Response({'detail': 'Payment method not found.'}, status=status.HTTP_404_NOT_FOUND)
         stripe.PaymentMethod.detach(pm_id)
         # Clear default if this was the default
         if request.user.default_payment_method_id == pm_id:

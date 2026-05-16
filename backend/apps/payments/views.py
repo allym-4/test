@@ -2,7 +2,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.db.models import Sum, Q, Count
+from django.db.models import Sum, Q, Count, F
 from django.db.models.functions import TruncMonth
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
@@ -13,7 +13,7 @@ from .serializers import (
     PackageSerializer, StudentPackageSerializer, MembershipTypeSerializer, GiftCardSerializer, PromoCodeSerializer,
     CancellationOfferSerializer,
 )
-from apps.users.permissions import IsAdminOrInstructor
+from apps.users.permissions import IsAdminOrInstructor, IsAdminUser
 from apps.users.models import User
 
 
@@ -273,14 +273,14 @@ def use_promo_code(request):
         promo = PromoCode.objects.get(code=code, is_active=True)
     except PromoCode.DoesNotExist:
         return Response({'detail': 'Invalid promo code.'}, status=status.HTTP_404_NOT_FOUND)
-    promo.current_uses += 1
-    promo.save(update_fields=['current_uses'])
+    PromoCode.objects.filter(pk=promo.pk).update(current_uses=F('current_uses') + 1)
+    promo.refresh_from_db()
     return Response({'status': 'ok', 'current_uses': promo.current_uses})
 
 
 class PaymentStatsView(APIView):
     """Pre-aggregated payment analytics for the reporting dashboard."""
-    permission_classes = [IsAdminOrInstructor]
+    permission_classes = [IsAdminUser]
 
     def get(self, request):
         qs = Payment.objects.all()
@@ -340,8 +340,10 @@ class PaymentStatsView(APIView):
 def student_balance(request, student_pk):
     if request.user.role not in ('admin', 'instructor') and request.user.pk != int(student_pk):
         return Response({'detail': 'Forbidden.'}, status=status.HTTP_403_FORBIDDEN)
-    """Return running balance for a student."""
-    student = User.objects.get(pk=student_pk)
+    try:
+        student = User.objects.get(pk=student_pk)
+    except User.DoesNotExist:
+        return Response({'detail': 'Student not found.'}, status=status.HTTP_404_NOT_FOUND)
     payments = Payment.objects.filter(student=student)
     credit_types = (
         Payment.PaymentType.PAYMENT,

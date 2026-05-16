@@ -16,6 +16,7 @@ class Enrolment(models.Model):
         COURSE = 'course', 'Course'
         CASUAL = 'casual', 'Casual'
         TRIAL = 'trial', 'Trial'
+        CATCHUP = 'catchup', 'Catchup'
 
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='enrolments')
     class_session = models.ForeignKey(ClassSession, on_delete=models.CASCADE, related_name='enrolments')

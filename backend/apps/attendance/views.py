@@ -154,11 +154,10 @@ class StudentCancelAwayView(APIView):
                 student=request.user, class_session=session, status='waitlisted'
             ).exists()
             if not already_waitlisted:
-                Enrolment.objects.create(
+                Enrolment.objects.update_or_create(
                     student=request.user,
                     class_session=session,
-                    status='waitlisted',
-                    enrolment_type='season',
+                    defaults={'status': 'waitlisted', 'enrolment_type': 'season'},
                 )
             return Response({
                 'status': 'waitlisted',

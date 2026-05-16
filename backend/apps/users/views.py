@@ -149,7 +149,7 @@ class BulkImportView(APIView):
                                 continue
                     user.set_password(password)
                     user.save()
-                    created.append({'id': user.id, 'name': user.display_name, 'username': username, 'password': password})
+                    created.append({'id': user.id, 'name': user.display_name, 'username': username})
                 except Exception as e:
                     errors.append({'row': i + 2, 'name': f'{first} {last}', 'reason': str(e)})
 
@@ -214,6 +214,8 @@ class AnnouncementListView(generics.ListCreateAPIView):
         return qs
 
     def perform_create(self, serializer):
+        if self.request.user.role not in ('admin', 'instructor', 'staff'):
+            raise permissions.PermissionDenied
         serializer.save(created_by=self.request.user)
 
 
@@ -1248,7 +1250,7 @@ def execute_tool(tool_name, tool_input, acting_user=None):
         balance = float(paid) - float(charged)
         # Recent attendance
         recent_att = AttendanceRecord.objects.filter(student=student).select_related('occurrence__class_session').order_by('-occurrence__date')[:5]
-        att_lines = [f"  - {r.occurrence.date} {r.occurrence.class_session}: {r.status}" for r in recent_att]
+        att_lines = [f"  - {r.occurrence.date} {r.occurrence.session}: {r.status}" for r in recent_att]
         att_str = '\n'.join(att_lines) if att_lines else '  None'
         return (
             f"Student: {student.display_name} ({student.email})\n"
@@ -1795,7 +1797,33 @@ class EmailListExportView(APIView):
         except EmailList.DoesNotExist:
             return Response({'detail': 'Not found'}, status=404)
 
-        students = User.objects.filter(role='student', is_active=True).order_by('last_name', 'first_name')
+        base_qs = User.objects.filter(role='student', is_active=True).exclude(email='')
+        slug = (email_list.query_slug or '').lower()
+        if slug == 'overdue':
+            from decimal import Decimal
+            from apps.payments.models import Payment as PaymentModel
+            paid_subq = PaymentModel.objects.filter(
+                student=OuterRef('pk'), payment_type__in=['payment', 'credit'],
+            ).values('student').annotate(s=Sum('amount')).values('s')
+            charged_subq = PaymentModel.objects.filter(
+                student=OuterRef('pk'), payment_type__in=['charge', 'no_show_fee'],
+            ).values('student').annotate(s=Sum('amount')).values('s')
+            from decimal import Decimal as D
+            overdue_ids = (
+                base_qs
+                .annotate(
+                    total_paid=Coalesce(Subquery(paid_subq), D('0')),
+                    total_charged=Coalesce(Subquery(charged_subq), D('0')),
+                )
+                .filter(total_charged__gt=models.F('total_paid'))
+                .values_list('id', flat=True)
+            )
+            base_qs = base_qs.filter(id__in=overdue_ids)
+        elif slug == 'enrolled':
+            from apps.enrolments.models import Enrolment
+            enrolled_ids = Enrolment.objects.filter(status='active').values_list('student_id', flat=True)
+            base_qs = base_qs.filter(id__in=enrolled_ids)
+        students = base_qs.order_by('last_name', 'first_name')
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="{email_list.name.replace(" ", "_")}_export.csv"'
         writer = csv.writer(response)
@@ -1855,8 +1883,7 @@ class XeroConnectView(APIView):
 
 
 class XeroCallbackView(APIView):
-    permission_classes = []
-    authentication_classes = []
+    permission_classes = [IsAdminUser]
 
     def get(self, request):
         from django.shortcuts import redirect as django_redirect
