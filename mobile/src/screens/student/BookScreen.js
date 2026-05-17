@@ -63,7 +63,12 @@ function getInstructor(occ) {
 }
 
 function getSessionId(occ) {
-  return occ.session_id ?? occ.session?.id ?? occ.id
+  // occ.session is the raw FK integer from the API; occ.session_detail?.id is the nested form
+  return (typeof occ.session === 'number' ? occ.session : null)
+    ?? occ.session_detail?.id
+    ?? occ.session?.id
+    ?? occ.session_id
+    ?? occ.id
 }
 
 function isEligible(occ, userLevel) {
@@ -796,7 +801,7 @@ export default function BookScreen() {
                   const time = fmtTime(occ.start_time)
                   const eligible = !showEligibleOnly || !levelFilter || isEligible(occ, levelFilter)
                   const sessionId = getSessionId(occ)
-                  const isBooked = booked[sessionId + '-catchup'] || booked[sessionId + '-casual']
+                  const isBooked = booked[sessionId + '-catchup'] || booked[sessionId + '-casual'] || enrolledSessionIds.has(sessionId)
 
                   return (
                     <TouchableOpacity
