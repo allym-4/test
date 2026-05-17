@@ -37,7 +37,7 @@ function HomeStack() {
 function BookStack() {
   return (
     <Stack.Navigator screenOptions={headerStyle}>
-      <Stack.Screen name="Book" component={BookScreen} options={{ title: 'Book a Class' }} />
+      <Stack.Screen name="BookHome" component={BookScreen} options={{ title: 'Book a Class' }} />
     </Stack.Navigator>
   )
 }
