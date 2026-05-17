@@ -278,7 +278,7 @@ function SubmissionDetailModal({ submission, assignment, onClose }) {
       <View style={s.modalRoot}>
         <View style={s.modalHeader}>
           <Text style={s.modalTitle} numberOfLines={1}>
-            {assignment?.title ?? `Assignment #${submission.assignment}`}
+            {submission.assignment_title ?? assignment?.title ?? `Assignment #${submission.assignment}`}
           </Text>
           <TouchableOpacity
             onPress={onClose}
@@ -353,7 +353,7 @@ function SubmissionDetailModal({ submission, assignment, onClose }) {
 
 function SubmittedCard({ submission, allAssignments, onView }) {
   const assignment = allAssignments.find(a => a.id === submission.assignment)
-  const title = assignment?.title ?? `Assignment #${submission.assignment}`
+  const title = submission.assignment_title ?? assignment?.title ?? `Assignment #${submission.assignment}`
   const className = assignment?.class_session_detail?.name
 
   return (
