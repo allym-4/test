@@ -471,6 +471,7 @@ export default function BookScreen() {
 
   const activeEnrolList = activeEnrolData?.results ?? activeEnrolData ?? []
   const activeSeasonCount = activeEnrolList.filter(e => e.enrolment_type === 'course').length
+  const DEFAULT_SEASON_PRICES = { 1: 270, 2: 440, 3: 580, 4: 700, 5: 800, 6: 900 }
   const seasonPricingConfig = studioSettings?.season_pricing_config ?? []
 
   function getSeasonPriceForTotal(totalClasses) {
@@ -478,7 +479,9 @@ export default function BookScreen() {
       const n = parseInt((r.label ?? '').match(/(\d+)/)?.[1] ?? '0')
       return n === totalClasses
     })
-    return tier ? parseFloat(tier.price) : parseFloat(studioSettings?.price_season ?? 270)
+    if (tier) return parseFloat(tier.price)
+    const n = Math.min(Math.max(totalClasses, 1), 6)
+    return DEFAULT_SEASON_PRICES[n] ?? parseFloat(studioSettings?.price_season ?? 270)
   }
   const seasonPrice = getSeasonPriceForTotal(activeSeasonCount + 1)
 
