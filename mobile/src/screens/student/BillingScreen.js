@@ -151,6 +151,14 @@ export default function BillingScreen() {
     [userId],
   )
 
+  const {
+    data: plansData,
+    loading: plansLoading,
+  } = useApi(
+    () => (userId ? payments.plans.list({ student: userId }) : null),
+    [userId],
+  )
+
   // payments.stripe.config() returns saved cards and auto-charge settings
   const {
     data: stripeConfig,
@@ -191,6 +199,7 @@ export default function BillingScreen() {
   const isCreditBalance = balanceNum > 0
 
   const paymentList = paymentsData?.results ?? paymentsData ?? []
+  const activePlans = (plansData?.results ?? plansData ?? []).filter(p => p.status === 'active')
   const creditsList = creditsData?.results ?? creditsData ?? []
   const availableCredits = creditsList.filter(c => c.status === 'available')
 
@@ -375,6 +384,41 @@ export default function BillingScreen() {
         )}
       </View>
 
+      {/* Payment plans */}
+      {(plansLoading || activePlans.length > 0) && (
+        <View style={s.card}>
+          <SectionHeader title="Payment Plans" />
+          {plansLoading ? (
+            <ActivityIndicator color="#6366f1" />
+          ) : activePlans.map(plan => (
+            <View key={plan.id} style={s.planCard}>
+              <View style={s.planHeader}>
+                <Text style={s.planDescription}>{plan.description}</Text>
+                <Text style={s.planTotal}>${parseFloat(plan.total_amount).toFixed(2)}</Text>
+              </View>
+              {(plan.instalments ?? []).map((inst, i) => {
+                const isPaid = inst.status === 'paid'
+                const isOverdue = inst.status === 'overdue'
+                return (
+                  <View key={inst.id ?? i} style={s.instalmentRow}>
+                    <View style={[s.instalmentDot, isPaid && s.dotPaid, isOverdue && s.dotOverdue]} />
+                    <Text style={s.instalmentDate}>
+                      {new Date(inst.due_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </Text>
+                    <Text style={[s.instalmentAmount, isPaid && s.amountPaid, isOverdue && s.amountOverdue]}>
+                      ${parseFloat(inst.amount).toFixed(2)}
+                    </Text>
+                    <Text style={[s.instalmentStatus, isPaid && s.statusPaid, isOverdue && s.statusOverdue]}>
+                      {isPaid ? '✓ Paid' : isOverdue ? 'Overdue' : 'Upcoming'}
+                    </Text>
+                  </View>
+                )
+              })}
+            </View>
+          ))}
+        </View>
+      )}
+
       {/* Payment history */}
       <View style={s.card}>
         <SectionHeader title="Payment History" />
@@ -528,6 +572,23 @@ const s = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 6,
   },
+
+  // ── Payment plans ────────────────────────────────────────────────────────────
+  planCard: { borderTopWidth: 1, borderTopColor: '#f3f4f6', paddingTop: 12, marginTop: 8 },
+  planHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  planDescription: { fontSize: 14, fontWeight: '600', color: '#111827', flex: 1, paddingRight: 8 },
+  planTotal: { fontSize: 15, fontWeight: '700', color: '#6366f1' },
+  instalmentRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 7, gap: 10, borderBottomWidth: 1, borderBottomColor: '#f9fafb' },
+  instalmentDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#d1d5db' },
+  dotPaid: { backgroundColor: '#10b981' },
+  dotOverdue: { backgroundColor: '#ef4444' },
+  instalmentDate: { flex: 1, fontSize: 13, color: '#374151' },
+  instalmentAmount: { fontSize: 13, fontWeight: '600', color: '#374151' },
+  amountPaid: { color: '#10b981' },
+  amountOverdue: { color: '#ef4444' },
+  instalmentStatus: { fontSize: 11, fontWeight: '600', color: '#9ca3af', width: 60, textAlign: 'right' },
+  statusPaid: { color: '#10b981' },
+  statusOverdue: { color: '#ef4444' },
 
   // ── Catch-up credits ─────────────────────────────────────────────────────────
   creditsCountRow: {

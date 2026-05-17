@@ -59,6 +59,10 @@ export const payments = {
     validate: (data) => client.post('/api/payments/promo-codes/validate/', data),
     use: (data) => client.post('/api/payments/promo-codes/use/', data),
   },
+  plans: {
+    list: (params) => client.get('/api/payments/plans/', { params }),
+    get: (id) => client.get(`/api/payments/plans/${id}/`),
+  },
 }
 
 export const seasons = {
@@ -124,4 +128,11 @@ export const community = {
 
 export const assistant = {
   chat: (message) => client.post('/api/users/assistant/', { message }),
+}
+
+export const pushTokens = {
+  register: (token, platform) =>
+    client.post('/api/users/push-token/', { token, platform }),
+  unregister: (token) =>
+    client.delete('/api/users/push-token/', { data: { token } }),
 }

@@ -384,6 +384,7 @@ class NotificationListView(generics.ListCreateAPIView):
             action_label=request.data.get('action_label', ''),
             action_url=request.data.get('action_url', ''),
         )
+        send_push_notification(notification.recipient_id, notification.title, notification.body)
         from rest_framework.response import Response
         return Response(NotificationSerializer(notification).data, status=201)
 
@@ -465,6 +466,8 @@ class BulkNotificationView(APIView):
             for u in recipients
         ]
         Notification.objects.bulk_create(notifications)
+        for u in recipients:
+            send_push_notification(u.id, title, body)
 
         if send_email:
             emails = [u.email for u in recipients if u.email]
@@ -490,6 +493,52 @@ class NotificationMarkReadView(APIView):
             qs = qs.filter(id__in=ids)
         qs.update(read=True)
         return Response({'ok': True})
+
+
+def send_push_notification(user_id, title, body, data=None):
+    """Send Expo push notification to all registered devices for a user."""
+    import urllib.request, json as _json
+    from .models import DevicePushToken
+    tokens = DevicePushToken.objects.filter(user_id=user_id).values_list('token', flat=True)
+    if not tokens:
+        return
+    messages = [
+        {'to': t, 'title': title, 'body': body, 'data': data or {}, 'sound': 'default'}
+        for t in tokens
+    ]
+    try:
+        req = urllib.request.Request(
+            'https://exp.host/--/api/v2/push/send',
+            data=_json.dumps(messages).encode(),
+            headers={'Content-Type': 'application/json', 'Accept': 'application/json'},
+            method='POST',
+        )
+        urllib.request.urlopen(req, timeout=5)
+    except Exception:
+        pass  # never let push failures break the main request
+
+
+from rest_framework.decorators import api_view, permission_classes as perm_classes
+from rest_framework.permissions import IsAuthenticated
+
+
+@api_view(['POST', 'DELETE'])
+@perm_classes([IsAuthenticated])
+def push_token(request):
+    from .models import DevicePushToken
+    token = request.data.get('token')
+    platform = request.data.get('platform', 'ios')
+    if not token:
+        return Response({'detail': 'token required'}, status=400)
+    if request.method == 'POST':
+        DevicePushToken.objects.update_or_create(
+            user=request.user, token=token,
+            defaults={'platform': platform}
+        )
+        return Response({'status': 'registered'})
+    else:
+        DevicePushToken.objects.filter(user=request.user, token=token).delete()
+        return Response({'status': 'unregistered'})
 
 
 class InstructorAvailabilityView(APIView):

@@ -17,6 +17,7 @@ urlpatterns = [
     path('automations/<int:pk>/', views.AutomationRuleDetailView.as_view(), name='automation-rule-detail'),
     path('orders/', views.OrderListView.as_view(), name='order-list'),
     path('orders/<int:pk>/', views.OrderDetailView.as_view(), name='order-detail'),
+    path('push-token/', views.push_token, name='push-token'),
     path('notifications/', views.NotificationListView.as_view(), name='notification-list'),
     path('notifications/bulk/', views.BulkNotificationView.as_view(), name='notification-bulk'),
     path('notifications/mark-read/', views.NotificationMarkReadView.as_view(), name='notification-mark-read'),

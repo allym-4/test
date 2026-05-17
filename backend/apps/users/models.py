@@ -547,6 +547,21 @@ class ChallengeProgress(models.Model):
         return f'{self.student.display_name} — {self.challenge.title}: {self.current_value}'
 
 
+class DevicePushToken(models.Model):
+    class Platform(models.TextChoices):
+        IOS = 'ios', 'iOS'
+        ANDROID = 'android', 'Android'
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='push_tokens')
+    token = models.CharField(max_length=500)
+    platform = models.CharField(max_length=10, choices=Platform.choices)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [('user', 'token')]
+
+
 class ActionItem(models.Model):
     icon = models.CharField(max_length=10, default='📌')
     title = models.CharField(max_length=200)
