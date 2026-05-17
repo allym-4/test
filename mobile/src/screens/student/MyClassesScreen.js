@@ -347,6 +347,127 @@ const cp = StyleSheet.create({
   backLinkText: { color: '#555', fontSize: 13 },
 })
 
+function ClassWaitlistLeaveModal({ enrolment, cancellationWindowHours, onClose }) {
+  const [leaving, setLeaving] = useState(false)
+  const [upgradingToSeason, setUpgradingToSeason] = useState(false)
+  const sess = enrolment?.class_session_detail
+  const sessName = sess?.name ?? enrolment?.class_name ?? 'this class'
+
+  // Calculate hours until next occurrence
+  let hoursUntil = null
+  if (sess?.day_of_week != null && sess?.start_time) {
+    const now = new Date()
+    const targetDay = sess.day_of_week // 0=Mon, 1=Tue, ... 6=Sun
+    // JS day: 0=Sun,1=Mon...6=Sat; model day: 0=Mon...6=Sun
+    const jsDay = (targetDay + 1) % 7
+    let daysUntil = (jsDay - now.getDay() + 7) % 7
+    if (daysUntil === 0) {
+      // same day — check if time has passed
+      const [h, m] = sess.start_time.split(':').map(Number)
+      const todayOcc = new Date(now); todayOcc.setHours(h, m, 0, 0)
+      if (todayOcc <= now) daysUntil = 7
+    }
+    const nextDate = new Date(now)
+    nextDate.setDate(nextDate.getDate() + daysUntil)
+    const [h, m] = sess.start_time.split(':').map(Number)
+    nextDate.setHours(h, m, 0, 0)
+    hoursUntil = (nextDate - now) / (1000 * 60 * 60)
+  }
+  const windowHours = cancellationWindowHours ?? 24
+  const isLate = hoursUntil != null && hoursUntil > 0 && hoursUntil < windowHours
+
+  async function handleLeave() {
+    setLeaving(true)
+    try {
+      await enrolments.delete(enrolment.id)
+      onClose(true)
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.detail || 'Could not leave waitlist.')
+    } finally { setLeaving(false) }
+  }
+
+  async function handleUpgradeToSeason() {
+    setUpgradingToSeason(true)
+    try {
+      const sessionId = enrolment.class_session ?? sess?.id
+      await enrolments.create({ student: enrolment.student, class_session: sessionId, status: 'waitlisted', enrolment_type: 'course' })
+      await enrolments.delete(enrolment.id)
+      onClose(true)
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.detail || 'Could not update waitlist.')
+    } finally { setUpgradingToSeason(false) }
+  }
+
+  return (
+    <Modal visible animationType="slide" transparent onRequestClose={() => onClose(false)}>
+      <View style={cwl.overlay}>
+        <View style={cwl.sheet}>
+          <View style={cwl.header}>
+            <Text style={cwl.title}>Leave Class Waitlist</Text>
+            <TouchableOpacity onPress={() => onClose(false)} style={cwl.closeBtn}>
+              <Text style={cwl.closeBtnText}>CLOSE</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={cwl.sessName}>{sessName}</Text>
+
+          {isLate ? (
+            <View style={cwl.warnBox}>
+              <Text style={cwl.warnText}>
+                <Text style={{ fontWeight: '700' }}>Late notice: </Text>
+                This class is within the {windowHours}-hour window. The studio will be notified of the late withdrawal.
+              </Text>
+            </View>
+          ) : (
+            <View style={cwl.infoBox}>
+              <Text style={cwl.infoText}>You'll be removed from the waitlist for this class. The next person on the list will be offered your spot.</Text>
+            </View>
+          )}
+
+          <TouchableOpacity
+            style={[cwl.seasonUpgradeBtn, (upgradingToSeason || leaving) && { opacity: 0.6 }]}
+            onPress={handleUpgradeToSeason}
+            disabled={upgradingToSeason || leaving}
+          >
+            {upgradingToSeason
+              ? <ActivityIndicator color="#7c3aed" />
+              : <Text style={cwl.seasonUpgradeBtnText}>JOIN SEASON WAITLIST INSTEAD</Text>
+            }
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[cwl.leaveBtn, (leaving || upgradingToSeason) && { opacity: 0.6 }]}
+            onPress={handleLeave}
+            disabled={leaving || upgradingToSeason}
+          >
+            {leaving
+              ? <ActivityIndicator color="#ef4444" />
+              : <Text style={cwl.leaveBtnText}>LEAVE CLASS WAITLIST</Text>
+            }
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  )
+}
+
+const cwl = StyleSheet.create({
+  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.75)' },
+  sheet: { backgroundColor: '#111', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 44 },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  title: { flex: 1, fontSize: 20, fontWeight: '800', color: '#fff' },
+  closeBtn: { paddingLeft: 12 },
+  closeBtnText: { color: '#555', fontSize: 12, fontWeight: '700', letterSpacing: 1 },
+  sessName: { fontSize: 14, color: '#888', marginBottom: 18 },
+  warnBox: { backgroundColor: 'rgba(255,170,0,0.08)', borderWidth: 1, borderColor: 'rgba(255,170,0,0.25)', borderRadius: 12, padding: 14, marginBottom: 18 },
+  warnText: { fontSize: 13, color: '#f59e0b', lineHeight: 20 },
+  infoBox: { backgroundColor: 'rgba(204,255,0,0.05)', borderWidth: 1, borderColor: 'rgba(204,255,0,0.15)', borderRadius: 12, padding: 14, marginBottom: 18 },
+  infoText: { fontSize: 13, color: '#aaa', lineHeight: 20 },
+  seasonUpgradeBtn: { borderRadius: 12, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: '#7c3aed', marginBottom: 10 },
+  seasonUpgradeBtnText: { color: '#b0a0ff', fontWeight: '800', fontSize: 13, letterSpacing: 0.3 },
+  leaveBtn: { borderRadius: 12, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)', backgroundColor: 'rgba(239,68,68,0.07)' },
+  leaveBtnText: { color: '#ef4444', fontWeight: '800', fontSize: 13 },
+})
+
 export default function MyClassesScreen({ navigation }) {
   const { user } = useAuth()
   const [tab, setTab] = useState('active')
@@ -355,6 +476,7 @@ export default function MyClassesScreen({ navigation }) {
   const [cancelPolicyEnrol, setCancelPolicyEnrol] = useState(null)
   const [cancellingAway, setCancellingAway] = useState(null)
   const [levelFilter, setLevelFilter] = useState(null)
+  const [classWaitlistLeaveEnrol, setClassWaitlistLeaveEnrol] = useState(null)
 
   useEffect(() => {
     if (user?.id) {
@@ -611,11 +733,11 @@ export default function MyClassesScreen({ navigation }) {
             )
           })}
 
-          {/* Waitlisted */}
-          {waitlistedEnrolments.filter(e => !e.waitlist_offered_at).length > 0 && (
+          {/* Season Waitlist */}
+          {waitlistedEnrolments.filter(e => !e.waitlist_offered_at && e.enrolment_type === 'course').length > 0 && (
             <View style={s.waitlistSection}>
-              <Text style={s.waitlistSectionTitle}>Waitlisted</Text>
-              {waitlistedEnrolments.filter(e => !e.waitlist_offered_at).map(e => {
+              <Text style={s.waitlistSectionTitle}>SEASON WAITLIST</Text>
+              {waitlistedEnrolments.filter(e => !e.waitlist_offered_at && e.enrolment_type === 'course').map(e => {
                 const s2 = e.class_session_detail
                 return (
                   <View key={e.id} style={s.waitlistCard}>
@@ -629,6 +751,32 @@ export default function MyClassesScreen({ navigation }) {
                       )}
                     </View>
                     <TouchableOpacity onPress={() => handleCancelEnrolment(e)}>
+                      <Text style={s.leaveWaitlist}>Leave</Text>
+                    </TouchableOpacity>
+                  </View>
+                )
+              })}
+            </View>
+          )}
+
+          {/* Class Waitlist */}
+          {waitlistedEnrolments.filter(e => !e.waitlist_offered_at && e.enrolment_type !== 'course').length > 0 && (
+            <View style={s.waitlistSection}>
+              <Text style={s.waitlistSectionTitle}>CLASS WAITLIST</Text>
+              {waitlistedEnrolments.filter(e => !e.waitlist_offered_at && e.enrolment_type !== 'course').map(e => {
+                const s2 = e.class_session_detail
+                return (
+                  <View key={e.id} style={s.waitlistCard}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.waitlistName}>{s2?.name ?? 'Class'}</Text>
+                      <Text style={s.waitlistMeta}>
+                        {[s2?.day_of_week != null ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][s2.day_of_week] : null, s2?.studio_detail?.name].filter(Boolean).join(' · ')}
+                      </Text>
+                      {e.waitlist_position != null && (
+                        <Text style={s.waitlistPos}>Position #{e.waitlist_position}</Text>
+                      )}
+                    </View>
+                    <TouchableOpacity onPress={() => setClassWaitlistLeaveEnrol(e)}>
                       <Text style={s.leaveWaitlist}>Leave</Text>
                     </TouchableOpacity>
                   </View>
@@ -680,6 +828,17 @@ export default function MyClassesScreen({ navigation }) {
           enrolment={cancelPolicyEnrol}
           onClose={(didLeave) => {
             setCancelPolicyEnrol(null)
+            if (didLeave) { refetch(); refetchWaitlist() }
+          }}
+        />
+      )}
+
+      {classWaitlistLeaveEnrol && (
+        <ClassWaitlistLeaveModal
+          enrolment={classWaitlistLeaveEnrol}
+          cancellationWindowHours={cancellationWindowHours}
+          onClose={(didLeave) => {
+            setClassWaitlistLeaveEnrol(null)
             if (didLeave) { refetch(); refetchWaitlist() }
           }}
         />
