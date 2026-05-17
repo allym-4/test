@@ -250,7 +250,6 @@ export default function StudentAccount() {
       </div>
 
       <div className="two-col-grid" style={{ maxWidth: 820 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24, maxWidth: 820 }}>
         {/* Left column */}
         <div>
           <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 16, fontWeight: 500 }}>Profile</div>
