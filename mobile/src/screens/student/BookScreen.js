@@ -620,7 +620,8 @@ export default function BookScreen({ navigation }) {
         Alert.alert('Booking confirmed!', "Your spot is reserved. The studio will follow up about card payment.")
       }
     } catch (err) {
-      Alert.alert('Booking failed', err.response?.data?.detail ?? 'Please try again or contact the studio.')
+      const detail = err.response?.data?.detail || err.response?.data?.non_field_errors?.[0] || err.message || 'Please try again or contact the studio.'
+      Alert.alert('Booking failed', detail)
     } finally {
       setBooking(null)
     }
