@@ -16,6 +16,7 @@ import ProgressScreen from '../screens/student/ProgressScreen'
 import HomeworkScreen from '../screens/student/HomeworkScreen'
 import ChatScreen from '../screens/student/ChatScreen'
 import PracticeScreen from '../screens/student/PracticeScreen'
+import SupportScreen from '../screens/student/SupportScreen'
 
 const Tab = createBottomTabNavigator()
 const Stack = createNativeStackNavigator()
@@ -79,6 +80,7 @@ function AccountStack() {
       <Stack.Screen name="Forms" component={FormsScreen} options={{ title: 'Forms' }} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Notifications' }} />
       <Stack.Screen name="StudioInfo" component={StudioInfoScreen} options={{ title: 'Studio Info' }} />
+      <Stack.Screen name="Support" component={SupportScreen} options={{ title: 'Help & Support' }} />
     </Stack.Navigator>
   )
 }
