@@ -314,7 +314,6 @@ export default function StudentProgress() {
                   {classSkills.length === 0 ? (
                     <div className="empty-state">Your instructor will track tricks here</div>
                   ) : (
-                    <div className="trick-grid">
                     <div
                       style={{
                         display: 'grid',
@@ -618,8 +617,7 @@ export default function StudentProgress() {
               </div>
 
               {chatClassId && (
-                <div className="chat-container">
-                <div style={{ display: 'flex', flexDirection: 'column', height: 'min(420px, 60vh)' }}>
+                <div className="chat-container" style={{ height: 'min(420px, 60vh)' }}>
                   {/* Message list */}
                   <div
                     style={{

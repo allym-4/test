@@ -250,7 +250,6 @@ export default function StudentAccount() {
       </div>
 
       <div className="two-col-grid" style={{ maxWidth: 820 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24, maxWidth: 820 }}>
         {/* Left column */}
         <div>
           <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 16, fontWeight: 500 }}>Profile</div>
@@ -486,10 +485,6 @@ export default function StudentAccount() {
                 {codeCopied ? '✓ Copied' : 'Copy'}
               </button>
             </div>
-            <div className="two-col-grid" style={{ gap: 10 }}>
-              <div style={{ background: '#111', borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
-                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20 }}>{myReferrals.length}</div>
-                <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>Referrals</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
               <div style={{ background: '#111', border: '1px solid #222', borderRadius: 8, padding: '10px', textAlign: 'center' }}>
                 <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, color: 'var(--lime)' }}>{myReferrals.length}</div>
