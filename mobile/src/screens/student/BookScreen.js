@@ -3,6 +3,7 @@ import {
   ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet,
   RefreshControl, Alert, ActivityIndicator, Modal, Switch,
 } from 'react-native'
+import { useStripe } from '@stripe/stripe-react-native'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { classes, enrolments, seasons, attendance, settings as settingsApi, payments } from '../../api'
@@ -487,6 +488,7 @@ function BookingModal({ visible, occ, availableCredits, priceCasual, seasonPrice
 // ─── main screen ─────────────────────────────────────────────────────────────
 export default function BookScreen({ navigation }) {
   const { user } = useAuth()
+  const { initSetupPaymentSheet, presentSetupPaymentSheet } = useStripe()
 
   const [tab, setTab] = useState('season')
   const [booking, setBooking] = useState(null)
@@ -596,16 +598,54 @@ export default function BookScreen({ navigation }) {
     setSelectedSessions(prev => [...prev, session])
   }
 
-  async function handleSeasonCheckout(payOption, _amount, promoCode) {
+  async function handleSeasonCheckout(payOption, amount, promoCode) {
     setBooking('season')
+
+    // For full / deposit — collect card via Stripe SetupIntent (save card, no charge now)
+    if (payOption === 'full' || payOption === 'deposit') {
+      try {
+        const { data } = await payments.stripe.setupIntent()
+        const { error: initErr } = await initSetupPaymentSheet({
+          merchantDisplayName: 'Duality Pole Studio',
+          setupIntentClientSecret: data.client_secret,
+          appearance: {
+            colors: {
+              primary: '#ccff00',
+              background: '#111',
+              componentBackground: '#1a1a1a',
+              componentText: '#fff',
+              primaryText: '#fff',
+              secondaryText: '#888',
+            },
+          },
+        })
+        if (initErr) {
+          Alert.alert('Error', initErr.message)
+          setBooking(null)
+          return
+        }
+        const { error: presentErr } = await presentSetupPaymentSheet()
+        if (presentErr) {
+          if (presentErr.code !== 'Canceled') Alert.alert('Card not saved', presentErr.message)
+          setBooking(null)
+          return
+        }
+      } catch (e) {
+        Alert.alert('Error', e?.response?.data?.detail || e?.message || 'Could not set up payment. Please try again.')
+        setBooking(null)
+        return
+      }
+    }
+
+    // Create enrolments
     try {
       for (const session of selectedSessions) {
-        const payload = { student: user.id, class_session: session.id, status: 'active', enrolment_type: 'course' }
-        await enrolments.create(payload)
+        await enrolments.create({ student: user.id, class_session: session.id, status: 'active', enrolment_type: 'course' })
       }
       if (promoCode) {
         await payments.promoCodes.use({ code: promoCode }).catch(() => {})
       }
+
       setShowSeasonCheckout(false)
       const newBooked = {}
       selectedSessions.forEach(s => { newBooked[s.id + '-season'] = true })
@@ -613,12 +653,14 @@ export default function BookScreen({ navigation }) {
       setSelectedSessions([])
       refetchActiveEnrol()
 
-      if (payOption === 'cash') {
-        Alert.alert('Booking confirmed!', "Your spot is reserved. Please arrange cash payment with the studio at your first class.")
+      if (payOption === 'full') {
+        Alert.alert('You\'re booked!', `Your card has been saved and your spot is reserved. We'll charge $${amount} when the season begins.`)
+      } else if (payOption === 'deposit') {
+        Alert.alert('You\'re booked!', `Your card has been saved. We'll charge your $${amount} deposit when the season begins, with the balance due before your first class.`)
       } else if (payOption === 'plan') {
-        Alert.alert('Booking confirmed!', "Your spot is reserved. The studio will be in touch to set up your payment plan.")
+        Alert.alert('You\'re booked!', "Your spot is reserved. The studio will be in touch to set up your payment plan.")
       } else {
-        Alert.alert('Booking confirmed!', "Your spot is reserved. The studio will follow up about card payment.")
+        Alert.alert('You\'re booked!', "Your spot is reserved. Please arrange cash payment with the studio at your first class.")
       }
     } catch (err) {
       const detail = err.response?.data?.detail || err.response?.data?.non_field_errors?.[0] || err.message || 'Please try again or contact the studio.'
