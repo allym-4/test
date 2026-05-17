@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   ScrollView, View, Text, TouchableOpacity, StyleSheet,
   RefreshControl, Alert, ActivityIndicator,
 } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { useStripePayment } from '../../hooks/useStripePayment'
@@ -65,6 +66,13 @@ export default function BookScreen() {
   const [tab, setTab] = useState('season')
   const [booking, setBooking] = useState(null)
   const [booked, setBooked] = useState({})
+  const [experienceLevel, setExperienceLevel] = useState(null)
+
+  useEffect(() => {
+    if (user?.id) {
+      AsyncStorage.getItem(`experience_level_${user.id}`).then(val => setExperienceLevel(val))
+    }
+  }, [user?.id])
 
   const { data: studioSettings } = useApi(() => settingsApi.get(), [])
   const { data: sessionsData, loading: sessLoading, refetch: refetchSessions } = useApi(
@@ -240,23 +248,52 @@ export default function BookScreen() {
         {tab === 'trial' && (
           <>
             <View style={[s.infoBanner, s.trialBanner]}>
-              <Text style={[s.infoBannerTitle, { color: '#92400e' }]}>Try your first class</Text>
-              <Text style={s.infoBannerBody}>No experience needed. Wear comfortable activewear and bring water.</Text>
+              <Text style={[s.infoBannerTitle, { color: '#92400e' }]}>
+                {experienceLevel === 'beginner' ? 'Perfect for beginners' :
+                 experienceLevel === 'some' ? 'Find your level' :
+                 experienceLevel === 'experienced' ? 'Jump back in' :
+                 'Try your first class'}
+              </Text>
+              <Text style={s.infoBannerBody}>
+                {experienceLevel === 'beginner' ? 'All our trial classes welcome complete beginners. No experience needed — just wear comfortable activewear and bring water.' :
+                 experienceLevel === 'some' ? 'These classes are great for picking up where you left off. Try a few and see what clicks.' :
+                 experienceLevel === 'experienced' ? 'Jump into any class — our instructors will work with your level.' :
+                 'No experience needed. Wear comfortable activewear and bring water.'}
+              </Text>
               <Text style={[s.infoBannerPrice, { color: '#92400e' }]}>${priceTrial} trial rate</Text>
             </View>
+
+            {experienceLevel === 'beginner' && (
+              <View style={s.filterNote}>
+                <Text style={s.filterNoteText}>Showing beginner-friendly classes first</Text>
+              </View>
+            )}
+
             {sessionList.length === 0 && !sessLoading && <Text style={s.empty}>No classes available.</Text>}
-            {sessionList.map(session => (
-              <ClassCard
-                key={session.id}
-                session={session}
-                actionLabel={`Book trial — $${priceTrial}`}
-                actionColor="#d97706"
-                accent="#f59e0b"
-                onPress={() => handleEnrol(session, 'trial', priceTrial)}
-                loading={booking === session.id}
-                done={booked[session.id + '-trial']}
-              />
-            ))}
+            {[...sessionList]
+              .sort((a, b) => {
+                if (experienceLevel !== 'beginner') return 0
+                const aLevel = (a.level?.name ?? a.name ?? '').toLowerCase()
+                const bLevel = (b.level?.name ?? b.name ?? '').toLowerCase()
+                const aIsBeginner = /level.?1|beginner|intro/i.test(aLevel)
+                const bIsBeginner = /level.?1|beginner|intro/i.test(bLevel)
+                if (aIsBeginner && !bIsBeginner) return -1
+                if (!aIsBeginner && bIsBeginner) return 1
+                return 0
+              })
+              .map(session => (
+                <ClassCard
+                  key={session.id}
+                  session={session}
+                  actionLabel={`Book trial — $${priceTrial}`}
+                  actionColor="#d97706"
+                  accent="#f59e0b"
+                  onPress={() => handleEnrol(session, 'trial', priceTrial)}
+                  loading={booking === session.id}
+                  done={booked[session.id + '-trial']}
+                />
+              ))
+            }
           </>
         )}
 
@@ -377,6 +414,8 @@ const s = StyleSheet.create({
   bookBtnText: { color: '#fff', fontWeight: '600', fontSize: 15 },
   doneTag: { borderRadius: 8, padding: 10, alignItems: 'center', marginTop: 8 },
   doneTagText: { fontWeight: '700', fontSize: 14 },
+  filterNote: { backgroundColor: '#fef3c7', borderRadius: 8, padding: 10, marginBottom: 12 },
+  filterNoteText: { fontSize: 12, color: '#92400e', fontWeight: '600' },
   confirmedRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
   confirmedText: { fontSize: 14, fontWeight: '700', color: '#10b981' },
   waitlistText: { fontSize: 14, fontWeight: '700', color: '#d97706' },
