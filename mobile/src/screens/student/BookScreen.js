@@ -524,7 +524,7 @@ export default function BookScreen({ navigation }) {
     () => user?.id ? attendance.makeupCredits.list({ student: user.id, status: 'available' }) : null,
     [user?.id]
   )
-  const { data: activeEnrolData } = useApi(
+  const { data: activeEnrolData, refetch: refetchActiveEnrol } = useApi(
     () => user?.id ? enrolments.list({ student: user.id, status: 'active' }) : null,
     [user?.id]
   )
@@ -611,6 +611,7 @@ export default function BookScreen({ navigation }) {
       selectedSessions.forEach(s => { newBooked[s.id + '-season'] = true })
       setBooked(b => ({ ...b, ...newBooked }))
       setSelectedSessions([])
+      refetchActiveEnrol()
 
       if (payOption === 'cash') {
         Alert.alert('Booking confirmed!', "Your spot is reserved. Please arrange cash payment with the studio at your first class.")
