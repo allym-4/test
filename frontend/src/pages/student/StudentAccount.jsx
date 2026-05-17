@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { auth, giftCards as giftCardsApi, referrals as referralsApi, lockers as lockersApi } from '../../api'
 import { useApi } from '../../hooks/useApi'
@@ -126,7 +127,8 @@ export default function StudentAccount() {
   // Notification preferences
   const prefs = user?.notification_preferences || {}
   const [classReminders, setClassReminders] = useState(prefs.class_reminders ?? true)
-  const [waitlistAlerts, setWaitlistAlerts] = useState(prefs.waitlist_alerts ?? true)
+  const [waitlistEmail, setWaitlistEmail] = useState(prefs.waitlist_email ?? true)
+  const [waitlistApp, setWaitlistApp] = useState(prefs.waitlist_app ?? true)
   const [studioUpdates, setStudioUpdates] = useState(prefs.studio_updates ?? false)
   const [homework, setHomework] = useState(prefs.homework ?? true)
   const [notifSaved, setNotifSaved] = useState(false)
@@ -183,14 +185,16 @@ export default function StudentAccount() {
   async function handleNotifToggle(key, value) {
     const updated = {
       class_reminders: classReminders,
-      waitlist_alerts: waitlistAlerts,
+      waitlist_email: waitlistEmail,
+      waitlist_app: waitlistApp,
       studio_updates: studioUpdates,
       homework,
       [key]: value,
     }
     // Update local state
     if (key === 'class_reminders') setClassReminders(value)
-    if (key === 'waitlist_alerts') setWaitlistAlerts(value)
+    if (key === 'waitlist_email') setWaitlistEmail(value)
+    if (key === 'waitlist_app') setWaitlistApp(value)
     if (key === 'studio_updates') setStudioUpdates(value)
     if (key === 'homework') setHomework(value)
     try {
@@ -200,7 +204,8 @@ export default function StudentAccount() {
     } catch {
       // revert on error
       if (key === 'class_reminders') setClassReminders(!value)
-      if (key === 'waitlist_alerts') setWaitlistAlerts(!value)
+      if (key === 'waitlist_email') setWaitlistEmail(!value)
+      if (key === 'waitlist_app') setWaitlistApp(!value)
       if (key === 'studio_updates') setStudioUpdates(!value)
       if (key === 'homework') setHomework(!value)
     }
@@ -219,7 +224,8 @@ export default function StudentAccount() {
 
   const notifRows = [
     { label: 'Class reminders', desc: 'Get notified 24hrs before each class', key: 'class_reminders', value: classReminders },
-    { label: 'Waitlist alerts', desc: 'Notified when a spot opens for you', key: 'waitlist_alerts', value: waitlistAlerts },
+    { label: 'Waitlist alerts — email', desc: 'Email me when a spot opens or expires', key: 'waitlist_email', value: waitlistEmail },
+    { label: 'Waitlist alerts — in-app', desc: 'In-app notification when a spot opens', key: 'waitlist_app', value: waitlistApp },
     { label: 'Studio updates', desc: 'News and updates from the studio', key: 'studio_updates', value: studioUpdates },
     { label: 'Homework', desc: 'Notified when new homework is assigned', key: 'homework', value: homework },
   ]
@@ -243,6 +249,7 @@ export default function StudentAccount() {
         <div className="page-title">Account</div>
       </div>
 
+      <div className="two-col-grid" style={{ maxWidth: 820 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24, maxWidth: 820 }}>
         {/* Left column */}
         <div>
@@ -455,7 +462,7 @@ export default function StudentAccount() {
                   <div style={{ fontSize: 13, fontWeight: 500 }}>Waiver required</div>
                   <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>Please sign before attending classes</div>
                 </div>
-                <a href="/portal/forms" style={{ fontSize: 12, color: 'var(--lime)', textDecoration: 'none', whiteSpace: 'nowrap' }}>Sign now →</a>
+                <Link to="/portal/forms" style={{ fontSize: 12, color: 'var(--lime)', textDecoration: 'none', whiteSpace: 'nowrap' }}>Sign now →</Link>
               </div>
             )}
           </div>
@@ -479,6 +486,10 @@ export default function StudentAccount() {
                 {codeCopied ? '✓ Copied' : 'Copy'}
               </button>
             </div>
+            <div className="two-col-grid" style={{ gap: 10 }}>
+              <div style={{ background: '#111', borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
+                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20 }}>{myReferrals.length}</div>
+                <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>Referrals</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
               <div style={{ background: '#111', border: '1px solid #222', borderRadius: 8, padding: '10px', textAlign: 'center' }}>
                 <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, color: 'var(--lime)' }}>{myReferrals.length}</div>
@@ -500,7 +511,7 @@ export default function StudentAccount() {
           {/* Gift Cards */}
           <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 16, fontWeight: 500 }}>Gift Cards</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <a href="/portal/billing" className="btn btn-ghost btn-sm" style={{ textDecoration: 'none' }}>Buy a Gift Card</a>
+            <Link to="/portal/billing" className="btn btn-ghost btn-sm" style={{ textDecoration: 'none' }}>Buy a Gift Card</Link>
             <button className="btn btn-ghost btn-sm" onClick={() => setShowGiftModal(true)}>Redeem a code</button>
           </div>
 

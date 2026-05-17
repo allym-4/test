@@ -30,6 +30,9 @@ class Command(BaseCommand):
         self.stdout.write('-- Notifying overdue balances --')
         call_command('notify_overdue_balances')
 
+        self.stdout.write('-- Processing waitlist offers (reminders + expiry) --')
+        call_command('process_waitlist_offers')
+
         self.stdout.write('-- Sending locker renewal reminders --')
         call_command('send_locker_renewal_reminders')
 

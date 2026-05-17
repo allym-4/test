@@ -23,6 +23,8 @@ class User(AbstractUser):
 
     pay_rate = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text='Per-class pay rate for instructors')
 
+    notification_preferences = models.JSONField(default=dict, blank=True)
+
     # Class roster visibility
     show_in_roster = models.BooleanField(default=False)
     roster_name = models.CharField(
@@ -511,6 +513,67 @@ class MediaItem(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Challenge(models.Model):
+    class ChallengeType(models.TextChoices):
+        ATTENDANCE_COUNT = 'attendance_count', 'Attend X classes'
+        STYLE_VARIETY = 'style_variety', 'Try X different class styles'
+        STREAK = 'streak', 'X weeks in a row'
+        CUSTOM = 'custom', 'Custom (manual completion)'
+
+    class RewardType(models.TextChoices):
+        BADGE = 'badge', 'Badge'
+        CREDIT = 'credit', 'Account credit'
+        NONE = 'none', 'No reward'
+
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    challenge_type = models.CharField(max_length=30, choices=ChallengeType.choices, default=ChallengeType.ATTENDANCE_COUNT)
+    target_value = models.PositiveIntegerField(default=1, help_text='Number to reach (classes, styles, or weeks)')
+    start_date = models.DateField()
+    end_date = models.DateField()
+    reward_type = models.CharField(max_length=20, choices=RewardType.choices, default=RewardType.BADGE)
+    reward_badge_name = models.CharField(max_length=100, blank=True)
+    reward_credit_amount = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-start_date']
+
+    def __str__(self):
+        return self.title
+
+
+class ChallengeProgress(models.Model):
+    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE, related_name='progress')
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='challenge_progress')
+    current_value = models.PositiveIntegerField(default=0)
+    completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = [('challenge', 'student')]
+        ordering = ['-current_value']
+
+    def __str__(self):
+        return f'{self.student.display_name} — {self.challenge.title}: {self.current_value}'
+
+
+class DevicePushToken(models.Model):
+    class Platform(models.TextChoices):
+        IOS = 'ios', 'iOS'
+        ANDROID = 'android', 'Android'
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='push_tokens')
+    token = models.CharField(max_length=500)
+    platform = models.CharField(max_length=10, choices=Platform.choices)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [('user', 'token')]
 
 
 class ActionItem(models.Model):

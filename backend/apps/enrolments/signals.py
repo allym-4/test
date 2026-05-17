@@ -2,11 +2,168 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.core.mail import send_mail
 from django.conf import settings
+from django.utils import timezone
+from datetime import timedelta
+
+
+def _is_silent_hours():
+    """True if it's between 10pm and 7am Sydney time."""
+    import pytz
+    try:
+        tz = pytz.timezone('Australia/Sydney')
+        now_local = timezone.now().astimezone(tz)
+        hour = now_local.hour
+        return hour >= 22 or hour < 7
+    except Exception:
+        return False
+
+
+def _offer_waitlist_spot(session):
+    """
+    When a spot opens in a session:
+    - If the next class occurrence is within 4 hours AND it's not silent hours:
+      notify ALL waitlisted students simultaneously (first to claim wins).
+    - Otherwise: notify only the #1 student, give them 4 hours to claim.
+    """
+    from apps.users.models import AutomationRule, Notification
+    from .models import Enrolment
+
+    rule = AutomationRule.objects.filter(slug='waitlist_notify').first()
+    if rule and not rule.enabled:
+        return
+
+    waitlisted = list(
+        Enrolment.objects.filter(
+            class_session=session,
+            status='waitlisted',
+            waitlist_offered_at__isnull=True,  # not already offered
+        ).order_by('id').select_related('student')
+    )
+    if not waitlisted:
+        return
+
+    # Determine how far away the next class occurrence is
+    import datetime
+    now = timezone.now()
+    next_occurrence = None
+    try:
+        # Try to find the next ClassOccurrence
+        from apps.classes.models import ClassOccurrence
+        occ = ClassOccurrence.objects.filter(
+            session=session, date__gte=now.date()
+        ).order_by('date').first()
+        if occ:
+            occ_dt = timezone.make_aware(
+                datetime.datetime.combine(occ.date, occ.start_time),
+                timezone.get_current_timezone()
+            )
+            next_occurrence = occ_dt
+    except Exception:
+        pass
+
+    hours_until_class = None
+    if next_occurrence:
+        hours_until_class = (next_occurrence - now).total_seconds() / 3600
+
+    urgent = (
+        hours_until_class is not None
+        and hours_until_class <= 4
+        and not _is_silent_hours()
+    )
+
+    expires_at = now + timedelta(hours=4)
+
+    # Get the custom email body if configured
+    email_subject = f"A spot has opened up — {session.name}!"
+    if urgent:
+        email_body_template = (
+            "Hi {first_name},\n\n"
+            "A spot has just opened in {class_name} which starts very soon!\n\n"
+            "Because the class is starting within 4 hours, this offer is open to all waitlisted students — "
+            "the first person to confirm their spot gets it.\n\n"
+            "You have until {expires} to claim your spot. Log in now to confirm.\n\n"
+            "Duality Pole Studio"
+        )
+        to_offer = waitlisted  # notify all
+    else:
+        email_body_template = (
+            "Hi {first_name},\n\n"
+            "Great news — a spot has opened up in {class_name}!\n\n"
+            "You have 4 hours to claim your spot (until {expires}). "
+            "If you don't confirm by then, your spot will be offered to the next person on the waitlist.\n\n"
+            "Log in to confirm your enrolment.\n\n"
+            "Duality Pole Studio"
+        )
+        to_offer = waitlisted[:1]  # notify only #1
+
+    expires_str = expires_at.strftime('%I:%M %p')
+    for enrolment in to_offer:
+        student = enrolment.student
+        prefs = student.notification_preferences or {}
+
+        enrolment.waitlist_offered_at = now
+        enrolment.waitlist_expires_at = expires_at
+        enrolment.waitlist_urgent = urgent
+        enrolment.save(update_fields=['waitlist_offered_at', 'waitlist_expires_at', 'waitlist_urgent'])
+
+        if prefs.get('waitlist_app', True):
+            Notification.objects.create(
+                recipient=student,
+                title=f"Spot available — {session.name}",
+                body=f"A spot opened up! You have until {expires_str} to claim it. Tap to confirm.",
+                notification_type='waitlist',
+                action_label='Claim My Spot',
+                action_url='/portal/my-classes',
+            )
+
+        if prefs.get('waitlist_email', True) and student.email:
+            send_mail(
+                subject=email_subject,
+                message=email_body_template.format(
+                    first_name=student.first_name,
+                    class_name=session.name,
+                    expires=expires_str,
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[student.email],
+                fail_silently=True,
+            )
+
+
+def _send_waitlist_reminder(enrolment):
+    """Send a reminder 30 minutes before the offer expires."""
+    from apps.users.models import Notification
+    student = enrolment.student
+    session = enrolment.class_session
+    prefs = student.notification_preferences or {}
+
+    if prefs.get('waitlist_app', True):
+        Notification.objects.create(
+            recipient=student,
+            title=f"30 mins left to claim — {session.name}",
+            body="Your waitlist offer expires soon! Log in now to confirm your spot.",
+            notification_type='waitlist',
+            action_label='Claim My Spot',
+            action_url='/portal/my-classes',
+        )
+
+    if prefs.get('waitlist_email', True) and student.email:
+        send_mail(
+            subject=f"Last chance to claim your spot — {session.name}",
+            message=(
+                f"Hi {student.first_name},\n\n"
+                f"Just a reminder — your spot in {session.name} expires in 30 minutes.\n\n"
+                f"Log in to confirm before you lose your place.\n\n"
+                f"Duality Pole Studio"
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[student.email],
+            fail_silently=True,
+        )
 
 
 @receiver(post_save, sender='enrolments.Enrolment')
 def handle_enrolment_change(sender, instance, created, **kwargs):
-    from apps.users.models import AutomationRule, Notification
     from apps.users.automation_engine import run_custom_automations
 
     session = instance.class_session
@@ -16,46 +173,11 @@ def handle_enrolment_change(sender, instance, created, **kwargs):
         'class_level': getattr(session, 'level', '') or '',
     }
 
-    # Waitlist notification when a spot opens
+    # When a spot opens, offer it to waitlisted students
     if not created and instance.status in ('cancelled', 'completed'):
-        rule = AutomationRule.objects.filter(slug='waitlist_notify').first()
-        if not (rule and not rule.enabled):
-            next_in_line = sender.objects.filter(
-                class_session=session,
-                status='waitlisted',
-            ).order_by('id').first()
-
-            if next_in_line:
-                # Auto-promote: move straight from waitlisted → active
-                next_in_line.status = 'active'
-                next_in_line.save(update_fields=['status'])
-
-                waitlist_student = next_in_line.student
-                Notification.objects.create(
-                    recipient=waitlist_student,
-                    title=f"You're in! {session.name}",
-                    body=f"A spot opened in {session.name} and you've been automatically enrolled. See you in class!",
-                    notification_type='waitlist',
-                    action_label='View My Classes',
-                    action_url='/portal/my-classes',
-                )
-                if waitlist_student.email:
-                    send_mail(
-                        subject=f"You're in! — {session.name}",
-                        message=(
-                            f'Hi {waitlist_student.first_name},\n\n'
-                            f'Great news! A spot opened up in {session.name} and you\'ve been '
-                            f'automatically moved from the waitlist into the class.\n\n'
-                            f'See you there!\n'
-                            f'Duality Pole Studio'
-                        ),
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[waitlist_student.email],
-                        fail_silently=True,
-                    )
-
+        _offer_waitlist_spot(session)
         run_custom_automations('enrolment_cancelled', student, context)
 
     # Fire enrolment_active trigger for new active enrolments
-    if instance.status == 'active' and (created or not created):
+    if instance.status == 'active':
         run_custom_automations('enrolment_active', student, context)

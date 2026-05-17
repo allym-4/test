@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react'
 import { useApi } from '../../hooks/useApi'
+import { lockers, users, seasons } from '../../api'
 import { lockers, users } from '../../api'
 
 const TOTAL_LOCKERS = 36
 
 // ─── Assign / Edit Modal ────────────────────────────────────────────────────
 
+function AssignModal({ locker, activeSeason, onClose, onSaved }) {
+  const defaultExpiry = locker?.expires_at || activeSeason?.end_date || ''
 function AssignModal({ locker, onClose, onSaved }) {
   const [studentSearch, setStudentSearch] = useState(locker?.assigned_to_detail?.display_name || '')
   const [studentList, setStudentList] = useState([])
   const [picked, setPicked] = useState(locker?.assigned_to_detail || null)
-  const [expiresAt, setExpiresAt] = useState(locker?.expires_at || '')
+  const [expiresAt, setExpiresAt] = useState(defaultExpiry)
   const [notes, setNotes] = useState(locker?.notes || '')
   const [lockerType, setLockerType] = useState(locker?.locker_type || 'complimentary')
   const [paymentType, setPaymentType] = useState(locker?.payment_type || '')
@@ -102,6 +105,7 @@ function AssignModal({ locker, onClose, onSaved }) {
               <option value="paid">Paid</option>
               <option value="waived">Waived</option>
             </select>],
+            ['Expiry Date', <input type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} placeholder={activeSeason?.end_date || ''} />],
             ['Expiry Date', <input type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} />],
             ['Notes', <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Optional…" />],
           ].map(([label, field]) => (
@@ -110,6 +114,11 @@ function AssignModal({ locker, onClose, onSaved }) {
               {field}
             </div>
           ))}
+          {activeSeason?.end_date && !locker?.expires_at && (
+            <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 14, marginTop: -8 }}>
+              Auto-set to season end: {activeSeason.end_date}
+            </div>
+          )}
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, cursor: 'pointer', fontSize: 13 }}>
             <input type="checkbox" checked={keyIssued} onChange={e => setKeyIssued(e.target.checked)} style={{ width: 15, height: 15 }} />
             Key issued to student
@@ -131,7 +140,9 @@ function AssignModal({ locker, onClose, onSaved }) {
 export default function AdminLockers() {
   const { data: lockerData, loading, refetch } = useApi(() => lockers.list(), [])
   const { data: eligibleData, refetch: refetchEligible } = useApi(() => lockers.eligible(), [])
+  const { data: seasonsData } = useApi(() => seasons.list(), [])
   const lockerList = lockerData?.results || lockerData || []
+  const activeSeason = (seasonsData?.results || seasonsData || []).find(s => s.status === 'active') || null
 
   const [modal, setModal] = useState(null)
   const [busy, setBusy] = useState(null)
@@ -147,6 +158,7 @@ export default function AdminLockers() {
 
   const eligible = eligibleData?.eligible || []
   const eligibleWithoutLocker = eligible.filter(s => !s.has_locker)
+  const seasonName = eligibleData?.season?.name || activeSeason?.name || 'Current Season'
   const seasonName = eligibleData?.season?.name || 'Current Season'
 
   // Stats
@@ -236,11 +248,13 @@ export default function AdminLockers() {
       </div>
 
       {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, marginBottom: 24 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12, marginBottom: 24 }}>
         {[
           { label: 'FREE LOCKERS', val: loading ? '…' : freeLockers, sub: 'Auto — 4+ classes/season', color: 'var(--amber)' },
           { label: 'PAID LOCKERS', val: loading ? '…' : paidLockers, sub: '$50/season', color: 'var(--lime)' },
           { label: 'AVAILABLE', val: loading ? '…' : available, sub: 'Unassigned', color: '#fff' },
+          { label: 'PENDING', val: loading ? '…' : eligibleWithoutLocker.length, sub: 'Need locker assigned', color: eligibleWithoutLocker.length > 0 ? 'var(--amber)' : 'var(--grey)' },
           { label: 'OVERDUE', val: loading ? '…' : overdue, sub: 'Chase needed', color: overdue > 0 ? 'var(--red)' : 'var(--grey)' },
         ].map(s => (
           <div key={s.label} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
@@ -295,6 +309,7 @@ export default function AdminLockers() {
             const l = lockerMap[num]
             return (
               <div key={num}
+                onClick={() => openAssign(num)}
                 onClick={() => l ? openAssign(num) : openAssign(num)}
                 title={l ? `${l.assigned_to_detail?.display_name}` : 'Available'}
                 style={{ aspectRatio: '1', borderRadius: 8, background: s.bg, border: `1px solid ${s.border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s' }}>
@@ -380,6 +395,10 @@ export default function AdminLockers() {
                               {busy === l.id + '-chase' ? '…' : 'Chase'}
                             </button>
                           )}
+                          {!l.key_lost && (
+                            <button className="btn btn-ghost btn-xs" style={{ color: 'var(--amber)', fontSize: 10 }}
+                              onClick={() => reportLostKey(l)} disabled={busy === l.id + '-lk'}>
+                              {busy === l.id + '-lk' ? '…' : 'Lost Key'}
                           {!l.key_lost && l.key_issued && !l.key_returned && (
                             <button className="btn btn-ghost btn-xs" style={{ color: 'var(--amber)', fontSize: 10 }}
                               onClick={() => reportLostKey(l)} disabled={busy === l.id + '-lk'}>
@@ -401,6 +420,7 @@ export default function AdminLockers() {
       {modal && (
         <AssignModal
           locker={modal}
+          activeSeason={activeSeason}
           onClose={() => setModal(null)}
           onSaved={() => { setModal(null); refetch(); refetchEligible() }}
         />

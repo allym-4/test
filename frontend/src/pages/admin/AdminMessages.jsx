@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useApi } from '../../hooks/useApi'
-import { helpdesk, users, settings, notifications as notificationsApi, classes as classesApi } from '../../api'
+import { helpdesk, users, settings, notifications as notificationsApi, classes as classesApi, tags as tagsApi } from '../../api'
 import { useAuth } from '../../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 
@@ -109,15 +109,27 @@ const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 function BroadcastModal({ onClose }) {
   const { data: sessData } = useApi(() => classesApi.list())
   const sessions = sessData?.results || sessData || []
+  const { data: tagData } = useApi(() => tagsApi.list())
+  const allTags = tagData?.results || tagData || []
 
   const [target, setTarget] = useState('all')
   const [sessionId, setSessionId] = useState('')
+  const [selectedTagIds, setSelectedTagIds] = useState([])
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
+  const [actionLabel, setActionLabel] = useState('')
+  const [actionUrl, setActionUrl] = useState('')
+  const [showCta, setShowCta] = useState(false)
   const [sendEmail, setSendEmail] = useState(false)
   const [sending, setSending] = useState(false)
   const [done, setDone] = useState(null)
   const [error, setError] = useState(null)
+
+  function toggleTag(id) {
+    setSelectedTagIds(prev =>
+      prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]
+    )
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -125,8 +137,22 @@ function BroadcastModal({ onClose }) {
     setSending(true)
     setError(null)
     try {
-      const targetVal = target === 'session' ? `session:${sessionId}` : target
-      const res = await notificationsApi.bulk({ title, body, target: targetVal, send_email: sendEmail })
+      const payload = {
+        title,
+        body,
+        send_email: sendEmail,
+        action_label: showCta ? actionLabel : '',
+        action_url: showCta ? actionUrl : '',
+      }
+      if (target === 'session') {
+        payload.target = `session:${sessionId}`
+      } else if (target === 'tags') {
+        payload.target = 'tags'
+        payload.tag_ids = selectedTagIds
+      } else {
+        payload.target = target
+      }
+      const res = await notificationsApi.bulk(payload)
       setDone(res.data)
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to send.')
@@ -135,9 +161,13 @@ function BroadcastModal({ onClose }) {
     }
   }
 
+  const canSend = title.trim() && body.trim()
+    && (target !== 'session' || sessionId)
+    && (target !== 'tags' || selectedTagIds.length > 0)
+
   return (
     <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="sd-modal" style={{ maxWidth: 480 }}>
+      <div className="sd-modal" style={{ maxWidth: 500 }}>
         <div className="sd-header">
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>Broadcast Message</div>
           <button className="modal-close-btn" onClick={onClose}>✕</button>
@@ -156,12 +186,52 @@ function BroadcastModal({ onClose }) {
           <form className="sd-body" onSubmit={handleSubmit}>
             <div className="field">
               <label>Send to</label>
-              <select value={target} onChange={e => setTarget(e.target.value)}>
+              <select value={target} onChange={e => { setTarget(e.target.value); setSelectedTagIds([]) }}>
                 <option value="all">All active students</option>
+                <option value="tags">Students with specific tags</option>
                 <option value="session">Students in a specific class</option>
                 <option value="overdue">Students with an overdue balance</option>
               </select>
             </div>
+
+            {target === 'tags' && (
+              <div className="field">
+                <label>Tags <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(select one or more)</span></label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '10px 0' }}>
+                  {allTags.length === 0 ? (
+                    <span style={{ fontSize: 12, color: 'var(--grey)' }}>No tags found — create tags in the Tags page first</span>
+                  ) : allTags.map(tag => {
+                    const selected = selectedTagIds.includes(tag.id)
+                    return (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => toggleTag(tag.id)}
+                        style={{
+                          padding: '5px 12px',
+                          borderRadius: 20,
+                          border: `1px solid ${selected ? (tag.colour || 'var(--lime)') : 'var(--border)'}`,
+                          background: selected ? `${tag.colour || 'var(--lime)'}22` : 'var(--card)',
+                          color: selected ? (tag.colour || 'var(--lime)') : 'var(--grey)',
+                          fontSize: 12,
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        {selected && '✓ '}{tag.name}
+                      </button>
+                    )
+                  })}
+                </div>
+                {selectedTagIds.length > 0 && (
+                  <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>
+                    {selectedTagIds.length} tag{selectedTagIds.length !== 1 ? 's' : ''} selected — recipients will be the union of all tagged students
+                  </div>
+                )}
+              </div>
+            )}
+
             {target === 'session' && (
               <div className="field">
                 <label>Class</label>
@@ -173,22 +243,43 @@ function BroadcastModal({ onClose }) {
                 </select>
               </div>
             )}
+
             <div className="field">
               <label>Title</label>
-              <input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Class update, Important notice" required />
+              <input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. New Level 5 class added!" required />
             </div>
             <div className="field">
               <label>Message</label>
               <textarea rows={4} value={body} onChange={e => setBody(e.target.value)} placeholder="Your message…" required style={{ width: '100%', boxSizing: 'border-box' }} />
             </div>
+
+            {/* CTA button toggle */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', marginBottom: showCta ? 12 : 18 }}>
+              <input type="checkbox" checked={showCta} onChange={e => setShowCta(e.target.checked)} style={{ accentColor: 'var(--lime)' }} />
+              Add a call-to-action button
+            </label>
+            {showCta && (
+              <div style={{ background: 'rgba(204,255,0,0.04)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 8, padding: '12px 14px', marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label style={{ fontSize: 12 }}>Button label</label>
+                  <input value={actionLabel} onChange={e => setActionLabel(e.target.value)} placeholder="e.g. Add to enrolment, View schedule" />
+                </div>
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label style={{ fontSize: 12 }}>Button link</label>
+                  <input value={actionUrl} onChange={e => setActionUrl(e.target.value)} placeholder="e.g. /portal/book" />
+                </div>
+              </div>
+            )}
+
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', marginBottom: 18 }}>
               <input type="checkbox" checked={sendEmail} onChange={e => setSendEmail(e.target.checked)} />
               Also send by email
             </label>
+
             {error && <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 12 }}>{error}</div>}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-              <button type="submit" className="btn btn-lime btn-sm" disabled={sending || (target === 'session' && !sessionId)}>
+              <button type="submit" className="btn btn-lime btn-sm" disabled={sending || !canSend}>
                 {sending ? 'Sending…' : 'Send Broadcast'}
               </button>
             </div>

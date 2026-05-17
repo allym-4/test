@@ -698,7 +698,7 @@ export default function AdminSettings() {
             <Section title="Gmail">
               <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 14 }}>
                 <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--lime)' }} />
-                <span style={{ fontSize: 13 }}>Connected: <b>mimi@dualitypole.com.au</b></span>
+                <span style={{ fontSize: 13 }}>Connected: <b>intrigued@dualitypole.com</b></span>
               </div>
             </Section>
             <Section title="Xero">

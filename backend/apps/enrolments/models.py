@@ -30,6 +30,11 @@ class Enrolment(models.Model):
     waiver_signed = models.BooleanField(default=False)
     flag_dismissed = models.BooleanField(default=False)
 
+    # Waitlist offer tracking
+    waitlist_offered_at = models.DateTimeField(null=True, blank=True)
+    waitlist_expires_at = models.DateTimeField(null=True, blank=True)
+    waitlist_urgent = models.BooleanField(default=False)  # True = everyone notified simultaneously
+
     class Meta:
         unique_together = [('student', 'class_session')]
         ordering = ['-enrolled_date']

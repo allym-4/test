@@ -128,10 +128,16 @@ CORS_ALLOWED_ORIGINS = os.environ.get(
     'http://localhost:5173,http://localhost:3000'
 ).split(',')
 
-# Allow regex-based origins (e.g. Vercel preview URLs).
-# Set CORS_ORIGIN_REGEX in Railway to a pipe-separated list of patterns.
-_cors_regex_env = os.environ.get('CORS_ORIGIN_REGEX', r'https://.*\.vercel\.app')
-CORS_ALLOWED_ORIGIN_REGEXES = [p for p in _cors_regex_env.split('|') if p]
+# Allow Railway/Vercel deploy URLs, and Capacitor native app origins.
+# Additional patterns can be set via CORS_ORIGIN_REGEX (pipe-separated) in Railway.
+_cors_regex_env = os.environ.get('CORS_ORIGIN_REGEX', '')
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r'^https://.*\.up\.railway\.app$',
+    r'^https://.*\.vercel\.app$',
+    r'^capacitor://localhost$',   # Capacitor iOS
+    r'^http://localhost$',        # Capacitor Android
+    r'^ionic://localhost$',       # Ionic/Capacitor fallback
+] + [p for p in _cors_regex_env.split('|') if p]
 
 # Expose Content-Disposition so browsers can read the filename on file downloads.
 CORS_EXPOSE_HEADERS = ['Content-Disposition']

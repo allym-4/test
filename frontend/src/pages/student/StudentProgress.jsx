@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, skills as skillsApi, media, classes } from '../../api'
+import { enrolments, skills as skillsApi, media, classes, challenges as challengesApi } from '../../api'
 import client from '../../api/client'
 
 const TYPE_BADGE = {
@@ -157,8 +157,55 @@ export default function StudentProgress() {
       .finally(() => setChatLoading(false))
   }
 
+  // Challenges
+  const { data: challengeData, refetch: refetchChallenges } = useApi(
+    () => challengesApi.list({ active: 'true' }),
+    []
+  )
+  const activeChallenges = challengeData?.results || challengeData || []
+  const [optingIn, setOptingIn] = useState(null)
+  const [leaderboardChallenge, setLeaderboardChallenge] = useState(null)
+  const [leaderboardData, setLeaderboardData] = useState(null)
+  const [optInPopped, setOptInPopped] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('challenge_popups_shown') || '[]') } catch { return [] }
+  })
+
+  // Show opt-in popup for new challenges the student hasn't been shown yet
+  useEffect(() => {
+    if (!activeChallenges.length) return
+    const unseen = activeChallenges.filter(c => {
+      const notYetJoined = !c.my_progress || c.my_progress.current_value === 0
+      const notPopped = !optInPopped.includes(c.id)
+      return notYetJoined && notPopped
+    })
+    if (unseen.length && !optingIn) {
+      setOptingIn(unseen[0])
+      const updated = [...optInPopped, unseen[0].id]
+      setOptInPopped(updated)
+      localStorage.setItem('challenge_popups_shown', JSON.stringify(updated))
+    }
+  }, [activeChallenges.length]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleOptIn(challengeId) {
+    await challengesApi.optIn(challengeId)
+    setOptingIn(null)
+    refetchChallenges()
+  }
+
+  async function handleOptOut(challengeId) {
+    await challengesApi.optOut(challengeId)
+    refetchChallenges()
+  }
+
+  async function openLeaderboard(c) {
+    setLeaderboardChallenge(c)
+    const res = await challengesApi.leaderboard(c.id)
+    setLeaderboardData(res.data)
+  }
+
   const tabs = [
     ['tricks', 'Tricks'],
+    ['challenges', 'Challenges'],
     ['resources', 'Resources'],
     ['chat', 'Class Chat'],
   ]
@@ -267,6 +314,7 @@ export default function StudentProgress() {
                   {classSkills.length === 0 ? (
                     <div className="empty-state">Your instructor will track tricks here</div>
                   ) : (
+                    <div className="trick-grid">
                     <div
                       style={{
                         display: 'grid',
@@ -344,6 +392,67 @@ export default function StudentProgress() {
                 </div>
               )}
             </>
+          )}
+        </div>
+      )}
+
+      {/* ── CHALLENGES TAB ── */}
+      {mainTab === 'challenges' && (
+        <div>
+          {activeChallenges.length === 0 ? (
+            <div className="empty-state">No active challenges right now</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {activeChallenges.map(c => {
+                const prog = c.my_progress
+                const joined = prog && (prog.current_value > 0 || prog.completed)
+                const pct = Math.min(100, ((prog?.current_value || 0) / c.target_value) * 100)
+                const daysLeft = Math.max(0, Math.ceil((new Date(c.end_date) - new Date()) / 86400000))
+                return (
+                  <div key={c.id} className="card">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                      <div>
+                        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, marginBottom: 2 }}>{c.title}</div>
+                        {c.description && <div style={{ fontSize: 12, color: 'var(--grey)' }}>{c.description}</div>}
+                      </div>
+                      {prog?.completed && <span className="tag tag-lime" style={{ fontSize: 10 }}>Complete!</span>}
+                    </div>
+
+                    <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 12, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                      <span>Target: <strong style={{ color: 'var(--white)' }}>{c.target_value}</strong></span>
+                      <span>Ends: <strong style={{ color: 'var(--white)' }}>{new Date(c.end_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</strong>{daysLeft > 0 ? ` (${daysLeft}d left)` : ''}</span>
+                      {c.reward_type !== 'none' && (
+                        <span>Reward: <strong style={{ color: 'var(--lime)' }}>{c.reward_type === 'badge' ? `"${c.reward_badge_name}" badge` : `$${c.reward_credit_amount} credit`}</strong></span>
+                      )}
+                    </div>
+
+                    {joined ? (
+                      <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 6 }}>
+                          <span style={{ color: 'var(--grey)' }}>Your progress</span>
+                          <span style={{ color: prog?.completed ? 'var(--lime)' : 'var(--white)' }}>
+                            {prog?.current_value || 0} / {c.target_value}
+                          </span>
+                        </div>
+                        <div style={{ background: 'var(--border)', borderRadius: 4, height: 8, overflow: 'hidden', marginBottom: 12 }}>
+                          <div style={{ width: `${pct}%`, height: '100%', background: prog?.completed ? 'var(--lime)' : 'var(--lav)', transition: 'width 0.4s' }} />
+                        </div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button className="btn btn-sm" style={{ fontSize: 11 }} onClick={() => openLeaderboard(c)}>Leaderboard</button>
+                          {!prog?.completed && (
+                            <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }} onClick={() => handleOptOut(c.id)}>Leave challenge</button>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <button className="btn btn-lime btn-sm" onClick={() => handleOptIn(c.id)}>
+                        Join challenge
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
           )}
         </div>
       )}
@@ -509,6 +618,7 @@ export default function StudentProgress() {
               </div>
 
               {chatClassId && (
+                <div className="chat-container">
                 <div style={{ display: 'flex', flexDirection: 'column', height: 'min(420px, 60vh)' }}>
                   {/* Message list */}
                   <div
@@ -618,6 +728,83 @@ export default function StudentProgress() {
               )}
             </>
           )}
+        </div>
+      )}
+      {/* ── CHALLENGE OPT-IN POPUP ── */}
+      {optingIn && (
+        <div className="sd-overlay" onClick={() => setOptingIn(null)}>
+          <div className="sd-modal" style={{ maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+            <div className="sd-header">
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>New challenge!</div>
+              <button className="modal-close-btn" onClick={() => setOptingIn(null)}>✕</button>
+            </div>
+            <div className="sd-body">
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, marginBottom: 8 }}>{optingIn.title}</div>
+              {optingIn.description && (
+                <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 16 }}>{optingIn.description}</div>
+              )}
+              <div style={{ fontSize: 13, marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div>Target: <strong>{optingIn.target_value}</strong> {optingIn.challenge_type === 'attendance_count' ? 'classes' : optingIn.challenge_type === 'style_variety' ? 'different styles' : 'weeks in a row'}</div>
+                <div>Ends: <strong>{new Date(optingIn.end_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'long' })}</strong></div>
+                {optingIn.reward_type !== 'none' && (
+                  <div>Reward: <strong style={{ color: 'var(--lime)' }}>{optingIn.reward_type === 'badge' ? `"${optingIn.reward_badge_name}" badge` : `$${optingIn.reward_credit_amount} credit`}</strong></div>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="btn btn-lime" style={{ flex: 1 }} onClick={() => handleOptIn(optingIn.id)}>
+                  Join challenge
+                </button>
+                <button className="btn btn-ghost btn-sm" onClick={() => setOptingIn(null)}>Not now</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── LEADERBOARD MODAL ── */}
+      {leaderboardChallenge && (
+        <div className="sd-overlay" onClick={() => { setLeaderboardChallenge(null); setLeaderboardData(null) }}>
+          <div className="sd-modal" style={{ maxWidth: 420 }} onClick={e => e.stopPropagation()}>
+            <div className="sd-header">
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>Leaderboard — {leaderboardChallenge.title}</div>
+              <button className="modal-close-btn" onClick={() => { setLeaderboardChallenge(null); setLeaderboardData(null) }}>✕</button>
+            </div>
+            <div className="sd-body">
+              {!leaderboardData ? (
+                <div style={{ color: 'var(--grey)', fontSize: 13 }}>Loading…</div>
+              ) : leaderboardData.length === 0 ? (
+                <div style={{ color: 'var(--grey)', fontSize: 13 }}>No participants yet</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                  {leaderboardData.map((entry, i) => {
+                    const pct = Math.min(100, (entry.current_value / leaderboardChallenge.target_value) * 100)
+                    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null
+                    const isMe = entry.student_id === user?.id
+                    return (
+                      <div key={entry.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #1a1a1a', background: isMe ? 'rgba(204,255,0,0.04)' : 'none' }}>
+                        <div style={{ width: 28, textAlign: 'center', fontSize: 15, flexShrink: 0 }}>
+                          {medal || <span style={{ fontSize: 12, color: 'var(--grey)' }}>#{i + 1}</span>}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                            <span style={{ fontSize: 13, fontWeight: isMe ? 700 : 500 }}>
+                              {entry.student_name}{isMe ? ' (you)' : ''}
+                            </span>
+                            <span style={{ fontSize: 12, color: entry.completed ? 'var(--lime)' : 'var(--grey)' }}>
+                              {entry.completed ? 'Done!' : `${entry.current_value}/${leaderboardChallenge.target_value}`}
+                            </span>
+                          </div>
+                          <div style={{ background: 'var(--border)', borderRadius: 4, height: 5, overflow: 'hidden' }}>
+                            <div style={{ width: `${pct}%`, height: '100%', background: entry.completed ? 'var(--lime)' : 'var(--lav)' }} />
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

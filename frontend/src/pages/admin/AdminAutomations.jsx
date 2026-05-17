@@ -9,7 +9,7 @@ const AUTOMATION_DEFS = [
   { slug: 'parq_reminder', icon: '📋', name: 'PAR-Q Form Reminder', desc: 'Reminds new students to complete their health questionnaire before their first class.', trigger: 'Trial class booked + PAR-Q not submitted', action: 'Send reminder email 48h before class', category: 'forms', defaultEnabled: true },
   { slug: 'season_enrol_open', icon: '📅', name: 'Season Enrolment Open Alert', desc: 'Notifies all active students when a new season opens for enrolment.', trigger: 'Season status → Upcoming', action: 'Bulk email all active students', category: 'comms', defaultEnabled: false },
   { slug: 'payment_overdue', icon: '💳', name: 'Overdue Payment Reminder', desc: 'Sends a friendly reminder to students with outstanding balances over $30.', trigger: 'Balance owing > $30 for 7+ days', action: 'Send payment reminder email', category: 'billing', defaultEnabled: true },
-  { slug: 'welfare_checkin', icon: '💚', name: 'Welfare Check-in', desc: 'Sends a personal check-in to students showing concerning attendance patterns.', trigger: 'Attendance < 50% over 4 classes', action: 'Send welfare email from Mimi', category: 'comms', defaultEnabled: false },
+  { slug: 'welfare_checkin', icon: '💚', name: 'Welfare Check-in', desc: 'Sends a personal check-in to students showing concerning attendance patterns.', trigger: 'Attendance < 50% over 4 classes', action: 'Send welfare email from Mimi & Chloe', category: 'comms', defaultEnabled: false },
   { slug: 'birthday', icon: '🎂', name: 'Birthday Message', desc: 'Sends a personalised birthday message to students on their birthday.', trigger: 'Student birthday (date of birth)', action: 'Send birthday email', category: 'comms', defaultEnabled: false },
   { slug: 'locker_renewal_reminder', icon: '🔒', name: 'Locker Renewal Reminder', desc: 'Notifies students 2 weeks before their locker expires at season end.', trigger: 'Locker expires_at within 14 days', action: 'Send in-app notification + email', category: 'comms', defaultEnabled: true },
 ]
@@ -288,14 +288,74 @@ function FlowBuilderModal({ initial, onClose, onSave }) {
   )
 }
 
+const DEFAULT_COPY = {
+  reengagement: { subject: "We miss you at Duality Pole!", body: "Hi {{first_name}},\n\nWe haven't seen you in a while and wanted to check in. Your spot is always here for you.\n\nIs everything okay? We'd love to see you back in the studio soon.\n\nWith love,\nDuality Pole Studio" },
+  payment_overdue: { subject: "Balance reminder — {{studio_name}}", body: "Hi {{first_name}},\n\nThis is a friendly reminder that you have an outstanding balance. Please log in to your account to settle this at your earliest convenience.\n\nIf you have any questions, please don't hesitate to reach out.\n\nThank you,\nDuality Pole Studio" },
+  welfare_checkin: { subject: "Checking in with you ♡", body: "Hi {{first_name}},\n\nWe wanted to personally check in to see how you're going. We've noticed you haven't been to as many classes recently and just wanted to make sure everything is okay.\n\nPlease don't hesitate to reach out if there's anything we can do to support you.\n\nWith love,\nMimi & Chloe\nDuality Pole Studio" },
+  birthday: { subject: "Happy Birthday {{first_name}}! 🎂", body: "Hi {{first_name}},\n\nWishing you the happiest of birthdays! We hope your day is as amazing as you are.\n\nWith love,\nDuality Pole Studio" },
+  noshow_fee: { subject: "No-show fee applied to your account", body: "Hi {{first_name}},\n\nA no-show fee has been applied to your account for missing {{class_name}} on {{class_date}} without cancelling.\n\nPlease ensure you cancel at least {{cancellation_window}} hours before class to avoid this fee.\n\nIf you have any questions, please contact us.\n\nDuality Pole Studio" },
+  parq_reminder: { subject: "Reminder: Complete your health form before class", body: "Hi {{first_name}},\n\nA quick reminder to complete your PAR-Q health questionnaire before your upcoming class. This helps us ensure your safety during sessions.\n\nLog in to your account to complete the form.\n\nSee you soon!\nDuality Pole Studio" },
+  waitlist_notify: { subject: "A spot has opened up! 🎉", body: "Hi {{first_name}},\n\nGreat news — a spot has opened up in {{class_name}}! You have 12 hours to claim your spot before it's offered to the next person on the waitlist.\n\nLog in to confirm your enrolment.\n\nDuality Pole Studio" },
+  season_enrol_open: { subject: "Season enrolments are now open!", body: "Hi {{first_name}},\n\nExciting news — enrolments for the new season are now open! Secure your spot before classes fill up.\n\nLog in to enrol now.\n\nDuality Pole Studio" },
+  locker_renewal_reminder: { subject: "Your locker expires at the end of the season", body: "Hi {{first_name}},\n\nYour locker (#{{locker_number}}) is due to expire at the end of the current season. Please contact us if you'd like to renew.\n\nDuality Pole Studio" },
+}
+
+function EditCopyModal({ slug, name, storedActions, onClose, onSave }) {
+  const defaults = DEFAULT_COPY[slug] || { subject: '', body: '' }
+  const existing = storedActions?.find(a => a.type === 'send_email') || {}
+  const [subject, setSubject] = useState(existing.subject || defaults.subject)
+  const [body, setBody] = useState(existing.body || defaults.body)
+  const [saving, setSaving] = useState(false)
+
+  async function handleSave() {
+    setSaving(true)
+    try {
+      await automations.saveActions(slug, [{ type: 'send_email', subject, body }])
+      onSave()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="sd-overlay" style={{ zIndex: 1000 }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 560 }}>
+        <div className="sd-header">
+          <div style={{ fontWeight: 700, fontSize: 15 }}>Edit Email Copy — {name}</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="sd-body">
+          <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 14, lineHeight: 1.6 }}>
+            Customise the email sent by this automation. Use variables like <code style={{ background: '#1a1a1a', padding: '1px 5px', borderRadius: 4 }}>{'{{first_name}}'}</code> to personalise.
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>Subject</label>
+            <input value={subject} onChange={e => setSubject(e.target.value)} style={{ width: '100%', boxSizing: 'border-box' }} />
+          </div>
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>Body</label>
+            <textarea value={body} onChange={e => setBody(e.target.value)} rows={10} style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical', background: '#111', color: '#fff', border: '1px solid #333', borderRadius: 8, padding: '8px 12px', fontSize: 13, fontFamily: 'inherit', lineHeight: 1.6 }} />
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button className="btn btn-lime btn-sm" onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save Copy'}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminAutomations() {
   const [activeTab, setActiveTab] = useState('builtin')
   const [filter, setFilter] = useState('all')
   const [enabledMap, setEnabledMap] = useState({})
+  const [storedRulesMap, setStoredRulesMap] = useState({})
   const [loading, setLoading] = useState(true)
   const [customFlows, setCustomFlows] = useState([])
   const [showBuilder, setShowBuilder] = useState(false)
   const [editingFlow, setEditingFlow] = useState(null)
+  const [editCopy, setEditCopy] = useState(null) // { slug, name }
   const [deleteError, setDeleteError] = useState('')
   const [confirmDeleteFlowId, setConfirmDeleteFlowId] = useState(null)
 
@@ -311,11 +371,14 @@ export default function AdminAutomations() {
     automations.list().then(r => {
       const stored = r.data.results || r.data
       const map = {}
+      const rulesMap = {}
       AUTOMATION_DEFS.forEach(def => {
         const found = stored.find(s => s.slug === def.slug)
         map[def.slug] = found ? found.enabled : def.defaultEnabled
+        if (found) rulesMap[def.slug] = found
       })
       setEnabledMap(map)
+      setStoredRulesMap(rulesMap)
       setCustomFlows(stored.filter(r => r.is_custom))
     }).finally(() => setLoading(false))
   }
@@ -377,6 +440,15 @@ export default function AdminAutomations() {
           onSave={() => { setShowBuilder(false); setEditingFlow(null); loadData() }}
         />
       )}
+      {editCopy && (
+        <EditCopyModal
+          slug={editCopy.slug}
+          name={editCopy.name}
+          storedActions={storedRulesMap[editCopy.slug]?.actions}
+          onClose={() => setEditCopy(null)}
+          onSave={() => { setEditCopy(null); loadData() }}
+        />
+      )}
 
       <div className="page-header">
         <div>
@@ -401,7 +473,7 @@ export default function AdminAutomations() {
 
       <div style={{ background: 'rgba(204,255,0,0.06)', border: '1px solid rgba(204,255,0,0.2)', borderRadius: 10, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, fontSize: 13 }}>
         <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--lime)', flexShrink: 0 }} />
-        <span>Gmail connected — <b>mimi@dualitypole.com.au</b>. All email automations are active.</span>
+        <span>Gmail connected — <b>intrigued@dualitypole.com</b>. All email automations are active.</span>
       </div>
 
       {/* Tabs */}
@@ -443,7 +515,14 @@ export default function AdminAutomations() {
                         <div><span style={{ color: 'var(--grey)' }}>Action: </span><span>{a.action}</span></div>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                      {DEFAULT_COPY[a.slug] && (
+                        <button
+                          className="btn btn-ghost btn-xs"
+                          style={{ fontSize: 11, color: 'var(--lav)' }}
+                          onClick={() => setEditCopy({ slug: a.slug, name: a.name })}
+                        >Edit Copy</button>
+                      )}
                       <Toggle checked={enabled} onChange={() => toggle(a.slug)} />
                     </div>
                   </div>

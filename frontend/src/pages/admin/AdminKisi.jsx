@@ -7,9 +7,12 @@ function GrantModal({ studioList, studentList, onSave, onClose }) {
   const pad = n => String(n).padStart(2, '0')
   const localDT = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 
+  // Use the first studio with a kisi_place_id, or the first studio overall
+  const defaultStudio = studioList.find(s => s.kisi_place_id) || studioList[0]
+
   const [form, setForm] = useState({
     student: '',
-    studio: studioList[0]?.id || '',
+    studio: defaultStudio?.id || '',
     valid_from: localDT(now),
     valid_until: localDT(new Date(now.getTime() + 2 * 60 * 60 * 1000)),
   })
@@ -41,7 +44,7 @@ function GrantModal({ studioList, studentList, onSave, onClose }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" style={{ maxWidth: 420 }} onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <div className="modal-title">Grant Access</div>
+          <div className="modal-title">Grant Studio Access</div>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
         <form onSubmit={handleSubmit}>
@@ -50,12 +53,6 @@ function GrantModal({ studioList, studentList, onSave, onClose }) {
             <select className="input" value={form.student} onChange={e => set('student', e.target.value)} required style={{ width: '100%' }}>
               <option value="">Select student…</option>
               {studentList.map(s => <option key={s.id} value={s.id}>{s.display_name}</option>)}
-            </select>
-          </div>
-          <div style={{ marginBottom: 14 }}>
-            <label className="form-label">Space</label>
-            <select className="input" value={form.studio} onChange={e => set('studio', e.target.value)} required style={{ width: '100%' }}>
-              {studioList.map(s => <option key={s.id} value={s.id}>{s.name}{s.kisi_place_id ? '' : ' (no Kisi place ID)'}</option>)}
             </select>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
@@ -303,11 +300,13 @@ export default function AdminKisi() {
 
             {studioList.length > 0 && (
               <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 10 }}>Place IDs (Kisi Lock Group per studio)</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {studioList.map(s => (
-                    <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 120, fontSize: 13, fontWeight: 600 }}>{s.name}</div>
+                <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 10 }}>Studio Place ID (Kisi Lock Group ID)</div>
+                {(() => {
+                  const s = studioList.find(s => s.kisi_place_id) || studioList[0]
+                  if (!s) return null
+                  return (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 140, fontSize: 13, fontWeight: 600 }}>Duality Pole Studio</div>
                       <input
                         className="input"
                         value={placeIds[s.id] ?? s.kisi_place_id ?? ''}
@@ -316,8 +315,8 @@ export default function AdminKisi() {
                         style={{ width: 180 }}
                       />
                     </div>
-                  ))}
-                </div>
+                  )
+                })()}
               </div>
             )}
 

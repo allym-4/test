@@ -17,7 +17,7 @@ try:
     ANTHROPIC_AVAILABLE = True
 except ImportError:
     ANTHROPIC_AVAILABLE = False
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, AutomationRun, Order, Notification, InstructorAvailability, InstructorUnavailableDate, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList, Referral, ActionItem
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, AutomationRun, Order, Notification, InstructorAvailability, InstructorUnavailableDate, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList, Referral, ActionItem, Challenge, ChallengeProgress
 from .serializers import (
     UserSerializer, UserCreateSerializer, StaffNoteSerializer, LeadSerializer,
     StudioSettingsSerializer, AnnouncementSerializer, ProductSerializer, AutomationRuleSerializer,
@@ -25,6 +25,7 @@ from .serializers import (
     InstructorPayRecordSerializer, StudentSkillSerializer,
     TagSerializer, StudentTagSerializer, SkillLevelSerializer, SkillGroupSerializer, SkillDefinitionSerializer,
     MediaItemSerializer, EmailCampaignSerializer, EmailListSerializer, ReferralSerializer, ActionItemSerializer,
+    ChallengeSerializer, ChallengeProgressSerializer,
     StudioSettingsPublicSerializer,
 )
 from .permissions import IsAdminOrInstructor, IsAdminUser
@@ -289,10 +290,15 @@ class AutomationRuleView(APIView):
     def patch(self, request):
         slug = request.data.get('slug')
         enabled = request.data.get('enabled')
-        if slug is None or enabled is None:
-            return Response({'detail': 'slug and enabled required'}, status=400)
+        if slug is None:
+            return Response({'detail': 'slug required'}, status=400)
         rule, _ = AutomationRule.objects.get_or_create(slug=slug)
-        rule.enabled = enabled
+        if enabled is not None:
+            rule.enabled = enabled
+        if 'actions' in request.data:
+            rule.actions = request.data['actions']
+        if 'name' in request.data:
+            rule.name = request.data['name']
         rule.save()
         return Response(AutomationRuleSerializer(rule).data)
 
@@ -402,6 +408,7 @@ class NotificationListView(generics.ListCreateAPIView):
             action_label=request.data.get('action_label', ''),
             action_url=request.data.get('action_url', ''),
         )
+        send_push_notification(notification.recipient_id, notification.title, notification.body)
         from rest_framework.response import Response
         return Response(NotificationSerializer(notification).data, status=201)
 
@@ -458,20 +465,33 @@ class BulkNotificationView(APIView):
             recipients = list(User.objects.filter(id__in=overdue_ids))
         elif target == 'user_ids' and user_ids:
             recipients = list(User.objects.filter(id__in=user_ids))
+        elif target == 'tags':
+            tag_ids = request.data.get('tag_ids', [])
+            if tag_ids:
+                student_ids = StudentTag.objects.filter(
+                    tag_id__in=tag_ids
+                ).values_list('student_id', flat=True).distinct()
+                recipients = list(User.objects.filter(id__in=student_ids, is_active=True))
 
         if not recipients:
             return Response({'detail': 'No matching recipients.', 'count': 0})
 
+        action_label = request.data.get('action_label', '')
+        action_url = request.data.get('action_url', '')
         notifications = [
             Notification(
                 recipient=u,
                 title=title,
                 body=body,
                 notification_type=request.data.get('notification_type', 'info'),
+                action_label=action_label,
+                action_url=action_url,
             )
             for u in recipients
         ]
         Notification.objects.bulk_create(notifications)
+        for u in recipients:
+            send_push_notification(u.id, title, body)
 
         if send_email:
             emails = [u.email for u in recipients if u.email]
@@ -499,6 +519,56 @@ class NotificationMarkReadView(APIView):
         return Response({'ok': True})
 
 
+def send_push_notification(user_id, title, body, data=None):
+    """Send Expo push notification to all registered devices for a user."""
+    import urllib.request, json as _json
+    from .models import DevicePushToken
+    tokens = DevicePushToken.objects.filter(user_id=user_id).values_list('token', flat=True)
+    if not tokens:
+        return
+    messages = [
+        {'to': t, 'title': title, 'body': body, 'data': data or {}, 'sound': 'default'}
+        for t in tokens
+    ]
+    try:
+        req = urllib.request.Request(
+            'https://exp.host/--/api/v2/push/send',
+            data=_json.dumps(messages).encode(),
+            headers={'Content-Type': 'application/json', 'Accept': 'application/json'},
+            method='POST',
+        )
+        urllib.request.urlopen(req, timeout=5)
+    except Exception:
+        pass  # never let push failures break the main request
+
+
+from rest_framework.decorators import api_view, permission_classes as perm_classes
+from rest_framework.permissions import IsAuthenticated
+
+
+@api_view(['POST', 'DELETE'])
+@perm_classes([IsAuthenticated])
+def push_token(request):
+    import re
+    from .models import DevicePushToken
+    token = request.data.get('token', '').strip()
+    platform = request.data.get('platform', 'ios')
+    if not token:
+        return Response({'detail': 'token required'}, status=400)
+    # Accept Expo push tokens (ExponentPushToken[...]) and raw FCM/APNs tokens (hex strings)
+    if not re.match(r'^ExponentPushToken\[.{10,}\]$|^[a-fA-F0-9:_\-]{20,250}$', token):
+        return Response({'detail': 'invalid token format'}, status=400)
+    if platform not in ('ios', 'android'):
+        return Response({'detail': 'platform must be ios or android'}, status=400)
+    if request.method == 'POST':
+        DevicePushToken.objects.update_or_create(
+            user=request.user, token=token,
+            defaults={'platform': platform}
+        )
+        return Response({'status': 'registered'})
+    else:
+        DevicePushToken.objects.filter(user=request.user, token=token).delete()
+        return Response({'status': 'unregistered'})
 class EscalateNotificationView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -2003,3 +2073,175 @@ class ActionItemDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = ActionItem.objects.all()
     serializer_class = ActionItemSerializer
     permission_classes = [IsAdminOrInstructor]
+
+
+class ChallengeListView(generics.ListCreateAPIView):
+    serializer_class = ChallengeSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAdminUser()]
+        return [permissions.IsAuthenticated()]
+
+    def get_queryset(self):
+        qs = Challenge.objects.all()
+        if self.request.query_params.get('active') == 'true':
+            qs = qs.filter(is_active=True)
+        return qs
+
+
+class ChallengeDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Challenge.objects.all()
+    serializer_class = ChallengeSerializer
+    permission_classes = [IsAdminUser]
+
+
+class ChallengeLeaderboardView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            challenge = Challenge.objects.get(pk=pk)
+        except Challenge.DoesNotExist:
+            return Response({'detail': 'Not found'}, status=404)
+        entries = ChallengeProgress.objects.filter(
+            challenge=challenge
+        ).select_related('student').order_by('-current_value', 'id')[:50]
+        data = ChallengeProgressSerializer(entries, many=True).data
+        return Response(data)
+
+
+class ChallengeOptInView(APIView):
+    """Student opts in or out of a challenge."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            challenge = Challenge.objects.get(pk=pk, is_active=True)
+        except Challenge.DoesNotExist:
+            return Response({'detail': 'Challenge not found'}, status=404)
+        action = request.data.get('action', 'in')
+        if action == 'out':
+            ChallengeProgress.objects.filter(challenge=challenge, student=request.user).delete()
+            return Response({'status': 'opted_out'})
+        # Opt in
+        progress, created = ChallengeProgress.objects.get_or_create(
+            challenge=challenge,
+            student=request.user,
+            defaults={'current_value': 0, 'completed': False},
+        )
+        # Recalculate immediately so existing attendance counts
+        _recalculate_challenge_progress(challenge, request.user)
+        progress.refresh_from_db()
+        return Response({
+            'status': 'opted_in',
+            'current_value': progress.current_value,
+            'completed': progress.completed,
+        })
+
+
+class ChallengeBulkProgressView(APIView):
+    """Admin: recalculate progress for all opted-in students on a challenge."""
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, pk):
+        try:
+            challenge = Challenge.objects.get(pk=pk)
+        except Challenge.DoesNotExist:
+            return Response({'detail': 'Not found'}, status=404)
+        entries = ChallengeProgress.objects.filter(challenge=challenge).select_related('student')
+        for entry in entries:
+            _recalculate_challenge_progress(challenge, entry.student)
+        return Response({'recalculated': entries.count()})
+
+
+def _recalculate_challenge_progress(challenge, student):
+    """Recalculate and save a student's progress on a challenge."""
+    from apps.attendance.models import AttendanceRecord
+    progress, _ = ChallengeProgress.objects.get_or_create(
+        challenge=challenge, student=student, defaults={'current_value': 0}
+    )
+
+    if challenge.challenge_type == 'attendance_count':
+        value = AttendanceRecord.objects.filter(
+            student=student,
+            status__in=('present', 'late'),
+            occurrence__date__gte=challenge.start_date,
+            occurrence__date__lte=challenge.end_date,
+        ).count()
+
+    elif challenge.challenge_type == 'style_variety':
+        levels = AttendanceRecord.objects.filter(
+            student=student,
+            status__in=('present', 'late'),
+            occurrence__date__gte=challenge.start_date,
+            occurrence__date__lte=challenge.end_date,
+        ).values_list('occurrence__session__level', flat=True).distinct()
+        value = len([l for l in levels if l])
+
+    elif challenge.challenge_type == 'streak':
+        # Count consecutive weeks with at least one attendance
+        from datetime import date, timedelta as td
+        records = AttendanceRecord.objects.filter(
+            student=student,
+            status__in=('present', 'late'),
+            occurrence__date__gte=challenge.start_date,
+            occurrence__date__lte=challenge.end_date,
+        ).values_list('occurrence__date', flat=True)
+        weeks = set()
+        for d in records:
+            # ISO week number
+            weeks.add(d.isocalendar()[:2])  # (year, week)
+        # Count max consecutive weeks
+        sorted_weeks = sorted(weeks)
+        max_streak = streak = 0
+        prev = None
+        for yw in sorted_weeks:
+            if prev is None:
+                streak = 1
+            else:
+                # Check if consecutive
+                prev_date = date.fromisocalendar(prev[0], prev[1], 1)
+                curr_date = date.fromisocalendar(yw[0], yw[1], 1)
+                if (curr_date - prev_date).days == 7:
+                    streak += 1
+                else:
+                    streak = 1
+            max_streak = max(max_streak, streak)
+            prev = yw
+        value = max_streak
+
+    else:
+        # custom — don't auto-update
+        return
+
+    progress.current_value = value
+    if value >= challenge.target_value and not progress.completed:
+        from django.utils import timezone as tz
+        progress.completed = True
+        progress.completed_at = tz.now()
+        # Grant reward
+        _grant_challenge_reward(challenge, student)
+    progress.save()
+
+
+def _grant_challenge_reward(challenge, student):
+    if challenge.reward_type == 'credit' and challenge.reward_credit_amount:
+        from apps.payments.models import Payment
+        Payment.objects.create(
+            student=student,
+            payment_type='credit',
+            amount=-abs(challenge.reward_credit_amount),
+            description=f'Challenge reward: {challenge.title}',
+        )
+    from .models import Notification
+    Notification.objects.create(
+        recipient=student,
+        title=f'Challenge complete — {challenge.title}!',
+        body=(
+            f'You completed the challenge! '
+            + (f'You\'ve earned the "{challenge.reward_badge_name}" badge.' if challenge.reward_type == 'badge' and challenge.reward_badge_name else '')
+            + (f'${challenge.reward_credit_amount} credit added to your account.' if challenge.reward_type == 'credit' else '')
+        ),
+        notification_type='challenge',
+    )

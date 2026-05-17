@@ -74,6 +74,7 @@ export const enrolments = {
   update: (id, data) => client.patch(`/api/enrolments/${id}/`, data),
   delete: (id) => client.delete(`/api/enrolments/${id}/`),
   convertTrial: (id, data) => client.post(`/api/enrolments/${id}/convert-trial/`, data),
+  claimSpot: (id) => client.post(`/api/enrolments/${id}/claim-spot/`),
   pricing: (student, session) => client.get('/api/enrolments/pricing/', { params: { student, session } }),
   flagged: () => client.get('/api/enrolments/flagged/'),
   dismissFlag: (id) => client.patch(`/api/enrolments/flagged/${id}/dismiss/`, {}),
@@ -217,6 +218,7 @@ export const products = {
 export const automations = {
   list: () => client.get('/api/users/automations/'),
   toggle: (slug, enabled) => client.patch('/api/users/automations/', { slug, enabled }),
+  saveActions: (slug, actions) => client.patch('/api/users/automations/', { slug, actions }),
   create: (data) => client.post('/api/users/automations/', data),
   update: (id, data) => client.patch(`/api/users/automations/${id}/`, data),
   delete: (id) => client.delete(`/api/users/automations/${id}/`),
@@ -423,4 +425,16 @@ export const xero = {
   status: () => client.get('/api/users/xero/status/'),
   sync: () => client.post('/api/users/xero/sync/', {}),
   disconnect: () => client.delete('/api/users/xero/status/'),
+}
+
+export const challenges = {
+  list: (params) => client.get('/api/users/challenges/', { params }),
+  get: (id) => client.get(`/api/users/challenges/${id}/`),
+  create: (data) => client.post('/api/users/challenges/', data),
+  update: (id, data) => client.patch(`/api/users/challenges/${id}/`, data),
+  delete: (id) => client.delete(`/api/users/challenges/${id}/`),
+  leaderboard: (id) => client.get(`/api/users/challenges/${id}/leaderboard/`),
+  optIn: (id) => client.post(`/api/users/challenges/${id}/opt-in/`, { action: 'in' }),
+  optOut: (id) => client.post(`/api/users/challenges/${id}/opt-in/`, { action: 'out' }),
+  recalculate: (id) => client.post(`/api/users/challenges/${id}/recalculate/`, {}),
 }

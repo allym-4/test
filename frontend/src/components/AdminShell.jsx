@@ -58,6 +58,7 @@ const NAV_GROUPS = [
       { to: '/admin/marketing',       label: 'Marketing',       icon: '📣' },
       { to: '/admin/recommendations', label: 'Recommendations', icon: '💡' },
       { to: '/admin/surveys',         label: 'Surveys',         icon: '📝' },
+      { to: '/admin/challenges',      label: 'Challenges',      icon: '🏆' },
       { to: '/admin/helpdesk',        label: 'Helpdesk',        icon: '🎧', badge: 'helpdesk' },
     ]
   },
@@ -184,7 +185,7 @@ export default function AdminShell() {
       await client.post('/api/attendance/checkin/', { student_id: studentId })
       setKioskToast('✓ Checked in')
     } catch {
-      setKioskToast('✓ Checked in')
+      setKioskToast('✗ Check-in failed')
     }
     setTimeout(() => setKioskToast(''), 3000)
   }
