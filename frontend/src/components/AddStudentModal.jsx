@@ -19,7 +19,8 @@ export default function AddStudentModal({ onClose, onCreated }) {
     setSaving(true)
     setError(null)
     try {
-      const username = (form.first_name + form.last_name).toLowerCase().replace(/[^a-z0-9]/g, '') + Math.floor(Math.random() * 999)
+      const base = (form.first_name + form.last_name).toLowerCase().replace(/[^a-z0-9]/g, '') || 'student'
+      const username = base + Math.floor(Math.random() * 90000 + 10000)
       const { data } = await users.create({
         ...form,
         username,
@@ -30,7 +31,13 @@ export default function AddStudentModal({ onClose, onCreated }) {
       onCreated(data)
       onClose()
     } catch (err) {
-      setError(err.response?.data ? JSON.stringify(err.response.data) : 'Failed to create student')
+      const d = err.response?.data
+      if (d && typeof d === 'object') {
+        const msgs = Object.entries(d).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`).join('\n')
+        setError(msgs)
+      } else {
+        setError(`Failed to create student (${err.response?.status || 'network error'})`)
+      }
     } finally {
       setSaving(false)
     }
