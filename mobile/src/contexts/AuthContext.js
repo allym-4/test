@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as SecureStore from 'expo-secure-store'
 import { auth } from '../api'
 
 const AuthContext = createContext(null)
@@ -9,11 +9,14 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    AsyncStorage.getItem('access_token').then(token => {
+    SecureStore.getItemAsync('access_token').then(token => {
       if (token) {
         auth.me()
           .then(res => setUser(res.data))
-          .catch(() => AsyncStorage.multiRemove(['access_token', 'refresh_token']))
+          .catch(async () => {
+            await SecureStore.deleteItemAsync('access_token')
+            await SecureStore.deleteItemAsync('refresh_token')
+          })
           .finally(() => setLoading(false))
       } else {
         setLoading(false)
@@ -23,15 +26,16 @@ export function AuthProvider({ children }) {
 
   async function login(username, password) {
     const { data } = await auth.login(username, password)
-    await AsyncStorage.setItem('access_token', data.access)
-    await AsyncStorage.setItem('refresh_token', data.refresh)
+    await SecureStore.setItemAsync('access_token', data.access)
+    await SecureStore.setItemAsync('refresh_token', data.refresh)
     const me = await auth.me()
     setUser(me.data)
     return me.data
   }
 
   async function logout() {
-    await AsyncStorage.multiRemove(['access_token', 'refresh_token'])
+    await SecureStore.deleteItemAsync('access_token')
+    await SecureStore.deleteItemAsync('refresh_token')
     setUser(null)
   }
 

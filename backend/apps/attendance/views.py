@@ -2,7 +2,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from .models import AttendanceRecord
+from .models import AttendanceRecord, MakeupCredit
 from .serializers import AttendanceRecordSerializer
 from apps.users.permissions import IsAdminOrInstructor
 from apps.classes.models import ClassOccurrence
@@ -69,7 +69,6 @@ def bulk_save_register(request, occurrence_pk):
 
         # Auto-issue makeup credit for absent (proper notice) only — not no_show
         if new_status == 'absent' and prev_status != 'absent':
-            from .models import MakeupCredit
             session = getattr(occurrence, 'session', None)
             session_name = session.name if session else 'class'
             season = getattr(session, 'season', None) if session else None

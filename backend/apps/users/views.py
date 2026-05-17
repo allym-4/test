@@ -525,11 +525,17 @@ from rest_framework.permissions import IsAuthenticated
 @api_view(['POST', 'DELETE'])
 @perm_classes([IsAuthenticated])
 def push_token(request):
+    import re
     from .models import DevicePushToken
-    token = request.data.get('token')
+    token = request.data.get('token', '').strip()
     platform = request.data.get('platform', 'ios')
     if not token:
         return Response({'detail': 'token required'}, status=400)
+    # Accept Expo push tokens (ExponentPushToken[...]) and raw FCM/APNs tokens (hex strings)
+    if not re.match(r'^ExponentPushToken\[.{10,}\]$|^[a-fA-F0-9:_\-]{20,250}$', token):
+        return Response({'detail': 'invalid token format'}, status=400)
+    if platform not in ('ios', 'android'):
+        return Response({'detail': 'platform must be ios or android'}, status=400)
     if request.method == 'POST':
         DevicePushToken.objects.update_or_create(
             user=request.user, token=token,

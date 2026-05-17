@@ -1,12 +1,12 @@
 import axios from 'axios'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as SecureStore from 'expo-secure-store'
 
-const BASE_URL = 'http://localhost:8000'
+const BASE_URL = 'https://YOUR_API_URL_HERE'
 
 const client = axios.create({ baseURL: BASE_URL })
 
 client.interceptors.request.use(async config => {
-  const token = await AsyncStorage.getItem('access_token')
+  const token = await SecureStore.getItemAsync('access_token')
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
@@ -17,15 +17,16 @@ client.interceptors.response.use(
     const original = err.config
     if (err.response?.status === 401 && !original._retry) {
       original._retry = true
-      const refresh = await AsyncStorage.getItem('refresh_token')
+      const refresh = await SecureStore.getItemAsync('refresh_token')
       if (refresh) {
         try {
           const { data } = await axios.post(`${BASE_URL}/api/auth/token/refresh/`, { refresh })
-          await AsyncStorage.setItem('access_token', data.access)
+          await SecureStore.setItemAsync('access_token', data.access)
           original.headers.Authorization = `Bearer ${data.access}`
           return client(original)
         } catch {
-          await AsyncStorage.multiRemove(['access_token', 'refresh_token'])
+          await SecureStore.deleteItemAsync('access_token')
+          await SecureStore.deleteItemAsync('refresh_token')
         }
       }
     }
