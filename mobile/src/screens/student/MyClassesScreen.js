@@ -6,7 +6,8 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, attendance, roster, settings as settingsApi } from '../../api'
+import { enrolments, attendance, roster, settings as settingsApi, helpdesk } from '../../api'
+import { TextInput } from 'react-native'
 import LevelFilterBar from '../../components/LevelFilterBar'
 
 function WhoComing({ sessionId }) {
@@ -198,11 +199,160 @@ const ma = StyleSheet.create({
   confirmBtnText: { color: '#000', fontWeight: '800', fontSize: 14 },
 })
 
+// ─── CancelPolicyModal ────────────────────────────────────────────────────────
+function CancelPolicyModal({ enrolment, onClose }) {
+  const [subView, setSubView] = useState(null) // null | 'transfer'
+  const [note, setNote] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+
+  const sessionName = enrolment?.class_session_detail?.name ?? enrolment?.class_name ?? 'this class'
+  const isWaitlist = enrolment?.status === 'waitlisted'
+
+  async function handleLeaveWaitlist() {
+    try {
+      await enrolments.delete(enrolment.id)
+      onClose(true)
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.detail || 'Could not remove from waitlist.')
+    }
+  }
+
+  async function submitTransferRequest() {
+    setSubmitting(true)
+    try {
+      await helpdesk.submitTicket({
+        subject: `Transfer request — ${sessionName}`,
+        body: `Student is requesting a transfer out of ${sessionName}.\n\n${note.trim()}`,
+      })
+      setSubmitted(true)
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.detail || 'Could not submit request. Please contact the studio directly.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <Modal visible animationType="slide" transparent onRequestClose={onClose}>
+      <View style={cp.overlay}>
+        <View style={cp.sheet}>
+          <View style={cp.header}>
+            <Text style={cp.title}>{isWaitlist ? 'Leave Waitlist' : 'Season Enrolment'}</Text>
+            <TouchableOpacity onPress={onClose} style={cp.closeBtn}>
+              <Text style={cp.closeBtnText}>CLOSE</Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={cp.sessionName}>{sessionName}</Text>
+
+          {isWaitlist ? (
+            // Waitlist — simple confirm leave
+            <>
+              <View style={cp.infoBox}>
+                <Text style={cp.infoText}>You'll be removed from the waitlist for this class. You can rejoin at any time if a spot opens up.</Text>
+              </View>
+              <TouchableOpacity style={cp.dangerBtn} onPress={handleLeaveWaitlist}>
+                <Text style={cp.dangerBtnText}>LEAVE WAITLIST</Text>
+              </TouchableOpacity>
+            </>
+          ) : submitted ? (
+            // Transfer request submitted
+            <>
+              <View style={cp.successBox}>
+                <Text style={cp.successText}>✓  Transfer request submitted</Text>
+                <Text style={cp.successSub}>The studio team will review your request and be in touch. Your enrolment remains active in the meantime.</Text>
+              </View>
+              <TouchableOpacity style={cp.keepBtn} onPress={onClose}>
+                <Text style={cp.keepBtnText}>DONE</Text>
+              </TouchableOpacity>
+            </>
+          ) : subView === 'transfer' ? (
+            // Transfer request form
+            <>
+              <View style={cp.policyBox}>
+                <Text style={cp.policyText}>Transfers are handled case-by-case. The studio will review your request and propose options (e.g. different class, future season credit).</Text>
+              </View>
+              <Text style={cp.inputLabel}>Reason for transfer (optional)</Text>
+              <TextInput
+                style={cp.noteInput}
+                placeholder="Add a note for the studio..."
+                placeholderTextColor="#555"
+                multiline
+                value={note}
+                onChangeText={setNote}
+              />
+              <TouchableOpacity
+                style={[cp.transferBtn, submitting && { opacity: 0.6 }]}
+                onPress={submitTransferRequest}
+                disabled={submitting}
+              >
+                {submitting
+                  ? <ActivityIndicator color="#000" />
+                  : <Text style={cp.transferBtnText}>SUBMIT TRANSFER REQUEST</Text>
+                }
+              </TouchableOpacity>
+              <TouchableOpacity style={cp.backLink} onPress={() => setSubView(null)}>
+                <Text style={cp.backLinkText}>← Back</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            // Default: policy + options
+            <>
+              <View style={cp.policyBox}>
+                <Text style={cp.policyTitle}>Non-refundable enrolment</Text>
+                <Text style={cp.policyText}>
+                  Season enrolments are non-refundable in line with our terms and conditions. If your circumstances have changed, you can request a transfer to a different class or a future season.
+                </Text>
+              </View>
+              <TouchableOpacity style={cp.transferBtn} onPress={() => setSubView('transfer')}>
+                <Text style={cp.transferBtnText}>REQUEST A TRANSFER</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={cp.keepBtn} onPress={onClose}>
+                <Text style={cp.keepBtnText}>KEEP MY ENROLMENT</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      </View>
+    </Modal>
+  )
+}
+
+const cp = StyleSheet.create({
+  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.75)' },
+  sheet: { backgroundColor: '#111', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 44 },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  title: { flex: 1, fontSize: 20, fontWeight: '800', color: '#fff' },
+  closeBtn: { paddingLeft: 12 },
+  closeBtnText: { color: '#555', fontSize: 12, fontWeight: '700', letterSpacing: 1 },
+  sessionName: { fontSize: 15, color: '#aaa', marginBottom: 20 },
+  policyBox: { backgroundColor: 'rgba(239,68,68,0.07)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)', borderRadius: 12, padding: 14, marginBottom: 20 },
+  policyTitle: { fontSize: 13, fontWeight: '700', color: '#ef4444', marginBottom: 6 },
+  policyText: { fontSize: 13, color: '#ccc', lineHeight: 20 },
+  infoBox: { backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#333', borderRadius: 12, padding: 14, marginBottom: 20 },
+  infoText: { fontSize: 13, color: '#aaa', lineHeight: 20 },
+  successBox: { backgroundColor: 'rgba(204,255,0,0.06)', borderWidth: 1, borderColor: 'rgba(204,255,0,0.2)', borderRadius: 12, padding: 16, marginBottom: 20 },
+  successText: { fontSize: 15, fontWeight: '700', color: '#ccff00', marginBottom: 8 },
+  successSub: { fontSize: 13, color: '#aaa', lineHeight: 20 },
+  transferBtn: { backgroundColor: '#ccff00', borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginBottom: 12 },
+  transferBtnText: { color: '#000', fontWeight: '800', fontSize: 14, letterSpacing: 0.5 },
+  keepBtn: { backgroundColor: '#1a1a1a', borderRadius: 12, paddingVertical: 16, alignItems: 'center', borderWidth: 1, borderColor: '#333' },
+  keepBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  dangerBtn: { backgroundColor: 'rgba(239,68,68,0.1)', borderRadius: 12, paddingVertical: 16, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)' },
+  dangerBtnText: { color: '#ef4444', fontWeight: '800', fontSize: 14 },
+  inputLabel: { fontSize: 13, color: '#666', marginBottom: 8 },
+  noteInput: { backgroundColor: '#1a1a1a', borderRadius: 10, borderWidth: 1, borderColor: '#333', color: '#fff', fontSize: 14, padding: 12, minHeight: 80, textAlignVertical: 'top', marginBottom: 16 },
+  backLink: { alignItems: 'center', paddingTop: 12 },
+  backLinkText: { color: '#555', fontSize: 13 },
+})
+
 export default function MyClassesScreen({ navigation }) {
   const { user } = useAuth()
   const [tab, setTab] = useState('active')
   const [markingAway, setMarkingAway] = useState(null)
   const [markAwayModal, setMarkAwayModal] = useState(null) // { occurrence, session }
+  const [cancelPolicyEnrol, setCancelPolicyEnrol] = useState(null)
   const [cancellingAway, setCancellingAway] = useState(null)
   const [levelFilter, setLevelFilter] = useState(null)
 
@@ -229,11 +379,11 @@ export default function MyClassesScreen({ navigation }) {
   const cancellationWindowHours = settingsData?.cancellation_window_hours ?? 24
 
   const availableLevels = [...new Set(
-    activeEnrolments.map(e => e.session?.level).filter(Boolean)
+    activeEnrolments.map(e => e.class_session_detail?.level).filter(Boolean)
   )].sort()
 
   const filteredEnrolments = levelFilter
-    ? activeEnrolments.filter(e => e.session?.level === levelFilter)
+    ? activeEnrolments.filter(e => e.class_session_detail?.level === levelFilter)
     : activeEnrolments
 
   async function handleCancelAway(occurrenceId, name) {
@@ -325,26 +475,8 @@ export default function MyClassesScreen({ navigation }) {
     Share.share({ message: ics, title: 'My Pole Classes' })
   }
 
-  async function handleCancelEnrolment(id, name) {
-    Alert.alert(
-      'Cancel enrolment',
-      `Are you sure you want to cancel your enrolment in ${name}?`,
-      [
-        { text: 'Keep enrolment', style: 'cancel' },
-        {
-          text: 'Cancel enrolment',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await enrolments.delete(id)
-              refetch()
-            } catch (err) {
-              Alert.alert('Error', err.response?.data?.detail || 'Could not cancel.')
-            }
-          },
-        },
-      ]
-    )
+  function handleCancelEnrolment(enrolment) {
+    setCancelPolicyEnrol(enrolment)
   }
 
   return (
@@ -414,64 +546,70 @@ export default function MyClassesScreen({ navigation }) {
                 : 'No active enrolments.'}
             </Text>
           )}
-          {filteredEnrolments.map(enr => (
-            <View key={enr.id} style={s.card}>
-              <View style={s.cardHeader}>
-                <Text style={s.cardTitle}>{enr.session?.name ?? 'Class'}</Text>
-                {enr.enrolment_type && (
-                  <View style={s.typeBadge}>
-                    <Text style={s.typeBadgeText}>{enr.enrolment_type}</Text>
-                  </View>
-                )}
-              </View>
-              {enr.session?.studio?.name && (
-                <Text style={s.cardMeta}>{enr.session.studio.name}</Text>
-              )}
-              {enr.next_occurrence && (
-                <View style={s.nextClass}>
-                  <Text style={s.nextLabel}>Next class</Text>
-                  <Text style={s.nextDate}>
-                    {new Date(enr.next_occurrence.date).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short' })}
-                    {enr.next_occurrence.start_time ? `  ·  ${enr.next_occurrence.start_time.slice(0, 5)}` : ''}
-                  </Text>
-                  {enr.next_occurrence.my_status === 'absent' || enr.next_occurrence.marked_away ? (
-                    <View style={s.awayRow}>
-                      <View style={s.awayBadge}><Text style={s.awayBadgeText}>Marked away</Text></View>
-                      <TouchableOpacity
-                        style={s.canMakeItBtn}
-                        disabled={cancellingAway === enr.next_occurrence.id}
-                        onPress={() => handleCancelAway(enr.next_occurrence.id, enr.session?.name)}
-                      >
-                        {cancellingAway === enr.next_occurrence.id
-                          ? <ActivityIndicator size="small" color="#ccff00" />
-                          : <Text style={s.canMakeItText}>I can make it!</Text>
-                        }
-                      </TouchableOpacity>
+          {filteredEnrolments.map(enr => {
+            const sess = enr.class_session_detail
+            const sessName = sess?.name ?? enr.class_name ?? 'Class'
+            return (
+              <View key={enr.id} style={s.card}>
+                <View style={s.cardHeader}>
+                  <Text style={s.cardTitle}>{sessName}</Text>
+                  {enr.enrolment_type && (
+                    <View style={s.typeBadge}>
+                      <Text style={s.typeBadgeText}>{enr.enrolment_type}</Text>
                     </View>
-                  ) : (
-                    <TouchableOpacity
-                      style={s.awayBtn}
-                      disabled={markingAway === enr.next_occurrence.id}
-                      onPress={() => handleMarkAway(enr.next_occurrence, enr.session)}
-                    >
-                      {markingAway === enr.next_occurrence.id
-                        ? <ActivityIndicator size="small" color="#ccff00" />
-                        : <Text style={s.awayBtnText}>Mark away</Text>
-                      }
-                    </TouchableOpacity>
                   )}
                 </View>
-              )}
-              {enr.session?.id && <WhoComing sessionId={enr.session.id} />}
+                {sess?.studio_detail?.name && (
+                  <Text style={s.cardMeta}>{sess.studio_detail.name}</Text>
+                )}
+                {enr.next_occurrence && (
+                  <View style={s.nextClass}>
+                    <Text style={s.nextLabel}>Next class</Text>
+                    <Text style={s.nextDate}>
+                      {new Date(enr.next_occurrence.date).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short' })}
+                      {enr.next_occurrence.start_time ? `  ·  ${enr.next_occurrence.start_time.slice(0, 5)}` : ''}
+                    </Text>
+                    {enr.next_occurrence.my_status === 'absent' || enr.next_occurrence.marked_away ? (
+                      <View style={s.awayRow}>
+                        <View style={s.awayBadge}><Text style={s.awayBadgeText}>Marked away</Text></View>
+                        <TouchableOpacity
+                          style={s.canMakeItBtn}
+                          disabled={cancellingAway === enr.next_occurrence.id}
+                          onPress={() => handleCancelAway(enr.next_occurrence.id, sessName)}
+                        >
+                          {cancellingAway === enr.next_occurrence.id
+                            ? <ActivityIndicator size="small" color="#ccff00" />
+                            : <Text style={s.canMakeItText}>I can make it!</Text>
+                          }
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        style={s.awayBtn}
+                        disabled={markingAway === enr.next_occurrence.id}
+                        onPress={() => handleMarkAway(enr.next_occurrence, sess)}
+                      >
+                        {markingAway === enr.next_occurrence.id
+                          ? <ActivityIndicator size="small" color="#ccff00" />
+                          : <Text style={s.awayBtnText}>Mark away</Text>
+                        }
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )}
+                {(sess?.id ?? enr.class_session) && (
+                  <WhoComing sessionId={sess?.id ?? enr.class_session} />
+                )}
 
-              <TouchableOpacity
-                style={s.cancelBtn}
-                onPress={() => handleCancelEnrolment(enr.id, enr.session?.name)}
-              >
-                <Text style={s.cancelBtnText}>Cancel enrolment</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
+                <TouchableOpacity
+                  style={s.cancelBtn}
+                  onPress={() => handleCancelEnrolment(enr)}
+                >
+                  <Text style={s.cancelBtnText}>Cancel enrolment</Text>
+                </TouchableOpacity>
+              </View>
+            )
+          })}
 
           {/* Waitlisted */}
           {waitlistedEnrolments.filter(e => !e.waitlist_offered_at).length > 0 && (
@@ -490,7 +628,7 @@ export default function MyClassesScreen({ navigation }) {
                         <Text style={s.waitlistPos}>Position #{e.waitlist_position}</Text>
                       )}
                     </View>
-                    <TouchableOpacity onPress={() => handleCancelEnrolment(e.id, s2?.name)}>
+                    <TouchableOpacity onPress={() => handleCancelEnrolment(e)}>
                       <Text style={s.leaveWaitlist}>Leave</Text>
                     </TouchableOpacity>
                   </View>
@@ -534,6 +672,16 @@ export default function MyClassesScreen({ navigation }) {
           onClose={() => setMarkAwayModal(null)}
           onConfirm={confirmMarkAway}
           confirming={!!markingAway}
+        />
+      )}
+
+      {cancelPolicyEnrol && (
+        <CancelPolicyModal
+          enrolment={cancelPolicyEnrol}
+          onClose={(didLeave) => {
+            setCancelPolicyEnrol(null)
+            if (didLeave) { refetch(); refetchWaitlist() }
+          }}
         />
       )}
     </View>
