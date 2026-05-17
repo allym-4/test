@@ -482,9 +482,7 @@ export default function BookScreen() {
   }
   const seasonPrice = getSeasonPriceForTotal(activeSeasonCount + 1)
 
-  const totalSeasonPrice = selectedSessions.reduce((sum, _, idx) => {
-    return sum + getSeasonPriceForTotal(activeSeasonCount + idx + 1)
-  }, 0)
+  const totalSeasonPrice = getSeasonPriceForTotal(activeSeasonCount + selectedSessions.length)
 
   const upcomingSeason = allSeasons.find(s => s.status === 'upcoming')
     ?? allSeasons.find(s => s.start_date && new Date(s.start_date) > new Date())
