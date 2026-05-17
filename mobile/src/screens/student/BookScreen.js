@@ -1,12 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import {
   ScrollView, View, Text, TouchableOpacity, StyleSheet,
   RefreshControl, Alert, ActivityIndicator, Modal, Switch,
 } from 'react-native'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { useStripePayment } from '../../hooks/useStripePayment'
 import { classes, enrolments, seasons, attendance, settings as settingsApi } from '../../api'
 
 // ─── theme ───────────────────────────────────────────────────────────────────
@@ -75,6 +73,191 @@ function isEligible(occ, userLevel) {
   if (typeof sessLevel === 'object') return sessLevel.name === userLevel || String(sessLevel.id) === String(userLevel)
   return String(sessLevel) === String(userLevel)
 }
+
+// ─── HeadsUpModal ────────────────────────────────────────────────────────────
+function HeadsUpModal({ session, onConfirm, onCancel }) {
+  if (!session) return null
+  const name = getSessionName(session)
+  const day = session.day_of_week != null ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][session.day_of_week] : ''
+  const time = fmtTime(session.start_time)
+  return (
+    <Modal visible animationType="slide" transparent onRequestClose={onCancel}>
+      <View style={hu.overlay}>
+        <View style={hu.sheet}>
+          <View style={hu.header}>
+            <Text style={hu.title}>Heads up</Text>
+            <TouchableOpacity onPress={onCancel} style={hu.closeBtn}>
+              <Text style={hu.closeBtnText}>CLOSE</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={hu.warn}>⚠</Text>
+          <Text style={hu.classLine}>{name}{day ? ` · ${day}` : ''}{time ? ` ${time}` : ''}</Text>
+          <Text style={hu.body}>
+            Your current level doesn't match this class. Please make sure you've checked with your instructor before enrolling — they'll be able to confirm if you're ready to step up.
+          </Text>
+          <View style={hu.actions}>
+            <TouchableOpacity style={hu.confirmBtn} onPress={onConfirm}>
+              <Text style={hu.confirmText}>I'VE CHECKED — BOOK IT</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={hu.cancelBtn} onPress={onCancel}>
+              <Text style={hu.cancelText}>CANCEL</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  )
+}
+
+const hu = StyleSheet.create({
+  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.7)' },
+  sheet: { backgroundColor: '#111', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 44 },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  title: { flex: 1, fontSize: 26, fontWeight: '800', color: T.text },
+  closeBtn: { paddingLeft: 12 },
+  closeBtnText: { color: T.muted, fontSize: 12, fontWeight: '700', letterSpacing: 1 },
+  warn: { fontSize: 36, textAlign: 'center', marginBottom: 12 },
+  classLine: { fontSize: 17, fontWeight: '700', color: T.text, marginBottom: 12 },
+  body: { fontSize: 14, color: '#bbb', lineHeight: 22, marginBottom: 28 },
+  actions: { flexDirection: 'row', gap: 12 },
+  confirmBtn: { flex: 1, backgroundColor: T.lime, borderRadius: 12, paddingVertical: 16, alignItems: 'center' },
+  confirmText: { color: '#000', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
+  cancelBtn: { backgroundColor: T.card, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 16, alignItems: 'center', borderWidth: 1, borderColor: T.border },
+  cancelText: { color: T.muted, fontWeight: '700', fontSize: 13 },
+})
+
+// ─── SeasonCheckoutModal ──────────────────────────────────────────────────────
+function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, onClose, onConfirm, loading }) {
+  const [payOption, setPayOption] = useState('full')
+  const depositAmount = Math.round(totalPrice / 2)
+
+  useEffect(() => {
+    if (visible) setPayOption('full')
+  }, [visible])
+
+  if (!visible || sessions.length === 0) return null
+
+  return (
+    <Modal visible animationType="slide" transparent onRequestClose={onClose}>
+      <View style={sc.overlay}>
+        <View style={sc.sheet}>
+          <View style={sc.header}>
+            <Text style={sc.title}>Before you checkout</Text>
+            <TouchableOpacity onPress={onClose} style={sc.closeBtn}>
+              <Text style={sc.closeBtnText}>CLOSE</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Selected classes summary */}
+          <View style={sc.summaryCard}>
+            {sessions.map((sess, i) => (
+              <Text key={sess.id} style={[sc.summaryLine, i > 0 && { marginTop: 4 }]}>
+                • {getSessionName(sess)}
+                {sess.day_of_week != null ? `  ·  ${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][sess.day_of_week]}` : ''}
+                {sess.start_time ? `  ${fmtTime(sess.start_time)}` : ''}
+              </Text>
+            ))}
+            {seasonName ? <Text style={sc.seasonTag}>{seasonName}</Text> : null}
+          </View>
+
+          <Text style={sc.sectionLabel}>How would you like to pay?</Text>
+
+          {/* Pay in full */}
+          <TouchableOpacity
+            style={[sc.option, payOption === 'full' && sc.optionSelected]}
+            onPress={() => setPayOption('full')}
+          >
+            <View style={[sc.radio, payOption === 'full' && sc.radioSelected]}>
+              {payOption === 'full' && <View style={sc.radioDot} />}
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={sc.optionTitle}>Pay in full today</Text>
+              <Text style={sc.optionSub}>One payment, nothing more to think about.</Text>
+            </View>
+            <Text style={sc.optionPrice}>${totalPrice}</Text>
+          </TouchableOpacity>
+
+          {/* 50% deposit */}
+          <TouchableOpacity
+            style={[sc.option, payOption === 'deposit' && sc.optionSelected]}
+            onPress={() => setPayOption('deposit')}
+          >
+            <View style={[sc.radio, payOption === 'deposit' && sc.radioSelected]}>
+              {payOption === 'deposit' && <View style={sc.radioDot} />}
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={sc.optionTitle}>Pay 50% deposit today</Text>
+              <Text style={sc.optionSub}>Balance of ${depositAmount} due before your first class.</Text>
+            </View>
+            <Text style={sc.optionPrice}>${depositAmount}</Text>
+          </TouchableOpacity>
+
+          {/* Confirm button */}
+          <TouchableOpacity
+            style={sc.confirmBtn}
+            onPress={() => onConfirm(payOption, payOption === 'deposit' ? depositAmount : totalPrice)}
+            disabled={loading}
+          >
+            {loading
+              ? <ActivityIndicator color="#000" />
+              : <Text style={sc.confirmBtnText}>
+                  CONFIRM AND PAY — ${payOption === 'deposit' ? depositAmount : totalPrice}
+                </Text>
+            }
+          </TouchableOpacity>
+
+          {/* Payment plan */}
+          <TouchableOpacity
+            style={sc.altBtn}
+            onPress={() => onConfirm('plan', 0)}
+            disabled={loading}
+          >
+            <Text style={sc.altBtnText}>REQUEST A PAYMENT PLAN</Text>
+          </TouchableOpacity>
+
+          {/* Pay cash */}
+          <TouchableOpacity
+            style={sc.altBtn}
+            onPress={() => onConfirm('cash', 0)}
+            disabled={loading}
+          >
+            <Text style={sc.altBtnText}>I WANT TO PAY CASH</Text>
+          </TouchableOpacity>
+
+          <Text style={sc.disclaimer}>
+            By booking you agree to our terms and conditions. Payments secured by Stripe.
+          </Text>
+        </View>
+      </View>
+    </Modal>
+  )
+}
+
+const sc = StyleSheet.create({
+  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.75)' },
+  sheet: { backgroundColor: '#111', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 44, maxHeight: '90%' },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  title: { flex: 1, fontSize: 20, fontWeight: '800', color: T.text },
+  closeBtn: { paddingLeft: 12 },
+  closeBtnText: { color: T.muted, fontSize: 12, fontWeight: '700', letterSpacing: 1 },
+  summaryCard: { backgroundColor: T.bg, borderRadius: 12, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: T.border },
+  summaryLine: { fontSize: 13, color: '#ccc', lineHeight: 20 },
+  seasonTag: { marginTop: 8, fontSize: 11, color: T.muted, fontWeight: '600' },
+  sectionLabel: { fontSize: 16, fontWeight: '700', color: T.text, marginBottom: 12 },
+  option: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: T.border, borderRadius: 12, padding: 14, marginBottom: 10, backgroundColor: T.bg },
+  optionSelected: { borderColor: T.lime, borderWidth: 1.5 },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: T.muted, marginRight: 12, alignItems: 'center', justifyContent: 'center' },
+  radioSelected: { borderColor: T.lime, backgroundColor: 'transparent' },
+  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: T.lime },
+  optionTitle: { fontSize: 14, fontWeight: '600', color: T.text },
+  optionSub: { fontSize: 12, color: T.muted, marginTop: 2 },
+  optionPrice: { fontSize: 18, fontWeight: '800', color: T.lime, marginLeft: 8 },
+  confirmBtn: { backgroundColor: T.lime, borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 8, marginBottom: 10 },
+  confirmBtnText: { color: '#000', fontWeight: '800', fontSize: 15, letterSpacing: 0.5 },
+  altBtn: { borderWidth: 1, borderColor: T.border, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginBottom: 8 },
+  altBtnText: { color: T.text, fontWeight: '700', fontSize: 13, letterSpacing: 0.5 },
+  disclaimer: { fontSize: 11, color: T.muted, textAlign: 'center', marginTop: 8, lineHeight: 16 },
+})
 
 // ─── BookingModal ─────────────────────────────────────────────────────────────
 function BookingModal({ visible, occ, availableCredits, priceCasual, seasonPrice, savedCardLast4, onClose, onBook, bookingLoading }) {
@@ -229,13 +412,16 @@ function BookingModal({ visible, occ, availableCredits, priceCasual, seasonPrice
 // ─── main screen ─────────────────────────────────────────────────────────────
 export default function BookScreen() {
   const { user } = useAuth()
-  const { pay } = useStripePayment()
 
   const [tab, setTab] = useState('season')
   const [booking, setBooking] = useState(null)
   const [booked, setBooked] = useState({})
   const [levelFilter, setLevelFilter] = useState(null)
-  const [savedCardLast4, setSavedCardLast4] = useState(null)
+
+  // Season tab state
+  const [selectedSessions, setSelectedSessions] = useState([])
+  const [headsUpSession, setHeadsUpSession] = useState(null)
+  const [showSeasonCheckout, setShowSeasonCheckout] = useState(false)
 
   // Casual tab state
   const [selectedOcc, setSelectedOcc] = useState(null)
@@ -244,11 +430,8 @@ export default function BookScreen() {
   const [hideUnavailable, setHideUnavailable] = useState(false)
 
   useEffect(() => {
-    if (user?.id) {
-      AsyncStorage.getItem(`class_level_${user.id}`).then(val => setLevelFilter(val))
-      AsyncStorage.getItem(`saved_card_last4_${user.id}`).then(val => setSavedCardLast4(val))
-    }
-  }, [user?.id])
+    if (user?.level) setLevelFilter(user.level)
+  }, [user?.level])
 
   // ── API calls ──────────────────────────────────────────────────────────────
   const { data: studioSettings } = useApi(() => settingsApi.get(), [])
@@ -290,15 +473,18 @@ export default function BookScreen() {
   const activeSeasonCount = activeEnrolList.filter(e => e.enrolment_type === 'course').length
   const seasonPricingConfig = studioSettings?.season_pricing_config ?? []
 
-  function getSeasonPrice() {
-    const totalClasses = activeSeasonCount + 1
+  function getSeasonPriceForTotal(totalClasses) {
     const tier = seasonPricingConfig.find(r => {
       const n = parseInt((r.label ?? '').match(/(\d+)/)?.[1] ?? '0')
       return n === totalClasses
     })
     return tier ? parseFloat(tier.price) : parseFloat(studioSettings?.price_season ?? 270)
   }
-  const seasonPrice = getSeasonPrice()
+  const seasonPrice = getSeasonPriceForTotal(activeSeasonCount + 1)
+
+  const totalSeasonPrice = selectedSessions.reduce((sum, _, idx) => {
+    return sum + getSeasonPriceForTotal(activeSeasonCount + idx + 1)
+  }, 0)
 
   const upcomingSeason = allSeasons.find(s => s.status === 'upcoming')
     ?? allSeasons.find(s => s.start_date && new Date(s.start_date) > new Date())
@@ -317,7 +503,49 @@ export default function BookScreen() {
   }
   const grouped = groupByDate(casualOccurrences)
 
-  // ── handlers ───────────────────────────────────────────────────────────────
+  // ── season handlers ────────────────────────────────────────────────────────
+  function toggleSession(session) {
+    const alreadySelected = selectedSessions.some(s => s.id === session.id)
+    if (alreadySelected) {
+      setSelectedSessions(prev => prev.filter(s => s.id !== session.id))
+      return
+    }
+    // Check level mismatch
+    const sessLevel = session.level ?? session.level_name
+    if (sessLevel && levelFilter && String(sessLevel) !== String(levelFilter)) {
+      setHeadsUpSession(session)
+      return
+    }
+    setSelectedSessions(prev => [...prev, session])
+  }
+
+  async function handleSeasonCheckout(payOption) {
+    setBooking('season')
+    try {
+      for (const session of selectedSessions) {
+        await enrolments.create({ session: session.id, status: 'active', enrolment_type: 'course' })
+      }
+      setShowSeasonCheckout(false)
+      const newBooked = {}
+      selectedSessions.forEach(s => { newBooked[s.id + '-season'] = true })
+      setBooked(b => ({ ...b, ...newBooked }))
+      setSelectedSessions([])
+
+      if (payOption === 'cash') {
+        Alert.alert('Booking confirmed!', "Your spot is reserved. Please arrange cash payment with the studio at your first class.")
+      } else if (payOption === 'plan') {
+        Alert.alert('Booking confirmed!', "Your spot is reserved. The studio will be in touch to set up your payment plan.")
+      } else {
+        Alert.alert('Booking confirmed!', "Your spot is reserved. The studio will follow up about card payment.")
+      }
+    } catch (err) {
+      Alert.alert('Booking failed', err.response?.data?.detail ?? 'Please try again or contact the studio.')
+    } finally {
+      setBooking(null)
+    }
+  }
+
+  // ── casual/catchup handlers ────────────────────────────────────────────────
   async function handleEnrol(session, type, price) {
     setBooking(session.id)
     try {
@@ -325,20 +553,19 @@ export default function BookScreen() {
         await enrolments.create({ session: session.id, status: 'active', enrolment_type: 'catchup' })
         refetchCredits()
         setBooked(b => ({ ...b, [session.id + '-catchup']: true }))
+        setModalVisible(false)
+        setSelectedOcc(null)
       } else {
-        const succeeded = await pay({
-          amountCents: Math.round(price * 100),
-          description: `${session.name} — ${type}`,
-          sessionId: session.id,
-          enrolmentType: type,
-          onSuccess: () => setBooked(b => ({ ...b, [session.id + '-' + type]: true })),
-        })
-        if (!succeeded) return
+        // Create enrolment directly — studio follows up about payment
+        const enrolType = type === 'season' ? 'course' : type === 'trial' ? 'trial' : 'casual'
+        await enrolments.create({ session: session.id, status: 'active', enrolment_type: enrolType })
+        setBooked(b => ({ ...b, [session.id + '-' + type]: true }))
+        setModalVisible(false)
+        setSelectedOcc(null)
+        Alert.alert('Booking confirmed!', "Your spot is reserved. The studio will be in touch about payment.")
       }
-      setModalVisible(false)
-      setSelectedOcc(null)
     } catch (err) {
-      Alert.alert('Payment failed', err.message ?? 'Could not complete booking.')
+      Alert.alert('Booking failed', err.response?.data?.detail ?? 'Could not complete booking. Please try again.')
     } finally {
       setBooking(null)
     }
@@ -444,36 +671,49 @@ export default function BookScreen() {
               <Text style={s.empty}>No classes available.</Text>
             )}
 
-            {allSessions.map(session => (
-              <View key={session.id} style={s.card}>
-                <View style={s.sessionRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={s.sessionName}>{session.name}</Text>
-                    <Text style={s.sessionMeta}>
-                      {[
-                        session.day_of_week != null ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][session.day_of_week] : null,
-                        session.start_time ? fmtTime(session.start_time) : null,
-                        session.studio_detail?.name ?? session.studio?.name,
-                        session.instructor_detail?.display_name ?? session.instructor_detail?.first_name,
-                      ].filter(Boolean).join('  ·  ')}
-                    </Text>
+            {allSessions.map(session => {
+              const isSelected = selectedSessions.some(s => s.id === session.id)
+              const isBooked = booked[session.id + '-season']
+              const spotsLeft = (session.capacity ?? 12) - (session.enrolled_count ?? 0)
+              const isFull = spotsLeft <= 0
+              return (
+                <TouchableOpacity
+                  key={session.id}
+                  style={[s.card, isSelected && s.cardSelected, isBooked && s.cardBooked]}
+                  onPress={() => !isBooked && !isFull && toggleSession(session)}
+                  activeOpacity={isBooked || isFull ? 1 : 0.75}
+                >
+                  <View style={s.sessionRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.sessionName}>{session.name}</Text>
+                      <Text style={s.sessionMeta}>
+                        {[
+                          session.day_of_week != null ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][session.day_of_week] : null,
+                          session.start_time ? fmtTime(session.start_time) : null,
+                          session.studio_detail?.name ?? session.studio?.name,
+                          session.instructor_detail?.display_name ?? session.instructor_detail?.first_name,
+                        ].filter(Boolean).join('  ·  ')}
+                      </Text>
+                      {spotsLeft > 0 && spotsLeft <= 3 && (
+                        <Text style={s.spotsWarning}>{spotsLeft} spot{spotsLeft !== 1 ? 's' : ''} left</Text>
+                      )}
+                      {isFull && <Text style={s.spotsFull}>Full</Text>}
+                    </View>
+                    {isBooked ? (
+                      <Text style={s.bookedBadge}>✓ Booked</Text>
+                    ) : isFull ? (
+                      <View style={s.checkCircle}>
+                        <Text style={{ color: T.muted, fontSize: 11, fontWeight: '700' }}>FULL</Text>
+                      </View>
+                    ) : (
+                      <View style={[s.checkCircle, isSelected && s.checkCircleSelected]}>
+                        {isSelected && <Text style={s.checkMark}>✓</Text>}
+                      </View>
+                    )}
                   </View>
-                  <TouchableOpacity
-                    style={[s.limeBtn, booking === session.id && s.limeBtnDisabled]}
-                    onPress={() => handleEnrol(session, 'season', seasonPrice)}
-                    disabled={booking === session.id}
-                  >
-                    {booking === session.id
-                      ? <ActivityIndicator size="small" color="#000" />
-                      : <Text style={s.limeBtnText}>Enrol — ${seasonPrice}</Text>
-                    }
-                  </TouchableOpacity>
-                </View>
-                {booked[session.id + '-season'] && (
-                  <Text style={s.bookedBadge}>✓ Booked</Text>
-                )}
-              </View>
-            ))}
+                </TouchableOpacity>
+              )
+            })}
           </>
         )}
 
@@ -675,17 +915,51 @@ export default function BookScreen() {
 
       </ScrollView>
 
-      {/* ── Booking Modal ─────────────────────────────────────────────────── */}
+      {/* ── Season sticky proceed bar ────────────────────────────────────── */}
+      {tab === 'season' && selectedSessions.length > 0 && (
+        <View style={s.proceedBar}>
+          <View style={{ flex: 1 }}>
+            <Text style={s.proceedCount}>{selectedSessions.length} class{selectedSessions.length !== 1 ? 'es' : ''} selected</Text>
+            <Text style={s.proceedPrice}>${totalSeasonPrice}</Text>
+          </View>
+          <TouchableOpacity style={s.proceedBtn} onPress={() => setShowSeasonCheckout(true)}>
+            <Text style={s.proceedBtnText}>Proceed →</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* ── Booking Modal (Casual) ────────────────────────────────────────── */}
       <BookingModal
         visible={modalVisible}
         occ={selectedOcc}
         availableCredits={availableCredits}
         priceCasual={priceCasual}
         seasonPrice={seasonPrice}
-        savedCardLast4={savedCardLast4}
+        savedCardLast4={null}
         onClose={closeModal}
         onBook={handleEnrol}
         bookingLoading={!!booking}
+      />
+
+      {/* ── Heads-up modal ───────────────────────────────────────────────── */}
+      <HeadsUpModal
+        session={headsUpSession}
+        onConfirm={() => {
+          setSelectedSessions(prev => [...prev, headsUpSession])
+          setHeadsUpSession(null)
+        }}
+        onCancel={() => setHeadsUpSession(null)}
+      />
+
+      {/* ── Season checkout modal ─────────────────────────────────────────── */}
+      <SeasonCheckoutModal
+        visible={showSeasonCheckout}
+        sessions={selectedSessions}
+        totalPrice={totalSeasonPrice}
+        seasonName={upcomingSeason?.name}
+        onClose={() => setShowSeasonCheckout(false)}
+        onConfirm={handleSeasonCheckout}
+        loading={booking === 'season'}
       />
     </View>
   )
@@ -818,7 +1092,7 @@ const s = StyleSheet.create({
   tabTextActive: { color: T.lime, fontWeight: '700' },
 
   scroll: { flex: 1 },
-  content: { padding: 16, paddingBottom: 60 },
+  content: { padding: 16, paddingBottom: 80 },
   empty: { textAlign: 'center', color: T.muted, marginTop: 48, fontSize: 14 },
 
   // season info card
@@ -846,10 +1120,34 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: T.border,
   },
+  cardSelected: { borderColor: T.lime, borderWidth: 1.5 },
+  cardBooked: { borderColor: T.lime + '66' },
   sessionRow: { flexDirection: 'row', alignItems: 'center' },
   sessionName: { fontSize: 16, fontWeight: '700', color: T.text, marginBottom: 4 },
   sessionMeta: { fontSize: 13, color: T.muted },
-  bookedBadge: { marginTop: 8, fontSize: 13, color: T.lime, fontWeight: '700' },
+  bookedBadge: { fontSize: 13, color: T.lime, fontWeight: '700' },
+  spotsWarning: { fontSize: 11, color: '#ffaa00', fontWeight: '600', marginTop: 4 },
+  spotsFull: { fontSize: 11, color: '#ff4444', fontWeight: '600', marginTop: 4 },
+  checkCircle: {
+    width: 32, height: 32, borderRadius: 16,
+    borderWidth: 2, borderColor: T.border,
+    alignItems: 'center', justifyContent: 'center',
+    marginLeft: 12,
+  },
+  checkCircleSelected: { borderColor: T.lime, backgroundColor: T.lime },
+  checkMark: { color: '#000', fontSize: 16, fontWeight: '900', lineHeight: 20 },
+
+  // proceed bar
+  proceedBar: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#111', borderTopWidth: 1, borderTopColor: T.lime,
+    paddingHorizontal: 20, paddingVertical: 14,
+    paddingBottom: 28,
+  },
+  proceedCount: { fontSize: 13, color: T.muted, fontWeight: '600' },
+  proceedPrice: { fontSize: 22, fontWeight: '900', color: T.lime },
+  proceedBtn: { backgroundColor: T.lime, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 14 },
+  proceedBtnText: { color: '#000', fontWeight: '800', fontSize: 15 },
 
   // lime button
   limeBtn: {
