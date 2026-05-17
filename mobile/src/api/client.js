@@ -1,7 +1,7 @@
 import axios from 'axios'
 import * as SecureStore from 'expo-secure-store'
 
-const BASE_URL = 'https://YOUR_API_URL_HERE'
+const BASE_URL = 'https://test-production-8a97.up.railway.app'
 
 const client = axios.create({ baseURL: BASE_URL })
 
