@@ -600,7 +600,7 @@ export default function BookScreen({ navigation }) {
     setBooking('season')
     try {
       for (const session of selectedSessions) {
-        const payload = { class_session: session.id, status: 'active', enrolment_type: 'course' }
+        const payload = { student: user.id, class_session: session.id, status: 'active', enrolment_type: 'course' }
         await enrolments.create(payload)
       }
       if (promoCode) {
@@ -632,7 +632,7 @@ export default function BookScreen({ navigation }) {
     setBooking(session.id)
     try {
       if (type === 'catchup') {
-        await enrolments.create({ class_session: session.id, status: 'active', enrolment_type: 'catchup' })
+        await enrolments.create({ student: user.id, class_session: session.id, status: 'active', enrolment_type: 'catchup' })
         refetchCredits()
         setBooked(b => ({ ...b, [session.id + '-catchup']: true }))
         setModalVisible(false)
@@ -640,7 +640,7 @@ export default function BookScreen({ navigation }) {
       } else {
         // Create enrolment directly — studio follows up about payment
         const enrolType = type === 'season' ? 'course' : type === 'trial' ? 'trial' : 'casual'
-        await enrolments.create({ class_session: session.id, status: 'active', enrolment_type: enrolType })
+        await enrolments.create({ student: user.id, class_session: session.id, status: 'active', enrolment_type: enrolType })
         setBooked(b => ({ ...b, [session.id + '-' + type]: true }))
         setModalVisible(false)
         setSelectedOcc(null)
@@ -995,7 +995,7 @@ export default function BookScreen({ navigation }) {
                         onPress={async () => {
                           setBooking(sess.id + '-trial')
                           try {
-                            await enrolments.create({ class_session: sess.id, status: 'active', enrolment_type: 'trial' })
+                            await enrolments.create({ student: user.id, class_session: sess.id, status: 'active', enrolment_type: 'trial' })
                             setBooked(b => ({ ...b, [sess.id + '-trial']: true }))
                             Alert.alert('Trial booked!', "Your trial class is confirmed. The studio will follow up about payment.")
                           } catch (err) {
