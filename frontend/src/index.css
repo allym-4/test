@@ -210,3 +210,7 @@ select option { background: #1a1a1a; }
 @media (max-width: 640px) {
   .chat-container { height: calc(100vh - 280px); min-height: 300px; }
 }
+
+/* Hide bottom nav when native keyboard is open */
+body.keyboard-open .student-bottom-nav { display: none; }
+body.keyboard-open .student-main { padding-bottom: 16px; }

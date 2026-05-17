@@ -3,7 +3,10 @@
   "appName": "Duality Pole",
   "webDir": "dist",
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "allowNavigation": [
+      "test-production-8a97.up.railway.app"
+    ]
   },
   "plugins": {
     "StatusBar": {

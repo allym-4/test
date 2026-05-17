@@ -118,10 +118,13 @@ CORS_ALLOWED_ORIGINS = os.environ.get(
     'CORS_ALLOWED_ORIGINS',
     'http://localhost:5173,http://localhost:3000'
 ).split(',')
-# Allow any Railway/Vercel deploy URL
+# Allow Railway/Vercel deploy URLs, and Capacitor native app origins
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r'^https://.*\.up\.railway\.app$',
     r'^https://.*\.vercel\.app$',
+    r'^capacitor://localhost$',   # Capacitor iOS
+    r'^http://localhost$',        # Capacitor Android
+    r'^ionic://localhost$',       # Ionic/Capacitor fallback
 ]
 
 META_APP_ID = os.environ.get('META_APP_ID', '')
