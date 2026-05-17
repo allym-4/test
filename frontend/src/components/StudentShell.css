@@ -147,6 +147,7 @@
     background: var(--card);
     border-top: 1px solid var(--border);
     z-index: 100;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   .student-bottom-item {
     flex: 1;
@@ -163,4 +164,16 @@
   }
   .student-bottom-item.active { color: var(--lime); }
   .student-bottom-icon { font-size: 16px; }
+
+  .student-topbar {
+    padding-top: max(12px, env(safe-area-inset-top));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+
+  .student-main {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
 }

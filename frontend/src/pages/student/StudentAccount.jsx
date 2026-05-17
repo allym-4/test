@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { auth, giftCards as giftCardsApi, referrals as referralsApi, lockers as lockersApi } from '../../api'
 import { useApi } from '../../hooks/useApi'
@@ -385,7 +386,7 @@ export default function StudentAccount() {
                   <div style={{ fontSize: 13, fontWeight: 500 }}>Waiver required</div>
                   <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>Please sign before attending classes</div>
                 </div>
-                <a href="/portal/forms" style={{ fontSize: 12, color: 'var(--lime)', textDecoration: 'none', whiteSpace: 'nowrap' }}>Sign now →</a>
+                <Link to="/portal/forms" style={{ fontSize: 12, color: 'var(--lime)', textDecoration: 'none', whiteSpace: 'nowrap' }}>Sign now →</Link>
               </div>
             )}
           </div>
@@ -426,7 +427,7 @@ export default function StudentAccount() {
           {/* Gift Cards */}
           <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 16, fontWeight: 500 }}>Gift Cards</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <a href="/portal/billing" className="btn btn-ghost btn-sm" style={{ textDecoration: 'none' }}>Buy a Gift Card</a>
+            <Link to="/portal/billing" className="btn btn-ghost btn-sm" style={{ textDecoration: 'none' }}>Buy a Gift Card</Link>
             <button className="btn btn-ghost btn-sm" onClick={() => setShowGiftModal(true)}>Redeem a code</button>
           </div>
 
