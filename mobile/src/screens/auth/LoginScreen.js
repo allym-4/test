@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
+  KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Image,
+  StatusBar,
 } from 'react-native'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -24,39 +25,114 @@ export default function LoginScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={s.card}>
-        <Text style={s.title}>Welcome back</Text>
-        <TextInput
-          style={s.input}
-          placeholder="Email"
-          placeholderTextColor="#9ca3af"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={username}
-          onChangeText={setUsername}
-        />
-        <TextInput
-          style={s.input}
-          placeholder="Password"
-          placeholderTextColor="#9ca3af"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-        <TouchableOpacity style={s.btn} onPress={handleLogin} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.btnText}>Sign in</Text>}
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+    <>
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
+      <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={s.inner}>
+          <View style={s.logoWrap}>
+            <Image source={require('../../../assets/icon.png')} style={s.logo} resizeMode="contain" />
+          </View>
+          <Text style={s.studio}>DUALITY POLE</Text>
+          <Text style={s.tagline}>Sign in to your account</Text>
+
+          <View style={s.form}>
+            <TextInput
+              style={s.input}
+              placeholder="Email or username"
+              placeholderTextColor="#555"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              value={username}
+              onChangeText={setUsername}
+              selectionColor="#ccff00"
+            />
+            <TextInput
+              style={s.input}
+              placeholder="Password"
+              placeholderTextColor="#555"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+              selectionColor="#ccff00"
+            />
+            <TouchableOpacity style={s.btn} onPress={handleLogin} disabled={loading} activeOpacity={0.85}>
+              {loading
+                ? <ActivityIndicator color="#000" />
+                : <Text style={s.btnText}>Sign in</Text>
+              }
+            </TouchableOpacity>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </>
   )
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f9fafb', justifyContent: 'center', padding: 24 },
-  card: { backgroundColor: '#fff', borderRadius: 16, padding: 28, shadowColor: '#000', shadowOpacity: 0.07, shadowRadius: 12, elevation: 3 },
-  title: { fontSize: 24, fontWeight: '700', color: '#111827', marginBottom: 24, textAlign: 'center' },
-  input: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, padding: 14, fontSize: 16, color: '#111827', marginBottom: 12 },
-  btn: { backgroundColor: '#6366f1', borderRadius: 10, padding: 14, alignItems: 'center', marginTop: 8 },
-  btnText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+  root: {
+    flex: 1,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+  },
+  inner: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  logoWrap: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: '#111',
+    borderWidth: 1,
+    borderColor: '#222',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    overflow: 'hidden',
+  },
+  logo: {
+    width: 72,
+    height: 72,
+  },
+  studio: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#ccff00',
+    letterSpacing: 4,
+    marginBottom: 6,
+  },
+  tagline: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 40,
+    letterSpacing: 0.5,
+  },
+  form: {
+    width: '100%',
+  },
+  input: {
+    backgroundColor: '#111',
+    borderWidth: 1,
+    borderColor: '#222',
+    borderRadius: 10,
+    padding: 16,
+    fontSize: 16,
+    color: '#fff',
+    marginBottom: 12,
+  },
+  btn: {
+    backgroundColor: '#ccff00',
+    borderRadius: 10,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  btnText: {
+    color: '#000',
+    fontWeight: '700',
+    fontSize: 16,
+    letterSpacing: 0.5,
+  },
 })
