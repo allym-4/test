@@ -123,6 +123,7 @@ export const homework = {
   submissions: (params) => client.get('/api/homework/submissions/', { params }),
   submitHomework: (data) => client.post('/api/homework/submissions/', data),
   submissionItems: (submissionId) => client.get(`/api/homework/submissions/${submissionId}/items/`),
+  createSubmissionItem: (submissionId, data) => client.post(`/api/homework/submissions/${submissionId}/items/`, data),
 }
 
 export const users = {
