@@ -1,4 +1,12 @@
 import { useState, useEffect, useRef, createContext, useContext } from 'react'
+
+// React 19 added strict forwardRef checks; React Navigation hasn't fully caught up yet.
+// This suppresses the noise until upstream fixes it.
+const _origError = console.error.bind(console)
+console.error = (...args) => {
+  if (typeof args[0] === 'string' && args[0].includes('forwardRef render functions accept exactly two')) return
+  _origError(...args)
+}
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { View, ActivityIndicator } from 'react-native'
