@@ -62,11 +62,10 @@ function CommunityStack() {
 }
 
 function AccountStack({ onSwitchToInstructor }) {
+  const AccountHome = (props) => <AccountScreen {...props} onSwitchToInstructor={onSwitchToInstructor} />
   return (
     <Stack.Navigator screenOptions={headerStyle}>
-      <Stack.Screen name="Account" options={{ title: 'Account' }}>
-        {(props) => <AccountScreen {...props} onSwitchToInstructor={onSwitchToInstructor} />}
-      </Stack.Screen>
+      <Stack.Screen name="AccountHome" component={AccountHome} options={{ title: 'Account' }} />
       <Stack.Screen name="Billing" component={BillingScreen} options={{ title: 'Billing' }} />
       <Stack.Screen name="Forms" component={FormsScreen} options={{ title: 'Forms' }} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Notifications' }} />
