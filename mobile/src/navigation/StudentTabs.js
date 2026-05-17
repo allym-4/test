@@ -1,3 +1,4 @@
+import { createContext, useContext } from 'react'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 
@@ -18,10 +19,17 @@ import ChatScreen from '../screens/student/ChatScreen'
 const Tab = createBottomTabNavigator()
 const Stack = createNativeStackNavigator()
 
+const SwitchContext = createContext(null)
+
 const headerStyle = {
   headerStyle: { backgroundColor: '#000' },
   headerTitleStyle: { fontWeight: '700', color: '#fff' },
   headerTintColor: '#ccff00',
+}
+
+function AccountHome(props) {
+  const onSwitchToInstructor = useContext(SwitchContext)
+  return <AccountScreen {...props} onSwitchToInstructor={onSwitchToInstructor} />
 }
 
 function HomeStack() {
@@ -61,8 +69,7 @@ function CommunityStack() {
   )
 }
 
-function AccountStack({ onSwitchToInstructor }) {
-  const AccountHome = (props) => <AccountScreen {...props} onSwitchToInstructor={onSwitchToInstructor} />
+function AccountStack() {
   return (
     <Stack.Navigator screenOptions={headerStyle}>
       <Stack.Screen name="AccountHome" component={AccountHome} options={{ title: 'Account' }} />
@@ -76,22 +83,22 @@ function AccountStack({ onSwitchToInstructor }) {
 
 export default function StudentTabs({ onSwitchToInstructor }) {
   return (
-    <Tab.Navigator
-      screenOptions={{
-        tabBarShowIcon: false,
-        tabBarActiveTintColor: '#ccff00',
-        tabBarInactiveTintColor: '#555',
-        tabBarStyle: { backgroundColor: '#000', borderTopColor: '#222' },
-        headerShown: false,
-      }}
-    >
-      <Tab.Screen name="Home" component={HomeStack} />
-      <Tab.Screen name="Book" component={BookStack} />
-      <Tab.Screen name="Classes" component={ClassesStack} options={{ title: 'My Classes' }} />
-      <Tab.Screen name="Community" component={CommunityStack} />
-      <Tab.Screen name="Account">
-        {() => <AccountStack onSwitchToInstructor={onSwitchToInstructor} />}
-      </Tab.Screen>
-    </Tab.Navigator>
+    <SwitchContext.Provider value={onSwitchToInstructor}>
+      <Tab.Navigator
+        screenOptions={{
+          tabBarShowIcon: false,
+          tabBarActiveTintColor: '#ccff00',
+          tabBarInactiveTintColor: '#555',
+          tabBarStyle: { backgroundColor: '#000', borderTopColor: '#222' },
+          headerShown: false,
+        }}
+      >
+        <Tab.Screen name="Home" component={HomeStack} />
+        <Tab.Screen name="Book" component={BookStack} />
+        <Tab.Screen name="Classes" component={ClassesStack} options={{ title: 'My Classes' }} />
+        <Tab.Screen name="Community" component={CommunityStack} />
+        <Tab.Screen name="Account" component={AccountStack} />
+      </Tab.Navigator>
+    </SwitchContext.Provider>
   )
 }
