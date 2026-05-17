@@ -68,10 +68,12 @@ function CommunityStack() {
   )
 }
 
-function AccountStack() {
+function AccountStack({ onSwitchToInstructor }) {
   return (
     <Stack.Navigator screenOptions={headerStyle}>
-      <Stack.Screen name="Account" component={AccountScreen} options={{ title: 'Account' }} />
+      <Stack.Screen name="Account" options={{ title: 'Account' }}>
+        {(props) => <AccountScreen {...props} onSwitchToInstructor={onSwitchToInstructor} />}
+      </Stack.Screen>
       <Stack.Screen name="Billing" component={BillingScreen} options={{ title: 'Billing' }} />
       <Stack.Screen name="Forms" component={FormsScreen} options={{ title: 'Forms' }} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Notifications' }} />
@@ -80,7 +82,7 @@ function AccountStack() {
   )
 }
 
-export default function StudentTabs() {
+export default function StudentTabs({ onSwitchToInstructor }) {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -94,7 +96,9 @@ export default function StudentTabs() {
       <Tab.Screen name="Book" component={BookStack} />
       <Tab.Screen name="Classes" component={ClassesStack} options={{ title: 'My Classes' }} />
       <Tab.Screen name="Community" component={CommunityStack} />
-      <Tab.Screen name="Account" component={AccountStack} />
+      <Tab.Screen name="Account">
+        {() => <AccountStack onSwitchToInstructor={onSwitchToInstructor} />}
+      </Tab.Screen>
     </Tab.Navigator>
   )
 }

@@ -11,8 +11,9 @@ function NavRow({ label, icon, onPress, danger }) {
   )
 }
 
-export default function InstructorAccountScreen({ navigation }) {
+export default function InstructorAccountScreen({ navigation, route }) {
   const { user, logout } = useAuth()
+  const onSwitchToStudent = route?.params?.onSwitchToStudent
 
   const initials = `${user?.first_name?.[0] ?? ''}${user?.last_name?.[0] ?? ''}`.toUpperCase() || '?'
   const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.email
@@ -45,6 +46,12 @@ export default function InstructorAccountScreen({ navigation }) {
         <NavRow icon="⭐" label="Skills approval" onPress={() => navigation.navigate('SkillsApproval')} />
         <NavRow icon="💰" label="Pay records" onPress={() => navigation.navigate('Pay')} />
       </View>
+
+      {onSwitchToStudent && (
+        <View style={[s.section, { marginTop: 16 }]}>
+          <NavRow icon="🎓" label="Switch to student view" onPress={onSwitchToStudent} />
+        </View>
+      )}
 
       <View style={[s.section, { marginTop: 16 }]}>
         <NavRow icon="🚪" label="Log out" onPress={handleLogout} danger />

@@ -19,7 +19,7 @@ function Icon({ name, focused }) {
   return <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>{ICONS[name]}</Text>
 }
 
-function AccountStackNav() {
+function AccountStackNav({ onSwitchToStudent }) {
   return (
     <AccountStack.Navigator
       screenOptions={{
@@ -28,7 +28,17 @@ function AccountStackNav() {
         headerTintColor: '#6366f1',
       }}
     >
-      <AccountStack.Screen name="AccountHome" component={InstructorAccountScreen} options={{ title: 'Account' }} />
+      <AccountStack.Screen
+        name="AccountHome"
+        options={{ title: 'Account' }}
+      >
+        {(props) => (
+          <InstructorAccountScreen
+            {...props}
+            route={{ ...props.route, params: { ...props.route.params, onSwitchToStudent } }}
+          />
+        )}
+      </AccountStack.Screen>
       <AccountStack.Screen name="InstructorProfile" component={InstructorProfileScreen} options={{ title: 'Edit Profile' }} />
       <AccountStack.Screen name="Availability" component={AvailabilityScreen} options={{ title: 'My Availability' }} />
       <AccountStack.Screen name="Messages" component={MessagesScreen} options={{ title: 'Messages' }} />
@@ -38,7 +48,7 @@ function AccountStackNav() {
   )
 }
 
-export default function InstructorTabs() {
+export default function InstructorTabs({ onSwitchToStudent }) {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -51,7 +61,9 @@ export default function InstructorTabs() {
     >
       <Tab.Screen name="Attendance" component={AttendanceScreen} options={{ title: 'Attendance' }} />
       <Tab.Screen name="Enrolments" component={EnrolmentsScreen} options={{ title: 'My Classes' }} />
-      <Tab.Screen name="Account" component={AccountStackNav} options={{ headerShown: false, title: 'Account' }} />
+      <Tab.Screen name="Account" options={{ headerShown: false, title: 'Account' }}>
+        {() => <AccountStackNav onSwitchToStudent={onSwitchToStudent} />}
+      </Tab.Screen>
     </Tab.Navigator>
   )
 }

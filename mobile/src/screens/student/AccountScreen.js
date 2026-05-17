@@ -88,7 +88,7 @@ function ChangePasswordModal({ visible, onClose }) {
   )
 }
 
-export default function AccountScreen({ navigation }) {
+export default function AccountScreen({ navigation, onSwitchToInstructor }) {
   const { user, logout } = useAuth()
   const { data: balanceData } = useApi(
     () => user ? payments.balance(user.id) : null, [user?.id]
@@ -333,6 +333,12 @@ export default function AccountScreen({ navigation }) {
         )}
       </View>
 
+      {onSwitchToInstructor && (
+        <TouchableOpacity style={s.switchBtn} onPress={onSwitchToInstructor}>
+          <Text style={s.switchBtnText}>Switch to instructor view</Text>
+        </TouchableOpacity>
+      )}
+
       <TouchableOpacity style={s.logoutBtn} onPress={confirmLogout}>
         <Text style={s.logoutText}>Sign out</Text>
       </TouchableOpacity>
@@ -371,6 +377,8 @@ const s = StyleSheet.create({
   navRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
   navArrow: { fontSize: 20, color: '#9ca3af' },
   rowSubValue: { fontSize: 12, color: '#6b7280', marginTop: 1 },
+  switchBtn: { marginTop: 8, width: '100%', borderWidth: 1.5, borderColor: '#6366f1', borderRadius: 12, padding: 14, alignItems: 'center' },
+  switchBtnText: { color: '#6366f1', fontWeight: '600', fontSize: 15 },
   logoutBtn: { marginTop: 8, width: '100%', borderWidth: 1.5, borderColor: '#ef4444', borderRadius: 12, padding: 14, alignItems: 'center' },
   logoutText: { color: '#ef4444', fontWeight: '600', fontSize: 15 },
   // modal

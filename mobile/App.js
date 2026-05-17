@@ -16,10 +16,37 @@ const STRIPE_PK = 'pk_live_REPLACE_WITH_YOUR_PUBLISHABLE_KEY'
 
 const Stack = createNativeStackNavigator()
 
+function viewModeKey(userId) {
+  return `view_mode_${userId}`
+}
+
+export function useViewMode(user) {
+  const [viewMode, setViewModeState] = useState(null) // null = loading
+
+  useEffect(() => {
+    if (!user) { setViewModeState('default'); return }
+    AsyncStorage.getItem(viewModeKey(user.id)).then(val => {
+      setViewModeState(val === 'student' ? 'student' : 'default')
+    })
+  }, [user?.id])
+
+  async function setViewMode(mode) {
+    setViewModeState(mode)
+    if (mode === 'student') {
+      await AsyncStorage.setItem(viewModeKey(user.id), 'student')
+    } else {
+      await AsyncStorage.removeItem(viewModeKey(user.id))
+    }
+  }
+
+  return { viewMode, setViewMode }
+}
+
 function RootNavigator() {
   const { user, loading } = useAuth()
-  const [onboardingDone, setOnboardingDone] = useState(null) // null = checking
+  const [onboardingDone, setOnboardingDone] = useState(null)
   const navigationRef = useRef(null)
+  const { viewMode, setViewMode } = useViewMode(user)
 
   useEffect(() => {
     if (!user || user.role !== 'student') { setOnboardingDone(true); return }
@@ -31,7 +58,6 @@ function RootNavigator() {
   usePushNotifications({
     user,
     onNotificationTap: (data) => {
-      // Deep-link based on notification data type
       if (!navigationRef.current) return
       if (data?.type === 'announcement' || data?.type === 'notification') {
         navigationRef.current.navigate('Notifications')
@@ -43,7 +69,7 @@ function RootNavigator() {
     },
   })
 
-  if (loading || (user && onboardingDone === null)) {
+  if (loading || (user && (onboardingDone === null || viewMode === null))) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f9fafb' }}>
         <ActivityIndicator size="large" color="#6366f1" />
@@ -60,15 +86,27 @@ function RootNavigator() {
     )
   }
 
+  const isInstructorViewingAsStudent = user?.role === 'instructor' && viewMode === 'student'
+  const showInstructorView = user?.role === 'instructor' && !isInstructorViewingAsStudent
+
   return (
     <NavigationContainer ref={navigationRef}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!user ? (
           <Stack.Screen name="Login" component={LoginScreen} />
-        ) : user.role === 'instructor' ? (
-          <Stack.Screen name="InstructorApp" component={InstructorTabs} />
+        ) : showInstructorView ? (
+          <Stack.Screen name="InstructorApp">
+            {() => <InstructorTabs onSwitchToStudent={() => setViewMode('student')} />}
+          </Stack.Screen>
         ) : (
-          <Stack.Screen name="StudentApp" component={StudentTabs} />
+          <Stack.Screen name="StudentApp">
+            {() => (
+              <StudentTabs
+                isInstructor={user?.role === 'instructor'}
+                onSwitchToInstructor={user?.role === 'instructor' ? () => setViewMode('default') : undefined}
+              />
+            )}
+          </Stack.Screen>
         )}
       </Stack.Navigator>
     </NavigationContainer>
