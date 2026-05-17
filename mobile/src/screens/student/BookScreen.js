@@ -953,10 +953,10 @@ export default function BookScreen({ navigation }) {
 
             {sessLoading ? (
               <ActivityIndicator color={T.lime} style={{ marginTop: 24 }} />
-            ) : sessions.length === 0 ? (
+            ) : allSessions.length === 0 ? (
               <Text style={s.empty}>No classes available right now.</Text>
             ) : (
-              sessions.map(sess => {
+              allSessions.map(sess => {
                 const isBooked = booked[sess.id + '-season'] || enrolledSessionIds.has(sess.id)
                 const instructorName = sess.instructor_detail
                   ? (sess.instructor_detail.display_name || sess.instructor_detail.first_name || '').trim()
