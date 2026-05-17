@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   ScrollView, View, Text, TouchableOpacity, StyleSheet,
-  RefreshControl, Alert, ActivityIndicator, Share,
+  RefreshControl, Alert, ActivityIndicator, Share, Modal,
 } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useAuth } from '../../contexts/AuthContext'
@@ -115,10 +115,94 @@ const wl = StyleSheet.create({
   claimBtnText: { color: '#000', fontWeight: '800', fontSize: 13 },
 })
 
+function MarkAwayModal({ occurrence, session, cancellationWindowHours, onClose, onConfirm, confirming }) {
+  const occDate = new Date(
+    (occurrence.date || '') + 'T' + (occurrence.start_time || session?.start_time || '00:00')
+  )
+  const hoursUntil = (occDate - new Date()) / (1000 * 60 * 60)
+  const windowHours = cancellationWindowHours || 24
+  const isLate = hoursUntil > 0 && hoursUntil < windowHours
+  const isPast = hoursUntil <= 0
+
+  const dateLabel = new Date(occurrence.date + 'T00:00').toLocaleDateString('en-AU', {
+    weekday: 'long', day: 'numeric', month: 'long',
+  })
+  const timeLabel = (occurrence.start_time || session?.start_time || '').slice(0, 5)
+
+  return (
+    <Modal visible animationType="fade" transparent onRequestClose={onClose}>
+      <View style={ma.overlay}>
+        <View style={ma.sheet}>
+          <View style={ma.header}>
+            <Text style={ma.title}>Mark Away</Text>
+            <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Text style={ma.close}>✕</Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={ma.className}>{session?.name || 'Class'}</Text>
+          <Text style={ma.classMeta}>{dateLabel}{timeLabel ? `  ·  ${timeLabel}` : ''}</Text>
+
+          {isLate ? (
+            <View style={ma.warnBox}>
+              <Text style={ma.warnText}>
+                <Text style={{ fontWeight: '700' }}>Late cancellation: </Text>
+                This class is within the {windowHours}-hour cancellation window. A late cancel fee may apply and a makeup credit will not be issued.
+              </Text>
+            </View>
+          ) : isPast ? (
+            <View style={ma.infoBox}>
+              <Text style={ma.infoText}>This class has already started or passed.</Text>
+            </View>
+          ) : (
+            <View style={ma.infoBox}>
+              <Text style={ma.infoText}>
+                Marking away lets your instructor plan ahead. A makeup credit may be issued if eligible.
+              </Text>
+            </View>
+          )}
+
+          <View style={ma.actions}>
+            <TouchableOpacity style={ma.cancelBtn} onPress={onClose}>
+              <Text style={ma.cancelBtnText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[ma.confirmBtn, isPast && { opacity: 0.5 }]} onPress={onConfirm} disabled={confirming || isPast}>
+              {confirming
+                ? <ActivityIndicator size="small" color="#000" />
+                : <Text style={ma.confirmBtnText}>Confirm Away</Text>
+              }
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  )
+}
+
+const ma = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  sheet: { backgroundColor: '#1a1a1a', borderRadius: 16, width: '100%', overflow: 'hidden' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18, borderBottomWidth: 1, borderBottomColor: '#2a2a2a' },
+  title: { fontSize: 16, fontWeight: '800', color: '#fff' },
+  close: { fontSize: 18, color: '#666' },
+  className: { fontSize: 15, fontWeight: '700', color: '#fff', paddingHorizontal: 18, paddingTop: 16, marginBottom: 4 },
+  classMeta: { fontSize: 13, color: '#666', paddingHorizontal: 18, marginBottom: 14 },
+  infoBox: { marginHorizontal: 18, marginBottom: 18, backgroundColor: 'rgba(204,255,0,0.05)', borderWidth: 1, borderColor: 'rgba(204,255,0,0.15)', borderRadius: 10, padding: 14 },
+  infoText: { fontSize: 13, color: '#aaa', lineHeight: 20 },
+  warnBox: { marginHorizontal: 18, marginBottom: 18, backgroundColor: 'rgba(255,170,0,0.08)', borderWidth: 1, borderColor: 'rgba(255,170,0,0.25)', borderRadius: 10, padding: 14 },
+  warnText: { fontSize: 13, color: '#f59e0b', lineHeight: 20 },
+  actions: { flexDirection: 'row', gap: 10, padding: 18, paddingTop: 0 },
+  cancelBtn: { flex: 1, borderWidth: 1, borderColor: '#333', borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
+  cancelBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  confirmBtn: { flex: 1, backgroundColor: '#ccff00', borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
+  confirmBtnText: { color: '#000', fontWeight: '800', fontSize: 14 },
+})
+
 export default function MyClassesScreen({ navigation }) {
   const { user } = useAuth()
   const [tab, setTab] = useState('active')
   const [markingAway, setMarkingAway] = useState(null)
+  const [markAwayModal, setMarkAwayModal] = useState(null) // { occurrence, session }
   const [cancellingAway, setCancellingAway] = useState(null)
   const [levelFilter, setLevelFilter] = useState(null)
 
@@ -183,35 +267,29 @@ export default function MyClassesScreen({ navigation }) {
     )
   }
 
-  async function handleMarkAway(occurrenceId, name) {
-    Alert.alert(
-      'Mark away',
-      `Mark yourself away from ${name}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Mark away',
-          onPress: async () => {
-            setMarkingAway(occurrenceId)
-            try {
-              const res = await attendance.markAway(occurrenceId)
-              const creditIssued = res.data?.credit_issued
-              Alert.alert(
-                'Marked away',
-                creditIssued
-                  ? "You've been marked away and a catch-up credit has been added to your account. 🎉"
-                  : "You've been marked away. No catch-up credit was issued as you're within the cancellation window.",
-              )
-              refetch()
-            } catch (err) {
-              Alert.alert('Error', err.response?.data?.detail || 'Could not mark away.')
-            } finally {
-              setMarkingAway(null)
-            }
-          },
-        },
-      ]
-    )
+  function handleMarkAway(occurrence, session) {
+    setMarkAwayModal({ occurrence, session })
+  }
+
+  async function confirmMarkAway() {
+    if (!markAwayModal) return
+    setMarkingAway(markAwayModal.occurrence.id)
+    try {
+      const res = await attendance.markAway(markAwayModal.occurrence.id)
+      const creditIssued = res.data?.credit_issued
+      setMarkAwayModal(null)
+      Alert.alert(
+        'Marked away',
+        creditIssued
+          ? "You've been marked away and a catch-up credit has been added to your account."
+          : "You've been marked away. No makeup credit was issued as this is within the cancellation window.",
+      )
+      refetch()
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.detail || 'Could not mark away.')
+    } finally {
+      setMarkingAway(null)
+    }
   }
 
   function handleExportCalendar() {
@@ -374,7 +452,7 @@ export default function MyClassesScreen({ navigation }) {
                     <TouchableOpacity
                       style={s.awayBtn}
                       disabled={markingAway === enr.next_occurrence.id}
-                      onPress={() => handleMarkAway(enr.next_occurrence.id, enr.session?.name)}
+                      onPress={() => handleMarkAway(enr.next_occurrence, enr.session)}
                     >
                       {markingAway === enr.next_occurrence.id
                         ? <ActivityIndicator size="small" color="#ccff00" />
@@ -446,6 +524,17 @@ export default function MyClassesScreen({ navigation }) {
             </View>
           ))}
         </ScrollView>
+      )}
+
+      {markAwayModal && (
+        <MarkAwayModal
+          occurrence={markAwayModal.occurrence}
+          session={markAwayModal.session}
+          cancellationWindowHours={cancellationWindowHours}
+          onClose={() => setMarkAwayModal(null)}
+          onConfirm={confirmMarkAway}
+          confirming={!!markingAway}
+        />
       )}
     </View>
   )
