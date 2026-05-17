@@ -20,6 +20,14 @@ export const classes = {
     book: (id) => client.post(`/api/classes/workshops/${id}/book/`),
     cancel: (id) => client.delete(`/api/classes/workshops/${id}/book/`),
   },
+  chat: {
+    list: (sessionId) => client.get(`/api/classes/sessions/${sessionId}/chat/`),
+    send: (sessionId, data) => client.post(`/api/classes/sessions/${sessionId}/chat/`, data),
+  },
+}
+
+export const media = {
+  list: (params) => client.get('/api/classes/media/', { params }),
 }
 
 export const enrolments = {
@@ -119,9 +127,10 @@ export const roster = {
 }
 
 export const challenges = {
-  list: () => client.get('/api/users/challenges/'),
+  list: (params) => client.get('/api/users/challenges/', { params }),
   optIn: (id) => client.post(`/api/users/challenges/${id}/opt-in/`, { action: 'in' }),
   optOut: (id) => client.post(`/api/users/challenges/${id}/opt-in/`, { action: 'out' }),
+  leaderboard: (id) => client.get(`/api/users/challenges/${id}/leaderboard/`),
 }
 
 export const community = {

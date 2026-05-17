@@ -387,7 +387,7 @@ export default function HomeworkScreen() {
     if (assignmentsLoading) {
       return (
         <View style={s.centred}>
-          <ActivityIndicator size="large" color="#6366f1" />
+          <ActivityIndicator size="large" color="#ccff00" />
         </View>
       )
     }
@@ -415,7 +415,7 @@ export default function HomeworkScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#6366f1"
+            tintColor="#ccff00"
           />
         }
         showsVerticalScrollIndicator={false}
@@ -428,7 +428,7 @@ export default function HomeworkScreen() {
     if (submissionsLoading) {
       return (
         <View style={s.centred}>
-          <ActivityIndicator size="large" color="#6366f1" />
+          <ActivityIndicator size="large" color="#ccff00" />
         </View>
       )
     }
@@ -454,7 +454,7 @@ export default function HomeworkScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#6366f1"
+            tintColor="#ccff00"
           />
         }
         showsVerticalScrollIndicator={false}
@@ -485,15 +485,15 @@ export default function HomeworkScreen() {
 const s = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#000',
   },
 
   // ── Tab bar ───────────────────────────────────────────────────────────────────
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: '#000',
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: '#222',
     paddingHorizontal: 16,
   },
   tab: {
@@ -504,15 +504,15 @@ const s = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   tabActive: {
-    borderBottomColor: '#6366f1',
+    borderBottomColor: '#ccff00',
   },
   tabText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#6b7280',
+    color: '#666',
   },
   tabTextActive: {
-    color: '#6366f1',
+    color: '#ccff00',
     fontWeight: '700',
   },
 
@@ -534,27 +534,24 @@ const s = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
+    color: '#fff',
     marginBottom: 6,
     textAlign: 'center',
   },
   emptySubtitle: {
     fontSize: 14,
-    color: '#6b7280',
+    color: '#666',
     textAlign: 'center',
     lineHeight: 20,
   },
 
   // ── Card ──────────────────────────────────────────────────────────────────────
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: '#111',
     borderRadius: 14,
     padding: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#222',
   },
   cardHeader: {
     marginBottom: 10,
@@ -568,18 +565,18 @@ const s = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#111827',
+    color: '#fff',
     flex: 1,
   },
   cardClass: {
     fontSize: 13,
-    color: '#6366f1',
+    color: '#ccff00',
     fontWeight: '500',
     marginBottom: 3,
   },
   cardDue: {
     fontSize: 12,
-    color: '#6b7280',
+    color: '#666',
   },
   cardDueOverdue: {
     color: '#ef4444',
@@ -587,12 +584,12 @@ const s = StyleSheet.create({
   },
   cardDate: {
     fontSize: 12,
-    color: '#6b7280',
+    color: '#666',
     marginTop: 2,
   },
   cardDesc: {
     fontSize: 14,
-    color: '#374151',
+    color: '#aaa',
     lineHeight: 20,
     marginBottom: 12,
   },
@@ -600,7 +597,7 @@ const s = StyleSheet.create({
   // ── Read-only checklist (pending card) ────────────────────────────────────────
   readonlyChecklist: {
     borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
+    borderTopColor: '#1a1a1a',
     paddingTop: 10,
     marginBottom: 12,
     gap: 6,
@@ -614,19 +611,19 @@ const s = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#a5b4fc',
+    backgroundColor: '#7c3aed',
     marginTop: 7,
   },
   readonlyCheckText: {
     flex: 1,
     fontSize: 13,
-    color: '#374151',
+    color: '#aaa',
     lineHeight: 20,
   },
 
   // ── Submit button on card ─────────────────────────────────────────────────────
   submitCardBtn: {
-    backgroundColor: '#6366f1',
+    backgroundColor: '#ccff00',
     borderRadius: 10,
     paddingVertical: 11,
     alignItems: 'center',
@@ -634,7 +631,7 @@ const s = StyleSheet.create({
   submitCardBtnText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#fff',
+    color: '#000',
   },
 
   // ── Status badges ─────────────────────────────────────────────────────────────
@@ -649,33 +646,33 @@ const s = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
-  badgeGrey: { backgroundColor: '#f3f4f6' },
-  badgeTextGrey: { color: '#374151' },
-  badgeGreen: { backgroundColor: '#d1fae5' },
-  badgeTextGreen: { color: '#065f46' },
-  badgeAmber: { backgroundColor: '#fef3c7' },
-  badgeTextAmber: { color: '#92400e' },
+  badgeGrey: { backgroundColor: '#1a1a1a' },
+  badgeTextGrey: { color: '#888' },
+  badgeGreen: { backgroundColor: '#0a2a1a' },
+  badgeTextGreen: { color: '#ccff00' },
+  badgeAmber: { backgroundColor: '#2a1a00' },
+  badgeTextAmber: { color: '#ffaa00' },
 
   // ── Feedback & grade (submitted card) ────────────────────────────────────────
   feedbackBox: {
-    backgroundColor: '#f5f3ff',
+    backgroundColor: '#1a1a1a',
     borderRadius: 8,
     padding: 12,
     marginTop: 4,
     borderLeftWidth: 3,
-    borderLeftColor: '#6366f1',
+    borderLeftColor: '#7c3aed',
   },
   feedbackLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#6366f1',
+    color: '#ccff00',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,
   },
   feedbackText: {
     fontSize: 14,
-    color: '#374151',
+    color: '#ccc',
     lineHeight: 20,
   },
   gradeRow: {
@@ -685,44 +682,44 @@ const s = StyleSheet.create({
     marginTop: 10,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
+    borderTopColor: '#1a1a1a',
   },
   gradeLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#6b7280',
+    color: '#666',
   },
   gradeValue: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#111827',
+    color: '#fff',
   },
 
   // ── Submit modal ──────────────────────────────────────────────────────────────
   modalRoot: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#000',
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#fff',
+    backgroundColor: '#111',
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: '#222',
   },
   modalTitle: {
     flex: 1,
     fontSize: 17,
     fontWeight: '700',
-    color: '#111827',
+    color: '#fff',
     marginRight: 12,
   },
   modalCloseText: {
     fontSize: 15,
-    color: '#6366f1',
+    color: '#ccff00',
     fontWeight: '600',
   },
   modalBody: {
@@ -739,16 +736,16 @@ const s = StyleSheet.create({
   modalSectionLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#6b7280',
+    color: '#666',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
   modalFooter: {
     padding: 16,
     paddingBottom: Platform.OS === 'ios' ? 32 : 16,
-    backgroundColor: '#fff',
+    backgroundColor: '#111',
     borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
+    borderTopColor: '#222',
   },
 
   // ── Modal checklist ───────────────────────────────────────────────────────────
@@ -763,57 +760,52 @@ const s = StyleSheet.create({
     height: 22,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: '#d1d5db',
+    borderColor: '#444',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
     marginTop: 1,
   },
   checkboxChecked: {
-    backgroundColor: '#6366f1',
-    borderColor: '#6366f1',
+    backgroundColor: '#ccff00',
+    borderColor: '#ccff00',
   },
   checkmark: {
     fontSize: 13,
-    color: '#fff',
+    color: '#000',
     fontWeight: '700',
     lineHeight: 16,
   },
   checkItemText: {
     flex: 1,
     fontSize: 15,
-    color: '#374151',
+    color: '#ccc',
     lineHeight: 22,
   },
   checkItemTextChecked: {
-    color: '#9ca3af',
+    color: '#555',
     textDecorationLine: 'line-through',
   },
 
   // ── Notes input ───────────────────────────────────────────────────────────────
   notesInput: {
-    backgroundColor: '#fff',
+    backgroundColor: '#111',
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: '#e5e7eb',
+    borderColor: '#333',
     padding: 12,
     fontSize: 15,
-    color: '#111827',
+    color: '#fff',
     minHeight: 100,
     lineHeight: 22,
   },
 
   // ── Modal submit button ───────────────────────────────────────────────────────
   submitBtn: {
-    backgroundColor: '#6366f1',
+    backgroundColor: '#ccff00',
     borderRadius: 12,
     paddingVertical: 15,
     alignItems: 'center',
-    shadowColor: '#6366f1',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 4,
   },
   submitBtnDisabled: {
     opacity: 0.65,
@@ -821,6 +813,6 @@ const s = StyleSheet.create({
   submitBtnText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#fff',
+    color: '#000',
   },
 })

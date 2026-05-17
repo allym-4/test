@@ -151,7 +151,7 @@ export default function NotificationsScreen() {
       {/* Notifications section */}
       <Text style={s.sectionLabel}>Notifications</Text>
       {loading && notifList.length === 0 && (
-        <ActivityIndicator color="#6366f1" style={{ marginTop: 24 }} />
+        <ActivityIndicator color="#ccff00" style={{ marginTop: 24 }} />
       )}
       {!loading && notifList.length === 0 && (
         <Text style={s.empty}>No notifications yet.</Text>
@@ -185,53 +185,52 @@ export default function NotificationsScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f9fafb' },
+  root: { flex: 1, backgroundColor: '#000' },
   content: { padding: 20, paddingBottom: 40 },
 
   headerRow: {
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between', marginBottom: 20,
   },
-  pageTitle: { fontSize: 22, fontWeight: '700', color: '#111827' },
-  markAllText: { fontSize: 14, fontWeight: '600', color: '#6366f1' },
+  pageTitle: { fontSize: 22, fontWeight: '700', color: '#fff' },
+  markAllText: { fontSize: 14, fontWeight: '600', color: '#ccff00' },
 
   sectionLabel: {
-    fontSize: 12, fontWeight: '700', color: '#6b7280',
+    fontSize: 12, fontWeight: '700', color: '#666',
     textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 10, marginTop: 4,
   },
 
   // Announcement card
   announceCard: {
-    backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 12,
-    borderLeftWidth: 4, borderLeftColor: '#6366f1',
-    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
+    backgroundColor: '#111', borderRadius: 14, padding: 16, marginBottom: 12,
+    borderLeftWidth: 4, borderLeftColor: '#ccff00', borderWidth: 1, borderColor: '#222',
   },
-  announceTitle: { fontSize: 15, fontWeight: '700', color: '#111827', marginBottom: 6 },
-  announceBody: { fontSize: 14, color: '#374151', lineHeight: 20, marginBottom: 12 },
+  announceTitle: { fontSize: 15, fontWeight: '700', color: '#fff', marginBottom: 6 },
+  announceBody: { fontSize: 14, color: '#aaa', lineHeight: 20, marginBottom: 12 },
   ackBtn: {
-    alignSelf: 'flex-start', backgroundColor: '#6366f1',
+    alignSelf: 'flex-start', backgroundColor: '#ccff00',
     borderRadius: 8, paddingHorizontal: 16, paddingVertical: 8,
   },
   ackBtnDisabled: { opacity: 0.5 },
-  ackBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  ackBtnText: { color: '#000', fontWeight: '700', fontSize: 13 },
 
   // Notification row
   notifRow: {
-    backgroundColor: '#fff', borderRadius: 14, padding: 14, marginBottom: 10,
+    backgroundColor: '#111', borderRadius: 14, padding: 14, marginBottom: 10,
     flexDirection: 'row', alignItems: 'flex-start',
-    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
+    borderWidth: 1, borderColor: '#222',
   },
-  notifRowRead: { opacity: 0.7 },
+  notifRowRead: { opacity: 0.6 },
   notifIcon: { fontSize: 22, marginRight: 12, marginTop: 1 },
   notifBody: { flex: 1 },
-  notifTitle: { fontSize: 15, fontWeight: '700', color: '#111827', marginBottom: 2 },
-  notifTitleRead: { fontWeight: '500', color: '#374151' },
-  notifPreview: { fontSize: 13, color: '#6b7280', lineHeight: 18, marginBottom: 4 },
-  notifTime: { fontSize: 12, color: '#9ca3af' },
+  notifTitle: { fontSize: 15, fontWeight: '700', color: '#fff', marginBottom: 2 },
+  notifTitleRead: { fontWeight: '500', color: '#aaa' },
+  notifPreview: { fontSize: 13, color: '#666', lineHeight: 18, marginBottom: 4 },
+  notifTime: { fontSize: 12, color: '#555' },
   unreadDot: {
     width: 9, height: 9, borderRadius: 5,
-    backgroundColor: '#6366f1', marginTop: 4, marginLeft: 8, flexShrink: 0,
+    backgroundColor: '#ccff00', marginTop: 4, marginLeft: 8, flexShrink: 0,
   },
 
-  empty: { color: '#9ca3af', textAlign: 'center', marginTop: 32, fontSize: 14 },
+  empty: { color: '#555', textAlign: 'center', marginTop: 32, fontSize: 14 },
 })
