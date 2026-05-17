@@ -523,7 +523,7 @@ export default function BookScreen() {
     setBooking('season')
     try {
       for (const session of selectedSessions) {
-        await enrolments.create({ session: session.id, status: 'active', enrolment_type: 'course' })
+        await enrolments.create({ class_session: session.id, status: 'active', enrolment_type: 'course' })
       }
       setShowSeasonCheckout(false)
       const newBooked = {}
@@ -550,7 +550,7 @@ export default function BookScreen() {
     setBooking(session.id)
     try {
       if (type === 'catchup') {
-        await enrolments.create({ session: session.id, status: 'active', enrolment_type: 'catchup' })
+        await enrolments.create({ class_session: session.id, status: 'active', enrolment_type: 'catchup' })
         refetchCredits()
         setBooked(b => ({ ...b, [session.id + '-catchup']: true }))
         setModalVisible(false)
@@ -558,7 +558,7 @@ export default function BookScreen() {
       } else {
         // Create enrolment directly — studio follows up about payment
         const enrolType = type === 'season' ? 'course' : type === 'trial' ? 'trial' : 'casual'
-        await enrolments.create({ session: session.id, status: 'active', enrolment_type: enrolType })
+        await enrolments.create({ class_session: session.id, status: 'active', enrolment_type: enrolType })
         setBooked(b => ({ ...b, [session.id + '-' + type]: true }))
         setModalVisible(false)
         setSelectedOcc(null)
