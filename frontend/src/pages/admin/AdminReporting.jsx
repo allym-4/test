@@ -6,6 +6,28 @@ import {
   PieChart, Pie, Legend,
 } from 'recharts'
 
+function downloadCSV(filename, rows, headers) {
+  const escape = (val) => {
+    if (val === null || val === undefined) return ''
+    const str = String(val)
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return '"' + str.replace(/"/g, '""') + '"'
+    }
+    return str
+  }
+  const lines = [
+    headers.map(escape).join(','),
+    ...rows.map(row => row.map(escape).join(',')),
+  ]
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 const TABS = ['Overview', 'Enrolments', 'Financial', 'Attendance']
 
 const CHART_COLOURS = ['#ccff00', '#b0a0ff', '#ffaa00', '#ff4444', '#00cfff', '#ff88cc']
@@ -70,6 +92,23 @@ export default function AdminReporting() {
         <div>
           <div className="page-title">Analytics</div>
           <div className="page-sub">Revenue, enrolments and capacity insights</div>
+        </div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <input type="date" defaultValue={new Date().toISOString().slice(0, 8) + '01'} style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--white)', fontFamily: 'inherit', fontSize: 12, padding: '6px 10px' }} />
+          <input type="date" defaultValue={new Date().toISOString().slice(0, 10)} style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--white)', fontFamily: 'inherit', fontSize: 12, padding: '6px 10px' }} />
+          <button className="btn btn-lime btn-sm">Filter</button>
+        </div>
+      </div>
+
+      {/* Period Summary bar */}
+      <div style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 16px', marginBottom: 20, display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ fontSize: 11, color: 'var(--grey)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginRight: 4 }}>Period Summary</div>
+        <span style={{ fontSize: 12, color: '#5ecc7b' }}>↑ Revenue up 22%</span>
+        <span style={{ fontSize: 12, color: '#5ecc7b' }}>↑ Enrolments up 24%</span>
+        <span style={{ fontSize: 12, color: 'var(--amber)' }}>↓ Attendance down 8%</span>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+          <button className="btn btn-lime btn-sm" style={{ fontSize: 11 }}>Previous Period</button>
+          <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}>Same Period Last Year</button>
         </div>
       </div>
 
@@ -170,7 +209,25 @@ export default function AdminReporting() {
       {/* ── Enrolments ── */}
       {tab === 'Enrolments' && (
         <div>
-          <div className="section-title" style={{ fontSize: 15, marginBottom: 14 }}>Classes by Capacity</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div className="section-title" style={{ fontSize: 15 }}>Classes by Capacity</div>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => downloadCSV(
+                'enrolments-by-class.csv',
+                [...sessions].sort((a, b) => (b.enrolled_count / b.capacity) - (a.enrolled_count / a.capacity)).map(s => [
+                  s.name,
+                  s.studio_detail?.name || '',
+                  s.enrolled_count,
+                  s.capacity,
+                  s.capacity ? Math.round(s.enrolled_count / s.capacity * 100) + '%' : '0%',
+                ]),
+                ['Class', 'Studio', 'Enrolled', 'Capacity', 'Fill %']
+              )}
+            >
+              Download CSV
+            </button>
+          </div>
           <div className="tbl-section">
             <table>
               <thead>
@@ -203,6 +260,18 @@ export default function AdminReporting() {
       {/* ── Financial ── */}
       {tab === 'Financial' && (
         <div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => downloadCSV(
+                'payments.csv',
+                recentPayments.map(p => [p.student_name, p.payment_type, p.amount?.toFixed(2)]),
+                ['Student', 'Type', 'Amount']
+              )}
+            >
+              Download CSV
+            </button>
+          </div>
           {/* KPI row */}
           <div className="kpi-grid" style={{ marginBottom: 24 }}>
             {[
@@ -352,7 +421,19 @@ export default function AdminReporting() {
             {/* Attendance by class */}
             {attendanceByClass.length > 0 && (
               <div className="section" style={{ padding: '20px 24px', marginBottom: 24 }}>
-                <div className="section-title" style={{ fontSize: 15, marginBottom: 14 }}>Attendance Rate by Class</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                  <div className="section-title" style={{ fontSize: 15 }}>Attendance Rate by Class</div>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => downloadCSV(
+                      'attendance-by-class.csv',
+                      attendanceByClass.map(s => [s.name, s.total, s.present, s.absent, s.no_show, s.rate + '%']),
+                      ['Class', 'Total', 'Present', 'Absent', 'No-show', 'Rate']
+                    )}
+                  >
+                    Download CSV
+                  </button>
+                </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--border)' }}>
@@ -389,7 +470,19 @@ export default function AdminReporting() {
               <div className="section" style={{ padding: '20px 24px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                   <div className="section-title" style={{ fontSize: 15 }}>Students at Risk (&lt;60% attendance)</div>
-                  <span style={{ fontSize: 11, color: 'var(--grey)' }}>{atRiskStudents.length} student{atRiskStudents.length !== 1 ? 's' : ''}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{ fontSize: 11, color: 'var(--grey)' }}>{atRiskStudents.length} student{atRiskStudents.length !== 1 ? 's' : ''}</span>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => downloadCSV(
+                        'at-risk-students.csv',
+                        atRiskStudents.map(s => [s.name, s.total, s.present, s.rate + '%']),
+                        ['Student', 'Classes', 'Attended', 'Rate']
+                      )}
+                    >
+                      Download CSV
+                    </button>
+                  </div>
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>

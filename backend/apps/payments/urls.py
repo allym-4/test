@@ -27,10 +27,15 @@ urlpatterns = [
     path('membership-types/', views.MembershipTypeListView.as_view(), name='membership-type-list'),
     path('membership-types/<int:pk>/', views.MembershipTypeDetailView.as_view(), name='membership-type-detail'),
     path('gift-cards/', views.GiftCardListView.as_view(), name='gift-card-list'),
-    path('gift-cards/<int:pk>/', views.GiftCardDetailView.as_view(), name='gift-card-detail'),
     path('gift-cards/redeem/', views.redeem_gift_card, name='gift-card-redeem'),
+    path('gift-cards/<int:pk>/', views.GiftCardDetailView.as_view(), name='gift-card-detail'),
     path('promo-codes/', views.PromoCodeListView.as_view(), name='promo-code-list'),
-    path('promo-codes/<int:pk>/', views.PromoCodeDetailView.as_view(), name='promo-code-detail'),
     path('promo-codes/validate/', views.validate_promo_code, name='promo-code-validate'),
     path('promo-codes/use/', views.use_promo_code, name='promo-code-use'),
+    path('promo-codes/<int:pk>/', views.PromoCodeDetailView.as_view(), name='promo-code-detail'),
+
+    path('cancellation-offers/', views.CancellationOfferListView.as_view(), name='cancellation-offer-list'),
+    path('cancellation-offers/mine/', views.MyCancellationOffersView.as_view(), name='cancellation-offer-mine'),
+    path('cancellation-offers/<int:pk>/resolve/', views.resolve_cancellation_offer, name='cancellation-offer-resolve'),
+    path('occurrences/<int:occurrence_pk>/send-cancellation-offers/', views.send_cancellation_offers, name='send-cancellation-offers'),
 ]

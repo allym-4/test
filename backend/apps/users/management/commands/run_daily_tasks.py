@@ -33,4 +33,10 @@ class Command(BaseCommand):
         self.stdout.write('-- Processing waitlist offers (reminders + expiry) --')
         call_command('process_waitlist_offers')
 
+        self.stdout.write('-- Sending locker renewal reminders --')
+        call_command('send_locker_renewal_reminders')
+
+        self.stdout.write('-- Running built-in automations (reengagement, welfare, birthday, PAR-Q) --')
+        call_command('run_built_in_automations')
+
         self.stdout.write('=== Done ===')

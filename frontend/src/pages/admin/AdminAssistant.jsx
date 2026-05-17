@@ -1,15 +1,15 @@
 import { useState, useRef, useEffect } from 'react'
-import client from '../../api/client'
+import { assistant } from '../../api'
 
 const SUGGESTIONS = [
-  'List all students',
-  'Show students owing money',
-  'How many active students do we have?',
-  'List new students this season',
-  'Which students have outstanding balances?',
-  'Show me an enrolment summary',
-  'List students and their emails',
-  'Who has not booked recently?',
+  'Sarah marked away from Level 3 Thursday but she can make it',
+  'Move Jess from Level 2 Monday to Level 2 Thursday',
+  "Who's coming to class today?",
+  'Enrol Mia in Level 1 Wednesday',
+  'Record a $270 cash payment from Bella',
+  'Issue a makeup credit to Jake — he was sick',
+  'Add a $20 no-show fee to Emma',
+  "What's on the waitlist for Level 3?",
 ]
 
 function renderText(text) {
@@ -22,7 +22,7 @@ function renderText(text) {
 
 export default function AdminAssistant() {
   const [messages, setMessages] = useState([
-    { role: 'assistant', text: `Hey! I'm your studio assistant. Ask me to pull reports, list students, find outstanding balances, or generate email lists. Try one of the suggestions above to get started.` }
+    { role: 'assistant', text: `Hey! I'm your studio assistant. I can look up students, update attendance, move people between classes, take payments, issue credits, check waitlists, and more. Try one of the suggestions above.` }
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -38,8 +38,8 @@ export default function AdminAssistant() {
     setInput('')
     setLoading(true)
     try {
-      const res = await client.post('/api/users/assistant/', { query })
-      const reply = res.data?.reply || 'No response received.'
+      const res = await assistant.chat(query)
+      const reply = res.data?.response || res.data?.reply || 'No response received.'
       setMessages(ms => [...ms, { role: 'assistant', text: reply }])
     } catch (err) {
       const errMsg = err.response?.data?.error || 'Sorry, something went wrong. Please try again.'

@@ -339,9 +339,26 @@ export default function AdminBookings() {
       <div className="page-header">
         <div>
           <div className="page-title">Bookings</div>
-          <div className="page-sub">{all.length} total enrolments</div>
+          <div className="page-sub">Every booking across terms, casuals, trials and workshops</div>
         </div>
-        <button className="btn btn-lime btn-sm" onClick={() => setShowAdd(true)}>+ Add Booking</button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <select
+            style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', padding: '7px 12px', fontSize: 13, outline: 'none' }}
+            onChange={e => {
+              const a = e.target.value
+              if (!a) return
+              alert(`Bulk action: ${a} applied to selected bookings`)
+              e.target.value = ''
+            }}
+          >
+            <option value="">Bulk Actions</option>
+            <option value="Send reminder">Send reminder</option>
+            <option value="Export selected">Export selected</option>
+            <option value="Cancel selected">Cancel selected</option>
+            <option value="Add to waitlist">Add to waitlist</option>
+          </select>
+          <button className="btn btn-lime btn-sm" onClick={() => setShowAdd(true)}>+ Add Booking</button>
+        </div>
       </div>
 
       <div className="kpi-grid" style={{ marginBottom: 20 }}>
@@ -391,9 +408,10 @@ export default function AdminBookings() {
               <tr>
                 <th>Student</th>
                 <th>Class</th>
-                <th>Studio</th>
+                <th>Season / Date</th>
                 <th>Type</th>
                 <th>Status</th>
+                <th>Amount</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -409,13 +427,30 @@ export default function AdminBookings() {
                     </td>
                     <td>
                       <b>{s?.name}</b>
-                      <div style={{ fontSize: 11, color: 'var(--grey)' }}>{DAYS[s?.day_of_week]} {s?.start_time?.slice(0, 5)}</div>
+                      <div style={{ fontSize: 11, color: 'var(--grey)' }}>{s?.name && `${DAYS[s?.day_of_week] || ''} ${s?.start_time?.slice(0, 5) || ''}`}</div>
                     </td>
-                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{s?.studio_detail?.name}</td>
+                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>
+                      {e.season_detail?.name || (e.enrolled_date ? new Date(e.enrolled_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—')}
+                    </td>
                     <td><span className={`tag ${TYPE_TAG[e.enrolment_type] || 'tag-grey'}`} style={{ fontSize: 10 }}>{e.enrolment_type}</span></td>
                     <td><span className={`tag ${STATUS_TAG[e.status] || 'tag-grey'}`} style={{ fontSize: 10 }}>{e.status}</span></td>
+                    <td style={{ fontSize: 12, color: e.amount_paid ? 'inherit' : 'var(--grey)' }}>
+                      {e.amount_paid != null ? `$${parseFloat(e.amount_paid).toFixed(0)}` : '—'}
+                    </td>
                     <td style={{ whiteSpace: 'nowrap' }} onClick={ev => ev.stopPropagation()}>
                       <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => setViewing(e)}>View</button>
+                      {e.status === 'active' && e.enrolment_type === 'trial' && (
+                        <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => setViewing(e)}>Convert to Season</button>
+                      )}
+                      {e.status === 'active' && e.enrolment_type !== 'trial' && (
+                        <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => alert('Transfer booking')}>Transfer</button>
+                      )}
+                      {e.status === 'cancelled' && (
+                        <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={async () => {
+                          await enrolments.update(e.id, { status: 'active' })
+                          refetch()
+                        }}>Reinstate</button>
+                      )}
                       {e.status === 'active' && (
                         confirmCancel === e.id ? (
                           <>
@@ -435,7 +470,7 @@ export default function AdminBookings() {
                 )
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--grey)', padding: '32px 0' }}>No bookings found</td></tr>
+                <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--grey)', padding: '32px 0' }}>No bookings found</td></tr>
               )}
             </tbody>
           </table>

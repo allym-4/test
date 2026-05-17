@@ -144,6 +144,58 @@ class StudentMarkAwayView(APIView):
         return Response(data, status=status.HTTP_200_OK)
 
 
+class StudentCancelAwayView(APIView):
+    """Student self-service: undo a marked absence and return to class (if spot available)."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        occurrence_id = request.data.get('occurrence_id')
+        if not occurrence_id:
+            return Response({'detail': 'occurrence_id required'}, status=400)
+        try:
+            occurrence = ClassOccurrence.objects.get(pk=occurrence_id)
+        except ClassOccurrence.DoesNotExist:
+            return Response({'detail': 'Occurrence not found'}, status=404)
+        if occurrence.date < date.today():
+            return Response({'detail': 'Cannot undo absence for a past class'}, status=400)
+
+        try:
+            record = AttendanceRecord.objects.get(
+                occurrence=occurrence, student=request.user, status='absent'
+            )
+        except AttendanceRecord.DoesNotExist:
+            return Response({'detail': 'No absence record found'}, status=400)
+
+        session = occurrence.session
+        # Count non-absent confirmed enrolments + casual/catchup bookings for this occurrence
+        # to determine if the spot was filled
+        confirmed_present = AttendanceRecord.objects.filter(
+            occurrence=occurrence
+        ).exclude(status='absent').exclude(student=request.user).count()
+        capacity = session.capacity
+
+        if confirmed_present < capacity:
+            # Spot still available — delete the absence record
+            record.delete()
+            return Response({'status': 'restored', 'message': "You're back in! See you in class."})
+        else:
+            # Class is full — add to session waitlist if not already on it
+            from apps.enrolments.models import Enrolment
+            already_waitlisted = Enrolment.objects.filter(
+                student=request.user, class_session=session, status='waitlisted'
+            ).exists()
+            if not already_waitlisted:
+                Enrolment.objects.update_or_create(
+                    student=request.user,
+                    class_session=session,
+                    defaults={'status': 'waitlisted', 'enrolment_type': 'season'},
+                )
+            return Response({
+                'status': 'waitlisted',
+                'message': "Oops — someone has taken your spot, but we've added you to the waitlist!"
+            })
+
+
 class AttendanceStatsView(APIView):
     """Pre-aggregated attendance analytics for the reporting dashboard."""
     permission_classes = [IsAdminOrInstructor]

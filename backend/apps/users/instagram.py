@@ -56,17 +56,15 @@ class InstagramWebhookView(View):
         #   source = models.CharField(max_length=20, default='direct',
         #                             choices=[('direct','Direct'),('instagram','Instagram')])
         # Do NOT modify the helpdesk app here — add those fields separately.
-        from apps.helpdesk.models import Conversation, ConversationMessage
-        from apps.users.models import User
-        # Find or create a conversation for this Instagram sender
+        from apps.helpdesk.models import Conversation, DirectMessage
         conv, _ = Conversation.objects.get_or_create(
             instagram_sender_id=instagram_sender_id,
             defaults={'source': 'instagram'}
         )
-        ConversationMessage.objects.create(
+        DirectMessage.objects.create(
             conversation=conv,
+            sender=None,
             body=text,
-            is_from_student=True,
         )
 
 

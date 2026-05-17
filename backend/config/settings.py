@@ -107,6 +107,15 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 50,
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '20/min',
+        'user': '300/min',
+        'login': '5/min',
+    },
 }
 
 SIMPLE_JWT = {
@@ -118,14 +127,20 @@ CORS_ALLOWED_ORIGINS = os.environ.get(
     'CORS_ALLOWED_ORIGINS',
     'http://localhost:5173,http://localhost:3000'
 ).split(',')
-# Allow Railway/Vercel deploy URLs, and Capacitor native app origins
+
+# Allow Railway/Vercel deploy URLs, and Capacitor native app origins.
+# Additional patterns can be set via CORS_ORIGIN_REGEX (pipe-separated) in Railway.
+_cors_regex_env = os.environ.get('CORS_ORIGIN_REGEX', '')
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r'^https://.*\.up\.railway\.app$',
     r'^https://.*\.vercel\.app$',
     r'^capacitor://localhost$',   # Capacitor iOS
     r'^http://localhost$',        # Capacitor Android
     r'^ionic://localhost$',       # Ionic/Capacitor fallback
-]
+] + [p for p in _cors_regex_env.split('|') if p]
+
+# Expose Content-Disposition so browsers can read the filename on file downloads.
+CORS_EXPOSE_HEADERS = ['Content-Disposition']
 
 META_APP_ID = os.environ.get('META_APP_ID', '')
 META_APP_SECRET = os.environ.get('META_APP_SECRET', '')
@@ -141,8 +156,9 @@ AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
 AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
 AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'ap-southeast-2')
 AWS_S3_FILE_OVERWRITE = False
-AWS_DEFAULT_ACL = 'public-read'
-AWS_QUERYSTRING_AUTH = False
+AWS_DEFAULT_ACL = None
+AWS_QUERYSTRING_AUTH = True
+AWS_S3_SIGNATURE_VERSION = 's3v4'
 
 if AWS_ACCESS_KEY_ID and AWS_STORAGE_BUCKET_NAME:
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
@@ -161,4 +177,4 @@ EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'hello@dualitypole.com.au')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'intrigued@dualitypole.com')

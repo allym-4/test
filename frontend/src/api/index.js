@@ -22,6 +22,7 @@ export const classes = {
   occurrences: (params) => client.get('/api/classes/occurrences/', { params }),
   getOccurrence: (id) => client.get(`/api/classes/occurrences/${id}/`),
   stats: () => client.get('/api/classes/stats/'),
+  roster: (sessionId) => client.get(`/api/classes/sessions/${sessionId}/roster/`),
   chat: {
     list: (sessionId) => client.get(`/api/classes/sessions/${sessionId}/chat/`),
     send: (sessionId, data) => client.post(`/api/classes/sessions/${sessionId}/chat/`, data),
@@ -34,6 +35,17 @@ export const classes = {
     book: (id) => client.post(`/api/classes/workshops/${id}/book/`),
     cancel: (id) => client.delete(`/api/classes/workshops/${id}/book/`),
     bookings: (id) => client.get(`/api/classes/workshops/${id}/bookings/`),
+  },
+  practice: {
+    list: (params) => client.get('/api/classes/practice/', { params }),
+    get: (id) => client.get(`/api/classes/practice/${id}/`),
+    create: (data) => client.post('/api/classes/practice/', data),
+    update: (id, data) => client.patch(`/api/classes/practice/${id}/`, data),
+    delete: (id) => client.delete(`/api/classes/practice/${id}/`),
+    book: (id) => client.post(`/api/classes/practice/${id}/book/`),
+    cancel: (id) => client.post(`/api/classes/practice/${id}/cancel/`),
+    myBookings: () => client.get('/api/classes/practice/my-bookings/'),
+    allBookings: (params) => client.get('/api/classes/practice/all-bookings/', { params }),
   },
 }
 
@@ -63,6 +75,9 @@ export const enrolments = {
   delete: (id) => client.delete(`/api/enrolments/${id}/`),
   convertTrial: (id, data) => client.post(`/api/enrolments/${id}/convert-trial/`, data),
   claimSpot: (id) => client.post(`/api/enrolments/${id}/claim-spot/`),
+  pricing: (student, session) => client.get('/api/enrolments/pricing/', { params: { student, session } }),
+  flagged: () => client.get('/api/enrolments/flagged/'),
+  dismissFlag: (id) => client.patch(`/api/enrolments/flagged/${id}/dismiss/`, {}),
 }
 
 export const payments = {
@@ -93,6 +108,12 @@ export const payments = {
     updateInstalment: (id, data) => client.patch(`/api/payments/plans/instalments/${id}/`, data),
     remind: (planId) => client.post(`/api/payments/plans/${planId}/remind/`),
   },
+  cancellationOffers: {
+    list: (params) => client.get('/api/payments/cancellation-offers/', { params }),
+    mine: () => client.get('/api/payments/cancellation-offers/mine/'),
+    resolve: (id, choice) => client.post(`/api/payments/cancellation-offers/${id}/resolve/`, { choice }),
+    sendForOccurrence: (occurrenceId) => client.post(`/api/payments/occurrences/${occurrenceId}/send-cancellation-offers/`),
+  },
 }
 
 export const leads = {
@@ -117,6 +138,10 @@ export const lockers = {
   create: (data) => client.post('/api/classes/lockers/', data),
   update: (id, data) => client.patch(`/api/classes/lockers/${id}/`, data),
   delete: (id) => client.delete(`/api/classes/lockers/${id}/`),
+  eligible: () => client.get('/api/classes/lockers/eligible/'),
+  lostKey: (id) => client.post(`/api/classes/lockers/${id}/lost_key/`),
+  chase: (id) => client.post(`/api/classes/lockers/${id}/chase/`),
+  markKeyIssued: (id, issued) => client.patch(`/api/classes/lockers/${id}/`, { key_issued: issued }),
 }
 
 export const helpdesk = {
@@ -182,6 +207,11 @@ export const products = {
   list: () => client.get('/api/users/products/'),
   create: (data) => client.post('/api/users/products/', data),
   update: (id, data) => client.patch(`/api/users/products/${id}/`, data),
+  uploadImage: (id, file) => {
+    const fd = new FormData()
+    fd.append('image', file)
+    return client.patch(`/api/users/products/${id}/`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
   delete: (id) => client.delete(`/api/users/products/${id}/`),
 }
 
@@ -209,6 +239,7 @@ export const notifications = {
   send: (userId, title, body, notificationType = 'info') =>
     client.post('/api/users/notifications/', { user: userId, title, body, notification_type: notificationType }),
   bulk: (data) => client.post('/api/users/notifications/bulk/', data),
+  escalate: (id) => client.post(`/api/users/notifications/${id}/escalate/`),
 }
 
 export const availability = {
@@ -250,6 +281,7 @@ export const attendance = {
   stats: () => client.get('/api/attendance/stats/'),
   bulkSave: (occurrenceId, records) => client.post(`/api/attendance/occurrence/${occurrenceId}/bulk/`, { records }),
   markAway: (occurrence_id) => client.post('/api/attendance/mark-away/', { occurrence_id }),
+  cancelAway: (occurrence_id) => client.post('/api/attendance/cancel-away/', { occurrence_id }),
   makeupCredits: {
     list: (params) => client.get('/api/attendance/makeup-credits/', { params }),
     create: (data) => client.post('/api/attendance/makeup-credits/', data),
@@ -326,10 +358,15 @@ export const surveys = {
   get: (id) => client.get(`/api/surveys/${id}/`),
   create: (data) => client.post('/api/surveys/', data),
   update: (id, data) => client.patch(`/api/surveys/${id}/`, data),
+  delete: (id) => client.delete(`/api/surveys/${id}/`),
   send: (id) => client.post(`/api/surveys/${id}/send/`, {}),
   questions: (surveyId) => client.get('/api/surveys/questions/', { params: { survey: surveyId } }),
+  createQuestion: (data) => client.post('/api/surveys/questions/', data),
+  updateQuestion: (id, data) => client.patch(`/api/surveys/questions/${id}/`, data),
+  deleteQuestion: (id) => client.delete(`/api/surveys/questions/${id}/`),
   respond: (data) => client.post('/api/surveys/responses/', data),
   responses: (surveyId) => client.get('/api/surveys/responses/', { params: { survey: surveyId } }),
+  exportCsv: (surveyId) => client.get(`/api/surveys/${surveyId}/export-csv/`, { responseType: 'blob' }),
 }
 
 export const media = {

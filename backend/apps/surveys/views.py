@@ -41,6 +41,12 @@ class SurveyQuestionListView(generics.ListCreateAPIView):
         return qs
 
 
+class SurveyQuestionDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = SurveyQuestionSerializer
+    permission_classes = [IsAdminOrInstructor]
+    queryset = SurveyQuestion.objects.all()
+
+
 class SurveyResponseListView(generics.ListCreateAPIView):
     serializer_class = SurveyResponseSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -102,16 +108,78 @@ class SurveySendView(APIView):
         survey.save(update_fields=['status', 'sent_at'])
 
         from apps.users.models import User, Notification
-        students = User.objects.filter(role='student', is_active=True)
+        from apps.enrolments.models import Enrolment
+
+        base_qs = User.objects.filter(role='student', is_active=True)
+        audience = survey.target_audience
+
+        if audience == 'trial':
+            trial_ids = Enrolment.objects.filter(
+                enrolment_type='trial', status='active'
+            ).values_list('student_id', flat=True)
+            students = base_qs.filter(id__in=trial_ids)
+        elif audience == 'active_enrolment':
+            enrolled_ids = Enrolment.objects.filter(
+                status='active'
+            ).values_list('student_id', flat=True)
+            students = base_qs.filter(id__in=enrolled_ids)
+        elif audience == 'lapsed':
+            from django.utils import timezone
+            from datetime import timedelta
+            from apps.attendance.models import AttendanceRecord
+            cutoff = timezone.now() - timedelta(days=42)
+            recent_ids = AttendanceRecord.objects.filter(
+                status='present', occurrence__date__gte=cutoff.date()
+            ).values_list('student_id', flat=True)
+            students = base_qs.exclude(id__in=recent_ids)
+        else:
+            students = base_qs
+
         notifications = [
             Notification(
                 recipient=student,
-                title='New survey',
-                body=f'Please complete: {survey.name}',
+                title='New survey — please complete',
+                body=f'{survey.name}: {survey.description[:100]}' if survey.description else survey.name,
                 notification_type='info',
+                action_label='Complete Survey',
+                action_url='/portal/forms',
             )
             for student in students
         ]
         Notification.objects.bulk_create(notifications, ignore_conflicts=True)
 
         return Response(SurveySerializer(survey).data)
+
+
+class SurveyExportCsvView(APIView):
+    """Return survey responses as a downloadable CSV file."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def get(self, request, pk):
+        import csv
+        from django.http import HttpResponse
+
+        try:
+            survey = Survey.objects.prefetch_related('questions', 'responses__answers').get(pk=pk)
+        except Survey.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=404)
+
+        questions = list(survey.questions.order_by('order'))
+        responses = survey.responses.select_related('student').prefetch_related('answers').all()
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="survey-{pk}-responses.csv"'
+
+        writer = csv.writer(response)
+        header = ['Student', 'Submitted At'] + [q.question_text for q in questions]
+        writer.writerow(header)
+
+        for r in responses:
+            answer_map = {a.question_id: a.answer_text for a in r.answers.all()}
+            row = [
+                str(r.student),
+                r.submitted_at.strftime('%Y-%m-%d %H:%M'),
+            ] + [answer_map.get(q.id, '') for q in questions]
+            writer.writerow(row)
+
+        return response

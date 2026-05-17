@@ -16,6 +16,7 @@ class Enrolment(models.Model):
         COURSE = 'course', 'Course'
         CASUAL = 'casual', 'Casual'
         TRIAL = 'trial', 'Trial'
+        CATCHUP = 'catchup', 'Catchup'
 
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='enrolments')
     class_session = models.ForeignKey(ClassSession, on_delete=models.CASCADE, related_name='enrolments')
@@ -27,6 +28,7 @@ class Enrolment(models.Model):
     is_first_visit = models.BooleanField(default=False)
     intro_email_sent = models.BooleanField(default=False)
     waiver_signed = models.BooleanField(default=False)
+    flag_dismissed = models.BooleanField(default=False)
 
     # Waitlist offer tracking
     waitlist_offered_at = models.DateTimeField(null=True, blank=True)

@@ -21,6 +21,7 @@ urlpatterns = [
     path('notifications/', views.NotificationListView.as_view(), name='notification-list'),
     path('notifications/bulk/', views.BulkNotificationView.as_view(), name='notification-bulk'),
     path('notifications/mark-read/', views.NotificationMarkReadView.as_view(), name='notification-mark-read'),
+    path('notifications/<int:pk>/escalate/', views.EscalateNotificationView.as_view(), name='notification-escalate'),
     path('availability/', views.InstructorAvailabilityView.as_view(), name='instructor-availability'),
     path('unavailable-dates/', views.InstructorUnavailableDateView.as_view(), name='instructor-unavailable-dates'),
     path('unavailable-dates/<int:pk>/', views.InstructorUnavailableDateDetailView.as_view(), name='instructor-unavailable-date-detail'),

@@ -5,7 +5,7 @@ from .models import Survey, SurveyQuestion, SurveyResponse, SurveyAnswer
 class SurveyQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = SurveyQuestion
-        fields = ('id', 'survey', 'question_text', 'question_type', 'options', 'order')
+        fields = ('id', 'survey', 'question_text', 'question_type', 'options', 'required', 'order')
 
 
 class SurveyAnswerSerializer(serializers.ModelSerializer):
@@ -32,8 +32,9 @@ class SurveySerializer(serializers.ModelSerializer):
     class Meta:
         model = Survey
         fields = (
-            'id', 'name', 'description', 'status', 'created_by_name',
-            'created_at', 'sent_at', 'question_count', 'response_count', 'questions',
+            'id', 'name', 'description', 'status', 'target_audience', 'trigger',
+            'created_by_name', 'created_at', 'sent_at',
+            'question_count', 'response_count', 'questions',
         )
 
     def get_question_count(self, obj):

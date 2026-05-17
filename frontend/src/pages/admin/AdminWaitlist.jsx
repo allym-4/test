@@ -82,22 +82,39 @@ export default function AdminWaitlist() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {notifyResult && <span style={{ fontSize: 12, color: 'var(--lime)' }}>✓ {notifyResult}</span>}
           <button className="btn btn-ghost btn-sm" onClick={notifyEligible} disabled={notifying || waitlisted.length === 0}>
-            {notifying ? 'Notifying…' : 'Notify All Eligible'}
+            {notifying ? 'Notifying…' : 'Notify all eligible →'}
           </button>
         </div>
       </div>
 
       <div className="kpi-grid" style={{ marginBottom: 24 }}>
-        {[
-          ['Total Waitlisted', waitlisted.length, 'kpi-amber'],
-          ['Classes with Waitlist', Object.keys(bySession).length, 'kpi-lav'],
-          ['Avg Position', waitlisted.length > 0 ? Math.ceil(waitlisted.length / Math.max(Object.keys(bySession).length, 1)) : 0, 'kpi-lime'],
-        ].map(([label, val, cls]) => (
-          <div key={label} className={`kpi ${cls}`}>
-            <div className="kpi-label">{label}</div>
-            <div className="kpi-value">{val}</div>
+        <div className="kpi kpi-amber">
+          <div className="kpi-label">Total Waitlisted</div>
+          <div className="kpi-value">{waitlisted.length}</div>
+        </div>
+        <div className="kpi kpi-lav">
+          <div className="kpi-label">Classes with Waitlist</div>
+          <div className="kpi-value">{Object.keys(bySession).length}</div>
+        </div>
+        <div className="kpi kpi-lime">
+          <div className="kpi-label">Promoted This Season</div>
+          <div className="kpi-value">—</div>
+          <div className="kpi-sub">From waitlist to enrolled</div>
+        </div>
+        <div className="kpi">
+          <div className="kpi-label">Avg Wait Time</div>
+          <div className="kpi-value">
+            {waitlisted.length === 0 ? '—' : (() => {
+              const now = Date.now()
+              const avg = waitlisted.reduce((sum, e) => {
+                const d = e.created_at ? now - new Date(e.created_at).getTime() : 0
+                return sum + d
+              }, 0) / waitlisted.length
+              const days = Math.round(avg / (1000 * 60 * 60 * 24))
+              return `${days}d`
+            })()}
           </div>
-        ))}
+        </div>
       </div>
 
       {loading ? (

@@ -8,7 +8,7 @@ class IsAdminUser(BasePermission):
 
 class IsAdminOrInstructor(BasePermission):
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role in ('admin', 'instructor')
+        return request.user.is_authenticated and request.user.role in ('admin', 'instructor', 'staff')
 
 
 class IsAdminInstructorOrSelf(BasePermission):

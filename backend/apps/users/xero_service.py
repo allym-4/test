@@ -136,7 +136,7 @@ def sync_payment(settings_obj, payment):
     invoice_id = invoice['InvoiceID']
 
     # Record payment against invoice (using default bank account code)
-    requests.post(
+    r2 = requests.post(
         f'{XERO_API_BASE}/Payments',
         json={'Payments': [{
             'Invoice': {'InvoiceID': invoice_id},
@@ -147,5 +147,6 @@ def sync_payment(settings_obj, payment):
         headers=headers,
         timeout=15,
     )
+    r2.raise_for_status()
 
     return invoice_id

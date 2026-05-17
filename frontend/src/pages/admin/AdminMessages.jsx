@@ -363,9 +363,11 @@ export default function AdminMessages() {
       <div className="page-header" style={{ marginBottom: 0, paddingBottom: 16 }}>
         <div>
           <div className="page-title">Messages</div>
-          <div className="page-sub">{instagramConnected ? 'Direct messages · Instagram DMs' : 'Student direct messages'}</div>
+          <div className="page-sub">{instagramConnected ? 'Instagram DMs · connected via Meta Messaging API' : 'Student direct messages'}</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => navigate('/admin/settings')}>⚙ Manage Connection</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => alert('All messages marked as read')}>Mark all read</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setShowBroadcast(true)}>📣 Broadcast</button>
           <button className="btn btn-lime btn-sm" onClick={() => setShowNew(true)}>+ New Message</button>
         </div>

@@ -35,12 +35,12 @@ export default function InstructorSkills() {
 
   return (
     <div>
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, marginBottom: 4 }}>
-          Skill Approvals
-        </div>
-        <div style={{ fontSize: 13, color: 'var(--grey)' }}>
-          {loading ? '…' : totalPending > 0 ? `${totalPending} skill${totalPending !== 1 ? 's' : ''} awaiting confirmation` : 'All skills confirmed — nothing pending'}
+      <div className="page-header">
+        <div>
+          <div className="page-title">Skill Approvals</div>
+          <div className="page-sub">
+            {loading ? '…' : totalPending > 0 ? `${totalPending} skill${totalPending !== 1 ? 's' : ''} awaiting confirmation` : 'All skills confirmed — nothing pending'}
+          </div>
         </div>
       </div>
 

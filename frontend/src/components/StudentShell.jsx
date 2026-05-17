@@ -3,12 +3,14 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useApi } from '../hooks/useApi'
 import { payments, notifications as notificationsApi, announcements as announcementsApi } from '../api'
+import HelpPanel from './HelpPanel'
 import './StudentShell.css'
 
 const NAV = [
   { to: '/portal',               label: 'Dashboard',    icon: '◆', end: true },
   { to: '/portal/book',          label: 'Book a Class', icon: '+' },
   { to: '/portal/classes',       label: 'My Classes',   icon: '□' },
+  { to: '/portal/practice',      label: 'Practice Time', icon: '🏋️' },
   { to: '/portal/progress',      label: 'Progress',     icon: '△' },
   { to: '/portal/notifications', label: 'Notifications', icon: '○', badge: true },
   { to: '/portal/forms',         label: 'Forms',        icon: '⬛', formsBadge: true },
@@ -25,6 +27,7 @@ export default function StudentShell() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
   const { data: balData } = useApi(() => user ? payments.balance(user.id) : null, [user?.id])
   const { data: notifData } = useApi(() => notificationsApi.list(), [])
   const { data: annData } = useApi(() => announcementsApi.list({ note_type: 'announcement' }), [])
@@ -130,6 +133,22 @@ export default function StudentShell() {
       <main className="student-main">
         <Outlet />
       </main>
+
+      {/* Floating help button */}
+      <button
+        onClick={() => setHelpOpen(true)}
+        style={{
+          position: 'fixed', bottom: 80, right: 20, zIndex: 200,
+          background: 'var(--lime)', color: '#000', border: 'none', borderRadius: 24,
+          padding: '10px 18px', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+          boxShadow: '0 4px 20px rgba(204,255,0,0.35)',
+          display: 'flex', alignItems: 'center', gap: 7,
+        }}
+      >
+        <span style={{ fontSize: 16 }}>?</span> I need help
+      </button>
+
+      <HelpPanel open={helpOpen} onClose={() => setHelpOpen(false)} />
 
       {/* Mobile bottom nav */}
       <nav className="student-bottom-nav">

@@ -62,9 +62,14 @@ class HomeworkSubmissionListView(generics.ListCreateAPIView):
 
 
 class HomeworkSubmissionDetailView(generics.RetrieveUpdateAPIView):
-    queryset = HomeworkSubmission.objects.prefetch_related('items')
     serializer_class = HomeworkSubmissionSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        qs = HomeworkSubmission.objects.prefetch_related('items')
+        if self.request.user.role == 'student':
+            qs = qs.filter(student=self.request.user)
+        return qs
 
     def perform_update(self, serializer):
         if self.request.user.role in ('admin', 'instructor') and 'instructor_notes' in self.request.data:
@@ -78,10 +83,19 @@ class SubmissionItemListView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return HomeworkSubmissionItem.objects.filter(submission_id=self.kwargs['submission_pk'])
+        qs = HomeworkSubmissionItem.objects.filter(submission_id=self.kwargs['submission_pk'])
+        if self.request.user.role == 'student':
+            qs = qs.filter(submission__student=self.request.user)
+        return qs
 
     def perform_create(self, serializer):
-        submission = HomeworkSubmission.objects.get(pk=self.kwargs['submission_pk'])
+        qs = HomeworkSubmission.objects.filter(pk=self.kwargs['submission_pk'])
+        if self.request.user.role == 'student':
+            qs = qs.filter(student=self.request.user)
+        try:
+            submission = qs.get()
+        except HomeworkSubmission.DoesNotExist:
+            raise permissions.PermissionDenied
         serializer.save(submission=submission)
 
 

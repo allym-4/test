@@ -11,6 +11,7 @@ const AUTOMATION_DEFS = [
   { slug: 'payment_overdue', icon: '💳', name: 'Overdue Payment Reminder', desc: 'Sends a friendly reminder to students with outstanding balances over $30.', trigger: 'Balance owing > $30 for 7+ days', action: 'Send payment reminder email', category: 'billing', defaultEnabled: true },
   { slug: 'welfare_checkin', icon: '💚', name: 'Welfare Check-in', desc: 'Sends a personal check-in to students showing concerning attendance patterns.', trigger: 'Attendance < 50% over 4 classes', action: 'Send welfare email from Mimi & Chloe', category: 'comms', defaultEnabled: false },
   { slug: 'birthday', icon: '🎂', name: 'Birthday Message', desc: 'Sends a personalised birthday message to students on their birthday.', trigger: 'Student birthday (date of birth)', action: 'Send birthday email', category: 'comms', defaultEnabled: false },
+  { slug: 'locker_renewal_reminder', icon: '🔒', name: 'Locker Renewal Reminder', desc: 'Notifies students 2 weeks before their locker expires at season end.', trigger: 'Locker expires_at within 14 days', action: 'Send in-app notification + email', category: 'comms', defaultEnabled: true },
 ]
 
 const CATEGORY_LABELS = { billing: 'Billing', comms: 'Communications', bookings: 'Bookings', forms: 'Forms' }
@@ -452,7 +453,7 @@ export default function AdminAutomations() {
       <div className="page-header">
         <div>
           <div className="page-title">Automations</div>
-          <div className="page-sub">Automated workflows and triggers</div>
+          <div className="page-sub">Visual flow builder — triggers, delays, conditions and actions</div>
         </div>
       </div>
 

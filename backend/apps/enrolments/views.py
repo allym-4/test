@@ -1,12 +1,57 @@
 import datetime
+from decimal import Decimal
 from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import generics, permissions, status
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
 from .models import Enrolment
 from .serializers import EnrolmentSerializer
 from apps.users.permissions import IsAdminOrInstructor
+
+
+SEASON_PRICES = {1: 270, 2: 440, 3: 580, 4: 700, 5: 800, 6: 900}
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminOrInstructor])
+def enrolment_pricing(request):
+    """Return the price for adding a class to a student's schedule.
+
+    GET /api/enrolments/pricing/?student=X&session=Y
+    """
+    student_id = request.query_params.get('student')
+    session_id = request.query_params.get('session')
+
+    if not student_id or not session_id:
+        return Response({'detail': 'student and session params are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    from apps.classes.models import ClassSession
+
+    try:
+        session = ClassSession.objects.select_related('category').get(pk=session_id)
+    except ClassSession.DoesNotExist:
+        return Response({'detail': 'Session not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    count = Enrolment.objects.filter(student_id=student_id, status='active').count()
+
+    if count == 0:
+        # First class — use standalone price or $270 default
+        if session.category and session.category.standalone_price:
+            price = Decimal(str(session.category.standalone_price))
+        else:
+            price = Decimal(str(SEASON_PRICES[1]))
+    else:
+        n = min(count, 5)  # cap at 6 classes total
+        price = Decimal(str(SEASON_PRICES[n + 1] - SEASON_PRICES[n]))
+
+    return Response({
+        'price': price,
+        'num_enrolments': count,
+        'is_addon': count > 0,
+    })
 
 
 class EnrolmentListView(generics.ListCreateAPIView):
@@ -266,3 +311,85 @@ class CalendarIcsView(APIView):
         response = HttpResponse(ics_content, content_type='text/calendar; charset=utf-8')
         response['Content-Disposition'] = 'attachment; filename="duality-pole-classes.ics"'
         return response
+
+
+class FlaggedEnrolmentsView(generics.ListAPIView):
+    permission_classes = [IsAdminOrInstructor]
+    serializer_class = EnrolmentSerializer
+
+    def get_queryset(self):
+        from apps.users.models import SkillLevel, StudentSkill
+
+        # Build level rank map from DB
+        level_rank = {}
+        for sl in SkillLevel.objects.all():
+            level_rank[sl.name.lower().strip()] = sl.order
+
+        # Fallback if no SkillLevels configured
+        FALLBACK = ['level 1', 'level 2', 'level 3', 'high tricks', 'inter floor']
+        if not level_rank:
+            level_rank = {name: i for i, name in enumerate(FALLBACK)}
+
+        def rank(level_str):
+            if not level_str:
+                return -1
+            l = level_str.lower().strip()
+            if l in level_rank:
+                return level_rank[l]
+            for key, val in level_rank.items():
+                if key in l or l in key:
+                    return val
+            return -1
+
+        enrolments = Enrolment.objects.filter(
+            status='active',
+            flag_dismissed=False,
+        ).exclude(class_session__level='').select_related('student', 'class_session')
+
+        flagged_ids = []
+        self._flag_reasons = {}
+
+        for e in enrolments:
+            session_rank = rank(e.class_session.level)
+            if session_rank <= 0:
+                continue  # Level 1 or unknown — no flag needed
+
+            confirmed = StudentSkill.objects.filter(
+                student=e.student, teacher_confirmed=True
+            ).values_list('level', flat=True)
+
+            if not confirmed:
+                self._flag_reasons[e.id] = 'No prerequisite assessment completed'
+                flagged_ids.append(e.id)
+            else:
+                max_rank = max((rank(lvl) for lvl in confirmed), default=-1)
+                if max_rank < session_rank:
+                    current = next(
+                        (sl.name for sl in SkillLevel.objects.all() if rank(sl.name) == max_rank),
+                        f'Level {max_rank + 1}'
+                    )
+                    self._flag_reasons[e.id] = f'Enrolled above assessed level (currently {current})'
+                    flagged_ids.append(e.id)
+
+        return Enrolment.objects.filter(id__in=flagged_ids).select_related('student', 'class_session')
+
+    def list(self, request, *args, **kwargs):
+        qs = self.get_queryset()
+        data = []
+        for e in qs:
+            data.append({
+                'id': e.id,
+                'student_id': e.student_id,
+                'student_name': e.student.display_name,
+                'session_name': e.class_session.name,
+                'session_id': e.class_session_id,
+                'flag_reason': self._flag_reasons.get(e.id, ''),
+            })
+        return Response(data)
+
+    def patch(self, request, pk=None):
+        """Dismiss a flag."""
+        enrolment = get_object_or_404(Enrolment, pk=pk)
+        enrolment.flag_dismissed = True
+        enrolment.save(update_fields=['flag_dismissed'])
+        return Response({'status': 'dismissed'})

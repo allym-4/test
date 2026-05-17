@@ -64,6 +64,7 @@ export default function StudentAccount() {
   const [pronouns, setPronouns] = useState(user?.pronouns || '')
   const [ecName, setEcName] = useState(user?.emergency_contact_name || '')
   const [ecPhone, setEcPhone] = useState(user?.emergency_contact_phone || '')
+  const [ecRelationship, setEcRelationship] = useState(user?.emergency_contact_relationship || '')
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [showPasswordModal, setShowPasswordModal] = useState(false)
@@ -97,7 +98,31 @@ export default function StudentAccount() {
   }
   const myReferrals = referralData?.results || referralData || []
   const creditedReferrals = myReferrals.filter(r => r.status === 'credited')
+  const pendingReferrals = myReferrals.filter(r => r.status === 'pending')
   const totalCredits = creditedReferrals.reduce((sum, r) => sum + parseFloat(r.credit_amount || 0), 0)
+
+  // Roster visibility
+  const [showInRoster, setShowInRoster] = useState(user?.show_in_roster ?? false)
+  const [rosterName, setRosterName] = useState(user?.roster_name || 'first_name')
+  const [nickname, setNickname] = useState(user?.nickname || '')
+  const [rosterSaved, setRosterSaved] = useState(false)
+
+  async function handleRosterChange(updates) {
+    const merged = {
+      show_in_roster: showInRoster,
+      roster_name: rosterName,
+      nickname,
+      ...updates,
+    }
+    if ('show_in_roster' in updates) setShowInRoster(updates.show_in_roster)
+    if ('roster_name' in updates) setRosterName(updates.roster_name)
+    if ('nickname' in updates) setNickname(updates.nickname)
+    try {
+      await auth.updateMe(merged)
+      setRosterSaved(true)
+      setTimeout(() => setRosterSaved(false), 2500)
+    } catch { /* silent */ }
+  }
 
   // Notification preferences
   const prefs = user?.notification_preferences || {}
@@ -140,6 +165,7 @@ export default function StudentAccount() {
         pronouns,
         emergency_contact_name: ecName,
         emergency_contact_phone: ecPhone,
+        emergency_contact_relationship: ecRelationship,
         preferred_name: preferredName,
         address,
         date_of_birth: dob || null,
@@ -224,11 +250,12 @@ export default function StudentAccount() {
       </div>
 
       <div className="two-col-grid" style={{ maxWidth: 820 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24, maxWidth: 820 }}>
         {/* Left column */}
         <div>
           <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 16, fontWeight: 500 }}>Profile</div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 26 }}>
             <div style={{ position: 'relative', cursor: 'pointer' }} onClick={() => fileRef.current?.click()}>
               {photoPreview ? (
                 <img src={photoPreview} alt="Profile" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border)' }} />
@@ -237,16 +264,15 @@ export default function StudentAccount() {
                   {user?.first_name?.[0] || '?'}
                 </div>
               )}
-              <div style={{ position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, borderRadius: '50%', background: 'var(--lime)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#000' }}>
-                {uploadingPhoto ? '…' : '+'}
-              </div>
               <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoChange} />
             </div>
-            <div>
-              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>{user?.display_name}</div>
-              <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>Student</div>
-              <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>Click photo to update</div>
-            </div>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploadingPhoto}
+            >
+              {uploadingPhoto ? 'Uploading…' : 'Change photo'}
+            </button>
           </div>
 
           <form onSubmit={handleSave}>
@@ -321,11 +347,15 @@ export default function StudentAccount() {
             <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 16, fontWeight: 500 }}>Emergency Contact</div>
 
             <div className="field">
-              <label>Contact name</label>
+              <label>Name</label>
               <input type="text" value={ecName} onChange={e => setEcName(e.target.value)} placeholder="Full name" />
             </div>
             <div className="field">
-              <label>Contact phone</label>
+              <label>Relationship</label>
+              <input type="text" value={ecRelationship} onChange={e => setEcRelationship(e.target.value)} placeholder="e.g. Sister, Partner, Mother" />
+            </div>
+            <div className="field">
+              <label>Phone</label>
               <input type="tel" value={ecPhone} onChange={e => setEcPhone(e.target.value)} placeholder="Phone number" />
             </div>
 
@@ -360,6 +390,52 @@ export default function StudentAccount() {
               <Toggle value={value} onChange={v => handleNotifToggle(key, v)} />
             </div>
           ))}
+
+          <div style={{ height: 1, background: 'var(--border)', margin: '20px 0' }} />
+
+          {/* Class roster */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', fontWeight: 500 }}>Who's Coming</div>
+            {rosterSaved && <span style={{ fontSize: 11, color: 'var(--lime)' }}>Saved</span>}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, paddingBottom: 14, marginBottom: 14, borderBottom: '1px solid #1a1a1a' }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 500 }}>Show my name to classmates</div>
+              <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>Other students in your class can see who's coming</div>
+            </div>
+            <Toggle value={showInRoster} onChange={v => handleRosterChange({ show_in_roster: v })} />
+          </div>
+          {showInRoster && (
+            <>
+              <div style={{ paddingBottom: 14, marginBottom: 14, borderBottom: '1px solid #1a1a1a' }}>
+                <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 10 }}>Show me as</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {[['first_name', 'First name'], ['nickname', 'Nickname']].map(([val, label]) => (
+                    <button
+                      key={val}
+                      onClick={() => handleRosterChange({ roster_name: val })}
+                      className={`btn btn-sm ${rosterName === val ? 'btn-lime' : 'btn-ghost'}`}
+                      style={{ fontSize: 12 }}
+                    >{label}</button>
+                  ))}
+                </div>
+              </div>
+              {rosterName === 'nickname' && (
+                <div style={{ paddingBottom: 14, marginBottom: 14, borderBottom: '1px solid #1a1a1a' }}>
+                  <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 8 }}>Your nickname</div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input
+                      value={nickname}
+                      onChange={e => setNickname(e.target.value)}
+                      placeholder="e.g. Mia"
+                      style={{ flex: 1, maxWidth: 200 }}
+                    />
+                    <button className="btn btn-ghost btn-sm" style={{ fontSize: 12 }} onClick={() => handleRosterChange({ nickname })}>Save</button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
 
           <div style={{ height: 1, background: 'var(--border)', margin: '20px 0' }} />
 
@@ -414,10 +490,18 @@ export default function StudentAccount() {
               <div style={{ background: '#111', borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
                 <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20 }}>{myReferrals.length}</div>
                 <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>Referrals</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+              <div style={{ background: '#111', border: '1px solid #222', borderRadius: 8, padding: '10px', textAlign: 'center' }}>
+                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, color: 'var(--lime)' }}>{myReferrals.length}</div>
+                <div style={{ fontSize: 10, color: 'var(--grey)', textTransform: 'uppercase', marginTop: 2 }}>Referrals</div>
               </div>
-              <div style={{ background: '#111', borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
-                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20 }}>${totalCredits.toFixed(0)}</div>
-                <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>Credits Earned</div>
+              <div style={{ background: '#111', border: '1px solid #222', borderRadius: 8, padding: '10px', textAlign: 'center' }}>
+                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, color: '#4ade80' }}>${totalCredits.toFixed(0)}</div>
+                <div style={{ fontSize: 10, color: 'var(--grey)', textTransform: 'uppercase', marginTop: 2 }}>Credits Earned</div>
+              </div>
+              <div style={{ background: '#111', border: '1px solid #222', borderRadius: 8, padding: '10px', textAlign: 'center' }}>
+                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, color: 'var(--lav)' }}>{pendingReferrals.length}</div>
+                <div style={{ fontSize: 10, color: 'var(--grey)', textTransform: 'uppercase', marginTop: 2 }}>Pending</div>
               </div>
             </div>
           </div>
@@ -434,7 +518,7 @@ export default function StudentAccount() {
           {showGiftModal && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               onClick={e => { if (e.target === e.currentTarget) { setShowGiftModal(false); setGiftCode(''); setGiftMsg('') } }}>
-              <div className="card" style={{ width: 340, padding: 24 }}>
+              <div className="card" style={{ width: 'min(340px, calc(100vw - 32px))', padding: 24 }}>
                 <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 16 }}>Redeem Gift Card</div>
                 <div className="field">
                   <label>Gift card code</label>

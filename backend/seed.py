@@ -68,8 +68,9 @@ for username, first, last, pronouns, phone in students_data:
     students[username] = u
 
 print("Creating studios...")
-the_box = Studio.objects.create(name='The Box', address='12 Industrial Ave, Fitzroy')
-rhapsody = Studio.objects.create(name='Rhapsody', address='88 Chapel St, South Yarra')
+rhapsody = Studio.objects.create(name='Rhapsody', address='Level 1, 88 Kippax St, Surry Hills NSW 2010', poles='14')
+the_box = Studio.objects.create(name='The Box', address='Level 1, 88 Kippax St, Surry Hills NSW 2010', poles='11')
+Studio.objects.create(name="Janitor's Closet", address='Level 1, 88 Kippax St, Surry Hills NSW 2010', poles='3')
 
 print("Creating class sessions...")
 lvl2_mon = ClassSession.objects.create(

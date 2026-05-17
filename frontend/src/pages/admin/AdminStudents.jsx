@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
 import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi, classes as classesApi, tags as tagsApi, settings as settingsApi } from '../../api'
 import client from '../../api/client'
@@ -909,19 +910,18 @@ function BulkTagModal({ studentIds, onClose }) {
 }
 
 export default function AdminStudents() {
+  const navigate = useNavigate()
   const { data, loading } = useApi(() => users.list({ role: 'student' }))
   const { data: sessionsData } = useApi(() => classesApi.list({ active: 'true' }))
   const [search, setSearch] = useState('')
   const [classFilter, setClassFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [activeChip, setActiveChip] = useState('All')
-  const [selected, setSelected] = useState(null)
   const [sortKey, setSortKey] = useState('name')
   const [sortDir, setSortDir] = useState('asc')
   const [balances, setBalances] = useState({})
   const [studentList, setStudentList] = useState(null)
   const [showAdd, setShowAdd] = useState(false)
-  const [viewForm, setViewForm] = useState(null)
   const [showImport, setShowImport] = useState(false)
   const [showBulkTag, setShowBulkTag] = useState(false)
 
@@ -982,7 +982,6 @@ export default function AdminStudents() {
           <div className="page-sub">{allStudents.length} active students</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-ghost btn-sm" onClick={() => setShowImport(true)}>↑ Bulk Import</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setShowBulkTag(true)}>Bulk Tag</button>
           <button className="btn btn-lime btn-sm" onClick={() => setShowAdd(true)}>+ Add Student</button>
         </div>
@@ -1043,11 +1042,11 @@ export default function AdminStudents() {
               <tr>
                 <th></th>
                 <SortTh col="name" label="Name" />
-                <th>Email</th>
-                <th>Enrolled Classes</th>
-                <SortTh col="last_seen" label="Last Seen" />
+                <th>Level</th>
+                <th>Classes</th>
                 <SortTh col="balance" label="Balance" />
                 <th>Status</th>
+                <SortTh col="last_seen" label="Last Seen" />
                 <th></th>
               </tr>
             </thead>
@@ -1059,7 +1058,7 @@ export default function AdminStudents() {
                   ? new Date(s.last_login).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
                   : '—'
                 return (
-                  <tr key={s.id} className="clickable" onClick={() => setSelected(s)}>
+                  <tr key={s.id} className="clickable" onClick={() => navigate(`/admin/students/${s.id}`)}>
                     <td>
                       {s.profile_photo ? (
                         <img src={s.profile_photo} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
@@ -1071,30 +1070,12 @@ export default function AdminStudents() {
                     </td>
                     <td>
                       <b>{s.display_name}</b>
-                      {s.pronouns && <div style={{ fontSize: 11, color: 'var(--grey)' }}>{s.pronouns}</div>}
+                      <div style={{ fontSize: 11, color: 'var(--grey)' }}>{s.email}</div>
                     </td>
-                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{s.email}</td>
-                    <td style={{ fontSize: 11 }}>
-                      {(s.enrolled_seasons_summary || []).length === 0 ? (
-                        <span style={{ color: 'var(--grey)' }}>—</span>
-                      ) : (
-                        <span>
-                          {(s.enrolled_seasons_summary || []).map((item, i) => {
-                            const abbrev = item.season_name
-                              ? item.season_name.replace(/season\s*/i, 'S').replace(/\s+/g, '')
-                              : '?'
-                            return (
-                              <span key={i}>
-                                {i > 0 && <span style={{ color: 'var(--grey)', margin: '0 4px' }}>|</span>}
-                                <span style={{ color: 'var(--lime)', fontWeight: 600 }}>{abbrev}</span>
-                                <span style={{ color: 'var(--grey)', marginLeft: 2 }}>- {item.count}</span>
-                              </span>
-                            )
-                          })}
-                        </span>
-                      )}
+                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{s.level || '—'}</td>
+                    <td style={{ fontSize: 12, color: 'var(--grey)' }}>
+                      {(s.enrolled_seasons_summary || []).reduce((sum, item) => sum + (item.count || 0), 0) || '—'}
                     </td>
-                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{lastSeen}</td>
                     <td>
                       {b !== undefined ? (
                         <span className={isNeg ? 'bal-neg' : 'bal-pos'}>
@@ -1103,8 +1084,9 @@ export default function AdminStudents() {
                       ) : <span style={{ color: 'var(--grey)' }}>—</span>}
                     </td>
                     <td><span className="tag tag-lime" style={{ fontSize: 10 }}>Active</span></td>
+                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{lastSeen}</td>
                     <td onClick={e => e.stopPropagation()}>
-                      <button className="btn btn-ghost btn-xs" onClick={() => setSelected(s)}>View</button>
+                      <button className="btn btn-ghost btn-xs" onClick={() => navigate(`/admin/students/${s.id}`)}>View</button>
                     </td>
                   </tr>
                 )
@@ -1112,18 +1094,6 @@ export default function AdminStudents() {
             </tbody>
           </table>
         </div>
-      )}
-
-      {selected && (
-        <StudentDetail
-          student={selected}
-          onClose={() => setSelected(null)}
-          onViewForm={setViewForm}
-          onRefreshList={updated => {
-            setSelected(updated)
-            setStudentList(prev => (prev ?? allStudents).map(s => s.id === updated.id ? updated : s))
-          }}
-        />
       )}
 
       {showAdd && (
@@ -1145,35 +1115,6 @@ export default function AdminStudents() {
       )}
 
       {showBulkTag && <BulkTagModal studentIds={filtered.map(s => s.id)} onClose={() => setShowBulkTag(false)} />}
-
-      {viewForm && (
-        <div className="sd-overlay" onClick={e => e.target === e.currentTarget && setViewForm(null)}>
-          <div className="sd-modal" style={{ maxWidth: 520 }}>
-            <div className="sd-header">
-              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>{viewForm.name}</div>
-              <button className="modal-close-btn" onClick={() => setViewForm(null)}>✕</button>
-            </div>
-            <div className="sd-body" style={{ maxHeight: '65vh', overflowY: 'auto' }}>
-              {viewForm.form?.responses && Object.keys(viewForm.form.responses).length > 0 ? (
-                Object.entries(viewForm.form.responses).map(([k, v]) => (
-                  <div key={k} style={{ display: 'flex', gap: 16, padding: '8px 0', borderBottom: '1px solid #1a1a1a', fontSize: 13 }}>
-                    <div style={{ width: 160, color: 'var(--grey)', flexShrink: 0, textTransform: 'capitalize' }}>{k.replace(/_/g, ' ')}</div>
-                    <div style={{ wordBreak: 'break-word' }}>{String(v)}</div>
-                  </div>
-                ))
-              ) : (
-                <div style={{ color: 'var(--grey)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>No form data recorded.</div>
-              )}
-              <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 14 }}>
-                Submitted {viewForm.form?.created_at ? new Date(viewForm.form.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
-              </div>
-            </div>
-            <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
-              <button className="btn btn-ghost btn-sm" onClick={() => setViewForm(null)}>Close</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

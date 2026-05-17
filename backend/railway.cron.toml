@@ -1,0 +1,19 @@
+# Railway Cron Service config
+# ─────────────────────────────────────────────────────────────────────────────
+# To set up:
+#   1. In Railway dashboard → your project → "+ New Service" → "GitHub Repo"
+#   2. Select the same repo, set root directory to /backend
+#   3. In the service Settings → Deploy → rename to "cron" or "daily-tasks"
+#   4. Under "Deploy" settings, paste the startCommand below
+#   5. Set Cron Schedule: "0 21 * * *"  (9am AEST = 11pm UTC)
+#   6. Rename this file to railway.toml in a separate "cron" branch, OR
+#      configure the start command directly in the Railway dashboard.
+# ─────────────────────────────────────────────────────────────────────────────
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "python manage.py run_daily_tasks"
+cronSchedule = "0 21 * * *"
+restartPolicyType = "never"

@@ -1,3 +1,4 @@
+import { Component } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 
@@ -16,6 +17,7 @@ import HomeworkPage from './pages/HomeworkPage'
 // Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminStudents from './pages/admin/AdminStudents'
+import AdminStudentDetail from './pages/admin/AdminStudentDetail'
 import AdminBilling from './pages/admin/AdminBilling'
 import AdminStaff from './pages/admin/AdminStaff'
 import AdminTimetable from './pages/admin/AdminTimetable'
@@ -50,6 +52,7 @@ import AdminSkillLists from './pages/admin/AdminSkillLists'
 import AdminStudioNotes from './pages/admin/AdminStudioNotes'
 import AdminSurveys from './pages/admin/AdminSurveys'
 import AdminChallenges from './pages/admin/AdminChallenges'
+import AdminPractice from './pages/admin/AdminPractice'
 
 // Student pages
 import StudentDashboard from './pages/student/StudentDashboard'
@@ -65,6 +68,7 @@ import StudentSupport from './pages/student/StudentSupport'
 import StudentStudioInfo from './pages/student/StudentStudioInfo'
 import StudentHomework from './pages/student/StudentHomework'
 import StudentForms from './pages/student/StudentForms'
+import StudentPractice from './pages/student/StudentPractice'
 
 // Instructor pages (extra)
 import InstructorMessages from './pages/InstructorMessages'
@@ -73,6 +77,7 @@ import InstructorAvailability from './pages/InstructorAvailability'
 import InstructorAttendance from './pages/InstructorAttendance'
 import InstructorProfile from './pages/InstructorProfile'
 import InstructorSkills from './pages/InstructorSkills'
+import InstructorNotifications from './pages/InstructorNotifications'
 
 // Login
 import LoginPage from './pages/LoginPage'
@@ -83,6 +88,29 @@ function Spinner() {
       <div className="spinner" />
     </div>
   )
+}
+
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { error: null }
+  }
+  static getDerivedStateFromError(error) {
+    return { error }
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 40, color: '#ff6666', fontFamily: 'monospace', background: '#0a0a0a', minHeight: '100dvh' }}>
+          <h2 style={{ color: '#ff6666' }}>Something went wrong</h2>
+          <p style={{ color: '#ccc', marginBottom: 16 }}>{this.state.error.message}</p>
+          <pre style={{ fontSize: 11, color: '#888', whiteSpace: 'pre-wrap' }}>{this.state.error.stack}</pre>
+          <button onClick={() => { this.setState({ error: null }); window.location.reload() }} style={{ marginTop: 20, padding: '8px 16px', background: '#ccff00', color: '#000', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Reload</button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
 }
 
 function RequireAuth({ children, role }) {
@@ -99,6 +127,7 @@ function RequireAuth({ children, role }) {
 
 export default function App() {
   return (
+    <ErrorBoundary>
     <AuthProvider>
       <BrowserRouter>
         <Routes>
@@ -109,13 +138,15 @@ export default function App() {
             <Route index element={<DashboardPage />} />
             <Route path="classes" element={<ClassesPage />} />
             <Route path="classes/:id/attendance" element={<AttendancePage />} />
-            <Route path="students" element={<StudentsPage />} />
+            <Route path="students" element={<AdminStudents />} />
+            <Route path="students/:id" element={<AdminStudentDetail />} />
             <Route path="homework" element={<HomeworkPage />} />
             <Route path="attendance" element={<InstructorAttendance />} />
             <Route path="messages" element={<InstructorMessages />} />
             <Route path="pay" element={<InstructorPay />} />
             <Route path="availability" element={<InstructorAvailability />} />
             <Route path="skills" element={<InstructorSkills />} />
+            <Route path="notifications" element={<InstructorNotifications />} />
             <Route path="profile" element={<InstructorProfile />} />
           </Route>
 
@@ -123,6 +154,7 @@ export default function App() {
           <Route path="/admin" element={<RequireAuth role="admin"><AdminShell /></RequireAuth>}>
             <Route index element={<AdminDashboard />} />
             <Route path="students" element={<AdminStudents />} />
+            <Route path="students/:id" element={<AdminStudentDetail />} />
             <Route path="billing" element={<AdminBilling />} />
             <Route path="staff" element={<AdminStaff />} />
             <Route path="timetable" element={<AdminTimetable />} />
@@ -157,6 +189,7 @@ export default function App() {
             <Route path="studio-notes" element={<AdminStudioNotes />} />
             <Route path="surveys" element={<AdminSurveys />} />
             <Route path="challenges" element={<AdminChallenges />} />
+            <Route path="practice" element={<AdminPractice />} />
             <Route path="classes/:id/attendance" element={<AttendancePage />} />
           </Route>
 
@@ -175,11 +208,13 @@ export default function App() {
             <Route path="studio" element={<StudentStudioInfo />} />
             <Route path="homework" element={<StudentHomework />} />
             <Route path="forms" element={<StudentForms />} />
+            <Route path="practice" element={<StudentPractice />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </ErrorBoundary>
   )
 }

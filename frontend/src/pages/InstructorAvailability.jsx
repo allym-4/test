@@ -112,10 +112,10 @@ export default function InstructorAvailability() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+      <div className="page-header">
         <div>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, marginBottom: 4 }}>Availability</div>
-          <div style={{ fontSize: 13, color: 'var(--grey)' }}>Set your weekly teaching availability</div>
+          <div className="page-title">Availability &amp; Cover</div>
+          <div className="page-sub">Manage your schedule and cover requests</div>
         </div>
       </div>
 
@@ -146,7 +146,8 @@ export default function InstructorAvailability() {
                 </button>
               </div>
 
-              <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+              <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflowX: 'auto' }}>
+                <div style={{ minWidth: 560 }}>
                 {/* Header row */}
                 <div style={{ display: 'grid', gridTemplateColumns: '120px repeat(7, 1fr)', borderBottom: '1px solid var(--border)' }}>
                   <div style={{ padding: '10px 14px', fontSize: 11, color: 'var(--grey)' }} />
@@ -193,6 +194,7 @@ export default function InstructorAvailability() {
                   </div>
                 ))}
               </div>
+              </div>{/* end minWidth wrapper */}
 
               <div style={{ marginTop: 12, fontSize: 12, color: 'var(--grey)' }}>
                 Click a cell to toggle your availability. Green means you're available to teach that slot.

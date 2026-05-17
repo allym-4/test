@@ -26,26 +26,27 @@ const NAV_GROUPS = [
     divider: true,
     label: 'Classes',
     items: [
-      { to: '/admin/timetable',  label: 'Timetable',   icon: '📅' },
-      { to: '/admin/classes',    label: 'Classes',     icon: '📚' },
-      { to: '/admin/waitlist',   label: 'Waitlist',    icon: '⏳' },
-      { to: '/admin/seasons',    label: 'Seasons',     icon: '🌀' },
-      { to: '/admin/categories', label: 'Categories',  icon: '🗂' },
-      { to: '/admin/skills',     label: 'Skill Lists', icon: '✅' },
-      { to: '/admin/rooms',      label: 'Rooms',       icon: '🏠' },
+      { to: '/admin/timetable',  label: 'Timetable',    icon: '📅' },
+      { to: '/admin/classes',    label: 'Classes',      icon: '📚' },
+      { to: '/admin/waitlist',   label: 'Waitlist',     icon: '⏳' },
+      { to: '/admin/seasons',    label: 'Seasons',      icon: '🌀' },
+      { to: '/admin/practice',   label: 'Practice Time',icon: '🏋️' },
+      { to: '/admin/categories', label: 'Categories',   icon: '🗂' },
+      { to: '/admin/skills',     label: 'Skill Lists',  icon: '✅' },
+      { to: '/admin/rooms',      label: 'Rooms',        icon: '🏢' },
     ]
   },
   {
     divider: true,
     label: 'Finance',
     items: [
-      { to: '/admin/billing',       label: 'Billing',        icon: '💳' },
-      { to: '/admin/payment-plans', label: 'Payment Plans',  icon: '📋' },
-      { to: '/admin/bookings',      label: 'Bookings',       icon: '🎟' },
-      { to: '/admin/memberships',   label: 'Memberships',    icon: '🎫' },
-      { to: '/admin/packages',      label: 'Packages',       icon: '📦' },
-      { to: '/admin/offers',        label: 'Offers',         icon: '🏷' },
-      { to: '/admin/reporting',     label: 'Analytics',      icon: '📊' },
+      { to: '/admin/billing',       label: 'Billing',       icon: '💳' },
+      { to: '/admin/payment-plans', label: 'Payment Plans', icon: '📋' },
+      { to: '/admin/bookings',      label: 'Bookings',      icon: '🎟' },
+      { to: '/admin/memberships',   label: 'Memberships',   icon: '🎫' },
+      { to: '/admin/packages',      label: 'Packages',      icon: '📦' },
+      { to: '/admin/offers',        label: 'Offers',        icon: '🏷' },
+      { to: '/admin/reporting',     label: 'Analytics',     icon: '📊' },
     ]
   },
   {
@@ -68,9 +69,6 @@ const NAV_GROUPS = [
       { to: '/admin/retail',       label: 'Retail',        icon: '🛍' },
       { to: '/admin/lockers',      label: 'Lockers',       icon: '🔐' },
       { to: '/admin/kisi',         label: 'Kisi Access',   icon: '🔑' },
-      { to: '/admin/media',        label: 'Media Library', icon: '🎬' },
-      { to: '/admin/studio-notes', label: 'Studio Notes',  icon: '📌' },
-      { to: '/admin/action-log',   label: 'Action Log',    icon: '☑️' },
       { to: '/admin/activity-log', label: 'Activity Log',  icon: '📋' },
       { to: '/admin/assistant',    label: 'Assistant',     icon: '🤖' },
       { to: '/admin/automations',  label: 'Automations',   icon: '🔔' },
@@ -229,14 +227,14 @@ export default function AdminShell() {
             <div key={gi}>
               {group.divider && <div className="admin-nav-divider" />}
               {group.label && <div className="admin-nav-group-label">{group.label}</div>}
-              {group.items.map(({ to, label, icon, end, stub, badge }) => {
+              {group.items.map(({ to, label, icon, end, badge }) => {
                 const count = badge ? badgeCounts[badge] : 0
                 return (
                   <NavLink
                     key={to}
                     to={to}
                     end={end}
-                    className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}${stub ? ' stub' : ''}`}
+                    className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
                     onClick={() => setMobileOpen(false)}
                   >
                     <span className="admin-nav-icon">{icon}</span>

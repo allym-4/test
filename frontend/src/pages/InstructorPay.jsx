@@ -93,9 +93,11 @@ export default function InstructorPay() {
 
   return (
     <div>
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, marginBottom: 4 }}>Pay & Earnings</div>
-        <div style={{ fontSize: 13, color: 'var(--grey)' }}>Your payment history from the studio</div>
+      <div className="page-header">
+        <div>
+          <div className="page-title">Pay &amp; Earnings</div>
+          <div className="page-sub">Your classes taught and income</div>
+        </div>
       </div>
 
       {loading ? (
@@ -103,7 +105,7 @@ export default function InstructorPay() {
       ) : (
         <>
           {/* 4 KPI cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 28 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12, marginBottom: 28 }}>
             <div className="kpi-lime" style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '18px 20px' }}>
               <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.7px', color: 'var(--grey)', marginBottom: 8 }}>This Pay Period</div>
               <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color: 'var(--lime)' }}>${thisPayTotal.toFixed(2)}</div>

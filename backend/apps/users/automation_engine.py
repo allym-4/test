@@ -76,7 +76,7 @@ def _execute_action(action, student, context):
 
     if atype == 'add_tag':
         from apps.users.models import Tag, StudentTag
-        tag_name = action.get('tag_name', '').strip()
+        tag_name = (action.get('tag_name') or action.get('tag', '')).strip()
         if not tag_name:
             return 'skip: no tag_name'
         tag, _ = Tag.objects.get_or_create(name=tag_name, defaults={'colour': '#888888', 'is_manual': False})

@@ -209,7 +209,7 @@ function PayTab({ allStaff }) {
                   </td>
                   <td>
                     {r.status === 'pending' && (
-                      <button className="btn btn-ghost btn-xs" onClick={() => markPaid(r)}>Mark Paid</button>
+                      <button className="btn btn-ghost btn-xs" onClick={() => markPaid(r)}>Take Payment</button>
                     )}
                   </td>
                 </tr>
@@ -285,8 +285,8 @@ export default function AdminStaff() {
                   <th></th>
                   <th>Name</th>
                   <th>Role</th>
-                  <th>Pay Rate</th>
                   <th>Classes</th>
+                  <th>Pay Rate</th>
                   <th>Status</th>
                   <th></th>
                 </tr>
@@ -308,10 +308,10 @@ export default function AdminStaff() {
                         {s.role === 'admin' ? 'Admin' : 'Instructor'}
                       </span>
                     </td>
+                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{classesForInstructor(s.id)}</td>
                     <td style={{ color: 'var(--grey)', fontSize: 12 }}>
                       {s.pay_rate ? `$${s.pay_rate}/class` : '—'}
                     </td>
-                    <td style={{ color: 'var(--grey)', fontSize: 12 }}>{classesForInstructor(s.id)}</td>
                     <td><span className="tag tag-lime" style={{ fontSize: 10 }}>Active</span></td>
                     <td><button className="btn btn-ghost btn-xs" onClick={() => { setEditStaff(s); setShowAddStaff(true) }}>Edit</button></td>
                   </tr>
@@ -326,22 +326,98 @@ export default function AdminStaff() {
       )}
 
       {tab === 'permissions' && (
-        <div className="list-card">
-          {allStaff.map(s => (
-            <div key={s.id} className="list-row">
-              <div className="staff-photo" style={{ background: avatarColor(s.display_name) }}>
-                {s.first_name?.[0] || '?'}
+        <div>
+          <p style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 20, lineHeight: 1.5 }}>
+            Each staff member is assigned a role. Roles define what they can see and do in the system.
+          </p>
+
+          {/* Role cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginBottom: 28 }}>
+            {/* Admin / Founder */}
+            <div style={{ background: '#0f1600', border: '2px solid var(--lime)', borderRadius: 12, padding: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: 'var(--lime)' }}>Admin / Founder</span>
+                <span style={{ fontSize: 11, color: 'var(--grey)' }}>{allStaff.filter(s => s.role === 'admin').length} people</span>
               </div>
-              <div className="list-body">
-                <div className="list-title">{s.display_name}</div>
-                <div className="list-sub">{s.role === 'admin' ? 'Full access — all features' : 'Instructor — classes, attendance, homework, students'}</div>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+                {allStaff.filter(s => s.role === 'admin').map(s => (
+                  <div key={s.id} title={s.display_name} style={{ width: 28, height: 28, borderRadius: '50%', background: avatarColor(s.display_name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#000', fontWeight: 700 }}>{s.first_name?.[0] || '?'}</div>
+                ))}
               </div>
-              <span className={`tag ${s.role === 'admin' ? 'tag-lime' : 'tag-lav'}`} style={{ fontSize: 10 }}>
-                {s.role === 'admin' ? 'Admin' : 'Instructor'}
-              </span>
-              <button className="btn btn-ghost btn-xs" onClick={() => { setEditStaff(s); setShowAddStaff(true) }}>Edit</button>
+              <div style={{ fontSize: 11, color: 'var(--lime)', display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
+                <div>✓ Full access — all screens and actions</div>
+                <div>✓ Edit billing, refunds, payment plans</div>
+                <div>✓ Manage staff, roles and settings</div>
+                <div>✓ View all reporting and financials</div>
+                <div>✓ Send marketing campaigns</div>
+              </div>
+              <button className="btn btn-ghost btn-sm" disabled style={{ opacity: 0.4, cursor: 'not-allowed' }}>Cannot edit Admin role</button>
             </div>
-          ))}
+
+            {/* Instructor */}
+            <div style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15 }}>Instructor</span>
+                <span style={{ fontSize: 11, color: 'var(--grey)' }}>{allStaff.filter(s => s.role === 'instructor').length} people</span>
+              </div>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+                {allStaff.filter(s => s.role === 'instructor').map(s => (
+                  <div key={s.id} title={s.display_name} style={{ width: 28, height: 28, borderRadius: '50%', background: avatarColor(s.display_name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#000', fontWeight: 700 }}>{s.first_name?.[0] || '?'}</div>
+                ))}
+              </div>
+              <div style={{ fontSize: 12, display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+                {[
+                  'View students in own classes only',
+                  'Mark attendance + add notes',
+                  'View owing status (own classes)',
+                  'Take payments',
+                  'Assign homework',
+                  'Send comms to students',
+                ].map(perm => (
+                  <div key={perm} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--grey)' }}>{perm}</span>
+                    <div style={{ width: 32, height: 18, borderRadius: 9, background: 'var(--lime)', flexShrink: 0, position: 'relative' }}>
+                      <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, right: 3 }} />
+                    </div>
+                  </div>
+                ))}
+                {[
+                  'Issue refunds / credits',
+                  'Edit timetable / seasons',
+                  'Access staff / settings',
+                  'View reporting',
+                ].map(perm => (
+                  <div key={perm} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--grey)' }}>{perm}</span>
+                    <div style={{ width: 32, height: 18, borderRadius: 9, background: '#333', flexShrink: 0, position: 'relative' }}>
+                      <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#666', position: 'absolute', top: 3, left: 3 }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button className="btn btn-ghost btn-sm" onClick={() => alert('Permission configuration coming soon')}>Edit role permissions</button>
+            </div>
+          </div>
+
+          {/* Individual role assignment */}
+          <div className="section" style={{ padding: '18px 20px' }}>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 6 }}>Individual Role Assignment</div>
+            <p style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16 }}>Change a staff member's role here to adjust their access instantly.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {allStaff.map(s => (
+                <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+                  <div className="staff-photo" style={{ background: avatarColor(s.display_name), width: 30, height: 30, fontSize: 12, flexShrink: 0 }}>
+                    {s.first_name?.[0] || '?'}
+                  </div>
+                  <div style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>{s.display_name}</div>
+                  <span className={`tag ${s.role === 'admin' ? 'tag-lime' : 'tag-lav'}`} style={{ fontSize: 10 }}>
+                    {s.role === 'admin' ? 'Admin' : 'Instructor'}
+                  </span>
+                  <button className="btn btn-ghost btn-xs" onClick={() => { setEditStaff(s); setShowAddStaff(true) }}>Edit</button>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 

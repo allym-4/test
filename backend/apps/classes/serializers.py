@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, Workshop, WorkshopBooking
+from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, Workshop, WorkshopBooking, PracticeSlot, PracticeBooking
 from apps.users.serializers import UserMinimalSerializer
 
 
@@ -12,7 +12,7 @@ class StudioSerializer(serializers.ModelSerializer):
 class ClassCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = ClassCategory
-        fields = ('id', 'name', 'colour', 'is_visible', 'created_at')
+        fields = ('id', 'name', 'colour', 'is_visible', 'is_addon_type', 'standalone_price', 'created_at')
         read_only_fields = ('id', 'created_at')
 
 
@@ -70,13 +70,33 @@ class SeasonSerializer(serializers.ModelSerializer):
         return Enrolment.objects.filter(class_session_id__in=session_ids, status='active').count()
 
 
+class LockerAssignedToDetailSerializer(serializers.ModelSerializer):
+    display_name = serializers.ReadOnlyField()
+
+    class Meta:
+        from apps.users.models import User
+        model = User
+        fields = ('id', 'display_name', 'email')
+
+
 class LockerSerializer(serializers.ModelSerializer):
-    assigned_to_detail = UserMinimalSerializer(source='assigned_to', read_only=True)
+    assigned_to_detail = serializers.SerializerMethodField()
 
     class Meta:
         model = Locker
-        fields = ('id', 'number', 'assigned_to', 'assigned_to_detail', 'notes', 'expires_at', 'assigned_at')
+        fields = (
+            'id', 'number', 'assigned_to', 'assigned_to_detail', 'notes',
+            'expires_at', 'assigned_at',
+            'key_issued', 'key_returned', 'key_lost', 'locker_type', 'payment_type',
+            'payment_status', 'key_lost_fee_paid',
+        )
         read_only_fields = ('id',)
+
+    def get_assigned_to_detail(self, obj):
+        if not obj.assigned_to:
+            return None
+        u = obj.assigned_to
+        return {'id': u.id, 'display_name': u.display_name, 'email': u.email}
 
 
 class KisiGrantSerializer(serializers.ModelSerializer):
@@ -141,4 +161,73 @@ class WorkshopBookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkshopBooking
         fields = ('id', 'workshop', 'workshop_detail', 'student', 'status', 'created_at')
+        read_only_fields = ('id', 'created_at')
+
+
+class PracticeSlotSerializer(serializers.ModelSerializer):
+    studio_detail = StudioSerializer(source='studio', read_only=True)
+    booked_count = serializers.ReadOnlyField()
+    spots_left = serializers.ReadOnlyField()
+    duration_hours = serializers.ReadOnlyField()
+    is_booked = serializers.SerializerMethodField()
+    my_booking_status = serializers.SerializerMethodField()
+    price_for_me = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PracticeSlot
+        fields = (
+            'id', 'studio', 'studio_detail', 'date', 'start_time', 'end_time',
+            'capacity', 'booked_count', 'spots_left', 'duration_hours',
+            'is_active', 'notes', 'created_at',
+            'is_booked', 'my_booking_status', 'price_for_me',
+        )
+        read_only_fields = ('id', 'created_at')
+
+    def _get_price(self, obj, user):
+        from apps.enrolments.models import Enrolment
+        from apps.classes.models import Season
+        # Free if enrolled in 3+ course classes in the current/active season
+        active_season = Season.objects.filter(status__in=['active', 'upcoming']).order_by('-start_date').first()
+        course_enrolments = Enrolment.objects.filter(
+            student=user,
+            status='active',
+            enrolment_type='course',
+            class_session__season=active_season,
+        ).count() if active_season else 0
+        if course_enrolments >= 3:
+            return 0
+        is_enrolled = course_enrolments > 0
+        rate = obj.ENROLLED_RATE if is_enrolled else obj.NON_ENROLLED_RATE
+        return round(obj.duration_hours * rate, 2)
+
+    def get_is_booked(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.bookings.filter(student=request.user, status='confirmed').exists()
+
+    def get_my_booking_status(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return None
+        b = obj.bookings.filter(student=request.user).first()
+        return b.status if b else None
+
+    def get_price_for_me(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return None
+        return self._get_price(obj, request.user)
+
+
+class PracticeBookingSerializer(serializers.ModelSerializer):
+    slot_detail = PracticeSlotSerializer(source='slot', read_only=True)
+    student_detail = UserMinimalSerializer(source='student', read_only=True)
+
+    class Meta:
+        model = PracticeBooking
+        fields = (
+            'id', 'slot', 'slot_detail', 'student', 'student_detail',
+            'status', 'price_charged', 'is_free', 'payment_type', 'created_at',
+        )
         read_only_fields = ('id', 'created_at')

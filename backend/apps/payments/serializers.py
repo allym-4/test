@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.db.models import Sum
-from .models import Payment, PaymentPlan, PaymentPlanInstalment, Package, StudentPackage, MembershipType, GiftCard, PromoCode
+from .models import Payment, PaymentPlan, PaymentPlanInstalment, Package, StudentPackage, MembershipType, GiftCard, PromoCode, CancellationOffer
 from apps.users.serializers import UserMinimalSerializer
 
 
@@ -92,6 +92,7 @@ class GiftCardSerializer(serializers.ModelSerializer):
         model = GiftCard
         fields = (
             'id', 'code', 'value', 'balance', 'issued_to_name', 'issued_to_email',
+            'purchased_by_name', 'purchased_by_phone', 'payment_type',
             'purchased_by', 'redeemed_by', 'redeemed_at', 'is_active', 'created_at', 'expires_at',
         )
         read_only_fields = ('id', 'created_at')
@@ -109,3 +110,31 @@ class PromoCodeSerializer(serializers.ModelSerializer):
         if obj.max_uses is None:
             return f'{obj.current_uses} / unlimited'
         return f'{obj.current_uses} / {obj.max_uses}'
+
+
+class CancellationOfferSerializer(serializers.ModelSerializer):
+    student_name = serializers.SerializerMethodField()
+    occurrence_label = serializers.SerializerMethodField()
+    session_name = serializers.SerializerMethodField()
+    occurrence_date = serializers.SerializerMethodField()
+
+    def get_student_name(self, obj):
+        return obj.student.display_name
+
+    def get_occurrence_label(self, obj):
+        return str(obj.occurrence)
+
+    def get_session_name(self, obj):
+        return obj.occurrence.session.name
+
+    def get_occurrence_date(self, obj):
+        return str(obj.occurrence.date)
+
+    class Meta:
+        model = CancellationOffer
+        fields = (
+            'id', 'student', 'student_name', 'occurrence', 'occurrence_label',
+            'session_name', 'occurrence_date', 'credit_amount', 'status',
+            'email_sent', 'resolved_at', 'created_at',
+        )
+        read_only_fields = ('id', 'created_at', 'resolved_at', 'email_sent')

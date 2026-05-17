@@ -3,8 +3,8 @@ from django.db.models import Count
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, ClassChatMessage, Workshop, WorkshopBooking
-from .serializers import StudioSerializer, ClassCategorySerializer, ClassSessionSerializer, ClassOccurrenceSerializer, SeasonSerializer, LockerSerializer, KisiGrantSerializer, WorkshopSerializer, WorkshopBookingSerializer
+from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, ClassChatMessage, Workshop, WorkshopBooking, PracticeSlot, PracticeBooking
+from .serializers import StudioSerializer, ClassCategorySerializer, ClassSessionSerializer, ClassOccurrenceSerializer, SeasonSerializer, LockerSerializer, KisiGrantSerializer, WorkshopSerializer, WorkshopBookingSerializer, PracticeSlotSerializer, PracticeBookingSerializer
 from apps.users.permissions import IsAdminOrInstructor, IsAdminUser
 
 
@@ -53,6 +53,26 @@ class ClassSessionDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = ClassSession.objects.select_related('instructor', 'studio')
     serializer_class = ClassSessionSerializer
     permission_classes = [IsAdminOrInstructor]
+
+
+class ClassRosterView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, session_pk):
+        from apps.enrolments.models import Enrolment
+        enrolled = Enrolment.objects.filter(
+            class_session_id=session_pk,
+            status='active',
+            student__show_in_roster=True,
+        ).select_related('student')
+        names = []
+        for e in enrolled:
+            s = e.student
+            if s.roster_name == 'nickname' and s.nickname:
+                names.append(s.nickname)
+            else:
+                names.append(s.first_name or s.display_name)
+        return Response({'names': names})
 
 
 class ClassOccurrenceListView(generics.ListCreateAPIView):
@@ -227,6 +247,32 @@ class LockerLostKeyView(APIView):
             )
 
         return Response(LockerSerializer(locker).data)
+
+
+class LockerChaseView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, pk):
+        try:
+            locker = Locker.objects.select_related('assigned_to').get(pk=pk)
+        except Locker.DoesNotExist:
+            return Response({'detail': 'Locker not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not locker.assigned_to:
+            return Response({'detail': 'Locker is not assigned.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        student = locker.assigned_to
+        from apps.users.models import Notification
+        Notification.objects.create(
+            recipient=student,
+            title=f'Locker #{locker.number} — Payment Overdue',
+            body=(
+                f'Hi {student.first_name}, your locker fee for Locker #{locker.number} '
+                f'is overdue. Please contact the studio to arrange payment.'
+            ),
+            notification_type=Notification.Type.PAYMENT,
+        )
+        return Response({'detail': f'Chase notification sent to {student.display_name}.'})
 
 
 class KisiGrantListView(APIView):
@@ -486,3 +532,115 @@ class WorkshopBookingListView(APIView):
         ]
         return Response(data)
 
+
+# ── Practice Time ─────────────────────────────────────────────────────────────
+
+class PracticeSlotListView(generics.ListCreateAPIView):
+    serializer_class = PracticeSlotSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        qs = PracticeSlot.objects.select_related('studio').prefetch_related('bookings')
+        if not (self.request.user.role in ('admin', 'instructor', 'staff')):
+            qs = qs.filter(is_active=True, date__gte=date.today())
+        date_from = self.request.query_params.get('date_from')
+        date_to = self.request.query_params.get('date_to')
+        studio_id = self.request.query_params.get('studio')
+        if date_from:
+            qs = qs.filter(date__gte=date_from)
+        if date_to:
+            qs = qs.filter(date__lte=date_to)
+        if studio_id:
+            qs = qs.filter(studio_id=studio_id)
+        return qs
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAdminOrInstructor()]
+        return [permissions.IsAuthenticated()]
+
+
+class PracticeSlotDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = PracticeSlot.objects.all()
+    serializer_class = PracticeSlotSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class PracticeSlotBookView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _calc_price(self, slot, user):
+        from apps.enrolments.models import Enrolment
+        from apps.classes.models import Season
+        # Free if enrolled in 3+ course classes in the current/active season
+        active_season = Season.objects.filter(status__in=['active', 'upcoming']).order_by('-start_date').first()
+        course_enrolments = Enrolment.objects.filter(
+            student=user,
+            status='active',
+            enrolment_type='course',
+            class_session__season=active_season,
+        ).count() if active_season else 0
+        if course_enrolments >= 3:
+            return 0, True
+        is_enrolled = course_enrolments > 0
+        rate = slot.ENROLLED_RATE if is_enrolled else slot.NON_ENROLLED_RATE
+        return round(slot.duration_hours * rate, 2), False
+
+    def post(self, request, pk):
+        try:
+            slot = PracticeSlot.objects.get(pk=pk, is_active=True)
+        except PracticeSlot.DoesNotExist:
+            return Response({'detail': 'Slot not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if slot.date < date.today():
+            return Response({'detail': 'Cannot book a past slot.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if slot.spots_left <= 0:
+            return Response({'detail': 'This slot is fully booked.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if PracticeBooking.objects.filter(slot=slot, student=request.user, status='confirmed').exists():
+            return Response({'detail': 'Already booked.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        price, is_free = self._calc_price(slot, request.user)
+        booking = PracticeBooking.objects.create(
+            slot=slot,
+            student=request.user,
+            price_charged=price,
+            is_free=is_free,
+        )
+        return Response(PracticeBookingSerializer(booking, context={'request': request}).data, status=status.HTTP_201_CREATED)
+
+
+class PracticeSlotCancelView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            booking = PracticeBooking.objects.get(slot_id=pk, student=request.user, status='confirmed')
+        except PracticeBooking.DoesNotExist:
+            return Response({'detail': 'Booking not found.'}, status=status.HTTP_404_NOT_FOUND)
+        booking.status = 'cancelled'
+        booking.save(update_fields=['status'])
+        return Response({'status': 'cancelled'})
+
+
+class MyPracticeBookingsView(generics.ListAPIView):
+    serializer_class = PracticeBookingSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return PracticeBooking.objects.filter(
+            student=self.request.user
+        ).select_related('slot', 'slot__studio').order_by('-slot__date', '-slot__start_time')
+
+
+class AdminPracticeBookingsView(generics.ListAPIView):
+    serializer_class = PracticeBookingSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+    def get_queryset(self):
+        qs = PracticeBooking.objects.select_related('slot', 'slot__studio', 'student').order_by('-slot__date', '-slot__start_time')
+        slot_id = self.request.query_params.get('slot')
+        if slot_id:
+            qs = qs.filter(slot_id=slot_id)
+        return qs

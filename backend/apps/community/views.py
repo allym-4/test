@@ -1,4 +1,4 @@
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import CommunityGroup, GroupPost, PostLike, PostReply
@@ -85,7 +85,10 @@ class GroupJoinView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        group = CommunityGroup.objects.get(pk=pk)
+        try:
+            group = CommunityGroup.objects.get(pk=pk)
+        except CommunityGroup.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
         group.members.add(request.user)
         return Response({'joined': True})
 
@@ -94,7 +97,10 @@ class GroupLeaveView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        group = CommunityGroup.objects.get(pk=pk)
+        try:
+            group = CommunityGroup.objects.get(pk=pk)
+        except CommunityGroup.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
         group.members.remove(request.user)
         return Response({'left': True})
 

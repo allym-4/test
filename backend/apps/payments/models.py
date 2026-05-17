@@ -139,6 +139,9 @@ class GiftCard(models.Model):
     balance = models.DecimalField(max_digits=8, decimal_places=2)
     issued_to_name = models.CharField(max_length=100, blank=True)
     issued_to_email = models.EmailField(blank=True)
+    purchased_by_name = models.CharField(max_length=100, blank=True)
+    purchased_by_phone = models.CharField(max_length=30, blank=True)
+    payment_type = models.CharField(max_length=20, blank=True, choices=[('cash', 'Cash'), ('card', 'Card'), ('eftpos', 'EFTPOS')], default='')
     purchased_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name='gift_cards_purchased'
     )
@@ -155,6 +158,42 @@ class GiftCard(models.Model):
 
     def __str__(self):
         return f'Gift Card {self.code} (${self.balance} remaining)'
+
+
+# Per-class value based on season pricing tiers (price / 8 weeks / classes_per_week)
+SEASON_PRICES = {1: 270, 2: 440, 3: 580, 4: 700, 5: 800, 6: 900}
+
+
+def per_class_credit_value(num_classes_enrolled):
+    n = max(1, min(num_classes_enrolled, 6))
+    return round(SEASON_PRICES[n] / (8 * n), 2)
+
+
+class CancellationOffer(models.Model):
+    """Offer sent to a student when their class is cancelled — choose credit or makeup."""
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        ACCEPTED_CREDIT = 'accepted_credit', 'Accepted — Account Credit'
+        ACCEPTED_MAKEUP = 'accepted_makeup', 'Accepted — Makeup Class'
+        EXPIRED = 'expired', 'Expired'
+
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cancellation_offers')
+    occurrence = models.ForeignKey(
+        'classes.ClassOccurrence', on_delete=models.CASCADE, related_name='cancellation_offers'
+    )
+    credit_amount = models.DecimalField(max_digits=6, decimal_places=2)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    email_sent = models.BooleanField(default=False)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [('student', 'occurrence')]
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.student.display_name} — {self.occurrence} ({self.status})'
 
 
 class PromoCode(models.Model):

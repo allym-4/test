@@ -430,19 +430,25 @@ function CalendarGrid({ sessions, weekStart, conflictIds, onDismissConflicts, co
 export default function AdminTimetable() {
   const [weekOffset, setWeekOffset]       = useState(0)
   const [view, setView]                   = useState('calendar')  // 'calendar' | 'list'
+  const [mode, setMode]                   = useState('attend')    // 'attend' | 'setup'
   const [showAddClass, setShowAddClass]   = useState(false)
   const [editSession, setEditSession]     = useState(null)
   const [sessionList, setSessionList]     = useState(null)
   const [conflictsDismissed, setConflictsDismissed] = useState(false)
   const [conflictCheckTick, setConflictCheckTick]   = useState(0)
   const [selectedSeasonId, setSelectedSeasonId]     = useState(null)
+  // Term Setup filters
+  const [setupFilterLevel,     setSetupFilterLevel]     = useState('')
+  const [setupFilterTeacher,   setSetupFilterTeacher]   = useState('')
+  const [setupFilterWaitlist,  setSetupFilterWaitlist]  = useState(false)
+  const [setupFilterLow,       setSetupFilterLow]       = useState(false)
 
   // Load active sessions
   const { data, loading } = useApi(() => classes.list({ active: true }))
 
   // Load seasons for the dropdown (best-effort; falls back to hardcoded)
   const { data: seasonsData } = useApi(() => seasonsApi.list())
-  const seasonOptions = seasonsData?.results ?? seasonsData ?? null
+  const seasonOptions = seasonsData?.results ?? []
 
   // Derive current season from live data
   const activeSeason = selectedSeasonId
@@ -517,7 +523,7 @@ export default function AdminTimetable() {
             >
               {seasonOptions && seasonOptions.length > 0
                 ? seasonOptions.map(s => (
-                    <option key={s.id} value={s.id}>{s.name ?? `Season ${s.number}`}</option>
+                    <option key={s.id} value={s.id}>{s.name}</option>
                   ))
                 : <option>{FALLBACK_SEASON_LABEL}</option>
               }
@@ -541,35 +547,43 @@ export default function AdminTimetable() {
           </div>
         </div>
 
-        {/* Right: Calendar/List toggle + Add Class */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          {/* Segmented toggle */}
-          <div style={{
-            display: 'flex',
-            border: '1px solid var(--border, #333)',
-            borderRadius: 6,
-            overflow: 'hidden',
-          }}>
-            {['calendar', 'list'].map(v => (
+        {/* Right: mode toggle + Calendar/List toggle + Add Class */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
+          {/* Attendance / Term Setup mode toggle */}
+          <div style={{ display: 'flex', border: '1px solid var(--border, #333)', borderRadius: 6, overflow: 'hidden' }}>
+            {[['attend', 'Attendance Mode'], ['setup', 'Term Setup']].map(([m, label]) => (
               <button
-                key={v}
-                onClick={() => setView(v)}
+                key={m}
+                onClick={() => setMode(m)}
                 style={{
-                  padding: '5px 14px',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  border: 'none',
-                  cursor: 'pointer',
-                  background: view === v ? 'var(--lime, #ccff00)' : 'transparent',
-                  color:      view === v ? '#000' : 'var(--grey)',
+                  padding: '5px 14px', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer',
+                  background: mode === m ? 'var(--lime, #ccff00)' : 'transparent',
+                  color:      mode === m ? '#000' : 'var(--grey)',
                   transition: 'background 0.15s, color 0.15s',
-                  textTransform: 'capitalize',
                 }}
-              >
-                {v === 'calendar' ? '⊞ Calendar' : '☰ List'}
-              </button>
+              >{label}</button>
             ))}
           </div>
+
+          {/* Calendar/List view toggle — only shown in Attendance Mode */}
+          {mode === 'attend' && (
+            <div style={{ display: 'flex', border: '1px solid var(--border, #333)', borderRadius: 6, overflow: 'hidden' }}>
+              {['calendar', 'list'].map(v => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  style={{
+                    padding: '5px 14px', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer',
+                    background: view === v ? 'var(--lime, #ccff00)' : 'transparent',
+                    color:      view === v ? '#000' : 'var(--grey)',
+                    transition: 'background 0.15s, color 0.15s',
+                  }}
+                >
+                  {v === 'calendar' ? '⊞ Calendar' : '☰ List'}
+                </button>
+              ))}
+            </div>
+          )}
 
           <button
             className="btn btn-lime btn-sm"
@@ -578,11 +592,106 @@ export default function AdminTimetable() {
         </div>
       </div>
 
+      {/* ── Term Setup banner ── */}
+      {mode === 'setup' && (
+        <div style={{ background: '#151000', border: '1px solid var(--amber)', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: 'var(--amber)' }}>
+          ⚙ Term Setup Mode — view season roster, edit class settings (levels, capacity, tags) and manage enrolments
+        </div>
+      )}
+
       {/* ── Body ── */}
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
           <div className="spinner" />
         </div>
+      ) : mode === 'setup' ? (
+        /* ── Term Setup view ── */
+        (() => {
+          const instructorNames = [...new Set(sorted.map(s => s.instructor_detail?.display_name).filter(Boolean))]
+          const levelNames      = [...new Set(sorted.map(s => s.name).filter(Boolean))].sort()
+          const filtered = sorted.filter(s => {
+            if (setupFilterLevel   && s.name !== setupFilterLevel) return false
+            if (setupFilterTeacher && (s.instructor_detail?.display_name || '') !== setupFilterTeacher) return false
+            if (setupFilterWaitlist && !(s.waitlist_count > 0)) return false
+            if (setupFilterLow     && !(s.enrolled_count < 4)) return false
+            return true
+          })
+          const seasonInfo = activeSeason
+            ? `${activeSeason.name} · ${activeSeason.start_date} to ${activeSeason.end_date} · ${seasonWeeks} weeks`
+            : 'No active season'
+          return (
+            <div>
+              {/* Filters */}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
+                <select value={setupFilterLevel} onChange={e => setSetupFilterLevel(e.target.value)}
+                  style={{ background: '#1a1a1a', border: '1px solid var(--border)', color: 'var(--white)', padding: '7px 12px', borderRadius: 8, fontFamily: 'inherit', fontSize: 13 }}>
+                  <option value="">All Classes</option>
+                  {levelNames.map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+                <select value={setupFilterTeacher} onChange={e => setSetupFilterTeacher(e.target.value)}
+                  style={{ background: '#1a1a1a', border: '1px solid var(--border)', color: 'var(--white)', padding: '7px 12px', borderRadius: 8, fontFamily: 'inherit', fontSize: 13 }}>
+                  <option value="">All Teachers</option>
+                  {instructorNames.map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={setupFilterWaitlist} onChange={e => setSetupFilterWaitlist(e.target.checked)} style={{ accentColor: 'var(--amber)' }} />
+                  <span style={{ color: 'var(--amber)' }}>Has waitlist</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={setupFilterLow} onChange={e => setSetupFilterLow(e.target.checked)} style={{ accentColor: 'var(--lav)' }} />
+                  <span style={{ color: 'var(--lav)' }}>Low numbers (&lt;4)</span>
+                </label>
+                {(setupFilterLevel || setupFilterTeacher || setupFilterWaitlist || setupFilterLow) && (
+                  <button className="btn btn-ghost btn-xs" onClick={() => { setSetupFilterLevel(''); setSetupFilterTeacher(''); setSetupFilterWaitlist(false); setSetupFilterLow(false) }}>Clear</button>
+                )}
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 14 }}>{seasonInfo} · Click any class to view roster or edit settings</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {filtered.length === 0 && (
+                  <div style={{ color: 'var(--grey)', fontSize: 13, padding: '24px 0', textAlign: 'center' }}>No classes match the current filters.</div>
+                )}
+                {filtered.map(s => {
+                  const isFull = s.enrolled_count >= s.capacity
+                  const hasWaitlist = s.waitlist_count > 0
+                  const isLow = s.enrolled_count < 4
+                  return (
+                    <div key={s.id} style={{ background: '#111', border: `1px solid ${isFull ? '#ff3333aa' : 'var(--border)'}`, borderRadius: 10 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '170px 1fr 160px 90px auto', alignItems: 'center', gap: 12, padding: '12px 16px', cursor: 'pointer' }}
+                        onClick={() => { setEditSession(s); setShowAddClass(true) }}>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 14 }}>{s.name}</div>
+                          <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{DAYS[s.day_of_week]} {s.start_time?.slice(0, 5)}</div>
+                        </div>
+                        <div style={{ fontSize: 13 }}>
+                          {s.instructor_detail?.display_name || '—'}
+                          <span style={{ color: 'var(--grey)' }}> · {s.studio_detail?.name || '—'}</span>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 13, color: isFull ? '#ff6b6b' : isLow ? 'var(--lav)' : 'var(--lime)' }}>
+                            {s.enrolled_count}/{s.capacity}{isFull ? ' FULL' : ''}
+                          </div>
+                          {hasWaitlist
+                            ? <div style={{ fontSize: 11, color: 'var(--amber)', marginTop: 2 }}>{s.waitlist_count} on waitlist</div>
+                            : <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>No waitlist</div>
+                          }
+                        </div>
+                        <span className={`tag ${!s.is_active ? 'tag-grey' : isFull ? 'tag-amber' : 'tag-lime'}`} style={{ fontSize: 10 }}>
+                          {!s.is_active ? 'Inactive' : isFull ? 'Full' : 'Active'}
+                        </span>
+                        <div style={{ display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
+                          <Link to={`/admin/classes/${s.id}/attendance`}>
+                            <button className="btn btn-ghost btn-xs">Roster</button>
+                          </Link>
+                          <button className="btn btn-ghost btn-xs" onClick={() => { setEditSession(s); setShowAddClass(true) }}>Edit</button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })()
       ) : view === 'calendar' ? (
         <CalendarGrid
           sessions={sessions}

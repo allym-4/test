@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
 import { classes, payments, enrolments, orders, notifications, settings as settingsApi } from '../../api'
 import client from '../../api/client'
@@ -100,6 +100,7 @@ function ConvertTrialModal({ enrolment: e, onClose, onSuccess }) {
 }
 
 export default function AdminDashboard() {
+  const navigate = useNavigate()
   const [actionItemsVisible, setActionItemsVisible] = useState(true)
   const [checkedItems, setCheckedItems] = useState({})
   const [confirmCancelId, setConfirmCancelId] = useState(null)
@@ -113,6 +114,7 @@ export default function AdminDashboard() {
   const { data: pendingPlansData, refetch: refetchPendingPlans } = useApi(() => payments.plans.list({ status: 'pending_approval' }))
   const { data: exemptionData, refetch: refetchExemptions } = useApi(() => enrolments.list({ status: 'exemption_requested' }))
   const { data: trialsAndCasualsData, refetch: refetchTrialsAndCasuals } = useApi(() => enrolments.list({ enrolment_type: 'trial,casual' }))
+  const { data: flaggedData, refetch: refetchFlagged } = useApi(() => enrolments.flagged())
 
   const sessions = sessionsData?.results || []
   const plans = plansData?.results || plansData || []
@@ -121,6 +123,7 @@ export default function AdminDashboard() {
   const pendingPlans = pendingPlansData?.results || pendingPlansData || []
   const exemptions = exemptionData?.results || exemptionData || []
   const trialsAndCasuals = trialsAndCasualsData?.results || trialsAndCasualsData || []
+  const flaggedEnrolments = flaggedData?.results || flaggedData || []
 
   const todayDow = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1
   const todaySessions = sessions.filter(s => s.day_of_week === todayDow)
@@ -333,16 +336,20 @@ export default function AdminDashboard() {
           <div className="kpi-value">{weekBookings}</div>
           <div className="kpi-sub">Enrolments this week</div>
         </div>
-        <div className="kpi kpi-red">
-          <div className="kpi-label">Outstanding Invoices</div>
-          <div className="kpi-value">${outstandingBalance.toFixed(0)}</div>
-          <div className="kpi-sub">Total unpaid balance</div>
-        </div>
-        <div className="kpi kpi-amber">
-          <div className="kpi-label">Active Students</div>
-          <div className="kpi-value">{activeStudentCount ?? '…'}</div>
-          <div className="kpi-sub">Students with active accounts</div>
-        </div>
+        <Link to="/admin/billing" style={{ textDecoration: 'none' }}>
+          <div className="kpi kpi-red" style={{ cursor: 'pointer' }}>
+            <div className="kpi-label">Outstanding Invoices</div>
+            <div className="kpi-value">${outstandingBalance.toFixed(0)}</div>
+            <div className="kpi-sub">Total unpaid balance · See all →</div>
+          </div>
+        </Link>
+        <Link to="/admin/students" style={{ textDecoration: 'none' }}>
+          <div className="kpi kpi-amber" style={{ cursor: 'pointer' }}>
+            <div className="kpi-label">Active Students</div>
+            <div className="kpi-value">{activeStudentCount ?? '…'}</div>
+            <div className="kpi-sub">Students with active accounts · See all →</div>
+          </div>
+        </Link>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
@@ -603,6 +610,51 @@ export default function AdminDashboard() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {flaggedEnrolments.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <div className="section-title" style={{ fontSize: 14, marginBottom: 14 }}>Flagged Enrolments</div>
+          <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 10 }}>
+            Students can still attend — these are flagged for your awareness. Ignore to clear the flag, or Contact to reach out.
+          </div>
+          <div className="tbl-section">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Class</th>
+                  <th>Flag Reason</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {flaggedEnrolments.map(f => (
+                  <tr key={f.id}>
+                    <td style={{ fontWeight: 600 }}>{f.student_name}</td>
+                    <td style={{ color: 'var(--grey)', fontSize: 13 }}>{f.session_name}</td>
+                    <td style={{ color: 'var(--amber)', fontSize: 13 }}>{f.flag_reason}</td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button
+                          className="btn btn-ghost btn-xs"
+                          onClick={async () => {
+                            await enrolments.dismissFlag(f.id)
+                            refetchFlagged()
+                          }}
+                        >Ignore</button>
+                        <button
+                          className="btn btn-ghost btn-xs"
+                          onClick={() => navigate(`/admin/students/${f.student_id}`)}
+                        >Contact</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

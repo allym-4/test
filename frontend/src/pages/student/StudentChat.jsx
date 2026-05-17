@@ -90,6 +90,8 @@ export default function StudentChat() {
 
   const humanMessages = conv?.messages || []
 
+  const [mobilePanelOpen, setMobilePanelOpen] = useState(false)
+
   const threads = [
     {
       id: 'assistant',
@@ -108,6 +110,11 @@ export default function StudentChat() {
     },
   ]
 
+  function selectThread(id) {
+    setActiveThread(id)
+    setMobilePanelOpen(true)
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 180px)' }}>
       <div style={{ marginBottom: 16 }}>
@@ -115,16 +122,16 @@ export default function StudentChat() {
         <div style={{ fontSize: 13, color: 'var(--grey)' }}>Chat with the studio team</div>
       </div>
 
-      <div style={{ flex: 1, border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', display: 'flex', minHeight: 0 }}>
+      <div className="split-layout" style={{ flex: 1, border: '1px solid var(--border)', borderRadius: 12, minHeight: 0 }}>
         {/* Sidebar */}
-        <div style={{ width: 260, borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+        <div className={`split-sidebar${mobilePanelOpen ? ' mobile-panel-open' : ''}`} style={{ width: 260, borderRight: '1px solid var(--border)' }}>
           <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', fontWeight: 500 }}>
             Conversations
           </div>
           {threads.map(t => (
             <div
               key={t.id}
-              onClick={() => setActiveThread(t.id)}
+              onClick={() => selectThread(t.id)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -160,20 +167,30 @@ export default function StudentChat() {
         </div>
 
         {/* Right pane */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        <div className={`split-main${!mobilePanelOpen ? ' mobile-list-showing' : ''}`}>
 
           {/* ── AI Assistant thread ── */}
           {activeThread === 'assistant' && (
             <>
               {/* Header */}
-              <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--lav)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
-                  🤖
+              <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <button className="mobile-back-btn" onClick={() => setMobilePanelOpen(false)}>← Back</button>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--lav)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
+                    🤖
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>Duality Assistant</div>
+                    <div style={{ fontSize: 11, color: 'var(--grey)' }}>AI studio helper · usually instant</div>
+                  </div>
                 </div>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>Duality Assistant</div>
-                  <div style={{ fontSize: 11, color: 'var(--grey)' }}>AI powered · Always available</div>
-                </div>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  style={{ fontSize: 12, flexShrink: 0 }}
+                  onClick={() => setActiveThread('human')}
+                >
+                  Speak to Mimi &amp; the Team
+                </button>
               </div>
 
               {/* Thread */}
@@ -201,15 +218,15 @@ export default function StudentChat() {
                   </div>
                 )}
 
-                {/* Escalation card */}
-                <div style={{ marginTop: 12, background: '#111', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                  <div style={{ fontSize: 12, color: 'var(--grey)' }}>Want to speak to a human?</div>
+                {/* Human handoff nudge */}
+                <div style={{ background: '#0d0d0d', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px', marginTop: 4 }}>
+                  <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 10 }}>Need something I can't handle — like changing your level or a custom question?</div>
                   <button
-                    className="btn btn-ghost btn-sm"
-                    style={{ fontSize: 12, flexShrink: 0 }}
+                    className="btn btn-sm"
+                    style={{ background: 'var(--lav)', color: '#000', fontSize: 12 }}
                     onClick={() => setActiveThread('human')}
                   >
-                    Contact Mimi &amp; the Team →
+                    Speak to Mimi &amp; the Team
                   </button>
                 </div>
               </div>
@@ -236,6 +253,7 @@ export default function StudentChat() {
             <>
               {/* Header */}
               <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <button className="mobile-back-btn" onClick={() => setMobilePanelOpen(false)}>← Back</button>
                 <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--lime)', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, flexShrink: 0 }}>
                   D
                 </div>

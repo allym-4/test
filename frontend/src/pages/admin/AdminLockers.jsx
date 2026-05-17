@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useApi } from '../../hooks/useApi'
 import { lockers, users, seasons } from '../../api'
+import { lockers, users } from '../../api'
 
 const TOTAL_LOCKERS = 36
 
@@ -8,6 +9,7 @@ const TOTAL_LOCKERS = 36
 
 function AssignModal({ locker, activeSeason, onClose, onSaved }) {
   const defaultExpiry = locker?.expires_at || activeSeason?.end_date || ''
+function AssignModal({ locker, onClose, onSaved }) {
   const [studentSearch, setStudentSearch] = useState(locker?.assigned_to_detail?.display_name || '')
   const [studentList, setStudentList] = useState([])
   const [picked, setPicked] = useState(locker?.assigned_to_detail || null)
@@ -104,6 +106,7 @@ function AssignModal({ locker, activeSeason, onClose, onSaved }) {
               <option value="waived">Waived</option>
             </select>],
             ['Expiry Date', <input type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} placeholder={activeSeason?.end_date || ''} />],
+            ['Expiry Date', <input type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} />],
             ['Notes', <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Optional…" />],
           ].map(([label, field]) => (
             <div key={label} style={{ marginBottom: 14 }}>
@@ -156,6 +159,7 @@ export default function AdminLockers() {
   const eligible = eligibleData?.eligible || []
   const eligibleWithoutLocker = eligible.filter(s => !s.has_locker)
   const seasonName = eligibleData?.season?.name || activeSeason?.name || 'Current Season'
+  const seasonName = eligibleData?.season?.name || 'Current Season'
 
   // Stats
   const freeLockers = lockerList.filter(l => l.locker_type === 'complimentary').length
@@ -245,6 +249,7 @@ export default function AdminLockers() {
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12, marginBottom: 24 }}>
         {[
           { label: 'FREE LOCKERS', val: loading ? '…' : freeLockers, sub: 'Auto — 4+ classes/season', color: 'var(--amber)' },
           { label: 'PAID LOCKERS', val: loading ? '…' : paidLockers, sub: '$50/season', color: 'var(--lime)' },
@@ -305,6 +310,7 @@ export default function AdminLockers() {
             return (
               <div key={num}
                 onClick={() => openAssign(num)}
+                onClick={() => l ? openAssign(num) : openAssign(num)}
                 title={l ? `${l.assigned_to_detail?.display_name}` : 'Available'}
                 style={{ aspectRatio: '1', borderRadius: 8, background: s.bg, border: `1px solid ${s.border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s' }}>
                 <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 13, color: s.color }}>{String(num).padStart(2, '0')}</div>
@@ -393,6 +399,10 @@ export default function AdminLockers() {
                             <button className="btn btn-ghost btn-xs" style={{ color: 'var(--amber)', fontSize: 10 }}
                               onClick={() => reportLostKey(l)} disabled={busy === l.id + '-lk'}>
                               {busy === l.id + '-lk' ? '…' : 'Lost Key'}
+                          {!l.key_lost && l.key_issued && !l.key_returned && (
+                            <button className="btn btn-ghost btn-xs" style={{ color: 'var(--amber)', fontSize: 10 }}
+                              onClick={() => reportLostKey(l)} disabled={busy === l.id + '-lk'}>
+                              Lost Key
                             </button>
                           )}
                           <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => unassign(l)}>Unassign</button>
