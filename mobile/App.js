@@ -7,6 +7,7 @@ import { StripeProvider } from '@stripe/stripe-react-native'
 import { AuthProvider, useAuth } from './src/contexts/AuthContext'
 import { usePushNotifications } from './src/hooks/usePushNotifications'
 import LoginScreen from './src/screens/auth/LoginScreen'
+import RegisterScreen from './src/screens/auth/RegisterScreen'
 import OnboardingScreen from './src/screens/auth/OnboardingScreen'
 import StudentTabs from './src/navigation/StudentTabs'
 import InstructorTabs from './src/navigation/InstructorTabs'
@@ -93,7 +94,10 @@ function RootNavigator() {
     <NavigationContainer ref={navigationRef}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!user ? (
-          <Stack.Screen name="Login" component={LoginScreen} />
+          <>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
+          </>
         ) : showInstructorView ? (
           <Stack.Screen name="InstructorApp">
             {() => <InstructorTabs onSwitchToStudent={() => setViewMode('student')} />}

@@ -6,7 +6,7 @@ import {
 } from 'react-native'
 import { useAuth } from '../../contexts/AuthContext'
 
-export default function LoginScreen() {
+export default function LoginScreen({ navigation }) {
   const { login } = useAuth()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -62,6 +62,10 @@ export default function LoginScreen() {
               }
             </TouchableOpacity>
           </View>
+
+          <TouchableOpacity onPress={() => navigation.navigate('Register')} activeOpacity={0.7} style={s.linkWrap}>
+            <Text style={s.link}>Don't have an account? <Text style={s.linkAccent}>Create account</Text></Text>
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </>
@@ -134,5 +138,16 @@ const s = StyleSheet.create({
     fontWeight: '700',
     fontSize: 16,
     letterSpacing: 0.5,
+  },
+  linkWrap: {
+    marginTop: 32,
+  },
+  link: {
+    color: '#666',
+    textAlign: 'center',
+    fontSize: 14,
+  },
+  linkAccent: {
+    color: '#ccff00',
   },
 })

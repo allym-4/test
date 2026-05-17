@@ -2,7 +2,9 @@ import csv
 import io
 import os
 import re
+import random
 from rest_framework import generics, permissions, status
+from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db import transaction
@@ -2245,3 +2247,75 @@ def _grant_challenge_reward(challenge, student):
         ),
         notification_type='challenge',
     )
+
+
+class RegisterView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        first_name = (request.data.get('first_name') or '').strip()
+        last_name = (request.data.get('last_name') or '').strip()
+        email = (request.data.get('email') or '').strip()
+        password = request.data.get('password', '')
+
+        errors = {}
+        if not first_name:
+            errors['first_name'] = ['This field is required.']
+        if not last_name:
+            errors['last_name'] = ['This field is required.']
+        if not email:
+            errors['email'] = ['This field is required.']
+        elif User.objects.filter(email=email).exists():
+            errors['email'] = ['A user with this email already exists.']
+        if not password:
+            errors['password'] = ['This field is required.']
+        elif len(password) < 8:
+            errors['password'] = ['Password must be at least 8 characters.']
+        if errors:
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
+        base = re.sub(r'[^a-z0-9]', '', f"{first_name}{last_name}".lower()) or 'student'
+        suffix = str(random.randint(10000, 99999))
+        username = f"{base}{suffix}"
+        while User.objects.filter(username=username).exists():
+            suffix = str(random.randint(10000, 99999))
+            username = f"{base}{suffix}"
+
+        user = User(
+            username=username,
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            role='student',
+        )
+        user.set_password(password)
+        user.save()
+
+        return Response(
+            {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class AdminSetPasswordView(APIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        password = request.data.get('password', '')
+        if not password:
+            return Response({'password': ['This field is required.']}, status=status.HTTP_400_BAD_REQUEST)
+        if len(password) < 8:
+            return Response({'password': ['Password must be at least 8 characters.']}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        user.set_password(password)
+        user.save(update_fields=['password'])
+        return Response({'detail': 'Password updated.'})

@@ -185,6 +185,7 @@ export const users = {
   update: (id, data) => client.patch(`/api/users/${id}/`, data),
   notes: (userId) => client.get(`/api/users/${userId}/notes/`),
   addNote: (userId, data) => client.post(`/api/users/${userId}/notes/`, data),
+  resetPassword: (id, password) => client.post(`/api/users/${id}/set-password/`, { password }),
   bulkImport: (formData) => client.post('/api/users/import/', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),

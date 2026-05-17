@@ -217,6 +217,12 @@ export default function AdminStudentDetail() {
   const [commsFilter, setCommsFilter] = useState('all')
   const [loadingComms, setLoadingComms] = useState(false)
   const [viewForm, setViewForm] = useState(null)
+  const [showResetPassword, setShowResetPassword] = useState(false)
+  const [resetPwNew, setResetPwNew] = useState('')
+  const [resetPwConfirm, setResetPwConfirm] = useState('')
+  const [resetPwError, setResetPwError] = useState(null)
+  const [resetPwSuccess, setResetPwSuccess] = useState(false)
+  const [savingResetPw, setSavingResetPw] = useState(false)
 
   useEffect(() => {
     users.get(id).then(res => {
@@ -371,6 +377,7 @@ export default function AdminStudentDetail() {
               <button className="btn btn-lime btn-xs" onClick={() => setShowCharge(true)}>+ Charge</button>
               <button className="btn btn-lime btn-xs" onClick={() => setShowPayment(true)}>Take Payment</button>
               <button className="btn btn-ghost btn-xs" onClick={() => setShowAddToClass(true)}>+ Add to Class</button>
+              <button className="btn btn-ghost btn-xs" onClick={() => { setShowResetPassword(true); setResetPwNew(''); setResetPwConfirm(''); setResetPwError(null); setResetPwSuccess(false) }}>Reset Password</button>
               <button
                 className="btn btn-ghost btn-xs"
                 style={{ color: student.is_active ? 'var(--red)' : 'var(--lime)', borderColor: student.is_active ? 'rgba(255,68,68,0.4)' : 'rgba(204,255,0,0.4)' }}
@@ -1080,6 +1087,76 @@ export default function AdminStudentDetail() {
                   {savingCredit ? 'Saving…' : 'Add Credit'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password */}
+      {showResetPassword && (
+        <div className="sd-overlay" onClick={e => e.target === e.currentTarget && setShowResetPassword(false)}>
+          <div className="sd-modal" style={{ maxWidth: 400 }}>
+            <div className="sd-header">
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>Reset Password</div>
+              <button className="modal-close-btn" onClick={() => setShowResetPassword(false)}>✕</button>
+            </div>
+            <div className="sd-body">
+              {resetPwSuccess ? (
+                <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                  <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
+                  <div style={{ fontSize: 14, color: 'var(--lime)', fontWeight: 600, marginBottom: 8 }}>Password updated successfully</div>
+                  <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 20 }}>The new password has been set for {student.first_name}.</div>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setShowResetPassword(false)}>Close</button>
+                </div>
+              ) : (
+                <form onSubmit={async e => {
+                  e.preventDefault()
+                  setResetPwError(null)
+                  if (resetPwNew.length < 8) { setResetPwError('Password must be at least 8 characters.'); return }
+                  if (resetPwNew !== resetPwConfirm) { setResetPwError('Passwords do not match.'); return }
+                  setSavingResetPw(true)
+                  try {
+                    await users.resetPassword(student.id, resetPwNew)
+                    setResetPwSuccess(true)
+                  } catch (err) {
+                    setResetPwError(err.response?.data?.detail || err.response?.data?.password?.[0] || 'Failed to reset password.')
+                  } finally {
+                    setSavingResetPw(false)
+                  }
+                }}>
+                  {resetPwError && (
+                    <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>
+                      {resetPwError}
+                    </div>
+                  )}
+                  <div className="field">
+                    <label>New Password</label>
+                    <input
+                      type="password"
+                      value={resetPwNew}
+                      onChange={e => setResetPwNew(e.target.value)}
+                      placeholder="Min. 8 characters"
+                      autoComplete="new-password"
+                    />
+                  </div>
+                  <div className="field">
+                    <label>Confirm New Password</label>
+                    <input
+                      type="password"
+                      value={resetPwConfirm}
+                      onChange={e => setResetPwConfirm(e.target.value)}
+                      placeholder="Re-enter new password"
+                      autoComplete="new-password"
+                    />
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowResetPassword(false)}>Cancel</button>
+                    <button type="submit" className="btn btn-lime btn-sm" disabled={savingResetPw}>
+                      {savingResetPw ? 'Saving…' : 'Set Password'}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         </div>
