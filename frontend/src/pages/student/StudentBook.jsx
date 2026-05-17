@@ -55,7 +55,7 @@ function SkeletonCard() {
   )
 }
 
-function ClassCard({ session, onAddToCart, priceCasual, cartSessionId }) {
+function ClassCard({ session, onAddToCart, priceCasual, cartSessionId, isWaitlisted, waitlistType = 'waitlist' }) {
   const spotsLeft = (session.capacity || 12) - (session.enrolled_count || 0)
   const isFull = spotsLeft <= 0
   const levelBadge = getLevelBadge(session.name)
@@ -95,7 +95,11 @@ function ClassCard({ session, onAddToCart, priceCasual, cartSessionId }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <SpotsLabel spotsLeft={spotsLeft} />
         {isFull ? (
-          <button className="btn btn-ghost btn-sm" onClick={() => onAddToCart(session, 'waitlist')}>Join Waitlist</button>
+          isWaitlisted ? (
+            <span style={{ fontSize: 12, color: 'var(--amber)', fontWeight: 700 }}>On Waitlist ✓</span>
+          ) : (
+            <button className="btn btn-ghost btn-sm" onClick={() => onAddToCart(session, waitlistType)}>Join Waitlist</button>
+          )
         ) : inCart ? (
           <span style={{ fontSize: 12, color: 'var(--lime)', fontWeight: 700 }}>✓ Added</span>
         ) : (
@@ -249,8 +253,9 @@ export default function StudentBook() {
   const [workshopError, setWorkshopError] = useState('')
 
   function addToCart(session, type, price) {
-    if (type === 'waitlist') {
-      enrolments.create({ session: session.id, student: user?.id, status: 'waitlisted', enrolment_type: 'course' })
+    if (type === 'waitlist' || type === 'casual-waitlist') {
+      const enrolmentType = type === 'casual-waitlist' ? 'casual' : 'course'
+      enrolments.create({ session: session.id, status: 'waitlisted', enrolment_type: enrolmentType })
         .then(() => setBooked(b => [...b, session.id + '-waitlist']))
         .catch(() => {})
       return
@@ -430,7 +435,7 @@ export default function StudentBook() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
               {sessions.length === 0 ? <EmptyState /> : sessions.map(s => (
-                <ClassCard key={s.id} session={s} onAddToCart={(s) => addToCart(s, 'season', seasonPrice)} priceCasual={seasonPrice} cartSessionId={cartSessionId} />
+                <ClassCard key={s.id} session={s} onAddToCart={(s, type) => addToCart(s, type || 'season', seasonPrice)} priceCasual={seasonPrice} cartSessionId={cartSessionId} isWaitlisted={booked.includes(s.id + '-waitlist')} waitlistType="waitlist" />
               ))}
             </div>
           )}
@@ -451,7 +456,7 @@ export default function StudentBook() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
               {sessions.length === 0 ? <EmptyState /> : sessions.map(s => (
-                <ClassCard key={s.id} session={{ ...s, type: 'casual' }} onAddToCart={(s) => addToCart(s, 'casual', priceCasual)} priceCasual={priceCasual} cartSessionId={cartSessionId} />
+                <ClassCard key={s.id} session={{ ...s, type: 'casual' }} onAddToCart={(s, type) => addToCart(s, type || 'casual', priceCasual)} priceCasual={priceCasual} cartSessionId={cartSessionId} isWaitlisted={booked.includes(s.id + '-waitlist')} waitlistType="casual-waitlist" />
               ))}
             </div>
           )}
