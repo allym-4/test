@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as ImagePicker from 'expo-image-picker'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { payments, auth, classes } from '../../api'
+import { payments, auth, classes, referrals as referralsApi, giftCards as giftCardsApi, lockers as lockersApi } from '../../api'
 
 // ─── ChangePasswordModal ─────────────────────────────────────────────────────
 
@@ -112,6 +112,17 @@ function FieldInput({ label, value, onChangeText, placeholder, keyboardType, mul
 export default function AccountScreen({ navigation, onSwitchToInstructor }) {
   const { user, logout } = useAuth()
   const { data: balanceData } = useApi(() => user ? payments.balance(user.id) : null, [user?.id])
+  const { data: referralData } = useApi(() => user?.id ? referralsApi.list({ referrer: user.id }) : null, [user?.id])
+  const { data: lockerData, refetch: refetchLocker } = useApi(() => lockersApi.mine(), [])
+
+  // Gift card state
+  const [showGiftModal, setShowGiftModal] = useState(false)
+  const [giftCode, setGiftCode] = useState('')
+  const [giftMsg, setGiftMsg] = useState('')
+  const [redeemingGift, setRedeemingGift] = useState(false)
+
+  // Locker state
+  const [keyLostMsg, setKeyLostMsg] = useState('')
 
   // Profile fields
   const [firstName, setFirstName] = useState(user?.first_name || '')
@@ -141,6 +152,7 @@ export default function AccountScreen({ navigation, onSwitchToInstructor }) {
   // Roster prefs
   const [showInRoster, setShowInRoster] = useState(user?.show_in_roster ?? false)
   const [rosterName, setRosterName] = useState(user?.roster_name ?? 'first_name')
+  const [nickname, setNickname] = useState(user?.nickname ?? '')
   const [savingRoster, setSavingRoster] = useState(false)
 
   // Notification preferences
@@ -178,6 +190,37 @@ export default function AccountScreen({ navigation, onSwitchToInstructor }) {
   const balance = balanceData?.balance
   const balanceNum = parseFloat(balance ?? 0)
   const initials = `${user?.first_name?.[0] ?? ''}${user?.last_name?.[0] ?? ''}`.toUpperCase()
+
+  const myReferrals = referralData?.results ?? referralData ?? []
+  const creditedReferrals = myReferrals.filter(r => r.status === 'credited')
+  const pendingReferrals = myReferrals.filter(r => r.status === 'pending')
+  const totalCredits = creditedReferrals.reduce((sum, r) => sum + parseFloat(r.credit_amount || 0), 0)
+
+  async function handleRedeemGiftCard() {
+    if (!giftCode.trim() || redeemingGift) return
+    setRedeemingGift(true)
+    try {
+      const res = await giftCardsApi.redeem(giftCode.trim().toUpperCase())
+      setGiftMsg(res.data?.detail || 'Gift card redeemed successfully!')
+      setGiftCode('')
+    } catch (err) {
+      setGiftMsg(err.response?.data?.detail || 'Could not redeem gift card. Please check the code.')
+    } finally {
+      setRedeemingGift(false)
+    }
+  }
+
+  async function handleLostKey() {
+    if (!lockerData?.id) return
+    try {
+      await lockersApi.lostKey(lockerData.id)
+      setKeyLostMsg("Reported — we'll be in touch about the replacement fee.")
+      refetchLocker()
+    } catch {
+      setKeyLostMsg('Something went wrong. Please email us.')
+    }
+    setTimeout(() => setKeyLostMsg(''), 6000)
+  }
 
   async function handleSaveProfile() {
     setSaving(true)
@@ -225,10 +268,10 @@ export default function AccountScreen({ navigation, onSwitchToInstructor }) {
     }
   }
 
-  async function saveRosterPrefs(newShow, newName) {
+  async function saveRosterPrefs(newShow, newName, newNickname) {
     setSavingRoster(true)
     try {
-      await auth.updateMe({ show_in_roster: newShow, roster_name: newName })
+      await auth.updateMe({ show_in_roster: newShow, roster_name: newName, nickname: newNickname ?? nickname })
     } catch {
       Alert.alert('Error', 'Could not save preference.')
     } finally {
@@ -421,7 +464,7 @@ export default function AccountScreen({ navigation, onSwitchToInstructor }) {
         </View>
       </SectionCard>
 
-      {/* Referral code */}
+      {/* Referral code + stats */}
       <SectionCard title="Refer a Friend">
         <Text style={s.inputLabel}>Your referral code</Text>
         <View style={s.referralRow}>
@@ -433,7 +476,61 @@ export default function AccountScreen({ navigation, onSwitchToInstructor }) {
             <Text style={s.copyBtnText}>Share</Text>
           </TouchableOpacity>
         </View>
+        <View style={s.referralStats}>
+          <View style={s.referralStat}>
+            <Text style={s.referralStatNum}>{myReferrals.length}</Text>
+            <Text style={s.referralStatLabel}>Referrals</Text>
+          </View>
+          <View style={s.referralStat}>
+            <Text style={[s.referralStatNum, { color: '#4ade80' }]}>${totalCredits.toFixed(0)}</Text>
+            <Text style={s.referralStatLabel}>Credits Earned</Text>
+          </View>
+          <View style={s.referralStat}>
+            <Text style={[s.referralStatNum, { color: '#b0a0ff' }]}>{pendingReferrals.length}</Text>
+            <Text style={s.referralStatLabel}>Pending</Text>
+          </View>
+        </View>
       </SectionCard>
+
+      {/* Gift cards */}
+      <SectionCard title="Gift Cards">
+        <TouchableOpacity style={s.ghostBtn} onPress={() => { setShowGiftModal(true); setGiftMsg('') }}>
+          <Text style={s.ghostBtnText}>Redeem a gift card code</Text>
+        </TouchableOpacity>
+      </SectionCard>
+
+      {/* Locker (conditional) */}
+      {lockerData && (
+        <SectionCard title="Locker">
+          <View style={s.lockerCard}>
+            <Text style={{ fontSize: 28, marginRight: 12 }}>🔐</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={s.lockerNumber}>Locker #{lockerData.number}</Text>
+              <Text style={s.lockerMeta}>
+                {lockerData.locker_type ? lockerData.locker_type.replace(/_/g, ' ') : 'Standard'}
+                {lockerData.expires_at ? ` · Expires ${new Date(lockerData.expires_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}
+              </Text>
+              <View style={s.lockerBadges}>
+                <View style={[s.lockerBadge, lockerData.key_issued ? s.lockerBadgeLime : s.lockerBadgeGrey]}>
+                  <Text style={s.lockerBadgeText}>{lockerData.key_issued ? 'Key issued' : 'No key'}</Text>
+                </View>
+                <View style={[s.lockerBadge, lockerData.payment_status === 'paid' ? s.lockerBadgeLime : s.lockerBadgeAmber]}>
+                  <Text style={s.lockerBadgeText}>{lockerData.payment_status || 'Unpaid'}</Text>
+                </View>
+                {lockerData.key_lost && (
+                  <View style={s.lockerBadgeRed}><Text style={s.lockerBadgeText}>Key lost</Text></View>
+                )}
+              </View>
+              {keyLostMsg ? <Text style={{ fontSize: 12, color: '#f59e0b', marginTop: 8 }}>{keyLostMsg}</Text> : null}
+              {lockerData.key_issued && !lockerData.key_lost && (
+                <TouchableOpacity style={s.lostKeyBtn} onPress={handleLostKey}>
+                  <Text style={s.lostKeyBtnText}>I've lost my key</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </SectionCard>
+      )}
 
       {/* Notifications */}
       <SectionCard title="Notifications">
@@ -484,21 +581,44 @@ export default function AccountScreen({ navigation, onSwitchToInstructor }) {
           />
         </View>
         {showInRoster && (
-          <View style={s.nameChoiceRow}>
-            <Text style={s.nameChoiceLabel}>Show as</Text>
-            <View style={s.nameChoiceBtns}>
-              {[['first_name', 'First name'], ['nickname', 'Nickname']].map(([val, label]) => (
-                <TouchableOpacity
-                  key={val}
-                  style={[s.choiceBtn, rosterName === val && s.choiceBtnActive]}
-                  onPress={() => { setRosterName(val); saveRosterPrefs(showInRoster, val) }}
-                  disabled={savingRoster}
-                >
-                  <Text style={[s.choiceBtnText, rosterName === val && s.choiceBtnTextActive]}>{label}</Text>
-                </TouchableOpacity>
-              ))}
+          <>
+            <View style={s.nameChoiceRow}>
+              <Text style={s.nameChoiceLabel}>Show as</Text>
+              <View style={s.nameChoiceBtns}>
+                {[['first_name', 'First name'], ['nickname', 'Nickname']].map(([val, label]) => (
+                  <TouchableOpacity
+                    key={val}
+                    style={[s.choiceBtn, rosterName === val && s.choiceBtnActive]}
+                    onPress={() => { setRosterName(val); saveRosterPrefs(showInRoster, val) }}
+                    disabled={savingRoster}
+                  >
+                    <Text style={[s.choiceBtnText, rosterName === val && s.choiceBtnTextActive]}>{label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
-          </View>
+            {rosterName === 'nickname' && (
+              <View style={{ marginTop: 12 }}>
+                <Text style={s.inputLabel}>Your nickname</Text>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <TextInput
+                    style={[s.input, { flex: 1 }]}
+                    value={nickname}
+                    onChangeText={setNickname}
+                    placeholder="e.g. Mia"
+                    placeholderTextColor="#555"
+                  />
+                  <TouchableOpacity
+                    style={[s.copyBtn, { alignSelf: 'center' }]}
+                    onPress={() => saveRosterPrefs(showInRoster, rosterName, nickname)}
+                    disabled={savingRoster}
+                  >
+                    <Text style={s.copyBtnText}>Save</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </>
         )}
       </View>
 
@@ -548,6 +668,41 @@ export default function AccountScreen({ navigation, onSwitchToInstructor }) {
       <View style={{ height: 40 }} />
 
       <ChangePasswordModal visible={showPasswordModal} onClose={() => setShowPasswordModal(false)} />
+
+      {/* Gift card modal */}
+      <Modal visible={showGiftModal} animationType="slide" transparent onRequestClose={() => setShowGiftModal(false)}>
+        <TouchableOpacity style={s.gcOverlay} activeOpacity={1} onPress={() => setShowGiftModal(false)}>
+          <View style={s.gcSheet}>
+            <Text style={s.gcTitle}>Redeem Gift Card</Text>
+            <Text style={s.inputLabel}>Gift card code</Text>
+            <TextInput
+              style={s.input}
+              value={giftCode}
+              onChangeText={setGiftCode}
+              placeholder="Enter code…"
+              placeholderTextColor="#555"
+              autoCapitalize="characters"
+            />
+            {giftMsg ? (
+              <Text style={[s.gcMsg, giftMsg.includes('redeemed') || giftMsg.includes('successfully') ? s.gcMsgOk : s.gcMsgErr]}>
+                {giftMsg}
+              </Text>
+            ) : null}
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+              <TouchableOpacity
+                style={[s.saveBtn, { flex: 1 }, (!giftCode.trim() || redeemingGift) && { opacity: 0.5 }]}
+                onPress={handleRedeemGiftCard}
+                disabled={!giftCode.trim() || redeemingGift}
+              >
+                {redeemingGift ? <ActivityIndicator color="#000" /> : <Text style={s.saveBtnText}>Redeem</Text>}
+              </TouchableOpacity>
+              <TouchableOpacity style={[s.ghostBtn, { flex: 1 }]} onPress={() => { setShowGiftModal(false); setGiftCode(''); setGiftMsg('') }}>
+                <Text style={s.ghostBtnText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </ScrollView>
   )
 }
@@ -629,6 +784,38 @@ const s = StyleSheet.create({
   switchBtnText: { color: '#ccff00', fontWeight: '600', fontSize: 15 },
   logoutBtn: { marginTop: 8, width: '100%', borderWidth: 1.5, borderColor: '#ef4444', borderRadius: 12, padding: 14, alignItems: 'center' },
   logoutText: { color: '#ef4444', fontWeight: '600', fontSize: 15 },
+
+  // Referral stats
+  referralStats: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  referralStat: { flex: 1, backgroundColor: '#0a0a0a', borderRadius: 10, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: '#1a1a1a' },
+  referralStatNum: { fontSize: 20, fontWeight: '800', color: '#ccff00' },
+  referralStatLabel: { fontSize: 10, color: '#666', textTransform: 'uppercase', marginTop: 2, letterSpacing: 0.5 },
+
+  // Ghost button
+  ghostBtn: { borderWidth: 1, borderColor: '#333', borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 4 },
+  ghostBtnText: { fontSize: 14, fontWeight: '600', color: '#ccc' },
+
+  // Locker
+  lockerCard: { flexDirection: 'row', alignItems: 'flex-start' },
+  lockerNumber: { fontSize: 20, fontWeight: '800', color: '#fff', marginBottom: 3 },
+  lockerMeta: { fontSize: 12, color: '#888', marginBottom: 8 },
+  lockerBadges: { flexDirection: 'row', gap: 6, flexWrap: 'wrap', marginBottom: 4 },
+  lockerBadge: { borderRadius: 5, paddingHorizontal: 8, paddingVertical: 3 },
+  lockerBadgeLime: { backgroundColor: 'rgba(204,255,0,0.15)' },
+  lockerBadgeGrey: { backgroundColor: '#1a1a1a' },
+  lockerBadgeAmber: { backgroundColor: 'rgba(255,170,0,0.15)' },
+  lockerBadgeRed: { backgroundColor: 'rgba(255,80,80,0.15)', borderRadius: 5, paddingHorizontal: 8, paddingVertical: 3 },
+  lockerBadgeText: { fontSize: 10, fontWeight: '600', color: '#ccc' },
+  lostKeyBtn: { marginTop: 10, alignSelf: 'flex-start', borderWidth: 1, borderColor: 'rgba(255,80,80,0.3)', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  lostKeyBtnText: { fontSize: 12, color: '#ef4444', fontWeight: '600' },
+
+  // Gift card modal
+  gcOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.7)' },
+  gcSheet: { backgroundColor: '#111', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 44 },
+  gcTitle: { fontSize: 17, fontWeight: '700', color: '#fff', marginBottom: 16 },
+  gcMsg: { fontSize: 13, marginBottom: 8, marginTop: 4 },
+  gcMsgOk: { color: '#ccff00' },
+  gcMsgErr: { color: '#ef4444' },
 
   // Modal
   modalRoot: { flex: 1, backgroundColor: '#000' },

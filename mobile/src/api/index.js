@@ -44,6 +44,8 @@ export const attendance = {
     client.post(`/api/attendance/occurrence/${occurrenceId}/bulk/`, { records }),
   markAway: (occurrence_id) =>
     client.post('/api/attendance/mark-away/', { occurrence_id }),
+  cancelAway: (occurrence_id) =>
+    client.post('/api/attendance/cancel-away/', { occurrence_id }),
   makeupCredits: {
     list: (params) => client.get('/api/attendance/makeup-credits/', { params }),
   },
@@ -155,6 +157,19 @@ export const pushTokens = {
     client.post('/api/users/push-token/', { token, platform }),
   unregister: (token) =>
     client.delete('/api/users/push-token/', { data: { token } }),
+}
+
+export const referrals = {
+  list: (params) => client.get('/api/users/referrals/', { params }),
+}
+
+export const giftCards = {
+  redeem: (code) => client.post('/api/payments/gift-cards/redeem/', { code }),
+}
+
+export const lockers = {
+  mine: () => client.get('/api/classes/lockers/mine/'),
+  lostKey: (id) => client.post(`/api/classes/lockers/${id}/lost_key/`),
 }
 
 export const availability = {
