@@ -185,7 +185,7 @@ export default function FormsScreen() {
         <Text style={s.pageSubtitle}>Complete all required forms to get started.</Text>
 
         {loading && submittedForms.length === 0 && (
-          <ActivityIndicator color="#6366f1" style={{ marginTop: 32 }} />
+          <ActivityIndicator color="#ccff00" style={{ marginTop: 32 }} />
         )}
 
         {FORM_DEFS.map((def) => {
@@ -231,77 +231,78 @@ export default function FormsScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f9fafb' },
+  root: { flex: 1, backgroundColor: '#000' },
   content: { padding: 20, paddingBottom: 40 },
 
-  pageTitle: { fontSize: 22, fontWeight: '700', color: '#111827', marginBottom: 4 },
-  pageSubtitle: { fontSize: 14, color: '#6b7280', marginBottom: 20 },
+  pageTitle: { fontSize: 22, fontWeight: '700', color: '#fff', marginBottom: 4 },
+  pageSubtitle: { fontSize: 14, color: '#666', marginBottom: 20 },
 
   card: {
-    backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 14,
-    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
+    backgroundColor: '#111', borderRadius: 14, padding: 16, marginBottom: 14,
+    borderWidth: 1, borderColor: '#222',
   },
-  cardDone: { borderLeftWidth: 4, borderLeftColor: '#10b981' },
+  cardDone: { borderLeftWidth: 4, borderLeftColor: '#ccff00', borderColor: '#ccff00' },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 14 },
   cardIcon: { fontSize: 28, marginRight: 14, marginTop: 1 },
   cardMeta: { flex: 1 },
-  cardTitle: { fontSize: 15, fontWeight: '700', color: '#111827', marginBottom: 4 },
-  cardDesc: { fontSize: 13, color: '#6b7280', lineHeight: 18 },
+  cardTitle: { fontSize: 15, fontWeight: '700', color: '#fff', marginBottom: 4 },
+  cardDesc: { fontSize: 13, color: '#888', lineHeight: 18 },
 
   completedRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
   },
-  completedBadge: { fontSize: 14, fontWeight: '700', color: '#10b981' },
-  completedDate: { fontSize: 13, color: '#9ca3af' },
+  completedBadge: { fontSize: 14, fontWeight: '700', color: '#ccff00' },
+  completedDate: { fontSize: 13, color: '#555' },
 
   completeBtn: {
-    backgroundColor: '#6366f1', borderRadius: 10,
+    backgroundColor: '#ccff00', borderRadius: 10,
     paddingVertical: 10, alignItems: 'center',
   },
-  completeBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  completeBtnText: { color: '#000', fontWeight: '700', fontSize: 14 },
 })
 
 // PAR-Q modal styles
 const m = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(0,0,0,0.8)',
     justifyContent: 'flex-end',
     zIndex: 100,
   },
   sheet: {
-    backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    backgroundColor: '#111', borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    borderWidth: 1, borderColor: '#222',
     padding: 24, paddingBottom: 36, maxHeight: '90%',
   },
-  title: { fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 4 },
-  subtitle: { fontSize: 13, color: '#6b7280', marginBottom: 16 },
+  title: { fontSize: 18, fontWeight: '700', color: '#fff', marginBottom: 4 },
+  subtitle: { fontSize: 13, color: '#666', marginBottom: 16 },
   scroll: { maxHeight: 420 },
 
   questionBlock: {
     marginBottom: 16, paddingBottom: 16,
-    borderBottomWidth: 1, borderBottomColor: '#f3f4f6',
+    borderBottomWidth: 1, borderBottomColor: '#1a1a1a',
   },
-  questionText: { fontSize: 14, color: '#374151', lineHeight: 20, marginBottom: 10 },
+  questionText: { fontSize: 14, color: '#ccc', lineHeight: 20, marginBottom: 10 },
   yesNo: { flexDirection: 'row', gap: 10 },
   answerBtn: {
     flex: 1, paddingVertical: 8, borderRadius: 8,
-    borderWidth: 1.5, borderColor: '#e5e7eb', alignItems: 'center',
+    borderWidth: 1.5, borderColor: '#333', alignItems: 'center',
   },
-  answerBtnYes: { backgroundColor: '#fee2e2', borderColor: '#ef4444' },
-  answerBtnNo: { backgroundColor: '#d1fae5', borderColor: '#10b981' },
-  answerText: { fontSize: 14, fontWeight: '600', color: '#6b7280' },
-  answerTextActive: { color: '#111827' },
+  answerBtnYes: { backgroundColor: '#2a0a0a', borderColor: '#ef4444' },
+  answerBtnNo: { backgroundColor: '#0a2a1a', borderColor: '#ccff00' },
+  answerText: { fontSize: 14, fontWeight: '600', color: '#666' },
+  answerTextActive: { color: '#fff' },
 
   actions: { flexDirection: 'row', gap: 12, marginTop: 16 },
   cancelBtn: {
     flex: 1, paddingVertical: 12, borderRadius: 10,
-    borderWidth: 1.5, borderColor: '#e5e7eb', alignItems: 'center',
+    borderWidth: 1, borderColor: '#333', alignItems: 'center',
   },
-  cancelText: { fontSize: 15, fontWeight: '600', color: '#6b7280' },
+  cancelText: { fontSize: 15, fontWeight: '600', color: '#888' },
   submitBtn: {
     flex: 2, paddingVertical: 12, borderRadius: 10,
-    backgroundColor: '#6366f1', alignItems: 'center',
+    backgroundColor: '#ccff00', alignItems: 'center',
   },
   submitBtnDisabled: { opacity: 0.45 },
-  submitText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  submitText: { fontSize: 15, fontWeight: '700', color: '#000' },
 })

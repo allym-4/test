@@ -108,7 +108,7 @@ function CardRow({ method, isDefault, onSetDefault, onRemove, removing }) {
           </View>
         )}
         {removing ? (
-          <ActivityIndicator size="small" color="#6366f1" />
+          <ActivityIndicator size="small" color="#ccff00" />
         ) : (
           <TouchableOpacity
             style={s.removeBtn}
@@ -318,7 +318,7 @@ export default function BillingScreen() {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          tintColor="#6366f1"
+          tintColor="#ccff00"
         />
       }
     >
@@ -463,9 +463,9 @@ export default function BillingScreen() {
             value={autoCharge ?? false}
             onValueChange={handleAutoChargeToggle}
             disabled={updatingAutoCharge || stripeLoading}
-            trackColor={{ true: '#6366f1', false: '#d1d5db' }}
+            trackColor={{ true: '#ccff00', false: '#333' }}
             thumbColor="#fff"
-            ios_backgroundColor="#d1d5db"
+            ios_backgroundColor="#333"
           />
         </View>
         {updatingAutoCharge && (
@@ -492,7 +492,7 @@ export default function BillingScreen() {
 const s = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#000',
   },
   content: {
     padding: 16,
@@ -507,20 +507,17 @@ const s = StyleSheet.create({
     padding: 28,
     marginBottom: 16,
     alignItems: 'center',
-    backgroundColor: '#6366f1',
-    shadowColor: '#6366f1',
-    shadowOpacity: 0.35,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 8,
+    backgroundColor: '#1a0f2e',
+    borderWidth: 1,
+    borderColor: '#7c3aed',
   },
   balanceCardRed: {
-    backgroundColor: '#ef4444',
-    shadowColor: '#ef4444',
+    backgroundColor: '#2a0a0a',
+    borderColor: '#ef4444',
   },
   balanceCardGreen: {
-    backgroundColor: '#10b981',
-    shadowColor: '#10b981',
+    backgroundColor: '#0a2a1a',
+    borderColor: '#ccff00',
   },
   balanceLoader: {
     marginTop: 16,
@@ -528,7 +525,7 @@ const s = StyleSheet.create({
   balanceLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: 'rgba(255,255,255,0.75)',
+    color: '#888',
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
@@ -542,52 +539,49 @@ const s = StyleSheet.create({
   balanceStatus: {
     fontSize: 14,
     fontWeight: '500',
-    color: 'rgba(255,255,255,0.85)',
+    color: '#aaa',
     marginTop: 4,
   },
 
-  // ── White card container ─────────────────────────────────────────────────────
+  // ── Dark card container ─────────────────────────────────────────────────────
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: '#111',
     borderRadius: 14,
     padding: 16,
     marginBottom: 14,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#222',
   },
   sectionTitle: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#6b7280',
+    color: '#666',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 12,
   },
   emptyText: {
     fontSize: 14,
-    color: '#9ca3af',
+    color: '#555',
     textAlign: 'center',
     paddingVertical: 6,
   },
 
   // ── Payment plans ────────────────────────────────────────────────────────────
-  planCard: { borderTopWidth: 1, borderTopColor: '#f3f4f6', paddingTop: 12, marginTop: 8 },
+  planCard: { borderTopWidth: 1, borderTopColor: '#1a1a1a', paddingTop: 12, marginTop: 8 },
   planHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  planDescription: { fontSize: 14, fontWeight: '600', color: '#111827', flex: 1, paddingRight: 8 },
-  planTotal: { fontSize: 15, fontWeight: '700', color: '#6366f1' },
-  instalmentRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 7, gap: 10, borderBottomWidth: 1, borderBottomColor: '#f9fafb' },
-  instalmentDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#d1d5db' },
-  dotPaid: { backgroundColor: '#10b981' },
+  planDescription: { fontSize: 14, fontWeight: '600', color: '#fff', flex: 1, paddingRight: 8 },
+  planTotal: { fontSize: 15, fontWeight: '700', color: '#ccff00' },
+  instalmentRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 7, gap: 10, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' },
+  instalmentDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#333' },
+  dotPaid: { backgroundColor: '#ccff00' },
   dotOverdue: { backgroundColor: '#ef4444' },
-  instalmentDate: { flex: 1, fontSize: 13, color: '#374151' },
-  instalmentAmount: { fontSize: 13, fontWeight: '600', color: '#374151' },
-  amountPaid: { color: '#10b981' },
+  instalmentDate: { flex: 1, fontSize: 13, color: '#ccc' },
+  instalmentAmount: { fontSize: 13, fontWeight: '600', color: '#ccc' },
+  amountPaid: { color: '#ccff00' },
   amountOverdue: { color: '#ef4444' },
-  instalmentStatus: { fontSize: 11, fontWeight: '600', color: '#9ca3af', width: 60, textAlign: 'right' },
-  statusPaid: { color: '#10b981' },
+  instalmentStatus: { fontSize: 11, fontWeight: '600', color: '#555', width: 60, textAlign: 'right' },
+  statusPaid: { color: '#ccff00' },
   statusOverdue: { color: '#ef4444' },
 
   // ── Catch-up credits ─────────────────────────────────────────────────────────
@@ -599,16 +593,16 @@ const s = StyleSheet.create({
   creditsNumber: {
     fontSize: 34,
     fontWeight: '800',
-    color: '#6366f1',
+    color: '#ccff00',
     marginRight: 8,
   },
   creditsCountLabel: {
     fontSize: 15,
-    color: '#374151',
+    color: '#aaa',
   },
   creditsList: {
     borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
+    borderTopColor: '#1a1a1a',
     paddingTop: 10,
     gap: 8,
   },
@@ -620,7 +614,7 @@ const s = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 3.5,
-    backgroundColor: '#a5b4fc',
+    backgroundColor: '#7c3aed',
     marginTop: 5,
     marginRight: 10,
   },
@@ -630,11 +624,11 @@ const s = StyleSheet.create({
   creditReason: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#111827',
+    color: '#fff',
   },
   creditDate: {
     fontSize: 12,
-    color: '#6b7280',
+    color: '#666',
     marginTop: 2,
   },
 
@@ -645,7 +639,7 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 11,
     borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
+    borderBottomColor: '#1a1a1a',
   },
   paymentLeft: {
     flex: 1,
@@ -653,12 +647,12 @@ const s = StyleSheet.create({
   },
   paymentDesc: {
     fontSize: 13,
-    color: '#374151',
+    color: '#aaa',
     marginTop: 4,
   },
   paymentDate: {
     fontSize: 11,
-    color: '#9ca3af',
+    color: '#555',
     marginTop: 3,
   },
   paymentAmount: {
@@ -668,28 +662,28 @@ const s = StyleSheet.create({
     flexShrink: 0,
   },
   amountGreen: {
-    color: '#10b981',
+    color: '#ccff00',
   },
   amountRed: {
     color: '#ef4444',
   },
   typeBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#e0e7ff',
+    backgroundColor: '#1a1a2e',
     borderRadius: 5,
     paddingHorizontal: 7,
     paddingVertical: 2,
   },
   typeBadgeRed: {
-    backgroundColor: '#fee2e2',
+    backgroundColor: '#2a0a0a',
   },
   typeBadgeText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#4338ca',
+    color: '#ccff00',
   },
   typeBadgeTextRed: {
-    color: '#b91c1c',
+    color: '#ef4444',
   },
 
   // ── Saved card rows ──────────────────────────────────────────────────────────
@@ -700,13 +694,13 @@ const s = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: '#e5e7eb',
+    borderWidth: 1,
+    borderColor: '#333',
     marginBottom: 8,
   },
   cardRowDefault: {
-    borderColor: '#6366f1',
-    backgroundColor: '#f5f3ff',
+    borderColor: '#ccff00',
+    backgroundColor: '#0a2a1a',
   },
   cardInfo: {
     flex: 1,
@@ -714,11 +708,11 @@ const s = StyleSheet.create({
   cardBrand: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#111827',
+    color: '#fff',
   },
   cardExpiry: {
     fontSize: 12,
-    color: '#6b7280',
+    color: '#666',
     marginTop: 2,
   },
   cardActions: {
@@ -727,15 +721,17 @@ const s = StyleSheet.create({
     gap: 10,
   },
   defaultBadge: {
-    backgroundColor: '#6366f1',
+    backgroundColor: '#0a2a1a',
     borderRadius: 5,
     paddingHorizontal: 7,
     paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: '#ccff00',
   },
   defaultBadgeText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#fff',
+    color: '#ccff00',
   },
   removeBtn: {
     padding: 4,
@@ -756,28 +752,28 @@ const s = StyleSheet.create({
   autoChargeLabel: {
     flex: 1,
     fontSize: 14,
-    color: '#374151',
+    color: '#aaa',
     lineHeight: 20,
   },
   savingText: {
     fontSize: 12,
-    color: '#9ca3af',
+    color: '#555',
     marginTop: 6,
   },
 
   // ── Refund button ─────────────────────────────────────────────────────────────
   refundBtn: {
-    borderWidth: 1.5,
-    borderColor: '#6366f1',
+    borderWidth: 1,
+    borderColor: '#333',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 2,
-    backgroundColor: '#fff',
+    backgroundColor: '#111',
   },
   refundBtnText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#6366f1',
+    color: '#ccff00',
   },
 })
