@@ -485,7 +485,7 @@ function BookingModal({ visible, occ, availableCredits, priceCasual, seasonPrice
 }
 
 // ─── main screen ─────────────────────────────────────────────────────────────
-export default function BookScreen() {
+export default function BookScreen({ navigation }) {
   const { user } = useAuth()
 
   const [tab, setTab] = useState('season')
@@ -703,6 +703,11 @@ export default function BookScreen() {
   // ── render ─────────────────────────────────────────────────────────────────
   return (
     <View style={s.root}>
+
+      {/* ── Practice banner ─────────────────────────────────────────────── */}
+      <TouchableOpacity style={s.practiceBanner} onPress={() => navigation.navigate('Practice')} activeOpacity={0.8}>
+        <Text style={s.practiceBannerText}>■  Book open practice time  →</Text>
+      </TouchableOpacity>
 
       {/* ── Tab bar ─────────────────────────────────────────────────────── */}
       <ScrollView
@@ -1476,4 +1481,7 @@ const s = StyleSheet.create({
   trialBookBtnText: { color: '#000', fontWeight: '800', fontSize: 14 },
   trialBookedRow: { marginTop: 6 },
   trialBookedText: { fontSize: 13, fontWeight: '600', color: T.lime },
+
+  practiceBanner: { backgroundColor: '#0a0a0a', borderBottomWidth: 1, borderBottomColor: T.border, paddingVertical: 10, paddingHorizontal: 16, alignItems: 'center' },
+  practiceBannerText: { fontSize: 13, color: '#b0a0ff', fontWeight: '600' },
 })

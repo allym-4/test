@@ -416,7 +416,7 @@ export default function DashboardScreen({ navigation }) {
           <Text style={s.quickLinkLabel}>Makeup or casual class</Text>
           <Text style={s.quickLinkSub}>Drop into any eligible class</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={s.quickLink} onPress={() => navigation.navigate('Book')}>
+        <TouchableOpacity style={s.quickLink} onPress={() => navigation.navigate('Book', { screen: 'Practice' })}>
           <Text style={s.quickLinkIcon}>■</Text>
           <Text style={s.quickLinkLabel}>Book practice time</Text>
           <Text style={s.quickLinkSub}>Open studio – $20</Text>
