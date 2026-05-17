@@ -66,7 +66,7 @@ function ClassesStack() {
 function CommunityStack() {
   return (
     <Stack.Navigator screenOptions={headerStyle}>
-      <Stack.Screen name="Community" component={CommunityScreen} options={{ title: 'Community' }} />
+      <Stack.Screen name="CommunityHome" component={CommunityScreen} options={{ title: 'Community' }} />
       <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat' }} />
     </Stack.Navigator>
   )
