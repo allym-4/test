@@ -91,6 +91,12 @@ export const homework = {
 
 export const users = {
   get: (id) => client.get(`/api/users/${id}/`),
+  list: (params) => client.get('/api/users/', { params }),
+}
+
+export const forms = {
+  list: () => client.get('/api/users/forms/'),
+  submit: (form_type, responses) => client.post('/api/users/forms/', { form_type, responses }),
 }
 
 export const settings = {
@@ -99,4 +105,23 @@ export const settings = {
 
 export const roster = {
   get: (sessionId) => client.get(`/api/classes/sessions/${sessionId}/roster/`),
+}
+
+export const challenges = {
+  list: () => client.get('/api/users/challenges/'),
+  optIn: (id) => client.post(`/api/users/challenges/${id}/opt-in/`, { action: 'in' }),
+  optOut: (id) => client.post(`/api/users/challenges/${id}/opt-in/`, { action: 'out' }),
+}
+
+export const community = {
+  groups: () => client.get('/api/community/groups/'),
+  posts: (groupId) => client.get('/api/community/posts/', { params: { group: groupId } }),
+  createPost: (data) => client.post('/api/community/posts/', data),
+  likePost: (postId) => client.post('/api/community/posts/like/', { post_id: postId }),
+  replies: (postId) => client.get('/api/community/replies/', { params: { post: postId } }),
+  createReply: (data) => client.post('/api/community/replies/', data),
+}
+
+export const assistant = {
+  chat: (message) => client.post('/api/users/assistant/', { message }),
 }
