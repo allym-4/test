@@ -187,7 +187,7 @@ export default function AdminShell() {
       await client.post('/api/attendance/checkin/', { student_id: studentId })
       setKioskToast('✓ Checked in')
     } catch {
-      setKioskToast('✓ Checked in')
+      setKioskToast('✗ Check-in failed')
     }
     setTimeout(() => setKioskToast(''), 3000)
   }

@@ -206,6 +206,30 @@ class AttendanceStatsView(APIView):
         })
 
 
+@api_view(['POST'])
+@permission_classes([IsAdminOrInstructor])
+def kiosk_checkin(request):
+    """Kiosk: mark a student present for their next occurrence today."""
+    student_id = request.data.get('student_id')
+    if not student_id:
+        return Response({'detail': 'student_id required'}, status=400)
+    today = date.today()
+    occurrences = ClassOccurrence.objects.filter(
+        date=today,
+        enrolments__student_id=student_id,
+        enrolments__status='active',
+    ).distinct()
+    if not occurrences.exists():
+        return Response({'detail': 'No class found for this student today'}, status=404)
+    occurrence = occurrences.first()
+    record, _ = AttendanceRecord.objects.update_or_create(
+        occurrence=occurrence,
+        student_id=student_id,
+        defaults={'status': 'present', 'recorded_by': request.user},
+    )
+    return Response(AttendanceRecordSerializer(record).data, status=status.HTTP_200_OK)
+
+
 class MakeupCreditListView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
