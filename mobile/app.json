@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Duality Pole",
-    "slug": "duality-pole",
+    "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
