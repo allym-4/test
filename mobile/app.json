@@ -16,7 +16,11 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.yourstudio.app",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification",
+          "remote-notification"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -26,7 +30,11 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.yourstudio.app",
-      "permissions": ["android.permission.RECEIVE_BOOT_COMPLETED", "android.permission.VIBRATE"]
+      "permissions": [
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -49,7 +57,10 @@
       ]
     ],
     "extra": {
-      "eas": {}
-    }
+      "eas": {
+        "projectId": "e1b53509-6ada-452f-b8c9-9130d3d7e97c"
+      }
+    },
+    "owner": "allycarr"
   }
 }
