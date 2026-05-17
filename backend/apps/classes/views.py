@@ -3,8 +3,8 @@ from django.db.models import Count
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, ClassChatMessage, Workshop, WorkshopBooking, PracticeSlot, PracticeBooking
-from .serializers import StudioSerializer, ClassCategorySerializer, ClassSessionSerializer, ClassOccurrenceSerializer, SeasonSerializer, LockerSerializer, KisiGrantSerializer, WorkshopSerializer, WorkshopBookingSerializer, PracticeSlotSerializer, PracticeBookingSerializer
+from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, ClassChatMessage, Workshop, WorkshopBooking, PracticeSlot, PracticeBooking, CasualBooking
+from .serializers import StudioSerializer, ClassCategorySerializer, ClassSessionSerializer, ClassOccurrenceSerializer, SeasonSerializer, LockerSerializer, KisiGrantSerializer, WorkshopSerializer, WorkshopBookingSerializer, PracticeSlotSerializer, PracticeBookingSerializer, CasualBookingSerializer
 from apps.users.permissions import IsAdminOrInstructor, IsAdminUser
 
 
@@ -644,3 +644,139 @@ class AdminPracticeBookingsView(generics.ListAPIView):
         if slot_id:
             qs = qs.filter(slot_id=slot_id)
         return qs
+
+
+class CasualBookView(APIView):
+    """Book or join waitlist for a specific class occurrence (casual / catch-up)."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            occurrence = ClassOccurrence.objects.select_related('session__studio').get(pk=pk)
+        except ClassOccurrence.DoesNotExist:
+            return Response({'detail': 'Occurrence not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if occurrence.date < date.today():
+            return Response({'detail': 'Cannot book a past class.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if occurrence.status == 'cancelled':
+            return Response({'detail': 'This class has been cancelled.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        enrolment_type = request.data.get('enrolment_type', 'casual')
+        if enrolment_type not in ('casual', 'catchup'):
+            return Response({'detail': 'Invalid enrolment_type.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if CasualBooking.objects.filter(
+            occurrence=occurrence, student=request.user
+        ).exclude(status='cancelled').exists():
+            return Response({'detail': 'Already booked for this class.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Deduct makeup credit for catch-up bookings
+        if enrolment_type == 'catchup':
+            from apps.attendance.models import MakeupCredit
+            from django.utils import timezone
+            credit = MakeupCredit.objects.filter(
+                student=request.user, status='available'
+            ).order_by('created_at').first()
+            if not credit:
+                return Response({'detail': 'No catch-up credits available.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check capacity
+        from apps.enrolments.models import Enrolment
+        season_enrolled = Enrolment.objects.filter(
+            class_session=occurrence.session, status='active', enrolment_type='course'
+        ).count()
+        casual_confirmed = occurrence.casual_bookings.filter(status='confirmed').count()
+        spots_left = occurrence.session.capacity - season_enrolled - casual_confirmed
+
+        if spots_left <= 0:
+            # Join waitlist
+            booking = CasualBooking.objects.create(
+                occurrence=occurrence,
+                student=request.user,
+                enrolment_type=enrolment_type,
+                status='waitlisted',
+            )
+            return Response(
+                CasualBookingSerializer(booking, context={'request': request}).data,
+                status=status.HTTP_201_CREATED,
+            )
+
+        # Deduct credit now that we know the booking will proceed
+        if enrolment_type == 'catchup':
+            from apps.attendance.models import MakeupCredit
+            from django.utils import timezone
+            credit = MakeupCredit.objects.filter(
+                student=request.user, status='available'
+            ).order_by('created_at').first()
+            credit.status = 'used'
+            credit.used_at = timezone.now()
+            credit.save(update_fields=['status', 'used_at'])
+
+        price = 0 if enrolment_type == 'catchup' else float(
+            getattr(request, '_casual_price', 0)
+        )
+
+        booking = CasualBooking.objects.create(
+            occurrence=occurrence,
+            student=request.user,
+            enrolment_type=enrolment_type,
+            status='confirmed',
+            price_charged=price,
+            is_free=(enrolment_type == 'catchup'),
+        )
+        return Response(
+            CasualBookingSerializer(booking, context={'request': request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class CasualBookCancelView(APIView):
+    """Cancel or leave waitlist for a casual occurrence booking."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            booking = CasualBooking.objects.get(
+                occurrence_id=pk, student=request.user
+            )
+        except CasualBooking.DoesNotExist:
+            return Response({'detail': 'Booking not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if booking.status == 'cancelled':
+            return Response({'detail': 'Already cancelled.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Block cancellation if a waitlist spot has been offered
+        if booking.status == 'waitlisted' and booking.waitlist_offered_at:
+            return Response(
+                {'detail': 'A spot has been offered to you — please claim or let it expire.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        was_catchup = booking.enrolment_type == 'catchup' and booking.status == 'confirmed'
+        booking.status = 'cancelled'
+        booking.save(update_fields=['status'])
+
+        # Restore makeup credit if cancelling a confirmed catch-up before the class
+        if was_catchup and booking.occurrence.date >= date.today():
+            from apps.attendance.models import MakeupCredit
+            from django.utils import timezone
+            MakeupCredit.objects.create(
+                student=request.user,
+                status='available',
+                notes='Restored: casual catch-up booking cancelled',
+            )
+
+        return Response({'status': 'cancelled'})
+
+
+class MyCasualBookingsView(generics.ListAPIView):
+    serializer_class = CasualBookingSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return CasualBooking.objects.filter(
+            student=self.request.user,
+        ).exclude(status='cancelled').select_related(
+            'occurrence__session__studio'
+        ).order_by('occurrence__date')

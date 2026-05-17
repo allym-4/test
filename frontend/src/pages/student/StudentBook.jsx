@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApi } from '../../hooks/useApi'
 import { useAuth } from '../../contexts/AuthContext'
 import { classes, enrolments, settings as settingsApi, seasons as seasonsApi, payments as paymentsApi, attendance as attendanceApi } from '../../api'
@@ -198,6 +198,147 @@ function StickyCart({ cart, priceCasual, onProceed, onClear, promoCode, promoDis
         </div>
         {promoError && <div style={{ fontSize: 11, color: 'var(--red)' }}>{promoError}</div>}
       </div>
+    </div>
+  )
+}
+
+function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, availableCredits, onCreditUsed }) {
+  const [open, setOpen] = useState(false)
+  const [occurrences, setOccurrences] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [bookingId, setBookingId] = useState(null)
+  const [cancellingId, setCancellingId] = useState(null)
+  const [error, setError] = useState('')
+
+  async function load() {
+    if (occurrences !== null) return
+    setLoading(true)
+    try {
+      const res = await classes.casual.occurrences({ session: session.id, upcoming: true })
+      setOccurrences(res.data?.results || res.data || [])
+    } catch {
+      setOccurrences([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function toggle() {
+    if (!open) load()
+    setOpen(o => !o)
+  }
+
+  async function book(occ) {
+    setBookingId(occ.id)
+    setError('')
+    try {
+      const res = await classes.casual.book(occ.id, { enrolment_type: enrolmentType })
+      const updated = { ...occ, my_booking: res.data, spots_left: res.data.status === 'confirmed' ? occ.spots_left - 1 : occ.spots_left }
+      setOccurrences(o => o.map(x => x.id === occ.id ? updated : x))
+      if (enrolmentType === 'catchup' && res.data.status === 'confirmed' && onCreditUsed) onCreditUsed()
+    } catch (e) {
+      setError(e.response?.data?.detail || 'Booking failed — please try again.')
+    } finally {
+      setBookingId(null)
+    }
+  }
+
+  async function cancel(occ) {
+    setCancellingId(occ.id)
+    setError('')
+    try {
+      await classes.casual.cancel(occ.id)
+      setOccurrences(o => o.map(x => x.id === occ.id ? { ...x, my_booking: null, spots_left: x.my_booking?.status === 'confirmed' ? x.spots_left + 1 : x.spots_left } : x))
+      if (enrolmentType === 'catchup' && occ.my_booking?.status === 'confirmed' && onCreditUsed) onCreditUsed()
+    } catch (e) {
+      setError(e.response?.data?.detail || 'Could not cancel — please try again.')
+    } finally {
+      setCancellingId(null)
+    }
+  }
+
+  const isCatchup = enrolmentType === 'catchup'
+  const accentColor = isCatchup ? 'var(--lime)' : 'var(--lime)'
+
+  return (
+    <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+      <button
+        onClick={toggle}
+        style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, textAlign: 'left' }}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, marginBottom: 3 }}>{session.name}</div>
+          <div style={{ fontSize: 12, color: 'var(--grey)' }}>
+            {DAYS[session.day_of_week]} · {session.start_time?.slice(0, 5)}
+            {session.studio_detail ? ` · ${session.studio_detail.name}` : ''}
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          {!isCatchup && <span style={{ fontSize: 13, fontWeight: 700, color: accentColor }}>${priceCasual}</span>}
+          {isCatchup && <span className="tag tag-lime" style={{ fontSize: 10 }}>Uses 1 credit</span>}
+          <span style={{ fontSize: 16, color: 'var(--grey)', transition: 'transform 0.2s', display: 'inline-block', transform: open ? 'rotate(180deg)' : 'none' }}>▾</span>
+        </div>
+      </button>
+
+      {open && (
+        <div style={{ borderTop: '1px solid var(--border)', padding: '12px 18px 16px' }}>
+          {error && <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 10 }}>{error}</div>}
+          {loading ? (
+            <div style={{ fontSize: 13, color: 'var(--grey)', padding: '8px 0' }}>Loading dates…</div>
+          ) : !occurrences || occurrences.length === 0 ? (
+            <div style={{ fontSize: 13, color: 'var(--grey)', padding: '8px 0' }}>No upcoming dates scheduled yet.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {occurrences.map(occ => {
+                const dateLabel = new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+                const spotsLeft = occ.spots_left ?? 0
+                const isFull = spotsLeft <= 0
+                const myBooking = occ.my_booking
+                const isBooked = myBooking?.status === 'confirmed'
+                const isWaitlisted = myBooking?.status === 'waitlisted'
+                const hasOffer = isWaitlisted && myBooking?.waitlist_offered_at
+                const isBooking = bookingId === occ.id
+                const isCancelling = cancellingId === occ.id
+
+                return (
+                  <div key={occ.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '10px 12px', background: isBooked ? 'rgba(204,255,0,0.05)' : isWaitlisted ? 'rgba(255,170,0,0.05)' : 'rgba(255,255,255,0.03)', borderRadius: 8, border: `1px solid ${isBooked ? 'rgba(204,255,0,0.2)' : isWaitlisted ? 'rgba(255,170,0,0.2)' : 'rgba(255,255,255,0.07)'}` }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>{dateLabel}</div>
+                      {isFull && !myBooking && <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 2 }}>Full</div>}
+                      {!isFull && !myBooking && <div style={{ fontSize: 11, color: spotsLeft <= 3 ? 'var(--amber)' : 'var(--grey)', marginTop: 2 }}>{spotsLeft} spot{spotsLeft !== 1 ? 's' : ''} left</div>}
+                      {isBooked && <div style={{ fontSize: 11, color: 'var(--lime)', marginTop: 2 }}>Booked ✓</div>}
+                      {isWaitlisted && !hasOffer && <div style={{ fontSize: 11, color: 'var(--amber)', marginTop: 2 }}>On waitlist</div>}
+                      {hasOffer && <div style={{ fontSize: 11, color: 'var(--lime)', marginTop: 2 }}>🎉 Spot offered!</div>}
+                    </div>
+                    <div style={{ flexShrink: 0 }}>
+                      {isBooked || (isWaitlisted && !hasOffer) ? (
+                        <button
+                          className="btn btn-ghost btn-xs"
+                          style={{ fontSize: 11, color: 'var(--red)' }}
+                          onClick={() => cancel(occ)}
+                          disabled={isCancelling}
+                        >
+                          {isCancelling ? '…' : isWaitlisted ? 'Leave' : 'Cancel'}
+                        </button>
+                      ) : hasOffer ? (
+                        <span style={{ fontSize: 11, color: 'var(--lime)', fontWeight: 700 }}>Claim →</span>
+                      ) : isFull ? (
+                        <button className="btn btn-ghost btn-xs" style={{ fontSize: 11 }} onClick={() => book(occ)} disabled={isBooking}>
+                          {isBooking ? '…' : 'Join Waitlist'}
+                        </button>
+                      ) : (
+                        <button className="btn btn-lime btn-xs" style={{ fontSize: 11 }} onClick={() => book(occ)} disabled={isBooking}>
+                          {isBooking ? '…' : isCatchup ? 'Book (Credit)' : `Book $${priceCasual}`}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -446,17 +587,17 @@ export default function StudentBook() {
         <div>
           <div style={{ background: 'rgba(204,255,0,0.06)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 12, padding: '14px 18px', marginBottom: 20 }}>
             <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>Drop-in Rate: ${priceCasual} per class</div>
-            <div style={{ fontSize: 12, color: 'var(--grey)' }}>Trial class for new students: ${priceTrial} — see the Trial Class tab</div>
+            <div style={{ fontSize: 12, color: 'var(--grey)' }}>Select a class below, then pick the specific date you'd like to attend.</div>
           </div>
 
           {loading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
             </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-              {sessions.length === 0 ? <EmptyState /> : sessions.map(s => (
-                <ClassCard key={s.id} session={{ ...s, type: 'casual' }} onAddToCart={(s, type) => addToCart(s, type || 'casual', priceCasual)} priceCasual={priceCasual} cartSessionId={cartSessionId} isWaitlisted={booked.includes(s.id + '-waitlist')} waitlistType="casual-waitlist" />
+          ) : sessions.length === 0 ? <EmptyState /> : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {sessions.map(s => (
+                <OccurrenceBookingPanel key={s.id} session={s} enrolmentType="casual" priceCasual={priceCasual} />
               ))}
             </div>
           )}
@@ -559,33 +700,20 @@ export default function StudentBook() {
             </div>
             <div style={{ fontSize: 12, color: 'var(--grey)' }}>
               {availableCredits > 0
-                ? 'Each credit lets you attend one class at no charge. Credits expire 60 days after issue.'
+                ? 'Select a class and pick the specific date you want to catch up. Each booking uses 1 credit.'
                 : 'Credits are issued when you notify us of an absence within the cancellation window. Contact the studio if you believe this is incorrect.'}
             </div>
           </div>
 
           {availableCredits > 0 && (
             loading ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
               </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-                {sessions.length === 0 ? <EmptyState /> : sessions.map(s => (
-                  <div key={s.id} style={{ background: 'var(--card)', border: `1px solid ${cartSessionId === s.id ? 'var(--lime)' : 'var(--border)'}`, borderRadius: 12, padding: '16px 18px' }}>
-                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, marginBottom: 4 }}>{s.name}</div>
-                    <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 10 }}>
-                      {DAYS[s.day_of_week]} · {s.start_time?.slice(0, 5)} · {s.studio_detail?.name}
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span className="tag tag-lime" style={{ fontSize: 10 }}>Uses 1 credit</span>
-                      {cartSessionId === s.id ? (
-                        <span style={{ fontSize: 12, color: 'var(--lime)', fontWeight: 700 }}>✓ Added</span>
-                      ) : (
-                        <button className="btn btn-lime btn-sm" onClick={() => addToCart(s, 'catchup', 0)}>Book (Credit)</button>
-                      )}
-                    </div>
-                  </div>
+            ) : sessions.length === 0 ? <EmptyState /> : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {sessions.map(s => (
+                  <OccurrenceBookingPanel key={s.id} session={s} enrolmentType="catchup" availableCredits={availableCredits} onCreditUsed={refetchCredits} />
                 ))}
               </div>
             )

@@ -33,4 +33,7 @@ urlpatterns = [
     path('practice/<int:pk>/', views.PracticeSlotDetailView.as_view(), name='practice-detail'),
     path('practice/<int:pk>/book/', views.PracticeSlotBookView.as_view(), name='practice-book'),
     path('practice/<int:pk>/cancel/', views.PracticeSlotCancelView.as_view(), name='practice-cancel'),
+    path('occurrences/<int:pk>/casual-book/', views.CasualBookView.as_view(), name='casual-book'),
+    path('occurrences/<int:pk>/casual-cancel/', views.CasualBookCancelView.as_view(), name='casual-cancel'),
+    path('casual-bookings/', views.MyCasualBookingsView.as_view(), name='casual-bookings-mine'),
 ]

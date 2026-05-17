@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments as enrolmentsApi, attendance, classes as classesApi, helpdesk as helpdeskApi } from '../../api'
+import { enrolments as enrolmentsApi, attendance, classes as classesApi, helpdesk as helpdeskApi, attendance as attendanceApi } from '../../api'
 
 function WaitlistOfferBanner({ enrolment, onClaimed }) {
   const [claiming, setClaiming] = useState(false)
@@ -453,11 +453,131 @@ function ClassWaitlistLeaveModal({ enrolment, onClose, onDone }) {
   )
 }
 
+function CasualBookingsTab({ bookings, refetch }) {
+  const [cancellingId, setCancellingId] = useState(null)
+  const [error, setError] = useState('')
+
+  const items = bookings?.results || bookings || []
+
+  async function cancel(booking) {
+    setCancellingId(booking.id)
+    setError('')
+    try {
+      await classesApi.casual.cancel(booking.occurrence)
+      refetch()
+    } catch (e) {
+      setError(e.response?.data?.detail || 'Could not cancel — please try again.')
+    } finally {
+      setCancellingId(null)
+    }
+  }
+
+  const confirmed = items.filter(b => b.status === 'confirmed')
+  const waitlisted = items.filter(b => b.status === 'waitlisted')
+
+  return (
+    <div>
+      {error && <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 10 }}>{error}</div>}
+
+      {items.length === 0 ? (
+        <div className="empty-state">
+          <div style={{ marginBottom: 8 }}>No casual or catch-up bookings yet</div>
+        </div>
+      ) : (
+        <>
+          {confirmed.length > 0 && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>Booked</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {confirmed.map(b => {
+                  const d = b.occurrence_detail
+                  const dateLabel = d?.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : '—'
+                  const isCancelling = cancellingId === b.id
+                  return (
+                    <div key={b.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{d?.session_name}</div>
+                        <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>
+                          {dateLabel}
+                          {d?.start_time ? ` · ${d.start_time.slice(0, 5)}` : ''}
+                          {d?.studio_name ? ` · ${d.studio_name}` : ''}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                        <span className="tag tag-lime" style={{ fontSize: 10 }}>{b.enrolment_type === 'catchup' ? 'Catch-up' : 'Casual'}</span>
+                        <button
+                          className="btn btn-ghost btn-xs"
+                          style={{ fontSize: 11, color: 'var(--red)' }}
+                          onClick={() => cancel(b)}
+                          disabled={isCancelling}
+                        >
+                          {isCancelling ? '…' : 'Cancel'}
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {waitlisted.length > 0 && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>Waitlisted</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {waitlisted.map(b => {
+                  const d = b.occurrence_detail
+                  const dateLabel = d?.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : '—'
+                  const hasOffer = !!b.waitlist_offered_at
+                  const isCancelling = cancellingId === b.id
+                  return (
+                    <div key={b.id} style={{ background: 'var(--card)', border: `1px solid ${hasOffer ? 'var(--lime)' : 'var(--border)'}`, borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{d?.session_name}</div>
+                        <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>
+                          {dateLabel}
+                          {d?.start_time ? ` · ${d.start_time.slice(0, 5)}` : ''}
+                          {d?.studio_name ? ` · ${d.studio_name}` : ''}
+                        </div>
+                        {hasOffer && <div style={{ fontSize: 11, color: 'var(--lime)', marginTop: 4 }}>🎉 A spot opened — claim it!</div>}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                        <span className="tag tag-amber" style={{ fontSize: 10 }}>Waitlist</span>
+                        {!hasOffer && (
+                          <button
+                            className="btn btn-ghost btn-xs"
+                            style={{ fontSize: 11, color: 'var(--red)' }}
+                            onClick={() => cancel(b)}
+                            disabled={isCancelling}
+                          >
+                            {isCancelling ? '…' : 'Leave'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      <div style={{ marginTop: 4 }}>
+        <Link to="/portal/book">
+          <button className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>+ Book a casual or catch-up</button>
+        </Link>
+      </div>
+    </div>
+  )
+}
+
 export default function StudentMyClasses() {
   const { user } = useAuth()
   const { data: enrolData, loading, refetch: refetchEnrol } = useApi(() => enrolmentsApi.list({ student: user?.id }), [user?.id])
   const { data: attData, refetch: refetchAtt } = useApi(() => attendance.list({ student: user?.id }), [user?.id])
   const { data: upcomingData, refetch: refetchUpcoming } = useApi(() => classesApi.occurrences({ student: user?.id, upcoming: true }), [user?.id])
+  const { data: casualBookingsData, refetch: refetchCasual } = useApi(() => classesApi.casual.myBookings(), [])
 
   const [markAwayOcc, setMarkAwayOcc] = useState(null)
   const [cancelAwayOcc, setCancelAwayOcc] = useState(null)
@@ -688,33 +808,7 @@ export default function StudentMyClasses() {
               )}
 
               {activeSubTab === 'casuals' && (
-                <div>
-                  {casual.length === 0 ? (
-                    <div className="empty-state">
-                      <div style={{ marginBottom: 8 }}>No casual bookings yet</div>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                      {casual.map(e => {
-                        const s = e.class_session_detail
-                        return (
-                          <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{s?.name}</div>
-                              <div style={{ fontSize: 12, color: 'var(--grey)' }}>{DAYS[s?.day_of_week]} · {s?.studio_detail?.name}</div>
-                            </div>
-                            <span className="tag tag-lav" style={{ fontSize: 10 }}>{e.enrolment_type || 'casual'}</span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                  <div style={{ marginTop: 16 }}>
-                    <Link to="/portal/book">
-                      <button className="btn btn-lav btn-sm" style={{ background: 'var(--lav)', color: '#000' }}>Book a casual or catch-up →</button>
-                    </Link>
-                  </div>
-                </div>
+                <CasualBookingsTab bookings={casualBookingsData} refetch={refetchCasual} />
               )}
             </div>
           )}

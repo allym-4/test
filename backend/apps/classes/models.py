@@ -216,6 +216,36 @@ class PracticeBooking(models.Model):
         return f'{self.student.display_name} → {self.slot}'
 
 
+class CasualBooking(models.Model):
+    """A booking for a specific class occurrence — used for casual drop-ins and catch-ups."""
+
+    class Status(models.TextChoices):
+        CONFIRMED = 'confirmed', 'Confirmed'
+        WAITLISTED = 'waitlisted', 'Waitlisted'
+        CANCELLED = 'cancelled', 'Cancelled'
+
+    occurrence = models.ForeignKey(ClassOccurrence, on_delete=models.CASCADE, related_name='casual_bookings')
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='casual_bookings')
+    enrolment_type = models.CharField(
+        max_length=10,
+        choices=[('casual', 'Casual'), ('catchup', 'Catchup')],
+        default='casual',
+    )
+    status = models.CharField(max_length=15, choices=Status.choices, default=Status.CONFIRMED)
+    price_charged = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    is_free = models.BooleanField(default=False)
+    waitlist_offered_at = models.DateTimeField(null=True, blank=True)
+    waitlist_expires_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [('occurrence', 'student')]
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.student.display_name} → {self.occurrence} ({self.enrolment_type})'
+
+
 class ClassChatMessage(models.Model):
     session = models.ForeignKey('ClassSession', on_delete=models.CASCADE, related_name='chat_messages')
     sender = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='class_chat_messages')
