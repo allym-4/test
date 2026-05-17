@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   ScrollView, View, Text, TouchableOpacity, StyleSheet,
-  RefreshControl, Alert, ActivityIndicator,
+  RefreshControl, Alert, ActivityIndicator, Share,
 } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useAuth } from '../../contexts/AuthContext'
@@ -214,6 +214,39 @@ export default function MyClassesScreen({ navigation }) {
     )
   }
 
+  function handleExportCalendar() {
+    if (activeEnrolments.length === 0) {
+      Alert.alert('No classes', 'You have no active enrolments to export.')
+      return
+    }
+    const DAYS = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU']
+    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Duality Pole Studio//Mobile//EN']
+    activeEnrolments.forEach(enr => {
+      const sess = enr.class_session_detail ?? enr.session
+      const name = sess?.name ?? 'Pole Class'
+      const studio = sess?.studio_detail?.name ?? sess?.studio?.name ?? 'Duality Pole Studio'
+      const startTime = sess?.start_time?.replace(/:/g, '').slice(0, 4) ?? '0900'
+      const endTime = sess?.end_time?.replace(/:/g, '').slice(0, 4) ?? '1000'
+      const dayNum = sess?.day_of_week // 0=Mon..6=Sun
+      const byday = dayNum != null ? DAYS[dayNum] : null
+      const now = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z'
+      lines.push(
+        'BEGIN:VEVENT',
+        `UID:${enr.id}@dualitypolestudio`,
+        `DTSTAMP:${now}`,
+        `SUMMARY:${name}`,
+        `LOCATION:${studio}`,
+        byday ? `RRULE:FREQ=WEEKLY;BYDAY=${byday}` : '',
+        `DTSTART;TZID=Australia/Sydney:20250101T${startTime}00`,
+        `DTEND;TZID=Australia/Sydney:20250101T${endTime}00`,
+        'END:VEVENT',
+      ).filter(Boolean)
+    })
+    lines.push('END:VCALENDAR')
+    const ics = lines.join('\r\n')
+    Share.share({ message: ics, title: 'My Pole Classes' })
+  }
+
   async function handleCancelEnrolment(id, name) {
     Alert.alert(
       'Cancel enrolment',
@@ -244,6 +277,9 @@ export default function MyClassesScreen({ navigation }) {
         </TouchableOpacity>
         <TouchableOpacity style={s.topLink} onPress={() => navigation.navigate('Homework')}>
           <Text style={s.topLinkText}>📚 Homework</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={s.topLink} onPress={handleExportCalendar}>
+          <Text style={s.topLinkText}>📅 Export</Text>
         </TouchableOpacity>
       </View>
 

@@ -1,13 +1,117 @@
 import { useState } from 'react'
 import {
   ScrollView, View, Text, TouchableOpacity, StyleSheet,
-  RefreshControl, Alert, Modal,
+  RefreshControl, Alert, Modal, ActivityIndicator,
 } from 'react-native'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, seasons, attendance as attendanceApi, classes as classesApi, skills as skillsApi, announcements as announcementsApi } from '../../api'
+import { enrolments, seasons, attendance as attendanceApi, classes as classesApi, skills as skillsApi, announcements as announcementsApi, payments } from '../../api'
 
 const DAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+function CancellationOfferModal({ offers, onResolved }) {
+  const [current, setCurrent] = useState(0)
+  const [choosing, setChoosing] = useState(false)
+  const [done, setDone] = useState(false)
+  const [error, setError] = useState('')
+
+  const offer = offers[current]
+  if (!offer) return null
+
+  async function choose(choice) {
+    setChoosing(true)
+    setError('')
+    try {
+      await payments.cancellationOffers.resolve(offer.id, choice)
+      setDone(true)
+      setTimeout(() => {
+        setDone(false)
+        if (current + 1 < offers.length) {
+          setCurrent(c => c + 1)
+        } else {
+          onResolved()
+        }
+      }, 1400)
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Something went wrong.')
+    } finally {
+      setChoosing(false)
+    }
+  }
+
+  const dateLabel = offer.occurrence_date
+    ? new Date(offer.occurrence_date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
+    : ''
+
+  return (
+    <Modal visible transparent animationType="fade">
+      <View style={co.overlay}>
+        <View style={co.sheet}>
+          <View style={co.sheetHeader}>
+            <Text style={co.cancelledLabel}>CLASS CANCELLED</Text>
+            <Text style={co.sessionName}>{offer.session_name}</Text>
+            <Text style={co.dateLabel}>{dateLabel}</Text>
+            {offers.length > 1 && (
+              <Text style={co.counter}>{current + 1} of {offers.length}</Text>
+            )}
+          </View>
+          <View style={co.body}>
+            <Text style={co.intro}>We're sorry your class was cancelled. Please choose one of the following:</Text>
+            {!!error && <Text style={co.errorText}>{error}</Text>}
+            {done ? (
+              <Text style={co.doneText}>✓ Got it — thanks!</Text>
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={[co.option, co.optionLime]}
+                  onPress={() => choose('credit')}
+                  disabled={choosing}
+                  activeOpacity={0.7}
+                >
+                  {choosing ? <ActivityIndicator color="#ccff00" size="small" /> : (
+                    <>
+                      <Text style={co.optionTitle}>${parseFloat(offer.credit_amount ?? 0).toFixed(2)} Account Credit</Text>
+                      <Text style={co.optionSub}>Added directly to your account balance — use it towards any future invoice.</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[co.option, co.optionLav]}
+                  onPress={() => choose('makeup')}
+                  disabled={choosing}
+                  activeOpacity={0.7}
+                >
+                  <Text style={co.optionTitleLav}>Makeup Class Credit</Text>
+                  <Text style={co.optionSub}>A credit to attend one makeup class in any session — arrange with reception.</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </View>
+    </Modal>
+  )
+}
+
+const co = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  sheet: { backgroundColor: '#111', borderRadius: 16, width: '100%', overflow: 'hidden', borderWidth: 1, borderColor: '#222' },
+  sheetHeader: { backgroundColor: 'rgba(255,68,68,0.1)', borderBottomWidth: 1, borderBottomColor: 'rgba(255,68,68,0.2)', padding: 20 },
+  cancelledLabel: { fontSize: 11, color: '#ef4444', textTransform: 'uppercase', letterSpacing: 1, fontWeight: '700', marginBottom: 4 },
+  sessionName: { fontSize: 18, fontWeight: '700', color: '#fff', lineHeight: 24 },
+  dateLabel: { fontSize: 13, color: '#888', marginTop: 4 },
+  counter: { fontSize: 11, color: '#666', marginTop: 6 },
+  body: { padding: 20 },
+  intro: { fontSize: 14, color: '#aaa', lineHeight: 22, marginBottom: 16 },
+  errorText: { color: '#ef4444', fontSize: 12, marginBottom: 12 },
+  doneText: { textAlign: 'center', color: '#ccff00', fontWeight: '600', fontSize: 15, paddingVertical: 16 },
+  option: { borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1 },
+  optionLime: { backgroundColor: 'rgba(204,255,0,0.06)', borderColor: 'rgba(204,255,0,0.3)' },
+  optionLav: { backgroundColor: 'rgba(176,160,255,0.06)', borderColor: 'rgba(176,160,255,0.3)' },
+  optionTitle: { fontWeight: '700', fontSize: 15, color: '#ccff00', marginBottom: 4 },
+  optionTitleLav: { fontWeight: '700', fontSize: 15, color: '#b0a0ff', marginBottom: 4 },
+  optionSub: { fontSize: 12, color: '#888', lineHeight: 18 },
+})
 
 function greeting() {
   const h = new Date().getHours()
@@ -112,9 +216,14 @@ export default function DashboardScreen({ navigation }) {
   const { data: annData, refetch: refetchAnn } = useApi(
     () => announcementsApi.list({ note_type: 'announcement' }), []
   )
+  const { data: offersData, refetch: refetchOffers } = useApi(
+    () => payments.cancellationOffers.mine(), []
+  )
 
   const [markAwayEnrol, setMarkAwayEnrol] = useState(null)
   const [acknowledging, setAcknowledging] = useState({})
+
+  const pendingOffers = offersData?.results ?? offersData ?? []
 
   const allAnnouncements = annData?.results || annData || []
   const pendingAnnouncements = allAnnouncements.filter(a => !a.is_acknowledged)
@@ -341,6 +450,13 @@ export default function DashboardScreen({ navigation }) {
           enrolment={markAwayEnrol}
           onClose={() => setMarkAwayEnrol(null)}
           onDone={() => setMarkAwayEnrol(null)}
+        />
+      )}
+
+      {pendingOffers.length > 0 && (
+        <CancellationOfferModal
+          offers={pendingOffers}
+          onResolved={refetchOffers}
         />
       )}
     </ScrollView>

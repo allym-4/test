@@ -84,6 +84,10 @@ export const payments = {
     list: (params) => client.get('/api/payments/plans/', { params }),
     get: (id) => client.get(`/api/payments/plans/${id}/`),
   },
+  cancellationOffers: {
+    mine: () => client.get('/api/payments/cancellation-offers/mine/'),
+    resolve: (id, choice) => client.post(`/api/payments/cancellation-offers/${id}/resolve/`, { choice }),
+  },
 }
 
 export const seasons = {
@@ -141,6 +145,10 @@ export const challenges = {
 
 export const community = {
   groups: () => client.get('/api/community/groups/'),
+  groupPosts: (groupId) => client.get(`/api/community/groups/${groupId}/posts/`),
+  createGroupPost: (groupId, data) => client.post(`/api/community/groups/${groupId}/posts/`, data),
+  joinGroup: (groupId) => client.post(`/api/community/groups/${groupId}/join/`),
+  leaveGroup: (groupId) => client.post(`/api/community/groups/${groupId}/leave/`),
   posts: (groupId) => client.get('/api/community/posts/', { params: { group: groupId } }),
   createPost: (data) => client.post('/api/community/posts/', data),
   likePost: (postId) => client.post('/api/community/posts/like/', { post_id: postId }),
