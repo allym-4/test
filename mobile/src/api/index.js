@@ -51,6 +51,14 @@ export const helpdesk = {
 export const payments = {
   balance: (studentId) => client.get(`/api/payments/balance/${studentId}/`),
   list: (params) => client.get('/api/payments/', { params }),
+  stripe: {
+    config: () => client.get('/api/payments/stripe/config/'),
+    createPaymentIntent: (data) => client.post('/api/payments/stripe/payment-intent/', data),
+  },
+  promoCodes: {
+    validate: (data) => client.post('/api/payments/promo-codes/validate/', data),
+    use: (data) => client.post('/api/payments/promo-codes/use/', data),
+  },
 }
 
 export const seasons = {
@@ -83,6 +91,10 @@ export const homework = {
 
 export const users = {
   get: (id) => client.get(`/api/users/${id}/`),
+}
+
+export const settings = {
+  get: () => client.get('/api/users/settings/'),
 }
 
 export const roster = {
