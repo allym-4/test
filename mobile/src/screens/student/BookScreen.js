@@ -23,6 +23,7 @@ const T = {
 const TABS = [
   { key: 'season',    label: 'Book a Season' },
   { key: 'casual',   label: 'Casual & Catch-ups' },
+  { key: 'trial',    label: 'Trial Class' },
   { key: 'workshops', label: 'Workshops & Events' },
 ]
 
@@ -697,6 +698,7 @@ export default function BookScreen() {
 
   const isLoading = tab === 'workshops' ? wsLoading : tab === 'casual' ? occLoading : sessLoading
   const onRefresh = tab === 'workshops' ? refetchWorkshops : tab === 'casual' ? refetchOcc : refetchSessions
+  // trial and season both use sessions data
 
   // ── render ─────────────────────────────────────────────────────────────────
   return (
@@ -807,10 +809,7 @@ export default function BookScreen() {
               <Text style={s.trialBannerText}>First time? 🔥 Book a trial class for just ${priceTrial}</Text>
               <TouchableOpacity
                 style={s.trialBannerBtn}
-                onPress={() => {
-                  // navigate to trial flow or open trial modal
-                  Alert.alert('Trial booking', `Trial classes are $${priceTrial}. Select a class below and choose "Pay casual rate" — or contact the studio to book a trial.`)
-                }}
+                onPress={() => setTab('trial')}
               >
                 <Text style={s.trialBannerBtnText}>BOOK TRIAL →</Text>
               </TouchableOpacity>
@@ -925,6 +924,91 @@ export default function BookScreen() {
                 })}
               </View>
             ))}
+          </>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════════
+            TRIAL CLASS
+        ══════════════════════════════════════════════════════════════════ */}
+        {tab === 'trial' && (
+          <>
+            {/* Hero card */}
+            <View style={s.trialHero}>
+              <View style={{ flex: 1 }}>
+                <Text style={s.trialHeroTitle}>Try Your First Class</Text>
+                <Text style={s.trialHeroBody}>Your first class, no experience needed. Wear comfortable activewear, bring water — we'll do the rest.</Text>
+              </View>
+              <View style={s.trialPriceBox}>
+                <Text style={s.trialPrice}>${priceTrial}</Text>
+                <Text style={s.trialPriceLabel}>trial rate</Text>
+              </View>
+            </View>
+
+            <Text style={s.subSectionLabel}>Available Classes for Your Trial</Text>
+
+            {sessLoading ? (
+              <ActivityIndicator color={T.lime} style={{ marginTop: 24 }} />
+            ) : sessions.length === 0 ? (
+              <Text style={s.empty}>No classes available right now.</Text>
+            ) : (
+              sessions.map(sess => {
+                const isBooked = booked[sess.id + '-season'] || enrolledSessionIds.has(sess.id)
+                const instructorName = sess.instructor_detail
+                  ? (sess.instructor_detail.display_name || sess.instructor_detail.first_name || '').trim()
+                  : (sess.instructor_name || '')
+                const dayLabel = sess.day_of_week != null
+                  ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][sess.day_of_week] : ''
+                return (
+                  <View key={sess.id} style={[s.trialCard, booking === sess.id + '-trial' && { opacity: 0.6 }]}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <View style={{ flex: 1, paddingRight: 10 }}>
+                        <Text style={s.trialCardName}>{sess.name}</Text>
+                        <Text style={s.trialCardMeta}>
+                          {[dayLabel, fmtTime(sess.start_time)].filter(Boolean).join(' · ')}
+                        </Text>
+                        {sess.studio_detail?.name && (
+                          <Text style={s.trialCardMeta}>{sess.studio_detail.name}</Text>
+                        )}
+                        {!!instructorName && (
+                          <Text style={s.trialCardInstructor}>Instructor: {instructorName}</Text>
+                        )}
+                      </View>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={s.trialCardPrice}>${priceTrial}</Text>
+                        <Text style={s.trialCardPriceLabel}>trial</Text>
+                      </View>
+                    </View>
+                    {isBooked ? (
+                      <View style={s.trialBookedRow}>
+                        <Text style={s.trialBookedText}>✓ Already enrolled</Text>
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        style={[s.trialBookBtn, booking === sess.id + '-trial' && s.limeBtnDisabled]}
+                        disabled={booking === sess.id + '-trial'}
+                        onPress={async () => {
+                          setBooking(sess.id + '-trial')
+                          try {
+                            await enrolments.create({ class_session: sess.id, status: 'active', enrolment_type: 'trial' })
+                            setBooked(b => ({ ...b, [sess.id + '-trial']: true }))
+                            Alert.alert('Trial booked!', "Your trial class is confirmed. The studio will follow up about payment.")
+                          } catch (err) {
+                            Alert.alert('Booking failed', err.response?.data?.detail ?? 'Could not book trial. Please try again.')
+                          } finally {
+                            setBooking(null)
+                          }
+                        }}
+                      >
+                        {booking === sess.id + '-trial'
+                          ? <ActivityIndicator size="small" color="#000" />
+                          : <Text style={s.trialBookBtnText}>Book Trial →</Text>
+                        }
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )
+              })
+            )}
           </>
         )}
 
@@ -1373,4 +1457,23 @@ const s = StyleSheet.create({
   confirmedText: { fontSize: 14, fontWeight: '700', color: T.lime },
   waitlistText: { fontSize: 14, fontWeight: '700', color: '#f59e0b' },
   cancelLink: { fontSize: 13, color: '#ef4444' },
+
+  // Trial tab
+  trialHero: { backgroundColor: 'rgba(255,170,0,0.08)', borderWidth: 1, borderColor: 'rgba(255,170,0,0.25)', borderRadius: 12, padding: 18, marginBottom: 20, flexDirection: 'row', alignItems: 'flex-start', gap: 14 },
+  trialHeroTitle: { fontSize: 16, fontWeight: '700', color: '#f59e0b', marginBottom: 6 },
+  trialHeroBody: { fontSize: 13, color: '#ccc', lineHeight: 20 },
+  trialPriceBox: { alignItems: 'flex-end', flexShrink: 0 },
+  trialPrice: { fontSize: 26, fontWeight: '800', color: '#f59e0b' },
+  trialPriceLabel: { fontSize: 11, color: T.muted },
+  subSectionLabel: { fontSize: 11, fontWeight: '700', color: T.muted, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 },
+  trialCard: { backgroundColor: T.card, borderRadius: 14, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(255,170,0,0.2)' },
+  trialCardName: { fontSize: 15, fontWeight: '700', color: T.text, marginBottom: 3 },
+  trialCardMeta: { fontSize: 12, color: T.muted, marginBottom: 1 },
+  trialCardInstructor: { fontSize: 12, color: '#aaa', marginTop: 4 },
+  trialCardPrice: { fontSize: 18, fontWeight: '800', color: '#f59e0b' },
+  trialCardPriceLabel: { fontSize: 10, color: T.muted },
+  trialBookBtn: { backgroundColor: '#f59e0b', borderRadius: 10, paddingVertical: 10, alignItems: 'center', marginTop: 8 },
+  trialBookBtnText: { color: '#000', fontWeight: '800', fontSize: 14 },
+  trialBookedRow: { marginTop: 6 },
+  trialBookedText: { fontSize: 13, fontWeight: '600', color: T.lime },
 })
