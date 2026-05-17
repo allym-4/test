@@ -134,11 +134,106 @@ const hu = StyleSheet.create({
 })
 
 // ─── SeasonCheckoutModal ──────────────────────────────────────────────────────
-function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, onClose, onConfirm, loading }) {
+const STRIPE_APPEARANCE = {
+  colors: {
+    primary: '#ccff00',
+    background: '#111',
+    componentBackground: '#1a1a1a',
+    componentText: '#fff',
+    primaryText: '#fff',
+    secondaryText: '#888',
+  },
+}
+
+function calcPlanSchedule(frequency, startFromSeason, upcomingSeason, total) {
+  const start = (!startFromSeason || !upcomingSeason?.start_date)
+    ? new Date()
+    : new Date(upcomingSeason.start_date + 'T00:00')
+  const end = upcomingSeason?.end_date ? new Date(upcomingSeason.end_date + 'T00:00') : null
+  const fmt = d => d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
+
+  if (frequency === 'monthly') {
+    const amt = (total / 2).toFixed(2)
+    const d2 = new Date(start); d2.setDate(d2.getDate() + 28)
+    return [
+      { label: 'First payment', date: fmt(start), amount: amt },
+      { label: 'Final payment', date: fmt(d2), amount: amt },
+    ]
+  }
+  if (frequency === 'fortnightly') {
+    const msEnd = end ? end.getTime() : start.getTime() + 90 * 86400000
+    const count = Math.max(2, Math.ceil((msEnd - start.getTime()) / (14 * 86400000)))
+    const amt = (total / count).toFixed(2)
+    return Array.from({ length: count }, (_, i) => {
+      const d = new Date(start); d.setDate(d.getDate() + i * 14)
+      return { label: i === 0 ? 'First payment' : i === count - 1 ? 'Final payment' : `Payment ${i + 1}`, date: fmt(d), amount: amt }
+    })
+  }
+  // weekly
+  const msEnd = end ? end.getTime() : start.getTime() + 90 * 86400000
+  const count = Math.max(2, Math.ceil((msEnd - start.getTime()) / (7 * 86400000)))
+  const amt = (total / count).toFixed(2)
+  return Array.from({ length: count }, (_, i) => {
+    const d = new Date(start); d.setDate(d.getDate() + i * 7)
+    return { label: i === 0 ? 'First payment' : i === count - 1 ? 'Final payment' : `Payment ${i + 1}`, date: fmt(d), amount: amt }
+  })
+}
+
+function CashCalendar({ selected, onSelect }) {
+  const today = new Date()
+  const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const startDow = today.getDay()
+  const totalCells = Math.ceil((startDow + 21) / 7) * 7
+  const cells = Array.from({ length: totalCells }, (_, i) => {
+    const off = i - startDow
+    if (off < 0 || off >= 21) return null
+    const d = new Date(today); d.setDate(d.getDate() + off)
+    return d
+  })
+  const rows = []
+  for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7))
+  const isSel = d => selected && d && d.toDateString() === selected.toDateString()
+
+  return (
+    <View>
+      <View style={{ flexDirection: 'row', marginBottom: 6 }}>
+        {DAYS.map(d => <Text key={d} style={{ flex: 1, textAlign: 'center', fontSize: 10, color: T.muted, fontWeight: '700' }}>{d}</Text>)}
+      </View>
+      {rows.map((row, ri) => (
+        <View key={ri} style={{ flexDirection: 'row', marginBottom: 4 }}>
+          {row.map((d, di) => (
+            <TouchableOpacity
+              key={di}
+              style={[sc.calCell, !d && { opacity: 0 }, isSel(d) && sc.calCellSelected]}
+              onPress={() => d && onSelect(d)}
+              disabled={!d}
+              activeOpacity={0.7}
+            >
+              {d && <Text style={[sc.calCellText, isSel(d) && sc.calCellTextSelected]}>{d.getDate()}</Text>}
+            </TouchableOpacity>
+          ))}
+        </View>
+      ))}
+    </View>
+  )
+}
+
+function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, upcomingSeason, onClose, onConfirm }) {
+  const { initPaymentSheet, presentPaymentSheet, initSetupPaymentSheet, presentSetupPaymentSheet } = useStripe()
+
   const [payOption, setPayOption] = useState('full')
   const [promoCode, setPromoCode] = useState('')
   const [promoValidating, setPromoValidating] = useState(false)
-  const [promoResult, setPromoResult] = useState(null) // { discount_amount, discount_percent, message }
+  const [promoResult, setPromoResult] = useState(null)
+  const [subView, setSubView] = useState(null) // null | 'plan' | 'cash'
+  const [stripeLoading, setStripeLoading] = useState(false)
+
+  // Plan sub-view
+  const [planFrequency, setPlanFrequency] = useState('monthly')
+  const [planStartSeason, setPlanStartSeason] = useState(false)
+
+  // Cash sub-view
+  const [cashDate, setCashDate] = useState(null)
 
   const discountAmount = promoResult?.discount_amount
     ? parseFloat(promoResult.discount_amount)
@@ -147,12 +242,14 @@ function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, onClos
     : 0
   const discountedTotal = Math.max(0, totalPrice - discountAmount)
   const depositAmount = Math.round(discountedTotal / 2)
+  const displayTotal = payOption === 'deposit' ? depositAmount : discountedTotal
+  const promoCodeClean = promoResult?.error ? null : promoCode.trim() || null
 
   useEffect(() => {
     if (visible) {
-      setPayOption('full')
-      setPromoCode('')
-      setPromoResult(null)
+      setPayOption('full'); setPromoCode(''); setPromoResult(null)
+      setSubView(null); setPlanFrequency('monthly'); setPlanStartSeason(false)
+      setCashDate(null); setStripeLoading(false)
     }
   }, [visible])
 
@@ -164,139 +261,245 @@ function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, onClos
       const { data } = await payments.promoCodes.validate({ code, amount: totalPrice })
       setPromoResult(data)
     } catch (err) {
-      const msg = err?.response?.data?.detail ?? err?.response?.data?.error ?? 'Invalid promo code.'
-      setPromoResult({ error: msg })
-    } finally {
-      setPromoValidating(false)
-    }
+      setPromoResult({ error: err?.response?.data?.detail ?? err?.response?.data?.error ?? 'Invalid promo code.' })
+    } finally { setPromoValidating(false) }
+  }
+
+  async function handleConfirmPayment() {
+    setStripeLoading(true)
+    try {
+      const amountCents = Math.round(displayTotal * 100)
+      const classNames = sessions.map(s => getSessionName(s)).join(', ')
+      const desc = payOption === 'deposit' ? `Season deposit — ${classNames}` : `Season enrolment — ${classNames}`
+      const { data } = await payments.stripe.createPaymentIntent({ amount_cents: amountCents, description: desc, save_method: true })
+      const { error: initErr } = await initPaymentSheet({ merchantDisplayName: 'Duality Pole Studio', paymentIntentClientSecret: data.client_secret, allowsDelayedPaymentMethods: false, appearance: STRIPE_APPEARANCE })
+      if (initErr) { Alert.alert('Error', initErr.message); return }
+      const { error: presentErr } = await presentPaymentSheet()
+      if (presentErr) { if (presentErr.code !== 'Canceled') Alert.alert('Payment failed', presentErr.message); return }
+      onConfirm(payOption, displayTotal, promoCodeClean)
+    } catch (e) {
+      Alert.alert('Error', e?.response?.data?.detail || e?.message || 'Could not process payment.')
+    } finally { setStripeLoading(false) }
+  }
+
+  async function handlePlanSubmit() {
+    setStripeLoading(true)
+    try {
+      const { data } = await payments.stripe.setupIntent()
+      const { error: initErr } = await initSetupPaymentSheet({ merchantDisplayName: 'Duality Pole Studio', setupIntentClientSecret: data.client_secret, appearance: STRIPE_APPEARANCE })
+      if (initErr) { Alert.alert('Error', initErr.message); return }
+      const { error: presentErr } = await presentSetupPaymentSheet()
+      if (presentErr) { if (presentErr.code !== 'Canceled') Alert.alert('Card not saved', presentErr.message); return }
+      const schedule = calcPlanSchedule(planFrequency, planStartSeason, upcomingSeason, discountedTotal)
+      onConfirm('plan', discountedTotal, promoCodeClean, { frequency: planFrequency, startSeason: planStartSeason, schedule })
+    } catch (e) {
+      Alert.alert('Error', e?.response?.data?.detail || e?.message || 'Could not set up payment plan.')
+    } finally { setStripeLoading(false) }
+  }
+
+  async function handleCashSubmit() {
+    if (!cashDate) { Alert.alert('Select a date', 'Please select when you\'ll be bringing cash.'); return }
+    setStripeLoading(true)
+    try {
+      const { data } = await payments.stripe.setupIntent()
+      const { error: initErr } = await initSetupPaymentSheet({ merchantDisplayName: 'Duality Pole Studio', setupIntentClientSecret: data.client_secret, appearance: STRIPE_APPEARANCE })
+      if (initErr) { Alert.alert('Error', initErr.message); return }
+      const { error: presentErr } = await presentSetupPaymentSheet()
+      if (presentErr) { if (presentErr.code !== 'Canceled') Alert.alert('Card not saved', presentErr.message); return }
+      onConfirm('cash', 0, null, { cashDate })
+    } catch (e) {
+      Alert.alert('Error', e?.response?.data?.detail || e?.message || 'Could not save card.')
+    } finally { setStripeLoading(false) }
   }
 
   if (!visible || sessions.length === 0) return null
 
-  const displayTotal = payOption === 'deposit' ? depositAmount : discountedTotal
+  const schedule = calcPlanSchedule(planFrequency, planStartSeason, upcomingSeason, discountedTotal)
+  const seasonEndLabel = upcomingSeason?.end_date
+    ? new Date(upcomingSeason.end_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
+    : null
 
   return (
-    <Modal visible animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible animationType="slide" transparent onRequestClose={subView ? () => setSubView(null) : onClose}>
       <View style={sc.overlay}>
-        <View style={sc.sheet}>
-          <View style={sc.header}>
-            <Text style={sc.title}>Before you checkout</Text>
-            <TouchableOpacity onPress={onClose} style={sc.closeBtn}>
-              <Text style={sc.closeBtnText}>CLOSE</Text>
-            </TouchableOpacity>
-          </View>
+        <ScrollView style={sc.sheet} contentContainerStyle={{ paddingBottom: 44 }} bounces={false} showsVerticalScrollIndicator={false}>
 
-          {/* Selected classes summary */}
-          <View style={sc.summaryCard}>
-            {sessions.map((sess, i) => (
-              <Text key={sess.id} style={[sc.summaryLine, i > 0 && { marginTop: 4 }]}>
-                • {getSessionName(sess)}
-                {sess.day_of_week != null ? `  ·  ${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][sess.day_of_week]}` : ''}
-                {sess.start_time ? `  ${fmtTime(sess.start_time)}` : ''}
-              </Text>
-            ))}
-            {seasonName ? <Text style={sc.seasonTag}>{seasonName}</Text> : null}
-          </View>
+          {/* ── PLAN SUB-VIEW ── */}
+          {subView === 'plan' && (
+            <>
+              <View style={sc.header}>
+                <TouchableOpacity onPress={() => setSubView(null)} style={{ marginRight: 12 }}>
+                  <Text style={sc.backBtn}>← BACK</Text>
+                </TouchableOpacity>
+                <Text style={sc.title}>Set up a payment plan</Text>
+              </View>
 
-          {/* Promo code */}
-          <View style={sc.promoRow}>
-            <TextInput
-              style={sc.promoInput}
-              value={promoCode}
-              onChangeText={t => { setPromoCode(t); setPromoResult(null) }}
-              placeholder="Promo code"
-              placeholderTextColor="#555"
-              autoCapitalize="characters"
-              returnKeyType="done"
-              onSubmitEditing={handleApplyPromo}
-            />
-            <TouchableOpacity style={sc.promoApplyBtn} onPress={handleApplyPromo} disabled={promoValidating || !promoCode.trim()}>
-              {promoValidating
-                ? <ActivityIndicator color="#000" size="small" />
-                : <Text style={sc.promoApplyText}>APPLY</Text>
-              }
-            </TouchableOpacity>
-          </View>
-          {!!promoResult && !promoResult.error && (
-            <Text style={sc.promoSuccess}>
-              {promoResult.message ?? `Code applied! -$${discountAmount.toFixed(2)} off`}
-            </Text>
-          )}
-          {!!promoResult?.error && (
-            <Text style={sc.promoError}>{promoResult.error}</Text>
-          )}
+              <Text style={sc.subLabel}>How frequently would you like to pay?</Text>
+              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 20 }}>
+                {[['weekly', 'Weekly'], ['fortnightly', 'Fortnightly'], ['monthly', 'Monthly (2x)']].map(([key, label]) => (
+                  <TouchableOpacity key={key} style={[sc.freqBtn, planFrequency === key && sc.freqBtnActive]} onPress={() => setPlanFrequency(key)}>
+                    <Text style={[sc.freqBtnText, planFrequency === key && sc.freqBtnTextActive]}>{label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
 
-          <Text style={sc.sectionLabel}>How would you like to pay?</Text>
+              <Text style={sc.subLabel}>When would you like to start payments?</Text>
+              {[
+                [false, 'Today'],
+                [true, 'When the season commences'],
+              ].map(([val, label]) => (
+                <TouchableOpacity key={label} style={[sc.option, planStartSeason === val && sc.optionSelected]} onPress={() => setPlanStartSeason(val)}>
+                  <View style={[sc.radio, planStartSeason === val && sc.radioSelected]}>
+                    {planStartSeason === val && <View style={sc.radioDot} />}
+                  </View>
+                  <Text style={sc.optionTitle}>{label}</Text>
+                </TouchableOpacity>
+              ))}
 
-          {/* Pay in full */}
-          <TouchableOpacity
-            style={[sc.option, payOption === 'full' && sc.optionSelected]}
-            onPress={() => setPayOption('full')}
-          >
-            <View style={[sc.radio, payOption === 'full' && sc.radioSelected]}>
-              {payOption === 'full' && <View style={sc.radioDot} />}
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={sc.optionTitle}>Pay in full today</Text>
-              <Text style={sc.optionSub}>One payment, nothing more to think about.</Text>
-            </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              {discountAmount > 0 && <Text style={sc.strikePrice}>${totalPrice}</Text>}
-              <Text style={sc.optionPrice}>${discountedTotal}</Text>
-            </View>
-          </TouchableOpacity>
-
-          {/* 50% deposit */}
-          <TouchableOpacity
-            style={[sc.option, payOption === 'deposit' && sc.optionSelected]}
-            onPress={() => setPayOption('deposit')}
-          >
-            <View style={[sc.radio, payOption === 'deposit' && sc.radioSelected]}>
-              {payOption === 'deposit' && <View style={sc.radioDot} />}
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={sc.optionTitle}>Pay 50% deposit today</Text>
-              <Text style={sc.optionSub}>Balance of ${depositAmount} due before your first class.</Text>
-            </View>
-            <Text style={sc.optionPrice}>${depositAmount}</Text>
-          </TouchableOpacity>
-
-          {/* Confirm button */}
-          <TouchableOpacity
-            style={sc.confirmBtn}
-            onPress={() => onConfirm(payOption, displayTotal, promoResult?.error ? null : promoCode.trim() || null)}
-            disabled={loading}
-          >
-            {loading
-              ? <ActivityIndicator color="#000" />
-              : <Text style={sc.confirmBtnText}>
-                  CONFIRM AND PAY — ${displayTotal}
+              <Text style={[sc.subLabel, { marginTop: 16, textTransform: 'uppercase', letterSpacing: 0.8, fontSize: 11 }]}>Your payment schedule</Text>
+              <View style={sc.scheduleCard}>
+                {schedule.map((inst, i) => (
+                  <View key={i} style={[sc.scheduleRow, i > 0 && { borderTopWidth: 1, borderTopColor: T.border }]}>
+                    <View>
+                      <Text style={sc.scheduleDate}>{inst.date}</Text>
+                      <Text style={sc.scheduleLabel}>{inst.label}</Text>
+                    </View>
+                    <Text style={sc.scheduleAmount}>${inst.amount}</Text>
+                  </View>
+                ))}
+              </View>
+              {seasonEndLabel && (
+                <Text style={sc.scheduleFootnote}>
+                  All payments must be completed by <Text style={{ fontWeight: '700', color: T.text }}>{seasonEndLabel}</Text> (season end).{'  '}
+                  {schedule.length} × ${schedule[0]?.amount} = ${discountedTotal.toFixed(2)}
                 </Text>
-            }
-          </TouchableOpacity>
+              )}
 
-          {/* Payment plan */}
-          <TouchableOpacity
-            style={sc.altBtn}
-            onPress={() => onConfirm('plan', 0, null)}
-            disabled={loading}
-          >
-            <Text style={sc.altBtnText}>REQUEST A PAYMENT PLAN</Text>
-          </TouchableOpacity>
+              <View style={sc.planInfoBox}>
+                <Text style={sc.planInfoText}>
+                  Your spot will be <Text style={{ fontWeight: '700', color: T.text }}>held for 24 hours</Text> while we review your request.
+                  {' '}You'll receive a confirmation once approved — no payment is taken until then.
+                </Text>
+              </View>
 
-          {/* Pay cash */}
-          <TouchableOpacity
-            style={sc.altBtn}
-            onPress={() => onConfirm('cash', 0, null)}
-            disabled={loading}
-          >
-            <Text style={sc.altBtnText}>I WANT TO PAY CASH</Text>
-          </TouchableOpacity>
+              <TouchableOpacity style={[sc.confirmBtn, stripeLoading && { opacity: 0.6 }]} onPress={handlePlanSubmit} disabled={stripeLoading}>
+                {stripeLoading ? <ActivityIndicator color="#000" /> : <Text style={sc.confirmBtnText}>SUBMIT PAYMENT PLAN REQUEST</Text>}
+              </TouchableOpacity>
+              <Text style={sc.disclaimer}>By booking you agree to our terms and conditions.</Text>
+            </>
+          )}
 
-          <Text style={sc.disclaimer}>
-            By booking you agree to our terms and conditions. Payments secured by Stripe.
-          </Text>
-        </View>
+          {/* ── CASH SUB-VIEW ── */}
+          {subView === 'cash' && (
+            <>
+              <View style={sc.header}>
+                <TouchableOpacity onPress={() => setSubView(null)} style={{ marginRight: 12 }}>
+                  <Text style={sc.backBtn}>← BACK</Text>
+                </TouchableOpacity>
+                <Text style={sc.title}>Pay cash on the day</Text>
+              </View>
+
+              <View style={sc.cashInfoBox}>
+                <Text style={sc.cashInfoText}>
+                  Your card details are saved securely but{' '}
+                  <Text style={{ fontWeight: '800', color: T.text }}>won't be charged</Text>
+                  {' '}unless you don't pay cash on the day you've selected.
+                </Text>
+              </View>
+
+              <Text style={sc.subLabel}>When will you be bringing cash?</Text>
+              <CashCalendar selected={cashDate} onSelect={setCashDate} />
+
+              <TouchableOpacity style={[sc.confirmBtn, { marginTop: 20 }, stripeLoading && { opacity: 0.6 }]} onPress={handleCashSubmit} disabled={stripeLoading}>
+                {stripeLoading ? <ActivityIndicator color="#000" /> : <Text style={sc.confirmBtnText}>CONFIRM BOOKING</Text>}
+              </TouchableOpacity>
+              <Text style={sc.disclaimer}>By booking you agree to our terms and conditions.</Text>
+            </>
+          )}
+
+          {/* ── MAIN OPTIONS VIEW ── */}
+          {subView === null && (
+            <>
+              <View style={sc.header}>
+                <Text style={sc.title}>Before you checkout</Text>
+                <TouchableOpacity onPress={onClose} style={sc.closeBtn}>
+                  <Text style={sc.closeBtnText}>CLOSE</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={sc.summaryCard}>
+                {sessions.map((sess, i) => (
+                  <Text key={sess.id} style={[sc.summaryLine, i > 0 && { marginTop: 4 }]}>
+                    • {getSessionName(sess)}
+                    {sess.day_of_week != null ? `  ·  ${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][sess.day_of_week]}` : ''}
+                    {sess.start_time ? `  ${fmtTime(sess.start_time)}` : ''}
+                  </Text>
+                ))}
+                {seasonName ? <Text style={sc.seasonTag}>{seasonName}</Text> : null}
+              </View>
+
+              <View style={sc.promoRow}>
+                <TextInput
+                  style={sc.promoInput}
+                  value={promoCode}
+                  onChangeText={t => { setPromoCode(t); setPromoResult(null) }}
+                  placeholder="Promo code"
+                  placeholderTextColor="#555"
+                  autoCapitalize="characters"
+                  returnKeyType="done"
+                  onSubmitEditing={handleApplyPromo}
+                />
+                <TouchableOpacity style={sc.promoApplyBtn} onPress={handleApplyPromo} disabled={promoValidating || !promoCode.trim()}>
+                  {promoValidating ? <ActivityIndicator color="#000" size="small" /> : <Text style={sc.promoApplyText}>APPLY</Text>}
+                </TouchableOpacity>
+              </View>
+              {!!promoResult && !promoResult.error && (
+                <Text style={sc.promoSuccess}>{promoResult.message ?? `Code applied! -$${discountAmount.toFixed(2)} off`}</Text>
+              )}
+              {!!promoResult?.error && <Text style={sc.promoError}>{promoResult.error}</Text>}
+
+              <Text style={sc.sectionLabel}>How would you like to pay?</Text>
+
+              <TouchableOpacity style={[sc.option, payOption === 'full' && sc.optionSelected]} onPress={() => setPayOption('full')}>
+                <View style={[sc.radio, payOption === 'full' && sc.radioSelected]}>{payOption === 'full' && <View style={sc.radioDot} />}</View>
+                <View style={{ flex: 1 }}>
+                  <Text style={sc.optionTitle}>Pay in full today</Text>
+                  <Text style={sc.optionSub}>One payment, nothing more to think about.</Text>
+                </View>
+                <View style={{ alignItems: 'flex-end' }}>
+                  {discountAmount > 0 && <Text style={sc.strikePrice}>${totalPrice}</Text>}
+                  <Text style={sc.optionPrice}>${discountedTotal}</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={[sc.option, payOption === 'deposit' && sc.optionSelected]} onPress={() => setPayOption('deposit')}>
+                <View style={[sc.radio, payOption === 'deposit' && sc.radioSelected]}>{payOption === 'deposit' && <View style={sc.radioDot} />}</View>
+                <View style={{ flex: 1 }}>
+                  <Text style={sc.optionTitle}>Pay 50% deposit today</Text>
+                  <Text style={sc.optionSub}>
+                    Balance of ${depositAmount} charged automatically 4 hours prior to your first class.
+                  </Text>
+                </View>
+                <Text style={sc.optionPrice}>${depositAmount}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={[sc.confirmBtn, stripeLoading && { opacity: 0.6 }]} onPress={handleConfirmPayment} disabled={stripeLoading}>
+                {stripeLoading ? <ActivityIndicator color="#000" /> : <Text style={sc.confirmBtnText}>CONFIRM AND PAY — ${displayTotal}</Text>}
+              </TouchableOpacity>
+
+              <TouchableOpacity style={sc.altBtn} onPress={() => setSubView('plan')}>
+                <Text style={sc.altBtnText}>REQUEST A PAYMENT PLAN</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={sc.altBtn} onPress={() => setSubView('cash')}>
+                <Text style={sc.altBtnText}>PAY CASH ON THE DAY</Text>
+              </TouchableOpacity>
+
+              <Text style={sc.disclaimer}>By booking you agree to our terms and conditions. Payments secured by Stripe.</Text>
+            </>
+          )}
+
+        </ScrollView>
       </View>
     </Modal>
   )
@@ -304,19 +507,21 @@ function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, onClos
 
 const sc = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.75)' },
-  sheet: { backgroundColor: '#111', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 44, maxHeight: '90%' },
-  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  sheet: { backgroundColor: '#111', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, maxHeight: '92%' },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
   title: { flex: 1, fontSize: 20, fontWeight: '800', color: T.text },
   closeBtn: { paddingLeft: 12 },
   closeBtnText: { color: T.muted, fontSize: 12, fontWeight: '700', letterSpacing: 1 },
+  backBtn: { color: T.muted, fontSize: 12, fontWeight: '700', letterSpacing: 0.5 },
   summaryCard: { backgroundColor: T.bg, borderRadius: 12, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: T.border },
   summaryLine: { fontSize: 13, color: '#ccc', lineHeight: 20 },
   seasonTag: { marginTop: 8, fontSize: 11, color: T.muted, fontWeight: '600' },
   sectionLabel: { fontSize: 16, fontWeight: '700', color: T.text, marginBottom: 12 },
+  subLabel: { fontSize: 13, color: T.muted, marginBottom: 10 },
   option: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: T.border, borderRadius: 12, padding: 14, marginBottom: 10, backgroundColor: T.bg },
   optionSelected: { borderColor: T.lime, borderWidth: 1.5 },
   radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: T.muted, marginRight: 12, alignItems: 'center', justifyContent: 'center' },
-  radioSelected: { borderColor: T.lime, backgroundColor: 'transparent' },
+  radioSelected: { borderColor: T.lime },
   radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: T.lime },
   optionTitle: { fontSize: 14, fontWeight: '600', color: T.text },
   optionSub: { fontSize: 12, color: T.muted, marginTop: 2 },
@@ -333,6 +538,29 @@ const sc = StyleSheet.create({
   promoSuccess: { fontSize: 12, color: T.lime, marginBottom: 10, fontWeight: '600' },
   promoError: { fontSize: 12, color: '#ef4444', marginBottom: 10, fontWeight: '600' },
   strikePrice: { fontSize: 12, color: T.muted, textDecorationLine: 'line-through' },
+  // frequency selector
+  freqBtn: { flex: 1, borderWidth: 1, borderColor: T.border, borderRadius: 20, paddingVertical: 8, alignItems: 'center' },
+  freqBtnActive: { borderColor: T.lime, backgroundColor: T.lime },
+  freqBtnText: { fontSize: 12, fontWeight: '700', color: T.muted },
+  freqBtnTextActive: { color: '#000' },
+  // schedule
+  scheduleCard: { borderRadius: 12, borderWidth: 1, borderColor: T.border, marginBottom: 10, overflow: 'hidden' },
+  scheduleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, backgroundColor: T.bg },
+  scheduleDate: { fontSize: 14, fontWeight: '700', color: T.text },
+  scheduleLabel: { fontSize: 11, color: T.muted, marginTop: 1 },
+  scheduleAmount: { fontSize: 16, fontWeight: '800', color: T.lime },
+  scheduleFootnote: { fontSize: 12, color: T.muted, lineHeight: 18, marginBottom: 16 },
+  // plan info box
+  planInfoBox: { backgroundColor: '#0a0a1a', borderRadius: 12, borderWidth: 1, borderColor: '#2a2a4a', padding: 14, marginBottom: 16 },
+  planInfoText: { fontSize: 13, color: '#aaa', lineHeight: 20 },
+  // cash info box
+  cashInfoBox: { backgroundColor: '#1a0f2e', borderRadius: 12, borderWidth: 1, borderColor: '#3d2070', padding: 14, marginBottom: 20 },
+  cashInfoText: { fontSize: 13, color: '#aaa', lineHeight: 20 },
+  // calendar
+  calCell: { flex: 1, aspectRatio: 1, margin: 2, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: '#111', borderWidth: 1, borderColor: T.border },
+  calCellSelected: { backgroundColor: T.lime, borderColor: T.lime },
+  calCellText: { fontSize: 14, fontWeight: '600', color: T.text },
+  calCellTextSelected: { color: '#000' },
 })
 
 // ─── BookingModal ─────────────────────────────────────────────────────────────
@@ -488,8 +716,6 @@ function BookingModal({ visible, occ, availableCredits, priceCasual, seasonPrice
 // ─── main screen ─────────────────────────────────────────────────────────────
 export default function BookScreen({ navigation }) {
   const { user } = useAuth()
-  const { initPaymentSheet, presentPaymentSheet } = useStripe()
-
   const [tab, setTab] = useState('season')
   const [booking, setBooking] = useState(null)
   const [booked, setBooked] = useState({})
@@ -598,56 +824,8 @@ export default function BookScreen({ navigation }) {
     setSelectedSessions(prev => [...prev, session])
   }
 
-  async function handleSeasonCheckout(payOption, amount, promoCode) {
+  async function handleSeasonCheckout(payOption, amount, promoCode, extraData) {
     setBooking('season')
-
-    // For full / deposit — charge card via Stripe
-    if (payOption === 'full' || payOption === 'deposit') {
-      try {
-        const amountCents = Math.round(amount * 100)
-        const classNames = selectedSessions.map(s => s.name).join(', ')
-        const description = payOption === 'deposit'
-          ? `Season deposit — ${classNames}`
-          : `Season enrolment — ${classNames}`
-        const { data } = await payments.stripe.createPaymentIntent({
-          amount_cents: amountCents,
-          description,
-          save_method: true,
-        })
-        const { error: initErr } = await initPaymentSheet({
-          merchantDisplayName: 'Duality Pole Studio',
-          paymentIntentClientSecret: data.client_secret,
-          allowsDelayedPaymentMethods: false,
-          appearance: {
-            colors: {
-              primary: '#ccff00',
-              background: '#111',
-              componentBackground: '#1a1a1a',
-              componentText: '#fff',
-              primaryText: '#fff',
-              secondaryText: '#888',
-            },
-          },
-        })
-        if (initErr) {
-          Alert.alert('Error', initErr.message)
-          setBooking(null)
-          return
-        }
-        const { error: presentErr } = await presentPaymentSheet()
-        if (presentErr) {
-          if (presentErr.code !== 'Canceled') Alert.alert('Payment failed', presentErr.message)
-          setBooking(null)
-          return
-        }
-      } catch (e) {
-        Alert.alert('Error', e?.response?.data?.detail || e?.message || 'Could not start payment. Please try again.')
-        setBooking(null)
-        return
-      }
-    }
-
-    // Create enrolments
     try {
       for (const session of selectedSessions) {
         await enrolments.create({ student: user.id, class_session: session.id, status: 'active', enrolment_type: 'course' })
@@ -655,7 +833,6 @@ export default function BookScreen({ navigation }) {
       if (promoCode) {
         await payments.promoCodes.use({ code: promoCode }).catch(() => {})
       }
-
       setShowSeasonCheckout(false)
       const newBooked = {}
       selectedSessions.forEach(s => { newBooked[s.id + '-season'] = true })
@@ -666,11 +843,14 @@ export default function BookScreen({ navigation }) {
       if (payOption === 'full') {
         Alert.alert('You\'re booked!', `Payment of $${amount} confirmed. Your spot is reserved for the season.`)
       } else if (payOption === 'deposit') {
-        Alert.alert('You\'re booked!', `Deposit of $${amount} confirmed. Your spot is reserved — the balance is due before your first class.`)
+        Alert.alert('You\'re booked!', `Deposit of $${amount} confirmed. Your spot is reserved — the balance will be charged automatically 4 hours before your first class.`)
       } else if (payOption === 'plan') {
-        Alert.alert('You\'re booked!', "Your spot is reserved. The studio will be in touch to set up your payment plan.")
-      } else {
-        Alert.alert('You\'re booked!', "Your spot is reserved. Please arrange cash payment with the studio at your first class.")
+        Alert.alert('You\'re booked!', "Your spot is held for 24 hours while we review your payment plan request. You'll receive a confirmation once approved — no payment is taken until then.")
+      } else if (payOption === 'cash') {
+        const dateLabel = extraData?.cashDate
+          ? extraData.cashDate.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
+          : 'on the day'
+        Alert.alert('You\'re booked!', `Your spot is reserved. Please bring cash on ${dateLabel}. Your card is saved as a backup in case you don't.`)
       }
     } catch (err) {
       const detail = err.response?.data?.detail || err.response?.data?.non_field_errors?.[0] || err.message || 'Please try again or contact the studio.'
@@ -1180,9 +1360,9 @@ export default function BookScreen({ navigation }) {
         sessions={selectedSessions}
         totalPrice={totalSeasonPrice}
         seasonName={upcomingSeason?.name}
+        upcomingSeason={upcomingSeason}
         onClose={() => setShowSeasonCheckout(false)}
         onConfirm={handleSeasonCheckout}
-        loading={booking === 'season'}
       />
     </View>
   )
