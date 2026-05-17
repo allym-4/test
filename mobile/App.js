@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, createContext, useContext } from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { View, ActivityIndicator } from 'react-native'
@@ -11,6 +11,18 @@ import RegisterScreen from './src/screens/auth/RegisterScreen'
 import OnboardingScreen from './src/screens/auth/OnboardingScreen'
 import StudentTabs from './src/navigation/StudentTabs'
 import InstructorTabs from './src/navigation/InstructorTabs'
+
+const AppContext = createContext({})
+
+function InstructorApp() {
+  const { onSwitchToStudent } = useContext(AppContext)
+  return <InstructorTabs onSwitchToStudent={onSwitchToStudent} />
+}
+
+function StudentApp() {
+  const { isInstructor, onSwitchToInstructor } = useContext(AppContext)
+  return <StudentTabs isInstructor={isInstructor} onSwitchToInstructor={onSwitchToInstructor} />
+}
 
 // Publishable key — safe to expose in client code
 const STRIPE_PK = 'pk_live_REPLACE_WITH_YOUR_PUBLISHABLE_KEY'
@@ -90,30 +102,29 @@ function RootNavigator() {
   const isInstructorViewingAsStudent = user?.role === 'instructor' && viewMode === 'student'
   const showInstructorView = user?.role === 'instructor' && !isInstructorViewingAsStudent
 
+  const appCtx = {
+    onSwitchToStudent: () => setViewMode('student'),
+    isInstructor: user?.role === 'instructor',
+    onSwitchToInstructor: user?.role === 'instructor' ? () => setViewMode('default') : undefined,
+  }
+
   return (
-    <NavigationContainer ref={navigationRef}>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!user ? (
-          <>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-          </>
-        ) : showInstructorView ? (
-          <Stack.Screen name="InstructorApp">
-            {() => <InstructorTabs onSwitchToStudent={() => setViewMode('student')} />}
-          </Stack.Screen>
-        ) : (
-          <Stack.Screen name="StudentApp">
-            {() => (
-              <StudentTabs
-                isInstructor={user?.role === 'instructor'}
-                onSwitchToInstructor={user?.role === 'instructor' ? () => setViewMode('default') : undefined}
-              />
-            )}
-          </Stack.Screen>
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <AppContext.Provider value={appCtx}>
+      <NavigationContainer ref={navigationRef}>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {!user ? (
+            <>
+              <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="Register" component={RegisterScreen} />
+            </>
+          ) : showInstructorView ? (
+            <Stack.Screen name="InstructorApp" component={InstructorApp} />
+          ) : (
+            <Stack.Screen name="StudentApp" component={StudentApp} />
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </AppContext.Provider>
   )
 }
 
