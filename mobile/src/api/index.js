@@ -5,6 +5,8 @@ export const auth = {
     client.post('/api/auth/token/', { username, password }),
   me: () => client.get('/api/users/me/'),
   updateMe: (data) => client.patch('/api/users/me/', data),
+  uploadPhoto: (formData) =>
+    client.patch('/api/users/me/', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   changePassword: (data) => client.post('/api/users/change-password/', data),
 }
 
@@ -46,6 +48,9 @@ export const helpdesk = {
   submitTicket: (data) => client.post('/api/helpdesk/submit/', data),
   myConversation: () => client.get('/api/helpdesk/my-conversation/'),
   sendMyDm: (data) => client.post('/api/helpdesk/my-conversation/', data),
+  conversations: () => client.get('/api/helpdesk/conversations/'),
+  dms: (convId) => client.get(`/api/helpdesk/conversations/${convId}/messages/`),
+  sendDm: (convId, data) => client.post(`/api/helpdesk/conversations/${convId}/messages/`, data),
 }
 
 export const payments = {
@@ -135,4 +140,20 @@ export const pushTokens = {
     client.post('/api/users/push-token/', { token, platform }),
   unregister: (token) =>
     client.delete('/api/users/push-token/', { data: { token } }),
+}
+
+export const availability = {
+  list: () => client.get('/api/users/availability/'),
+  save: (slots) => client.post('/api/users/availability/', slots),
+  unavailableDates: {
+    list: (params) => client.get('/api/users/unavailable-dates/', { params }),
+    create: (data) => client.post('/api/users/unavailable-dates/', data),
+    delete: (id) => client.delete(`/api/users/unavailable-dates/${id}/`),
+  },
+}
+
+export const instructorPay = {
+  list: (params) => client.get('/api/users/pay-records/', { params }),
+  calculatePay: (userId, params) =>
+    client.get(`/api/users/${userId}/calculate-pay/`, { params }),
 }

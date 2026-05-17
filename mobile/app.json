@@ -39,6 +39,12 @@
           "color": "#6366f1",
           "sounds": []
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to update your profile picture."
+        }
       ]
     ],
     "extra": {

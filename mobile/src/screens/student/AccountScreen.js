@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react'
-import { ScrollView, View, Text, TouchableOpacity, StyleSheet, Alert, Switch } from 'react-native'
+import {
+  ScrollView, View, Text, TextInput, TouchableOpacity,
+  StyleSheet, Alert, Switch, Image, ActivityIndicator, Modal,
+} from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as ImagePicker from 'expo-image-picker'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { payments, auth, classes } from '../../api'
@@ -29,6 +33,61 @@ function NavRow({ label, onPress }) {
   )
 }
 
+function ChangePasswordModal({ visible, onClose }) {
+  const [current, setCurrent] = useState('')
+  const [next, setNext] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  async function handleSave() {
+    if (!current || !next) {
+      Alert.alert('Required', 'Please fill in all fields.')
+      return
+    }
+    if (next !== confirm) {
+      Alert.alert('Mismatch', 'New passwords do not match.')
+      return
+    }
+    if (next.length < 8) {
+      Alert.alert('Too short', 'Password must be at least 8 characters.')
+      return
+    }
+    setSaving(true)
+    try {
+      await auth.changePassword({ old_password: current, new_password: next })
+      Alert.alert('Done', 'Password changed successfully.')
+      setCurrent(''); setNext(''); setConfirm('')
+      onClose()
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.detail || err.response?.data?.old_password?.[0] || 'Could not change password.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <View style={s.modalRoot}>
+        <View style={s.modalHeader}>
+          <Text style={s.modalTitle}>Change password</Text>
+          <TouchableOpacity onPress={onClose}><Text style={s.modalClose}>✕</Text></TouchableOpacity>
+        </View>
+        <View style={s.modalBody}>
+          <Text style={s.inputLabel}>Current password</Text>
+          <TextInput style={s.input} value={current} onChangeText={setCurrent} secureTextEntry placeholder="Current password" />
+          <Text style={s.inputLabel}>New password</Text>
+          <TextInput style={s.input} value={next} onChangeText={setNext} secureTextEntry placeholder="New password (min 8 chars)" />
+          <Text style={s.inputLabel}>Confirm new password</Text>
+          <TextInput style={s.input} value={confirm} onChangeText={setConfirm} secureTextEntry placeholder="Confirm new password" />
+          <TouchableOpacity style={s.saveBtn} onPress={handleSave} disabled={saving}>
+            {saving ? <ActivityIndicator color="#fff" /> : <Text style={s.saveBtnText}>Change password</Text>}
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  )
+}
+
 export default function AccountScreen({ navigation }) {
   const { user, logout } = useAuth()
   const { data: balanceData } = useApi(
@@ -40,6 +99,9 @@ export default function AccountScreen({ navigation }) {
   const [savingRoster, setSavingRoster] = useState(false)
   const [experienceLevel, setExperienceLevel] = useState(null)
   const [classLevel, setClassLevel] = useState(null)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [photoUri, setPhotoUri] = useState(user?.profile_photo ?? null)
 
   const { data: sessionsData } = useApi(() => classes.list(), [])
   const availableLevels = [...new Set(
@@ -130,16 +192,58 @@ export default function AccountScreen({ navigation }) {
     ])
   }
 
+  async function handlePickPhoto() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow photo access to upload a profile picture.')
+      return
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    })
+    if (result.canceled) return
+
+    const uri = result.assets[0].uri
+    const filename = uri.split('/').pop()
+    const match = /\.(\w+)$/.exec(filename)
+    const type = match ? `image/${match[1]}` : 'image/jpeg'
+
+    const formData = new FormData()
+    formData.append('profile_photo', { uri, name: filename, type })
+
+    setUploadingPhoto(true)
+    try {
+      await auth.uploadPhoto(formData)
+      setPhotoUri(uri)
+    } catch {
+      Alert.alert('Error', 'Could not upload photo.')
+    } finally {
+      setUploadingPhoto(false)
+    }
+  }
+
   const balance = balanceData?.balance
   const balanceNum = parseFloat(balance ?? 0)
+  const initials = `${user?.first_name?.[0] ?? ''}${user?.last_name?.[0] ?? ''}`.toUpperCase()
 
   return (
     <ScrollView style={s.root} contentContainerStyle={s.content}>
-      <View style={s.avatar}>
-        <Text style={s.avatarText}>
-          {(user?.first_name?.[0] ?? '') + (user?.last_name?.[0] ?? '')}
-        </Text>
-      </View>
+      <TouchableOpacity onPress={handlePickPhoto} disabled={uploadingPhoto} style={s.avatarWrap}>
+        {photoUri ? (
+          <Image source={{ uri: photoUri }} style={s.avatarImg} />
+        ) : (
+          <View style={s.avatar}>
+            <Text style={s.avatarText}>{initials}</Text>
+          </View>
+        )}
+        {uploadingPhoto
+          ? <ActivityIndicator style={s.avatarSpinner} color="#6366f1" />
+          : <Text style={s.avatarHint}>Change photo</Text>
+        }
+      </TouchableOpacity>
       <Text style={s.name}>{user?.first_name} {user?.last_name}</Text>
       <Text style={s.email}>{user?.email}</Text>
 
@@ -156,11 +260,15 @@ export default function AccountScreen({ navigation }) {
           </View>
           <Text style={s.navArrow}>›</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[s.navRow, { borderBottomWidth: 0 }]} onPress={handleChangeClassLevel}>
+        <TouchableOpacity style={s.navRow} onPress={handleChangeClassLevel}>
           <View style={{ flex: 1 }}>
             <Text style={s.rowLabel}>My class level</Text>
             <Text style={s.rowSubValue}>{classLevel ?? 'All levels'}</Text>
           </View>
+          <Text style={s.navArrow}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[s.navRow, { borderBottomWidth: 0 }]} onPress={() => setShowPasswordModal(true)}>
+          <Text style={s.rowLabel}>Change password</Text>
           <Text style={s.navArrow}>›</Text>
         </TouchableOpacity>
       </View>
@@ -228,6 +336,8 @@ export default function AccountScreen({ navigation }) {
       <TouchableOpacity style={s.logoutBtn} onPress={confirmLogout}>
         <Text style={s.logoutText}>Sign out</Text>
       </TouchableOpacity>
+
+      <ChangePasswordModal visible={showPasswordModal} onClose={() => setShowPasswordModal(false)} />
     </ScrollView>
   )
 }
@@ -235,15 +345,18 @@ export default function AccountScreen({ navigation }) {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#f9fafb' },
   content: { padding: 24, paddingBottom: 50, alignItems: 'center' },
-  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#6366f1', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  avatarWrap: { alignItems: 'center', marginBottom: 4 },
+  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#6366f1', alignItems: 'center', justifyContent: 'center' },
+  avatarImg: { width: 80, height: 80, borderRadius: 40 },
   avatarText: { color: '#fff', fontSize: 28, fontWeight: '700' },
+  avatarSpinner: { marginTop: 4 },
+  avatarHint: { fontSize: 12, color: '#6366f1', marginTop: 4, marginBottom: 8 },
   name: { fontSize: 20, fontWeight: '700', color: '#111827' },
   email: { fontSize: 14, color: '#6b7280', marginTop: 4, marginBottom: 24 },
   section: { width: '100%', backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
   sectionTitle: { fontSize: 13, fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
   sectionDesc: { fontSize: 13, color: '#9ca3af', marginBottom: 12 },
   row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
-  balanceRow: { borderBottomWidth: 0 },
   rowLabel: { fontSize: 15, color: '#374151' },
   rowValue: { fontSize: 15, color: '#111827', fontWeight: '500', textTransform: 'capitalize' },
   negative: { color: '#ef4444' },
@@ -260,4 +373,14 @@ const s = StyleSheet.create({
   rowSubValue: { fontSize: 12, color: '#6b7280', marginTop: 1 },
   logoutBtn: { marginTop: 8, width: '100%', borderWidth: 1.5, borderColor: '#ef4444', borderRadius: 12, padding: 14, alignItems: 'center' },
   logoutText: { color: '#ef4444', fontWeight: '600', fontSize: 15 },
+  // modal
+  modalRoot: { flex: 1, backgroundColor: '#fff' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
+  modalTitle: { fontSize: 17, fontWeight: '700', color: '#111827' },
+  modalClose: { fontSize: 18, color: '#6b7280', padding: 4 },
+  modalBody: { padding: 20 },
+  inputLabel: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 6, marginTop: 14 },
+  input: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: '#111827', backgroundColor: '#fafafa' },
+  saveBtn: { backgroundColor: '#6366f1', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 24 },
+  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 })
