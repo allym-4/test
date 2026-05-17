@@ -6,7 +6,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, attendance, roster, settings as settingsApi, helpdesk } from '../../api'
+import { enrolments, attendance, roster, settings as settingsApi, helpdesk, classes as classesApi } from '../../api'
 import { TextInput } from 'react-native'
 import LevelFilterBar from '../../components/LevelFilterBar'
 
@@ -468,6 +468,123 @@ const cwl = StyleSheet.create({
   leaveBtnText: { color: '#ef4444', fontWeight: '800', fontSize: 13 },
 })
 
+function CasualBookingsTab({ bookings, refetch, navigation }) {
+  const [cancellingId, setCancellingId] = useState(null)
+
+  const items = bookings?.results || bookings || []
+  const confirmed = items.filter(b => b.status === 'confirmed')
+  const waitlisted = items.filter(b => b.status === 'waitlisted')
+
+  async function cancel(booking) {
+    Alert.alert(
+      booking.status === 'waitlisted' ? 'Leave Waitlist?' : 'Cancel Booking?',
+      booking.status === 'waitlisted'
+        ? 'You will lose your waitlist position for this date.'
+        : 'Are you sure you want to cancel this booking?',
+      [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Yes', style: 'destructive',
+          onPress: async () => {
+            setCancellingId(booking.id)
+            try {
+              await classesApi.casual.cancel(booking.occurrence)
+              refetch()
+            } catch (err) {
+              Alert.alert('Error', err.response?.data?.detail ?? 'Could not cancel. Please try again.')
+            } finally {
+              setCancellingId(null)
+            }
+          }
+        }
+      ]
+    )
+  }
+
+  function renderBookingRow(b, isWait) {
+    const d = b.occurrence_detail
+    const dateLabel = d?.date
+      ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+      : '—'
+    const hasOffer = isWait && !!b.waitlist_offered_at
+    const isCancelling = cancellingId === b.id
+
+    return (
+      <View key={b.id} style={cb.row}>
+        <View style={{ flex: 1 }}>
+          <Text style={cb.sessionName}>{d?.session_name ?? 'Class'}</Text>
+          <Text style={cb.dateMeta}>
+            {[dateLabel, d?.start_time ? d.start_time.slice(0, 5) : null, d?.studio_name].filter(Boolean).join('  ·  ')}
+          </Text>
+          {hasOffer && (
+            <Text style={cb.offerText}>🎉 A spot opened — claim it!</Text>
+          )}
+        </View>
+        <View style={{ alignItems: 'flex-end', gap: 4 }}>
+          <View style={[cb.badge, isWait ? cb.badgeAmber : cb.badgeLime]}>
+            <Text style={cb.badgeText}>{b.enrolment_type === 'catchup' ? 'Catch-up' : 'Casual'}</Text>
+          </View>
+          {!hasOffer && (
+            isCancelling
+              ? <ActivityIndicator size="small" color="#ff4444" />
+              : (
+                <TouchableOpacity onPress={() => cancel(b)}>
+                  <Text style={cb.cancelText}>{isWait ? 'Leave' : 'Cancel'}</Text>
+                </TouchableOpacity>
+              )
+          )}
+        </View>
+      </View>
+    )
+  }
+
+  return (
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+      {items.length === 0 ? (
+        <Text style={{ fontSize: 14, color: '#555', textAlign: 'center', marginTop: 40 }}>
+          No casual or catch-up bookings yet.
+        </Text>
+      ) : (
+        <>
+          {confirmed.length > 0 && (
+            <View style={{ marginBottom: 20 }}>
+              <Text style={cb.sectionTitle}>BOOKED</Text>
+              {confirmed.map(b => renderBookingRow(b, false))}
+            </View>
+          )}
+          {waitlisted.length > 0 && (
+            <View style={{ marginBottom: 20 }}>
+              <Text style={cb.sectionTitle}>WAITLISTED</Text>
+              {waitlisted.map(b => renderBookingRow(b, true))}
+            </View>
+          )}
+        </>
+      )}
+      <TouchableOpacity
+        style={cb.bookBtn}
+        onPress={() => navigation.navigate('Book')}
+      >
+        <Text style={cb.bookBtnText}>+ BOOK A CASUAL OR CATCH-UP</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  )
+}
+
+const cb = StyleSheet.create({
+  sectionTitle: { fontSize: 11, fontWeight: '800', color: '#555', letterSpacing: 0.8, marginBottom: 10, textTransform: 'uppercase' },
+  row: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#111', borderRadius: 12, borderWidth: 1, borderColor: '#222', padding: 14, marginBottom: 8 },
+  sessionName: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 3 },
+  dateMeta: { fontSize: 12, color: '#666' },
+  offerText: { fontSize: 12, color: '#ccff00', marginTop: 4 },
+  badge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  badgeLime: { backgroundColor: 'rgba(204,255,0,0.12)' },
+  badgeAmber: { backgroundColor: 'rgba(255,170,0,0.12)' },
+  badgeText: { fontSize: 10, fontWeight: '800', color: '#ccff00' },
+  cancelText: { fontSize: 11, color: '#ff4444', fontWeight: '700' },
+  bookBtn: { borderRadius: 12, borderWidth: 1, borderColor: '#333', padding: 16, alignItems: 'center', marginTop: 8 },
+  bookBtnText: { fontSize: 13, fontWeight: '800', color: '#666', letterSpacing: 0.5 },
+})
+
 export default function MyClassesScreen({ navigation }) {
   const { user } = useAuth()
   const [tab, setTab] = useState('active')
@@ -494,6 +611,7 @@ export default function MyClassesScreen({ navigation }) {
     () => attendance.list({ limit: 30 }), []
   )
   const { data: settingsData } = useApi(() => settingsApi.get(), [])
+  const { data: casualBookingsData, refetch: refetchCasual } = useApi(() => classesApi.casual.myBookings(), [])
 
   const activeEnrolments = enrolData?.results ?? enrolData ?? []
   const waitlistedEnrolments = waitlistData?.results ?? waitlistData ?? []
@@ -631,7 +749,7 @@ export default function MyClassesScreen({ navigation }) {
       )}
 
       <View style={s.tabs}>
-        {[['active', 'My Classes'], ['history', 'Attendance']].map(([key, label]) => (
+        {[['active', 'My Classes'], ['casuals', 'Casuals'], ['history', 'Attendance']].map(([key, label]) => (
           <TouchableOpacity key={key} style={[s.tab, tab === key && s.tabActive]} onPress={() => setTab(key)}>
             <Text style={[s.tabText, tab === key && s.tabTextActive]}>{label}</Text>
           </TouchableOpacity>
@@ -785,6 +903,14 @@ export default function MyClassesScreen({ navigation }) {
             </View>
           )}
         </ScrollView>
+      )}
+
+      {tab === 'casuals' && (
+        <CasualBookingsTab
+          bookings={casualBookingsData}
+          refetch={refetchCasual}
+          navigation={navigation}
+        />
       )}
 
       {tab === 'history' && (

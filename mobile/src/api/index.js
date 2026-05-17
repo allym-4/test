@@ -24,6 +24,12 @@ export const classes = {
     list: (sessionId) => client.get(`/api/classes/sessions/${sessionId}/chat/`),
     send: (sessionId, data) => client.post(`/api/classes/sessions/${sessionId}/chat/`, data),
   },
+  casual: {
+    occurrences: (params) => client.get('/api/classes/occurrences/', { params }),
+    book: (occurrenceId, data) => client.post(`/api/classes/occurrences/${occurrenceId}/casual-book/`, data),
+    cancel: (occurrenceId) => client.post(`/api/classes/occurrences/${occurrenceId}/casual-cancel/`),
+    myBookings: () => client.get('/api/classes/casual-bookings/'),
+  },
   practice: {
     list: (params) => client.get('/api/classes/practice/', { params }),
     book: (id) => client.post(`/api/classes/practice/${id}/book/`),

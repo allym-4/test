@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, Workshop, WorkshopBooking, PracticeSlot, PracticeBooking
+from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, Workshop, WorkshopBooking, PracticeSlot, PracticeBooking, CasualBooking
 from apps.users.serializers import UserMinimalSerializer
 
 
@@ -41,6 +41,9 @@ class ClassOccurrenceSerializer(serializers.ModelSerializer):
     substitute_instructor_detail = UserMinimalSerializer(source='substitute_instructor', read_only=True)
     instructor_detail = UserMinimalSerializer(source='session.instructor', read_only=True)
     studio_detail = StudioSerializer(source='session.studio', read_only=True)
+    spots_left = serializers.SerializerMethodField()
+    casual_booked_count = serializers.SerializerMethodField()
+    my_booking = serializers.SerializerMethodField()
 
     class Meta:
         model = ClassOccurrence
@@ -49,7 +52,59 @@ class ClassOccurrenceSerializer(serializers.ModelSerializer):
             'substitute_instructor', 'substitute_instructor_detail',
             'instructor_detail', 'studio_detail',
             'notes', 'register_saved', 'cover_needed',
+            'spots_left', 'casual_booked_count', 'my_booking',
         )
+
+    def get_casual_booked_count(self, obj):
+        return obj.casual_bookings.filter(status='confirmed').count()
+
+    def get_spots_left(self, obj):
+        from apps.enrolments.models import Enrolment
+        season_enrolled = Enrolment.objects.filter(
+            class_session=obj.session, status='active', enrolment_type='course'
+        ).count()
+        casual_confirmed = obj.casual_bookings.filter(status='confirmed').count()
+        return max(0, obj.session.capacity - season_enrolled - casual_confirmed)
+
+    def get_my_booking(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return None
+        booking = obj.casual_bookings.filter(student=request.user).exclude(status='cancelled').first()
+        if not booking:
+            return None
+        return {
+            'id': booking.id,
+            'status': booking.status,
+            'enrolment_type': booking.enrolment_type,
+            'waitlist_offered_at': booking.waitlist_offered_at,
+            'waitlist_expires_at': booking.waitlist_expires_at,
+        }
+
+
+class CasualBookingSerializer(serializers.ModelSerializer):
+    occurrence_detail = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CasualBooking
+        fields = (
+            'id', 'occurrence', 'occurrence_detail', 'enrolment_type', 'status',
+            'price_charged', 'is_free', 'waitlist_offered_at', 'waitlist_expires_at', 'created_at',
+        )
+        read_only_fields = ('id', 'price_charged', 'is_free', 'created_at')
+
+    def get_occurrence_detail(self, obj):
+        occ = obj.occurrence
+        s = occ.session
+        return {
+            'id': occ.id,
+            'date': str(occ.date),
+            'session_id': s.id,
+            'session_name': s.name,
+            'day_of_week': s.day_of_week,
+            'start_time': str(s.start_time),
+            'studio_name': s.studio.name if s.studio else None,
+        }
 
 
 class SeasonSerializer(serializers.ModelSerializer):

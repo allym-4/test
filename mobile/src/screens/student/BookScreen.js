@@ -734,6 +734,10 @@ export default function BookScreen({ navigation }) {
   const [modalVisible, setModalVisible] = useState(false)
   const [showEligibleOnly, setShowEligibleOnly] = useState(true)
   const [hideUnavailable, setHideUnavailable] = useState(false)
+  const [occPickerSession, setOccPickerSession] = useState(null) // { session, enrolmentType }
+  const [occPickerData, setOccPickerData] = useState([])
+  const [occPickerLoading, setOccPickerLoading] = useState(false)
+  const [occPickerBooking, setOccPickerBooking] = useState(null)
   const [exemptionSession, setExemptionSession] = useState(null)
   const [exemptionNote, setExemptionNote] = useState('')
   const [submittingExemption, setSubmittingExemption] = useState(false)
@@ -913,6 +917,52 @@ export default function BookScreen({ navigation }) {
       Alert.alert('Booking failed', err.response?.data?.detail ?? 'Could not complete booking. Please try again.')
     } finally {
       setBooking(null)
+    }
+  }
+
+  async function openOccurrencePicker(session, enrolmentType) {
+    setOccPickerSession({ session, enrolmentType })
+    setOccPickerData([])
+    setOccPickerLoading(true)
+    try {
+      const res = await classes.casual.occurrences({ session: session.id, upcoming: true })
+      setOccPickerData(res.data?.results || res.data || [])
+    } catch {
+      setOccPickerData([])
+    } finally {
+      setOccPickerLoading(false)
+    }
+  }
+
+  async function handleOccurrenceBook(occ, enrolmentType) {
+    setOccPickerBooking(occ.id)
+    try {
+      const res = await classes.casual.book(occ.id, { enrolment_type: enrolmentType })
+      setOccPickerData(prev => prev.map(o => o.id === occ.id
+        ? { ...o, my_booking: res.data, spots_left: res.data.status === 'confirmed' ? Math.max(0, (o.spots_left ?? 0) - 1) : o.spots_left }
+        : o
+      ))
+      if (enrolmentType === 'catchup' && res.data.status === 'confirmed') refetchCredits()
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.detail ?? 'Could not complete booking. Please try again.')
+    } finally {
+      setOccPickerBooking(null)
+    }
+  }
+
+  async function handleOccurrenceCancel(occ) {
+    setOccPickerBooking(occ.id)
+    try {
+      await classes.casual.cancel(occ.id)
+      setOccPickerData(prev => prev.map(o => o.id === occ.id
+        ? { ...o, my_booking: null, spots_left: occ.my_booking?.status === 'confirmed' ? (o.spots_left ?? 0) + 1 : o.spots_left }
+        : o
+      ))
+      if (occ.my_booking?.enrolment_type === 'catchup' && occ.my_booking?.status === 'confirmed') refetchCredits()
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.detail ?? 'Could not cancel. Please try again.')
+    } finally {
+      setOccPickerBooking(null)
     }
   }
 
@@ -1222,8 +1272,8 @@ export default function BookScreen({ navigation }) {
                         {isFull ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''}`}
                       </Text>
 
-                      {isBooked || hasExemptionPending ? (
-                        <Text style={s.classBookedText}>{hasExemptionPending ? '⏳ Requested' : '✓ Booked'}</Text>
+                      {hasExemptionPending ? (
+                        <Text style={s.classBookedText}>⏳ Requested</Text>
                       ) : isGrayed ? (
                         <TouchableOpacity
                           style={s.exemptBtn}
@@ -1231,30 +1281,12 @@ export default function BookScreen({ navigation }) {
                         >
                           <Text style={s.exemptBtnText}>REQUEST EXEMPTION</Text>
                         </TouchableOpacity>
-                      ) : isFull ? (
-                        booked[sess.id + '-waitlist'] ? (
-                          <Text style={s.classBookedText}>⏳ Waitlisted</Text>
-                        ) : (
-                          <TouchableOpacity
-                            style={s.exemptBtn}
-                            onPress={async () => {
-                              try {
-                                await enrolments.create({ student: user.id, class_session: sess.id, status: 'waitlisted', enrolment_type: 'casual' })
-                                setBooked(b => ({ ...b, [sess.id + '-waitlist']: true }))
-                              } catch { }
-                            }}
-                          >
-                            <Text style={s.exemptBtnText}>JOIN WAITLIST</Text>
-                          </TouchableOpacity>
-                        )
                       ) : (
                         <TouchableOpacity
                           style={s.casualBookBtn}
-                          onPress={() => openModal(sess)}
+                          onPress={() => openOccurrencePicker(sess, creditEligible ? 'catchup' : 'casual')}
                         >
-                          <Text style={s.casualBookBtnText}>
-                            {creditEligible ? 'BOOK / CREDIT' : 'BOOK'}
-                          </Text>
+                          <Text style={s.casualBookBtnText}>SELECT DATE →</Text>
                         </TouchableOpacity>
                       )}
                     </View>
@@ -1510,6 +1542,99 @@ export default function BookScreen({ navigation }) {
               >
                 <Text style={ms.confirmBtnText}>{submittingExemption ? 'SUBMITTING…' : 'SUBMIT REQUEST'}</Text>
               </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* Occurrence date picker modal */}
+      {occPickerSession && (
+        <Modal visible transparent animationType="slide" onRequestClose={() => setOccPickerSession(null)}>
+          <View style={ms.overlay}>
+            <View style={[ms.sheet, { maxHeight: '80%' }]}>
+              <View style={ms.header}>
+                <View style={{ flex: 1 }}>
+                  <Text style={ms.sheetTitle}>{occPickerSession.session.name}</Text>
+                  <Text style={{ fontSize: 13, color: T.muted, marginTop: 2 }}>
+                    {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][occPickerSession.session.day_of_week]}  ·  {fmtTime(occPickerSession.session.start_time)}
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={() => setOccPickerSession(null)} style={ms.closeBtn}>
+                  <Text style={ms.closeBtnText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={{ fontSize: 13, color: T.muted, marginBottom: 16 }}>
+                {occPickerSession.enrolmentType === 'catchup'
+                  ? 'Select a date to use a catch-up credit. You can book multiple dates if needed.'
+                  : 'Select the date you want to attend. You can join the waitlist for dates that are full.'}
+              </Text>
+
+              {occPickerLoading ? (
+                <ActivityIndicator color={T.lime} style={{ marginVertical: 24 }} />
+              ) : occPickerData.length === 0 ? (
+                <Text style={{ fontSize: 14, color: T.muted, textAlign: 'center', padding: 24 }}>No upcoming dates scheduled yet.</Text>
+              ) : (
+                <ScrollView style={{ flexGrow: 0 }}>
+                  {occPickerData.map(occ => {
+                    const dateLabel = new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+                    const spotsLeft = occ.spots_left ?? 0
+                    const isFull = spotsLeft <= 0
+                    const myBooking = occ.my_booking
+                    const isBooked = myBooking?.status === 'confirmed'
+                    const isWaitlisted = myBooking?.status === 'waitlisted'
+                    const hasOffer = isWaitlisted && myBooking?.waitlist_offered_at
+                    const isLoading = occPickerBooking === occ.id
+
+                    return (
+                      <View key={occ.id} style={{
+                        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                        paddingVertical: 12, paddingHorizontal: 14, marginBottom: 8, borderRadius: 10,
+                        backgroundColor: isBooked ? 'rgba(204,255,0,0.06)' : isWaitlisted ? 'rgba(255,170,0,0.06)' : 'rgba(255,255,255,0.04)',
+                        borderWidth: 1,
+                        borderColor: isBooked ? 'rgba(204,255,0,0.2)' : isWaitlisted ? 'rgba(255,170,0,0.2)' : '#222',
+                      }}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: 14, fontWeight: '700', color: T.text }}>{dateLabel}</Text>
+                          <Text style={{ fontSize: 12, color: isBooked ? T.lime : isWaitlisted ? '#ffaa00' : isFull ? '#ff4444' : T.muted, marginTop: 2 }}>
+                            {isBooked ? '✓ Booked' : hasOffer ? '🎉 Spot offered!' : isWaitlisted ? 'On waitlist' : isFull ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left`}
+                          </Text>
+                        </View>
+                        <View>
+                          {isLoading ? (
+                            <ActivityIndicator color={T.lime} size="small" />
+                          ) : isBooked || (isWaitlisted && !hasOffer) ? (
+                            <TouchableOpacity
+                              style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#ff4444' }}
+                              onPress={() => handleOccurrenceCancel(occ)}
+                            >
+                              <Text style={{ fontSize: 12, fontWeight: '700', color: '#ff4444' }}>{isWaitlisted ? 'LEAVE' : 'CANCEL'}</Text>
+                            </TouchableOpacity>
+                          ) : hasOffer ? (
+                            <Text style={{ fontSize: 12, fontWeight: '700', color: T.lime }}>CLAIM →</Text>
+                          ) : isFull ? (
+                            <TouchableOpacity
+                              style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#555' }}
+                              onPress={() => handleOccurrenceBook(occ, occPickerSession.enrolmentType)}
+                            >
+                              <Text style={{ fontSize: 12, fontWeight: '700', color: T.muted }}>JOIN WAITLIST</Text>
+                            </TouchableOpacity>
+                          ) : (
+                            <TouchableOpacity
+                              style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: T.lime }}
+                              onPress={() => handleOccurrenceBook(occ, occPickerSession.enrolmentType)}
+                            >
+                              <Text style={{ fontSize: 12, fontWeight: '800', color: '#000' }}>
+                                {occPickerSession.enrolmentType === 'catchup' ? 'USE CREDIT' : 'BOOK'}
+                              </Text>
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      </View>
+                    )
+                  })}
+                </ScrollView>
+              )}
             </View>
           </View>
         </Modal>
