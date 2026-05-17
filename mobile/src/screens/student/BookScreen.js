@@ -756,6 +756,10 @@ export default function BookScreen({ navigation }) {
     () => user?.id ? enrolments.list({ student: user.id, status: 'active' }) : null,
     [user?.id]
   )
+  const { data: anyEnrolData } = useApi(
+    () => user?.id ? enrolments.list({ student: user.id, limit: 1, page_size: 1 }) : null,
+    [user?.id]
+  )
 
   // ── derived data ───────────────────────────────────────────────────────────
   const allSessions = sessionsData?.results ?? sessionsData ?? []
@@ -772,10 +776,14 @@ export default function BookScreen({ navigation }) {
   const priceTrial = parseFloat(studioSettings?.price_trial ?? 25)
 
   const activeEnrolList = activeEnrolData?.results ?? activeEnrolData ?? []
-  const activeSeasonCount = activeEnrolList.filter(e => e.enrolment_type === 'course').length
   const enrolledSessionIds = new Set(activeEnrolList.map(e => e.class_session ?? e.class_session_id))
   const DEFAULT_SEASON_PRICES = { 1: 270, 2: 440, 3: 580, 4: 700, 5: 800, 6: 900 }
   const seasonPricingConfig = studioSettings?.season_pricing_config ?? []
+
+  // Is this student brand new? (hide trial tab from returning students)
+  const anyEnrolList = anyEnrolData?.results ?? anyEnrolData ?? []
+  const anyEnrolCount = anyEnrolData?.count ?? anyEnrolList.length
+  const isNewStudent = anyEnrolCount === 0
 
   function getSeasonPriceForTotal(totalClasses) {
     const tier = seasonPricingConfig.find(r => {
@@ -786,22 +794,46 @@ export default function BookScreen({ navigation }) {
     const n = Math.min(Math.max(totalClasses, 1), 6)
     return DEFAULT_SEASON_PRICES[n] ?? parseFloat(studioSettings?.price_season ?? 270)
   }
-  const seasonPrice = getSeasonPriceForTotal(activeSeasonCount + 1)
 
-  const totalSeasonPrice = getSeasonPriceForTotal(activeSeasonCount + selectedSessions.length)
+  const activeSeason = allSeasons.find(s => s.status === 'active')
+  // Booking season for the season tab: prefer upcoming, fall back to active
+  const bookingSeason = allSeasons.find(s => s.status === 'upcoming') ?? activeSeason
+
+  // Sessions that belong to the booking season
+  const bookingSeasonSessions = bookingSeason
+    ? allSessions.filter(s => s.is_active && s.season === bookingSeason.id)
+    : allSessions.filter(s => s.is_active)
+
+  // Count active enrolments ONLY in the booking season (for incremental pricing)
+  const bookingSeasonSessionIds = new Set(bookingSeasonSessions.map(s => s.id))
+  const activeSeasonCount = activeEnrolList.filter(e =>
+    e.enrolment_type === 'course' && bookingSeasonSessionIds.has(e.class_session ?? e.class_session_id)
+  ).length
+
+  // Incremental price: what the student pays to add more classes (upgrade cost)
+  const alreadyPaidTier = activeSeasonCount > 0 ? getSeasonPriceForTotal(activeSeasonCount) : 0
+  const seasonPrice = getSeasonPriceForTotal(activeSeasonCount + 1) - alreadyPaidTier
+  const totalSeasonPrice = getSeasonPriceForTotal(activeSeasonCount + selectedSessions.length) - alreadyPaidTier
 
   const upcomingSeason = allSeasons.find(s => s.status === 'upcoming')
     ?? allSeasons.find(s => s.start_date && new Date(s.start_date) > new Date())
-    ?? allSeasons.find(s => s.status === 'active')
 
   // Week-of-season for routine cutoff
-  const activeSeason = allSeasons.find(s => s.status === 'active')
   const seasonStartDate = activeSeason?.start_date ? new Date(activeSeason.start_date + 'T00:00') : null
   const currentSeasonWeek = seasonStartDate ? Math.ceil((new Date() - seasonStartDate) / (7 * 86400000)) : 0
   const isPastWeek3 = currentSeasonWeek > 3
 
-  // Casual tab: use sessions (not occurrences) — all active sessions in the current/upcoming season
-  const casualSessions = allSessions.filter(s => s.is_active)
+  // Casual tab: sessions from active season + upcoming if it starts within 7 days
+  const nextSeason = allSeasons.find(s => s.status === 'upcoming')
+  const nextSeasonStart = nextSeason?.start_date ? new Date(nextSeason.start_date + 'T00:00') : null
+  const nextSeasonStartsSoon = nextSeasonStart && nextSeasonStart <= new Date(Date.now() + 7 * 86400000)
+  const casualSessions = allSessions.filter(s => {
+    if (!s.is_active) return false
+    if (!activeSeason?.id && !nextSeason?.id) return true
+    if (activeSeason && s.season === activeSeason.id) return true
+    if (nextSeasonStartsSoon && nextSeason && s.season === nextSeason.id) return true
+    return false
+  })
 
   // ── season handlers ────────────────────────────────────────────────────────
   function toggleSession(session) {
@@ -967,7 +999,7 @@ export default function BookScreen({ navigation }) {
         style={s.tabBar}
         contentContainerStyle={s.tabBarContent}
       >
-        {TABS.map(({ key, label }) => (
+        {TABS.filter(t => t.key !== 'trial' || isNewStudent).map(({ key, label }) => (
           <TouchableOpacity
             key={key}
             style={[s.tab, tab === key && s.tabActive]}
@@ -989,27 +1021,34 @@ export default function BookScreen({ navigation }) {
         ══════════════════════════════════════════════════════════════════ */}
         {tab === 'season' && (
           <>
-            {upcomingSeason && (
-              <View style={s.seasonInfoCard}>
-                <View style={s.limeAccentBar} />
-                <View style={s.seasonInfoBody}>
-                  <Text style={s.seasonInfoTitle}>{upcomingSeason.name}</Text>
-                  <Text style={s.seasonInfoSub}>
-                    Reserve your spot for the full term.
-                    {upcomingSeason.start_date && upcomingSeason.end_date
-                      ? ` Runs ${new Date(upcomingSeason.start_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} – ${new Date(upcomingSeason.end_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}.`
-                      : ''}
+            <View style={s.seasonInfoCard}>
+              <View style={s.limeAccentBar} />
+              <View style={s.seasonInfoBody}>
+                <Text style={s.seasonInfoTitle}>
+                  {bookingSeason?.name ?? 'Season Enrolment'}
+                </Text>
+                {bookingSeason?.start_date && bookingSeason?.end_date && (
+                  <Text style={s.seasonInfoDates}>
+                    {new Date(bookingSeason.start_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                    {' – '}
+                    {new Date(bookingSeason.end_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </Text>
-                  <Text style={s.seasonInfoPrice}>${seasonPrice} per class / season</Text>
-                </View>
+                )}
+                {activeSeasonCount > 0 ? (
+                  <Text style={s.seasonInfoPrice}>
+                    +${seasonPrice} to add a class (upgrading from {activeSeasonCount}-class package)
+                  </Text>
+                ) : (
+                  <Text style={s.seasonInfoPrice}>${getSeasonPriceForTotal(1)} for 1 class · more classes = better value</Text>
+                )}
               </View>
+            </View>
+
+            {bookingSeasonSessions.length === 0 && !sessLoading && (
+              <Text style={s.empty}>No classes available for this season.</Text>
             )}
 
-            {allSessions.length === 0 && !sessLoading && (
-              <Text style={s.empty}>No classes available.</Text>
-            )}
-
-            {allSessions.map(session => {
+            {bookingSeasonSessions.map(session => {
               const isSelected = selectedSessions.some(s => s.id === session.id)
               const isBooked = booked[session.id + '-season'] || enrolledSessionIds.has(session.id)
               const spotsLeft = (session.capacity ?? 12) - (session.enrolled_count ?? 0)
@@ -1060,30 +1099,40 @@ export default function BookScreen({ navigation }) {
         ══════════════════════════════════════════════════════════════════ */}
         {tab === 'casual' && (
           <>
-            {/* Trial banner */}
-            <View style={s.trialBanner}>
-              <Text style={s.trialBannerText}>First time? 🔥 Book a trial class for just ${priceTrial}</Text>
-              <TouchableOpacity style={s.trialBannerBtn} onPress={() => setTab('trial')}>
-                <Text style={s.trialBannerBtnText}>BOOK TRIAL →</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Catch-up credits card */}
-            {availableCredits > 0 && (
-              <View style={s.creditsCard}>
-                <Text style={s.creditsNumber}>{availableCredits}</Text>
-                <View style={{ flex: 1, paddingLeft: 14 }}>
-                  <Text style={s.creditsLabel}>
-                    catch-up credit{availableCredits !== 1 ? 's' : ''} available
-                  </Text>
-                  {creditExpiry && (
-                    <Text style={s.creditsExpiry}>
-                      Expires {new Date(creditExpiry).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </Text>
-                  )}
-                </View>
+            {/* Trial banner — new students only */}
+            {isNewStudent && (
+              <View style={s.trialBanner}>
+                <Text style={s.trialBannerText}>First time? 🔥 Book a trial class for just ${priceTrial}</Text>
+                <TouchableOpacity style={s.trialBannerBtn} onPress={() => setTab('trial')}>
+                  <Text style={s.trialBannerBtnText}>BOOK TRIAL →</Text>
+                </TouchableOpacity>
               </View>
             )}
+
+            {/* Credits summary — always shown */}
+            <View style={[s.creditsCard, availableCredits === 0 && s.creditsCardEmpty]}>
+              {availableCredits > 0 ? (
+                <>
+                  <Text style={s.creditsNumber}>{availableCredits}</Text>
+                  <View style={{ flex: 1, paddingLeft: 14 }}>
+                    <Text style={s.creditsLabel}>
+                      catch-up credit{availableCredits !== 1 ? 's' : ''} available
+                    </Text>
+                    {creditExpiry && (
+                      <Text style={s.creditsExpiry}>
+                        Expires {new Date(creditExpiry).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </Text>
+                    )}
+                    <Text style={s.creditsExpiry}>Tap a class to use a credit or pay casual rate.</Text>
+                  </View>
+                </>
+              ) : (
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.creditsLabel, { fontSize: 13 }]}>No catch-up credits available</Text>
+                  <Text style={s.creditsExpiry}>Credits are issued when you mark yourself away within the cancellation window. You can still book at the casual rate below.</Text>
+                </View>
+              )}
+            </View>
 
             {/* Filter toggle */}
             <View style={s.filtersCard}>
@@ -1111,10 +1160,13 @@ export default function BookScreen({ navigation }) {
                 const instructor = sess.instructor_detail?.display_name ?? sess.instructor_detail?.first_name ?? null
                 const spotsLeft = (sess.capacity ?? 12) - (sess.enrolled_count ?? 0)
                 const isFull = spotsLeft <= 0
+                // Credits only valid for active season, not the upcoming one
+                const creditEligible = availableCredits > 0 && activeSeason && sess.season === activeSeason.id
+                const isUpcomingSess = nextSeason && sess.season === nextSeason.id
 
                 // Eligibility checks
                 const levelOk = !levelFilter || !sess.level || String(sess.level) === String(levelFilter)
-                const routineBlocked = isPastWeek3 && sess.session_type === 'course'
+                const routineBlocked = !isUpcomingSess && isPastWeek3 && sess.session_type === 'course'
                 const isGrayed = !levelOk || routineBlocked
 
                 const isBooked = booked[sess.id + '-casual'] || booked[sess.id + '-catchup'] || enrolledSessionIds.has(sess.id)
@@ -1132,7 +1184,14 @@ export default function BookScreen({ navigation }) {
                     style={[s.casualCard, isGrayed && s.casualCardGrayed]}
                   >
                     <View style={{ flex: 1 }}>
-                      <Text style={[s.casualCardName, isGrayed && s.casualCardNameGrayed]} numberOfLines={1}>{sess.name}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3, flexWrap: 'wrap' }}>
+                        <Text style={[s.casualCardName, isGrayed && s.casualCardNameGrayed]} numberOfLines={1}>{sess.name}</Text>
+                        {isUpcomingSess && nextSeason && (
+                          <View style={{ backgroundColor: 'rgba(124,58,237,0.15)', borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2 }}>
+                            <Text style={{ fontSize: 9, fontWeight: '800', color: T.purple, letterSpacing: 0.5 }}>{nextSeason.name?.toUpperCase()}</Text>
+                          </View>
+                        )}
+                      </View>
                       <Text style={s.casualCardMeta}>
                         {[dayLabel, time, instructor].filter(Boolean).join('  ·  ')}
                       </Text>
@@ -1166,7 +1225,7 @@ export default function BookScreen({ navigation }) {
                           disabled={isFull}
                         >
                           <Text style={[s.casualBookBtnText, isFull && { color: T.muted }]}>
-                            {availableCredits > 0 ? 'BOOK / CREDIT' : 'BOOK'}
+                            {creditEligible ? 'BOOK / CREDIT' : 'BOOK'}
                           </Text>
                         </TouchableOpacity>
                       )}
@@ -1334,7 +1393,10 @@ export default function BookScreen({ navigation }) {
       {tab === 'season' && selectedSessions.length > 0 && (
         <View style={s.proceedBar}>
           <View style={{ flex: 1 }}>
-            <Text style={s.proceedCount}>{selectedSessions.length} class{selectedSessions.length !== 1 ? 'es' : ''} selected</Text>
+            <Text style={s.proceedCount}>
+              {selectedSessions.length} class{selectedSessions.length !== 1 ? 'es' : ''} selected
+              {activeSeasonCount > 0 ? ` · upgrading from ${activeSeasonCount}` : ''}
+            </Text>
             <Text style={s.proceedPrice}>${totalSeasonPrice}</Text>
           </View>
           <TouchableOpacity style={s.proceedBtn} onPress={() => setShowSeasonCheckout(true)}>
@@ -1371,8 +1433,8 @@ export default function BookScreen({ navigation }) {
         visible={showSeasonCheckout}
         sessions={selectedSessions}
         totalPrice={totalSeasonPrice}
-        seasonName={upcomingSeason?.name}
-        upcomingSeason={upcomingSeason}
+        seasonName={bookingSeason?.name}
+        upcomingSeason={bookingSeason}
         onClose={() => setShowSeasonCheckout(false)}
         onConfirm={handleSeasonCheckout}
       />
@@ -1570,9 +1632,10 @@ const s = StyleSheet.create({
   },
   limeAccentBar: { width: 4, backgroundColor: T.lime },
   seasonInfoBody: { flex: 1, padding: 14 },
-  seasonInfoTitle: { fontSize: 17, fontWeight: '800', color: T.text, marginBottom: 4 },
+  seasonInfoTitle: { fontSize: 17, fontWeight: '800', color: T.text, marginBottom: 2 },
+  seasonInfoDates: { fontSize: 12, color: T.muted, marginBottom: 6 },
   seasonInfoSub: { fontSize: 13, color: T.muted, lineHeight: 18, marginBottom: 6 },
-  seasonInfoPrice: { fontSize: 15, fontWeight: '700', color: T.lime },
+  seasonInfoPrice: { fontSize: 14, fontWeight: '700', color: T.lime },
 
   // generic card
   card: {
@@ -1663,6 +1726,10 @@ const s = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: T.purple,
+  },
+  creditsCardEmpty: {
+    backgroundColor: '#0f0f0f',
+    borderColor: '#333',
   },
   creditsNumber: {
     fontSize: 48,
