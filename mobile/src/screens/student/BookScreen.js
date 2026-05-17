@@ -8,6 +8,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { useStripePayment } from '../../hooks/useStripePayment'
 import { classes, enrolments, seasons, attendance, settings as settingsApi } from '../../api'
+import LevelFilterBar from '../../components/LevelFilterBar'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -67,10 +68,12 @@ export default function BookScreen() {
   const [booking, setBooking] = useState(null)
   const [booked, setBooked] = useState({})
   const [experienceLevel, setExperienceLevel] = useState(null)
+  const [levelFilter, setLevelFilter] = useState(null)
 
   useEffect(() => {
     if (user?.id) {
       AsyncStorage.getItem(`experience_level_${user.id}`).then(val => setExperienceLevel(val))
+      AsyncStorage.getItem(`class_level_${user.id}`).then(val => setLevelFilter(val))
     }
   }, [user?.id])
 
@@ -91,7 +94,11 @@ export default function BookScreen() {
     [user?.id]
   )
 
-  const sessionList = sessionsData?.results ?? sessionsData ?? []
+  const allSessions = sessionsData?.results ?? sessionsData ?? []
+  const availableLevels = [...new Set(allSessions.map(s => s.level).filter(Boolean))].sort()
+  const sessionList = levelFilter
+    ? allSessions.filter(s => s.level === levelFilter)
+    : allSessions
   const workshopList = workshopsData?.results ?? workshopsData ?? []
   const allSeasons = seasonsData?.results ?? seasonsData ?? []
   const credits = creditsData?.results ?? creditsData ?? []
@@ -187,6 +194,21 @@ export default function BookScreen() {
           </TouchableOpacity>
         ))}
       </ScrollView>
+
+      {['season', 'casual', 'trial'].includes(tab) && availableLevels.length > 0 && (
+        <LevelFilterBar
+          levels={availableLevels}
+          selected={levelFilter}
+          onSelect={level => {
+            setLevelFilter(level)
+            if (user?.id) {
+              level
+                ? AsyncStorage.setItem(`class_level_${user.id}`, level)
+                : AsyncStorage.removeItem(`class_level_${user.id}`)
+            }
+          }}
+        />
+      )}
 
       <ScrollView
         style={s.scroll}

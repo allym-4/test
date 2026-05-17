@@ -3,7 +3,7 @@ import { ScrollView, View, Text, TouchableOpacity, StyleSheet, Alert, Switch } f
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { payments, auth } from '../../api'
+import { payments, auth, classes } from '../../api'
 
 const EXPERIENCE_LABELS = {
   beginner: "I'm brand new 👋",
@@ -39,10 +39,18 @@ export default function AccountScreen({ navigation }) {
   const [rosterName, setRosterName] = useState(user?.roster_name ?? 'first_name')
   const [savingRoster, setSavingRoster] = useState(false)
   const [experienceLevel, setExperienceLevel] = useState(null)
+  const [classLevel, setClassLevel] = useState(null)
+
+  const { data: sessionsData } = useApi(() => classes.list(), [])
+  const availableLevels = [...new Set(
+    (sessionsData?.results ?? sessionsData ?? [])
+      .map(s => s.level).filter(Boolean)
+  )].sort()
 
   useEffect(() => {
     if (user?.id) {
       AsyncStorage.getItem(`experience_level_${user.id}`).then(val => setExperienceLevel(val))
+      AsyncStorage.getItem(`class_level_${user.id}`).then(val => setClassLevel(val))
     }
   }, [user?.id])
 
@@ -62,6 +70,31 @@ export default function AccountScreen({ navigation }) {
   async function saveExperience(level) {
     await AsyncStorage.setItem(`experience_level_${user.id}`, level)
     setExperienceLevel(level)
+  }
+
+  function handleChangeClassLevel() {
+    const options = availableLevels.map(level => ({
+      text: level,
+      onPress: () => saveClassLevel(level),
+    }))
+    Alert.alert(
+      'My class level',
+      'Sets the default filter on your classes and bookings.',
+      [
+        ...options,
+        { text: 'Show all levels', onPress: () => saveClassLevel(null) },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    )
+  }
+
+  async function saveClassLevel(level) {
+    if (level) {
+      await AsyncStorage.setItem(`class_level_${user.id}`, level)
+    } else {
+      await AsyncStorage.removeItem(`class_level_${user.id}`)
+    }
+    setClassLevel(level)
   }
 
   useEffect(() => {
@@ -120,6 +153,13 @@ export default function AccountScreen({ navigation }) {
             <Text style={s.rowSubValue}>
               {experienceLevel ? EXPERIENCE_LABELS[experienceLevel] : 'Not set'}
             </Text>
+          </View>
+          <Text style={s.navArrow}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[s.navRow, { borderBottomWidth: 0 }]} onPress={handleChangeClassLevel}>
+          <View style={{ flex: 1 }}>
+            <Text style={s.rowLabel}>My class level</Text>
+            <Text style={s.rowSubValue}>{classLevel ?? 'All levels'}</Text>
           </View>
           <Text style={s.navArrow}>›</Text>
         </TouchableOpacity>

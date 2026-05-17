@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   ScrollView, View, Text, TouchableOpacity, StyleSheet,
   RefreshControl, Alert, ActivityIndicator,
 } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { enrolments, attendance, roster } from '../../api'
+import LevelFilterBar from '../../components/LevelFilterBar'
 
 function WhoComing({ sessionId }) {
   const [open, setOpen] = useState(false)
@@ -61,8 +64,16 @@ function StatusBadge({ status }) {
 }
 
 export default function MyClassesScreen({ navigation }) {
+  const { user } = useAuth()
   const [tab, setTab] = useState('active')
   const [markingAway, setMarkingAway] = useState(null)
+  const [levelFilter, setLevelFilter] = useState(null)
+
+  useEffect(() => {
+    if (user?.id) {
+      AsyncStorage.getItem(`class_level_${user.id}`).then(val => setLevelFilter(val))
+    }
+  }, [user?.id])
 
   const { data: enrolData, loading, refetch } = useApi(
     () => enrolments.list({ status: 'active' }), []
@@ -73,6 +84,14 @@ export default function MyClassesScreen({ navigation }) {
 
   const activeEnrolments = enrolData?.results ?? enrolData ?? []
   const history = historyData?.results ?? historyData ?? []
+
+  const availableLevels = [...new Set(
+    activeEnrolments.map(e => e.session?.level).filter(Boolean)
+  )].sort()
+
+  const filteredEnrolments = levelFilter
+    ? activeEnrolments.filter(e => e.session?.level === levelFilter)
+    : activeEnrolments
 
   async function handleMarkAway(occurrenceId, name) {
     Alert.alert(
@@ -132,6 +151,21 @@ export default function MyClassesScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
+      {availableLevels.length > 0 && (
+        <LevelFilterBar
+          levels={availableLevels}
+          selected={levelFilter}
+          onSelect={level => {
+            setLevelFilter(level)
+            if (user?.id) {
+              level
+                ? AsyncStorage.setItem(`class_level_${user.id}`, level)
+                : AsyncStorage.removeItem(`class_level_${user.id}`)
+            }
+          }}
+        />
+      )}
+
       <View style={s.tabs}>
         {[['active', 'My Classes'], ['history', 'Attendance']].map(([key, label]) => (
           <TouchableOpacity key={key} style={[s.tab, tab === key && s.tabActive]} onPress={() => setTab(key)}>
@@ -146,10 +180,14 @@ export default function MyClassesScreen({ navigation }) {
           contentContainerStyle={s.content}
           refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} />}
         >
-          {activeEnrolments.length === 0 && !loading && (
-            <Text style={s.empty}>No active enrolments.</Text>
+          {filteredEnrolments.length === 0 && !loading && (
+            <Text style={s.empty}>
+              {levelFilter && activeEnrolments.length > 0
+                ? `No ${levelFilter} classes. Try a different level or tap All.`
+                : 'No active enrolments.'}
+            </Text>
           )}
-          {activeEnrolments.map(enr => (
+          {filteredEnrolments.map(enr => (
             <View key={enr.id} style={s.card}>
               <View style={s.cardHeader}>
                 <Text style={s.cardTitle}>{enr.session?.name ?? 'Class'}</Text>
