@@ -1,10 +1,14 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from datetime import date, time
-from apps.users.models import User, StaffNote
-from apps.classes.models import Studio, ClassSession, ClassOccurrence
+from datetime import date, time, timedelta
+from apps.users.models import (
+    User, StaffNote, StudioSettings, Announcement, Notification,
+    SkillLevel, SkillGroup, SkillDefinition, MediaItem,
+    Challenge, ChallengeProgress,
+)
+from apps.classes.models import Studio, ClassSession, ClassOccurrence, Season, ClassChatMessage
 from apps.enrolments.models import Enrolment
-from apps.attendance.models import AttendanceRecord
+from apps.attendance.models import AttendanceRecord, MakeupCredit
 from apps.payments.models import Payment, PaymentPlan, PaymentPlanInstalment
 from apps.homework.models import HomeworkAssignment, HomeworkChecklistItem, HomeworkSubmission, HomeworkSubmissionItem
 
@@ -16,22 +20,65 @@ class Command(BaseCommand):
         if User.objects.filter(username='chloe').exists():
             self.stdout.write('Seed data already present, skipping.')
             return
+
         self.stdout.write('Clearing existing data...')
+        ChallengeProgress.objects.all().delete()
+        Challenge.objects.all().delete()
+        MediaItem.objects.all().delete()
+        SkillDefinition.objects.all().delete()
+        SkillGroup.objects.all().delete()
+        SkillLevel.objects.all().delete()
+        Notification.objects.all().delete()
+        Announcement.objects.all().delete()
+        ClassChatMessage.objects.all().delete()
         HomeworkSubmissionItem.objects.all().delete()
         HomeworkSubmission.objects.all().delete()
         HomeworkChecklistItem.objects.all().delete()
         HomeworkAssignment.objects.all().delete()
         AttendanceRecord.objects.all().delete()
+        MakeupCredit.objects.all().delete()
         Enrolment.objects.all().delete()
         ClassOccurrence.objects.all().delete()
         ClassSession.objects.all().delete()
+        Season.objects.all().delete()
         Studio.objects.all().delete()
         PaymentPlanInstalment.objects.all().delete()
         PaymentPlan.objects.all().delete()
         Payment.objects.all().delete()
         StaffNote.objects.all().delete()
+        StudioSettings.objects.all().delete()
         User.objects.filter(is_superuser=False).delete()
 
+        today = date.today()
+
+        # ── Studio settings ───────────────────────────────────────────────
+        self.stdout.write('Creating studio settings...')
+        StudioSettings.objects.create(
+            pk=1,
+            studio_name='Duality Pole Studio',
+            email='hello@dualitypole.com.au',
+            phone='(02) 9000 0000',
+            instagram='@dualitypolestudio',
+            tagline='Move boldly. Feel everything.',
+            price_casual=35,
+            price_season=270,
+            price_trial=25,
+            season_pricing_config=[
+                {'label': '1 class/week', 'price': '270', 'discount': '$33.75 per class'},
+                {'label': '2 classes/week', 'price': '440', 'discount': '$27.50 per class'},
+                {'label': '3 classes/week', 'price': '580', 'discount': '$24.17 per class'},
+                {'label': '4 classes/week', 'price': '700', 'discount': '$21.88 per class'},
+                {'label': '5 classes/week', 'price': '800', 'discount': '$20.00 per class'},
+                {'label': '6 classes/week', 'price': '900', 'discount': '$18.75 per class'},
+            ],
+            cancellation_window_hours=24,
+            no_show_fee=20,
+            late_cancel_fee=10,
+            credit_expiry_days=60,
+            max_freeze_weeks=8,
+        )
+
+        # ── Users ─────────────────────────────────────────────────────────
         self.stdout.write('Creating users...')
         admin = User.objects.create_superuser(
             username='admin', email='admin@dualitypole.com',
@@ -39,20 +86,20 @@ class Command(BaseCommand):
         )
         chloe = User.objects.create_user(
             username='chloe', email='chloe@dualitypole.com',
-            password='chloe1234', first_name='Chloe', last_name='Instructor',
+            password='chloe1234', first_name='Chloe', last_name='Glover',
             role='instructor', pronouns='she/her', phone='0412 000 001',
         )
         students_data = [
-            ('jess', 'Jess', 'Malone', 'she/her', '0412 111 001'),
-            ('tara', 'Tara', 'Bell', 'she/her', '0412 111 002'),
-            ('dana', 'Dana', 'Park', 'she/they', '0412 111 003'),
-            ('nina', 'Nina', 'Torres', 'she/her', '0412 111 004'),
-            ('sophie', 'Sophie', 'Lawson', 'she/her', '0412 111 005'),
-            ('alex', 'Alex', 'Kim', 'they/them', '0412 111 006'),
-            ('riley', 'Riley', 'Chen', 'she/her', '0412 111 007'),
-            ('morgan', 'Morgan', 'Walsh', 'they/them', '0412 111 008'),
-            ('jade', 'Jade', 'Nguyen', 'she/her', '0412 111 009'),
-            ('sam', 'Sam', 'Foster', 'she/her', '0412 111 010'),
+            ('jess',   'Jess',   'Malone',  'she/her',   '0412 111 001'),
+            ('tara',   'Tara',   'Bell',    'she/her',   '0412 111 002'),
+            ('dana',   'Dana',   'Park',    'she/they',  '0412 111 003'),
+            ('nina',   'Nina',   'Torres',  'she/her',   '0412 111 004'),
+            ('sophie', 'Sophie', 'Lawson',  'she/her',   '0412 111 005'),
+            ('alex',   'Alex',   'Kim',     'they/them', '0412 111 006'),
+            ('riley',  'Riley',  'Chen',    'she/her',   '0412 111 007'),
+            ('morgan', 'Morgan', 'Walsh',   'they/them', '0412 111 008'),
+            ('jade',   'Jade',   'Nguyen',  'she/her',   '0412 111 009'),
+            ('sam',    'Sam',    'Foster',  'she/her',   '0412 111 010'),
         ]
         students = {}
         for username, first, last, pronouns, phone in students_data:
@@ -62,71 +109,119 @@ class Command(BaseCommand):
                 role='student', pronouns=pronouns, phone=phone,
             )
 
+        # ── Studios ───────────────────────────────────────────────────────
         self.stdout.write('Creating studios and classes...')
         rhapsody = Studio.objects.create(name='Rhapsody', address='Level 1, 88 Kippax St, Surry Hills NSW 2010', poles='14')
-        the_box = Studio.objects.create(name='The Box', address='Level 1, 88 Kippax St, Surry Hills NSW 2010', poles='11')
+        the_box  = Studio.objects.create(name='The Box',  address='Level 1, 88 Kippax St, Surry Hills NSW 2010', poles='11')
         Studio.objects.create(name="Janitor's Closet", address='Level 1, 88 Kippax St, Surry Hills NSW 2010', poles='3')
 
+        # ── Season ────────────────────────────────────────────────────────
+        season_start = today.replace(day=1)
+        season_end   = (season_start + timedelta(days=90)).replace(day=1) - timedelta(days=1)
+        season = Season.objects.create(
+            name=f'Season {today.year}',
+            start_date=season_start,
+            end_date=season_end,
+            status='active',
+        )
+
+        # ── Class sessions ────────────────────────────────────────────────
         lvl2_mon = ClassSession.objects.create(
             name='Level 2', level='Level 2', instructor=chloe, studio=the_box,
-            day_of_week=0, start_time=time(18, 30), duration_minutes=90, capacity=15, session_type='course',
+            day_of_week=0, start_time=time(18, 30), duration_minutes=90, capacity=15,
+            session_type='course', season=season,
         )
         lvl2_thu = ClassSession.objects.create(
             name='Level 2', level='Level 2', instructor=chloe, studio=rhapsody,
-            day_of_week=3, start_time=time(18, 30), duration_minutes=90, capacity=12, session_type='course',
+            day_of_week=3, start_time=time(18, 30), duration_minutes=90, capacity=12,
+            session_type='course', season=season,
         )
         lvl3_mon = ClassSession.objects.create(
             name='Level 3', level='Level 3', instructor=chloe, studio=rhapsody,
-            day_of_week=0, start_time=time(20, 30), duration_minutes=90, capacity=12, session_type='course',
+            day_of_week=0, start_time=time(20, 30), duration_minutes=90, capacity=12,
+            session_type='course', season=season,
         )
-        ClassSession.objects.create(
+        lvl3_tue = ClassSession.objects.create(
             name='Level 3', level='Level 3', instructor=chloe, studio=rhapsody,
-            day_of_week=1, start_time=time(20, 30), duration_minutes=90, capacity=10, session_type='course',
+            day_of_week=1, start_time=time(20, 30), duration_minutes=90, capacity=10,
+            session_type='course', season=season,
         )
-        ClassSession.objects.create(
+        lvl1_sat = ClassSession.objects.create(
             name='Level 1', level='Level 1', instructor=chloe, studio=the_box,
-            day_of_week=5, start_time=time(10, 0), duration_minutes=90, capacity=12, session_type='course',
+            day_of_week=5, start_time=time(10, 0), duration_minutes=90, capacity=12,
+            session_type='course', season=season,
         )
 
+        # ── Enrolments ────────────────────────────────────────────────────
         self.stdout.write('Enrolling students...')
         for username in ['jess', 'tara', 'dana', 'nina', 'sophie', 'alex', 'riley', 'morgan', 'jade', 'sam']:
-            Enrolment.objects.create(student=students[username], class_session=lvl2_mon, enrolment_type='course')
+            Enrolment.objects.create(student=students[username], class_session=lvl2_mon, enrolment_type='course', status='active')
         for username in ['tara', 'dana', 'nina', 'sophie', 'alex']:
-            Enrolment.objects.create(student=students[username], class_session=lvl3_mon, enrolment_type='course')
+            Enrolment.objects.create(student=students[username], class_session=lvl3_mon, enrolment_type='course', status='active')
+        for username in ['jess', 'riley']:
+            Enrolment.objects.create(student=students[username], class_session=lvl1_sat, enrolment_type='course', status='active')
 
-        self.stdout.write('Creating occurrences and attendance...')
-        occ = ClassOccurrence.objects.create(session=lvl2_mon, date=date(2025, 5, 12), status='scheduled')
-        ClassOccurrence.objects.create(session=lvl2_mon, date=date(2025, 5, 5), status='completed', register_saved=True)
+        # ── Occurrences ───────────────────────────────────────────────────
+        self.stdout.write('Creating occurrences...')
+        def next_weekday(weekday):
+            days_ahead = weekday - today.weekday()
+            if days_ahead <= 0:
+                days_ahead += 7
+            return today + timedelta(days=days_ahead)
 
+        def last_weekday(weekday):
+            days_ago = today.weekday() - weekday
+            if days_ago <= 0:
+                days_ago += 7
+            return today - timedelta(days=days_ago)
+
+        occ_lvl2_mon_past = ClassOccurrence.objects.create(session=lvl2_mon, date=last_weekday(0), status='completed', register_saved=True)
+        occ_lvl2_mon_next = ClassOccurrence.objects.create(session=lvl2_mon, date=next_weekday(0), status='scheduled')
+        occ_lvl3_mon_past = ClassOccurrence.objects.create(session=lvl3_mon, date=last_weekday(0), status='completed', register_saved=True)
+        occ_lvl3_mon_next = ClassOccurrence.objects.create(session=lvl3_mon, date=next_weekday(0), status='scheduled')
+        occ_lvl1_sat_next = ClassOccurrence.objects.create(session=lvl1_sat, date=next_weekday(5), status='scheduled')
+
+        # ── Attendance ────────────────────────────────────────────────────
+        for username in ['jess', 'tara', 'dana', 'nina', 'sophie', 'alex', 'riley', 'morgan', 'jade', 'sam']:
+            AttendanceRecord.objects.create(student=students[username], occurrence=occ_lvl2_mon_past, status='present')
+        for username in ['tara', 'dana', 'nina', 'sophie']:
+            AttendanceRecord.objects.create(student=students[username], occurrence=occ_lvl3_mon_past, status='present')
+        AttendanceRecord.objects.create(student=students['alex'], occurrence=occ_lvl3_mon_past, status='absent')
+
+        MakeupCredit.objects.create(student=students['alex'], status='available',
+            reason='Absent — Level 3 Mon', season=season, issued_by=chloe)
+
+        # ── Payments ─────────────────────────────────────────────────────
         self.stdout.write('Creating payments...')
-        Payment.objects.create(student=students['jess'], payment_type='charge', amount=220,
-            description='Season 4 course fee', created_by=admin)
-        Payment.objects.create(student=students['jess'], payment_type='payment', amount=100,
+        Payment.objects.create(student=students['jess'], payment_type='charge', amount=270,
+            description='Season course fee — Level 2 Mon', created_by=admin)
+        Payment.objects.create(student=students['jess'], payment_type='payment', amount=150,
             description='Payment received — bank transfer', created_by=admin)
         Payment.objects.create(student=students['jess'], payment_type='no_show_fee', amount=20,
-            description='No-show fee · Level 2 Mon 5 May', created_by=chloe)
+            description='No-show fee · Level 2', created_by=chloe)
         plan = PaymentPlan.objects.create(
-            student=students['jess'], description='Season 4 remainder payment plan',
+            student=students['jess'], description='Season remainder payment plan',
             total_amount=120, status='active', created_by=admin,
         )
-        PaymentPlanInstalment.objects.create(plan=plan, amount=40, due_date=date(2025, 4, 21), paid_date=date(2025, 4, 20), status='paid')
-        PaymentPlanInstalment.objects.create(plan=plan, amount=40, due_date=date(2025, 5, 5), status='overdue')
-        PaymentPlanInstalment.objects.create(plan=plan, amount=40, due_date=date(2025, 5, 19), status='pending')
+        PaymentPlanInstalment.objects.create(plan=plan, amount=40, due_date=today - timedelta(days=28), paid_date=today - timedelta(days=29), status='paid')
+        PaymentPlanInstalment.objects.create(plan=plan, amount=40, due_date=today - timedelta(days=7), status='overdue')
+        PaymentPlanInstalment.objects.create(plan=plan, amount=40, due_date=today + timedelta(days=14), status='pending')
 
-        self.stdout.write('Creating staff notes...')
-        StaffNote.objects.create(student=students['jess'], created_by=chloe, tag='Medical',
-            body='Wrist injury noted — avoid weight-bearing on left hand for next 2 weeks.')
-        StaffNote.objects.create(student=students['jess'], created_by=admin, tag='Enrolment',
-            body='Cross-enrolled from Level 3. Confirm prerequisite assessment completed.')
+        for username in ['tara', 'dana', 'nina', 'sophie', 'alex']:
+            Payment.objects.create(student=students[username], payment_type='charge', amount=440,
+                description='Season course fee — Level 2 + Level 3', created_by=admin)
+            Payment.objects.create(student=students[username], payment_type='payment', amount=440,
+                description='Payment received', created_by=admin)
 
+        # ── Homework ─────────────────────────────────────────────────────
         self.stdout.write('Creating homework...')
         hw1 = HomeworkAssignment.objects.create(
             title='Spinning Pole — Week 3 Checklist', class_session=lvl2_mon,
-            assigned_by=chloe, assigned_date=date(2025, 5, 8), status='active',
+            assigned_by=chloe, assigned_date=today - timedelta(days=7), status='active',
         )
         for i, text in enumerate([
             'Practice outside leg hang — 3 sets each side',
-            'Carousel spin — record video attempt',
+            'Carousel spin — record a video attempt',
             'Seated spin to floor dismount — controlled',
             'Stretch routine — hip flexors and shoulders (10 min)',
         ]):
@@ -134,7 +229,7 @@ class Command(BaseCommand):
 
         hw2 = HomeworkAssignment.objects.create(
             title='Invert Conditioning Drills', class_session=lvl2_mon,
-            assigned_by=chloe, assigned_date=date(2025, 5, 5), status='active',
+            assigned_by=chloe, assigned_date=today - timedelta(days=14), status='active',
         )
         for i, text in enumerate([
             'Dead hang — 3 x 30 seconds',
@@ -145,11 +240,182 @@ class Command(BaseCommand):
 
         sub = HomeworkSubmission.objects.create(
             assignment=hw1, student=students['jess'],
-            submitted_at=timezone.make_aware(timezone.datetime(2025, 5, 11, 20, 0)),
+            submitted_at=timezone.now() - timedelta(days=1),
         )
         for item in hw1.checklist_items.all():
             HomeworkSubmissionItem.objects.create(submission=sub, checklist_item=item, completed=True)
 
+        # ── Chat messages ─────────────────────────────────────────────────
+        self.stdout.write('Creating chat messages...')
+        chat_msgs = [
+            (chloe,             "Hey everyone! Don't forget to bring your grip aid on Monday 🙌"),
+            (students['jess'],  "Will do! Quick question — are we doing the layback this week?"),
+            (chloe,             "Yes! We'll be working on the layback entry. Make sure your invert is solid first."),
+            (students['tara'],  "So excited for this one 😍"),
+            (students['dana'],  "Should we warm up our shoulders beforehand?"),
+            (chloe,             "Absolutely — shoulder circles, band pull-aparts, and cat-cows. I'll send a video."),
+            (students['jess'],  "Thanks Chloe! See everyone Monday"),
+            (students['nina'],  "Can't wait! 💪"),
+        ]
+        for sender, body in chat_msgs:
+            ClassChatMessage.objects.create(session=lvl2_mon, sender=sender, body=body)
+
+        lvl3_chat = [
+            (chloe,              "Level 3 crew — we're starting the aerial invert sequence this month. Very exciting!"),
+            (students['tara'],   "Finally!! I've been working on my aerial for weeks"),
+            (students['sophie'], "Same, can't wait to show you what I've been practising"),
+            (chloe,              "Love the dedication 🔥 Come 5 mins early if you want a quick warm-up run-through"),
+        ]
+        for sender, body in lvl3_chat:
+            ClassChatMessage.objects.create(session=lvl3_mon, sender=sender, body=body)
+
+        # ── Notifications & announcements ─────────────────────────────────
+        self.stdout.write('Creating notifications and announcements...')
+        Announcement.objects.create(
+            title='Season dates confirmed!',
+            body=f'The current season runs {season_start.strftime("%d %b")} – {season_end.strftime("%d %b %Y")}. Fees are due by the end of week 2. Contact us if you need a payment plan.',
+            note_type='announcement',
+            created_by=admin,
+            is_pinned=True,
+        )
+        Announcement.objects.create(
+            title='Studio closure — long weekend',
+            body='The studio will be closed on the public holiday Monday. Your next class will be the following week. No makeup credit needed — the term has been adjusted.',
+            note_type='announcement',
+            created_by=admin,
+        )
+        Notification.objects.create(
+            recipient=students['jess'],
+            title='Homework assigned',
+            body='Chloe has assigned new homework: Spinning Pole — Week 3 Checklist',
+            notification_type='info',
+            read=False,
+        )
+        Notification.objects.create(
+            recipient=students['jess'],
+            title='Payment overdue',
+            body='An instalment of $40 was due last week. Please arrange payment at your earliest convenience.',
+            notification_type='billing',
+            read=False,
+        )
+        Notification.objects.create(
+            recipient=students['alex'],
+            title='Makeup credit added',
+            body='A makeup credit has been added to your account for your absence on Level 3 Mon.',
+            notification_type='info',
+            read=True,
+        )
+
+        # ── Skills ────────────────────────────────────────────────────────
+        self.stdout.write('Creating skill levels and definitions...')
+        skills_data = {
+            'Level 1': {
+                'Floor & Warm-up': ['Cat-cow stretch', 'Hip circles', 'Body roll', 'Floorwork transition'],
+                'Static Pole Basics': ['Front hook spin', 'Back hook spin', 'Fireman spin', 'Chair spin'],
+                'Beginner Climbs': ['Basic climb', 'Side climb', 'Thigh hold', 'Sitting position'],
+            },
+            'Level 2': {
+                'Spins': ['Carousel spin', 'Attitude spin', 'Cradle spin', 'Fan kick spin'],
+                'Inversions': ['Tuck invert', 'Straddle invert', 'Crucifix', 'Outside leg hang'],
+                'Transitions': ['Layback', 'Seated spin to dismount', 'Pole sit transition', 'Bird of paradise entry'],
+            },
+            'Level 3': {
+                'Aerial Moves': ['Aerial invert', 'Ayesha', 'Handspring', 'Flatline Scorpio'],
+                'Advanced Spins': ['Superman spin', 'Dead man spin', 'Helicopter', 'Twisted grip spin'],
+                'Combos & Flow': ['3-move combo (student choice)', 'Floor-to-pole transition', 'Slow flow sequence'],
+            },
+        }
+        for order, (level_name, groups) in enumerate(skills_data.items()):
+            level = SkillLevel.objects.create(name=level_name, order=order)
+            for g_order, (group_name, skills) in enumerate(groups.items()):
+                group = SkillGroup.objects.create(level=level, name=group_name, order=g_order)
+                for s_order, skill_name in enumerate(skills):
+                    SkillDefinition.objects.create(group=group, name=skill_name, order=s_order)
+
+        # Add some self-assessed skills for jess
+        from apps.users.models import StudentSkill
+        for skill_name in ['Fireman spin', 'Chair spin', 'Basic climb', 'Carousel spin', 'Tuck invert']:
+            StudentSkill.objects.create(student=students['jess'], skill_name=skill_name,
+                self_assessed=True, teacher_confirmed=False)
+        for skill_name in ['Cat-cow stretch', 'Hip circles', 'Body roll', 'Front hook spin', 'Back hook spin']:
+            StudentSkill.objects.create(student=students['jess'], skill_name=skill_name,
+                self_assessed=True, teacher_confirmed=True)
+
+        # ── Media items ───────────────────────────────────────────────────
+        self.stdout.write('Creating media items...')
+        MediaItem.objects.create(
+            name='Invert Conditioning Guide', media_type='pdf',
+            url='https://example.com/invert-guide.pdf',
+            level='Level 2', uploaded_by=chloe, session=lvl2_mon,
+        )
+        MediaItem.objects.create(
+            name='Layback Tutorial Video', media_type='video',
+            url='https://example.com/layback-tutorial.mp4',
+            level='Level 2', uploaded_by=chloe, session=lvl2_mon,
+        )
+        MediaItem.objects.create(
+            name='Aerial Invert Breakdown', media_type='video',
+            url='https://example.com/aerial-invert.mp4',
+            level='Level 3', uploaded_by=chloe, session=lvl3_mon,
+        )
+        MediaItem.objects.create(
+            name='Warm-up Routine PDF', media_type='pdf',
+            url='https://example.com/warmup.pdf',
+            level='', uploaded_by=chloe,
+        )
+
+        # ── Challenges ────────────────────────────────────────────────────
+        self.stdout.write('Creating challenges...')
+        c1 = Challenge.objects.create(
+            title='Attendance All-Star',
+            description='Attend 8 classes this season and earn your All-Star badge!',
+            challenge_type='attendance_count',
+            target_value=8,
+            start_date=season_start,
+            end_date=season_end,
+            reward_type='badge',
+            reward_badge_name='All-Star',
+            is_active=True,
+        )
+        c2 = Challenge.objects.create(
+            title='Consistency Queen',
+            description='Come to class 4 weeks in a row — build that habit!',
+            challenge_type='streak',
+            target_value=4,
+            start_date=season_start,
+            end_date=season_end,
+            reward_type='credit',
+            reward_credit_amount=20,
+            is_active=True,
+        )
+        c3 = Challenge.objects.create(
+            title='Style Explorer',
+            description='Try 3 different class styles this season.',
+            challenge_type='style_variety',
+            target_value=3,
+            start_date=season_start,
+            end_date=season_end,
+            reward_type='badge',
+            reward_badge_name='Explorer',
+            is_active=True,
+        )
+        ChallengeProgress.objects.create(challenge=c1, student=students['jess'], current_value=5, completed=False)
+        ChallengeProgress.objects.create(challenge=c1, student=students['tara'], current_value=7, completed=False)
+        ChallengeProgress.objects.create(challenge=c1, student=students['dana'], current_value=8, completed=True,
+            completed_at=timezone.now() - timedelta(days=2))
+        ChallengeProgress.objects.create(challenge=c2, student=students['jess'], current_value=3, completed=False)
+        ChallengeProgress.objects.create(challenge=c2, student=students['nina'], current_value=4, completed=True,
+            completed_at=timezone.now() - timedelta(days=5))
+
+        # ── Staff notes ───────────────────────────────────────────────────
+        StaffNote.objects.create(student=students['jess'], created_by=chloe, tag='Medical',
+            body='Wrist injury noted — avoid weight-bearing on left hand for next 2 weeks.')
+        StaffNote.objects.create(student=students['jess'], created_by=admin, tag='Enrolment',
+            body='Cross-enrolled from Level 3. Confirm prerequisite assessment completed.')
+
         self.stdout.write(self.style.SUCCESS(
-            f'\n✓ Done. Logins: admin/admin1234 · chloe/chloe1234 · jess/student1234'
+            '\n✓ Done!\n'
+            '  admin      → admin/admin1234\n'
+            '  instructor → chloe/chloe1234\n'
+            '  student    → jess/student1234  (and tara, dana, nina, sophie, alex, riley, morgan, jade, sam — all /student1234)\n'
         ))
