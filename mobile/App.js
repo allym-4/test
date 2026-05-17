@@ -1,10 +1,14 @@
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { View, ActivityIndicator } from 'react-native'
+import { StripeProvider } from '@stripe/stripe-react-native'
 import { AuthProvider, useAuth } from './src/contexts/AuthContext'
 import LoginScreen from './src/screens/auth/LoginScreen'
 import StudentTabs from './src/navigation/StudentTabs'
 import InstructorTabs from './src/navigation/InstructorTabs'
+
+// Publishable key — safe to expose in client code
+const STRIPE_PK = 'pk_live_REPLACE_WITH_YOUR_PUBLISHABLE_KEY'
 
 const Stack = createNativeStackNavigator()
 
@@ -34,10 +38,16 @@ function RootNavigator() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <NavigationContainer>
-        <RootNavigator />
-      </NavigationContainer>
-    </AuthProvider>
+    <StripeProvider
+      publishableKey={STRIPE_PK}
+      merchantIdentifier="merchant.com.yourstudio.app"
+      urlScheme="yourstudio"
+    >
+      <AuthProvider>
+        <NavigationContainer>
+          <RootNavigator />
+        </NavigationContainer>
+      </AuthProvider>
+    </StripeProvider>
   )
 }

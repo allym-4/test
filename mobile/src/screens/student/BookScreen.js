@@ -5,7 +5,8 @@ import {
 } from 'react-native'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { classes, enrolments, seasons, attendance, settings as settingsApi, payments } from '../../api'
+import { useStripePayment } from '../../hooks/useStripePayment'
+import { classes, enrolments, seasons, attendance, settings as settingsApi } from '../../api'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -60,6 +61,7 @@ function ClassCard({ session, actionLabel, actionColor = '#6366f1', onPress, loa
 
 export default function BookScreen() {
   const { user } = useAuth()
+  const { pay } = useStripePayment()
   const [tab, setTab] = useState('season')
   const [booking, setBooking] = useState(null)
   const [booked, setBooked] = useState({})
@@ -108,44 +110,27 @@ export default function BookScreen() {
     ?? allSeasons.find(s => s.status === 'active')
 
   async function handleEnrol(session, type, price) {
-    const labels = { season: 'Season enrolment', casual: 'Casual booking', trial: 'Trial booking' }
-    Alert.alert(
-      `Confirm ${labels[type]}`,
-      type === 'catchup'
-        ? `Use 1 catch-up credit to book ${session.name}?`
-        : `${session.name}\n$${price} — you'll be taken to payment.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: type === 'catchup' ? 'Use credit' : 'Continue',
-          onPress: async () => {
-            setBooking(session.id)
-            try {
-              if (type === 'catchup') {
-                await enrolments.create({ session: session.id, status: 'active', enrolment_type: 'catchup' })
-                refetchCredits()
-                setBooked(b => ({ ...b, [session.id + '-catchup']: true }))
-              } else {
-                // Payment flow — create intent then handle via Stripe
-                const intentRes = await payments.stripe.createPaymentIntent({
-                  amount: Math.round(price * 100),
-                  description: `${session.name} — ${type}`,
-                  session_id: session.id,
-                  enrolment_type: type,
-                })
-                // TODO: present Stripe payment sheet using @stripe/stripe-react-native
-                // For now confirm booking intent is ready
-                Alert.alert('Payment', `Payment intent created. Stripe sheet coming soon.\nReference: ${intentRes.data?.id ?? 'pending'}`)
-              }
-            } catch (err) {
-              Alert.alert('Error', err.response?.data?.detail ?? 'Could not complete booking.')
-            } finally {
-              setBooking(null)
-            }
-          },
-        },
-      ]
-    )
+    setBooking(session.id)
+    try {
+      if (type === 'catchup') {
+        await enrolments.create({ session: session.id, status: 'active', enrolment_type: 'catchup' })
+        refetchCredits()
+        setBooked(b => ({ ...b, [session.id + '-catchup']: true }))
+      } else {
+        const succeeded = await pay({
+          amountCents: Math.round(price * 100),
+          description: `${session.name} — ${type}`,
+          sessionId: session.id,
+          enrolmentType: type,
+          onSuccess: () => setBooked(b => ({ ...b, [session.id + '-' + type]: true })),
+        })
+        if (!succeeded) return // user cancelled — no error
+      }
+    } catch (err) {
+      Alert.alert('Payment failed', err.message ?? 'Could not complete booking.')
+    } finally {
+      setBooking(null)
+    }
   }
 
   async function handleWorkshopBook(workshop) {
