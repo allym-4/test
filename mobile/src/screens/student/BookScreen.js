@@ -64,10 +64,8 @@ function WorkshopCard({ workshop, onBook, booking }) {
         </Text>
       )}
       {workshop.studio?.name && <Text style={s.cardMeta}>{workshop.studio.name}</Text>}
-      {spotsLeft != null && (
-        <Text style={[s.cardMeta, spotsLeft <= 3 && { color: '#ef4444' }]}>
-          {spotsLeft > 0 ? `${spotsLeft} spots left` : 'Fully booked'}
-        </Text>
+      {spotsLeft === 0 && (
+        <Text style={[s.cardMeta, { color: '#ef4444' }]}>Fully booked</Text>
       )}
       {workshop.price != null && <Text style={s.price}>${workshop.price}</Text>}
       <TouchableOpacity
