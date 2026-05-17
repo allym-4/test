@@ -163,6 +163,11 @@ class Command(BaseCommand):
             Enrolment.objects.create(student=students[username], class_session=lvl3_mon, enrolment_type='course', status='active')
         for username in ['jess', 'riley']:
             Enrolment.objects.create(student=students[username], class_session=lvl1_sat, enrolment_type='course', status='active')
+        # A few students also enrolled in the Thu/Tue sessions
+        for username in ['morgan', 'jade', 'sam']:
+            Enrolment.objects.create(student=students[username], class_session=lvl2_thu, enrolment_type='course', status='active')
+        for username in ['riley', 'morgan']:
+            Enrolment.objects.create(student=students[username], class_session=lvl3_tue, enrolment_type='course', status='active')
 
         # ── Occurrences ───────────────────────────────────────────────────
         self.stdout.write('Creating occurrences...')
@@ -178,21 +183,68 @@ class Command(BaseCommand):
                 days_ago += 7
             return today - timedelta(days=days_ago)
 
+        # Past occurrences — 4 weeks of history
+        occ_lvl2_mon_w4 = ClassOccurrence.objects.create(session=lvl2_mon, date=last_weekday(0) - timedelta(weeks=3), status='completed', register_saved=True)
+        occ_lvl2_mon_w3 = ClassOccurrence.objects.create(session=lvl2_mon, date=last_weekday(0) - timedelta(weeks=2), status='completed', register_saved=True)
+        occ_lvl2_mon_w2 = ClassOccurrence.objects.create(session=lvl2_mon, date=last_weekday(0) - timedelta(weeks=1), status='completed', register_saved=True)
         occ_lvl2_mon_past = ClassOccurrence.objects.create(session=lvl2_mon, date=last_weekday(0), status='completed', register_saved=True)
         occ_lvl2_mon_next = ClassOccurrence.objects.create(session=lvl2_mon, date=next_weekday(0), status='scheduled')
+
+        occ_lvl3_mon_w4 = ClassOccurrence.objects.create(session=lvl3_mon, date=last_weekday(0) - timedelta(weeks=3), status='completed', register_saved=True)
+        occ_lvl3_mon_w3 = ClassOccurrence.objects.create(session=lvl3_mon, date=last_weekday(0) - timedelta(weeks=2), status='completed', register_saved=True)
+        occ_lvl3_mon_w2 = ClassOccurrence.objects.create(session=lvl3_mon, date=last_weekday(0) - timedelta(weeks=1), status='completed', register_saved=True)
         occ_lvl3_mon_past = ClassOccurrence.objects.create(session=lvl3_mon, date=last_weekday(0), status='completed', register_saved=True)
         occ_lvl3_mon_next = ClassOccurrence.objects.create(session=lvl3_mon, date=next_weekday(0), status='scheduled')
+
+        occ_lvl1_sat_w2  = ClassOccurrence.objects.create(session=lvl1_sat, date=last_weekday(5) - timedelta(weeks=1), status='completed', register_saved=True)
+        occ_lvl1_sat_past = ClassOccurrence.objects.create(session=lvl1_sat, date=last_weekday(5), status='completed', register_saved=True)
         occ_lvl1_sat_next = ClassOccurrence.objects.create(session=lvl1_sat, date=next_weekday(5), status='scheduled')
 
-        # ── Attendance ────────────────────────────────────────────────────
-        for username in ['jess', 'tara', 'dana', 'nina', 'sophie', 'alex', 'riley', 'morgan', 'jade', 'sam']:
-            AttendanceRecord.objects.create(student=students[username], occurrence=occ_lvl2_mon_past, status='present')
-        for username in ['tara', 'dana', 'nina', 'sophie']:
-            AttendanceRecord.objects.create(student=students[username], occurrence=occ_lvl3_mon_past, status='present')
-        AttendanceRecord.objects.create(student=students['alex'], occurrence=occ_lvl3_mon_past, status='absent')
+        ClassOccurrence.objects.create(session=lvl2_thu, date=last_weekday(3), status='completed', register_saved=True)
+        ClassOccurrence.objects.create(session=lvl2_thu, date=next_weekday(3), status='scheduled')
+        ClassOccurrence.objects.create(session=lvl3_tue, date=last_weekday(1), status='completed', register_saved=True)
+        ClassOccurrence.objects.create(session=lvl3_tue, date=next_weekday(1), status='scheduled')
 
+        # ── Attendance ────────────────────────────────────────────────────
+        # Level 2 Monday history — a few absences scattered across weeks
+        lvl2_students = ['jess', 'tara', 'dana', 'nina', 'sophie', 'alex', 'riley', 'morgan', 'jade', 'sam']
+        for occ in [occ_lvl2_mon_w4, occ_lvl2_mon_w3, occ_lvl2_mon_w2, occ_lvl2_mon_past]:
+            for username in lvl2_students:
+                AttendanceRecord.objects.create(student=students[username], occurrence=occ, status='present')
+
+        # Overwrite: tara was absent week 3; dana was absent week 2; morgan marked away week 4
+        AttendanceRecord.objects.filter(student=students['tara'], occurrence=occ_lvl2_mon_w3).update(status='absent')
+        AttendanceRecord.objects.filter(student=students['dana'], occurrence=occ_lvl2_mon_w2).update(status='absent')
+        AttendanceRecord.objects.filter(student=students['morgan'], occurrence=occ_lvl2_mon_w4).update(status='marked_away')
+
+        # Level 3 Monday history
+        lvl3_students = ['tara', 'dana', 'nina', 'sophie', 'alex']
+        for occ in [occ_lvl3_mon_w4, occ_lvl3_mon_w3, occ_lvl3_mon_w2, occ_lvl3_mon_past]:
+            for username in lvl3_students:
+                AttendanceRecord.objects.create(student=students[username], occurrence=occ, status='present')
+
+        # Overwrite: alex absent week 4 and last week; sophie marked away week 3
+        AttendanceRecord.objects.filter(student=students['alex'], occurrence=occ_lvl3_mon_w4).update(status='absent')
+        AttendanceRecord.objects.filter(student=students['alex'], occurrence=occ_lvl3_mon_past).update(status='absent')
+        AttendanceRecord.objects.filter(student=students['sophie'], occurrence=occ_lvl3_mon_w3).update(status='marked_away')
+
+        # Level 1 Saturday history
+        for occ in [occ_lvl1_sat_w2, occ_lvl1_sat_past]:
+            for username in ['jess', 'riley']:
+                AttendanceRecord.objects.create(student=students[username], occurrence=occ, status='present')
+        AttendanceRecord.objects.filter(student=students['riley'], occurrence=occ_lvl1_sat_w2).update(status='absent')
+
+        # Makeup credits
         MakeupCredit.objects.create(student=students['alex'], status='available',
-            reason='Absent — Level 3 Mon', season=season, issued_by=chloe)
+            reason='Absent — Level 3 Mon (last week)', season=season, issued_by=chloe)
+        MakeupCredit.objects.create(student=students['alex'], status='used',
+            reason='Absent — Level 3 Mon (week 4)', season=season, issued_by=chloe)
+        MakeupCredit.objects.create(student=students['tara'], status='available',
+            reason='Absent — Level 2 Mon (week 3)', season=season, issued_by=chloe)
+        MakeupCredit.objects.create(student=students['dana'], status='available',
+            reason='Absent — Level 2 Mon (week 2)', season=season, issued_by=chloe)
+        MakeupCredit.objects.create(student=students['riley'], status='available',
+            reason='Absent — Level 1 Sat (week 2)', season=season, issued_by=chloe)
 
         # ── Payments ─────────────────────────────────────────────────────
         self.stdout.write('Creating payments...')

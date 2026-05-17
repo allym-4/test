@@ -69,6 +69,10 @@ export const payments = {
   stripe: {
     config: () => client.get('/api/payments/stripe/config/'),
     createPaymentIntent: (data) => client.post('/api/payments/stripe/payment-intent/', data),
+    setupIntent: () => client.post('/api/payments/stripe/setup-intent/'),
+    paymentMethods: (params) => client.get('/api/payments/stripe/payment-methods/', { params }),
+    removePaymentMethod: (data) => client.delete('/api/payments/stripe/payment-methods/', { data }),
+    updateAutoCharge: (data) => client.patch('/api/payments/stripe/config/', data),
   },
   promoCodes: {
     validate: (data) => client.post('/api/payments/promo-codes/validate/', data),

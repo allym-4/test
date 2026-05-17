@@ -471,6 +471,7 @@ export default function BookScreen() {
 
   const activeEnrolList = activeEnrolData?.results ?? activeEnrolData ?? []
   const activeSeasonCount = activeEnrolList.filter(e => e.enrolment_type === 'course').length
+  const enrolledSessionIds = new Set(activeEnrolList.map(e => e.class_session ?? e.class_session_id))
   const DEFAULT_SEASON_PRICES = { 1: 270, 2: 440, 3: 580, 4: 700, 5: 800, 6: 900 }
   const seasonPricingConfig = studioSettings?.season_pricing_config ?? []
 
@@ -674,7 +675,7 @@ export default function BookScreen() {
 
             {allSessions.map(session => {
               const isSelected = selectedSessions.some(s => s.id === session.id)
-              const isBooked = booked[session.id + '-season']
+              const isBooked = booked[session.id + '-season'] || enrolledSessionIds.has(session.id)
               const spotsLeft = (session.capacity ?? 12) - (session.enrolled_count ?? 0)
               const isFull = spotsLeft <= 0
               return (

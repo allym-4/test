@@ -10,6 +10,7 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native'
+import { useStripe } from '@stripe/stripe-react-native'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { payments, attendance, helpdesk } from '../../api'
@@ -128,6 +129,7 @@ function CardRow({ method, isDefault, onSetDefault, onRemove, removing }) {
 export default function BillingScreen() {
   const { user } = useAuth()
   const userId = user?.id
+  const { initPaymentSheet, presentPaymentSheet, initSetupPaymentSheet, presentSetupPaymentSheet } = useStripe()
 
   // ── remote data ─────────────────────────────────────────────────────────────
   const {
@@ -172,6 +174,8 @@ export default function BillingScreen() {
   const [updatingAutoCharge, setUpdatingAutoCharge] = useState(false)
   const [removingId, setRemovingId] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [payingNow, setPayingNow] = useState(false)
+  const [addingCard, setAddingCard] = useState(false)
 
   // Sync local state once stripe config arrives (only on first load)
   if (stripeConfig !== null && autoCharge === null) {
@@ -257,6 +261,61 @@ export default function BillingScreen() {
         },
       ],
     )
+  }
+
+  async function handlePayNow() {
+    if (payingNow || !isOwing) return
+    setPayingNow(true)
+    try {
+      const amountCents = Math.round(Math.abs(balanceNum) * 100)
+      const { data } = await payments.stripe.createPaymentIntent({
+        amount: amountCents,
+        description: 'Account balance payment',
+      })
+      const { error: initErr } = await initPaymentSheet({
+        merchantDisplayName: 'Duality Pole Studio',
+        paymentIntentClientSecret: data.client_secret,
+        allowsDelayedPaymentMethods: false,
+        appearance: { colors: { primary: '#ccff00', background: '#111', componentBackground: '#1a1a1a', componentText: '#fff', primaryText: '#fff', secondaryText: '#888' } },
+      })
+      if (initErr) { Alert.alert('Error', initErr.message); return }
+      const { error: presentErr } = await presentPaymentSheet()
+      if (presentErr) {
+        if (presentErr.code !== 'Canceled') Alert.alert('Payment failed', presentErr.message)
+      } else {
+        Alert.alert('Payment successful', 'Your payment has been processed.')
+        await Promise.all([refetchBalance(), refetchPayments()])
+      }
+    } catch {
+      Alert.alert('Error', 'Could not start payment. Please try again.')
+    } finally {
+      setPayingNow(false)
+    }
+  }
+
+  async function handleAddCard() {
+    if (addingCard) return
+    setAddingCard(true)
+    try {
+      const { data } = await payments.stripe.setupIntent()
+      const { error: initErr } = await initSetupPaymentSheet({
+        merchantDisplayName: 'Duality Pole Studio',
+        setupIntentClientSecret: data.client_secret,
+        appearance: { colors: { primary: '#ccff00', background: '#111', componentBackground: '#1a1a1a', componentText: '#fff', primaryText: '#fff', secondaryText: '#888' } },
+      })
+      if (initErr) { Alert.alert('Error', initErr.message); return }
+      const { error: presentErr } = await presentSetupPaymentSheet()
+      if (presentErr) {
+        if (presentErr.code !== 'Canceled') Alert.alert('Failed', presentErr.message)
+      } else {
+        Alert.alert('Card saved', 'Your card has been saved successfully.')
+        await refetchStripe()
+      }
+    } catch {
+      Alert.alert('Error', 'Could not add card. Please try again.')
+    } finally {
+      setAddingCard(false)
+    }
   }
 
   function handleRefundRequest() {
@@ -345,6 +404,19 @@ export default function BillingScreen() {
                   ? 'Credit on account'
                   : 'No balance due'}
             </Text>
+            {isOwing && (
+              <TouchableOpacity
+                style={s.payNowBtn}
+                onPress={handlePayNow}
+                disabled={payingNow}
+                activeOpacity={0.8}
+              >
+                {payingNow
+                  ? <ActivityIndicator color="#000" size="small" />
+                  : <Text style={s.payNowBtnText}>Pay ${Math.abs(balanceNum).toFixed(2)} now</Text>
+                }
+              </TouchableOpacity>
+            )}
           </>
         )}
       </View>
@@ -433,7 +505,15 @@ export default function BillingScreen() {
 
       {/* Saved cards */}
       <View style={s.card}>
-        <SectionHeader title="Saved Cards" />
+        <View style={s.cardSectionHeader}>
+          <Text style={s.sectionTitle}>Saved Cards</Text>
+          <TouchableOpacity style={s.addCardBtn} onPress={handleAddCard} disabled={addingCard} activeOpacity={0.8}>
+            {addingCard
+              ? <ActivityIndicator color="#000" size="small" style={{ width: 60 }} />
+              : <Text style={s.addCardBtnText}>+ Add card</Text>
+            }
+          </TouchableOpacity>
+        </View>
         {stripeLoading ? (
           <ActivityIndicator color="#ccff00" />
         ) : paymentMethods.length === 0 ? (
@@ -542,6 +622,20 @@ const s = StyleSheet.create({
     color: '#aaa',
     marginTop: 4,
   },
+  payNowBtn: {
+    marginTop: 18,
+    backgroundColor: '#ccff00',
+    borderRadius: 22,
+    paddingHorizontal: 28,
+    paddingVertical: 12,
+    minWidth: 180,
+    alignItems: 'center',
+  },
+  payNowBtnText: {
+    color: '#000',
+    fontWeight: '800',
+    fontSize: 15,
+  },
 
   // ── Dark card container ─────────────────────────────────────────────────────
   card: {
@@ -559,6 +653,24 @@ const s = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 12,
+  },
+  cardSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  addCardBtn: {
+    backgroundColor: '#ccff00',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    marginBottom: 8,
+  },
+  addCardBtnText: {
+    color: '#000',
+    fontWeight: '700',
+    fontSize: 12,
   },
   emptyText: {
     fontSize: 14,
