@@ -4,7 +4,36 @@ import {
   RefreshControl, Alert, ActivityIndicator,
 } from 'react-native'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, attendance } from '../../api'
+import { enrolments, attendance, roster } from '../../api'
+
+function WhoComing({ sessionId }) {
+  const [open, setOpen] = useState(false)
+  const { data, loading, refetch } = useApi(
+    () => open ? roster.get(sessionId) : null, [open, sessionId]
+  )
+  const names = data?.names ?? data ?? []
+
+  if (!open) {
+    return (
+      <TouchableOpacity onPress={() => setOpen(true)} style={s.whoBtn}>
+        <Text style={s.whoBtnText}>Who's coming?</Text>
+      </TouchableOpacity>
+    )
+  }
+
+  return (
+    <View style={s.whoPanel}>
+      <Text style={s.whoLabel}>Who's coming</Text>
+      {loading && <ActivityIndicator size="small" color="#6366f1" />}
+      {!loading && names.length === 0 && (
+        <Text style={s.whoEmpty}>No one's opted in yet.</Text>
+      )}
+      {!loading && names.length > 0 && (
+        <Text style={s.whoNames}>{names.join('  ·  ')}</Text>
+      )}
+    </View>
+  )
+}
 
 const STATUS_COLORS = {
   present: '#d1fae5',
@@ -143,6 +172,8 @@ export default function MyClassesScreen() {
                   </TouchableOpacity>
                 </View>
               )}
+              {enr.session?.id && <WhoComing sessionId={enr.session.id} />}
+
               <TouchableOpacity
                 style={s.cancelBtn}
                 onPress={() => handleCancelEnrolment(enr.id, enr.session?.name)}
@@ -211,4 +242,10 @@ const s = StyleSheet.create({
   histDate: { fontSize: 12, color: '#6b7280', marginTop: 2 },
   badge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   badgeText: { fontSize: 12, fontWeight: '600', textTransform: 'capitalize' },
+  whoBtn: { alignSelf: 'flex-start', paddingVertical: 6, marginBottom: 4 },
+  whoBtnText: { fontSize: 13, color: '#6366f1', fontWeight: '600' },
+  whoPanel: { backgroundColor: '#f5f3ff', borderRadius: 8, padding: 10, marginBottom: 8 },
+  whoLabel: { fontSize: 11, fontWeight: '700', color: '#6366f1', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
+  whoEmpty: { fontSize: 13, color: '#9ca3af' },
+  whoNames: { fontSize: 14, color: '#374151', lineHeight: 20 },
 })

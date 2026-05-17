@@ -84,3 +84,7 @@ export const homework = {
 export const users = {
   get: (id) => client.get(`/api/users/${id}/`),
 }
+
+export const roster = {
+  get: (sessionId) => client.get(`/api/classes/sessions/${sessionId}/roster/`),
+}
