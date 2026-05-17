@@ -1081,10 +1081,20 @@ export default function BookScreen({ navigation }) {
                     </View>
                     {isBooked ? (
                       <Text style={s.bookedBadge}>✓ Booked</Text>
+                    ) : booked[session.id + '-waitlist'] ? (
+                      <Text style={s.bookedBadge}>⏳ Waitlisted</Text>
                     ) : isFull ? (
-                      <View style={s.checkCircle}>
-                        <Text style={{ color: T.muted, fontSize: 11, fontWeight: '700' }}>FULL</Text>
-                      </View>
+                      <TouchableOpacity
+                        style={s.waitlistBtn}
+                        onPress={async () => {
+                          try {
+                            await enrolments.create({ student: user.id, class_session: session.id, status: 'waitlisted', enrolment_type: 'course' })
+                            setBooked(b => ({ ...b, [session.id + '-waitlist']: true }))
+                          } catch { }
+                        }}
+                      >
+                        <Text style={s.waitlistBtnText}>JOIN WAITLIST</Text>
+                      </TouchableOpacity>
                     ) : (
                       <View style={[s.checkCircle, isSelected && s.checkCircleSelected]}>
                         {isSelected && <Text style={s.checkMark}>✓</Text>}
@@ -1221,13 +1231,28 @@ export default function BookScreen({ navigation }) {
                         >
                           <Text style={s.exemptBtnText}>REQUEST EXEMPTION</Text>
                         </TouchableOpacity>
+                      ) : isFull ? (
+                        booked[sess.id + '-waitlist'] ? (
+                          <Text style={s.classBookedText}>⏳ Waitlisted</Text>
+                        ) : (
+                          <TouchableOpacity
+                            style={s.exemptBtn}
+                            onPress={async () => {
+                              try {
+                                await enrolments.create({ student: user.id, class_session: sess.id, status: 'waitlisted', enrolment_type: 'casual' })
+                                setBooked(b => ({ ...b, [sess.id + '-waitlist']: true }))
+                              } catch { }
+                            }}
+                          >
+                            <Text style={s.exemptBtnText}>JOIN WAITLIST</Text>
+                          </TouchableOpacity>
+                        )
                       ) : (
                         <TouchableOpacity
-                          style={[s.casualBookBtn, isFull && s.casualBookBtnDisabled]}
-                          onPress={() => !isFull && openModal(sess)}
-                          disabled={isFull}
+                          style={s.casualBookBtn}
+                          onPress={() => openModal(sess)}
                         >
-                          <Text style={[s.casualBookBtnText, isFull && { color: T.muted }]}>
+                          <Text style={s.casualBookBtnText}>
                             {creditEligible ? 'BOOK / CREDIT' : 'BOOK'}
                           </Text>
                         </TouchableOpacity>
@@ -1886,4 +1911,6 @@ const s = StyleSheet.create({
     borderColor: '#f59e0b',
   },
   exemptBtnText: { fontSize: 10, fontWeight: '800', color: '#f59e0b', letterSpacing: 0.3 },
+  waitlistBtn: { borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12, alignItems: 'center', borderWidth: 1, borderColor: T.muted },
+  waitlistBtnText: { fontSize: 11, fontWeight: '800', color: T.muted, letterSpacing: 0.3 },
 })
