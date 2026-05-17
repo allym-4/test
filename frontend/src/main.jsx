@@ -5,8 +5,8 @@ import App from './App.jsx'
 
 async function initNative() {
   if (window.Capacitor?.isNativePlatform()) {
-    const { StatusBar, Style } = await import('@capacitor/status-bar')
-    const { Keyboard } = await import('@capacitor/keyboard')
+    const { StatusBar, Style } = await import(/* @vite-ignore */ '@capacitor/status-bar')
+    const { Keyboard } = await import(/* @vite-ignore */ '@capacitor/keyboard')
     await StatusBar.setStyle({ style: Style.Dark })
     await StatusBar.setBackgroundColor({ color: '#000000' })
     Keyboard.addListener('keyboardWillShow', () => {
