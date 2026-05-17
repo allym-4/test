@@ -3,6 +3,7 @@ from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from apps.users.urls import leads_urlpatterns
 from apps.users.throttles import LoginRateThrottle
+from apps.users import views as user_views
 
 class ThrottledTokenObtainPairView(TokenObtainPairView):
     throttle_classes = [LoginRateThrottle]
@@ -11,6 +12,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/token/', ThrottledTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/auth/register/', user_views.RegisterView.as_view(), name='register'),
     path('api/users/', include('apps.users.urls')),
     path('api/leads/', include((leads_urlpatterns, 'leads'))),
     path('api/classes/', include('apps.classes.urls')),

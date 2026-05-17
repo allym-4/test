@@ -3,6 +3,8 @@ import client from './client'
 export const auth = {
   login: (username, password) =>
     client.post('/api/auth/token/', { username, password }),
+  register: (data) =>
+    client.post('/api/auth/register/', data),
   me: () => client.get('/api/users/me/'),
   updateMe: (data) => client.patch('/api/users/me/', data),
   uploadPhoto: (formData) =>

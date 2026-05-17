@@ -71,6 +71,7 @@ urlpatterns = [
     path('', views.UserListView.as_view(), name='user-list'),
     path('<int:pk>/', views.UserDetailView.as_view(), name='user-detail'),
     path('<int:user_pk>/notes/', views.StaffNoteListView.as_view(), name='staff-notes'),
+    path('<int:pk>/set-password/', views.AdminSetPasswordView.as_view(), name='user-set-password'),
 ]
 
 leads_urlpatterns = [
