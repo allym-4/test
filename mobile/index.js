@@ -1,5 +1,11 @@
 import { registerRootComponent } from 'expo';
 
+const _origError = console.error.bind(console)
+console.error = (...args) => {
+  if (typeof args[0] === 'string' && args[0].includes('forwardRef render functions')) return
+  _origError(...args)
+}
+
 import App from './App';
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
