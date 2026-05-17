@@ -292,8 +292,9 @@ export default function BillingScreen() {
         Alert.alert('Payment successful', 'Your payment has been processed.')
         await Promise.all([refetchBalance(), refetchPayments()])
       }
-    } catch {
-      Alert.alert('Error', 'Could not start payment. Please try again.')
+    } catch (e) {
+      const msg = e?.response?.data?.detail || e?.message || 'Could not start payment. Please try again.'
+      Alert.alert('Error', msg)
     } finally {
       setPayingNow(false)
     }
