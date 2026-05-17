@@ -24,6 +24,12 @@ export const classes = {
     list: (sessionId) => client.get(`/api/classes/sessions/${sessionId}/chat/`),
     send: (sessionId, data) => client.post(`/api/classes/sessions/${sessionId}/chat/`, data),
   },
+  practice: {
+    list: (params) => client.get('/api/classes/practice/', { params }),
+    book: (id) => client.post(`/api/classes/practice/${id}/book/`),
+    cancel: (id) => client.post(`/api/classes/practice/${id}/cancel/`),
+    myBookings: () => client.get('/api/classes/practice/my-bookings/'),
+  },
 }
 
 export const media = {

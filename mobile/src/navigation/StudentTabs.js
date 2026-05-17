@@ -15,6 +15,7 @@ import StudioInfoScreen from '../screens/student/StudioInfoScreen'
 import ProgressScreen from '../screens/student/ProgressScreen'
 import HomeworkScreen from '../screens/student/HomeworkScreen'
 import ChatScreen from '../screens/student/ChatScreen'
+import PracticeScreen from '../screens/student/PracticeScreen'
 
 const Tab = createBottomTabNavigator()
 const Stack = createNativeStackNavigator()
@@ -46,6 +47,7 @@ function BookStack() {
   return (
     <Stack.Navigator screenOptions={headerStyle}>
       <Stack.Screen name="BookHome" component={BookScreen} options={{ title: 'Book a Class' }} />
+      <Stack.Screen name="Practice" component={PracticeScreen} options={{ title: 'Practice Time' }} />
     </Stack.Navigator>
   )
 }
