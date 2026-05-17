@@ -60,7 +60,7 @@ function StatusBadge({ status }) {
   )
 }
 
-export default function MyClassesScreen() {
+export default function MyClassesScreen({ navigation }) {
   const [tab, setTab] = useState('active')
   const [markingAway, setMarkingAway] = useState(null)
 
@@ -123,6 +123,15 @@ export default function MyClassesScreen() {
 
   return (
     <View style={s.root}>
+      <View style={s.topLinks}>
+        <TouchableOpacity style={s.topLink} onPress={() => navigation.navigate('Progress')}>
+          <Text style={s.topLinkText}>⭐ Progress</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={s.topLink} onPress={() => navigation.navigate('Homework')}>
+          <Text style={s.topLinkText}>📚 Homework</Text>
+        </TouchableOpacity>
+      </View>
+
       <View style={s.tabs}>
         {[['active', 'My Classes'], ['history', 'Attendance']].map(([key, label]) => (
           <TouchableOpacity key={key} style={[s.tab, tab === key && s.tabActive]} onPress={() => setTab(key)}>
@@ -236,6 +245,9 @@ const s = StyleSheet.create({
   awayBtnText: { fontSize: 13, fontWeight: '600', color: '#92400e' },
   cancelBtn: { alignSelf: 'flex-start', paddingVertical: 4 },
   cancelBtnText: { fontSize: 13, color: '#ef4444' },
+  topLinks: { flexDirection: 'row', gap: 10, padding: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
+  topLink: { flex: 1, backgroundColor: '#f5f3ff', borderRadius: 10, padding: 10, alignItems: 'center' },
+  topLinkText: { fontSize: 13, fontWeight: '600', color: '#6366f1' },
   histRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 10, padding: 14, marginBottom: 8 },
   histInfo: { flex: 1 },
   histClass: { fontWeight: '600', color: '#111827', fontSize: 14 },

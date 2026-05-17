@@ -89,8 +89,20 @@ export default function DashboardScreen({ navigation }) {
         <TouchableOpacity style={s.quickLink} onPress={() => navigation.navigate('Book')}>
           <Text style={s.quickLinkText}>📅  Book a class</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={s.quickLink} onPress={() => navigation.navigate('Support')}>
-          <Text style={s.quickLinkText}>💬  Get support</Text>
+        <TouchableOpacity style={s.quickLink} onPress={() => navigation.navigate('Classes', { screen: 'Progress' })}>
+          <Text style={s.quickLinkText}>⭐  My progress</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={s.quickLink} onPress={() => navigation.navigate('Classes', { screen: 'Homework' })}>
+          <Text style={s.quickLinkText}>📚  Homework</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={s.quickLink} onPress={() => navigation.navigate('Community', { screen: 'Chat' })}>
+          <Text style={s.quickLinkText}>💬  Chat with us</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={s.quickLink} onPress={() => navigation.navigate('Home', { screen: 'Notifications' })}>
+          <Text style={s.quickLinkText}>🔔  Notifications</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={s.quickLink} onPress={() => navigation.navigate('Home', { screen: 'StudioInfo' })}>
+          <Text style={s.quickLinkText}>📍  Studio info</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

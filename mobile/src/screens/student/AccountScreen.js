@@ -13,7 +13,16 @@ function Row({ label, value }) {
   )
 }
 
-export default function AccountScreen() {
+function NavRow({ label, onPress }) {
+  return (
+    <TouchableOpacity style={s.navRow} onPress={onPress}>
+      <Text style={s.rowLabel}>{label}</Text>
+      <Text style={s.navArrow}>›</Text>
+    </TouchableOpacity>
+  )
+}
+
+export default function AccountScreen({ navigation }) {
   const { user, logout } = useAuth()
   const { data: balanceData } = useApi(
     () => user ? payments.balance(user.id) : null, [user?.id]
@@ -77,12 +86,20 @@ export default function AccountScreen() {
 
       <View style={s.section}>
         <Text style={s.sectionTitle}>Billing</Text>
-        <View style={[s.row, s.balanceRow]}>
+        <View style={[s.row, { alignItems: 'center' }]}>
           <Text style={s.rowLabel}>Account balance</Text>
           <Text style={[s.rowValue, balanceNum < 0 && s.negative, balanceNum > 0 && s.positive]}>
             {balance != null ? `$${Math.abs(balanceNum).toFixed(2)} ${balanceNum < 0 ? 'owed' : balanceNum > 0 ? 'credit' : ''}` : '—'}
           </Text>
         </View>
+        <NavRow label="Billing & payment history" onPress={() => navigation.navigate('Billing')} />
+      </View>
+
+      <View style={s.section}>
+        <Text style={s.sectionTitle}>Studio</Text>
+        <NavRow label="Notifications" onPress={() => navigation.navigate('Notifications')} />
+        <NavRow label="Forms & waivers" onPress={() => navigation.navigate('Forms')} />
+        <NavRow label="Studio info" onPress={() => navigation.navigate('StudioInfo')} />
       </View>
 
       <View style={s.section}>
@@ -157,6 +174,8 @@ const s = StyleSheet.create({
   choiceBtnActive: { backgroundColor: '#e0e7ff' },
   choiceBtnText: { fontSize: 13, fontWeight: '600', color: '#6b7280' },
   choiceBtnTextActive: { color: '#4338ca' },
+  navRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  navArrow: { fontSize: 20, color: '#9ca3af' },
   logoutBtn: { marginTop: 8, width: '100%', borderWidth: 1.5, borderColor: '#ef4444', borderRadius: 12, padding: 14, alignItems: 'center' },
   logoutText: { color: '#ef4444', fontWeight: '600', fontSize: 15 },
 })
