@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Modal,
-  TextInput,
   Alert,
   RefreshControl,
   ActivityIndicator,
@@ -34,17 +33,6 @@ function isOverdue(dueDateStr) {
   return new Date(dueDateStr) < new Date()
 }
 
-const SUBMISSION_STATUS_LABELS = {
-  pending_review: 'Submitted',
-  approved: 'Approved',
-  needs_work: 'Needs work',
-}
-
-const SUBMISSION_STATUS_STYLES = {
-  pending_review: { badge: 'badgeGrey', text: 'badgeTextGrey' },
-  approved: { badge: 'badgeGreen', text: 'badgeTextGreen' },
-  needs_work: { badge: 'badgeAmber', text: 'badgeTextAmber' },
-}
 
 // ─── sub-components ───────────────────────────────────────────────────────────
 
@@ -68,15 +56,12 @@ function TabBar({ activeTab, onSelect }) {
   )
 }
 
-function StatusBadge({ status }) {
-  const label = SUBMISSION_STATUS_LABELS[status] ?? status
-  const styles = SUBMISSION_STATUS_STYLES[status] ?? {
-    badge: 'badgeGrey',
-    text: 'badgeTextGrey',
-  }
+function StatusBadge({ reviewed }) {
   return (
-    <View style={[s.badge, s[styles.badge]]}>
-      <Text style={[s.badgeText, s[styles.text]]}>{label}</Text>
+    <View style={[s.badge, reviewed ? s.badgeGreen : s.badgeGrey]}>
+      <Text style={[s.badgeText, reviewed ? s.badgeTextGreen : s.badgeTextGrey]}>
+        {reviewed ? 'Reviewed' : 'Submitted'}
+      </Text>
     </View>
   )
 }
@@ -102,7 +87,6 @@ function ChecklistItem({ item, checked, onToggle }) {
 
 function SubmitModal({ visible, assignment, onClose, onSuccess }) {
   const [checked, setChecked] = useState({})
-  const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   // Reset state each time a new assignment is opened
@@ -122,17 +106,22 @@ function SubmitModal({ visible, assignment, onClose, onSuccess }) {
   }
 
   async function handleSubmit() {
-    const checklistResponses = Object.entries(checked).map(([id, done]) => ({
-      checklist_item: id,
-      completed: done,
-    }))
     setSubmitting(true)
     try {
-      await homework.submitHomework({
-        assignment: assignment.id,
-        checklist_responses: checklistResponses,
-        notes: notes.trim() || undefined,
-      })
+      const subRes = await homework.submitHomework({ assignment: assignment.id })
+      const subId = subRes.data.id
+      // POST each checked item separately — backend ignores checklist on submission endpoint
+      await Promise.all(
+        Object.entries(checked)
+          .filter(([, done]) => done)
+          .map(([itemId]) =>
+            homework.createSubmissionItem(subId, {
+              submission: subId,
+              checklist_item: parseInt(itemId),
+              completed: true,
+            })
+          )
+      )
       onSuccess()
     } catch (err) {
       Alert.alert(
@@ -192,20 +181,6 @@ function SubmitModal({ visible, assignment, onClose, onSuccess }) {
             </View>
           )}
 
-          {/* Notes */}
-          <View style={s.modalSection}>
-            <Text style={s.modalSectionLabel}>Notes (optional)</Text>
-            <TextInput
-              style={s.notesInput}
-              placeholder="Add any notes for your teacher…"
-              placeholderTextColor="#9ca3af"
-              multiline
-              numberOfLines={4}
-              value={notes}
-              onChangeText={setNotes}
-              textAlignVertical="top"
-            />
-          </View>
         </ScrollView>
 
         {/* Submit button */}
@@ -246,8 +221,8 @@ function PendingCard({ assignment, submittedIds, onPressSubmit }) {
             </View>
           )}
         </View>
-        {!!assignment.session?.name && (
-          <Text style={s.cardClass}>{assignment.session.name}</Text>
+        {!!assignment.class_session_detail?.name && (
+          <Text style={s.cardClass}>{assignment.class_session_detail.name}</Text>
         )}
         {!!assignment.due_date && (
           <Text style={[s.cardDue, overdue && s.cardDueOverdue]}>
@@ -288,13 +263,10 @@ function PendingCard({ assignment, submittedIds, onPressSubmit }) {
 // ─── submission detail modal ──────────────────────────────────────────────────
 
 function SubmissionDetailModal({ submission, assignment, onClose }) {
-  const { data: itemsData, loading: itemsLoading } = useApi(
-    () => homework.submissionItems(submission.id),
-    [submission.id],
-  )
-  const items = itemsData?.results ?? itemsData ?? []
+  // items are embedded in every submission response — no extra fetch needed
+  const items = submission.items ?? []
   const checklistItems = assignment?.checklist_items ?? []
-  const feedback = submission.feedback || submission.instructor_notes
+  const feedback = submission.instructor_notes
 
   return (
     <Modal
@@ -330,7 +302,7 @@ function SubmissionDetailModal({ submission, assignment, onClose }) {
               )}
             </View>
             <View style={s.detailStatusCol}>
-              <StatusBadge status={submission.status} />
+              <StatusBadge reviewed={submission.reviewed} />
               {!!submission.reviewed && (
                 <View style={s.reviewedBadge}>
                   <Text style={s.reviewedBadgeText}>Reviewed ✓</Text>
@@ -349,48 +321,26 @@ function SubmissionDetailModal({ submission, assignment, onClose }) {
             </View>
           )}
 
-          {/* Grade */}
-          {submission.grade != null && (
-            <View style={s.gradeRow}>
-              <Text style={s.gradeLabel}>Grade</Text>
-              <Text style={s.gradeValue}>{submission.grade}</Text>
-            </View>
-          )}
-
           {/* Checklist items with completion status */}
           {checklistItems.length > 0 && (
             <View style={s.modalSection}>
               <Text style={s.modalSectionLabel}>Checklist</Text>
-              {itemsLoading ? (
-                <ActivityIndicator color="#ccff00" style={{ marginTop: 8 }} />
-              ) : (
-                checklistItems.map(ci => {
-                  const submitted = items.find(i => i.checklist_item === ci.id)
-                  const done = submitted?.completed ?? false
-                  return (
-                    <View key={ci.id} style={s.detailCheckRow}>
-                      <View style={[s.detailCheckCircle, done && s.detailCheckCircleDone]}>
-                        <Text style={[s.detailCheckSymbol, done && s.detailCheckSymbolDone]}>
-                          {done ? '✓' : '○'}
-                        </Text>
-                      </View>
-                      <Text style={[s.detailCheckText, done && s.detailCheckTextDone]}>
-                        {ci.text}
+              {checklistItems.map(ci => {
+                const submitted = items.find(i => i.checklist_item === ci.id)
+                const done = submitted?.completed ?? false
+                return (
+                  <View key={ci.id} style={s.detailCheckRow}>
+                    <View style={[s.detailCheckCircle, done && s.detailCheckCircleDone]}>
+                      <Text style={[s.detailCheckSymbol, done && s.detailCheckSymbolDone]}>
+                        {done ? '✓' : '○'}
                       </Text>
                     </View>
-                  )
-                })
-              )}
-            </View>
-          )}
-
-          {/* Student notes */}
-          {!!submission.notes && (
-            <View style={s.modalSection}>
-              <Text style={s.modalSectionLabel}>Your Notes</Text>
-              <View style={s.studentNotesBox}>
-                <Text style={s.studentNotesText}>{submission.notes}</Text>
-              </View>
+                    <Text style={[s.detailCheckText, done && s.detailCheckTextDone]}>
+                      {ci.text}
+                    </Text>
+                  </View>
+                )
+              })}
             </View>
           )}
         </ScrollView>
@@ -404,7 +354,7 @@ function SubmissionDetailModal({ submission, assignment, onClose }) {
 function SubmittedCard({ submission, allAssignments, onView }) {
   const assignment = allAssignments.find(a => a.id === submission.assignment)
   const title = assignment?.title ?? `Assignment #${submission.assignment}`
-  const className = assignment?.session?.name
+  const className = assignment?.class_session_detail?.name
 
   return (
     <TouchableOpacity style={[s.card, s.cardSubmitted]} onPress={onView} activeOpacity={0.85}>
@@ -413,7 +363,7 @@ function SubmittedCard({ submission, allAssignments, onView }) {
           <Text style={[s.cardTitle, { flex: 1 }]} numberOfLines={2}>
             {title}
           </Text>
-          <StatusBadge status={submission.status} />
+          <StatusBadge reviewed={submission.reviewed} />
         </View>
         {!!className && <Text style={s.cardClass}>{className}</Text>}
         <View style={s.submittedMeta}>
