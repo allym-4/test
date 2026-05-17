@@ -1,7 +1,13 @@
-import { ScrollView, View, Text, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native'
+import { useState } from 'react'
+import {
+  ScrollView, View, Text, TouchableOpacity, StyleSheet,
+  RefreshControl, Alert, Modal,
+} from 'react-native'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { classes, attendance, announcements } from '../../api'
+import { enrolments, seasons, attendance as attendanceApi, classes as classesApi, skills as skillsApi, announcements as announcementsApi } from '../../api'
+
+const DAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 function greeting() {
   const h = new Date().getHours()
@@ -10,101 +16,333 @@ function greeting() {
   return 'Good evening'
 }
 
-function KpiCard({ label, value }) {
+function KpiCard({ label, value, color = '#ccff00' }) {
   return (
     <View style={s.kpi}>
-      <Text style={s.kpiVal}>{value ?? '—'}</Text>
+      <Text style={[s.kpiVal, { color }]}>{value ?? '—'}</Text>
       <Text style={s.kpiLabel}>{label}</Text>
     </View>
   )
 }
 
+function MarkAwayModal({ enrolment, onClose, onDone }) {
+  const sess = enrolment.class_session_detail
+  const [confirming, setConfirming] = useState(false)
+  const [done, setDone] = useState(false)
+  const [error, setError] = useState('')
+
+  const { data: occData } = useApi(
+    () => sess?.id ? classesApi.occurrences({ session: sess.id, upcoming: 'true' }) : null,
+    [sess?.id]
+  )
+  const nextOcc = occData?.results?.[0] || occData?.[0] || null
+
+  async function handleConfirm() {
+    if (!nextOcc) { setError('No upcoming class found'); return }
+    setConfirming(true)
+    setError('')
+    try {
+      await attendanceApi.markAway(nextOcc.id)
+      setDone(true)
+      setTimeout(onDone, 1200)
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Could not mark away')
+    } finally {
+      setConfirming(false)
+    }
+  }
+
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
+      <View style={s.overlay}>
+        <View style={s.modal}>
+          <View style={s.modalHeader}>
+            <Text style={s.modalTitle}>Mark Away</Text>
+            <TouchableOpacity onPress={onClose}><Text style={s.modalClose}>✕</Text></TouchableOpacity>
+          </View>
+          <View style={s.modalBody}>
+            <Text style={s.modalClassName}>{sess?.name}</Text>
+            <Text style={s.modalClassMeta}>
+              {sess?.day_of_week != null ? DAYS_FULL[sess.day_of_week] : ''} · {sess?.start_time?.slice(0, 5)}
+            </Text>
+            {nextOcc?.date && (
+              <Text style={s.modalNextDate}>
+                Next class: {new Date(nextOcc.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
+              </Text>
+            )}
+            <View style={s.infoBox}>
+              <Text style={s.infoBoxText}>
+                Marking away lets your instructor plan ahead. A makeup credit may be issued if eligible.
+              </Text>
+            </View>
+            {!!error && <Text style={s.errorText}>{error}</Text>}
+            {done ? (
+              <Text style={s.doneText}>✓ Marked as away</Text>
+            ) : (
+              <View style={s.modalActions}>
+                <TouchableOpacity style={s.cancelBtn} onPress={onClose}>
+                  <Text style={s.cancelBtnText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.confirmBtn, (confirming || !nextOcc) && s.btnDisabled]}
+                  onPress={handleConfirm}
+                  disabled={confirming || !nextOcc}
+                >
+                  <Text style={s.confirmBtnText}>{confirming ? 'Saving…' : 'Confirm Away'}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      </View>
+    </Modal>
+  )
+}
+
 export default function DashboardScreen({ navigation }) {
   const { user } = useAuth()
-  const { data: occurrences, loading, refetch } = useApi(
-    () => classes.occurrences({ upcoming: true, enrolled: true, limit: 5 }), []
+  const { data: enrolData, loading, refetch: refetchEnrol } = useApi(
+    () => enrolments.list({ student: user?.id, status: 'active' }), [user?.id]
   )
-  const { data: credits } = useApi(
-    () => attendance.makeupCredits.list({ status: 'available' }), []
+  const { data: seasonData } = useApi(() => seasons.list(), [])
+  const { data: skillsData } = useApi(() => user?.id ? skillsApi.list(user.id) : null, [user?.id])
+  const { data: creditsData } = useApi(
+    () => attendanceApi.makeupCredits.list({ student: user?.id, status: 'available' }), [user?.id]
   )
-  const { data: announceData, refetch: refetchAnnounce } = useApi(
-    () => announcements.list({ unacknowledged: true }), []
+  const { data: annData, refetch: refetchAnn } = useApi(
+    () => announcementsApi.list({ note_type: 'announcement' }), []
   )
 
-  const upcomingList = occurrences?.results ?? occurrences ?? []
-  const creditCount = credits?.results?.length ?? credits?.length ?? 0
-  const unackAnnouncements = announceData?.results ?? announceData ?? []
+  const [markAwayEnrol, setMarkAwayEnrol] = useState(null)
+  const [acknowledging, setAcknowledging] = useState({})
+
+  const allAnnouncements = annData?.results || annData || []
+  const pendingAnnouncements = allAnnouncements.filter(a => !a.is_acknowledged)
+
+  async function acknowledgeAnn(id) {
+    setAcknowledging(prev => ({ ...prev, [id]: true }))
+    try {
+      await announcementsApi.acknowledge(id)
+      refetchAnn()
+    } finally {
+      setAcknowledging(prev => ({ ...prev, [id]: false }))
+    }
+  }
+
+  const enrolList = enrolData?.results || enrolData || []
+  const tricksUnlocked = (skillsData?.results || skillsData || []).filter(sk => sk.achieved).length
+  const creditCount = (creditsData?.results || creditsData || []).length
+
+  // Current active season
+  const allSeasons = seasonData?.results || seasonData || []
+  const now = new Date()
+  const currentSeason = allSeasons.find(s => s.status === 'active') ||
+    allSeasons.find(s => {
+      const start = s.start_date ? new Date(s.start_date) : null
+      const end = s.end_date ? new Date(s.end_date) : null
+      return start && end && now >= start && now <= end
+    }) || allSeasons[0]
+
+  let weeksRemaining = '—'
+  if (currentSeason?.end_date) {
+    const end = new Date(currentSeason.end_date)
+    const msLeft = end - now
+    if (msLeft > 0) weeksRemaining = Math.ceil(msLeft / (1000 * 60 * 60 * 24 * 7))
+  }
+
+  const hasEnrolments = enrolList.length > 0
+  const profileIncomplete = !user?.phone || !user?.emergency_contact_name || !user?.emergency_contact_phone
+
+  // Level progression
+  const allSkills = skillsData?.results || skillsData || []
+  const nextLevelSkills = allSkills.filter(sk => !sk.achieved && sk.required_for_next_level)
+
+  function onRefresh() {
+    refetchEnrol()
+    refetchAnn()
+  }
 
   return (
     <ScrollView
       style={s.root}
       contentContainerStyle={s.content}
-      refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} />}
+      refreshControl={<RefreshControl refreshing={loading} onRefresh={onRefresh} tintColor="#ccff00" />}
     >
-      <Text style={s.greeting}>{greeting()}, {user?.first_name || 'there'}</Text>
+      {/* Greeting */}
+      <Text style={s.greeting}>{greeting()}, {user?.first_name || 'there'} 👋</Text>
+      <Text style={s.dateText}>
+        {new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+      </Text>
 
-      {unackAnnouncements.length > 0 && (
-        <View style={s.announceBanner}>
-          <Text style={s.announceTitle}>📢 {unackAnnouncements[0].title}</Text>
-          <Text style={s.announceBody}>{unackAnnouncements[0].body}</Text>
-        </View>
-      )}
-
-      <View style={s.kpiRow}>
-        <KpiCard label="Classes this week" value={upcomingList.filter(o => {
-          const d = new Date(o.date)
-          const now = new Date()
-          const weekEnd = new Date(now); weekEnd.setDate(now.getDate() + 7)
-          return d >= now && d <= weekEnd
-        }).length} />
-        <KpiCard label="Catch-up credits" value={creditCount} />
-      </View>
-
-      <Text style={s.sectionTitle}>Coming up</Text>
-      {upcomingList.length === 0 && !loading && (
-        <Text style={s.empty}>No upcoming classes. Book a class to get started.</Text>
-      )}
-      {upcomingList.map(occ => (
-        <View key={occ.id} style={s.classCard}>
-          <View style={s.classInfo}>
-            <Text style={s.className}>{occ.session?.name ?? 'Class'}</Text>
-            <Text style={s.classMeta}>
-              {new Date(occ.date).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
-              {occ.start_time ? `  ·  ${occ.start_time.slice(0, 5)}` : ''}
-            </Text>
-            {occ.session?.studio?.name && (
-              <Text style={s.classMeta}>{occ.session.studio.name}</Text>
-            )}
-          </View>
-          <TouchableOpacity
-            style={s.awayBtn}
-            onPress={() => navigation.navigate('MyClasses')}
-          >
-            <Text style={s.awayBtnText}>Mark away</Text>
+      {/* Season open banner — shown when no active enrolments */}
+      {!loading && !hasEnrolments && (
+        <View style={s.seasonBanner}>
+          <Text style={s.seasonBannerText}>
+            {currentSeason ? `${currentSeason.name} is now open` : 'New season is now open'} — book your spot
+          </Text>
+          <TouchableOpacity style={s.seasonBannerBtn} onPress={() => navigation.navigate('Book')}>
+            <Text style={s.seasonBannerBtnText}>Book Now</Text>
           </TouchableOpacity>
         </View>
-      ))}
+      )}
 
+      {/* Profile incomplete banner */}
+      {profileIncomplete && (
+        <View style={s.profileBanner}>
+          <View style={{ flex: 1 }}>
+            <Text style={s.profileBannerTitle}>Complete your profile</Text>
+            <Text style={s.profileBannerBody}>Add your phone number and emergency contact.</Text>
+          </View>
+          <TouchableOpacity style={s.profileBannerBtn} onPress={() => navigation.navigate('Account')}>
+            <Text style={s.profileBannerBtnText}>Update</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Enrolled classes summary */}
+      {hasEnrolments && (
+        <Text style={s.enrolledSummary}>
+          You're enrolled in {enrolList.map(e => e.class_session_detail?.name).filter(Boolean).join(' and ')} this season.
+        </Text>
+      )}
+
+      {/* KPI grid */}
+      <View style={s.kpiRow}>
+        <KpiCard label="Classes This Season" value={loading ? '—' : enrolList.length} />
+        <KpiCard label="Catch-up Credits" value={creditCount} color="#b0a0ff" />
+      </View>
+      <View style={s.kpiRow}>
+        <KpiCard label="Tricks Unlocked" value={skillsData ? tricksUnlocked : '—'} />
+        <KpiCard label="Weeks Remaining" value={weeksRemaining} color="#b0a0ff" />
+      </View>
+
+      {/* Announcements */}
+      {pendingAnnouncements.length > 0 && (
+        <View style={s.announcementsSection}>
+          {pendingAnnouncements.map(a => (
+            <View key={a.id} style={[s.announcementCard, a.requires_acknowledgement ? s.announcementCardAmber : s.announcementCardLav]}>
+              <View style={s.announcementRow}>
+                <View style={{ flex: 1 }}>
+                  {a.is_pinned && <Text style={s.pinnedLabel}>PINNED</Text>}
+                  <Text style={s.announcementTitle}>{a.title}</Text>
+                </View>
+                {a.requires_acknowledgement && (
+                  <TouchableOpacity
+                    style={[s.ackBtn, acknowledging[a.id] && s.ackBtnDisabled]}
+                    onPress={() => acknowledgeAnn(a.id)}
+                    disabled={!!acknowledging[a.id]}
+                  >
+                    <Text style={s.ackBtnText}>{acknowledging[a.id] ? '…' : 'Acknowledge'}</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              <Text style={s.announcementBody}>{a.body}</Text>
+              {a.requires_acknowledgement && (
+                <Text style={s.ackHint}>Please read and acknowledge this notice to dismiss it.</Text>
+              )}
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Classes This Week */}
+      <Text style={s.sectionTitle}>Classes This Week</Text>
+      {enrolList.length === 0 && !loading ? (
+        <Text style={s.empty}>No classes enrolled yet. Contact your studio to get set up.</Text>
+      ) : (
+        enrolList.map(e => {
+          const sess = e.class_session_detail
+          const instructorName = sess?.instructor_detail
+            ? `${sess.instructor_detail.first_name || ''} ${sess.instructor_detail.last_name || ''}`.trim()
+            : (sess?.instructor_name || '—')
+          return (
+            <View key={e.id} style={s.classCard}>
+              <View style={{ flex: 1 }}>
+                {sess?.day_of_week != null && (
+                  <Text style={s.classDay}>
+                    {DAYS_FULL[sess.day_of_week]} · {sess.start_time?.slice(0, 5)}
+                  </Text>
+                )}
+                <Text style={s.className}>{sess?.name} · {sess?.studio_detail?.name}</Text>
+                <Text style={s.classInstructor}>with {instructorName}</Text>
+              </View>
+              <TouchableOpacity style={s.awayBtn} onPress={() => setMarkAwayEnrol(e)}>
+                <Text style={s.awayBtnText}>Mark Away</Text>
+              </TouchableOpacity>
+            </View>
+          )
+        })
+      )}
+
+      {/* Level Progression Tracker */}
+      {hasEnrolments && nextLevelSkills.length > 0 && (
+        <View style={s.progressCard}>
+          <View style={s.progressHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={s.progressTitle}>Ready for the next level?</Text>
+              <Text style={s.progressSubtitle}>
+                Tick off these moves as you nail them. Your instructor signs you off when ready.
+              </Text>
+            </View>
+            <Text style={s.progressCount}>
+              {nextLevelSkills.filter(sk => sk.self_marked).length} / {nextLevelSkills.length}
+            </Text>
+          </View>
+          {nextLevelSkills.map(skill => (
+            <View key={skill.id} style={[s.skillRow, skill.self_marked && s.skillRowActive]}>
+              <View style={[s.skillDot, skill.self_marked && s.skillDotActive]}>
+                {skill.self_marked && <Text style={s.skillCheck}>✓</Text>}
+              </View>
+              <Text style={[s.skillName, skill.self_marked && s.skillNameActive]}>{skill.name}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Quick Links */}
+      <Text style={s.sectionTitle}>Quick Links</Text>
       <View style={s.quickLinks}>
         <TouchableOpacity style={s.quickLink} onPress={() => navigation.navigate('Book')}>
-          <Text style={s.quickLinkText}>📅  Book a class</Text>
+          <Text style={s.quickLinkIcon}>○</Text>
+          <Text style={s.quickLinkLabel}>Makeup or casual class</Text>
+          <Text style={s.quickLinkSub}>Drop into any eligible class</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={s.quickLink} onPress={() => navigation.navigate('Classes', { screen: 'Progress' })}>
-          <Text style={s.quickLinkText}>⭐  My progress</Text>
+        <TouchableOpacity style={s.quickLink} onPress={() => navigation.navigate('Book')}>
+          <Text style={s.quickLinkIcon}>■</Text>
+          <Text style={s.quickLinkLabel}>Book practice time</Text>
+          <Text style={s.quickLinkSub}>Open studio – $20</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={s.quickLink} onPress={() => navigation.navigate('Classes', { screen: 'Homework' })}>
-          <Text style={s.quickLinkText}>📚  Homework</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={s.quickLink} onPress={() => navigation.navigate('Community', { screen: 'Chat' })}>
-          <Text style={s.quickLinkText}>💬  Chat with us</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={s.quickLink} onPress={() => navigation.navigate('Home', { screen: 'Notifications' })}>
-          <Text style={s.quickLinkText}>🔔  Notifications</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={s.quickLink} onPress={() => navigation.navigate('Home', { screen: 'StudioInfo' })}>
-          <Text style={s.quickLinkText}>📍  Studio info</Text>
+        <TouchableOpacity style={s.quickLink} onPress={() => navigation.navigate('Progress')}>
+          <Text style={s.quickLinkIcon}>△</Text>
+          <Text style={s.quickLinkLabel}>See my progress</Text>
+          <Text style={s.quickLinkSub}>Tricks, levels and resources</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Upsell strip */}
+      {hasEnrolments && (
+        <View style={s.upsellCard}>
+          <View style={{ flex: 1 }}>
+            <Text style={s.upsellTitle}>
+              You're on {enrolList.length} class{enrolList.length !== 1 ? 'es' : ''} per week
+            </Text>
+            <Text style={s.upsellBody}>
+              Add a 3rd class to unlock <Text style={{ color: '#ccff00' }}>1 free practice session per week</Text>.
+            </Text>
+          </View>
+          <TouchableOpacity style={s.upsellBtn} onPress={() => navigation.navigate('Book')}>
+            <Text style={s.upsellBtnText}>Add a class</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {markAwayEnrol && (
+        <MarkAwayModal
+          enrolment={markAwayEnrol}
+          onClose={() => setMarkAwayEnrol(null)}
+          onDone={() => setMarkAwayEnrol(null)}
+        />
+      )}
     </ScrollView>
   )
 }
@@ -112,23 +350,119 @@ export default function DashboardScreen({ navigation }) {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000' },
   content: { padding: 20, paddingBottom: 40 },
-  greeting: { fontSize: 22, fontWeight: '700', color: '#fff', marginBottom: 16 },
-  announceBanner: { backgroundColor: '#1a0a00', borderRadius: 12, padding: 16, marginBottom: 16, borderLeftWidth: 4, borderLeftColor: '#ccff00' },
-  announceTitle: { fontWeight: '700', color: '#ccff00', marginBottom: 4 },
-  announceBody: { color: '#fff', fontSize: 14 },
-  kpiRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
+
+  greeting: { fontSize: 22, fontWeight: '700', color: '#fff', marginBottom: 2 },
+  dateText: { fontSize: 13, color: '#666', marginBottom: 16 },
+
+  // Season banner
+  seasonBanner: {
+    backgroundColor: '#ccff00', borderRadius: 12, padding: 14, marginBottom: 16,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+  },
+  seasonBannerText: { flex: 1, fontWeight: '700', fontSize: 14, color: '#000' },
+  seasonBannerBtn: { backgroundColor: '#000', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  seasonBannerBtnText: { color: '#ccff00', fontSize: 13, fontWeight: '700' },
+
+  // Profile banner
+  profileBanner: {
+    backgroundColor: 'rgba(176,160,255,0.08)', borderWidth: 1, borderColor: 'rgba(176,160,255,0.25)',
+    borderRadius: 12, padding: 14, marginBottom: 16,
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+  },
+  profileBannerTitle: { fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.7, color: '#b0a0ff', marginBottom: 4, fontWeight: '700' },
+  profileBannerBody: { fontSize: 13, color: '#666' },
+  profileBannerBtn: { backgroundColor: '#b0a0ff', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  profileBannerBtnText: { color: '#000', fontSize: 13, fontWeight: '700' },
+
+  enrolledSummary: { fontSize: 14, color: '#666', marginBottom: 20 },
+
+  // KPI
+  kpiRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
   kpi: { flex: 1, backgroundColor: '#111', borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#222' },
   kpiVal: { fontSize: 28, fontWeight: '800', color: '#ccff00' },
-  kpiLabel: { fontSize: 12, color: '#888', marginTop: 4, textAlign: 'center' },
-  sectionTitle: { fontSize: 11, fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
+  kpiLabel: { fontSize: 11, color: '#666', marginTop: 4, textAlign: 'center' },
+
+  // Announcements
+  announcementsSection: { marginBottom: 20, marginTop: 8 },
+  announcementCard: { borderRadius: 12, padding: 14, marginBottom: 10 },
+  announcementCardAmber: { backgroundColor: 'rgba(255,170,0,0.07)', borderWidth: 1, borderColor: 'rgba(255,170,0,0.3)' },
+  announcementCardLav: { backgroundColor: 'rgba(176,160,255,0.07)', borderWidth: 1, borderColor: 'rgba(176,160,255,0.25)' },
+  announcementRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 6 },
+  pinnedLabel: { fontSize: 10, fontWeight: '700', color: '#ccff00', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 2 },
+  announcementTitle: { fontWeight: '700', fontSize: 14, color: '#fff' },
+  announcementBody: { fontSize: 13, color: '#666', lineHeight: 20 },
+  ackBtn: { backgroundColor: '#ffaa00', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, flexShrink: 0 },
+  ackBtnDisabled: { opacity: 0.5 },
+  ackBtnText: { color: '#000', fontSize: 12, fontWeight: '700' },
+  ackHint: { fontSize: 11, color: '#ffaa00', marginTop: 8 },
+
+  sectionTitle: { fontSize: 11, fontWeight: '700', color: '#666', textTransform: 'uppercase', letterSpacing: 1, marginTop: 8, marginBottom: 12 },
   empty: { color: '#666', textAlign: 'center', padding: 20 },
-  classCard: { backgroundColor: '#111', borderRadius: 12, padding: 16, marginBottom: 10, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#222' },
-  classInfo: { flex: 1 },
-  className: { fontWeight: '600', color: '#fff', fontSize: 15 },
-  classMeta: { fontSize: 13, color: '#888', marginTop: 2 },
+
+  // Class cards
+  classCard: {
+    backgroundColor: '#111', borderRadius: 12, padding: 16, marginBottom: 10,
+    flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#222',
+  },
+  classDay: { fontSize: 12, color: '#666', marginBottom: 2 },
+  className: { fontWeight: '600', color: '#fff', fontSize: 14, marginBottom: 2 },
+  classInstructor: { fontSize: 12, color: '#666' },
   awayBtn: { backgroundColor: '#1a1a1a', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#333' },
   awayBtnText: { fontSize: 12, fontWeight: '600', color: '#ccff00' },
-  quickLinks: { marginTop: 20, gap: 10 },
+
+  // Level progression
+  progressCard: {
+    backgroundColor: '#111', borderRadius: 14, padding: 20, marginBottom: 24,
+    borderWidth: 1, borderColor: '#222',
+  },
+  progressHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 14, gap: 12 },
+  progressTitle: { fontSize: 16, fontWeight: '700', color: '#fff', marginBottom: 4 },
+  progressSubtitle: { fontSize: 13, color: '#666', lineHeight: 18 },
+  progressCount: { fontSize: 11, fontWeight: '700', color: '#666', textTransform: 'uppercase', flexShrink: 0 },
+  skillRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8, paddingHorizontal: 10, borderRadius: 8 },
+  skillRowActive: { backgroundColor: 'rgba(204,255,0,0.05)' },
+  skillDot: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: '#333', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  skillDotActive: { borderColor: '#ccff00', backgroundColor: 'rgba(204,255,0,0.15)' },
+  skillCheck: { fontSize: 12, color: '#ccff00' },
+  skillName: { fontSize: 13, color: '#666', flex: 1 },
+  skillNameActive: { color: '#fff' },
+
+  // Quick links
+  quickLinks: { gap: 10, marginBottom: 24 },
   quickLink: { backgroundColor: '#111', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#222' },
-  quickLinkText: { fontSize: 15, fontWeight: '600', color: '#fff' },
+  quickLinkIcon: { fontSize: 22, color: '#ccff00', marginBottom: 8 },
+  quickLinkLabel: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 4 },
+  quickLinkSub: { fontSize: 13, color: '#666' },
+
+  // Upsell
+  upsellCard: {
+    backgroundColor: '#0d0d0d', borderRadius: 12, padding: 20, marginBottom: 8,
+    borderWidth: 1, borderColor: '#222',
+    flexDirection: 'row', alignItems: 'center', gap: 16,
+  },
+  upsellTitle: { fontSize: 15, fontWeight: '700', color: '#fff', marginBottom: 6 },
+  upsellBody: { fontSize: 14, color: '#666' },
+  upsellBtn: { borderWidth: 1, borderColor: '#333', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8 },
+  upsellBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
+
+  // Mark Away Modal
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  modal: { backgroundColor: '#111', borderRadius: 16, width: '100%', maxWidth: 420, borderWidth: 1, borderColor: '#222' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18, borderBottomWidth: 1, borderBottomColor: '#222' },
+  modalTitle: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  modalClose: { fontSize: 18, color: '#666' },
+  modalBody: { padding: 18 },
+  modalClassName: { fontSize: 15, fontWeight: '600', color: '#fff', marginBottom: 4 },
+  modalClassMeta: { fontSize: 13, color: '#666', marginBottom: 4 },
+  modalNextDate: { fontSize: 12, color: '#666', marginBottom: 16 },
+  infoBox: { backgroundColor: 'rgba(204,255,0,0.05)', borderWidth: 1, borderColor: 'rgba(204,255,0,0.15)', borderRadius: 10, padding: 14, marginBottom: 16 },
+  infoBoxText: { fontSize: 13, color: '#666', lineHeight: 20 },
+  errorText: { color: '#ff4444', fontSize: 12, marginBottom: 12 },
+  doneText: { textAlign: 'center', color: '#ccff00', fontWeight: '700', paddingVertical: 8 },
+  modalActions: { flexDirection: 'row', gap: 10 },
+  cancelBtn: { flex: 1, borderWidth: 1, borderColor: '#333', borderRadius: 10, paddingVertical: 11, alignItems: 'center' },
+  cancelBtnText: { fontSize: 14, fontWeight: '600', color: '#fff' },
+  confirmBtn: { flex: 1, backgroundColor: '#ccff00', borderRadius: 10, paddingVertical: 11, alignItems: 'center' },
+  confirmBtnText: { fontSize: 14, fontWeight: '700', color: '#000' },
+  btnDisabled: { opacity: 0.5 },
 })
