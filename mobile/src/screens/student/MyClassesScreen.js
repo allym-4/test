@@ -104,8 +104,14 @@ export default function MyClassesScreen({ navigation }) {
           onPress: async () => {
             setMarkingAway(occurrenceId)
             try {
-              await attendance.markAway(occurrenceId)
-              Alert.alert('Done', 'You\'ve been marked away.')
+              const res = await attendance.markAway(occurrenceId)
+              const creditIssued = res.data?.credit_issued
+              Alert.alert(
+                'Marked away',
+                creditIssued
+                  ? "You've been marked away and a catch-up credit has been added to your account. 🎉"
+                  : "You've been marked away. No catch-up credit was issued as you're within the cancellation window.",
+              )
               refetch()
             } catch (err) {
               Alert.alert('Error', err.response?.data?.detail || 'Could not mark away.')

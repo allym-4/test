@@ -96,6 +96,10 @@ class StudentMarkAwayView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
+        from datetime import datetime, time as dt_time
+        import pytz
+        from apps.users.models import StudioSettings
+
         occurrence_id = request.data.get('occurrence_id')
         if not occurrence_id:
             return Response({'detail': 'occurrence_id required'}, status=400)
@@ -105,12 +109,40 @@ class StudentMarkAwayView(APIView):
             return Response({'detail': 'Occurrence not found'}, status=404)
         if occurrence.date < date.today():
             return Response({'detail': 'Cannot mark away for a past class'}, status=400)
+
         record, _ = AttendanceRecord.objects.update_or_create(
             occurrence=occurrence,
             student=request.user,
             defaults={'status': 'absent', 'recorded_by': request.user, 'note': 'Student marked away'}
         )
-        return Response(AttendanceRecordSerializer(record).data, status=status.HTTP_200_OK)
+
+        # Check notice period and issue makeup credit if eligible
+        credit_issued = False
+        try:
+            studio = StudioSettings.objects.first()
+            window_hours = getattr(studio, 'cancellation_window_hours', 24)
+            start_time = occurrence.start_time or dt_time(0, 0)
+            class_dt = datetime.combine(occurrence.date, start_time)
+            # Make timezone-aware if needed
+            if timezone.is_naive(class_dt):
+                class_dt = timezone.make_aware(class_dt)
+            hours_notice = (class_dt - timezone.now()).total_seconds() / 3600
+            if hours_notice >= window_hours:
+                session = getattr(occurrence, 'session', None)
+                season = getattr(session, 'season', None) if session else None
+                session_name = session.name if session else 'class'
+                _, created = MakeupCredit.objects.get_or_create(
+                    student=request.user,
+                    reason=f'Marked away: {session_name} on {occurrence.date}',
+                    defaults={'issued_by': request.user, 'status': 'available', 'season': season},
+                )
+                credit_issued = created
+        except Exception:
+            pass
+
+        data = AttendanceRecordSerializer(record).data
+        data['credit_issued'] = credit_issued
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class AttendanceStatsView(APIView):
