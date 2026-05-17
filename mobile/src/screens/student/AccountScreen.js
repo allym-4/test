@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react'
 import { ScrollView, View, Text, TouchableOpacity, StyleSheet, Alert, Switch } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { payments, auth } from '../../api'
+
+const EXPERIENCE_LABELS = {
+  beginner: "I'm brand new 👋",
+  some: 'A bit of experience 🙌',
+  experienced: "I've been training 🔥",
+}
 
 function Row({ label, value }) {
   return (
@@ -31,6 +38,31 @@ export default function AccountScreen({ navigation }) {
   const [showInRoster, setShowInRoster] = useState(user?.show_in_roster ?? false)
   const [rosterName, setRosterName] = useState(user?.roster_name ?? 'first_name')
   const [savingRoster, setSavingRoster] = useState(false)
+  const [experienceLevel, setExperienceLevel] = useState(null)
+
+  useEffect(() => {
+    if (user?.id) {
+      AsyncStorage.getItem(`experience_level_${user.id}`).then(val => setExperienceLevel(val))
+    }
+  }, [user?.id])
+
+  function handleChangeExperience() {
+    Alert.alert(
+      'Your experience level',
+      'This helps us show you the right trial classes.',
+      [
+        { text: "I'm brand new 👋", onPress: () => saveExperience('beginner') },
+        { text: 'A bit of experience 🙌', onPress: () => saveExperience('some') },
+        { text: "I've been training 🔥", onPress: () => saveExperience('experienced') },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    )
+  }
+
+  async function saveExperience(level) {
+    await AsyncStorage.setItem(`experience_level_${user.id}`, level)
+    setExperienceLevel(level)
+  }
 
   useEffect(() => {
     setShowInRoster(user?.show_in_roster ?? false)
@@ -82,6 +114,15 @@ export default function AccountScreen({ navigation }) {
         <Text style={s.sectionTitle}>Account</Text>
         <Row label="Role" value={user?.role} />
         <Row label="Phone" value={user?.phone} />
+        <TouchableOpacity style={s.navRow} onPress={handleChangeExperience}>
+          <View style={{ flex: 1 }}>
+            <Text style={s.rowLabel}>Experience level</Text>
+            <Text style={s.rowSubValue}>
+              {experienceLevel ? EXPERIENCE_LABELS[experienceLevel] : 'Not set'}
+            </Text>
+          </View>
+          <Text style={s.navArrow}>›</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={s.section}>
@@ -176,6 +217,7 @@ const s = StyleSheet.create({
   choiceBtnTextActive: { color: '#4338ca' },
   navRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
   navArrow: { fontSize: 20, color: '#9ca3af' },
+  rowSubValue: { fontSize: 12, color: '#6b7280', marginTop: 1 },
   logoutBtn: { marginTop: 8, width: '100%', borderWidth: 1.5, borderColor: '#ef4444', borderRadius: 12, padding: 14, alignItems: 'center' },
   logoutText: { color: '#ef4444', fontWeight: '600', fontSize: 15 },
 })
