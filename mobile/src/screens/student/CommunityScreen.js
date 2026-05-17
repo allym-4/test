@@ -129,14 +129,14 @@ function PostCard({ post, onLike, liking }) {
       {showReplies && (
         <View style={s.replySection}>
           {repliesLoading
-            ? <ActivityIndicator size="small" color="#6366f1" style={{ marginVertical: 8 }} />
+            ? <ActivityIndicator size="small" color="#ccff00" style={{ marginVertical: 8 }} />
             : replies.map(r => <ReplyRow key={r.id} reply={r} />)
           }
           <View style={s.replyInputRow}>
             <TextInput
               style={s.replyInput}
               placeholder="Write a reply…"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor="#555"
               value={replyText}
               onChangeText={setReplyText}
               multiline
@@ -196,7 +196,7 @@ function NewPostModal({ visible, onClose, onSubmit }) {
           <TextInput
             style={s.modalInput}
             placeholder="What's on your mind?"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor="#555"
             value={text}
             onChangeText={setText}
             multiline
@@ -257,7 +257,7 @@ function Feed({ groupId }) {
   const posts = data?.results ?? data ?? []
 
   if (loading && !refreshing) {
-    return <ActivityIndicator size="large" color="#6366f1" style={s.centered} />
+    return <ActivityIndicator size="large" color="#ccff00" style={s.centered} />
   }
   if (error) {
     return <Text style={s.errorText}>{error}</Text>
@@ -276,7 +276,7 @@ function Feed({ groupId }) {
           />
         )}
         contentContainerStyle={s.feedPad}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366f1" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#ccff00" />}
         ListEmptyComponent={
           <View style={s.emptyState}>
             <Text style={s.emptyTitle}>No posts yet</Text>
@@ -306,7 +306,7 @@ export default function CommunityScreen() {
   const activeGroupId = selectedGroupId ?? (groups[0]?.id ?? null)
 
   if (groupsLoading) {
-    return <ActivityIndicator size="large" color="#6366f1" style={s.centered} />
+    return <ActivityIndicator size="large" color="#ccff00" style={s.centered} />
   }
 
   // Use top tabs if few groups (≤5), else side rail
@@ -362,27 +362,27 @@ export default function CommunityScreen() {
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f9fafb' },
+  root: { flex: 1, backgroundColor: '#000' },
   centered: { flex: 1, marginTop: 80 },
   errorText: { textAlign: 'center', color: '#ef4444', marginTop: 40, fontSize: 14 },
 
   // Group tabs (top, few groups)
-  groupTabBar: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e5e7eb', flexGrow: 0 },
+  groupTabBar: { backgroundColor: '#000', borderBottomWidth: 1, borderBottomColor: '#222', flexGrow: 0 },
   groupTabBarContent: { paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
-  groupTab: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#f3f4f6', flexDirection: 'row', alignItems: 'center', gap: 6 },
-  groupTabActive: { backgroundColor: '#ede9fe' },
-  groupTabText: { fontSize: 14, fontWeight: '600', color: '#6b7280' },
-  groupTabTextActive: { color: '#6366f1' },
-  groupTabCount: { fontSize: 12, color: '#9ca3af', backgroundColor: '#e5e7eb', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 10 },
-  groupTabCountActive: { backgroundColor: '#c7d2fe', color: '#6366f1' },
+  groupTab: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#111', flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: '#222' },
+  groupTabActive: { backgroundColor: '#1a2a00', borderColor: '#ccff00' },
+  groupTabText: { fontSize: 14, fontWeight: '600', color: '#666' },
+  groupTabTextActive: { color: '#ccff00' },
+  groupTabCount: { fontSize: 12, color: '#666', backgroundColor: '#222', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 10 },
+  groupTabCountActive: { backgroundColor: '#2a3a00', color: '#ccff00' },
 
   // Side rail (many groups)
-  rail: { width: 96, backgroundColor: '#fff', borderRightWidth: 1, borderRightColor: '#e5e7eb' },
-  railItem: { padding: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
-  railItemActive: { backgroundColor: '#ede9fe' },
-  railItemText: { fontSize: 13, fontWeight: '600', color: '#6b7280', marginBottom: 2 },
-  railItemTextActive: { color: '#6366f1' },
-  railItemCount: { fontSize: 11, color: '#9ca3af' },
+  rail: { width: 96, backgroundColor: '#000', borderRightWidth: 1, borderRightColor: '#222' },
+  railItem: { padding: 12, borderBottomWidth: 1, borderBottomColor: '#222' },
+  railItemActive: { backgroundColor: '#111' },
+  railItemText: { fontSize: 13, fontWeight: '600', color: '#666', marginBottom: 2 },
+  railItemTextActive: { color: '#ccff00' },
+  railItemCount: { fontSize: 11, color: '#555' },
   feedPane: { flex: 1 },
 
   // Feed
@@ -390,47 +390,47 @@ const s = StyleSheet.create({
   feedPad: { padding: 14, paddingBottom: 100 },
 
   // Post card
-  postCard: { backgroundColor: '#fff', borderRadius: 14, padding: 14, marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 },
+  postCard: { backgroundColor: '#111', borderRadius: 14, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#222' },
   postHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 10 },
   postMeta: { flex: 1 },
-  postAuthor: { fontSize: 14, fontWeight: '700', color: '#111827' },
-  postTime: { fontSize: 12, color: '#9ca3af', marginTop: 1 },
-  postBody: { fontSize: 15, color: '#374151', lineHeight: 22, marginBottom: 12 },
-  postActions: { flexDirection: 'row', gap: 16, borderTopWidth: 1, borderTopColor: '#f3f4f6', paddingTop: 10 },
+  postAuthor: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  postTime: { fontSize: 12, color: '#666', marginTop: 1 },
+  postBody: { fontSize: 15, color: '#ccc', lineHeight: 22, marginBottom: 12 },
+  postActions: { flexDirection: 'row', gap: 16, borderTopWidth: 1, borderTopColor: '#222', paddingTop: 10 },
   actionBtn: { flexDirection: 'row', alignItems: 'center' },
-  actionText: { fontSize: 14, color: '#6b7280', fontWeight: '500' },
-  actionTextActive: { color: '#6366f1' },
+  actionText: { fontSize: 14, color: '#666', fontWeight: '500' },
+  actionTextActive: { color: '#ccff00' },
 
   // Replies
-  replySection: { marginTop: 10, borderTopWidth: 1, borderTopColor: '#f3f4f6', paddingTop: 10 },
+  replySection: { marginTop: 10, borderTopWidth: 1, borderTopColor: '#222', paddingTop: 10 },
   replyRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   replyContent: { flex: 1 },
-  replyAuthor: { fontSize: 13, fontWeight: '700', color: '#374151' },
-  replyBody: { fontSize: 14, color: '#4b5563', lineHeight: 20, marginTop: 2 },
-  replyTime: { fontSize: 11, color: '#9ca3af', marginTop: 3 },
+  replyAuthor: { fontSize: 13, fontWeight: '700', color: '#ccc' },
+  replyBody: { fontSize: 14, color: '#888', lineHeight: 20, marginTop: 2 },
+  replyTime: { fontSize: 11, color: '#555', marginTop: 3 },
   replyInputRow: { flexDirection: 'row', gap: 8, alignItems: 'flex-end', marginTop: 8 },
-  replyInput: { flex: 1, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8, fontSize: 14, color: '#111827', maxHeight: 80 },
-  replyBtn: { backgroundColor: '#6366f1', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 8 },
-  replyBtnDisabled: { backgroundColor: '#a5b4fc' },
-  replyBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  replyInput: { flex: 1, borderWidth: 1, borderColor: '#333', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8, fontSize: 14, color: '#fff', backgroundColor: '#1a1a1a', maxHeight: 80 },
+  replyBtn: { backgroundColor: '#ccff00', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 8 },
+  replyBtnDisabled: { backgroundColor: '#3a4a00' },
+  replyBtnText: { color: '#000', fontSize: 13, fontWeight: '600' },
 
   // FAB
-  fab: { position: 'absolute', bottom: 24, right: 20, width: 54, height: 54, borderRadius: 27, backgroundColor: '#6366f1', alignItems: 'center', justifyContent: 'center', shadowColor: '#6366f1', shadowOpacity: 0.4, shadowRadius: 8, elevation: 6 },
-  fabText: { color: '#fff', fontSize: 28, lineHeight: 34 },
+  fab: { position: 'absolute', bottom: 24, right: 20, width: 54, height: 54, borderRadius: 27, backgroundColor: '#ccff00', alignItems: 'center', justifyContent: 'center', shadowColor: '#ccff00', shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 },
+  fabText: { color: '#000', fontSize: 28, lineHeight: 34 },
 
   // Modal
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modalSheet: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 36 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  modalSheet: { backgroundColor: '#111', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 36, borderTopWidth: 1, borderColor: '#222' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: 17, fontWeight: '700', color: '#111827' },
-  modalClose: { fontSize: 18, color: '#6b7280', padding: 4 },
-  modalInput: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 14, fontSize: 15, color: '#111827', minHeight: 110, textAlignVertical: 'top', marginBottom: 14 },
-  modalPostBtn: { backgroundColor: '#6366f1', borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
-  modalPostBtnDisabled: { backgroundColor: '#a5b4fc' },
-  modalPostBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  modalTitle: { fontSize: 17, fontWeight: '700', color: '#fff' },
+  modalClose: { fontSize: 18, color: '#666', padding: 4 },
+  modalInput: { borderWidth: 1, borderColor: '#333', borderRadius: 12, padding: 14, fontSize: 15, color: '#fff', backgroundColor: '#1a1a1a', minHeight: 110, textAlignVertical: 'top', marginBottom: 14 },
+  modalPostBtn: { backgroundColor: '#ccff00', borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
+  modalPostBtnDisabled: { backgroundColor: '#3a4a00' },
+  modalPostBtnText: { color: '#000', fontSize: 15, fontWeight: '700' },
 
   // Empty state
   emptyState: { alignItems: 'center', paddingVertical: 60 },
-  emptyTitle: { fontSize: 17, fontWeight: '700', color: '#374151', marginBottom: 6 },
-  emptyBody: { fontSize: 14, color: '#9ca3af', textAlign: 'center', paddingHorizontal: 32 },
+  emptyTitle: { fontSize: 17, fontWeight: '700', color: '#fff', marginBottom: 6 },
+  emptyBody: { fontSize: 14, color: '#666', textAlign: 'center', paddingHorizontal: 32 },
 })

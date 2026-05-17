@@ -80,7 +80,7 @@ function ChangePasswordModal({ visible, onClose }) {
           <Text style={s.inputLabel}>Confirm new password</Text>
           <TextInput style={s.input} value={confirm} onChangeText={setConfirm} secureTextEntry placeholder="Confirm new password" />
           <TouchableOpacity style={s.saveBtn} onPress={handleSave} disabled={saving}>
-            {saving ? <ActivityIndicator color="#fff" /> : <Text style={s.saveBtnText}>Change password</Text>}
+            {saving ? <ActivityIndicator color="#000" /> : <Text style={s.saveBtnText}>Change password</Text>}
           </TouchableOpacity>
         </View>
       </View>
@@ -240,7 +240,7 @@ export default function AccountScreen({ navigation, onSwitchToInstructor }) {
           </View>
         )}
         {uploadingPhoto
-          ? <ActivityIndicator style={s.avatarSpinner} color="#6366f1" />
+          ? <ActivityIndicator style={s.avatarSpinner} color="#ccff00" />
           : <Text style={s.avatarHint}>Change photo</Text>
         }
       </TouchableOpacity>
@@ -302,7 +302,8 @@ export default function AccountScreen({ navigation, onSwitchToInstructor }) {
             value={showInRoster}
             onValueChange={handleToggleRoster}
             disabled={savingRoster}
-            trackColor={{ true: '#6366f1' }}
+            trackColor={{ false: '#333', true: '#ccff00' }}
+          thumbColor={showInRoster ? '#000' : '#666'}
           />
         </View>
 
@@ -349,46 +350,46 @@ export default function AccountScreen({ navigation, onSwitchToInstructor }) {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f9fafb' },
+  root: { flex: 1, backgroundColor: '#000' },
   content: { padding: 24, paddingBottom: 50, alignItems: 'center' },
   avatarWrap: { alignItems: 'center', marginBottom: 4 },
-  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#6366f1', alignItems: 'center', justifyContent: 'center' },
+  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#1a1a1a', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#ccff00' },
   avatarImg: { width: 80, height: 80, borderRadius: 40 },
-  avatarText: { color: '#fff', fontSize: 28, fontWeight: '700' },
+  avatarText: { color: '#ccff00', fontSize: 28, fontWeight: '700' },
   avatarSpinner: { marginTop: 4 },
-  avatarHint: { fontSize: 12, color: '#6366f1', marginTop: 4, marginBottom: 8 },
-  name: { fontSize: 20, fontWeight: '700', color: '#111827' },
-  email: { fontSize: 14, color: '#6b7280', marginTop: 4, marginBottom: 24 },
-  section: { width: '100%', backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-  sectionTitle: { fontSize: 13, fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
-  sectionDesc: { fontSize: 13, color: '#9ca3af', marginBottom: 12 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
-  rowLabel: { fontSize: 15, color: '#374151' },
-  rowValue: { fontSize: 15, color: '#111827', fontWeight: '500', textTransform: 'capitalize' },
+  avatarHint: { fontSize: 12, color: '#ccff00', marginTop: 4, marginBottom: 8 },
+  name: { fontSize: 20, fontWeight: '700', color: '#fff' },
+  email: { fontSize: 14, color: '#888', marginTop: 4, marginBottom: 24 },
+  section: { width: '100%', backgroundColor: '#111', borderRadius: 14, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#222' },
+  sectionTitle: { fontSize: 11, fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 },
+  sectionDesc: { fontSize: 13, color: '#666', marginBottom: 12 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#222' },
+  rowLabel: { fontSize: 15, color: '#ccc' },
+  rowValue: { fontSize: 15, color: '#fff', fontWeight: '500', textTransform: 'capitalize' },
   negative: { color: '#ef4444' },
-  positive: { color: '#10b981' },
+  positive: { color: '#ccff00' },
   nameChoiceRow: { paddingTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  nameChoiceLabel: { fontSize: 14, color: '#374151' },
+  nameChoiceLabel: { fontSize: 14, color: '#ccc' },
   nameChoiceBtns: { flexDirection: 'row', gap: 8 },
-  choiceBtn: { borderRadius: 8, paddingHorizontal: 14, paddingVertical: 7, backgroundColor: '#f3f4f6' },
-  choiceBtnActive: { backgroundColor: '#e0e7ff' },
-  choiceBtnText: { fontSize: 13, fontWeight: '600', color: '#6b7280' },
-  choiceBtnTextActive: { color: '#4338ca' },
-  navRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
-  navArrow: { fontSize: 20, color: '#9ca3af' },
-  rowSubValue: { fontSize: 12, color: '#6b7280', marginTop: 1 },
-  switchBtn: { marginTop: 8, width: '100%', borderWidth: 1.5, borderColor: '#6366f1', borderRadius: 12, padding: 14, alignItems: 'center' },
-  switchBtnText: { color: '#6366f1', fontWeight: '600', fontSize: 15 },
+  choiceBtn: { borderRadius: 8, paddingHorizontal: 14, paddingVertical: 7, backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333' },
+  choiceBtnActive: { backgroundColor: '#1a2a00', borderColor: '#ccff00' },
+  choiceBtnText: { fontSize: 13, fontWeight: '600', color: '#888' },
+  choiceBtnTextActive: { color: '#ccff00' },
+  navRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#222' },
+  navArrow: { fontSize: 20, color: '#555' },
+  rowSubValue: { fontSize: 12, color: '#888', marginTop: 1 },
+  switchBtn: { marginTop: 8, width: '100%', borderWidth: 1.5, borderColor: '#ccff00', borderRadius: 12, padding: 14, alignItems: 'center' },
+  switchBtnText: { color: '#ccff00', fontWeight: '600', fontSize: 15 },
   logoutBtn: { marginTop: 8, width: '100%', borderWidth: 1.5, borderColor: '#ef4444', borderRadius: 12, padding: 14, alignItems: 'center' },
   logoutText: { color: '#ef4444', fontWeight: '600', fontSize: 15 },
   // modal
-  modalRoot: { flex: 1, backgroundColor: '#fff' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
-  modalTitle: { fontSize: 17, fontWeight: '700', color: '#111827' },
-  modalClose: { fontSize: 18, color: '#6b7280', padding: 4 },
+  modalRoot: { flex: 1, backgroundColor: '#000' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#222' },
+  modalTitle: { fontSize: 17, fontWeight: '700', color: '#fff' },
+  modalClose: { fontSize: 18, color: '#888', padding: 4 },
   modalBody: { padding: 20 },
-  inputLabel: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 6, marginTop: 14 },
-  input: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: '#111827', backgroundColor: '#fafafa' },
-  saveBtn: { backgroundColor: '#6366f1', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 24 },
-  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  inputLabel: { fontSize: 13, fontWeight: '600', color: '#ccc', marginBottom: 6, marginTop: 14 },
+  input: { borderWidth: 1, borderColor: '#333', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: '#fff', backgroundColor: '#111' },
+  saveBtn: { backgroundColor: '#ccff00', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 24 },
+  saveBtnText: { color: '#000', fontSize: 16, fontWeight: '700' },
 })

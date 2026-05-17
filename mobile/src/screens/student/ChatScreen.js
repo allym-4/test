@@ -96,7 +96,7 @@ function StudioTab({ userId }) {
         onContentSizeChange={() => flatRef.current?.scrollToEnd({ animated: true })}
         ListEmptyComponent={
           loading ? (
-            <ActivityIndicator size="large" color="#6366f1" style={s.centered} />
+            <ActivityIndicator size="large" color="#ccff00" style={s.centered} />
           ) : (
             <View style={s.emptyState}>
               <Text style={s.emptyTitle}>Send us a message</Text>
@@ -109,7 +109,7 @@ function StudioTab({ userId }) {
         <TextInput
           style={s.input}
           placeholder="Message..."
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor="#555"
           value={text}
           onChangeText={setText}
           multiline
@@ -209,7 +209,7 @@ function AssistantTab() {
         <TextInput
           style={s.input}
           placeholder="Ask anything..."
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor="#555"
           value={text}
           onChangeText={setText}
           multiline
@@ -252,16 +252,16 @@ export default function ChatScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f9fafb' },
+  root: { flex: 1, backgroundColor: '#000' },
   flex: { flex: 1 },
   centered: { marginTop: 60 },
 
   // Tab bar
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: '#000',
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: '#222',
   },
   tabBtn: {
     flex: 1,
@@ -270,9 +270,9 @@ const s = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
   },
-  tabBtnActive: { borderBottomColor: '#6366f1' },
-  tabBtnText: { fontSize: 15, fontWeight: '600', color: '#6b7280' },
-  tabBtnTextActive: { color: '#6366f1' },
+  tabBtnActive: { borderBottomColor: '#ccff00' },
+  tabBtnText: { fontSize: 15, fontWeight: '600', color: '#555' },
+  tabBtnTextActive: { color: '#ccff00' },
 
   // Messages
   messageList: {
@@ -282,7 +282,7 @@ const s = StyleSheet.create({
     justifyContent: 'flex-end',
   },
 
-  // Bubbles — shared with SupportScreen style
+  // Bubbles
   bubble: {
     maxWidth: '80%',
     borderRadius: 16,
@@ -290,61 +290,60 @@ const s = StyleSheet.create({
     marginBottom: 8,
   },
   bubbleMine: {
-    backgroundColor: '#6366f1',
+    backgroundColor: '#ccff00',
     alignSelf: 'flex-end',
     borderBottomRightRadius: 4,
   },
   bubbleTheirs: {
-    backgroundColor: '#fff',
+    backgroundColor: '#111',
     alignSelf: 'flex-start',
     borderBottomLeftRadius: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    borderWidth: 1,
+    borderColor: '#222',
   },
-  senderName: { fontSize: 11, fontWeight: '600', color: '#6b7280', marginBottom: 2 },
-  bubbleText: { fontSize: 15, color: '#111827' },
-  bubbleTextMine: { color: '#fff' },
-  bubbleTime: { fontSize: 10, color: '#9ca3af', marginTop: 4, textAlign: 'right' },
-  bubbleTimeMine: { color: 'rgba(255,255,255,0.7)' },
+  senderName: { fontSize: 11, fontWeight: '600', color: '#666', marginBottom: 2 },
+  bubbleText: { fontSize: 15, color: '#fff' },
+  bubbleTextMine: { color: '#000' },
+  bubbleTime: { fontSize: 10, color: '#666', marginTop: 4, textAlign: 'right' },
+  bubbleTimeMine: { color: 'rgba(0,0,0,0.5)' },
 
   // Typing indicator
   typingBubble: { paddingVertical: 10, paddingHorizontal: 16 },
-  typingDots: { fontSize: 12, color: '#9ca3af', letterSpacing: 4 },
+  typingDots: { fontSize: 12, color: '#555', letterSpacing: 4 },
 
   // Input row
   inputRow: {
     flexDirection: 'row',
     padding: 12,
-    backgroundColor: '#fff',
+    backgroundColor: '#000',
     borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
+    borderTopColor: '#222',
     alignItems: 'flex-end',
     gap: 8,
   },
   input: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: '#333',
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 15,
-    color: '#111827',
+    color: '#fff',
+    backgroundColor: '#111',
     maxHeight: 100,
   },
   sendBtn: {
-    backgroundColor: '#6366f1',
+    backgroundColor: '#ccff00',
     borderRadius: 20,
     paddingHorizontal: 18,
     paddingVertical: 10,
   },
-  sendBtnDisabled: { backgroundColor: '#a5b4fc' },
-  sendBtnText: { color: '#fff', fontWeight: '600' },
+  sendBtnDisabled: { backgroundColor: '#3a4a00' },
+  sendBtnText: { color: '#000', fontWeight: '600' },
 
   // Empty state
   emptyState: { alignItems: 'center', paddingVertical: 60 },
-  emptyTitle: { fontSize: 17, fontWeight: '700', color: '#374151', marginBottom: 6 },
-  emptyBody: { fontSize: 14, color: '#9ca3af', textAlign: 'center' },
+  emptyTitle: { fontSize: 17, fontWeight: '700', color: '#fff', marginBottom: 6 },
+  emptyBody: { fontSize: 14, color: '#666', textAlign: 'center' },
 })
