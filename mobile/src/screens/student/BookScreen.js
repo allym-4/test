@@ -731,6 +731,9 @@ export default function BookScreen({ navigation }) {
   const [modalVisible, setModalVisible] = useState(false)
   const [showEligibleOnly, setShowEligibleOnly] = useState(true)
   const [hideUnavailable, setHideUnavailable] = useState(false)
+  const [exemptionSession, setExemptionSession] = useState(null)
+  const [exemptionNote, setExemptionNote] = useState('')
+  const [submittingExemption, setSubmittingExemption] = useState(false)
 
   useEffect(() => {
     if (user?.level) setLevelFilter(user.level)
@@ -740,9 +743,6 @@ export default function BookScreen({ navigation }) {
   const { data: studioSettings } = useApi(() => settingsApi.get(), [])
   const { data: sessionsData, loading: sessLoading, refetch: refetchSessions } = useApi(
     () => classes.list(), []
-  )
-  const { data: occurrencesData, loading: occLoading, refetch: refetchOcc } = useApi(
-    () => classes.occurrences({ upcoming: true, limit: 50 }), []
   )
   const { data: workshopsData, loading: wsLoading, refetch: refetchWorkshops } = useApi(
     () => classes.workshops.list(), []
@@ -759,7 +759,6 @@ export default function BookScreen({ navigation }) {
 
   // ── derived data ───────────────────────────────────────────────────────────
   const allSessions = sessionsData?.results ?? sessionsData ?? []
-  const allOccurrences = occurrencesData?.results ?? occurrencesData ?? []
   const workshopList = workshopsData?.results ?? workshopsData ?? []
   const allSeasons = seasonsData?.results ?? seasonsData ?? []
   const credits = creditsData?.results ?? creditsData ?? []
@@ -795,18 +794,14 @@ export default function BookScreen({ navigation }) {
     ?? allSeasons.find(s => s.start_date && new Date(s.start_date) > new Date())
     ?? allSeasons.find(s => s.status === 'active')
 
-  // Filter occurrences for Casual tab
-  let casualOccurrences = [...allOccurrences]
-  if (showEligibleOnly && levelFilter) {
-    casualOccurrences = casualOccurrences.filter(occ => isEligible(occ, levelFilter))
-  }
-  if (hideUnavailable) {
-    casualOccurrences = casualOccurrences.filter(occ => {
-      const spotsLeft = occ.spots_left ?? occ.capacity_remaining
-      return spotsLeft == null || spotsLeft > 0
-    })
-  }
-  const grouped = groupByDate(casualOccurrences)
+  // Week-of-season for routine cutoff
+  const activeSeason = allSeasons.find(s => s.status === 'active')
+  const seasonStartDate = activeSeason?.start_date ? new Date(activeSeason.start_date + 'T00:00') : null
+  const currentSeasonWeek = seasonStartDate ? Math.ceil((new Date() - seasonStartDate) / (7 * 86400000)) : 0
+  const isPastWeek3 = currentSeasonWeek > 3
+
+  // Casual tab: use sessions (not occurrences) — all active sessions in the current/upcoming season
+  const casualSessions = allSessions.filter(s => s.is_active)
 
   // ── season handlers ────────────────────────────────────────────────────────
   function toggleSession(session) {
@@ -920,6 +915,28 @@ export default function BookScreen({ navigation }) {
     ])
   }
 
+  async function handleExemptionSubmit() {
+    if (!exemptionSession) return
+    setSubmittingExemption(true)
+    try {
+      await enrolments.create({
+        student: user.id,
+        class_session: exemptionSession.id,
+        status: 'exemption_requested',
+        enrolment_type: 'casual',
+        notes: exemptionNote.trim(),
+      })
+      setBooked(b => ({ ...b, [exemptionSession.id + '-exemption']: true }))
+      setExemptionSession(null)
+      setExemptionNote('')
+      Alert.alert('Request sent', "Your exemption request has been submitted. The studio will review and get back to you.")
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.detail ?? 'Could not submit exemption request.')
+    } finally {
+      setSubmittingExemption(false)
+    }
+  }
+
   function openModal(occ) {
     setSelectedOcc(occ)
     setModalVisible(true)
@@ -930,8 +947,8 @@ export default function BookScreen({ navigation }) {
     setSelectedOcc(null)
   }
 
-  const isLoading = tab === 'workshops' ? wsLoading : tab === 'casual' ? occLoading : sessLoading
-  const onRefresh = tab === 'workshops' ? refetchWorkshops : tab === 'casual' ? refetchOcc : refetchSessions
+  const isLoading = tab === 'workshops' ? wsLoading : sessLoading
+  const onRefresh = tab === 'workshops' ? refetchWorkshops : refetchSessions
   // trial and season both use sessions data
 
   // ── render ─────────────────────────────────────────────────────────────────
@@ -1046,10 +1063,7 @@ export default function BookScreen({ navigation }) {
             {/* Trial banner */}
             <View style={s.trialBanner}>
               <Text style={s.trialBannerText}>First time? 🔥 Book a trial class for just ${priceTrial}</Text>
-              <TouchableOpacity
-                style={s.trialBannerBtn}
-                onPress={() => setTab('trial')}
-              >
+              <TouchableOpacity style={s.trialBannerBtn} onPress={() => setTab('trial')}>
                 <Text style={s.trialBannerBtnText}>BOOK TRIAL →</Text>
               </TouchableOpacity>
             </View>
@@ -1071,10 +1085,10 @@ export default function BookScreen({ navigation }) {
               </View>
             )}
 
-            {/* Filter toggles */}
+            {/* Filter toggle */}
             <View style={s.filtersCard}>
               <View style={s.filterRow}>
-                <Text style={s.filterLabel}>Show my eligible classes only</Text>
+                <Text style={s.filterLabel}>Show eligible classes only</Text>
                 <Switch
                   value={showEligibleOnly}
                   onValueChange={setShowEligibleOnly}
@@ -1082,87 +1096,85 @@ export default function BookScreen({ navigation }) {
                   thumbColor={T.text}
                 />
               </View>
-              <View style={[s.filterRow, { borderTopWidth: 1, borderTopColor: T.border, marginTop: 10, paddingTop: 10 }]}>
-                <Text style={s.filterLabel}>Hide unavailable classes</Text>
-                <Switch
-                  value={hideUnavailable}
-                  onValueChange={setHideUnavailable}
-                  trackColor={{ false: T.border, true: T.purple }}
-                  thumbColor={T.text}
-                />
-              </View>
             </View>
 
-            {/* Level info */}
-            {levelFilter && showEligibleOnly && (
-              <Text style={s.levelInfo}>Showing classes eligible for Level {levelFilter}</Text>
+            {/* Session list */}
+            {sessLoading ? (
+              <ActivityIndicator color={T.lime} style={{ marginTop: 24 }} />
+            ) : casualSessions.length === 0 ? (
+              <Text style={s.empty}>No classes available right now.</Text>
+            ) : (
+              casualSessions.map(sess => {
+                const DAYS_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                const dayLabel = DAYS_SHORT[sess.day_of_week] ?? ''
+                const time = fmtTime(sess.start_time)
+                const instructor = sess.instructor_detail?.display_name ?? sess.instructor_detail?.first_name ?? null
+                const spotsLeft = (sess.capacity ?? 12) - (sess.enrolled_count ?? 0)
+                const isFull = spotsLeft <= 0
+
+                // Eligibility checks
+                const levelOk = !levelFilter || !sess.level || String(sess.level) === String(levelFilter)
+                const routineBlocked = isPastWeek3 && sess.session_type === 'course'
+                const isGrayed = !levelOk || routineBlocked
+
+                const isBooked = booked[sess.id + '-casual'] || booked[sess.id + '-catchup'] || enrolledSessionIds.has(sess.id)
+                const hasExemptionPending = booked[sess.id + '-exemption']
+
+                if (showEligibleOnly && isGrayed) return null
+
+                let greyReason = null
+                if (routineBlocked) greyReason = `Week ${currentSeasonWeek} of season — routine classes closed to new drop-ins`
+                else if (!levelOk) greyReason = `This class is outside your current level`
+
+                return (
+                  <View
+                    key={sess.id}
+                    style={[s.casualCard, isGrayed && s.casualCardGrayed]}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={[s.casualCardName, isGrayed && s.casualCardNameGrayed]} numberOfLines={1}>{sess.name}</Text>
+                      <Text style={s.casualCardMeta}>
+                        {[dayLabel, time, instructor].filter(Boolean).join('  ·  ')}
+                      </Text>
+                      {sess.studio_detail?.name && (
+                        <Text style={s.casualCardStudio}>{sess.studio_detail.name}</Text>
+                      )}
+                      {isGrayed && greyReason && (
+                        <Text style={s.casualCardGreyReason}>{greyReason}</Text>
+                      )}
+                    </View>
+
+                    <View style={{ alignItems: 'flex-end', justifyContent: 'space-between', paddingLeft: 10 }}>
+                      {/* spots */}
+                      <Text style={[s.casualCardSpots, isFull && s.casualCardSpotsFull]}>
+                        {isFull ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''}`}
+                      </Text>
+
+                      {isBooked || hasExemptionPending ? (
+                        <Text style={s.classBookedText}>{hasExemptionPending ? '⏳ Requested' : '✓ Booked'}</Text>
+                      ) : isGrayed ? (
+                        <TouchableOpacity
+                          style={s.exemptBtn}
+                          onPress={() => { setExemptionSession(sess); setExemptionNote('') }}
+                        >
+                          <Text style={s.exemptBtnText}>REQUEST EXEMPTION</Text>
+                        </TouchableOpacity>
+                      ) : (
+                        <TouchableOpacity
+                          style={[s.casualBookBtn, isFull && s.casualBookBtnDisabled]}
+                          onPress={() => !isFull && openModal(sess)}
+                          disabled={isFull}
+                        >
+                          <Text style={[s.casualBookBtnText, isFull && { color: T.muted }]}>
+                            {availableCredits > 0 ? 'BOOK / CREDIT' : 'BOOK'}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </View>
+                )
+              })
             )}
-
-            {/* Class list grouped by date */}
-            {grouped.length === 0 && !occLoading && (
-              <Text style={s.empty}>No upcoming classes.</Text>
-            )}
-
-            {grouped.map(({ date, items }) => (
-              <View key={date}>
-                <Text style={s.dateHeader}>{date ? fmtDateHeader(date) : 'Upcoming'}</Text>
-                {items.map((occ, idx) => {
-                  const name = getSessionName(occ)
-                  const instructor = getInstructor(occ)
-                  const time = fmtTime(occ.start_time)
-                  const eligible = !showEligibleOnly || !levelFilter || isEligible(occ, levelFilter)
-                  const sessionId = getSessionId(occ)
-                  const isBooked = booked[sessionId + '-catchup'] || booked[sessionId + '-casual'] || enrolledSessionIds.has(sessionId)
-
-                  return (
-                    <TouchableOpacity
-                      key={occ.id ?? idx}
-                      style={s.classRow}
-                      onPress={() => openModal(occ)}
-                      activeOpacity={0.75}
-                    >
-                      {/* day box */}
-                      <View style={s.dayBox}>
-                        {date ? (
-                          <>
-                            <Text style={s.dayBoxName}>
-                              {new Date(date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short' }).toUpperCase()}
-                            </Text>
-                            <Text style={s.dayBoxNum}>{new Date(date + 'T00:00').getDate()}</Text>
-                          </>
-                        ) : (
-                          <Text style={s.dayBoxName}>—</Text>
-                        )}
-                      </View>
-
-                      {/* info */}
-                      <View style={s.classInfo}>
-                        <Text style={s.className} numberOfLines={1}>{name}</Text>
-                        <Text style={s.classMeta} numberOfLines={1}>
-                          {[time, instructor].filter(Boolean).join('  ·  ')}
-                        </Text>
-                      </View>
-
-                      {/* right side */}
-                      <View style={s.classRight}>
-                        {eligible && availableCredits > 0 && !isBooked && (
-                          <View style={s.eligiblePill}>
-                            <Text style={s.eligiblePillText}>CATCH-UP ELIGIBLE</Text>
-                          </View>
-                        )}
-                        {isBooked ? (
-                          <Text style={s.classBookedText}>✓ Booked</Text>
-                        ) : (
-                          <View style={s.classArrow}>
-                            <Text style={s.classArrowText}>›</Text>
-                          </View>
-                        )}
-                      </View>
-                    </TouchableOpacity>
-                  )
-                })}
-              </View>
-            ))}
           </>
         )}
 
@@ -1364,6 +1376,54 @@ export default function BookScreen({ navigation }) {
         onClose={() => setShowSeasonCheckout(false)}
         onConfirm={handleSeasonCheckout}
       />
+
+      {/* ── Exemption Request Modal ───────────────────────────────────────── */}
+      {exemptionSession && (
+        <Modal visible animationType="slide" transparent onRequestClose={() => setExemptionSession(null)}>
+          <View style={ms.overlay}>
+            <View style={ms.sheet}>
+              <View style={ms.header}>
+                <Text style={ms.sheetTitle} numberOfLines={2}>Request Exemption</Text>
+                <TouchableOpacity onPress={() => setExemptionSession(null)} style={ms.closeBtn}>
+                  <Text style={ms.closeBtnText}>CLOSE</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={{ fontSize: 15, fontWeight: '700', color: T.text, marginBottom: 4 }}>{exemptionSession.name}</Text>
+              <Text style={{ fontSize: 13, color: T.muted, marginBottom: 20 }}>
+                {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][exemptionSession.day_of_week]}  ·  {fmtTime(exemptionSession.start_time)}
+              </Text>
+
+              <View style={{ backgroundColor: '#1a0a00', borderRadius: 12, borderWidth: 1, borderColor: '#5a2a00', padding: 14, marginBottom: 20 }}>
+                <Text style={{ fontSize: 13, color: '#ffaa44', lineHeight: 20 }}>
+                  This class is outside your usual eligibility. Submitting a request will notify the studio team, who will review and confirm if you can attend.
+                </Text>
+              </View>
+
+              <Text style={{ fontSize: 13, color: T.muted, marginBottom: 8 }}>Note (optional)</Text>
+              <TextInput
+                style={{
+                  backgroundColor: '#1a1a1a', borderRadius: 10, borderWidth: 1, borderColor: T.border,
+                  color: T.text, fontSize: 14, padding: 12, minHeight: 80, textAlignVertical: 'top', marginBottom: 20,
+                }}
+                placeholder="Add a note for the studio..."
+                placeholderTextColor={T.muted}
+                multiline
+                value={exemptionNote}
+                onChangeText={setExemptionNote}
+              />
+
+              <TouchableOpacity
+                style={[ms.confirmBtn, submittingExemption && { opacity: 0.6 }]}
+                onPress={handleExemptionSubmit}
+                disabled={submittingExemption}
+              >
+                <Text style={ms.confirmBtnText}>{submittingExemption ? 'SUBMITTING…' : 'SUBMIT REQUEST'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
     </View>
   )
 }
@@ -1718,4 +1778,42 @@ const s = StyleSheet.create({
 
   practiceBanner: { backgroundColor: '#0a0a0a', borderBottomWidth: 1, borderBottomColor: T.border, paddingVertical: 10, paddingHorizontal: 16, alignItems: 'center' },
   practiceBannerText: { fontSize: 13, color: '#b0a0ff', fontWeight: '600' },
+
+  // Casual tab session cards
+  casualCard: {
+    backgroundColor: T.card,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: T.border,
+    padding: 14,
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  casualCardGrayed: { opacity: 0.45 },
+  casualCardName: { fontSize: 15, fontWeight: '700', color: T.text, marginBottom: 3 },
+  casualCardNameGrayed: { color: T.muted },
+  casualCardMeta: { fontSize: 12, color: T.muted, marginBottom: 2 },
+  casualCardStudio: { fontSize: 11, color: T.muted },
+  casualCardGreyReason: { fontSize: 11, color: '#f59e0b', marginTop: 6, lineHeight: 16 },
+  casualCardSpots: { fontSize: 11, fontWeight: '600', color: T.muted, marginBottom: 8 },
+  casualCardSpotsFull: { color: '#ef4444' },
+  casualBookBtn: {
+    backgroundColor: T.lime,
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+  },
+  casualBookBtnDisabled: { backgroundColor: '#222' },
+  casualBookBtnText: { fontSize: 12, fontWeight: '800', color: '#000' },
+  exemptBtn: {
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#f59e0b',
+  },
+  exemptBtnText: { fontSize: 10, fontWeight: '800', color: '#f59e0b', letterSpacing: 0.3 },
 })
