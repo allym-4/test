@@ -27,7 +27,7 @@ function WhoComing({ sessionId }) {
   return (
     <View style={s.whoPanel}>
       <Text style={s.whoLabel}>Who's coming</Text>
-      {loading && <ActivityIndicator size="small" color="#6366f1" />}
+      {loading && <ActivityIndicator size="small" color="#ccff00" />}
       {!loading && names.length === 0 && (
         <Text style={s.whoEmpty}>No one's opted in yet.</Text>
       )}
@@ -39,24 +39,24 @@ function WhoComing({ sessionId }) {
 }
 
 const STATUS_COLORS = {
-  present: '#d1fae5',
-  absent: '#fef3c7',
-  no_show: '#fee2e2',
-  late: '#e0e7ff',
-  cancelled: '#f3f4f6',
+  present: '#0a2a1a',
+  absent: '#2a1a00',
+  no_show: '#2a0a0a',
+  late: '#1a1a2a',
+  cancelled: '#1a1a1a',
 }
 const STATUS_TEXT = {
-  present: '#065f46',
-  absent: '#92400e',
-  no_show: '#991b1b',
-  late: '#3730a3',
-  cancelled: '#6b7280',
+  present: '#ccff00',
+  absent: '#f59e0b',
+  no_show: '#ef4444',
+  late: '#a78bfa',
+  cancelled: '#666',
 }
 
 function StatusBadge({ status }) {
   return (
-    <View style={[s.badge, { backgroundColor: STATUS_COLORS[status] ?? '#f3f4f6' }]}>
-      <Text style={[s.badgeText, { color: STATUS_TEXT[status] ?? '#374151' }]}>
+    <View style={[s.badge, { backgroundColor: STATUS_COLORS[status] ?? '#1a1a1a' }]}>
+      <Text style={[s.badgeText, { color: STATUS_TEXT[status] ?? '#888' }]}>
         {status?.replace('_', ' ')}
       </Text>
     </View>
@@ -219,7 +219,7 @@ export default function MyClassesScreen({ navigation }) {
                     onPress={() => handleMarkAway(enr.next_occurrence.id, enr.session?.name)}
                   >
                     {markingAway === enr.next_occurrence.id
-                      ? <ActivityIndicator size="small" color="#92400e" />
+                      ? <ActivityIndicator size="small" color="#ccff00" />
                       : <Text style={s.awayBtnText}>Mark away</Text>
                     }
                   </TouchableOpacity>
@@ -267,41 +267,41 @@ export default function MyClassesScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f9fafb' },
-  tabs: { flexDirection: 'row', backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
+  root: { flex: 1, backgroundColor: '#000' },
+  tabs: { flexDirection: 'row', backgroundColor: '#000', borderBottomWidth: 1, borderBottomColor: '#222' },
   tab: { flex: 1, paddingVertical: 14, alignItems: 'center' },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: '#6366f1' },
-  tabText: { fontSize: 14, fontWeight: '500', color: '#6b7280' },
-  tabTextActive: { color: '#6366f1', fontWeight: '700' },
+  tabActive: { borderBottomWidth: 2, borderBottomColor: '#ccff00' },
+  tabText: { fontSize: 14, fontWeight: '500', color: '#666' },
+  tabTextActive: { color: '#ccff00', fontWeight: '700' },
   scroll: { flex: 1 },
   content: { padding: 16, paddingBottom: 40 },
-  empty: { textAlign: 'center', color: '#9ca3af', marginTop: 40 },
-  card: { backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  empty: { textAlign: 'center', color: '#666', marginTop: 40 },
+  card: { backgroundColor: '#111', borderRadius: 14, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#222' },
   cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: '#111827', flex: 1 },
-  typeBadge: { backgroundColor: '#e0e7ff', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  typeBadgeText: { fontSize: 11, fontWeight: '600', color: '#4338ca', textTransform: 'capitalize' },
-  cardMeta: { fontSize: 13, color: '#6b7280', marginBottom: 10 },
-  nextClass: { backgroundColor: '#f9fafb', borderRadius: 10, padding: 12, marginBottom: 10 },
-  nextLabel: { fontSize: 11, fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
-  nextDate: { fontSize: 14, color: '#111827', fontWeight: '500', marginBottom: 8 },
-  awayBtn: { alignSelf: 'flex-start', backgroundColor: '#fef3c7', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
-  awayBtnText: { fontSize: 13, fontWeight: '600', color: '#92400e' },
+  cardTitle: { fontSize: 16, fontWeight: '700', color: '#fff', flex: 1 },
+  typeBadge: { backgroundColor: '#1a1a2a', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: '#333' },
+  typeBadgeText: { fontSize: 11, fontWeight: '600', color: '#ccff00', textTransform: 'capitalize' },
+  cardMeta: { fontSize: 13, color: '#888', marginBottom: 10 },
+  nextClass: { backgroundColor: '#0a0a0a', borderRadius: 10, padding: 12, marginBottom: 10, borderWidth: 1, borderColor: '#222' },
+  nextLabel: { fontSize: 11, fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
+  nextDate: { fontSize: 14, color: '#fff', fontWeight: '500', marginBottom: 8 },
+  awayBtn: { alignSelf: 'flex-start', backgroundColor: '#1a1a1a', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#333' },
+  awayBtnText: { fontSize: 13, fontWeight: '600', color: '#ccff00' },
   cancelBtn: { alignSelf: 'flex-start', paddingVertical: 4 },
   cancelBtnText: { fontSize: 13, color: '#ef4444' },
-  topLinks: { flexDirection: 'row', gap: 10, padding: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
-  topLink: { flex: 1, backgroundColor: '#f5f3ff', borderRadius: 10, padding: 10, alignItems: 'center' },
-  topLinkText: { fontSize: 13, fontWeight: '600', color: '#6366f1' },
-  histRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 10, padding: 14, marginBottom: 8 },
+  topLinks: { flexDirection: 'row', gap: 10, padding: 12, backgroundColor: '#000', borderBottomWidth: 1, borderBottomColor: '#222' },
+  topLink: { flex: 1, backgroundColor: '#111', borderRadius: 10, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: '#222' },
+  topLinkText: { fontSize: 13, fontWeight: '600', color: '#ccff00' },
+  histRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#111', borderRadius: 10, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#222' },
   histInfo: { flex: 1 },
-  histClass: { fontWeight: '600', color: '#111827', fontSize: 14 },
-  histDate: { fontSize: 12, color: '#6b7280', marginTop: 2 },
+  histClass: { fontWeight: '600', color: '#fff', fontSize: 14 },
+  histDate: { fontSize: 12, color: '#888', marginTop: 2 },
   badge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   badgeText: { fontSize: 12, fontWeight: '600', textTransform: 'capitalize' },
   whoBtn: { alignSelf: 'flex-start', paddingVertical: 6, marginBottom: 4 },
-  whoBtnText: { fontSize: 13, color: '#6366f1', fontWeight: '600' },
-  whoPanel: { backgroundColor: '#f5f3ff', borderRadius: 8, padding: 10, marginBottom: 8 },
-  whoLabel: { fontSize: 11, fontWeight: '700', color: '#6366f1', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
-  whoEmpty: { fontSize: 13, color: '#9ca3af' },
-  whoNames: { fontSize: 14, color: '#374151', lineHeight: 20 },
+  whoBtnText: { fontSize: 13, color: '#ccff00', fontWeight: '600' },
+  whoPanel: { backgroundColor: '#0a0a0a', borderRadius: 8, padding: 10, marginBottom: 8, borderWidth: 1, borderColor: '#222' },
+  whoLabel: { fontSize: 11, fontWeight: '700', color: '#ccff00', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
+  whoEmpty: { fontSize: 13, color: '#666' },
+  whoNames: { fontSize: 14, color: '#ccc', lineHeight: 20 },
 })

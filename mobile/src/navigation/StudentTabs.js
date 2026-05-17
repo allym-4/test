@@ -1,6 +1,5 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
-import { Text } from 'react-native'
 
 import DashboardScreen from '../screens/student/DashboardScreen'
 import BookScreen from '../screens/student/BookScreen'
@@ -19,16 +18,10 @@ import ChatScreen from '../screens/student/ChatScreen'
 const Tab = createBottomTabNavigator()
 const Stack = createNativeStackNavigator()
 
-const ICONS = { Home: '🏠', Book: '📅', Classes: '📋', Community: '💬', Account: '👤' }
-
-function Icon({ name, focused }) {
-  return <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>{ICONS[name]}</Text>
-}
-
 const headerStyle = {
-  headerStyle: { backgroundColor: '#fff' },
-  headerTitleStyle: { fontWeight: '700', color: '#111827' },
-  headerTintColor: '#6366f1',
+  headerStyle: { backgroundColor: '#000' },
+  headerTitleStyle: { fontWeight: '700', color: '#fff' },
+  headerTintColor: '#ccff00',
 }
 
 function HomeStack() {
@@ -85,12 +78,13 @@ function AccountStack({ onSwitchToInstructor }) {
 export default function StudentTabs({ onSwitchToInstructor }) {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused }) => <Icon name={route.name} focused={focused} />,
-        tabBarActiveTintColor: '#6366f1',
-        tabBarInactiveTintColor: '#9ca3af',
+      screenOptions={{
+        tabBarShowIcon: false,
+        tabBarActiveTintColor: '#ccff00',
+        tabBarInactiveTintColor: '#555',
+        tabBarStyle: { backgroundColor: '#000', borderTopColor: '#222' },
         headerShown: false,
-      })}
+      }}
     >
       <Tab.Screen name="Home" component={HomeStack} />
       <Tab.Screen name="Book" component={BookStack} />
