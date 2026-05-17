@@ -16,8 +16,11 @@ from apps.homework.models import HomeworkAssignment, HomeworkChecklistItem, Home
 class Command(BaseCommand):
     help = 'Seed the database with demo data'
 
+    def add_arguments(self, parser):
+        parser.add_argument('--force', action='store_true', help='Wipe and reseed even if data exists')
+
     def handle(self, *args, **options):
-        if User.objects.filter(username='chloe').exists():
+        if User.objects.filter(username='chloe').exists() and not options['force']:
             self.stdout.write('Seed data already present, skipping.')
             return
 
