@@ -497,6 +497,9 @@ export default function AccountScreen({ navigation, onSwitchToInstructor }) {
         <TouchableOpacity style={s.ghostBtn} onPress={() => { setShowGiftModal(true); setGiftMsg('') }}>
           <Text style={s.ghostBtnText}>Redeem a gift card code</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={[s.ghostBtn, { marginTop: 8, borderColor: '#b0a0ff' }]} onPress={() => navigation.navigate('Billing')}>
+          <Text style={[s.ghostBtnText, { color: '#b0a0ff' }]}>Buy a gift card →</Text>
+        </TouchableOpacity>
       </SectionCard>
 
       {/* Locker (conditional) */}
