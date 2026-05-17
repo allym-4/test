@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import {
-  ScrollView, View, Text, TouchableOpacity, StyleSheet,
+  ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet,
   RefreshControl, Alert, ActivityIndicator, Modal, Switch,
 } from 'react-native'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { classes, enrolments, seasons, attendance, settings as settingsApi } from '../../api'
+import { classes, enrolments, seasons, attendance, settings as settingsApi, payments } from '../../api'
 
 // ─── theme ───────────────────────────────────────────────────────────────────
 const T = {
@@ -134,13 +134,44 @@ const hu = StyleSheet.create({
 // ─── SeasonCheckoutModal ──────────────────────────────────────────────────────
 function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, onClose, onConfirm, loading }) {
   const [payOption, setPayOption] = useState('full')
-  const depositAmount = Math.round(totalPrice / 2)
+  const [promoCode, setPromoCode] = useState('')
+  const [promoValidating, setPromoValidating] = useState(false)
+  const [promoResult, setPromoResult] = useState(null) // { discount_amount, discount_percent, message }
+
+  const discountAmount = promoResult?.discount_amount
+    ? parseFloat(promoResult.discount_amount)
+    : promoResult?.discount_percent
+    ? Math.round(totalPrice * promoResult.discount_percent / 100)
+    : 0
+  const discountedTotal = Math.max(0, totalPrice - discountAmount)
+  const depositAmount = Math.round(discountedTotal / 2)
 
   useEffect(() => {
-    if (visible) setPayOption('full')
+    if (visible) {
+      setPayOption('full')
+      setPromoCode('')
+      setPromoResult(null)
+    }
   }, [visible])
 
+  async function handleApplyPromo() {
+    const code = promoCode.trim()
+    if (!code || promoValidating) return
+    setPromoValidating(true)
+    try {
+      const { data } = await payments.promoCodes.validate({ code, amount: totalPrice })
+      setPromoResult(data)
+    } catch (err) {
+      const msg = err?.response?.data?.detail ?? err?.response?.data?.error ?? 'Invalid promo code.'
+      setPromoResult({ error: msg })
+    } finally {
+      setPromoValidating(false)
+    }
+  }
+
   if (!visible || sessions.length === 0) return null
+
+  const displayTotal = payOption === 'deposit' ? depositAmount : discountedTotal
 
   return (
     <Modal visible animationType="slide" transparent onRequestClose={onClose}>
@@ -165,6 +196,34 @@ function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, onClos
             {seasonName ? <Text style={sc.seasonTag}>{seasonName}</Text> : null}
           </View>
 
+          {/* Promo code */}
+          <View style={sc.promoRow}>
+            <TextInput
+              style={sc.promoInput}
+              value={promoCode}
+              onChangeText={t => { setPromoCode(t); setPromoResult(null) }}
+              placeholder="Promo code"
+              placeholderTextColor="#555"
+              autoCapitalize="characters"
+              returnKeyType="done"
+              onSubmitEditing={handleApplyPromo}
+            />
+            <TouchableOpacity style={sc.promoApplyBtn} onPress={handleApplyPromo} disabled={promoValidating || !promoCode.trim()}>
+              {promoValidating
+                ? <ActivityIndicator color="#000" size="small" />
+                : <Text style={sc.promoApplyText}>APPLY</Text>
+              }
+            </TouchableOpacity>
+          </View>
+          {!!promoResult && !promoResult.error && (
+            <Text style={sc.promoSuccess}>
+              {promoResult.message ?? `Code applied! -$${discountAmount.toFixed(2)} off`}
+            </Text>
+          )}
+          {!!promoResult?.error && (
+            <Text style={sc.promoError}>{promoResult.error}</Text>
+          )}
+
           <Text style={sc.sectionLabel}>How would you like to pay?</Text>
 
           {/* Pay in full */}
@@ -179,7 +238,10 @@ function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, onClos
               <Text style={sc.optionTitle}>Pay in full today</Text>
               <Text style={sc.optionSub}>One payment, nothing more to think about.</Text>
             </View>
-            <Text style={sc.optionPrice}>${totalPrice}</Text>
+            <View style={{ alignItems: 'flex-end' }}>
+              {discountAmount > 0 && <Text style={sc.strikePrice}>${totalPrice}</Text>}
+              <Text style={sc.optionPrice}>${discountedTotal}</Text>
+            </View>
           </TouchableOpacity>
 
           {/* 50% deposit */}
@@ -200,13 +262,13 @@ function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, onClos
           {/* Confirm button */}
           <TouchableOpacity
             style={sc.confirmBtn}
-            onPress={() => onConfirm(payOption, payOption === 'deposit' ? depositAmount : totalPrice)}
+            onPress={() => onConfirm(payOption, displayTotal, promoResult?.error ? null : promoCode.trim() || null)}
             disabled={loading}
           >
             {loading
               ? <ActivityIndicator color="#000" />
               : <Text style={sc.confirmBtnText}>
-                  CONFIRM AND PAY — ${payOption === 'deposit' ? depositAmount : totalPrice}
+                  CONFIRM AND PAY — ${displayTotal}
                 </Text>
             }
           </TouchableOpacity>
@@ -214,7 +276,7 @@ function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, onClos
           {/* Payment plan */}
           <TouchableOpacity
             style={sc.altBtn}
-            onPress={() => onConfirm('plan', 0)}
+            onPress={() => onConfirm('plan', 0, null)}
             disabled={loading}
           >
             <Text style={sc.altBtnText}>REQUEST A PAYMENT PLAN</Text>
@@ -223,7 +285,7 @@ function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, onClos
           {/* Pay cash */}
           <TouchableOpacity
             style={sc.altBtn}
-            onPress={() => onConfirm('cash', 0)}
+            onPress={() => onConfirm('cash', 0, null)}
             disabled={loading}
           >
             <Text style={sc.altBtnText}>I WANT TO PAY CASH</Text>
@@ -262,6 +324,13 @@ const sc = StyleSheet.create({
   altBtn: { borderWidth: 1, borderColor: T.border, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginBottom: 8 },
   altBtnText: { color: T.text, fontWeight: '700', fontSize: 13, letterSpacing: 0.5 },
   disclaimer: { fontSize: 11, color: T.muted, textAlign: 'center', marginTop: 8, lineHeight: 16 },
+  promoRow: { flexDirection: 'row', gap: 8, marginBottom: 6 },
+  promoInput: { flex: 1, backgroundColor: T.bg, borderWidth: 1, borderColor: T.border, borderRadius: 10, color: T.text, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, fontWeight: '600' },
+  promoApplyBtn: { backgroundColor: T.lime, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, justifyContent: 'center', alignItems: 'center' },
+  promoApplyText: { color: '#000', fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
+  promoSuccess: { fontSize: 12, color: T.lime, marginBottom: 10, fontWeight: '600' },
+  promoError: { fontSize: 12, color: '#ef4444', marginBottom: 10, fontWeight: '600' },
+  strikePrice: { fontSize: 12, color: T.muted, textDecorationLine: 'line-through' },
 })
 
 // ─── BookingModal ─────────────────────────────────────────────────────────────
@@ -526,11 +595,15 @@ export default function BookScreen() {
     setSelectedSessions(prev => [...prev, session])
   }
 
-  async function handleSeasonCheckout(payOption) {
+  async function handleSeasonCheckout(payOption, _amount, promoCode) {
     setBooking('season')
     try {
       for (const session of selectedSessions) {
-        await enrolments.create({ class_session: session.id, status: 'active', enrolment_type: 'course' })
+        const payload = { class_session: session.id, status: 'active', enrolment_type: 'course' }
+        await enrolments.create(payload)
+      }
+      if (promoCode) {
+        await payments.promoCodes.use({ code: promoCode }).catch(() => {})
       }
       setShowSeasonCheckout(false)
       const newBooked = {}

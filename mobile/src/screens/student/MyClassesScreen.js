@@ -6,7 +6,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, attendance, roster } from '../../api'
+import { enrolments, attendance, roster, settings as settingsApi } from '../../api'
 import LevelFilterBar from '../../components/LevelFilterBar'
 
 function WhoComing({ sessionId }) {
@@ -63,10 +63,63 @@ function StatusBadge({ status }) {
   )
 }
 
+function WaitlistClaimBanner({ enrolment, onClaimed }) {
+  const [claiming, setClaiming] = useState(false)
+  const session = enrolment.class_session_detail
+  const expiresAt = enrolment.waitlist_expires_at ? new Date(enrolment.waitlist_expires_at) : null
+  const minutesLeft = expiresAt ? Math.max(0, Math.round((expiresAt - new Date()) / 60000)) : null
+
+  async function claim() {
+    setClaiming(true)
+    try {
+      await enrolments.claimSpot(enrolment.id)
+      onClaimed()
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.detail || 'Failed to claim spot.')
+    } finally {
+      setClaiming(false)
+    }
+  }
+
+  return (
+    <View style={wl.banner}>
+      <View style={{ flex: 1 }}>
+        <Text style={wl.title}>🎉 A spot opened up!</Text>
+        <Text style={wl.sessionName}>{session?.name}</Text>
+        <Text style={wl.timeLeft}>
+          {enrolment.waitlist_urgent
+            ? 'Class starts soon — first to confirm gets it!'
+            : minutesLeft != null
+              ? minutesLeft > 60
+                ? `${Math.round(minutesLeft / 60)}h ${minutesLeft % 60}m to claim`
+                : minutesLeft > 0
+                  ? `⏰ Only ${minutesLeft} minutes left!`
+                  : 'Claim your spot — offer may have expired.'
+              : 'Claim before it\'s offered to the next person.'
+          }
+        </Text>
+      </View>
+      <TouchableOpacity style={wl.claimBtn} onPress={claim} disabled={claiming}>
+        {claiming ? <ActivityIndicator color="#000" size="small" /> : <Text style={wl.claimBtnText}>Claim Spot →</Text>}
+      </TouchableOpacity>
+    </View>
+  )
+}
+
+const wl = StyleSheet.create({
+  banner: { backgroundColor: 'rgba(204,255,0,0.08)', borderWidth: 2, borderColor: '#ccff00', borderRadius: 14, padding: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  title: { fontSize: 14, fontWeight: '700', color: '#ccff00', marginBottom: 3 },
+  sessionName: { fontSize: 14, fontWeight: '600', color: '#fff', marginBottom: 2 },
+  timeLeft: { fontSize: 12, color: '#888', lineHeight: 18 },
+  claimBtn: { backgroundColor: '#ccff00', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, flexShrink: 0 },
+  claimBtnText: { color: '#000', fontWeight: '800', fontSize: 13 },
+})
+
 export default function MyClassesScreen({ navigation }) {
   const { user } = useAuth()
   const [tab, setTab] = useState('active')
   const [markingAway, setMarkingAway] = useState(null)
+  const [cancellingAway, setCancellingAway] = useState(null)
   const [levelFilter, setLevelFilter] = useState(null)
 
   useEffect(() => {
@@ -78,12 +131,18 @@ export default function MyClassesScreen({ navigation }) {
   const { data: enrolData, loading, refetch } = useApi(
     () => enrolments.list({ status: 'active' }), []
   )
+  const { data: waitlistData, refetch: refetchWaitlist } = useApi(
+    () => enrolments.list({ status: 'waitlisted' }), []
+  )
   const { data: historyData, loading: histLoading, refetch: refetchHistory } = useApi(
     () => attendance.list({ limit: 30 }), []
   )
+  const { data: settingsData } = useApi(() => settingsApi.get(), [])
 
   const activeEnrolments = enrolData?.results ?? enrolData ?? []
+  const waitlistedEnrolments = waitlistData?.results ?? waitlistData ?? []
   const history = historyData?.results ?? historyData ?? []
+  const cancellationWindowHours = settingsData?.cancellation_window_hours ?? 24
 
   const availableLevels = [...new Set(
     activeEnrolments.map(e => e.session?.level).filter(Boolean)
@@ -92,6 +151,37 @@ export default function MyClassesScreen({ navigation }) {
   const filteredEnrolments = levelFilter
     ? activeEnrolments.filter(e => e.session?.level === levelFilter)
     : activeEnrolments
+
+  async function handleCancelAway(occurrenceId, name) {
+    Alert.alert(
+      'I can make it!',
+      `Changed your mind? We'll check if your spot in ${name} is still available.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: "Yes, I'm coming!",
+          onPress: async () => {
+            setCancellingAway(occurrenceId)
+            try {
+              const res = await attendance.cancelAway(occurrenceId)
+              const msg = res.data?.message
+              const isWaitlisted = res.data?.status === 'waitlisted'
+              Alert.alert(
+                isWaitlisted ? 'Spot Taken' : "You're Back In!",
+                msg || (isWaitlisted ? "Your spot was taken but you've been added to the waitlist." : "You're back on the register!")
+              )
+              refetch()
+              refetchHistory()
+            } catch (err) {
+              Alert.alert('Error', err.response?.data?.detail || 'Could not process request.')
+            } finally {
+              setCancellingAway(null)
+            }
+          },
+        },
+      ]
+    )
+  }
 
   async function handleMarkAway(occurrenceId, name) {
     Alert.alert(
@@ -186,6 +276,23 @@ export default function MyClassesScreen({ navigation }) {
           contentContainerStyle={s.content}
           refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} />}
         >
+          {/* Waitlist claim banners */}
+          {waitlistedEnrolments.filter(e => e.waitlist_offered_at).map(e => (
+            <WaitlistClaimBanner key={e.id} enrolment={e} onClaimed={() => { refetch(); refetchWaitlist() }} />
+          ))}
+
+          {/* Pricing summary strip */}
+          {activeEnrolments.length > 0 && (
+            <View style={s.pricingStrip}>
+              <Text style={s.pricingText}>
+                {activeEnrolments.length} class{activeEnrolments.length !== 1 ? 'es' : ''} · Active season
+              </Text>
+              {activeEnrolments.length === 1 && (
+                <Text style={s.pricingHint}>Add a 2nd class for a better rate</Text>
+              )}
+            </View>
+          )}
+
           {filteredEnrolments.length === 0 && !loading && (
             <Text style={s.empty}>
               {levelFilter && activeEnrolments.length > 0
@@ -213,16 +320,32 @@ export default function MyClassesScreen({ navigation }) {
                     {new Date(enr.next_occurrence.date).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short' })}
                     {enr.next_occurrence.start_time ? `  ·  ${enr.next_occurrence.start_time.slice(0, 5)}` : ''}
                   </Text>
-                  <TouchableOpacity
-                    style={s.awayBtn}
-                    disabled={markingAway === enr.next_occurrence.id}
-                    onPress={() => handleMarkAway(enr.next_occurrence.id, enr.session?.name)}
-                  >
-                    {markingAway === enr.next_occurrence.id
-                      ? <ActivityIndicator size="small" color="#ccff00" />
-                      : <Text style={s.awayBtnText}>Mark away</Text>
-                    }
-                  </TouchableOpacity>
+                  {enr.next_occurrence.my_status === 'absent' || enr.next_occurrence.marked_away ? (
+                    <View style={s.awayRow}>
+                      <View style={s.awayBadge}><Text style={s.awayBadgeText}>Marked away</Text></View>
+                      <TouchableOpacity
+                        style={s.canMakeItBtn}
+                        disabled={cancellingAway === enr.next_occurrence.id}
+                        onPress={() => handleCancelAway(enr.next_occurrence.id, enr.session?.name)}
+                      >
+                        {cancellingAway === enr.next_occurrence.id
+                          ? <ActivityIndicator size="small" color="#ccff00" />
+                          : <Text style={s.canMakeItText}>I can make it!</Text>
+                        }
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={s.awayBtn}
+                      disabled={markingAway === enr.next_occurrence.id}
+                      onPress={() => handleMarkAway(enr.next_occurrence.id, enr.session?.name)}
+                    >
+                      {markingAway === enr.next_occurrence.id
+                        ? <ActivityIndicator size="small" color="#ccff00" />
+                        : <Text style={s.awayBtnText}>Mark away</Text>
+                      }
+                    </TouchableOpacity>
+                  )}
                 </View>
               )}
               {enr.session?.id && <WhoComing sessionId={enr.session.id} />}
@@ -235,6 +358,32 @@ export default function MyClassesScreen({ navigation }) {
               </TouchableOpacity>
             </View>
           ))}
+
+          {/* Waitlisted */}
+          {waitlistedEnrolments.filter(e => !e.waitlist_offered_at).length > 0 && (
+            <View style={s.waitlistSection}>
+              <Text style={s.waitlistSectionTitle}>Waitlisted</Text>
+              {waitlistedEnrolments.filter(e => !e.waitlist_offered_at).map(e => {
+                const s2 = e.class_session_detail
+                return (
+                  <View key={e.id} style={s.waitlistCard}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.waitlistName}>{s2?.name ?? 'Class'}</Text>
+                      <Text style={s.waitlistMeta}>
+                        {[s2?.day_of_week != null ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][s2.day_of_week] : null, s2?.studio_detail?.name].filter(Boolean).join(' · ')}
+                      </Text>
+                      {e.waitlist_position != null && (
+                        <Text style={s.waitlistPos}>Position #{e.waitlist_position}</Text>
+                      )}
+                    </View>
+                    <TouchableOpacity onPress={() => handleCancelEnrolment(e.id, s2?.name)}>
+                      <Text style={s.leaveWaitlist}>Leave</Text>
+                    </TouchableOpacity>
+                  </View>
+                )
+              })}
+            </View>
+          )}
         </ScrollView>
       )}
 
@@ -287,6 +436,21 @@ const s = StyleSheet.create({
   nextDate: { fontSize: 14, color: '#fff', fontWeight: '500', marginBottom: 8 },
   awayBtn: { alignSelf: 'flex-start', backgroundColor: '#1a1a1a', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#333' },
   awayBtnText: { fontSize: 13, fontWeight: '600', color: '#ccff00' },
+  awayRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  awayBadge: { backgroundColor: 'rgba(255,170,0,0.1)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(255,170,0,0.3)' },
+  awayBadgeText: { fontSize: 11, fontWeight: '700', color: '#f59e0b' },
+  canMakeItBtn: { paddingVertical: 4 },
+  canMakeItText: { fontSize: 13, fontWeight: '600', color: '#ccff00' },
+  pricingStrip: { backgroundColor: 'rgba(176,160,255,0.08)', borderWidth: 1, borderColor: 'rgba(176,160,255,0.2)', borderRadius: 12, padding: 14, marginBottom: 12 },
+  pricingText: { fontSize: 14, fontWeight: '600', color: '#fff' },
+  pricingHint: { fontSize: 12, color: '#888', marginTop: 2 },
+  waitlistSection: { marginTop: 8 },
+  waitlistSectionTitle: { fontSize: 11, fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 },
+  waitlistCard: { backgroundColor: '#111', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#222', flexDirection: 'row', alignItems: 'center', gap: 12 },
+  waitlistName: { fontSize: 14, fontWeight: '600', color: '#fff', marginBottom: 2 },
+  waitlistMeta: { fontSize: 12, color: '#888' },
+  waitlistPos: { fontSize: 11, fontWeight: '700', color: '#b0a0ff', marginTop: 3 },
+  leaveWaitlist: { fontSize: 13, color: '#ef4444', fontWeight: '500' },
   cancelBtn: { alignSelf: 'flex-start', paddingVertical: 4 },
   cancelBtnText: { fontSize: 13, color: '#ef4444' },
   topLinks: { flexDirection: 'row', gap: 10, padding: 12, backgroundColor: '#000', borderBottomWidth: 1, borderBottomColor: '#222' },

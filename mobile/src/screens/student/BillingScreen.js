@@ -3,7 +3,9 @@ import {
   ScrollView,
   View,
   Text,
+  TextInput,
   TouchableOpacity,
+  Modal,
   StyleSheet,
   Alert,
   Switch,
@@ -176,6 +178,10 @@ export default function BillingScreen() {
   const [refreshing, setRefreshing] = useState(false)
   const [payingNow, setPayingNow] = useState(false)
   const [addingCard, setAddingCard] = useState(false)
+  const [invoiceRecord, setInvoiceRecord] = useState(null)
+  const [showPartialModal, setShowPartialModal] = useState(false)
+  const [partialAmount, setPartialAmount] = useState('')
+  const [payingPartial, setPayingPartial] = useState(false)
 
   // Sync local state once stripe config arrives (only on first load)
   if (stripeConfig !== null && autoCharge === null) {
@@ -318,6 +324,36 @@ export default function BillingScreen() {
     }
   }
 
+  async function handlePayPartial() {
+    const amt = parseFloat(partialAmount)
+    if (!amt || amt <= 0 || payingPartial) return
+    setPayingPartial(true)
+    try {
+      const amountCents = Math.round(amt * 100)
+      const { data } = await payments.stripe.createPaymentIntent({ amount: amountCents, description: 'Partial payment' })
+      const { error: initErr } = await initPaymentSheet({
+        merchantDisplayName: 'Duality Pole Studio',
+        paymentIntentClientSecret: data.client_secret,
+        allowsDelayedPaymentMethods: false,
+        appearance: { colors: { primary: '#ccff00', background: '#111', componentBackground: '#1a1a1a', componentText: '#fff', primaryText: '#fff', secondaryText: '#888' } },
+      })
+      if (initErr) { Alert.alert('Error', initErr.message); return }
+      const { error: presentErr } = await presentPaymentSheet()
+      if (presentErr) {
+        if (presentErr.code !== 'Canceled') Alert.alert('Payment failed', presentErr.message)
+      } else {
+        setShowPartialModal(false)
+        setPartialAmount('')
+        Alert.alert('Payment successful', `$${amt.toFixed(2)} payment processed.`)
+        await Promise.all([refetchBalance(), refetchPayments()])
+      }
+    } catch {
+      Alert.alert('Error', 'Could not start payment. Please try again.')
+    } finally {
+      setPayingPartial(false)
+    }
+  }
+
   function handleRefundRequest() {
     Alert.alert(
       'Request refund or credit',
@@ -405,17 +441,26 @@ export default function BillingScreen() {
                   : 'No balance due'}
             </Text>
             {isOwing && (
-              <TouchableOpacity
-                style={s.payNowBtn}
-                onPress={handlePayNow}
-                disabled={payingNow}
-                activeOpacity={0.8}
-              >
-                {payingNow
-                  ? <ActivityIndicator color="#000" size="small" />
-                  : <Text style={s.payNowBtnText}>Pay ${Math.abs(balanceNum).toFixed(2)} now</Text>
-                }
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 18 }}>
+                <TouchableOpacity
+                  style={s.payNowBtn}
+                  onPress={handlePayNow}
+                  disabled={payingNow}
+                  activeOpacity={0.8}
+                >
+                  {payingNow
+                    ? <ActivityIndicator color="#000" size="small" />
+                    : <Text style={s.payNowBtnText}>Pay ${Math.abs(balanceNum).toFixed(2)} now</Text>
+                  }
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={s.payPartialBtn}
+                  onPress={() => setShowPartialModal(true)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={s.payPartialBtnText}>Partial</Text>
+                </TouchableOpacity>
+              </View>
             )}
           </>
         )}
@@ -499,7 +544,11 @@ export default function BillingScreen() {
         ) : paymentList.length === 0 ? (
           <Text style={s.emptyText}>No payment history yet.</Text>
         ) : (
-          paymentList.map(record => <PaymentRow key={record.id} record={record} />)
+          paymentList.map(record => (
+            <TouchableOpacity key={record.id} onPress={() => setInvoiceRecord(record)} activeOpacity={0.8}>
+              <PaymentRow record={record} />
+            </TouchableOpacity>
+          ))
         )}
       </View>
 
@@ -563,6 +612,57 @@ export default function BillingScreen() {
       </TouchableOpacity>
 
       <View style={s.bottomSpacer} />
+
+      {/* Invoice modal */}
+      <Modal visible={!!invoiceRecord} transparent animationType="fade" onRequestClose={() => setInvoiceRecord(null)}>
+        <TouchableOpacity style={s.modalOverlay} activeOpacity={1} onPress={() => setInvoiceRecord(null)}>
+          <View style={s.invoiceSheet}>
+            <Text style={s.invoiceTitle}>Invoice #{invoiceRecord?.id}</Text>
+            <Text style={s.invoiceDesc}>{invoiceRecord?.description || invoiceRecord?.payment_type?.replace(/_/g, ' ')}</Text>
+            <View style={s.invoiceRow}>
+              <Text style={s.invoiceRowLabel}>Amount</Text>
+              <Text style={s.invoiceRowValue}>${Math.abs(parseFloat(invoiceRecord?.amount || 0)).toFixed(2)}</Text>
+            </View>
+            <View style={s.invoiceRow}>
+              <Text style={s.invoiceRowLabel}>Date</Text>
+              <Text style={s.invoiceRowValue}>
+                {invoiceRecord?.created_at ? new Date(invoiceRecord.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
+              </Text>
+            </View>
+            <TouchableOpacity style={s.invoiceCloseBtn} onPress={() => setInvoiceRecord(null)}>
+              <Text style={s.invoiceCloseBtnText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Partial payment modal */}
+      <Modal visible={showPartialModal} transparent animationType="fade" onRequestClose={() => setShowPartialModal(false)}>
+        <TouchableOpacity style={s.modalOverlay} activeOpacity={1} onPress={() => setShowPartialModal(false)}>
+          <View style={s.invoiceSheet}>
+            <Text style={s.invoiceTitle}>Pay partial amount</Text>
+            <Text style={s.invoiceDesc}>Enter the amount you'd like to pay</Text>
+            <TextInput
+              style={s.partialInput}
+              value={partialAmount}
+              onChangeText={setPartialAmount}
+              placeholder="0.00"
+              placeholderTextColor="#555"
+              keyboardType="decimal-pad"
+            />
+            <TouchableOpacity
+              style={[s.payNowBtn, { marginTop: 12, width: '100%' }, (!partialAmount || parseFloat(partialAmount) <= 0 || payingPartial) && { opacity: 0.5 }]}
+              onPress={handlePayPartial}
+              disabled={!partialAmount || parseFloat(partialAmount) <= 0 || payingPartial}
+            >
+              {payingPartial
+                ? <ActivityIndicator color="#000" size="small" />
+                : <Text style={s.payNowBtnText}>Pay ${partialAmount ? parseFloat(partialAmount).toFixed(2) : '0.00'}</Text>
+              }
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </ScrollView>
   )
 }
@@ -887,5 +987,87 @@ const s = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#ccff00',
+  },
+
+  // ── Partial pay button ───────────────────────────────────────────────────────
+  payPartialBtn: {
+    borderWidth: 1,
+    borderColor: '#ccff00',
+    borderRadius: 22,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginTop: 18,
+    alignItems: 'center',
+  },
+  payPartialBtnText: {
+    color: '#ccff00',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+
+  // ── Modals ────────────────────────────────────────────────────────────────────
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    padding: 24,
+  },
+  invoiceSheet: {
+    backgroundColor: '#111',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+  },
+  invoiceTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  invoiceDesc: {
+    fontSize: 13,
+    color: '#888',
+    marginBottom: 16,
+  },
+  invoiceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1a1a1a',
+  },
+  invoiceRowLabel: {
+    fontSize: 14,
+    color: '#888',
+  },
+  invoiceRowValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  invoiceCloseBtn: {
+    backgroundColor: '#ccff00',
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  invoiceCloseBtnText: {
+    color: '#000',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  partialInput: {
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: '#333',
+    borderRadius: 10,
+    color: '#fff',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 8,
   },
 })
