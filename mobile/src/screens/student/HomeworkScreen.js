@@ -285,16 +285,129 @@ function PendingCard({ assignment, submittedIds, onPressSubmit }) {
   )
 }
 
+// ─── submission detail modal ──────────────────────────────────────────────────
+
+function SubmissionDetailModal({ submission, assignment, onClose }) {
+  const { data: itemsData, loading: itemsLoading } = useApi(
+    () => homework.submissionItems(submission.id),
+    [submission.id],
+  )
+  const items = itemsData?.results ?? itemsData ?? []
+  const checklistItems = assignment?.checklist_items ?? []
+  const feedback = submission.feedback || submission.instructor_notes
+
+  return (
+    <Modal
+      visible
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <View style={s.modalRoot}>
+        <View style={s.modalHeader}>
+          <Text style={s.modalTitle} numberOfLines={1}>
+            {assignment?.title ?? `Assignment #${submission.assignment}`}
+          </Text>
+          <TouchableOpacity
+            onPress={onClose}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Text style={s.modalCloseText}>Done</Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          style={s.modalBody}
+          contentContainerStyle={s.modalBodyContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Submitted banner */}
+          <View style={s.submittedBanner}>
+            <View style={{ flex: 1 }}>
+              <Text style={s.submittedBannerTitle}>Submitted ✓</Text>
+              {!!submission.submitted_at && (
+                <Text style={s.submittedBannerDate}>{fmtDate(submission.submitted_at)}</Text>
+              )}
+            </View>
+            <View style={s.detailStatusCol}>
+              <StatusBadge status={submission.status} />
+              {!!submission.reviewed && (
+                <View style={s.reviewedBadge}>
+                  <Text style={s.reviewedBadgeText}>Reviewed ✓</Text>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Instructor feedback */}
+          {!!feedback && (
+            <View style={s.modalSection}>
+              <Text style={s.modalSectionLabel}>Instructor Feedback</Text>
+              <View style={s.feedbackBox}>
+                <Text style={s.feedbackText}>{feedback}</Text>
+              </View>
+            </View>
+          )}
+
+          {/* Grade */}
+          {submission.grade != null && (
+            <View style={s.gradeRow}>
+              <Text style={s.gradeLabel}>Grade</Text>
+              <Text style={s.gradeValue}>{submission.grade}</Text>
+            </View>
+          )}
+
+          {/* Checklist items with completion status */}
+          {checklistItems.length > 0 && (
+            <View style={s.modalSection}>
+              <Text style={s.modalSectionLabel}>Checklist</Text>
+              {itemsLoading ? (
+                <ActivityIndicator color="#ccff00" style={{ marginTop: 8 }} />
+              ) : (
+                checklistItems.map(ci => {
+                  const submitted = items.find(i => i.checklist_item === ci.id)
+                  const done = submitted?.completed ?? false
+                  return (
+                    <View key={ci.id} style={s.detailCheckRow}>
+                      <View style={[s.detailCheckCircle, done && s.detailCheckCircleDone]}>
+                        <Text style={[s.detailCheckSymbol, done && s.detailCheckSymbolDone]}>
+                          {done ? '✓' : '○'}
+                        </Text>
+                      </View>
+                      <Text style={[s.detailCheckText, done && s.detailCheckTextDone]}>
+                        {ci.text}
+                      </Text>
+                    </View>
+                  )
+                })
+              )}
+            </View>
+          )}
+
+          {/* Student notes */}
+          {!!submission.notes && (
+            <View style={s.modalSection}>
+              <Text style={s.modalSectionLabel}>Your Notes</Text>
+              <View style={s.studentNotesBox}>
+                <Text style={s.studentNotesText}>{submission.notes}</Text>
+              </View>
+            </View>
+          )}
+        </ScrollView>
+      </View>
+    </Modal>
+  )
+}
+
 // ─── submitted card ───────────────────────────────────────────────────────────
 
-function SubmittedCard({ submission, allAssignments }) {
-  // Look up the assignment title from the fetched list if possible
+function SubmittedCard({ submission, allAssignments, onView }) {
   const assignment = allAssignments.find(a => a.id === submission.assignment)
   const title = assignment?.title ?? `Assignment #${submission.assignment}`
   const className = assignment?.session?.name
 
   return (
-    <View style={s.card}>
+    <TouchableOpacity style={[s.card, s.cardSubmitted]} onPress={onView} activeOpacity={0.85}>
       <View style={s.cardHeader}>
         <View style={s.cardTitleRow}>
           <Text style={[s.cardTitle, { flex: 1 }]} numberOfLines={2}>
@@ -303,27 +416,20 @@ function SubmittedCard({ submission, allAssignments }) {
           <StatusBadge status={submission.status} />
         </View>
         {!!className && <Text style={s.cardClass}>{className}</Text>}
-        {!!submission.submitted_at && (
-          <Text style={s.cardDate}>
-            Submitted {fmtDate(submission.submitted_at)}
-          </Text>
-        )}
+        <View style={s.submittedMeta}>
+          {!!submission.submitted_at && (
+            <Text style={s.cardDate}>Submitted {fmtDate(submission.submitted_at)}</Text>
+          )}
+          {!!submission.reviewed && (
+            <Text style={s.reviewedInline}>Reviewed ✓</Text>
+          )}
+        </View>
       </View>
 
-      {!!submission.feedback && (
-        <View style={s.feedbackBox}>
-          <Text style={s.feedbackLabel}>Teacher feedback</Text>
-          <Text style={s.feedbackText}>{submission.feedback}</Text>
-        </View>
-      )}
-
-      {submission.grade != null && (
-        <View style={s.gradeRow}>
-          <Text style={s.gradeLabel}>Grade</Text>
-          <Text style={s.gradeValue}>{submission.grade}</Text>
-        </View>
-      )}
-    </View>
+      <View style={s.viewRow}>
+        <Text style={s.viewRowText}>View submission →</Text>
+      </View>
+    </TouchableOpacity>
   )
 }
 
@@ -335,8 +441,7 @@ export default function HomeworkScreen() {
 
   const [activeTab, setActiveTab] = useState('Pending')
   const [modalAssignment, setModalAssignment] = useState(null)
-  // Track locally submitted IDs so the UI updates immediately without a
-  // full refetch (the list will sync properly on pull-to-refresh)
+  const [viewSubmission, setViewSubmission] = useState(null)
   const [locallySubmitted, setLocallySubmitted] = useState(new Set())
   const [refreshing, setRefreshing] = useState(false)
 
@@ -447,7 +552,11 @@ export default function HomeworkScreen() {
         data={submissions}
         keyExtractor={item => String(item.id)}
         renderItem={({ item }) => (
-          <SubmittedCard submission={item} allAssignments={assignments} />
+          <SubmittedCard
+            submission={item}
+            allAssignments={assignments}
+            onView={() => setViewSubmission(item)}
+          />
         )}
         contentContainerStyle={s.listContent}
         refreshControl={
@@ -476,6 +585,14 @@ export default function HomeworkScreen() {
         onClose={() => setModalAssignment(null)}
         onSuccess={handleSubmitSuccess}
       />
+
+      {viewSubmission && (
+        <SubmissionDetailModal
+          submission={viewSubmission}
+          assignment={assignments.find(a => a.id === viewSubmission.assignment)}
+          onClose={() => setViewSubmission(null)}
+        />
+      )}
     </View>
   )
 }
@@ -653,22 +770,139 @@ const s = StyleSheet.create({
   badgeAmber: { backgroundColor: '#2a1a00' },
   badgeTextAmber: { color: '#ffaa00' },
 
-  // ── Feedback & grade (submitted card) ────────────────────────────────────────
+  // ── Submitted card ────────────────────────────────────────────────────────────
+  cardSubmitted: {
+    borderColor: 'rgba(204,255,0,0.18)',
+  },
+  submittedMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 2,
+  },
+  reviewedInline: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#ccff00',
+  },
+  viewRow: {
+    marginTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#1a1a1a',
+    paddingTop: 10,
+    alignItems: 'flex-end',
+  },
+  viewRowText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#b0a0ff',
+  },
+
+  // ── Submission detail modal ───────────────────────────────────────────────────
+  submittedBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: 'rgba(204,255,0,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(204,255,0,0.15)',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 4,
+    gap: 12,
+  },
+  submittedBannerTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#ccff00',
+    marginBottom: 3,
+  },
+  submittedBannerDate: {
+    fontSize: 12,
+    color: '#888',
+  },
+  detailStatusCol: {
+    alignItems: 'flex-end',
+    gap: 6,
+    flexShrink: 0,
+  },
+  reviewedBadge: {
+    backgroundColor: 'rgba(204,255,0,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(204,255,0,0.25)',
+    borderRadius: 5,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  reviewedBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#ccff00',
+  },
+
+  // ── Detail checklist ──────────────────────────────────────────────────────────
+  detailCheckRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#111',
+  },
+  detailCheckCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 2,
+    borderColor: '#333',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    marginTop: 1,
+  },
+  detailCheckCircleDone: {
+    backgroundColor: '#ccff00',
+    borderColor: '#ccff00',
+  },
+  detailCheckSymbol: {
+    fontSize: 13,
+    color: '#555',
+    fontWeight: '700',
+    lineHeight: 16,
+  },
+  detailCheckSymbolDone: {
+    color: '#000',
+  },
+  detailCheckText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 22,
+  },
+  detailCheckTextDone: {
+    color: '#ccc',
+  },
+
+  // ── Student notes (detail) ────────────────────────────────────────────────────
+  studentNotesBox: {
+    backgroundColor: '#111',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#222',
+  },
+  studentNotesText: {
+    fontSize: 14,
+    color: '#aaa',
+    lineHeight: 21,
+  },
+
+  // ── Feedback & grade ──────────────────────────────────────────────────────────
   feedbackBox: {
     backgroundColor: '#1a1a1a',
     borderRadius: 8,
     padding: 12,
-    marginTop: 4,
     borderLeftWidth: 3,
     borderLeftColor: '#7c3aed',
-  },
-  feedbackLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#ccff00',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 4,
   },
   feedbackText: {
     fontSize: 14,
@@ -679,10 +913,11 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#1a1a1a',
+    backgroundColor: '#111',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#222',
   },
   gradeLabel: {
     fontSize: 13,
@@ -690,7 +925,7 @@ const s = StyleSheet.create({
     color: '#666',
   },
   gradeValue: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '800',
     color: '#fff',
   },
