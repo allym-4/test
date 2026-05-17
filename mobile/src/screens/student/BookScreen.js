@@ -137,11 +137,14 @@ const hu = StyleSheet.create({
 const STRIPE_APPEARANCE = {
   colors: {
     primary: '#ccff00',
-    background: '#111',
+    background: '#111111',
     componentBackground: '#1a1a1a',
-    componentText: '#fff',
-    primaryText: '#fff',
-    secondaryText: '#888',
+    componentText: '#ffffff',
+    primaryText: '#ffffff',
+    secondaryText: '#888888',
+    placeholderText: '#555555',
+    icon: '#888888',
+    error: '#ff4444',
   },
 }
 
