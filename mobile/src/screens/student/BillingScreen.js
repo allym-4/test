@@ -353,7 +353,7 @@ export default function BillingScreen() {
       <View style={s.card}>
         <SectionHeader title="Catch-up Credits" />
         {creditsLoading ? (
-          <ActivityIndicator color="#6366f1" />
+          <ActivityIndicator color="#ccff00" />
         ) : (
           <>
             <View style={s.creditsCountRow}>
@@ -389,7 +389,7 @@ export default function BillingScreen() {
         <View style={s.card}>
           <SectionHeader title="Payment Plans" />
           {plansLoading ? (
-            <ActivityIndicator color="#6366f1" />
+            <ActivityIndicator color="#ccff00" />
           ) : activePlans.map(plan => (
             <View key={plan.id} style={s.planCard}>
               <View style={s.planHeader}>
@@ -423,7 +423,7 @@ export default function BillingScreen() {
       <View style={s.card}>
         <SectionHeader title="Payment History" />
         {paymentsLoading ? (
-          <ActivityIndicator color="#6366f1" />
+          <ActivityIndicator color="#ccff00" />
         ) : paymentList.length === 0 ? (
           <Text style={s.emptyText}>No payment history yet.</Text>
         ) : (
@@ -435,7 +435,7 @@ export default function BillingScreen() {
       <View style={s.card}>
         <SectionHeader title="Saved Cards" />
         {stripeLoading ? (
-          <ActivityIndicator color="#6366f1" />
+          <ActivityIndicator color="#ccff00" />
         ) : paymentMethods.length === 0 ? (
           <Text style={s.emptyText}>No saved cards.</Text>
         ) : (

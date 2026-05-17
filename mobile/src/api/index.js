@@ -27,7 +27,7 @@ export const classes = {
 }
 
 export const media = {
-  list: (params) => client.get('/api/classes/media/', { params }),
+  list: (params) => client.get('/api/users/media/', { params }),
 }
 
 export const enrolments = {
