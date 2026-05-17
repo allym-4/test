@@ -488,7 +488,7 @@ function BookingModal({ visible, occ, availableCredits, priceCasual, seasonPrice
 // ─── main screen ─────────────────────────────────────────────────────────────
 export default function BookScreen({ navigation }) {
   const { user } = useAuth()
-  const { initSetupPaymentSheet, presentSetupPaymentSheet } = useStripe()
+  const { initPaymentSheet, presentPaymentSheet } = useStripe()
 
   const [tab, setTab] = useState('season')
   const [booking, setBooking] = useState(null)
@@ -601,13 +601,23 @@ export default function BookScreen({ navigation }) {
   async function handleSeasonCheckout(payOption, amount, promoCode) {
     setBooking('season')
 
-    // For full / deposit — collect card via Stripe SetupIntent (save card, no charge now)
+    // For full / deposit — charge card via Stripe
     if (payOption === 'full' || payOption === 'deposit') {
       try {
-        const { data } = await payments.stripe.setupIntent()
-        const { error: initErr } = await initSetupPaymentSheet({
+        const amountCents = Math.round(amount * 100)
+        const classNames = selectedSessions.map(s => s.name).join(', ')
+        const description = payOption === 'deposit'
+          ? `Season deposit — ${classNames}`
+          : `Season enrolment — ${classNames}`
+        const { data } = await payments.stripe.createPaymentIntent({
+          amount_cents: amountCents,
+          description,
+          save_method: true,
+        })
+        const { error: initErr } = await initPaymentSheet({
           merchantDisplayName: 'Duality Pole Studio',
-          setupIntentClientSecret: data.client_secret,
+          paymentIntentClientSecret: data.client_secret,
+          allowsDelayedPaymentMethods: false,
           appearance: {
             colors: {
               primary: '#ccff00',
@@ -624,14 +634,14 @@ export default function BookScreen({ navigation }) {
           setBooking(null)
           return
         }
-        const { error: presentErr } = await presentSetupPaymentSheet()
+        const { error: presentErr } = await presentPaymentSheet()
         if (presentErr) {
-          if (presentErr.code !== 'Canceled') Alert.alert('Card not saved', presentErr.message)
+          if (presentErr.code !== 'Canceled') Alert.alert('Payment failed', presentErr.message)
           setBooking(null)
           return
         }
       } catch (e) {
-        Alert.alert('Error', e?.response?.data?.detail || e?.message || 'Could not set up payment. Please try again.')
+        Alert.alert('Error', e?.response?.data?.detail || e?.message || 'Could not start payment. Please try again.')
         setBooking(null)
         return
       }
@@ -654,9 +664,9 @@ export default function BookScreen({ navigation }) {
       refetchActiveEnrol()
 
       if (payOption === 'full') {
-        Alert.alert('You\'re booked!', `Your card has been saved and your spot is reserved. We'll charge $${amount} when the season begins.`)
+        Alert.alert('You\'re booked!', `Payment of $${amount} confirmed. Your spot is reserved for the season.`)
       } else if (payOption === 'deposit') {
-        Alert.alert('You\'re booked!', `Your card has been saved. We'll charge your $${amount} deposit when the season begins, with the balance due before your first class.`)
+        Alert.alert('You\'re booked!', `Deposit of $${amount} confirmed. Your spot is reserved — the balance is due before your first class.`)
       } else if (payOption === 'plan') {
         Alert.alert('You\'re booked!', "Your spot is reserved. The studio will be in touch to set up your payment plan.")
       } else {
