@@ -39,4 +39,7 @@ urlpatterns = [
     path('casual-bookings/<int:pk>/upgrade/', views.CasualUpgradeView.as_view(), name='casual-upgrade'),
     path('casual-bookings/<int:pk>/release/', views.CasualReleaseView.as_view(), name='casual-release'),
     path('casual-bookings/<int:pk>/admin-displace/', views.CasualAdminDisplaceView.as_view(), name='casual-admin-displace'),
+    path('upsells/', views.ClassUpsellListView.as_view(), name='upsell-list'),
+    path('upsells/<int:pk>/', views.ClassUpsellDetailView.as_view(), name='upsell-detail'),
+    path('upsells/suggest/', views.UpsellSuggestView.as_view(), name='upsell-suggest'),
 ]

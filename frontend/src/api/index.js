@@ -55,6 +55,13 @@ export const classes = {
     myBookings: () => client.get('/api/classes/practice/my-bookings/'),
     allBookings: (params) => client.get('/api/classes/practice/all-bookings/', { params }),
   },
+  upsells: {
+    list: (params) => client.get('/api/classes/upsells/', { params }),
+    create: (data) => client.post('/api/classes/upsells/', data),
+    update: (id, data) => client.patch(`/api/classes/upsells/${id}/`, data),
+    delete: (id) => client.delete(`/api/classes/upsells/${id}/`),
+    suggest: (sessionIds) => client.get('/api/classes/upsells/suggest/', { params: { session_ids: sessionIds.join(',') } }),
+  },
 }
 
 export const studios = {

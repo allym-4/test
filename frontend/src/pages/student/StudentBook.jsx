@@ -455,7 +455,7 @@ export default function StudentBook() {
       return
     }
 
-    setCheckout({ session, type, amount: effectivePrice, description })
+    setCheckout({ session, type, amount: effectivePrice, description, sessionIds: [session.id] })
   }
 
   async function cancelWorkshop(workshop) {
@@ -519,6 +519,7 @@ export default function StudentBook() {
         <CheckoutModal
           amount={checkout.amount}
           description={checkout.description}
+          sessionIds={checkout.sessionIds}
           saveMethod={true}
           onSuccess={handlePaymentSuccess}
           onClose={() => setCheckout(null)}

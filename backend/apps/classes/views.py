@@ -3,8 +3,8 @@ from django.db.models import Count
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, ClassChatMessage, Workshop, WorkshopBooking, PracticeSlot, PracticeBooking, CasualBooking
-from .serializers import StudioSerializer, ClassCategorySerializer, ClassSessionSerializer, ClassOccurrenceSerializer, SeasonSerializer, LockerSerializer, KisiGrantSerializer, WorkshopSerializer, WorkshopBookingSerializer, PracticeSlotSerializer, PracticeBookingSerializer, CasualBookingSerializer
+from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, ClassChatMessage, Workshop, WorkshopBooking, PracticeSlot, PracticeBooking, CasualBooking, ClassUpsell
+from .serializers import StudioSerializer, ClassCategorySerializer, ClassSessionSerializer, ClassOccurrenceSerializer, SeasonSerializer, LockerSerializer, KisiGrantSerializer, WorkshopSerializer, WorkshopBookingSerializer, PracticeSlotSerializer, PracticeBookingSerializer, CasualBookingSerializer, ClassUpsellSerializer
 from apps.users.permissions import IsAdminOrInstructor, IsAdminUser
 
 
@@ -558,6 +558,49 @@ class PracticeSlotListView(generics.ListCreateAPIView):
         if self.request.method == 'POST':
             return [IsAdminOrInstructor()]
         return [permissions.IsAuthenticated()]
+
+
+class ClassUpsellListView(generics.ListCreateAPIView):
+    serializer_class = ClassUpsellSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [permissions.IsAuthenticated()]
+        return [IsAdminUser()]
+
+    def get_queryset(self):
+        qs = ClassUpsell.objects.select_related('source_session', 'suggested_session', 'suggested_session__category')
+        source = self.request.query_params.get('source_session')
+        if source:
+            qs = qs.filter(source_session_id=source, is_active=True)
+        return qs
+
+
+class ClassUpsellDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = ClassUpsell.objects.select_related('source_session', 'suggested_session', 'suggested_session__category')
+    serializer_class = ClassUpsellSerializer
+    permission_classes = [IsAdminUser]
+
+
+class UpsellSuggestView(APIView):
+    """Given a list of session IDs, return active upsells for any of them."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        ids_param = request.query_params.get('session_ids', '')
+        session_ids = [int(i) for i in ids_param.split(',') if i.strip().isdigit()]
+        if not session_ids:
+            return Response([])
+        upsells = ClassUpsell.objects.filter(
+            source_session_id__in=session_ids, is_active=True
+        ).select_related('source_session', 'suggested_session', 'suggested_session__category')
+        seen = set()
+        results = []
+        for u in upsells:
+            if u.suggested_session_id not in seen:
+                seen.add(u.suggested_session_id)
+                results.append(ClassUpsellSerializer(u).data)
+        return Response(results)
 
 
 class PracticeSlotDetailView(generics.RetrieveUpdateDestroyAPIView):

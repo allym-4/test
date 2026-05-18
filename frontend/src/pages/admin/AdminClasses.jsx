@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApi } from '../../hooks/useApi'
 import { classes, users, studios } from '../../api'
 
@@ -69,7 +69,100 @@ function WorkshopModal({ w, instructorList, studioList, onSave, onClose }) {
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const TYPE_LABELS = { course: 'Course', casual: 'Drop-In' }
 
-function ClassModal({ cls, instructors, studios, onSave, onClose }) {
+function UpsellsPanel({ sessionId, allSessions }) {
+  const [upsells, setUpsells] = useState([])
+  const [adding, setAdding] = useState(false)
+  const [newForm, setNewForm] = useState({ suggested_session: '', headline: '', body: '' })
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    classes.upsells.list({ source_session: sessionId }).then(r => setUpsells(r.data || []))
+  }, [sessionId])
+
+  async function saveNew(e) {
+    e.preventDefault()
+    if (!newForm.suggested_session || !newForm.headline) return
+    setSaving(true)
+    try {
+      await classes.upsells.create({ source_session: sessionId, ...newForm })
+      const r = await classes.upsells.list({ source_session: sessionId })
+      setUpsells(r.data || [])
+      setNewForm({ suggested_session: '', headline: '', body: '' })
+      setAdding(false)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function remove(id) {
+    await classes.upsells.delete(id)
+    setUpsells(u => u.filter(x => x.id !== id))
+  }
+
+  async function toggle(u) {
+    const r = await classes.upsells.update(u.id, { is_active: !u.is_active })
+    setUpsells(us => us.map(x => x.id === u.id ? r.data : x))
+  }
+
+  const otherSessions = allSessions.filter(s => s.id !== sessionId)
+
+  return (
+    <div>
+      {upsells.length === 0 && !adding && (
+        <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 12 }}>No upsells configured for this class.</div>
+      )}
+      {upsells.map(u => (
+        <div key={u.id} style={{
+          background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8,
+          padding: '10px 14px', marginBottom: 8, display: 'flex', alignItems: 'flex-start', gap: 10,
+        }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 600, fontSize: 13 }}>{u.headline}</div>
+            <div style={{ fontSize: 12, color: 'var(--grey)' }}>→ {u.suggested_session_name}</div>
+            {u.body && <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{u.body}</div>}
+          </div>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+            <span
+              onClick={() => toggle(u)}
+              style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, cursor: 'pointer',
+                background: u.is_active ? 'rgba(204,255,0,0.12)' : 'var(--border)',
+                color: u.is_active ? 'var(--lime)' : 'var(--grey)' }}
+            >{u.is_active ? 'Active' : 'Off'}</span>
+            <button className="btn btn-ghost btn-xs" onClick={() => remove(u.id)} style={{ color: 'var(--red)' }}>✕</button>
+          </div>
+        </div>
+      ))}
+      {adding ? (
+        <form onSubmit={saveNew} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8, padding: 14, marginTop: 8 }}>
+          <div style={{ marginBottom: 10 }}>
+            <label className="form-label">Suggest this class</label>
+            <select className="input" style={{ width: '100%' }} value={newForm.suggested_session} onChange={e => setNewForm(f => ({ ...f, suggested_session: e.target.value }))} required>
+              <option value="">— Select class —</option>
+              {otherSessions.map(s => <option key={s.id} value={s.id}>{s.name} ({s.day_of_week_display} {s.start_time?.slice(0,5)})</option>)}
+            </select>
+          </div>
+          <div style={{ marginBottom: 10 }}>
+            <label className="form-label">Headline</label>
+            <input className="input" style={{ width: '100%' }} placeholder="e.g. Combining this with High Tricks is a great double" value={newForm.headline} onChange={e => setNewForm(f => ({ ...f, headline: e.target.value }))} required />
+          </div>
+          <div style={{ marginBottom: 10 }}>
+            <label className="form-label">Body (optional)</label>
+            <input className="input" style={{ width: '100%' }} placeholder="Short description shown to student" value={newForm.body} onChange={e => setNewForm(f => ({ ...f, body: e.target.value }))} />
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>{saving ? 'Saving…' : 'Add'}</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setAdding(false)}>Cancel</button>
+          </div>
+        </form>
+      ) : (
+        <button className="btn btn-ghost btn-sm" onClick={() => setAdding(true)} style={{ marginTop: 4 }}>+ Add upsell</button>
+      )}
+    </div>
+  )
+}
+
+function ClassModal({ cls, instructors, studios: studioList, allSessions, onSave, onClose }) {
+  const [tab, setTab] = useState('details')
   const [form, setForm] = useState({
     name: cls?.name || '',
     level: cls?.level || '',
@@ -101,68 +194,86 @@ function ClassModal({ cls, instructors, studios, onSave, onClose }) {
     }
   }
 
+  const tabStyle = (t) => ({
+    fontSize: 12, fontWeight: 600, padding: '6px 14px', cursor: 'pointer',
+    borderBottom: tab === t ? '2px solid var(--lime)' : '2px solid transparent',
+    color: tab === t ? 'var(--lime)' : 'var(--grey)',
+  })
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" style={{ maxWidth: 520 }} onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <div className="modal-title">{cls ? 'Edit Class' : 'Create Class'}</div>
+          <div className="modal-title">{cls?.id ? 'Edit Class' : 'Create Class'}</div>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
-        <form onSubmit={handleSubmit}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-            <div style={{ gridColumn: '1/-1' }}>
-              <label className="form-label">Class Name</label>
-              <input className="input" value={form.name} onChange={e => set('name', e.target.value)} required style={{ width: '100%' }} />
-            </div>
-            <div>
-              <label className="form-label">Level</label>
-              <input className="input" value={form.level} onChange={e => set('level', e.target.value)} style={{ width: '100%' }} placeholder="e.g. Level 2" />
-            </div>
-            <div>
-              <label className="form-label">Type</label>
-              <select className="input" value={form.session_type} onChange={e => set('session_type', e.target.value)} style={{ width: '100%' }}>
-                <option value="course">Course</option>
-                <option value="casual">Drop-In</option>
-              </select>
-            </div>
-            <div>
-              <label className="form-label">Day</label>
-              <select className="input" value={form.day_of_week} onChange={e => set('day_of_week', parseInt(e.target.value))} style={{ width: '100%' }}>
-                {DAYS.map((d, i) => <option key={i} value={i}>{d}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="form-label">Start Time</label>
-              <input className="input" type="time" value={form.start_time} onChange={e => set('start_time', e.target.value)} style={{ width: '100%' }} />
-            </div>
-            <div>
-              <label className="form-label">Duration (mins)</label>
-              <input className="input" type="number" value={form.duration_minutes} onChange={e => set('duration_minutes', parseInt(e.target.value))} style={{ width: '100%' }} />
-            </div>
-            <div>
-              <label className="form-label">Capacity</label>
-              <input className="input" type="number" value={form.capacity} onChange={e => set('capacity', parseInt(e.target.value))} style={{ width: '100%' }} />
-            </div>
-            <div>
-              <label className="form-label">Instructor</label>
-              <select className="input" value={form.instructor || ''} onChange={e => set('instructor', e.target.value || null)} style={{ width: '100%' }}>
-                <option value="">— None —</option>
-                {instructors.map(i => <option key={i.id} value={i.id}>{i.display_name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="form-label">Studio</label>
-              <select className="input" value={form.studio || ''} onChange={e => set('studio', e.target.value || null)} style={{ width: '100%' }}>
-                <option value="">— None —</option>
-                {studios.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-            </div>
+
+        {cls?.id && (
+          <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border)', marginBottom: 16 }}>
+            <div style={tabStyle('details')} onClick={() => setTab('details')}>Details</div>
+            <div style={tabStyle('upsells')} onClick={() => setTab('upsells')}>Upsells</div>
           </div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
-            <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving…' : cls ? 'Save Changes' : 'Create Class'}</button>
-            <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
-          </div>
-        </form>
+        )}
+
+        {tab === 'details' ? (
+          <form onSubmit={handleSubmit}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div style={{ gridColumn: '1/-1' }}>
+                <label className="form-label">Class Name</label>
+                <input className="input" value={form.name} onChange={e => set('name', e.target.value)} required style={{ width: '100%' }} />
+              </div>
+              <div>
+                <label className="form-label">Level</label>
+                <input className="input" value={form.level} onChange={e => set('level', e.target.value)} style={{ width: '100%' }} placeholder="e.g. Level 2" />
+              </div>
+              <div>
+                <label className="form-label">Type</label>
+                <select className="input" value={form.session_type} onChange={e => set('session_type', e.target.value)} style={{ width: '100%' }}>
+                  <option value="course">Course</option>
+                  <option value="casual">Drop-In</option>
+                </select>
+              </div>
+              <div>
+                <label className="form-label">Day</label>
+                <select className="input" value={form.day_of_week} onChange={e => set('day_of_week', parseInt(e.target.value))} style={{ width: '100%' }}>
+                  {DAYS.map((d, i) => <option key={i} value={i}>{d}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="form-label">Start Time</label>
+                <input className="input" type="time" value={form.start_time} onChange={e => set('start_time', e.target.value)} style={{ width: '100%' }} />
+              </div>
+              <div>
+                <label className="form-label">Duration (mins)</label>
+                <input className="input" type="number" value={form.duration_minutes} onChange={e => set('duration_minutes', parseInt(e.target.value))} style={{ width: '100%' }} />
+              </div>
+              <div>
+                <label className="form-label">Capacity</label>
+                <input className="input" type="number" value={form.capacity} onChange={e => set('capacity', parseInt(e.target.value))} style={{ width: '100%' }} />
+              </div>
+              <div>
+                <label className="form-label">Instructor</label>
+                <select className="input" value={form.instructor || ''} onChange={e => set('instructor', e.target.value || null)} style={{ width: '100%' }}>
+                  <option value="">— None —</option>
+                  {instructors.map(i => <option key={i.id} value={i.id}>{i.display_name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="form-label">Studio</label>
+                <select className="input" value={form.studio || ''} onChange={e => set('studio', e.target.value || null)} style={{ width: '100%' }}>
+                  <option value="">— None —</option>
+                  {studioList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
+              <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving…' : cls?.id ? 'Save Changes' : 'Create Class'}</button>
+              <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
+            </div>
+          </form>
+        ) : (
+          <UpsellsPanel sessionId={cls.id} allSessions={allSessions || []} />
+        )}
       </div>
     </div>
   )
@@ -296,6 +407,7 @@ export default function AdminClasses() {
           cls={modal._new ? { session_type: modal.session_type } : modal}
           instructors={instructors}
           studios={studioList}
+          allSessions={sessions}
           onSave={() => { setModal(null); refetch() }}
           onClose={() => setModal(null)}
         />
