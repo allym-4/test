@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
   ScrollView, View, Text, TouchableOpacity, StyleSheet,
   RefreshControl, Alert, Modal, ActivityIndicator, TextInput,
 } from 'react-native'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, seasons, attendance as attendanceApi, classes as classesApi, skills as skillsApi, announcements as announcementsApi, payments } from '../../api'
+import { enrolments, seasons, attendance as attendanceApi, skills as skillsApi, announcements as announcementsApi, payments } from '../../api'
 
 const DAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -129,24 +129,48 @@ function KpiCard({ label, value, color = '#ccff00' }) {
   )
 }
 
+function getNextClassDate(sess) {
+  // Compute the next calendar date for this session from day_of_week + start_time
+  if (sess?.day_of_week == null || !sess?.start_time) return null
+  const djangoDow = sess.day_of_week // 0=Mon … 6=Sun
+  const jsDow = djangoDow === 6 ? 0 : djangoDow + 1 // JS: 0=Sun … 6=Sat
+  const now = new Date()
+  let daysAhead = jsDow - now.getDay()
+  if (daysAhead < 0) daysAhead += 7
+  if (daysAhead === 0) {
+    const [h, m] = sess.start_time.split(':').map(Number)
+    const classToday = new Date(now); classToday.setHours(h, m, 0, 0)
+    if (classToday <= now) daysAhead = 7
+  }
+  const d = new Date(now)
+  d.setDate(now.getDate() + daysAhead)
+  const [h, m] = sess.start_time.split(':').map(Number)
+  d.setHours(h, m, 0, 0)
+  return d
+}
+
 function MarkAwayModal({ enrolment, onClose, onDone }) {
   const sess = enrolment.class_session_detail
   const [confirming, setConfirming] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
 
-  const { data: occData } = useApi(
-    () => sess?.id ? classesApi.occurrences({ session: sess.id, upcoming: 'true' }) : null,
-    [sess?.id]
-  )
-  const nextOcc = occData?.results?.[0] || occData?.[0] || null
+  const nextClassDate = useMemo(() => getNextClassDate(sess), [sess])
+
+  const withinCutoff = useMemo(() => {
+    if (!nextClassDate) return false
+    return (nextClassDate - new Date()) < 4 * 60 * 60 * 1000
+  }, [nextClassDate])
+
+  const nextDateLabel = nextClassDate
+    ? nextClassDate.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
+    : null
 
   async function handleConfirm() {
-    if (!nextOcc) { setError('No upcoming class found'); return }
     setConfirming(true)
     setError('')
     try {
-      await attendanceApi.markAway(nextOcc.id)
+      await attendanceApi.markAway(null, enrolment.id)
       setDone(true)
       setTimeout(onDone, 1200)
     } catch (err) {
@@ -168,17 +192,28 @@ function MarkAwayModal({ enrolment, onClose, onDone }) {
             <Text style={s.modalClassName}>{sess?.name}</Text>
             <Text style={s.modalClassMeta}>
               {sess?.day_of_week != null ? DAYS_FULL[sess.day_of_week] : ''} · {sess?.start_time?.slice(0, 5)}
+              {nextDateLabel ? `  ·  ${nextDateLabel}` : ''}
             </Text>
-            {nextOcc?.date && (
-              <Text style={s.modalNextDate}>
-                Next class: {new Date(nextOcc.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
-              </Text>
+
+            {!withinCutoff ? (
+              <View style={[s.infoBox, { borderColor: '#ccff00', backgroundColor: '#0f1600' }]}>
+                <Text style={[s.infoBoxHeading, { color: '#ccff00' }]}>You'll receive a catch-up credit</Text>
+                <Text style={s.infoBoxText}>
+                  This is more than 4 hours before your class — you're within the cancellation window. A catch-up credit will be added to your account to use within this season.
+                </Text>
+              </View>
+            ) : (
+              <View style={[s.infoBox, { borderColor: '#ffaa44', backgroundColor: '#1a0900' }]}>
+                <Text style={[s.infoBoxHeading, { color: '#ffaa44' }]}>No catch-up credit for this one</Text>
+                <Text style={s.infoBoxText}>
+                  This is within 4 hours of your class — the cancellation window has passed. You can still mark away so we know you're not coming, but no credit will be issued.{' '}
+                  If you don't mark away and don't attend, a{' '}
+                  <Text style={{ color: '#ffaa44', fontWeight: '600' }}>$20 no-show fee</Text>
+                  {' '}will be charged.
+                </Text>
+              </View>
             )}
-            <View style={s.infoBox}>
-              <Text style={s.infoBoxText}>
-                Marking away lets your instructor plan ahead. A makeup credit may be issued if eligible.
-              </Text>
-            </View>
+
             {!!error && <Text style={s.errorText}>{error}</Text>}
             {done ? (
               <Text style={s.doneText}>✓ Marked as away</Text>
@@ -188,11 +223,13 @@ function MarkAwayModal({ enrolment, onClose, onDone }) {
                   <Text style={s.cancelBtnText}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[s.confirmBtn, (confirming || !nextOcc) && s.btnDisabled]}
+                  style={[s.confirmBtn, confirming && s.btnDisabled]}
                   onPress={handleConfirm}
-                  disabled={confirming || !nextOcc}
+                  disabled={confirming}
                 >
-                  <Text style={s.confirmBtnText}>{confirming ? 'Saving…' : 'Confirm Away'}</Text>
+                  <Text style={s.confirmBtnText} numberOfLines={1}>
+                    {confirming ? 'Saving…' : withinCutoff ? 'Mark away anyway' : 'Confirm away'}
+                  </Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -703,6 +740,7 @@ const s = StyleSheet.create({
   modalClassMeta: { fontSize: 13, color: '#666', marginBottom: 4 },
   modalNextDate: { fontSize: 12, color: '#666', marginBottom: 16 },
   infoBox: { backgroundColor: 'rgba(204,255,0,0.05)', borderWidth: 1, borderColor: 'rgba(204,255,0,0.15)', borderRadius: 10, padding: 14, marginBottom: 16 },
+  infoBoxHeading: { fontSize: 13, fontWeight: '700', marginBottom: 6 },
   infoBoxText: { fontSize: 13, color: '#666', lineHeight: 20 },
   errorText: { color: '#ff4444', fontSize: 12, marginBottom: 12 },
   doneText: { textAlign: 'center', color: '#ccff00', fontWeight: '700', paddingVertical: 8 },

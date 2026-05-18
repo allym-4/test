@@ -100,14 +100,27 @@ class StudentMarkAwayView(APIView):
         from apps.users.models import StudioSettings
 
         occurrence_id = request.data.get('occurrence_id')
-        if not occurrence_id:
-            return Response({'detail': 'occurrence_id required'}, status=400)
-        try:
-            occurrence = ClassOccurrence.objects.get(pk=occurrence_id)
-        except ClassOccurrence.DoesNotExist:
-            return Response({'detail': 'Occurrence not found'}, status=404)
-        if occurrence.date < date.today():
-            return Response({'detail': 'Cannot mark away for a past class'}, status=400)
+        enrolment_id = request.data.get('enrolment_id')
+        if not occurrence_id and not enrolment_id:
+            return Response({'detail': 'occurrence_id or enrolment_id required'}, status=400)
+        if enrolment_id:
+            from apps.enrolments.models import Enrolment
+            try:
+                enrolment = Enrolment.objects.get(pk=enrolment_id, student=request.user)
+            except Enrolment.DoesNotExist:
+                return Response({'detail': 'Enrolment not found'}, status=404)
+            occurrence = ClassOccurrence.objects.filter(
+                session=enrolment.class_session, date__gte=date.today()
+            ).order_by('date').first()
+            if not occurrence:
+                return Response({'detail': 'No upcoming class found for this enrolment'}, status=400)
+        else:
+            try:
+                occurrence = ClassOccurrence.objects.get(pk=occurrence_id)
+            except ClassOccurrence.DoesNotExist:
+                return Response({'detail': 'Occurrence not found'}, status=404)
+            if occurrence.date < date.today():
+                return Response({'detail': 'Cannot mark away for a past class'}, status=400)
 
         record, _ = AttendanceRecord.objects.update_or_create(
             occurrence=occurrence,

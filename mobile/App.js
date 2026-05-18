@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { StripeProvider } from '@stripe/stripe-react-native'
 import { AuthProvider, useAuth } from './src/contexts/AuthContext'
 import { usePushNotifications } from './src/hooks/usePushNotifications'
+import { payments } from './src/api'
 import LoginScreen from './src/screens/auth/LoginScreen'
 import RegisterScreen from './src/screens/auth/RegisterScreen'
 import OnboardingScreen from './src/screens/auth/OnboardingScreen'
@@ -23,9 +24,6 @@ function StudentApp() {
   const { isInstructor, onSwitchToInstructor } = useContext(AppContext)
   return <StudentTabs isInstructor={isInstructor} onSwitchToInstructor={onSwitchToInstructor} />
 }
-
-// Publishable key — safe to expose in client code
-const STRIPE_PK = 'pk_live_REPLACE_WITH_YOUR_PUBLISHABLE_KEY'
 
 const Stack = createNativeStackNavigator()
 
@@ -128,16 +126,33 @@ function RootNavigator() {
   )
 }
 
-export default function App() {
+function AppWithStripe() {
+  const { user } = useAuth()
+  const [stripePk, setStripePk] = useState('')
+
+  useEffect(() => {
+    if (user) {
+      payments.stripe.config()
+        .then(r => { if (r.data?.publishable_key) setStripePk(r.data.publishable_key) })
+        .catch(() => {})
+    }
+  }, [user?.id])
+
   return (
     <StripeProvider
-      publishableKey={STRIPE_PK}
+      publishableKey={stripePk || 'pk_live_placeholder'}
       merchantIdentifier="merchant.com.yourstudio.app"
       urlScheme="yourstudio"
     >
-      <AuthProvider>
-        <RootNavigator />
-      </AuthProvider>
+      <RootNavigator />
     </StripeProvider>
+  )
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppWithStripe />
+    </AuthProvider>
   )
 }

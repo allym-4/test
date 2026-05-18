@@ -60,8 +60,8 @@ export const attendance = {
   list: (params) => client.get('/api/attendance/', { params }),
   bulkSave: (occurrenceId, records) =>
     client.post(`/api/attendance/occurrence/${occurrenceId}/bulk/`, { records }),
-  markAway: (occurrence_id) =>
-    client.post('/api/attendance/mark-away/', { occurrence_id }),
+  markAway: (occurrence_id, enrolment_id) =>
+    client.post('/api/attendance/mark-away/', { occurrence_id, enrolment_id }),
   cancelAway: (occurrence_id) =>
     client.post('/api/attendance/cancel-away/', { occurrence_id }),
   makeupCredits: {
