@@ -63,6 +63,10 @@ class ClassSession(models.Model):
     season = models.ForeignKey(
         'Season', on_delete=models.SET_NULL, null=True, blank=True, related_name='sessions'
     )
+    catchup_cutoff_weeks = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text='No catch-up bookings accepted after this many weeks into the season. Leave blank to allow catch-ups any time.'
+    )
 
     class Meta:
         ordering = ['day_of_week', 'start_time']
@@ -131,6 +135,7 @@ class Season(models.Model):
     start_date = models.DateField()
     end_date = models.DateField()
     status = models.CharField(max_length=15, choices=Status.choices, default=Status.UPCOMING)
+    bookings_open = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
     published_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

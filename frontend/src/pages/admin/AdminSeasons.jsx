@@ -235,15 +235,21 @@ function SeasonModal({ season, onClose, onSaved, allSeasons = [] }) {
   )
 }
 
-function SeasonDrawer({ season, onClose, onEdit, onStatusChange }) {
+function SeasonDrawer({ season, onClose, onEdit, onStatusChange, onBookingsToggle }) {
   const { data: sessionsData, loading: loadingSessions } = useApi(
     () => classesApi.list({ season: season.id }),
     [season.id]
   )
   const sessions = sessionsData?.results || sessionsData || []
+  const [toggling, setToggling] = useState(false)
 
   const statusCls = { active: 'tag-lime', upcoming: 'tag-lav', completed: 'tag-grey' }
   const wr = weeksRemaining(season.end_date)
+
+  async function handleToggleBookings() {
+    setToggling(true)
+    try { await onBookingsToggle() } finally { setToggling(false) }
+  }
 
   return (
     <>
@@ -261,10 +267,21 @@ function SeasonDrawer({ season, onClose, onEdit, onStatusChange }) {
         {/* header */}
         <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, marginBottom: 4 }}>{season.name}</div>
-            <span className={`tag ${statusCls[season.status] || 'tag-grey'}`} style={{ fontSize: 10 }}>
-              {season.status.charAt(0).toUpperCase() + season.status.slice(1)}
-            </span>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, marginBottom: 6 }}>{season.name}</div>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span className={`tag ${statusCls[season.status] || 'tag-grey'}`} style={{ fontSize: 10 }}>
+                {season.status.charAt(0).toUpperCase() + season.status.slice(1)}
+              </span>
+              <span style={{
+                fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+                padding: '2px 8px', borderRadius: 20,
+                background: season.bookings_open ? 'rgba(204,255,0,0.15)' : 'rgba(255,68,68,0.12)',
+                color: season.bookings_open ? 'var(--lime)' : 'var(--red)',
+                border: `1px solid ${season.bookings_open ? 'rgba(204,255,0,0.3)' : 'rgba(255,68,68,0.25)'}`,
+              }}>
+                {season.bookings_open ? 'Bookings open' : 'Bookings closed'}
+              </span>
+            </div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <button className="btn btn-ghost btn-xs" onClick={onEdit}>Edit</button>
@@ -338,6 +355,38 @@ function SeasonDrawer({ season, onClose, onEdit, onStatusChange }) {
               <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>{season.notes}</div>
             </div>
           )}
+
+          {/* Bookings toggle */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', fontWeight: 600, marginBottom: 10 }}>Booking Access</div>
+            <div style={{ background: '#111', borderRadius: 10, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>
+                  {season.bookings_open ? 'Bookings are open' : 'Bookings are closed'}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--grey)' }}>
+                  {season.bookings_open
+                    ? 'Students can enrol in classes for this season.'
+                    : 'Students cannot book season classes until you open bookings.'}
+                </div>
+              </div>
+              <button
+                onClick={handleToggleBookings}
+                disabled={toggling}
+                style={{
+                  flexShrink: 0,
+                  background: season.bookings_open ? 'rgba(255,68,68,0.12)' : 'var(--lime)',
+                  color: season.bookings_open ? 'var(--red)' : '#000',
+                  border: season.bookings_open ? '1px solid rgba(255,68,68,0.3)' : 'none',
+                  borderRadius: 8, padding: '8px 16px', fontWeight: 700, fontSize: 12,
+                  cursor: toggling ? 'default' : 'pointer', opacity: toggling ? 0.6 : 1,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {toggling ? '…' : season.bookings_open ? 'Close bookings' : 'Open bookings'}
+              </button>
+            </div>
+          </div>
 
           {/* Status actions */}
           <div style={{ display: 'flex', gap: 8 }}>
@@ -427,9 +476,19 @@ export default function AdminSeasons() {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18 }}>{season.name}</div>
-                  <span className={`tag ${statusCls[season.status] || 'tag-grey'}`} style={{ fontSize: 10 }}>
-                    {season.status.charAt(0).toUpperCase() + season.status.slice(1)}
-                  </span>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    <span className={`tag ${statusCls[season.status] || 'tag-grey'}`} style={{ fontSize: 10 }}>
+                      {season.status.charAt(0).toUpperCase() + season.status.slice(1)}
+                    </span>
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 20,
+                      background: season.bookings_open ? 'rgba(204,255,0,0.12)' : 'rgba(255,68,68,0.1)',
+                      color: season.bookings_open ? 'var(--lime)' : 'var(--red)',
+                      border: `1px solid ${season.bookings_open ? 'rgba(204,255,0,0.25)' : 'rgba(255,68,68,0.2)'}`,
+                    }}>
+                      {season.bookings_open ? 'Open' : 'Closed'}
+                    </span>
+                  </div>
                 </div>
 
                 <div style={{ fontSize: 12, color: 'var(--grey)' }}>
@@ -474,6 +533,12 @@ export default function AdminSeasons() {
           onClose={() => setDrawerSeason(null)}
           onEdit={() => { setEditSeason(drawerSeason); setShowModal(true) }}
           onStatusChange={(status) => handleStatusChange(drawerSeason.id, status)}
+          onBookingsToggle={async () => {
+            const res = await seasons.toggleBookings(drawerSeason.id)
+            const updated = { ...drawerSeason, bookings_open: res.data.bookings_open }
+            setDrawerSeason(updated)
+            refetch()
+          }}
         />
       )}
 

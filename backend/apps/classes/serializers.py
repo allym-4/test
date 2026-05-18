@@ -32,8 +32,16 @@ class ClassSessionSerializer(serializers.ModelSerializer):
             'studio', 'studio_detail', 'day_of_week', 'day_of_week_display',
             'start_time', 'duration_minutes', 'capacity', 'enrolled_count',
             'session_type', 'is_active', 'category', 'category_name',
-            'season', 'season_name', 'season_start_date',
+            'season', 'season_name', 'season_start_date', 'season_bookings_open',
+            'catchup_cutoff_weeks',
         )
+
+    season_bookings_open = serializers.SerializerMethodField()
+
+    def get_season_bookings_open(self, obj):
+        if obj.season_id is None:
+            return True  # no season = always open
+        return obj.season.bookings_open
 
 
 class ClassOccurrenceSerializer(serializers.ModelSerializer):
@@ -114,7 +122,7 @@ class SeasonSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Season
-        fields = ('id', 'name', 'start_date', 'end_date', 'status', 'notes', 'published_at', 'created_at', 'session_count', 'enrolled_count')
+        fields = ('id', 'name', 'start_date', 'end_date', 'status', 'bookings_open', 'notes', 'published_at', 'created_at', 'session_count', 'enrolled_count')
         read_only_fields = ('id', 'created_at', 'session_count', 'enrolled_count')
 
     def get_session_count(self, obj):

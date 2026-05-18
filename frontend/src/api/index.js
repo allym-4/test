@@ -144,6 +144,7 @@ export const seasons = {
   create: (data) => client.post('/api/classes/seasons/', data),
   update: (id, data) => client.patch(`/api/classes/seasons/${id}/`, data),
   delete: (id) => client.delete(`/api/classes/seasons/${id}/`),
+  toggleBookings: (id) => client.post(`/api/classes/seasons/${id}/toggle-bookings/`),
 }
 
 export const lockers = {

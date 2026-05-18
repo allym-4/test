@@ -12,6 +12,7 @@ urlpatterns = [
     path('occurrences/<int:pk>/', views.ClassOccurrenceDetailView.as_view(), name='occurrence-detail'),
     path('seasons/', views.SeasonListView.as_view(), name='season-list'),
     path('seasons/<int:pk>/', views.SeasonDetailView.as_view(), name='season-detail'),
+    path('seasons/<int:pk>/toggle-bookings/', views.SeasonToggleBookingsView.as_view(), name='season-toggle-bookings'),
     path('lockers/', views.LockerListView.as_view(), name='locker-list'),
     path('lockers/mine/', views.MyLockerView.as_view(), name='locker-mine'),
     path('lockers/eligible/', views.LockerEligibleStudentsView.as_view(), name='locker-eligible'),

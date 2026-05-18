@@ -192,8 +192,44 @@ class EnrolmentListView(generics.ListCreateAPIView):
         return qs
 
     def perform_create(self, serializer):
+        from rest_framework.exceptions import PermissionDenied, ValidationError
+        from apps.payments.models import Payment
+        from django.db.models import Sum
+
         user = self.request.user
-        # Students can only enrol themselves
+        enrolment_type = serializer.validated_data.get('enrolment_type', 'course')
+        session = serializer.validated_data.get('class_session')
+
+        # Season booking gate — course/catchup enrolments only (not casual/trial)
+        if user.role == 'student' and session and enrolment_type in ('course', 'catchup', 'catch_up'):
+            season = getattr(session, 'season', None)
+            if season and not season.bookings_open:
+                raise ValidationError(
+                    f'Bookings for {season.name} are not open yet. '
+                    'Keep an eye on your email for when they open!'
+                )
+
+        # Catch-up cutoff week gate
+        if session and enrolment_type in ('catchup', 'catch_up'):
+            cutoff = getattr(session, 'catchup_cutoff_weeks', None)
+            season = getattr(session, 'season', None)
+            if cutoff is not None and season and season.start_date:
+                today = timezone.localdate()
+                week_number = (today - season.start_date).days // 7 + 1
+                if week_number > cutoff:
+                    raise ValidationError(
+                        f'Catch-up bookings for {session.name} closed after week {cutoff} of the season.'
+                    )
+
+        # Block students with an outstanding balance from booking
+        if user.role == 'student':
+            balance = Payment.objects.filter(student=user).aggregate(total=Sum('amount'))['total'] or 0
+            if balance < 0:
+                raise PermissionDenied(
+                    f'You have an outstanding balance of ${abs(balance):.2f}. '
+                    'Please settle your account before booking.'
+                )
+
         if user.role == 'student':
             enrolment = serializer.save(student=user)
         else:
