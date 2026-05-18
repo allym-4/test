@@ -2,7 +2,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from .models import AttendanceRecord, MakeupCredit
+from .models import AttendanceRecord, MakeupCredit, ClassPass
 from .serializers import AttendanceRecordSerializer
 from apps.users.permissions import IsAdminOrInstructor
 from apps.classes.models import ClassOccurrence
@@ -354,3 +354,60 @@ class MakeupCreditDetailView(generics.RetrieveUpdateDestroyAPIView):
             serializer.save(used_at=timezone.now())
         else:
             serializer.save()
+
+
+class ClassPassListView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        from .serializers import ClassPassSerializer
+        return ClassPassSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role in ('admin', 'instructor', 'staff'):
+            qs = ClassPass.objects.select_related('student')
+            student_id = self.request.query_params.get('student')
+            if student_id:
+                qs = qs.filter(student_id=student_id)
+            return qs
+        return ClassPass.objects.filter(student=user)
+
+
+class ClassPassPurchaseView(generics.CreateAPIView):
+    """Student purchases a class pass. Payment is handled client-side via Stripe."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        from .serializers import ClassPassSerializer
+        return ClassPassSerializer
+
+    def create(self, request, *args, **kwargs):
+        from apps.users.models import StudioSettings
+        from datetime import date, timedelta
+
+        settings = StudioSettings.get()
+        num_classes = settings.class_pass_size
+        price = settings.price_class_pass
+        expiry_days = settings.credit_expiry_days
+
+        class_pass = ClassPass.objects.create(
+            student=request.user,
+            num_classes=num_classes,
+            classes_used=0,
+            price_paid=price,
+            expires_at=date.today() + timedelta(days=expiry_days),
+        )
+        from .serializers import ClassPassSerializer
+        return Response(ClassPassSerializer(class_pass).data, status=status.HTTP_201_CREATED)
+
+
+class ClassPassDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def get_serializer_class(self):
+        from .serializers import ClassPassSerializer
+        return ClassPassSerializer
+
+    def get_queryset(self):
+        return ClassPass.objects.select_related('student').all()

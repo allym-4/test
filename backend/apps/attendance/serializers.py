@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import AttendanceRecord, MakeupCredit
+from .models import AttendanceRecord, MakeupCredit, ClassPass
 from apps.users.serializers import UserMinimalSerializer
 from apps.classes.serializers import ClassOccurrenceSerializer
 
@@ -27,3 +27,18 @@ class MakeupCreditSerializer(serializers.ModelSerializer):
         model = MakeupCredit
         fields = ('id', 'student', 'student_name', 'season', 'reason', 'status', 'issued_by', 'issued_by_name', 'created_at', 'used_at')
         read_only_fields = ('id', 'issued_by', 'created_at')
+
+
+class ClassPassSerializer(serializers.ModelSerializer):
+    student_name = serializers.StringRelatedField(source='student')
+    classes_remaining = serializers.IntegerField(read_only=True)
+    is_active = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = ClassPass
+        fields = (
+            'id', 'student', 'student_name',
+            'num_classes', 'classes_used', 'classes_remaining', 'is_active',
+            'price_paid', 'created_at', 'expires_at',
+        )
+        read_only_fields = ('id', 'created_at', 'classes_used')

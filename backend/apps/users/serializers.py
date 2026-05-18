@@ -124,7 +124,7 @@ class StudioSettingsSerializer(serializers.ModelSerializer):
             'credit_expiry_days', 'max_freeze_weeks', 'gst_registered', 'abn',
             'kisi_api_key', 'kisi_org_id',
             'instagram_access_token', 'instagram_page_id', 'instagram_username', 'meta_app_id',
-            'price_casual', 'price_season', 'price_trial', 'season_pricing_config',
+            'price_casual', 'price_season', 'price_trial', 'price_class_pass', 'class_pass_size', 'season_pricing_config',
             'form_health_enabled', 'form_photo_consent_enabled', 'form_waiver_enabled', 'form_season_agreement_enabled',
             'mailchimp_api_key', 'mailchimp_list_id', 'mailchimp_connected',
             'xero_client_id', 'xero_client_secret', 'xero_tenant_id', 'xero_connected',
@@ -143,7 +143,7 @@ class StudioSettingsPublicSerializer(serializers.ModelSerializer):
             'cancellation_window_hours', 'no_show_fee', 'late_cancel_fee',
             'credit_expiry_days', 'max_freeze_weeks', 'gst_registered', 'abn',
             'instagram_username', 'meta_app_id',
-            'price_casual', 'price_season', 'price_trial', 'season_pricing_config',
+            'price_casual', 'price_season', 'price_trial', 'price_class_pass', 'class_pass_size', 'season_pricing_config',
             'form_health_enabled', 'form_photo_consent_enabled', 'form_waiver_enabled', 'form_season_agreement_enabled',
         )
 

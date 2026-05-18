@@ -202,7 +202,7 @@ function StickyCart({ cart, priceCasual, onProceed, onClear, promoCode, promoDis
   )
 }
 
-function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, availableCredits, onCreditUsed, seasonName, seasonPrice, alreadyEnrolled, onEnrolInSeason }) {
+function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, availableCredits, onCreditUsed, seasonName, seasonPrice, alreadyEnrolled, onEnrolInSeason, passCredits, onPassUsed, onBuyPass }) {
   const [open, setOpen] = useState(false)
   const [occurrences, setOccurrences] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -228,14 +228,16 @@ function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, available
     setOpen(o => !o)
   }
 
-  async function book(occ) {
+  async function book(occ, usePass = false) {
     setBookingId(occ.id)
     setError('')
+    const type = usePass ? 'classpass' : enrolmentType
     try {
-      const res = await classes.casual.book(occ.id, { enrolment_type: enrolmentType })
+      const res = await classes.casual.book(occ.id, { enrolment_type: type })
       const updated = { ...occ, my_booking: res.data, spots_left: res.data.status === 'confirmed' ? occ.spots_left - 1 : occ.spots_left }
       setOccurrences(o => o.map(x => x.id === occ.id ? updated : x))
-      if (enrolmentType === 'catchup' && res.data.status === 'confirmed' && onCreditUsed) onCreditUsed()
+      if (type === 'catchup' && res.data.status === 'confirmed' && onCreditUsed) onCreditUsed()
+      if (type === 'classpass' && res.data.status === 'confirmed' && onPassUsed) onPassUsed()
     } catch (e) {
       setError(e.response?.data?.detail || 'Booking failed — please try again.')
     } finally {
@@ -258,7 +260,8 @@ function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, available
   }
 
   const isCatchup = enrolmentType === 'catchup'
-  const accentColor = isCatchup ? 'var(--lime)' : 'var(--lime)'
+  const isCasual = enrolmentType === 'casual'
+  const hasPassCredits = isCasual && (passCredits ?? 0) > 0
 
   return (
     <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
@@ -274,7 +277,8 @@ function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, available
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          {!isCatchup && <span style={{ fontSize: 13, fontWeight: 700, color: accentColor }}>${priceCasual}</span>}
+          {isCasual && <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--lime)' }}>${priceCasual}</span>}
+          {isCasual && hasPassCredits && <span className="tag" style={{ fontSize: 10, background: 'rgba(204,255,0,0.1)', color: 'var(--lime)', border: '1px solid rgba(204,255,0,0.3)' }}>{passCredits} pass</span>}
           {isCatchup && <span className="tag tag-lime" style={{ fontSize: 10 }}>Uses 1 credit</span>}
           <span style={{ fontSize: 16, color: 'var(--grey)', transition: 'transform 0.2s', display: 'inline-block', transform: open ? 'rotate(180deg)' : 'none' }}>▾</span>
         </div>
@@ -283,7 +287,7 @@ function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, available
       {open && (
         <div style={{ borderTop: '1px solid var(--border)', padding: '12px 18px 16px' }}>
           {!alreadyEnrolled && onEnrolInSeason && seasonName && (
-            <div style={{ background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 10, padding: '13px 16px', marginBottom: 14 }}>
+            <div style={{ background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 10, padding: '13px 16px', marginBottom: 10 }}>
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }} onClick={onEnrolInSeason}>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 500 }}>Enrol in the full {seasonName} course instead</div>
@@ -295,6 +299,21 @@ function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, available
               </label>
             </div>
           )}
+
+          {isCasual && (
+            <div style={{ background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 10, padding: '13px 16px', marginBottom: 14, cursor: 'pointer' }} onClick={onBuyPass}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 500 }}>
+                    Buy a 4 class pass · <span style={{ color: 'var(--lime)' }}>save $20</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 3 }}>$35/class · use across any eligible casual or catch-up</div>
+                </div>
+                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, flexShrink: 0 }}>$140</div>
+              </div>
+            </div>
+          )}
+
           {error && <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 10 }}>{error}</div>}
           {loading ? (
             <div style={{ fontSize: 13, color: 'var(--grey)', padding: '8px 0' }}>Loading dates…</div>
@@ -323,7 +342,7 @@ function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, available
                       {isWaitlisted && !hasOffer && <div style={{ fontSize: 11, color: 'var(--amber)', marginTop: 2 }}>On waitlist</div>}
                       {hasOffer && <div style={{ fontSize: 11, color: 'var(--lime)', marginTop: 2 }}>🎉 Spot offered!</div>}
                     </div>
-                    <div style={{ flexShrink: 0 }}>
+                    <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
                       {isBooked || (isWaitlisted && !hasOffer) ? (
                         <button
                           className="btn btn-ghost btn-xs"
@@ -340,9 +359,16 @@ function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, available
                           {isBooking ? '…' : 'Join Waitlist'}
                         </button>
                       ) : (
-                        <button className="btn btn-lime btn-xs" style={{ fontSize: 11 }} onClick={() => book(occ)} disabled={isBooking}>
-                          {isBooking ? '…' : isCatchup ? 'Book (Credit)' : `Book $${priceCasual}`}
-                        </button>
+                        <>
+                          <button className="btn btn-lime btn-xs" style={{ fontSize: 11 }} onClick={() => book(occ)} disabled={isBooking}>
+                            {isBooking ? '…' : isCatchup ? 'Book (Credit)' : `Book $${priceCasual}`}
+                          </button>
+                          {hasPassCredits && (
+                            <button className="btn btn-ghost btn-xs" style={{ fontSize: 10, color: 'var(--lime)' }} onClick={() => book(occ, true)} disabled={isBooking}>
+                              Use pass
+                            </button>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -362,6 +388,7 @@ export default function StudentBook() {
   const [booked, setBooked] = useState([])
   const [cart, setCart] = useState(null) // { session, type, price, label }
   const [checkout, setCheckout] = useState(null) // { session, type, amount, description }
+  const [buyingPass, setBuyingPass] = useState(false)
   const [promoCode, setPromoCode] = useState('')
   const [promoDiscount, setPromoDiscount] = useState(null)
   const [promoApplying, setPromoApplying] = useState(false)
@@ -374,6 +401,7 @@ export default function StudentBook() {
   const { data: seasonsData } = useApi(() => seasonsApi.list())
   const { data: activeEnrolData } = useApi(() => user?.id ? enrolments.list({ student: user.id, status: 'active' }) : null, [user?.id])
   const { data: creditsData, refetch: refetchCredits } = useApi(() => user?.id ? attendanceApi.makeupCredits.list({ student: user.id, status: 'available' }) : null, [user?.id])
+  const { data: passData, refetch: refetchPasses } = useApi(() => user?.id ? attendanceApi.classPasses.list({ student: user.id }) : null, [user?.id])
 
   const priceCasual = parseFloat(studioSettings?.price_casual || 35)
   const priceSeason = parseFloat(studioSettings?.price_season || 270)
@@ -393,6 +421,13 @@ export default function StudentBook() {
   const seasonPrice = getSeasonPrice(1)
 
   const availableCredits = (creditsData?.results || creditsData || []).length
+
+  const priceClassPass = parseFloat(studioSettings?.price_class_pass || 140)
+  const classPassSize = studioSettings?.class_pass_size || 4
+  const allPasses = passData?.results || passData || []
+  const availablePassCredits = allPasses
+    .filter(p => p.is_active)
+    .reduce((sum, p) => sum + p.classes_remaining, 0)
 
   const allSeasons = seasonsData?.results || seasonsData || []
   const now = new Date()
@@ -561,6 +596,24 @@ export default function StudentBook() {
         />
       )}
 
+      {buyingPass && (
+        <CheckoutModal
+          amount={priceClassPass}
+          description={`${classPassSize}-Class Pass · $${(priceClassPass / classPassSize).toFixed(0)}/class`}
+          saveMethod={false}
+          onSuccess={async () => {
+            try {
+              await attendanceApi.classPasses.purchase()
+              refetchPasses()
+              setBuyingPass(false)
+            } catch {
+              setBuyingPass(false)
+            }
+          }}
+          onClose={() => setBuyingPass(false)}
+        />
+      )}
+
       <StickyCart
         cart={cart?.session}
         priceCasual={cart?.price}
@@ -658,6 +711,9 @@ export default function StudentBook() {
                     seasonPrice={seasonPrice}
                     alreadyEnrolled={alreadyEnrolled}
                     onEnrolInSeason={() => setTab('season')}
+                    passCredits={availablePassCredits}
+                    onPassUsed={refetchPasses}
+                    onBuyPass={() => setBuyingPass(true)}
                   />
                 )
               })}

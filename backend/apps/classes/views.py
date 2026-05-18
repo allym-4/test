@@ -1,4 +1,5 @@
 from datetime import date
+from django.db import models
 from django.db.models import Count
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
@@ -719,7 +720,7 @@ class CasualBookView(APIView):
             return Response({'detail': 'This class has been cancelled.'}, status=status.HTTP_400_BAD_REQUEST)
 
         enrolment_type = request.data.get('enrolment_type', 'casual')
-        if enrolment_type not in ('casual', 'catchup'):
+        if enrolment_type not in ('casual', 'catchup', 'classpass'):
             return Response({'detail': 'Invalid enrolment_type.'}, status=status.HTTP_400_BAD_REQUEST)
 
         if CasualBooking.objects.filter(
@@ -727,15 +728,25 @@ class CasualBookView(APIView):
         ).exclude(status='cancelled').exists():
             return Response({'detail': 'Already booked for this class.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Deduct makeup credit for catch-up bookings
+        # Validate credit availability before checking capacity
+        active_pass = None
         if enrolment_type == 'catchup':
             from apps.attendance.models import MakeupCredit
-            from django.utils import timezone
             credit = MakeupCredit.objects.filter(
                 student=request.user, status='available'
             ).order_by('created_at').first()
             if not credit:
                 return Response({'detail': 'No catch-up credits available.'}, status=status.HTTP_400_BAD_REQUEST)
+        elif enrolment_type == 'classpass':
+            from apps.attendance.models import ClassPass
+            from datetime import date as _date
+            active_pass = ClassPass.objects.filter(
+                student=request.user,
+                classes_used__lt=models.F('num_classes'),
+                expires_at__gte=_date.today(),
+            ).order_by('expires_at').first()
+            if not active_pass:
+                return Response({'detail': 'No class pass credits available.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Check capacity
         from apps.enrolments.models import Enrolment
@@ -750,7 +761,7 @@ class CasualBookView(APIView):
             booking = CasualBooking.objects.create(
                 occurrence=occurrence,
                 student=request.user,
-                enrolment_type=enrolment_type,
+                enrolment_type=enrolment_type if enrolment_type == 'casual' else enrolment_type,
                 status='waitlisted',
             )
             return Response(
@@ -758,7 +769,7 @@ class CasualBookView(APIView):
                 status=status.HTTP_201_CREATED,
             )
 
-        # Deduct credit now that we know the booking will proceed
+        # Deduct credits now that we know the booking will proceed
         if enrolment_type == 'catchup':
             from apps.attendance.models import MakeupCredit
             from django.utils import timezone
@@ -768,10 +779,12 @@ class CasualBookView(APIView):
             credit.status = 'used'
             credit.used_at = timezone.now()
             credit.save(update_fields=['status', 'used_at'])
+        elif enrolment_type == 'classpass' and active_pass:
+            active_pass.classes_used += 1
+            active_pass.save(update_fields=['classes_used'])
 
-        price = 0 if enrolment_type == 'catchup' else float(
-            getattr(request, '_casual_price', 0)
-        )
+        is_free = enrolment_type in ('catchup', 'classpass')
+        price = 0 if is_free else float(getattr(request, '_casual_price', 0))
 
         booking = CasualBooking.objects.create(
             occurrence=occurrence,
@@ -779,7 +792,7 @@ class CasualBookView(APIView):
             enrolment_type=enrolment_type,
             status='confirmed',
             price_charged=price,
-            is_free=(enrolment_type == 'catchup'),
+            is_free=is_free,
         )
         return Response(
             CasualBookingSerializer(booking, context={'request': request}).data,

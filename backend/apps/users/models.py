@@ -128,6 +128,8 @@ class StudioSettings(models.Model):
     price_casual = models.DecimalField(max_digits=8, decimal_places=2, default=40)
     price_season = models.DecimalField(max_digits=8, decimal_places=2, default=270)
     price_trial = models.DecimalField(max_digits=8, decimal_places=2, default=35)
+    price_class_pass = models.DecimalField(max_digits=8, decimal_places=2, default=140)
+    class_pass_size = models.PositiveIntegerField(default=4)
     season_pricing_config = models.JSONField(default=list, blank=True)
     form_health_enabled = models.BooleanField(default=True)
     form_photo_consent_enabled = models.BooleanField(default=True)

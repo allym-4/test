@@ -253,8 +253,8 @@ class CasualBooking(models.Model):
     occurrence = models.ForeignKey(ClassOccurrence, on_delete=models.CASCADE, related_name='casual_bookings')
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='casual_bookings')
     enrolment_type = models.CharField(
-        max_length=10,
-        choices=[('casual', 'Casual'), ('catchup', 'Catchup')],
+        max_length=12,
+        choices=[('casual', 'Casual'), ('catchup', 'Catchup'), ('classpass', 'Class Pass')],
         default='casual',
     )
     status = models.CharField(max_length=15, choices=Status.choices, default=Status.CONFIRMED)

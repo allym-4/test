@@ -52,3 +52,31 @@ class MakeupCredit(models.Model):
 
     def __str__(self):
         return f'Credit for {self.student.display_name} ({self.status})'
+
+
+class ClassPass(models.Model):
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='class_passes')
+    num_classes = models.PositiveIntegerField(default=4)
+    classes_used = models.PositiveIntegerField(default=0)
+    price_paid = models.DecimalField(max_digits=8, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    @property
+    def classes_remaining(self):
+        return self.num_classes - self.classes_used
+
+    @property
+    def is_active(self):
+        from datetime import date
+        if self.classes_remaining <= 0:
+            return False
+        if self.expires_at and self.expires_at < date.today():
+            return False
+        return True
+
+    def __str__(self):
+        return f'{self.student.display_name} · {self.classes_remaining}/{self.num_classes} remaining'

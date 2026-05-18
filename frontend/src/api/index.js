@@ -311,6 +311,11 @@ export const attendance = {
     create: (data) => client.post('/api/attendance/makeup-credits/', data),
     update: (id, data) => client.patch(`/api/attendance/makeup-credits/${id}/`, data),
   },
+  classPasses: {
+    list: (params) => client.get('/api/attendance/class-passes/', { params }),
+    purchase: () => client.post('/api/attendance/class-passes/purchase/'),
+    update: (id, data) => client.patch(`/api/attendance/class-passes/${id}/`, data),
+  },
 }
 
 export const tags = {
