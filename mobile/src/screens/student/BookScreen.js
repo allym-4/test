@@ -23,8 +23,9 @@ const T = {
 
 // ─── tabs ────────────────────────────────────────────────────────────────────
 const TABS = [
-  { key: 'season',    label: 'Book a Season' },
-  { key: 'casual',   label: 'Casual & Catch-ups' },
+  { key: 'season',   label: 'Book a Season' },
+  { key: 'casual',   label: 'Casual / Drop-in' },
+  { key: 'catchup',  label: 'Catch-up Classes' },
   { key: 'trial',    label: 'Trial Class' },
   { key: 'workshops', label: 'Workshops & Events' },
 ]
@@ -81,6 +82,16 @@ function isEligible(occ, userLevel) {
   if (typeof sessLevel === 'object') return sessLevel.name === userLevel || String(sessLevel.id) === String(userLevel)
   return String(sessLevel) === String(userLevel)
 }
+
+function getLevelBadge(name) {
+  if (!name) return null
+  if (/level\s*1/i.test(name)) return { label: 'Level 1', color: '#ccff00', bg: 'rgba(204,255,0,0.12)' }
+  if (/level\s*2/i.test(name)) return { label: 'Level 2', color: '#b0a0ff', bg: 'rgba(176,160,255,0.12)' }
+  if (/level\s*[3-9]/i.test(name)) return { label: 'Level 3+', color: '#ffaa00', bg: 'rgba(255,170,0,0.12)' }
+  return null
+}
+
+const DAYS_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 // ─── HeadsUpModal ────────────────────────────────────────────────────────────
 function HeadsUpModal({ session, onConfirm, onCancel }) {
@@ -743,6 +754,121 @@ const bo = StyleSheet.create({
   cancelBtnText: { color: '#555', fontSize: 13 },
 })
 
+// ─── CatchupSessionPanel ──────────────────────────────────────────────────────
+function CatchupSessionPanel({ session, availableCredits, onBook, onCancel, bookingId }) {
+  const [open, setOpen] = useState(false)
+  const [occs, setOccs] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const levelBadge = getLevelBadge(session.name)
+  const dayLabel = session.day_of_week != null ? DAYS_SHORT[session.day_of_week] : ''
+
+  async function load() {
+    if (occs !== null) return
+    setLoading(true)
+    try {
+      const res = await classes.casual.occurrences({ session: session.id, upcoming: true })
+      setOccs(res.data?.results ?? res.data ?? [])
+    } catch { setOccs([]) }
+    finally { setLoading(false) }
+  }
+
+  function toggle() {
+    if (!open) load()
+    setOpen(o => !o)
+  }
+
+  return (
+    <View style={{ backgroundColor: T.card, borderRadius: 14, marginBottom: 10, borderWidth: 1, borderColor: T.border, overflow: 'hidden' }}>
+      <TouchableOpacity onPress={toggle} activeOpacity={0.7} style={{ padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 3 }}>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: T.text }}>{session.name}</Text>
+            {levelBadge && (
+              <View style={{ backgroundColor: levelBadge.bg, borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2 }}>
+                <Text style={{ fontSize: 10, fontWeight: '700', color: levelBadge.color }}>{levelBadge.label}</Text>
+              </View>
+            )}
+          </View>
+          <Text style={{ fontSize: 12, color: T.muted }}>
+            {[dayLabel, session.start_time ? fmtTime(session.start_time) : null, session.studio_detail?.name].filter(Boolean).join('  ·  ')}
+          </Text>
+        </View>
+        <View style={{ alignItems: 'flex-end', flexShrink: 0 }}>
+          <View style={{ backgroundColor: 'rgba(204,255,0,0.1)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, marginBottom: 4 }}>
+            <Text style={{ fontSize: 10, fontWeight: '700', color: T.lime }}>Uses 1 credit</Text>
+          </View>
+          <Text style={{ fontSize: 16, color: T.muted }}>{open ? '▴' : '▾'}</Text>
+        </View>
+      </TouchableOpacity>
+
+      {open && (
+        <View style={{ borderTopWidth: 1, borderTopColor: T.border, padding: 14 }}>
+          {loading || occs === null ? (
+            <ActivityIndicator color={T.lime} size="small" style={{ paddingVertical: 12 }} />
+          ) : occs.length === 0 ? (
+            <Text style={{ fontSize: 13, color: T.muted, paddingVertical: 8 }}>No upcoming dates scheduled yet.</Text>
+          ) : (
+            occs.map(occ => {
+              const dateLabel = new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+              const spotsLeft = occ.spots_left ?? 0
+              const isFull = spotsLeft <= 0
+              const myBooking = occ.my_booking
+              const isBooked = myBooking?.status === 'confirmed'
+              const isWaitlisted = myBooking?.status === 'waitlisted'
+              const isProcessing = bookingId === occ.id
+              return (
+                <View key={occ.id} style={{
+                  flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+                  padding: 10, borderRadius: 8, marginBottom: 6,
+                  backgroundColor: isBooked ? 'rgba(204,255,0,0.05)' : 'rgba(255,255,255,0.03)',
+                  borderWidth: 1, borderColor: isBooked ? 'rgba(204,255,0,0.2)' : T.border,
+                }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: T.text }}>{dateLabel}</Text>
+                    {isBooked && <Text style={{ fontSize: 11, color: T.lime, marginTop: 2 }}>✓ Booked</Text>}
+                    {isWaitlisted && <Text style={{ fontSize: 11, color: '#ffaa44', marginTop: 2 }}>On waitlist</Text>}
+                    {!myBooking && isFull && <Text style={{ fontSize: 11, color: '#ef4444', marginTop: 2 }}>Full</Text>}
+                    {!myBooking && !isFull && spotsLeft <= 2 && <Text style={{ fontSize: 11, color: '#ffaa00', marginTop: 2 }}>{spotsLeft} spot{spotsLeft !== 1 ? 's' : ''} left</Text>}
+                  </View>
+                  <View style={{ flexShrink: 0 }}>
+                    {isProcessing ? (
+                      <ActivityIndicator color={T.lime} size="small" />
+                    ) : isBooked || isWaitlisted ? (
+                      <TouchableOpacity
+                        style={{ borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10, borderWidth: 1, borderColor: '#ef4444' }}
+                        onPress={() => onCancel(occ)}
+                      >
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: '#ef4444' }}>{isWaitlisted ? 'LEAVE' : 'CANCEL'}</Text>
+                      </TouchableOpacity>
+                    ) : isFull ? (
+                      <TouchableOpacity
+                        style={{ borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10, borderWidth: 1, borderColor: T.muted }}
+                        onPress={() => onBook(occ, 'casual')}
+                      >
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: T.muted }}>WAITLIST</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity
+                        style={{ borderRadius: 8, paddingVertical: 6, paddingHorizontal: 12, backgroundColor: availableCredits > 0 ? T.lime : '#222', borderWidth: 1, borderColor: availableCredits > 0 ? T.lime : T.border }}
+                        onPress={() => availableCredits > 0 ? onBook(occ, 'catchup') : null}
+                        disabled={availableCredits <= 0}
+                      >
+                        <Text style={{ fontSize: 11, fontWeight: '800', color: availableCredits > 0 ? '#000' : T.muted }}>
+                          {availableCredits > 0 ? 'BOOK (CREDIT)' : 'NO CREDITS'}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              )
+            })
+          )}
+        </View>
+      )}
+    </View>
+  )
+}
+
 // ─── main screen ─────────────────────────────────────────────────────────────
 export default function BookScreen({ navigation }) {
   const { user } = useAuth()
@@ -757,6 +883,11 @@ export default function BookScreen({ navigation }) {
   const [headsUpSession, setHeadsUpSession] = useState(null)
   const [showSeasonCheckout, setShowSeasonCheckout] = useState(false)
   const [selectedSeasonId, setSelectedSeasonId] = useState(null)
+
+  // Filter state
+  const [dayFilter, setDayFilter] = useState(null)
+  const [instructorFilter, setInstructorFilter] = useState(null)
+  const [eligibleOnly, setEligibleOnly] = useState(false)
 
   // Casual tab state
   const [exemptionSession, setExemptionSession] = useState(null)
@@ -888,6 +1019,33 @@ export default function BookScreen({ navigation }) {
     return false
   })
 
+  // ── filter helpers ─────────────────────────────────────────────────────────
+  const uniqueInstructors = useMemo(() => {
+    const seen = new Set()
+    const result = []
+    for (const s of allSessions) {
+      const name = s.instructor_detail?.display_name ?? s.instructor_detail?.first_name
+      if (name && !seen.has(name)) { seen.add(name); result.push(name) }
+    }
+    return result
+  }, [allSessions])
+
+  function matchesFilters(session) {
+    if (dayFilter !== null && session.day_of_week !== dayFilter) return false
+    if (instructorFilter) {
+      const name = session.instructor_detail?.display_name ?? session.instructor_detail?.first_name
+      if (name !== instructorFilter) return false
+    }
+    if (eligibleOnly && levelFilter) {
+      const sessLevel = session.level ?? session.level_name
+      if (sessLevel && String(sessLevel) !== String(levelFilter)) return false
+    }
+    return true
+  }
+
+  const seasonFiltered = bookingSeasonSessions.filter(matchesFilters)
+  const casualFiltered = casualSessions.filter(matchesFilters)
+
   // ── season handlers ────────────────────────────────────────────────────────
   function toggleSession(session) {
     const alreadySelected = selectedSessions.some(s => s.id === session.id)
@@ -961,6 +1119,13 @@ export default function BookScreen({ navigation }) {
     })
     return () => { cancelled = true }
   }, [casualSessionKey])
+
+  // Filter casual occurrences based on current filters
+  const casualFilteredIds = new Set(casualFiltered.map(s => s.id))
+  const casualAllOccsFiltered = (casualAllOccs ?? []).filter(occ => {
+    const sessId = occ.session ?? occ.session_detail?.id
+    return casualFilteredIds.has(sessId)
+  })
 
   async function bookCasualOcc(occ, enrolmentType) {
     setCasualBookingId(occ.id)
@@ -1190,15 +1355,70 @@ export default function BookScreen({ navigation }) {
               </View>
             </View>
 
-            {bookingSeasonSessions.length === 0 && !sessLoading && (
-              <Text style={s.empty}>No classes available for this season.</Text>
+            {/* ── Filters ── */}
+            <View style={s.filterBar}>
+              <View style={s.filterRow}>
+                <Text style={s.filterLabel}>Show eligible classes only</Text>
+                <Switch
+                  value={eligibleOnly}
+                  onValueChange={setEligibleOnly}
+                  trackColor={{ false: T.border, true: T.lime }}
+                  thumbColor={eligibleOnly ? '#000' : '#888'}
+                />
+              </View>
+              {levelFilter && eligibleOnly && (
+                <Text style={s.levelInfo}>Showing classes matching your level</Text>
+              )}
+            </View>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
+              <TouchableOpacity
+                onPress={() => setDayFilter(null)}
+                style={[s.filterPill, dayFilter === null && s.filterPillActive]}
+              >
+                <Text style={[s.filterPillText, dayFilter === null && s.filterPillTextActive]}>All days</Text>
+              </TouchableOpacity>
+              {DAYS_SHORT.map((d, i) => (
+                <TouchableOpacity
+                  key={d}
+                  onPress={() => setDayFilter(dayFilter === i ? null : i)}
+                  style={[s.filterPill, dayFilter === i && s.filterPillActive]}
+                >
+                  <Text style={[s.filterPillText, dayFilter === i && s.filterPillTextActive]}>{d}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {uniqueInstructors.length > 1 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
+                <TouchableOpacity
+                  onPress={() => setInstructorFilter(null)}
+                  style={[s.filterPill, !instructorFilter && s.filterPillActive]}
+                >
+                  <Text style={[s.filterPillText, !instructorFilter && s.filterPillTextActive]}>All instructors</Text>
+                </TouchableOpacity>
+                {uniqueInstructors.map(name => (
+                  <TouchableOpacity
+                    key={name}
+                    onPress={() => setInstructorFilter(instructorFilter === name ? null : name)}
+                    style={[s.filterPill, instructorFilter === name && s.filterPillActive]}
+                  >
+                    <Text style={[s.filterPillText, instructorFilter === name && s.filterPillTextActive]}>{name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             )}
 
-            {bookingSeasonSessions.map(session => {
+            {seasonFiltered.length === 0 && !sessLoading && (
+              <Text style={s.empty}>No classes match your filters.</Text>
+            )}
+
+            {seasonFiltered.map(session => {
               const isSelected = selectedSessions.some(s => s.id === session.id)
               const isBooked = booked[session.id + '-season'] || enrolledSessionIds.has(session.id)
               const spotsLeft = (session.capacity ?? 12) - (session.enrolled_count ?? 0)
               const isFull = spotsLeft <= 0
+              const levelBadge = getLevelBadge(session.name)
               return (
                 <TouchableOpacity
                   key={session.id}
@@ -1208,10 +1428,17 @@ export default function BookScreen({ navigation }) {
                 >
                   <View style={s.sessionRow}>
                     <View style={{ flex: 1 }}>
-                      <Text style={s.sessionName}>{session.name}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 2 }}>
+                        <Text style={s.sessionName}>{session.name}</Text>
+                        {levelBadge && (
+                          <View style={{ backgroundColor: levelBadge.bg, borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2 }}>
+                            <Text style={{ fontSize: 10, fontWeight: '700', color: levelBadge.color }}>{levelBadge.label}</Text>
+                          </View>
+                        )}
+                      </View>
                       <Text style={s.sessionMeta}>
                         {[
-                          session.day_of_week != null ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][session.day_of_week] : null,
+                          session.day_of_week != null ? DAYS_SHORT[session.day_of_week] : null,
                           session.start_time ? fmtTime(session.start_time) : null,
                           session.studio_detail?.name ?? session.studio?.name,
                           session.instructor_detail?.display_name ?? session.instructor_detail?.first_name,
@@ -1251,7 +1478,7 @@ export default function BookScreen({ navigation }) {
         )}
 
         {/* ══════════════════════════════════════════════════════════════════
-            CASUAL & CATCH-UPS
+            CASUAL / DROP-IN
         ══════════════════════════════════════════════════════════════════ */}
         {tab === 'casual' && (() => {
           // Build next-14-days strip for calendar mode
@@ -1261,8 +1488,8 @@ export default function BookScreen({ navigation }) {
           })
           const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-          // Group occurrences by date (filtered for calendar mode)
-          const occsToShow = (casualAllOccs ?? []).filter(occ => {
+          // Group occurrences by date (filtered for calendar mode + session filters)
+          const occsToShow = casualAllOccsFiltered.filter(occ => {
             if (casualViewMode === 'calendar' && casualSelectedDate) return occ.date === casualSelectedDate
             return true
           })
@@ -1285,26 +1512,13 @@ export default function BookScreen({ navigation }) {
                 </View>
               )}
 
-              {/* Credits badge */}
-              {availableCredits > 0 && (
-                <View style={s.creditsCard}>
-                  <Text style={s.creditsNumber}>{availableCredits}</Text>
-                  <View style={{ flex: 1, paddingLeft: 14 }}>
-                    <Text style={s.creditsLabel}>catch-up credit{availableCredits !== 1 ? 's' : ''} available</Text>
-                    {creditExpiry && (
-                      <Text style={s.creditsExpiry}>Expires {new Date(creditExpiry).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</Text>
-                    )}
-                  </View>
-                </View>
-              )}
-
               {/* Class pass card */}
               {passClassesRemaining > 0 ? (
                 <View style={[s.creditsCard, { borderColor: 'rgba(124,58,237,0.4)', backgroundColor: 'rgba(124,58,237,0.07)' }]}>
                   <Text style={[s.creditsNumber, { color: '#b0a0ff' }]}>{passClassesRemaining}</Text>
                   <View style={{ flex: 1, paddingLeft: 14 }}>
                     <Text style={[s.creditsLabel, { color: '#b0a0ff' }]}>{classPassSize}-class pass — {passClassesRemaining} remaining</Text>
-                    <Text style={s.creditsExpiry}>Tap PASS on any class below to use a credit</Text>
+                    <Text style={s.creditsExpiry}>Tap BOOK → use class pass credit</Text>
                   </View>
                 </View>
               ) : (
@@ -1315,6 +1529,31 @@ export default function BookScreen({ navigation }) {
                   </View>
                   <Text style={s.passPromoArrow}>→</Text>
                 </TouchableOpacity>
+              )}
+
+              {/* ── Filters ── */}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
+                <TouchableOpacity onPress={() => setDayFilter(null)} style={[s.filterPill, dayFilter === null && s.filterPillActive]}>
+                  <Text style={[s.filterPillText, dayFilter === null && s.filterPillTextActive]}>All days</Text>
+                </TouchableOpacity>
+                {DAYS_SHORT.map((d, i) => (
+                  <TouchableOpacity key={d} onPress={() => setDayFilter(dayFilter === i ? null : i)} style={[s.filterPill, dayFilter === i && s.filterPillActive]}>
+                    <Text style={[s.filterPillText, dayFilter === i && s.filterPillTextActive]}>{d}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              {uniqueInstructors.length > 1 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
+                  <TouchableOpacity onPress={() => setInstructorFilter(null)} style={[s.filterPill, !instructorFilter && s.filterPillActive]}>
+                    <Text style={[s.filterPillText, !instructorFilter && s.filterPillTextActive]}>All instructors</Text>
+                  </TouchableOpacity>
+                  {uniqueInstructors.map(name => (
+                    <TouchableOpacity key={name} onPress={() => setInstructorFilter(instructorFilter === name ? null : name)} style={[s.filterPill, instructorFilter === name && s.filterPillActive]}>
+                      <Text style={[s.filterPillText, instructorFilter === name && s.filterPillTextActive]}>{name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
               )}
 
               {/* List / Calendar toggle */}
@@ -1388,15 +1627,21 @@ export default function BookScreen({ navigation }) {
                         const myBooking = occ.my_booking
                         const isConfirmed = myBooking?.status === 'confirmed'
                         const isWaitlisted = myBooking?.status === 'waitlisted'
-                        const creditEligible = availableCredits > 0 && activeSeason && sess?.season === activeSeason.id
-                        const passEligible = passClassesRemaining > 0
                         const isProcessing = casualBookingId === occ.id
                         const alreadySeason = enrolledSessionIds.has(sessId)
+                        const levelBadge = getLevelBadge(name)
 
                         return (
                           <View key={occ.id} style={[s.casualCard, { marginBottom: 8 }, (isConfirmed || isWaitlisted) && { borderColor: isConfirmed ? 'rgba(204,255,0,0.3)' : 'rgba(255,170,0,0.3)', backgroundColor: isConfirmed ? 'rgba(204,255,0,0.04)' : 'rgba(255,170,0,0.04)' }]}>
                             <View style={{ flex: 1 }}>
-                              <Text style={s.casualCardName}>{name}</Text>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 2 }}>
+                                <Text style={s.casualCardName}>{name}</Text>
+                                {levelBadge && (
+                                  <View style={{ backgroundColor: levelBadge.bg, borderRadius: 5, paddingHorizontal: 5, paddingVertical: 2 }}>
+                                    <Text style={{ fontSize: 9, fontWeight: '700', color: levelBadge.color }}>{levelBadge.label}</Text>
+                                  </View>
+                                )}
+                              </View>
                               <Text style={s.casualCardMeta}>{[time, instructor].filter(Boolean).join('  ·  ')}</Text>
                               {studio && <Text style={s.casualCardStudio}>{studio}</Text>}
                               {isConfirmed && <Text style={{ fontSize: 11, color: T.lime, marginTop: 4, fontWeight: '600' }}>✓ Booked</Text>}
@@ -1444,6 +1689,55 @@ export default function BookScreen({ navigation }) {
             </>
           )
         })()}
+
+        {/* ══════════════════════════════════════════════════════════════════
+            CATCH-UP CLASSES
+        ══════════════════════════════════════════════════════════════════ */}
+        {tab === 'catchup' && (
+          <>
+            <View style={{
+              backgroundColor: availableCredits > 0 ? 'rgba(204,255,0,0.06)' : 'rgba(255,68,68,0.06)',
+              borderWidth: 1,
+              borderColor: availableCredits > 0 ? 'rgba(204,255,0,0.2)' : 'rgba(255,68,68,0.2)',
+              borderRadius: 12, padding: 16, marginBottom: 16,
+            }}>
+              <Text style={{ fontWeight: '700', fontSize: 15, color: T.text, marginBottom: 4 }}>
+                {availableCredits > 0
+                  ? `${availableCredits} catch-up credit${availableCredits !== 1 ? 's' : ''} available`
+                  : 'No catch-up credits available'}
+              </Text>
+              <Text style={{ fontSize: 12, color: T.muted, lineHeight: 18 }}>
+                {availableCredits > 0
+                  ? 'Tap a class below to expand upcoming dates. Each booking uses 1 credit — no charge.'
+                  : 'Credits are issued when you notify us of an absence in time. Contact the studio if you think this is incorrect.'}
+              </Text>
+              {creditExpiry && availableCredits > 0 && (
+                <Text style={{ fontSize: 11, color: '#ffaa00', marginTop: 6, fontWeight: '600' }}>
+                  Expires {new Date(creditExpiry).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </Text>
+              )}
+            </View>
+
+            {availableCredits > 0 && (
+              sessLoading ? (
+                <ActivityIndicator color={T.lime} style={{ marginTop: 24 }} />
+              ) : casualSessions.length === 0 ? (
+                <Text style={s.empty}>No classes available right now.</Text>
+              ) : (
+                casualSessions.map(sess => (
+                  <CatchupSessionPanel
+                    key={sess.id}
+                    session={sess}
+                    availableCredits={availableCredits}
+                    bookingId={casualBookingId}
+                    onBook={bookCasualOcc}
+                    onCancel={cancelCasualOcc}
+                  />
+                ))
+              )
+            )}
+          </>
+        )}
 
         {/* ══════════════════════════════════════════════════════════════════
             TRIAL CLASS
@@ -1985,12 +2279,12 @@ const s = StyleSheet.create({
   passPromoSub: { fontSize: 12, color: T.muted },
   passPromoArrow: { fontSize: 18, color: '#b0a0ff', fontWeight: '700', marginLeft: 10 },
 
-  // filters card
-  filtersCard: {
+  // filter bar
+  filterBar: {
     backgroundColor: T.card,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 12,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
     borderWidth: 1,
     borderColor: T.border,
   },
@@ -2000,6 +2294,15 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
   },
   filterLabel: { fontSize: 14, color: T.text, fontWeight: '500', flex: 1 },
+
+  // filter pills
+  filterPill: {
+    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
+    backgroundColor: T.card, borderWidth: 1, borderColor: T.border,
+  },
+  filterPillActive: { backgroundColor: T.lime, borderColor: T.lime },
+  filterPillText: { fontSize: 12, fontWeight: '600', color: T.muted },
+  filterPillTextActive: { color: '#000' },
 
   // level info
   levelInfo: {
