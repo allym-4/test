@@ -6,7 +6,7 @@ from apps.users.models import (
     SkillLevel, SkillGroup, SkillDefinition, MediaItem,
     Challenge, ChallengeProgress,
 )
-from apps.classes.models import Studio, ClassSession, ClassOccurrence, Season, ClassChatMessage
+from apps.classes.models import Studio, ClassSession, ClassOccurrence, Season, ClassChatMessage, ClassUpsell, Workshop, WorkshopBooking
 from apps.enrolments.models import Enrolment
 from apps.attendance.models import AttendanceRecord, MakeupCredit
 from apps.payments.models import Payment, PaymentPlan, PaymentPlanInstalment
@@ -50,7 +50,7 @@ class Command(BaseCommand):
         Payment.objects.all().delete()
         StaffNote.objects.all().delete()
         StudioSettings.objects.all().delete()
-        User.objects.filter(is_superuser=False).delete()
+        User.objects.all().delete()
 
         today = date.today()
 
@@ -66,6 +66,8 @@ class Command(BaseCommand):
             price_casual=35,
             price_season=270,
             price_trial=25,
+            price_class_pass=120,
+            class_pass_size=4,
             season_pricing_config=[
                 {'label': '1 class/week', 'price': '270', 'discount': '$33.75 per class'},
                 {'label': '2 classes/week', 'price': '440', 'discount': '$27.50 per class'},
@@ -215,7 +217,7 @@ class Command(BaseCommand):
         # Overwrite: tara was absent week 3; dana was absent week 2; morgan marked away week 4
         AttendanceRecord.objects.filter(student=students['tara'], occurrence=occ_lvl2_mon_w3).update(status='absent')
         AttendanceRecord.objects.filter(student=students['dana'], occurrence=occ_lvl2_mon_w2).update(status='absent')
-        AttendanceRecord.objects.filter(student=students['morgan'], occurrence=occ_lvl2_mon_w4).update(status='marked_away')
+        AttendanceRecord.objects.filter(student=students['morgan'], occurrence=occ_lvl2_mon_w4).update(status='absent')
 
         # Level 3 Monday history
         lvl3_students = ['tara', 'dana', 'nina', 'sophie', 'alex']
@@ -226,7 +228,7 @@ class Command(BaseCommand):
         # Overwrite: alex absent week 4 and last week; sophie marked away week 3
         AttendanceRecord.objects.filter(student=students['alex'], occurrence=occ_lvl3_mon_w4).update(status='absent')
         AttendanceRecord.objects.filter(student=students['alex'], occurrence=occ_lvl3_mon_past).update(status='absent')
-        AttendanceRecord.objects.filter(student=students['sophie'], occurrence=occ_lvl3_mon_w3).update(status='marked_away')
+        AttendanceRecord.objects.filter(student=students['sophie'], occurrence=occ_lvl3_mon_w3).update(status='absent')
 
         # Level 1 Saturday history
         for occ in [occ_lvl1_sat_w2, occ_lvl1_sat_past]:
@@ -467,6 +469,120 @@ class Command(BaseCommand):
             body='Wrist injury noted — avoid weight-bearing on left hand for next 2 weeks.')
         StaffNote.objects.create(student=students['jess'], created_by=admin, tag='Enrolment',
             body='Cross-enrolled from Level 3. Confirm prerequisite assessment completed.')
+
+        # ── Past season with completed enrolments ─────────────────────────
+        self.stdout.write('Creating past season...')
+        past_start = today - timedelta(days=180)
+        past_end   = today - timedelta(days=90)
+        past_season = Season.objects.create(
+            name=f'Season {today.year - 1} Spring',
+            start_date=past_start, end_date=past_end, status='completed',
+        )
+        past_lvl1 = ClassSession.objects.create(
+            name='Level 1', level='Level 1', instructor=chloe, studio=rhapsody,
+            day_of_week=0, start_time=time(18, 0), duration_minutes=90, capacity=12,
+            session_type='course', season=past_season,
+        )
+        past_lvl2 = ClassSession.objects.create(
+            name='Level 2', level='Level 2', instructor=chloe, studio=the_box,
+            day_of_week=3, start_time=time(18, 30), duration_minutes=90, capacity=12,
+            session_type='course', season=past_season,
+        )
+        Enrolment.objects.create(student=students['jess'], class_session=past_lvl1,
+            enrolment_type='course', status='completed')
+        Enrolment.objects.create(student=students['tara'], class_session=past_lvl2,
+            enrolment_type='course', status='completed')
+        Enrolment.objects.create(student=students['dana'], class_session=past_lvl1,
+            enrolment_type='course', status='completed')
+
+        # ── Upcoming season with enrolments ───────────────────────────────
+        self.stdout.write('Creating upcoming season...')
+        upcoming_start = (today.replace(day=1) + timedelta(days=95)).replace(day=1)
+        upcoming_end   = upcoming_start + timedelta(days=89)
+        upcoming_season = Season.objects.create(
+            name=f'Season {today.year} Winter',
+            start_date=upcoming_start, end_date=upcoming_end, status='upcoming', bookings_open=True,
+        )
+        upcoming_lvl2 = ClassSession.objects.create(
+            name='Level 2', level='Level 2', instructor=chloe, studio=the_box,
+            day_of_week=0, start_time=time(18, 30), duration_minutes=90, capacity=15,
+            session_type='course', season=upcoming_season,
+        )
+        upcoming_lvl3 = ClassSession.objects.create(
+            name='Level 3', level='Level 3', instructor=chloe, studio=rhapsody,
+            day_of_week=1, start_time=time(19, 0), duration_minutes=90, capacity=12,
+            session_type='course', season=upcoming_season,
+        )
+        Enrolment.objects.create(student=students['jess'], class_session=upcoming_lvl2,
+            enrolment_type='course', status='active')
+        Enrolment.objects.create(student=students['tara'], class_session=upcoming_lvl2,
+            enrolment_type='course', status='active')
+        Enrolment.objects.create(student=students['tara'], class_session=upcoming_lvl3,
+            enrolment_type='course', status='active')
+
+        # ── Casual sessions with upcoming occurrences ─────────────────────
+        self.stdout.write('Creating casual sessions...')
+        casual_wed = ClassSession.objects.create(
+            name='Open Pole', level='All Levels', instructor=chloe, studio=rhapsody,
+            day_of_week=2, start_time=time(19, 0), duration_minutes=90, capacity=10,
+            session_type='casual',
+        )
+        casual_fri = ClassSession.objects.create(
+            name='Conditioning & Flex', level='All Levels', instructor=chloe, studio=the_box,
+            day_of_week=4, start_time=time(17, 30), duration_minutes=60, capacity=12,
+            session_type='casual',
+        )
+        # Generate 4 weeks of upcoming casual occurrences
+        for sess, dow in [(casual_wed, 2), (casual_fri, 4)]:
+            days_ahead = dow - today.weekday()
+            if days_ahead <= 0:
+                days_ahead += 7
+            for week in range(4):
+                ClassOccurrence.objects.create(
+                    session=sess,
+                    date=today + timedelta(days=days_ahead + week * 7),
+                    status='scheduled',
+                )
+
+        # ── Workshops ─────────────────────────────────────────────────────
+        self.stdout.write('Creating workshops...')
+        ws1 = Workshop.objects.create(
+            name='Exotic Flow Masterclass',
+            description='Dive deep into fluid exotic movement with special guest instructor Lola V. This two-hour workshop covers floor transitions, partner flow, and signature styling techniques.',
+            date=today + timedelta(days=12),
+            start_time=time(14, 0), end_time=time(16, 0),
+            instructor=chloe, studio=rhapsody, price=65, capacity=14, is_active=True,
+        )
+        ws2 = Workshop.objects.create(
+            name='Aerial Invert Intensive',
+            description='Spend 90 minutes focused entirely on aerial inversions — entries, exits, shape and strength. Suitable for Level 2+ students with a consistent straddle.',
+            date=today + timedelta(days=26),
+            start_time=time(11, 0), end_time=time(12, 30),
+            instructor=chloe, studio=the_box, price=55, capacity=10, is_active=True,
+        )
+        ws3 = Workshop.objects.create(
+            name='Strength & Conditioning for Pole',
+            description='A 90-minute strength session designed specifically for pole dancers — grip, shoulder stability, core, and hip flexor work. Bands, body weight, and pole included.',
+            date=today + timedelta(days=40),
+            start_time=time(10, 0), end_time=time(11, 30),
+            instructor=chloe, studio=rhapsody, price=45, capacity=16, is_active=True,
+        )
+        WorkshopBooking.objects.create(workshop=ws1, student=students['jess'], status='confirmed')
+        WorkshopBooking.objects.create(workshop=ws1, student=students['tara'], status='confirmed')
+        WorkshopBooking.objects.create(workshop=ws2, student=students['dana'], status='confirmed')
+
+        # ── ClassUpsells (show during season checkout) ────────────────────
+        self.stdout.write('Creating upsells...')
+        ClassUpsell.objects.create(
+            source_session=lvl2_mon, suggested_session=lvl3_mon, is_active=True,
+            headline='Add Level 3 to your season',
+            body='Already doing Level 2? Level 3 is the natural next step — deepen your invert work and start aerial training.',
+        )
+        ClassUpsell.objects.create(
+            source_session=lvl2_thu, suggested_session=lvl3_tue, is_active=True,
+            headline='Add Level 3 (Tuesday)',
+            body='Build on Level 2 with a second weekly session in our Level 3 Tuesday class.',
+        )
 
         self.stdout.write(self.style.SUCCESS(
             '\n✓ Done!\n'

@@ -20,6 +20,7 @@ class User(AbstractUser):
     stripe_customer_id = models.CharField(max_length=100, blank=True)
     default_payment_method_id = models.CharField(max_length=100, blank=True)
     auto_charge_saved_card = models.BooleanField(default=False)
+    booking_blocked = models.BooleanField(default=False)
 
     pay_rate = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text='Per-class pay rate for instructors')
 
@@ -33,8 +34,6 @@ class User(AbstractUser):
         default='first_name',
     )
     nickname = models.CharField(max_length=50, blank=True)
-
-    booking_blocked = models.BooleanField(default=False, help_text='Admin can set this to prevent the student from making new bookings.')
 
     # Staff permission flags (only meaningful for instructor/admin/staff roles)
     perm_billing = models.BooleanField(default=False)
@@ -130,7 +129,7 @@ class StudioSettings(models.Model):
     price_casual = models.DecimalField(max_digits=8, decimal_places=2, default=40)
     price_season = models.DecimalField(max_digits=8, decimal_places=2, default=270)
     price_trial = models.DecimalField(max_digits=8, decimal_places=2, default=35)
-    price_class_pass = models.DecimalField(max_digits=8, decimal_places=2, default=140)
+    price_class_pass = models.DecimalField(max_digits=8, decimal_places=2, default=120)
     class_pass_size = models.PositiveIntegerField(default=4)
     season_pricing_config = models.JSONField(default=list, blank=True)
     form_health_enabled = models.BooleanField(default=True)

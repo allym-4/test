@@ -5,7 +5,7 @@ import {
 } from 'react-native'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, seasons, attendance as attendanceApi, classes as classesApi, skills as skillsApi, announcements as announcementsApi, payments } from '../../api'
+import { enrolments, seasons, attendance as attendanceApi, skills as skillsApi, announcements as announcementsApi, payments } from '../../api'
 
 const DAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -129,31 +129,48 @@ function KpiCard({ label, value, color = '#ccff00' }) {
   )
 }
 
+function getNextClassDate(sess) {
+  // Compute the next calendar date for this session from day_of_week + start_time
+  if (sess?.day_of_week == null || !sess?.start_time) return null
+  const djangoDow = sess.day_of_week // 0=Mon … 6=Sun
+  const jsDow = djangoDow === 6 ? 0 : djangoDow + 1 // JS: 0=Sun … 6=Sat
+  const now = new Date()
+  let daysAhead = jsDow - now.getDay()
+  if (daysAhead < 0) daysAhead += 7
+  if (daysAhead === 0) {
+    const [h, m] = sess.start_time.split(':').map(Number)
+    const classToday = new Date(now); classToday.setHours(h, m, 0, 0)
+    if (classToday <= now) daysAhead = 7
+  }
+  const d = new Date(now)
+  d.setDate(now.getDate() + daysAhead)
+  const [h, m] = sess.start_time.split(':').map(Number)
+  d.setHours(h, m, 0, 0)
+  return d
+}
+
 function MarkAwayModal({ enrolment, onClose, onDone }) {
   const sess = enrolment.class_session_detail
   const [confirming, setConfirming] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
 
-  const { data: occData } = useApi(
-    () => sess?.id ? classesApi.occurrences({ session: sess.id, upcoming: 'true' }) : null,
-    [sess?.id]
-  )
-  const nextOcc = occData?.results?.[0] || occData?.[0] || null
+  const nextClassDate = useMemo(() => getNextClassDate(sess), [sess])
 
-  // Determine if we're within 4 hours of the next class
   const withinCutoff = useMemo(() => {
-    if (!nextOcc?.date || !sess?.start_time) return false
-    const classDateTime = new Date(`${nextOcc.date}T${sess.start_time}`)
-    return (classDateTime - new Date()) < 4 * 60 * 60 * 1000
-  }, [nextOcc, sess])
+    if (!nextClassDate) return false
+    return (nextClassDate - new Date()) < 4 * 60 * 60 * 1000
+  }, [nextClassDate])
+
+  const nextDateLabel = nextClassDate
+    ? nextClassDate.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
+    : null
 
   async function handleConfirm() {
-    if (!nextOcc) { setError('No upcoming class found'); return }
     setConfirming(true)
     setError('')
     try {
-      await attendanceApi.markAway(nextOcc.id)
+      await attendanceApi.markAway(null, enrolment.id)
       setDone(true)
       setTimeout(onDone, 1200)
     } catch (err) {
@@ -162,10 +179,6 @@ function MarkAwayModal({ enrolment, onClose, onDone }) {
       setConfirming(false)
     }
   }
-
-  const nextDateLabel = nextOcc?.date
-    ? new Date(nextOcc.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
-    : null
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onClose}>
@@ -210,11 +223,11 @@ function MarkAwayModal({ enrolment, onClose, onDone }) {
                   <Text style={s.cancelBtnText}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[s.confirmBtn, (confirming || !nextOcc) && s.btnDisabled]}
+                  style={[s.confirmBtn, confirming && s.btnDisabled]}
                   onPress={handleConfirm}
-                  disabled={confirming || !nextOcc}
+                  disabled={confirming}
                 >
-                  <Text style={s.confirmBtnText}>
+                  <Text style={s.confirmBtnText} numberOfLines={1}>
                     {confirming ? 'Saving…' : withinCutoff ? 'Mark away anyway' : 'Confirm away'}
                   </Text>
                 </TouchableOpacity>
@@ -727,7 +740,7 @@ const s = StyleSheet.create({
   modalClassMeta: { fontSize: 13, color: '#666', marginBottom: 4 },
   modalNextDate: { fontSize: 12, color: '#666', marginBottom: 16 },
   infoBox: { backgroundColor: 'rgba(204,255,0,0.05)', borderWidth: 1, borderColor: 'rgba(204,255,0,0.15)', borderRadius: 10, padding: 14, marginBottom: 16 },
-  infoBoxHeading: { fontWeight: '700', fontSize: 15, marginBottom: 6 },
+  infoBoxHeading: { fontSize: 13, fontWeight: '700', marginBottom: 6 },
   infoBoxText: { fontSize: 13, color: '#666', lineHeight: 20 },
   errorText: { color: '#ff4444', fontSize: 12, marginBottom: 12 },
   doneText: { textAlign: 'center', color: '#ccff00', fontWeight: '700', paddingVertical: 8 },
@@ -735,6 +748,6 @@ const s = StyleSheet.create({
   cancelBtn: { flex: 1, borderWidth: 1, borderColor: '#333', borderRadius: 10, paddingVertical: 11, alignItems: 'center' },
   cancelBtnText: { fontSize: 14, fontWeight: '600', color: '#fff' },
   confirmBtn: { flex: 1, backgroundColor: '#ccff00', borderRadius: 10, paddingVertical: 11, alignItems: 'center' },
-  confirmBtnText: { fontSize: 14, fontWeight: '700', color: '#000', numberOfLines: 1 },
+  confirmBtnText: { fontSize: 14, fontWeight: '700', color: '#000' },
   btnDisabled: { opacity: 0.5 },
 })
