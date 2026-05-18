@@ -289,7 +289,7 @@ function CancelPolicyModal({ enrolment, isWaitlist, onClose, onDone }) {
                     Season enrolments are non-refundable in line with our terms and conditions. We don't offer cancellations once the season has begun.
                   </div>
                   <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.6, marginBottom: 20 }}>
-                    If your circumstances have changed, we may be able to arrange a <strong style={{ color: 'var(--white)' }}>transfer</strong> to a different class or season. Submit a request and our team will be in touch.
+                    If your circumstances have changed, we may be able to arrange a <strong style={{ color: 'var(--white)' }}>transfer</strong> to a different class. Submit a request and our team will be in touch.
                   </div>
                   <div style={{ display: 'flex', gap: 10 }}>
                     <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Close</button>
