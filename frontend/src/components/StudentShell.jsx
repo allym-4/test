@@ -17,6 +17,7 @@ const NAV = [
 ]
 
 const NAV2 = [
+  { to: '/portal/shop',      label: 'Shop',           icon: '🛍️' },
   { to: '/portal/chat',      label: 'Chat',           icon: '○' },
   { to: '/portal/community', label: 'Community',      icon: '♬' },
   { to: '/portal/support',   label: 'Help & Support', icon: '🎧' },

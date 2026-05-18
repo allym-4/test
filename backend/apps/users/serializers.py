@@ -88,7 +88,7 @@ class StaffNoteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StaffNote
-        fields = ('id', 'student', 'created_by', 'created_by_name', 'tag', 'body', 'created_at', 'updated_at')
+        fields = ('id', 'student', 'created_by', 'created_by_name', 'tag', 'body', 'archived', 'recheck_date', 'is_permanent', 'created_at', 'updated_at')
         read_only_fields = ('id', 'created_by', 'created_at', 'updated_at')
 
 

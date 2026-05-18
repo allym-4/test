@@ -211,3 +211,13 @@ export const instructorPay = {
   calculatePay: (userId, params) =>
     client.get(`/api/users/${userId}/calculate-pay/`, { params }),
 }
+
+
+export const products = {
+  list: () => client.get('/api/users/products/'),
+}
+
+export const orders = {
+  list: () => client.get('/api/users/orders/'),
+  create: (data) => client.post('/api/users/orders/', data),
+}

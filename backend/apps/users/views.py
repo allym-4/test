@@ -74,10 +74,46 @@ class StaffNoteListView(generics.ListCreateAPIView):
     permission_classes = [IsAdminOrInstructor]
 
     def get_queryset(self):
-        return StaffNote.objects.filter(student_id=self.kwargs['user_pk'])
+        qs = StaffNote.objects.filter(student_id=self.kwargs['user_pk'])
+        archived = self.request.query_params.get('archived')
+        if archived == 'true':
+            qs = qs.filter(archived=True)
+        elif archived == 'false':
+            qs = qs.filter(archived=False)
+        return qs
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user, student_id=self.kwargs['user_pk'])
+
+
+class StaffNoteDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = StaffNoteSerializer
+    permission_classes = [IsAdminOrInstructor]
+    queryset = StaffNote.objects.all()
+
+
+class RecheckNotesTodayView(APIView):
+    """Notes where recheck_date = today, for the dashboard action items panel."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def get(self, request):
+        from django.utils import timezone
+        today = timezone.localdate()
+        notes = StaffNote.objects.filter(
+            recheck_date=today, archived=False
+        ).select_related('student', 'created_by')
+        data = []
+        for note in notes:
+            data.append({
+                'id': note.id,
+                'student_id': note.student_id,
+                'student_name': note.student.display_name if note.student else '',
+                'tag': note.tag,
+                'body': note.body,
+                'recheck_date': str(note.recheck_date),
+                'is_permanent': note.is_permanent,
+            })
+        return Response(data)
 
 
 def _slugify_username(first, last, existing):
@@ -244,9 +280,19 @@ class AnnouncementAcknowledgeView(APIView):
 
 
 class ProductListView(generics.ListCreateAPIView):
-    queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [IsAdminOrInstructor]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        qs = Product.objects.filter(is_active=True)
+        if self.request.user.role in ('admin', 'instructor', 'staff'):
+            qs = Product.objects.all()
+        return qs
+
+    def perform_create(self, serializer):
+        if self.request.user.role not in ('admin', 'instructor', 'staff'):
+            raise permissions.PermissionDenied
+        serializer.save()
 
     def get_serializer_context(self):
         ctx = super().get_serializer_context()
@@ -257,7 +303,18 @@ class ProductListView(generics.ListCreateAPIView):
 class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [IsAdminOrInstructor]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def update(self, request, *args, **kwargs):
+        if request.user.role not in ('admin', 'instructor', 'staff'):
+            raise permissions.PermissionDenied
+        kwargs['partial'] = True
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        if request.user.role not in ('admin', 'instructor', 'staff'):
+            raise permissions.PermissionDenied
+        return super().destroy(request, *args, **kwargs)
 
     def get_serializer_context(self):
         ctx = super().get_serializer_context()
@@ -367,20 +424,42 @@ class AutomationRunListView(APIView):
 
 class OrderListView(generics.ListCreateAPIView):
     serializer_class = OrderSerializer
-    permission_classes = [IsAdminOrInstructor]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        user = self.request.user
         qs = Order.objects.select_related('student')
+        if user.role == 'student':
+            return qs.filter(student=user)
         status_filter = self.request.query_params.get('status')
         if status_filter:
             qs = qs.filter(status=status_filter)
         return qs
 
+    def perform_create(self, serializer):
+        user = self.request.user
+        if user.role == 'student':
+            serializer.save(student=user, student_name=user.display_name)
+        else:
+            serializer.save()
+
 
 class OrderDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Order.objects.select_related('student')
     serializer_class = OrderSerializer
-    permission_classes = [IsAdminOrInstructor]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = Order.objects.select_related('student')
+        if user.role == 'student':
+            return qs.filter(student=user)
+        return qs
+
+    def update(self, request, *args, **kwargs):
+        if request.user.role not in ('admin', 'instructor', 'staff'):
+            raise permissions.PermissionDenied
+        kwargs['partial'] = True
+        return super().update(request, *args, **kwargs)
 
 
 class NotificationListView(generics.ListCreateAPIView):

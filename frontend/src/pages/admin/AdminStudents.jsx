@@ -195,8 +195,11 @@ function StudentDetail({ student, onClose, onRefreshList, onViewForm }) {
   const [chargeError, setChargeError] = useState(null)
   const [noteText, setNoteText] = useState('')
   const [noteCategory, setNoteCategory] = useState('general')
+  const [noteRecheckDate, setNoteRecheckDate] = useState('')
+  const [noteIsPermanent, setNoteIsPermanent] = useState(false)
   const [savingNote, setSavingNote] = useState(false)
   const [noteCatFilter, setNoteCatFilter] = useState('all')
+  const [showArchivedNotes, setShowArchivedNotes] = useState(false)
   const [skillLevel, setSkillLevel] = useState('Level 1')
   const [skillProgress, setSkillProgress] = useState({})
   const [formsData, setFormsData] = useState(null)
@@ -236,7 +239,7 @@ function StudentDetail({ student, onClose, onRefreshList, onViewForm }) {
     Promise.all([
       payments.balance(student.id),
       enrolments.list({ student: student.id }),
-      users.notes(student.id),
+      users.notes(student.id, { archived: 'false' }),
       attendance.list({ student: student.id }),
       payments.list({ student: student.id }),
       formsApi.listForStudent(student.id),
@@ -258,8 +261,19 @@ function StudentDetail({ student, onClose, onRefreshList, onViewForm }) {
   }
 
   async function reloadNotes() {
-    const res = await users.notes(student.id)
-    setNotesData(res.data.results || [])
+    const res = await users.notes(student.id, { archived: showArchivedNotes ? 'true' : 'false' })
+    setNotesData(res.data.results || res.data || [])
+  }
+
+  async function archiveNote(noteId, archived) {
+    await users.updateNote(student.id, noteId, { archived })
+    await reloadNotes()
+  }
+
+  async function deleteNote(noteId) {
+    if (!window.confirm('Delete this note permanently?')) return
+    await users.deleteNote(student.id, noteId)
+    await reloadNotes()
   }
 
   function toggleSkill(skillName, type) {
@@ -287,8 +301,15 @@ function StudentDetail({ student, onClose, onRefreshList, onViewForm }) {
     if (!noteText.trim()) return
     setSavingNote(true)
     try {
-      await users.addNote(student.id, { body: noteText, tag: noteCategory })
+      await users.addNote(student.id, {
+        body: noteText,
+        tag: noteCategory,
+        recheck_date: noteRecheckDate || null,
+        is_permanent: noteIsPermanent,
+      })
       setNoteText('')
+      setNoteRecheckDate('')
+      setNoteIsPermanent(false)
       await reloadNotes()
     } finally { setSavingNote(false) }
   }
@@ -697,11 +718,17 @@ function StudentDetail({ student, onClose, onRefreshList, onViewForm }) {
                     ) : null}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
                       {filteredNotes.map(n => (
-                        <div key={n.id} className="note-item">
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div key={n.id} className="note-item" style={{ opacity: n.archived ? 0.55 : 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6, gap: 8 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                               {n.tag && <span className="tag tag-amber" style={{ fontSize: 10 }}>{n.tag}</span>}
+                              {n.is_permanent && <span className="tag" style={{ fontSize: 10, background: 'rgba(255,68,68,0.15)', color: 'var(--red)', border: '1px solid rgba(255,68,68,0.3)' }}>Permanent</span>}
+                              {n.recheck_date && <span className="tag" style={{ fontSize: 10, background: 'rgba(179,157,219,0.15)', color: 'var(--lav)', border: '1px solid rgba(179,157,219,0.3)' }}>Recheck {new Date(n.recheck_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>}
                               <div className="note-meta" style={{ margin: 0 }}>{n.created_by_name} · {new Date(n.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                            </div>
+                            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                              <button className="btn btn-ghost btn-xs" onClick={() => archiveNote(n.id, !n.archived)}>{n.archived ? 'Restore' : 'Archive'}</button>
+                              <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => deleteNote(n.id)}>✕</button>
                             </div>
                           </div>
                           <div className="note-text">{n.body}</div>
@@ -709,7 +736,17 @@ function StudentDetail({ student, onClose, onRefreshList, onViewForm }) {
                       ))}
                     </div>
                     <div className="card" style={{ padding: '16px 18px' }}>
-                      <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 13, marginBottom: 12 }}>Add Note</div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 13 }}>Add Note</div>
+                        <button
+                          className={`btn btn-xs ${showArchivedNotes ? 'btn-lime' : 'btn-ghost'}`}
+                          onClick={() => {
+                            const next = !showArchivedNotes
+                            setShowArchivedNotes(next)
+                            users.notes(student.id, { archived: next ? 'true' : 'false' }).then(r => setNotesData(r.data.results || r.data || []))
+                          }}
+                        >{showArchivedNotes ? 'Show Active' : 'Show Archived'}</button>
+                      </div>
                       <form onSubmit={submitNote}>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 10 }}>
                           <div className="field" style={{ marginBottom: 0 }}>
@@ -721,6 +758,10 @@ function StudentDetail({ student, onClose, onRefreshList, onViewForm }) {
                               <option value="vibe">✨ Vibe</option>
                             </select>
                           </div>
+                          <div className="field" style={{ marginBottom: 0 }}>
+                            <label>Recheck date <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(optional)</span></label>
+                            <input type="date" value={noteRecheckDate} onChange={e => setNoteRecheckDate(e.target.value)} style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', padding: '8px 10px', fontSize: 13 }} />
+                          </div>
                         </div>
                         <textarea
                           value={noteText}
@@ -729,7 +770,13 @@ function StudentDetail({ student, onClose, onRefreshList, onViewForm }) {
                           rows={3}
                           style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', padding: '10px 12px', fontSize: 13, resize: 'vertical', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', marginBottom: 10 }}
                         />
-                        <button type="submit" className="btn btn-lime btn-sm" disabled={savingNote || !noteText.trim()}>{savingNote ? 'Saving…' : 'Save Note'}</button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+                          <button type="submit" className="btn btn-lime btn-sm" disabled={savingNote || !noteText.trim()}>{savingNote ? 'Saving…' : 'Save Note'}</button>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: 'var(--grey)' }}>
+                            <input type="checkbox" checked={noteIsPermanent} onChange={e => setNoteIsPermanent(e.target.checked)} style={{ accentColor: 'var(--lime)' }} />
+                            Permanent note
+                          </label>
+                        </div>
                       </form>
                     </div>
                   </div>

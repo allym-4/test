@@ -192,9 +192,28 @@ class EnrolmentListView(generics.ListCreateAPIView):
         return qs
 
     def perform_create(self, serializer):
+        from rest_framework.exceptions import PermissionDenied
+        from apps.payments.models import Payment
+        from django.db.models import Sum
+
         user = self.request.user
-        # Students can only enrol themselves
+
+        # Block students with an outstanding balance from booking
         if user.role == 'student':
+            credit_types = ('payment', 'refund', 'credit')
+            debit_types = ('charge', 'no_show_fee')
+            total_paid = Payment.objects.filter(
+                student=user, payment_type__in=credit_types
+            ).aggregate(t=Sum('amount'))['t'] or 0
+            total_charged = Payment.objects.filter(
+                student=user, payment_type__in=debit_types
+            ).aggregate(t=Sum('amount'))['t'] or 0
+            balance = float(total_paid) - float(total_charged)
+            if balance < 0:
+                raise PermissionDenied(
+                    f'You have an outstanding balance of ${abs(balance):.2f}. '
+                    'Please settle your account before booking.'
+                )
             enrolment = serializer.save(student=user)
         else:
             enrolment = serializer.save()

@@ -198,8 +198,11 @@ export const users = {
   get: (id) => client.get(`/api/users/${id}/`),
   create: (data) => client.post('/api/users/', data),
   update: (id, data) => client.patch(`/api/users/${id}/`, data),
-  notes: (userId) => client.get(`/api/users/${userId}/notes/`),
+  notes: (userId, params) => client.get(`/api/users/${userId}/notes/`, { params }),
   addNote: (userId, data) => client.post(`/api/users/${userId}/notes/`, data),
+  updateNote: (userId, noteId, data) => client.patch(`/api/users/${userId}/notes/${noteId}/`, data),
+  deleteNote: (userId, noteId) => client.delete(`/api/users/${userId}/notes/${noteId}/`),
+  recheckNotesToday: () => client.get('/api/users/notes/recheck-today/'),
   resetPassword: (id, password) => client.post(`/api/users/${id}/set-password/`, { password }),
   bulkImport: (formData) => client.post('/api/users/import/', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },

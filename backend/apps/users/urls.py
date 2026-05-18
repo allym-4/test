@@ -71,6 +71,8 @@ urlpatterns = [
     path('', views.UserListView.as_view(), name='user-list'),
     path('<int:pk>/', views.UserDetailView.as_view(), name='user-detail'),
     path('<int:user_pk>/notes/', views.StaffNoteListView.as_view(), name='staff-notes'),
+    path('<int:user_pk>/notes/<int:pk>/', views.StaffNoteDetailView.as_view(), name='staff-note-detail'),
+    path('notes/recheck-today/', views.RecheckNotesTodayView.as_view(), name='notes-recheck-today'),
     path('<int:pk>/set-password/', views.AdminSetPasswordView.as_view(), name='user-set-password'),
 ]
 
