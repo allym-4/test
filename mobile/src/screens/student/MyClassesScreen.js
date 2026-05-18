@@ -3,12 +3,10 @@ import {
   ScrollView, View, Text, TouchableOpacity, StyleSheet,
   RefreshControl, Alert, ActivityIndicator, Share, Modal,
 } from 'react-native'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { enrolments, attendance, roster, settings as settingsApi, helpdesk as helpdeskApi, classes as classesApi } from '../../api'
 import { TextInput } from 'react-native'
-import LevelFilterBar from '../../components/LevelFilterBar'
 
 function WhoComing({ sessionId }) {
   const [open, setOpen] = useState(false)
@@ -887,15 +885,9 @@ export default function MyClassesScreen({ navigation }) {
   const [markAwayModal, setMarkAwayModal] = useState(null) // { occurrence, session }
   const [cancelPolicyEnrol, setCancelPolicyEnrol] = useState(null)
   const [cancellingAway, setCancellingAway] = useState(null)
-  const [levelFilter, setLevelFilter] = useState(null)
   const [classWaitlistLeaveEnrol, setClassWaitlistLeaveEnrol] = useState(null)
   const [displacementModal, setDisplacementModal] = useState(null)
 
-  useEffect(() => {
-    if (user?.id) {
-      AsyncStorage.getItem(`class_level_${user.id}`).then(val => setLevelFilter(val))
-    }
-  }, [user?.id])
 
   const { data: enrolData, loading, refetch } = useApi(
     () => enrolments.list({ status: 'active' }), []
@@ -927,10 +919,6 @@ export default function MyClassesScreen({ navigation }) {
     if (displaced) setDisplacementModal(displaced)
   }, [casualBookingsData])
 
-  const availableLevels = [...new Set(
-    activeEnrolments.map(e => e.class_session_detail?.level).filter(Boolean)
-  )].sort()
-
   const today = new Date().toISOString().slice(0, 10)
   const currentEnrolments = activeEnrolments.filter(e => {
     const start = e.class_session_detail?.season_start_date
@@ -940,15 +928,9 @@ export default function MyClassesScreen({ navigation }) {
     const start = e.class_session_detail?.season_start_date
     return start && start > today
   })
-
-  const filteredCurrent = levelFilter
-    ? currentEnrolments.filter(e => e.class_session_detail?.level === levelFilter)
-    : currentEnrolments
-  const filteredUpcoming = levelFilter
-    ? upcomingEnrolments.filter(e => e.class_session_detail?.level === levelFilter)
-    : upcomingEnrolments
-  // keep backward compat for export and other uses
-  const filteredEnrolments = [...filteredCurrent, ...filteredUpcoming]
+  const filteredCurrent = currentEnrolments
+  const filteredUpcoming = upcomingEnrolments
+  const filteredEnrolments = [...currentEnrolments, ...upcomingEnrolments]
 
   async function handleCancelAway(occurrenceId, name) {
     Alert.alert(
@@ -1118,20 +1100,6 @@ export default function MyClassesScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {availableLevels.length > 0 && (
-        <LevelFilterBar
-          levels={availableLevels}
-          selected={levelFilter}
-          onSelect={level => {
-            setLevelFilter(level)
-            if (user?.id) {
-              level
-                ? AsyncStorage.setItem(`class_level_${user.id}`, level)
-                : AsyncStorage.removeItem(`class_level_${user.id}`)
-            }
-          }}
-        />
-      )}
 
       <View style={s.tabs}>
         {[['active', 'My Classes'], ['casuals', 'Casuals'], ['history', 'Attendance']].map(([key, label]) => (
@@ -1158,11 +1126,7 @@ export default function MyClassesScreen({ navigation }) {
           ))}
 
           {filteredEnrolments.length === 0 && !loading && (
-            <Text style={s.empty}>
-              {levelFilter && activeEnrolments.length > 0
-                ? `No ${levelFilter} classes. Try a different level or tap All.`
-                : 'No active enrolments.'}
-            </Text>
+            <Text style={s.empty}>No active enrolments.</Text>
           )}
 
           {/* Current enrolments */}
