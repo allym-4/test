@@ -292,7 +292,7 @@ function CancelPolicyModal({ enrolment, onClose }) {
             // Transfer request form
             <>
               <View style={cp.policyBox}>
-                <Text style={cp.policyText}>Transfers are handled case-by-case. The studio will review your request and propose options (e.g. different class, future season credit).</Text>
+                <Text style={cp.policyText}>Transfers are handled case-by-case. The studio will review your request and propose options for a different class.</Text>
               </View>
               <Text style={cp.inputLabel}>Reason for transfer (optional)</Text>
               <TextInput
@@ -323,7 +323,7 @@ function CancelPolicyModal({ enrolment, onClose }) {
               <View style={cp.policyBox}>
                 <Text style={cp.policyTitle}>Non-refundable enrolment</Text>
                 <Text style={cp.policyText}>
-                  Season enrolments are non-refundable in line with our terms and conditions. If your circumstances have changed, you can request a transfer to a different class or a future season.
+                  Season enrolments are non-refundable in line with our terms and conditions. If your circumstances have changed, you can request a transfer to a different class.
                 </Text>
               </View>
               <TouchableOpacity style={cp.transferBtn} onPress={() => setSubView('transfer')}>
