@@ -674,11 +674,15 @@ const pass = StyleSheet.create({
 })
 
 // ─── CasualBookingOptionsModal ────────────────────────────────────────────────
-function CasualBookingOptionsModal({ visible, occ, priceCasual, availableCredits, passClassesRemaining, classPassSize, activeSeason, onClose, onBook }) {
+function CasualBookingOptionsModal({ visible, occ, priceCasual, availableCredits, passClassesRemaining, classPassSize, activeSeason, currentSeasonWeek, onClose, onBook, onRequestExemption }) {
   const sess = occ?.session_detail
   const sessName = sess?.name ?? 'Class'
   const time = fmtTime(sess?.start_time)
-  const creditEligible = availableCredits > 0 && activeSeason && sess?.season === activeSeason?.id
+  const inActiveSeason = activeSeason && sess?.season === activeSeason?.id
+  const cutoffWeeks = sess?.catchup_cutoff_weeks ?? 3
+  const pastCutoff = inActiveSeason && currentSeasonWeek > cutoffWeeks
+  const creditEligible = availableCredits > 0 && inActiveSeason && !pastCutoff
+  const creditBlocked = availableCredits > 0 && inActiveSeason && pastCutoff
   const passEligible = passClassesRemaining > 0
 
   return (
@@ -704,6 +708,23 @@ function CasualBookingOptionsModal({ visible, occ, priceCasual, availableCredits
                 <Text style={bo.optionSub}>{availableCredits} credit{availableCredits !== 1 ? 's' : ''} available — no charge today</Text>
               </View>
               <Text style={[bo.optionPrice, { color: '#b0a0ff' }]}>FREE</Text>
+            </TouchableOpacity>
+          )}
+
+          {creditBlocked && (
+            <TouchableOpacity
+              style={[bo.option, { borderColor: 'rgba(255,170,0,0.35)', backgroundColor: 'rgba(255,170,0,0.06)' }]}
+              onPress={() => { onClose(); onRequestExemption(sess) }}
+              activeOpacity={0.8}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={[bo.optionTitle, { color: '#ffaa00' }]}>Request a make-up exemption</Text>
+                <Text style={bo.optionSub}>
+                  Catch-ups close after week {cutoffWeeks} — we're now in week {currentSeasonWeek}.
+                  Submit a request and the studio will review it.
+                </Text>
+              </View>
+              <Text style={[bo.optionPrice, { color: '#ffaa00', fontSize: 13 }]}>REQUEST</Text>
             </TouchableOpacity>
           )}
 
@@ -755,12 +776,14 @@ const bo = StyleSheet.create({
 })
 
 // ─── CatchupSessionPanel ──────────────────────────────────────────────────────
-function CatchupSessionPanel({ session, availableCredits, onBook, onCancel, bookingId }) {
+function CatchupSessionPanel({ session, availableCredits, onBook, onCancel, bookingId, currentSeasonWeek, onRequestExemption }) {
   const [open, setOpen] = useState(false)
   const [occs, setOccs] = useState(null)
   const [loading, setLoading] = useState(false)
   const levelBadge = getLevelBadge(session.name)
   const dayLabel = session.day_of_week != null ? DAYS_SHORT[session.day_of_week] : ''
+  const cutoffWeeks = session.catchup_cutoff_weeks ?? 3
+  const pastCutoff = currentSeasonWeek > 0 && currentSeasonWeek > cutoffWeeks
 
   async function load() {
     if (occs !== null) return
@@ -775,6 +798,39 @@ function CatchupSessionPanel({ session, availableCredits, onBook, onCancel, book
   function toggle() {
     if (!open) load()
     setOpen(o => !o)
+  }
+
+  if (pastCutoff) {
+    return (
+      <View style={{ backgroundColor: T.card, borderRadius: 14, marginBottom: 10, borderWidth: 1, borderColor: 'rgba(255,170,0,0.25)', opacity: 0.75, overflow: 'hidden' }}>
+        <View style={{ padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 3 }}>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: T.muted }}>{session.name}</Text>
+              {levelBadge && (
+                <View style={{ backgroundColor: levelBadge.bg, borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2 }}>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: levelBadge.color }}>{levelBadge.label}</Text>
+                </View>
+              )}
+            </View>
+            <Text style={{ fontSize: 12, color: T.muted }}>
+              {[dayLabel, session.start_time ? fmtTime(session.start_time) : null].filter(Boolean).join('  ·  ')}
+            </Text>
+            <Text style={{ fontSize: 11, color: '#ffaa00', marginTop: 4, fontWeight: '600' }}>
+              Catch-ups closed after week {cutoffWeeks}
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => onRequestExemption(session)}
+            style={{ backgroundColor: 'rgba(255,170,0,0.12)', borderRadius: 10, paddingVertical: 8, paddingHorizontal: 10, borderWidth: 1, borderColor: 'rgba(255,170,0,0.35)', alignItems: 'center' }}
+            activeOpacity={0.75}
+          >
+            <Text style={{ fontSize: 10, fontWeight: '800', color: '#ffaa00', letterSpacing: 0.3 }}>REQUEST</Text>
+            <Text style={{ fontSize: 10, fontWeight: '800', color: '#ffaa00', letterSpacing: 0.3 }}>EXEMPTION</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    )
   }
 
   return (
@@ -1727,23 +1783,23 @@ export default function BookScreen({ navigation }) {
               )}
             </View>
 
-            {availableCredits > 0 && (
-              sessLoading ? (
-                <ActivityIndicator color={T.lime} style={{ marginTop: 24 }} />
-              ) : casualSessions.length === 0 ? (
-                <Text style={s.empty}>No classes available right now.</Text>
-              ) : (
-                casualSessions.map(sess => (
-                  <CatchupSessionPanel
-                    key={sess.id}
-                    session={sess}
-                    availableCredits={availableCredits}
-                    bookingId={casualBookingId}
-                    onBook={bookCasualOcc}
-                    onCancel={cancelCasualOcc}
-                  />
-                ))
-              )
+            {sessLoading ? (
+              <ActivityIndicator color={T.lime} style={{ marginTop: 24 }} />
+            ) : casualSessions.length === 0 ? (
+              <Text style={s.empty}>No classes available right now.</Text>
+            ) : (
+              casualSessions.map(sess => (
+                <CatchupSessionPanel
+                  key={sess.id}
+                  session={sess}
+                  availableCredits={availableCredits}
+                  bookingId={casualBookingId}
+                  onBook={bookCasualOcc}
+                  onCancel={cancelCasualOcc}
+                  currentSeasonWeek={currentSeasonWeek}
+                  onRequestExemption={setExemptionSession}
+                />
+              ))
             )}
           </>
         )}
@@ -1970,11 +2026,16 @@ export default function BookScreen({ navigation }) {
         passClassesRemaining={passClassesRemaining}
         classPassSize={classPassSize}
         activeSeason={activeSeason}
+        currentSeasonWeek={currentSeasonWeek}
         onClose={() => setBookingOptionsOcc(null)}
         onBook={(type) => {
           const occ = bookingOptionsOcc
           setBookingOptionsOcc(null)
           bookCasualOcc(occ, type)
+        }}
+        onRequestExemption={(sess) => {
+          setBookingOptionsOcc(null)
+          setExemptionSession(sess)
         }}
       />
 
