@@ -364,6 +364,7 @@ def student_balance(request, student_pk):
         'balance': balance,
         'total_charged': total_charged,
         'total_paid': total_paid,
+        'booking_blocked': student.booking_blocked,
     })
 
 

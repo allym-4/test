@@ -751,7 +751,7 @@ export default function BookScreen({ navigation }) {
 
   // Outstanding balance gate
   const currentBalance = balanceData ? parseFloat(balanceData.balance) : null
-  const isOwing = currentBalance !== null && currentBalance < 0
+  const isOwing = balanceData?.booking_blocked === true
 
   function getSeasonPriceForTotal(totalClasses) {
     const tier = seasonPricingConfig.find(r => {

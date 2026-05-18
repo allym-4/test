@@ -34,6 +34,8 @@ class User(AbstractUser):
     )
     nickname = models.CharField(max_length=50, blank=True)
 
+    booking_blocked = models.BooleanField(default=False, help_text='Admin can set this to prevent the student from making new bookings.')
+
     # Staff permission flags (only meaningful for instructor/admin/staff roles)
     perm_billing = models.BooleanField(default=False)
     perm_edit_profiles = models.BooleanField(default=False)
