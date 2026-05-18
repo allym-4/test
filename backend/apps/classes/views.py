@@ -784,7 +784,12 @@ class CasualBookView(APIView):
             active_pass.save(update_fields=['classes_used'])
 
         is_free = enrolment_type in ('catchup', 'classpass')
-        price = 0 if is_free else float(getattr(request, '_casual_price', 0))
+        if is_free:
+            price = 0
+        else:
+            from apps.users.models import StudioSettings
+            _s = StudioSettings.objects.first()
+            price = float(_s.price_casual) if _s else 0
 
         booking = CasualBooking.objects.create(
             occurrence=occurrence,

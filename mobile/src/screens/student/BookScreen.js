@@ -662,159 +662,10 @@ const pass = StyleSheet.create({
   cancelBtnText: { color: '#555', fontSize: 13 },
 })
 
-// ─── BookingModal ─────────────────────────────────────────────────────────────
-function BookingModal({ visible, occ, availableCredits, priceCasual, seasonPrice, savedCardLast4, onClose, onBook, bookingLoading }) {
-  const [selected, setSelected] = useState(null)
-
-  useEffect(() => {
-    if (visible) {
-      setSelected(availableCredits > 0 ? 'credit' : 'casual')
-    }
-  }, [visible, availableCredits])
-
-  if (!occ) return null
-
-  const name = getSessionName(occ)
-  const instructor = getInstructor(occ)
-  const dateHeader = occ.date ? fmtDateHeader(occ.date) : ''
-  const time = fmtTime(occ.start_time)
-  const sessionId = getSessionId(occ)
-
-  function getButtonLabel() {
-    if (selected === 'credit') return 'BOOK FOR FREE'
-    if (selected === 'season') return `BOOK — $${seasonPrice}`
-    if (selected === 'casual') return `BOOK — $${priceCasual}`
-    if (selected === 'pass') {
-      const passPrice = Math.max(0, priceCasual * 4 - 20)
-      return `BOOK — $${passPrice}`
-    }
-    return 'SELECT AN OPTION'
-  }
-
-  function handleConfirm() {
-    const session = { id: sessionId, name }
-    if (selected === 'credit') {
-      onBook(session, 'catchup', 0)
-    } else if (selected === 'casual') {
-      onBook(session, 'casual', priceCasual)
-    } else if (selected === 'season') {
-      onBook(session, 'season', seasonPrice)
-    } else if (selected === 'pass') {
-      const passPrice = Math.max(0, priceCasual * 4 - 20)
-      onBook(session, 'pass', passPrice)
-    }
-  }
-
-  const passPrice = Math.max(0, priceCasual * 4 - 20)
-  const passSaving = priceCasual * 4 - passPrice
-
-  return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
-      <View style={ms.overlay}>
-        <View style={ms.sheet}>
-          {/* header */}
-          <View style={ms.header}>
-            <Text style={ms.sheetTitle} numberOfLines={2}>{name}</Text>
-            <TouchableOpacity onPress={onClose} style={ms.closeBtn}>
-              <Text style={ms.closeBtnText}>CLOSE</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* meta */}
-          <Text style={ms.meta}>
-            {[dateHeader, time, instructor].filter(Boolean).join('  ·  ')}
-          </Text>
-
-          {/* credits notice */}
-          {availableCredits > 0 && (
-            <Text style={ms.creditNotice}>
-              {availableCredits} catch-up credit{availableCredits !== 1 ? 's' : ''} available
-            </Text>
-          )}
-
-          {/* options */}
-          <View style={ms.options}>
-            {/* Season enrol */}
-            <TouchableOpacity
-              style={[ms.option, selected === 'season' && ms.optionSelected]}
-              onPress={() => setSelected('season')}
-            >
-              <View style={ms.optionCheck}>
-                {selected === 'season' && <View style={ms.optionCheckInner} />}
-              </View>
-              <Text style={ms.optionLabel}>Enrol in the full Season course instead</Text>
-              <Text style={ms.optionPrice}>${seasonPrice}</Text>
-            </TouchableOpacity>
-
-            {/* Use credit */}
-            {availableCredits > 0 && (
-              <TouchableOpacity
-                style={[ms.option, selected === 'credit' && ms.optionSelected]}
-                onPress={() => setSelected('credit')}
-              >
-                <View style={ms.optionCheck}>
-                  {selected === 'credit' && <View style={ms.optionCheckInner} />}
-                </View>
-                <Text style={ms.optionLabel}>Use class credit</Text>
-                <Text style={[ms.optionPrice, { color: T.lime }]}>FREE</Text>
-              </TouchableOpacity>
-            )}
-
-            {/* Pay casual */}
-            <TouchableOpacity
-              style={[ms.option, selected === 'casual' && ms.optionSelected]}
-              onPress={() => setSelected('casual')}
-            >
-              <View style={ms.optionCheck}>
-                {selected === 'casual' && <View style={ms.optionCheckInner} />}
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={ms.optionLabel}>Pay casual rate</Text>
-                {savedCardLast4 ? (
-                  <Text style={ms.optionSub}>Card ending {savedCardLast4}</Text>
-                ) : null}
-              </View>
-              <Text style={ms.optionPrice}>${priceCasual}</Text>
-            </TouchableOpacity>
-
-            {/* 4-class pass */}
-            <TouchableOpacity
-              style={[ms.option, selected === 'pass' && ms.optionSelected]}
-              onPress={() => setSelected('pass')}
-            >
-              <View style={ms.optionCheck}>
-                {selected === 'pass' && <View style={ms.optionCheckInner} />}
-              </View>
-              <Text style={ms.optionLabel}>Buy a 4 class pass · save ${passSaving}</Text>
-              <Text style={ms.optionPrice}>${passPrice}</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* confirm button */}
-          <TouchableOpacity
-            style={[ms.confirmBtn, !selected && ms.confirmBtnDisabled]}
-            onPress={handleConfirm}
-            disabled={!selected || bookingLoading}
-          >
-            {bookingLoading
-              ? <ActivityIndicator size="small" color="#000" />
-              : <Text style={ms.confirmBtnText}>{getButtonLabel()}</Text>
-            }
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  )
-}
-
 // ─── main screen ─────────────────────────────────────────────────────────────
 export default function BookScreen({ navigation }) {
   const { user } = useAuth()
+  const { initPaymentSheet, presentPaymentSheet } = useStripe()
   const [tab, setTab] = useState('season')
   const [booking, setBooking] = useState(null)
   const [booked, setBooked] = useState({})
@@ -826,14 +677,6 @@ export default function BookScreen({ navigation }) {
   const [showSeasonCheckout, setShowSeasonCheckout] = useState(false)
 
   // Casual tab state
-  const [selectedOcc, setSelectedOcc] = useState(null)
-  const [modalVisible, setModalVisible] = useState(false)
-  const [showEligibleOnly, setShowEligibleOnly] = useState(true)
-  const [hideUnavailable, setHideUnavailable] = useState(false)
-  const [occPickerSession, setOccPickerSession] = useState(null) // { session, enrolmentType }
-  const [occPickerData, setOccPickerData] = useState([])
-  const [occPickerLoading, setOccPickerLoading] = useState(false)
-  const [occPickerBooking, setOccPickerBooking] = useState(null)
   const [exemptionSession, setExemptionSession] = useState(null)
   const [exemptionNote, setExemptionNote] = useState('')
   const [submittingExemption, setSubmittingExemption] = useState(false)
@@ -1012,78 +855,6 @@ export default function BookScreen({ navigation }) {
     }
   }
 
-  // ── casual/catchup handlers ────────────────────────────────────────────────
-  async function handleEnrol(session, type, price) {
-    setBooking(session.id)
-    try {
-      if (type === 'catchup') {
-        await enrolments.create({ student: user.id, class_session: session.id, status: 'active', enrolment_type: 'catchup' })
-        refetchCredits()
-        setBooked(b => ({ ...b, [session.id + '-catchup']: true }))
-        setModalVisible(false)
-        setSelectedOcc(null)
-      } else {
-        // Create enrolment directly — studio follows up about payment
-        const enrolType = type === 'season' ? 'course' : type === 'trial' ? 'trial' : 'casual'
-        await enrolments.create({ student: user.id, class_session: session.id, status: 'active', enrolment_type: enrolType })
-        setBooked(b => ({ ...b, [session.id + '-' + type]: true }))
-        setModalVisible(false)
-        setSelectedOcc(null)
-        Alert.alert('Booking confirmed!', "Your spot is reserved. The studio will be in touch about payment.")
-      }
-    } catch (err) {
-      Alert.alert('Booking failed', err.response?.data?.detail ?? 'Could not complete booking. Please try again.')
-    } finally {
-      setBooking(null)
-    }
-  }
-
-  async function openOccurrencePicker(session, enrolmentType) {
-    setOccPickerSession({ session, enrolmentType })
-    setOccPickerData([])
-    setOccPickerLoading(true)
-    try {
-      const res = await classes.casual.occurrences({ session: session.id, upcoming: true })
-      setOccPickerData(res.data?.results || res.data || [])
-    } catch {
-      setOccPickerData([])
-    } finally {
-      setOccPickerLoading(false)
-    }
-  }
-
-  async function handleOccurrenceBook(occ, enrolmentType) {
-    setOccPickerBooking(occ.id)
-    try {
-      const res = await classes.casual.book(occ.id, { enrolment_type: enrolmentType })
-      setOccPickerData(prev => prev.map(o => o.id === occ.id
-        ? { ...o, my_booking: res.data, spots_left: res.data.status === 'confirmed' ? Math.max(0, (o.spots_left ?? 0) - 1) : o.spots_left }
-        : o
-      ))
-      if (enrolmentType === 'catchup' && res.data.status === 'confirmed') refetchCredits()
-    } catch (err) {
-      Alert.alert('Error', err.response?.data?.detail ?? 'Could not complete booking. Please try again.')
-    } finally {
-      setOccPickerBooking(null)
-    }
-  }
-
-  async function handleOccurrenceCancel(occ) {
-    setOccPickerBooking(occ.id)
-    try {
-      await classes.casual.cancel(occ.id)
-      setOccPickerData(prev => prev.map(o => o.id === occ.id
-        ? { ...o, my_booking: null, spots_left: occ.my_booking?.status === 'confirmed' ? (o.spots_left ?? 0) + 1 : o.spots_left }
-        : o
-      ))
-      if (occ.my_booking?.enrolment_type === 'catchup' && occ.my_booking?.status === 'confirmed') refetchCredits()
-    } catch (err) {
-      Alert.alert('Error', err.response?.data?.detail ?? 'Could not cancel. Please try again.')
-    } finally {
-      setOccPickerBooking(null)
-    }
-  }
-
   // Casual date-view: fetch all upcoming occurrences for casual-eligible sessions
   const casualSessionKey = casualSessions.map(s => s.id).sort().join(',')
   useEffect(() => {
@@ -1109,6 +880,24 @@ export default function BookScreen({ navigation }) {
   async function bookCasualOcc(occ, enrolmentType) {
     setCasualBookingId(occ.id)
     try {
+      if (enrolmentType === 'casual') {
+        const amountCents = Math.round(priceCasual * 100)
+        const sessName = occ.session_detail?.name ?? 'Class'
+        const { data: pi } = await payments.stripe.createPaymentIntent({
+          amount_cents: amountCents,
+          description: `Casual class — ${sessName}`,
+          save_method: true,
+        })
+        const { error: initErr } = await initPaymentSheet({
+          merchantDisplayName: 'Duality Pole Studio',
+          paymentIntentClientSecret: pi.client_secret,
+          allowsDelayedPaymentMethods: false,
+          appearance: STRIPE_APPEARANCE,
+        })
+        if (initErr) { Alert.alert('Error', initErr.message); return }
+        const { error: presentErr } = await presentPaymentSheet()
+        if (presentErr) { if (presentErr.code !== 'Canceled') Alert.alert('Payment failed', presentErr.message); return }
+      }
       const res = await classes.casual.book(occ.id, { enrolment_type: enrolmentType })
       setCasualAllOccs(prev => prev?.map(o => o.id === occ.id
         ? { ...o, my_booking: res.data, spots_left: res.data.status === 'confirmed' ? Math.max(0, (o.spots_left ?? 0) - 1) : (o.spots_left ?? 0) }
@@ -1194,16 +983,6 @@ export default function BookScreen({ navigation }) {
     } finally {
       setSubmittingExemption(false)
     }
-  }
-
-  function openModal(occ) {
-    setSelectedOcc(occ)
-    setModalVisible(true)
-  }
-
-  function closeModal() {
-    setModalVisible(false)
-    setSelectedOcc(null)
   }
 
   const isLoading = tab === 'workshops' ? wsLoading : sessLoading
@@ -1628,9 +1407,24 @@ export default function BookScreen({ navigation }) {
                         onPress={async () => {
                           setBooking(sess.id + '-trial')
                           try {
+                            const amountCents = Math.round(priceTrial * 100)
+                            const { data: pi } = await payments.stripe.createPaymentIntent({
+                              amount_cents: amountCents,
+                              description: `Trial class — ${sess.name ?? sess.session_name ?? 'Class'}`,
+                              save_method: true,
+                            })
+                            const { error: initErr } = await initPaymentSheet({
+                              merchantDisplayName: 'Duality Pole Studio',
+                              paymentIntentClientSecret: pi.client_secret,
+                              allowsDelayedPaymentMethods: false,
+                              appearance: STRIPE_APPEARANCE,
+                            })
+                            if (initErr) { Alert.alert('Error', initErr.message); return }
+                            const { error: presentErr } = await presentPaymentSheet()
+                            if (presentErr) { if (presentErr.code !== 'Canceled') Alert.alert('Payment failed', presentErr.message); return }
                             await enrolments.create({ student: user.id, class_session: sess.id, status: 'active', enrolment_type: 'trial' })
                             setBooked(b => ({ ...b, [sess.id + '-trial']: true }))
-                            Alert.alert('Trial booked!', "Your trial class is confirmed. The studio will follow up about payment.")
+                            Alert.alert('Trial booked! 🎉', `Payment of $${priceTrial} confirmed. See you in class!`)
                           } catch (err) {
                             Alert.alert('Booking failed', err.response?.data?.detail ?? 'Could not book trial. Please try again.')
                           } finally {
@@ -1734,19 +1528,6 @@ export default function BookScreen({ navigation }) {
         </View>
       )}
 
-      {/* ── Booking Modal (Casual) ────────────────────────────────────────── */}
-      <BookingModal
-        visible={modalVisible}
-        occ={selectedOcc}
-        availableCredits={availableCredits}
-        priceCasual={priceCasual}
-        seasonPrice={seasonPrice}
-        savedCardLast4={null}
-        onClose={closeModal}
-        onBook={handleEnrol}
-        bookingLoading={!!booking}
-      />
-
       {/* ── Heads-up modal ───────────────────────────────────────────────── */}
       <HeadsUpModal
         session={headsUpSession}
@@ -1825,98 +1606,6 @@ export default function BookScreen({ navigation }) {
         </Modal>
       )}
 
-      {/* Occurrence date picker modal */}
-      {occPickerSession && (
-        <Modal visible transparent animationType="slide" onRequestClose={() => setOccPickerSession(null)}>
-          <View style={ms.overlay}>
-            <View style={[ms.sheet, { maxHeight: '80%' }]}>
-              <View style={ms.header}>
-                <View style={{ flex: 1 }}>
-                  <Text style={ms.sheetTitle}>{occPickerSession.session.name}</Text>
-                  <Text style={{ fontSize: 13, color: T.muted, marginTop: 2 }}>
-                    {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][occPickerSession.session.day_of_week]}  ·  {fmtTime(occPickerSession.session.start_time)}
-                  </Text>
-                </View>
-                <TouchableOpacity onPress={() => setOccPickerSession(null)} style={ms.closeBtn}>
-                  <Text style={ms.closeBtnText}>✕</Text>
-                </TouchableOpacity>
-              </View>
-
-              <Text style={{ fontSize: 13, color: T.muted, marginBottom: 16 }}>
-                {occPickerSession.enrolmentType === 'catchup'
-                  ? 'Select a date to use a catch-up credit. You can book multiple dates if needed.'
-                  : 'Select the date you want to attend. You can join the waitlist for dates that are full.'}
-              </Text>
-
-              {occPickerLoading ? (
-                <ActivityIndicator color={T.lime} style={{ marginVertical: 24 }} />
-              ) : occPickerData.length === 0 ? (
-                <Text style={{ fontSize: 14, color: T.muted, textAlign: 'center', padding: 24 }}>No upcoming dates scheduled yet.</Text>
-              ) : (
-                <ScrollView style={{ flexGrow: 0 }}>
-                  {occPickerData.map(occ => {
-                    const dateLabel = new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
-                    const spotsLeft = occ.spots_left ?? 0
-                    const isFull = spotsLeft <= 0
-                    const myBooking = occ.my_booking
-                    const isBooked = myBooking?.status === 'confirmed'
-                    const isWaitlisted = myBooking?.status === 'waitlisted'
-                    const hasOffer = isWaitlisted && myBooking?.waitlist_offered_at
-                    const isLoading = occPickerBooking === occ.id
-
-                    return (
-                      <View key={occ.id} style={{
-                        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-                        paddingVertical: 12, paddingHorizontal: 14, marginBottom: 8, borderRadius: 10,
-                        backgroundColor: isBooked ? 'rgba(204,255,0,0.06)' : isWaitlisted ? 'rgba(255,170,0,0.06)' : 'rgba(255,255,255,0.04)',
-                        borderWidth: 1,
-                        borderColor: isBooked ? 'rgba(204,255,0,0.2)' : isWaitlisted ? 'rgba(255,170,0,0.2)' : '#222',
-                      }}>
-                        <View style={{ flex: 1 }}>
-                          <Text style={{ fontSize: 14, fontWeight: '700', color: T.text }}>{dateLabel}</Text>
-                          <Text style={{ fontSize: 12, color: isBooked ? T.lime : isWaitlisted ? '#ffaa00' : isFull ? '#ff4444' : T.muted, marginTop: 2 }}>
-                            {isBooked ? '✓ Booked' : hasOffer ? '🎉 Spot offered!' : isWaitlisted ? 'On waitlist' : isFull ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left`}
-                          </Text>
-                        </View>
-                        <View>
-                          {isLoading ? (
-                            <ActivityIndicator color={T.lime} size="small" />
-                          ) : isBooked || (isWaitlisted && !hasOffer) ? (
-                            <TouchableOpacity
-                              style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#ff4444' }}
-                              onPress={() => handleOccurrenceCancel(occ)}
-                            >
-                              <Text style={{ fontSize: 12, fontWeight: '700', color: '#ff4444' }}>{isWaitlisted ? 'LEAVE' : 'CANCEL'}</Text>
-                            </TouchableOpacity>
-                          ) : hasOffer ? (
-                            <Text style={{ fontSize: 12, fontWeight: '700', color: T.lime }}>CLAIM →</Text>
-                          ) : isFull ? (
-                            <TouchableOpacity
-                              style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#555' }}
-                              onPress={() => handleOccurrenceBook(occ, occPickerSession.enrolmentType)}
-                            >
-                              <Text style={{ fontSize: 12, fontWeight: '700', color: T.muted }}>JOIN WAITLIST</Text>
-                            </TouchableOpacity>
-                          ) : (
-                            <TouchableOpacity
-                              style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: T.lime }}
-                              onPress={() => handleOccurrenceBook(occ, occPickerSession.enrolmentType)}
-                            >
-                              <Text style={{ fontSize: 12, fontWeight: '800', color: '#000' }}>
-                                {occPickerSession.enrolmentType === 'catchup' ? 'USE CREDIT' : 'BOOK'}
-                              </Text>
-                            </TouchableOpacity>
-                          )}
-                        </View>
-                      </View>
-                    )
-                  })}
-                </ScrollView>
-              )}
-            </View>
-          </View>
-        </Modal>
-      )}
     </View>
   )
 }
