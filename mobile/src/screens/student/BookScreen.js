@@ -1419,17 +1419,19 @@ export default function BookScreen({ navigation }) {
               const spotsLeft = (session.capacity ?? 12) - (session.enrolled_count ?? 0)
               const isFull = spotsLeft <= 0
               const levelBadge = getLevelBadge(session.name)
+              const sessLevel = session.level ?? session.level_name
+              const isOutOfLevel = !isBooked && levelFilter && sessLevel && String(sessLevel) !== String(levelFilter)
               return (
                 <TouchableOpacity
                   key={session.id}
-                  style={[s.card, isSelected && s.cardSelected, isBooked && s.cardBooked]}
+                  style={[s.card, isSelected && s.cardSelected, isBooked && s.cardBooked, isOutOfLevel && s.cardOutOfLevel]}
                   onPress={() => !isBooked && !isFull && toggleSession(session)}
                   activeOpacity={isBooked || isFull ? 1 : 0.75}
                 >
                   <View style={s.sessionRow}>
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 2 }}>
-                        <Text style={s.sessionName}>{session.name}</Text>
+                        <Text style={[s.sessionName, isOutOfLevel && { color: T.muted }]}>{session.name}</Text>
                         {levelBadge && (
                           <View style={{ backgroundColor: levelBadge.bg, borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2 }}>
                             <Text style={{ fontSize: 10, fontWeight: '700', color: levelBadge.color }}>{levelBadge.label}</Text>
@@ -1444,7 +1446,12 @@ export default function BookScreen({ navigation }) {
                           session.instructor_detail?.display_name ?? session.instructor_detail?.first_name,
                         ].filter(Boolean).join('  ·  ')}
                       </Text>
-                      {spotsLeft > 0 && spotsLeft <= 2 && (
+                      {isOutOfLevel && (
+                        <Text style={{ fontSize: 11, color: '#f59e0b', marginTop: 4, fontWeight: '600' }}>
+                          ⚠ Outside your current level — tap to request
+                        </Text>
+                      )}
+                      {!isOutOfLevel && spotsLeft > 0 && spotsLeft <= 2 && (
                         <Text style={s.spotsWarning}>{spotsLeft} spot{spotsLeft !== 1 ? 's' : ''} left</Text>
                       )}
                       {isFull && <Text style={s.spotsFull}>Full</Text>}
@@ -1453,6 +1460,8 @@ export default function BookScreen({ navigation }) {
                       <Text style={s.bookedBadge}>✓ Booked</Text>
                     ) : booked[session.id + '-waitlist'] ? (
                       <Text style={s.bookedBadge}>⏳ Waitlisted</Text>
+                    ) : isOutOfLevel ? (
+                      <Text style={{ fontSize: 18, color: '#f59e0b' }}>⚠</Text>
                     ) : isFull ? (
                       <TouchableOpacity
                         style={s.waitlistBtn}
@@ -2179,6 +2188,7 @@ const s = StyleSheet.create({
   },
   cardSelected: { borderColor: T.lime, borderWidth: 1.5 },
   cardBooked: { borderColor: T.lime + '66' },
+  cardOutOfLevel: { borderColor: 'rgba(255,170,0,0.3)', backgroundColor: 'rgba(255,170,0,0.03)' },
   sessionRow: { flexDirection: 'row', alignItems: 'center' },
   sessionName: { fontSize: 16, fontWeight: '700', color: T.text, marginBottom: 4 },
   sessionMeta: { fontSize: 13, color: T.muted },
