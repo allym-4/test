@@ -931,9 +931,24 @@ export default function MyClassesScreen({ navigation }) {
     activeEnrolments.map(e => e.class_session_detail?.level).filter(Boolean)
   )].sort()
 
-  const filteredEnrolments = levelFilter
-    ? activeEnrolments.filter(e => e.class_session_detail?.level === levelFilter)
-    : activeEnrolments
+  const today = new Date().toISOString().slice(0, 10)
+  const currentEnrolments = activeEnrolments.filter(e => {
+    const start = e.class_session_detail?.season_start_date
+    return !start || start <= today
+  })
+  const upcomingEnrolments = activeEnrolments.filter(e => {
+    const start = e.class_session_detail?.season_start_date
+    return start && start > today
+  })
+
+  const filteredCurrent = levelFilter
+    ? currentEnrolments.filter(e => e.class_session_detail?.level === levelFilter)
+    : currentEnrolments
+  const filteredUpcoming = levelFilter
+    ? upcomingEnrolments.filter(e => e.class_session_detail?.level === levelFilter)
+    : upcomingEnrolments
+  // keep backward compat for export and other uses
+  const filteredEnrolments = [...filteredCurrent, ...filteredUpcoming]
 
   async function handleCancelAway(occurrenceId, name) {
     Alert.alert(
@@ -1028,6 +1043,67 @@ export default function MyClassesScreen({ navigation }) {
     setCancelPolicyEnrol(enrolment)
   }
 
+  function renderEnrolmentCard(enr) {
+    const sess = enr.class_session_detail
+    const sessName = sess?.name ?? enr.class_name ?? 'Class'
+    return (
+      <View key={enr.id} style={s.card}>
+        <View style={s.cardHeader}>
+          <Text style={s.cardTitle}>{sessName}</Text>
+          {enr.enrolment_type && (
+            <View style={s.typeBadge}>
+              <Text style={s.typeBadgeText}>{enr.enrolment_type}</Text>
+            </View>
+          )}
+        </View>
+        {sess?.studio_detail?.name && (
+          <Text style={s.cardMeta}>{sess.studio_detail.name}</Text>
+        )}
+        {enr.next_occurrence && (
+          <View style={s.nextClass}>
+            <Text style={s.nextLabel}>Next class</Text>
+            <Text style={s.nextDate}>
+              {new Date(enr.next_occurrence.date).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short' })}
+              {enr.next_occurrence.start_time ? `  ·  ${enr.next_occurrence.start_time.slice(0, 5)}` : ''}
+            </Text>
+            {enr.next_occurrence.my_status === 'absent' || enr.next_occurrence.marked_away ? (
+              <View style={s.awayRow}>
+                <View style={s.awayBadge}><Text style={s.awayBadgeText}>Marked away</Text></View>
+                <TouchableOpacity
+                  style={s.canMakeItBtn}
+                  disabled={cancellingAway === enr.next_occurrence.id}
+                  onPress={() => handleCancelAway(enr.next_occurrence.id, sessName)}
+                >
+                  {cancellingAway === enr.next_occurrence.id
+                    ? <ActivityIndicator size="small" color="#ccff00" />
+                    : <Text style={s.canMakeItText}>I can make it!</Text>
+                  }
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={s.awayBtn}
+                disabled={markingAway === enr.next_occurrence.id}
+                onPress={() => handleMarkAway(enr.next_occurrence, sess)}
+              >
+                {markingAway === enr.next_occurrence.id
+                  ? <ActivityIndicator size="small" color="#ccff00" />
+                  : <Text style={s.awayBtnText}>Mark away</Text>
+                }
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+        {(sess?.id ?? enr.class_session) && (
+          <WhoComing sessionId={sess?.id ?? enr.class_session} />
+        )}
+        <TouchableOpacity style={s.cancelBtn} onPress={() => handleCancelEnrolment(enr)}>
+          <Text style={s.cancelBtnText}>Cancel enrolment</Text>
+        </TouchableOpacity>
+      </View>
+    )
+  }
+
   return (
     <View style={s.root}>
       <View style={s.topLinks}>
@@ -1081,18 +1157,6 @@ export default function MyClassesScreen({ navigation }) {
             <PendingDisplacementBanner key={e.id} enrolment={e} />
           ))}
 
-          {/* Pricing summary strip */}
-          {activeEnrolments.length > 0 && (
-            <View style={s.pricingStrip}>
-              <Text style={s.pricingText}>
-                Current enrolment
-              </Text>
-              {activeEnrolments.length === 1 && (
-                <Text style={s.pricingHint}>Add a 2nd class for a better rate</Text>
-              )}
-            </View>
-          )}
-
           {filteredEnrolments.length === 0 && !loading && (
             <Text style={s.empty}>
               {levelFilter && activeEnrolments.length > 0
@@ -1100,70 +1164,25 @@ export default function MyClassesScreen({ navigation }) {
                 : 'No active enrolments.'}
             </Text>
           )}
-          {filteredEnrolments.map(enr => {
-            const sess = enr.class_session_detail
-            const sessName = sess?.name ?? enr.class_name ?? 'Class'
-            return (
-              <View key={enr.id} style={s.card}>
-                <View style={s.cardHeader}>
-                  <Text style={s.cardTitle}>{sessName}</Text>
-                  {enr.enrolment_type && (
-                    <View style={s.typeBadge}>
-                      <Text style={s.typeBadgeText}>{enr.enrolment_type}</Text>
-                    </View>
-                  )}
-                </View>
-                {sess?.studio_detail?.name && (
-                  <Text style={s.cardMeta}>{sess.studio_detail.name}</Text>
-                )}
-                {enr.next_occurrence && (
-                  <View style={s.nextClass}>
-                    <Text style={s.nextLabel}>Next class</Text>
-                    <Text style={s.nextDate}>
-                      {new Date(enr.next_occurrence.date).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short' })}
-                      {enr.next_occurrence.start_time ? `  ·  ${enr.next_occurrence.start_time.slice(0, 5)}` : ''}
-                    </Text>
-                    {enr.next_occurrence.my_status === 'absent' || enr.next_occurrence.marked_away ? (
-                      <View style={s.awayRow}>
-                        <View style={s.awayBadge}><Text style={s.awayBadgeText}>Marked away</Text></View>
-                        <TouchableOpacity
-                          style={s.canMakeItBtn}
-                          disabled={cancellingAway === enr.next_occurrence.id}
-                          onPress={() => handleCancelAway(enr.next_occurrence.id, sessName)}
-                        >
-                          {cancellingAway === enr.next_occurrence.id
-                            ? <ActivityIndicator size="small" color="#ccff00" />
-                            : <Text style={s.canMakeItText}>I can make it!</Text>
-                          }
-                        </TouchableOpacity>
-                      </View>
-                    ) : (
-                      <TouchableOpacity
-                        style={s.awayBtn}
-                        disabled={markingAway === enr.next_occurrence.id}
-                        onPress={() => handleMarkAway(enr.next_occurrence, sess)}
-                      >
-                        {markingAway === enr.next_occurrence.id
-                          ? <ActivityIndicator size="small" color="#ccff00" />
-                          : <Text style={s.awayBtnText}>Mark away</Text>
-                        }
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                )}
-                {(sess?.id ?? enr.class_session) && (
-                  <WhoComing sessionId={sess?.id ?? enr.class_session} />
-                )}
 
-                <TouchableOpacity
-                  style={s.cancelBtn}
-                  onPress={() => handleCancelEnrolment(enr)}
-                >
-                  <Text style={s.cancelBtnText}>Cancel enrolment</Text>
-                </TouchableOpacity>
-              </View>
-            )
-          })}
+          {/* Current enrolments */}
+          {filteredCurrent.length > 0 && (
+            <View style={s.pricingStrip}>
+              <Text style={s.pricingText}>Current enrolment</Text>
+              {currentEnrolments.length === 1 && (
+                <Text style={s.pricingHint}>Add a 2nd class for a better rate</Text>
+              )}
+            </View>
+          )}
+          {filteredCurrent.map(enr => renderEnrolmentCard(enr))}
+
+          {/* Upcoming enrolments */}
+          {filteredUpcoming.length > 0 && (
+            <View style={[s.pricingStrip, { marginTop: filteredCurrent.length > 0 ? 16 : 0, borderColor: 'rgba(124,58,237,0.3)', backgroundColor: 'rgba(124,58,237,0.05)' }]}>
+              <Text style={[s.pricingText, { color: '#b0a0ff' }]}>Upcoming season</Text>
+            </View>
+          )}
+          {filteredUpcoming.map(enr => renderEnrolmentCard(enr))}
 
           {/* Season Waitlist */}
           {waitlistedEnrolments.filter(e => !e.waitlist_offered_at && e.enrolment_type === 'course').length > 0 && (

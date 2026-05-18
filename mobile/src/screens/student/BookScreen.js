@@ -590,6 +590,78 @@ const sc = StyleSheet.create({
   calCellTextSelected: { color: '#000' },
 })
 
+// ─── ClassPassCheckoutModal ───────────────────────────────────────────────────
+function ClassPassCheckoutModal({ visible, price, size, onClose, onSuccess }) {
+  const { initPaymentSheet, presentPaymentSheet } = useStripe()
+  const [loading, setLoading] = useState(false)
+
+  async function handlePurchase() {
+    setLoading(true)
+    try {
+      const { data } = await payments.stripe.createPaymentIntent({
+        amount_cents: Math.round(price * 100),
+        description: `${size}-class pass`,
+        save_method: true,
+      })
+      const { error: initErr } = await initPaymentSheet({
+        merchantDisplayName: 'Duality Pole Studio',
+        paymentIntentClientSecret: data.client_secret,
+        allowsDelayedPaymentMethods: false,
+        appearance: STRIPE_APPEARANCE,
+      })
+      if (initErr) { Alert.alert('Error', initErr.message); return }
+      const { error: presentErr } = await presentPaymentSheet()
+      if (presentErr) { if (presentErr.code !== 'Canceled') Alert.alert('Payment failed', presentErr.message); return }
+      await attendance.classPasses.purchase()
+      onSuccess()
+    } catch (e) {
+      Alert.alert('Error', e?.response?.data?.detail || e?.message || 'Could not process payment.')
+    } finally { setLoading(false) }
+  }
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={pass.overlay}>
+        <View style={pass.sheet}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+            <Text style={pass.title}>{size}-Class Pass</Text>
+            <TouchableOpacity onPress={onClose} style={{ marginLeft: 'auto' }}>
+              <Text style={{ color: '#555', fontSize: 12, fontWeight: '700', letterSpacing: 1 }}>CLOSE</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={pass.infoBox}>
+            <Text style={pass.infoText}>Book any {size} casual classes at a discounted rate. Credits never expire mid-season and can be used for any eligible class.</Text>
+          </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+            <Text style={{ color: T.muted, fontSize: 14 }}>{size} classes</Text>
+            <Text style={{ color: T.lime, fontSize: 26, fontWeight: '900' }}>${price}</Text>
+          </View>
+          <TouchableOpacity style={[pass.buyBtn, loading && { opacity: 0.6 }]} onPress={handlePurchase} disabled={loading}>
+            {loading
+              ? <ActivityIndicator color="#000" />
+              : <Text style={pass.buyBtnText}>PAY ${price} →</Text>
+            }
+          </TouchableOpacity>
+          <TouchableOpacity style={pass.cancelBtn} onPress={onClose}>
+            <Text style={pass.cancelBtnText}>Maybe later</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  )
+}
+const pass = StyleSheet.create({
+  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.75)' },
+  sheet: { backgroundColor: '#111', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 44 },
+  title: { fontSize: 20, fontWeight: '800', color: T.text },
+  infoBox: { backgroundColor: 'rgba(204,255,0,0.05)', borderWidth: 1, borderColor: 'rgba(204,255,0,0.15)', borderRadius: 12, padding: 14, marginBottom: 20 },
+  infoText: { fontSize: 13, color: '#aaa', lineHeight: 20 },
+  buyBtn: { backgroundColor: T.lime, borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginBottom: 12 },
+  buyBtnText: { color: '#000', fontWeight: '800', fontSize: 15, letterSpacing: 0.3 },
+  cancelBtn: { alignItems: 'center', paddingVertical: 12 },
+  cancelBtnText: { color: '#555', fontSize: 13 },
+})
+
 // ─── BookingModal ─────────────────────────────────────────────────────────────
 function BookingModal({ visible, occ, availableCredits, priceCasual, seasonPrice, savedCardLast4, onClose, onBook, bookingLoading }) {
   const [selected, setSelected] = useState(null)
@@ -769,6 +841,7 @@ export default function BookScreen({ navigation }) {
   const [casualAllOccs, setCasualAllOccs] = useState(null) // null=loading, []=loaded
   const [casualSelectedDate, setCasualSelectedDate] = useState(null)
   const [casualBookingId, setCasualBookingId] = useState(null)
+  const [buyingPass, setBuyingPass] = useState(false)
 
   useEffect(() => {
     if (user?.level) setLevelFilter(user.level)
@@ -799,6 +872,10 @@ export default function BookScreen({ navigation }) {
     () => user?.id ? payments.balance(user.id) : null,
     [user?.id]
   )
+  const { data: passData, refetch: refetchPasses } = useApi(
+    () => user?.id ? attendance.classPasses.list({ student: user.id }) : null,
+    [user?.id]
+  )
 
   // ── derived data ───────────────────────────────────────────────────────────
   const allSessions = sessionsData?.results ?? sessionsData ?? []
@@ -813,6 +890,11 @@ export default function BookScreen({ navigation }) {
 
   const priceCasual = parseFloat(studioSettings?.price_casual ?? 35)
   const priceTrial = parseFloat(studioSettings?.price_trial ?? 25)
+  const priceClassPass = parseFloat(studioSettings?.price_class_pass ?? 140)
+  const classPassSize = parseInt(studioSettings?.class_pass_size ?? 4)
+  const passList = passData?.results ?? passData ?? []
+  const activePass = passList.find(p => p.is_active)
+  const passClassesRemaining = activePass?.classes_remaining ?? 0
 
   const activeEnrolList = activeEnrolData?.results ?? activeEnrolData ?? []
   const enrolledSessionIds = new Set(activeEnrolList.map(e => e.class_session ?? e.class_session_id))
@@ -1033,6 +1115,7 @@ export default function BookScreen({ navigation }) {
         : o
       ))
       if (enrolmentType === 'catchup' && res.data.status === 'confirmed') refetchCredits()
+      if (enrolmentType === 'classpass' && res.data.status === 'confirmed') refetchPasses()
     } catch (err) {
       Alert.alert('Error', err.response?.data?.detail ?? 'Could not complete booking. Please try again.')
     } finally {
@@ -1049,6 +1132,7 @@ export default function BookScreen({ navigation }) {
         : o
       ))
       if (occ.my_booking?.enrolment_type === 'catchup') refetchCredits()
+      if (occ.my_booking?.enrolment_type === 'classpass') refetchPasses()
     } catch (err) {
       Alert.alert('Error', err.response?.data?.detail ?? 'Could not cancel.')
     } finally {
@@ -1304,9 +1388,6 @@ export default function BookScreen({ navigation }) {
           })
           const dateGroups = Object.entries(byDate)
 
-          // casual session ID set for eligibility
-          const casualSessionIds2 = new Set(casualSessions.map(s => s.id))
-
           return (
             <>
               {/* Trial banner */}
@@ -1330,6 +1411,25 @@ export default function BookScreen({ navigation }) {
                     )}
                   </View>
                 </View>
+              )}
+
+              {/* Class pass card */}
+              {passClassesRemaining > 0 ? (
+                <View style={[s.creditsCard, { borderColor: 'rgba(124,58,237,0.4)', backgroundColor: 'rgba(124,58,237,0.07)' }]}>
+                  <Text style={[s.creditsNumber, { color: '#b0a0ff' }]}>{passClassesRemaining}</Text>
+                  <View style={{ flex: 1, paddingLeft: 14 }}>
+                    <Text style={[s.creditsLabel, { color: '#b0a0ff' }]}>{classPassSize}-class pass — {passClassesRemaining} remaining</Text>
+                    <Text style={s.creditsExpiry}>Tap PASS on any class below to use a credit</Text>
+                  </View>
+                </View>
+              ) : (
+                <TouchableOpacity style={s.passPromoCard} onPress={() => setBuyingPass(true)} activeOpacity={0.8}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.passPromoTitle}>{classPassSize}-class pass · ${priceClassPass}</Text>
+                    <Text style={s.passPromoSub}>Save on casual bookings — use any time this season</Text>
+                  </View>
+                  <Text style={s.passPromoArrow}>→</Text>
+                </TouchableOpacity>
               )}
 
               {/* List / Calendar toggle */}
@@ -1404,6 +1504,7 @@ export default function BookScreen({ navigation }) {
                         const isConfirmed = myBooking?.status === 'confirmed'
                         const isWaitlisted = myBooking?.status === 'waitlisted'
                         const creditEligible = availableCredits > 0 && activeSeason && sess?.season === activeSeason.id
+                        const passEligible = passClassesRemaining > 0
                         const isProcessing = casualBookingId === occ.id
                         const alreadySeason = enrolledSessionIds.has(sessId)
 
@@ -1417,37 +1518,41 @@ export default function BookScreen({ navigation }) {
                               {isWaitlisted && <Text style={{ fontSize: 11, color: '#ffaa44', marginTop: 4, fontWeight: '600' }}>On waitlist</Text>}
                               {alreadySeason && !myBooking && <Text style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>Season class</Text>}
                             </View>
-                            <View style={{ alignItems: 'flex-end', justifyContent: 'space-between', paddingLeft: 10, minWidth: 72 }}>
+                            <View style={{ alignItems: 'flex-end', justifyContent: 'space-between', paddingLeft: 10, minWidth: 80 }}>
                               {!myBooking && (
                                 <Text style={[s.casualCardSpots, isFull && s.casualCardSpotsFull]}>
                                   {isFull ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''}`}
                                 </Text>
                               )}
-                              {isConfirmed || isWaitlisted ? (
+                              {isProcessing ? (
+                                <ActivityIndicator color={T.lime} size="small" style={{ marginTop: 6 }} />
+                              ) : isConfirmed || isWaitlisted ? (
                                 <TouchableOpacity
                                   style={[s.waitlistBtn, { borderColor: '#ef4444' }]}
                                   onPress={() => cancelCasualOcc(occ)}
-                                  disabled={isProcessing}
                                 >
-                                  <Text style={[s.waitlistBtnText, { color: '#ef4444' }]}>{isProcessing ? '…' : isWaitlisted ? 'LEAVE' : 'CANCEL'}</Text>
+                                  <Text style={[s.waitlistBtnText, { color: '#ef4444' }]}>{isWaitlisted ? 'LEAVE' : 'CANCEL'}</Text>
                                 </TouchableOpacity>
                               ) : alreadySeason ? null : isFull ? (
-                                <TouchableOpacity style={s.waitlistBtn} onPress={() => bookCasualOcc(occ, 'casual')} disabled={isProcessing}>
-                                  <Text style={s.waitlistBtnText}>{isProcessing ? '…' : 'WAITLIST'}</Text>
+                                <TouchableOpacity style={s.waitlistBtn} onPress={() => bookCasualOcc(occ, 'casual')}>
+                                  <Text style={s.waitlistBtnText}>WAITLIST</Text>
                                 </TouchableOpacity>
-                              ) : creditEligible ? (
+                              ) : (
                                 <View style={{ gap: 6 }}>
-                                  <TouchableOpacity style={[s.casualBookBtn, { backgroundColor: T.purple }]} onPress={() => bookCasualOcc(occ, 'catchup')} disabled={isProcessing}>
-                                    <Text style={[s.casualBookBtnText, { color: '#fff' }]}>{isProcessing ? '…' : 'USE CREDIT'}</Text>
-                                  </TouchableOpacity>
-                                  <TouchableOpacity style={[s.casualBookBtn, { backgroundColor: T.card, borderWidth: 1, borderColor: T.border }]} onPress={() => bookCasualOcc(occ, 'casual')} disabled={isProcessing}>
-                                    <Text style={[s.casualBookBtnText, { color: T.text }]}>${priceCasual}</Text>
+                                  {creditEligible && (
+                                    <TouchableOpacity style={[s.casualBookBtn, { backgroundColor: T.purple }]} onPress={() => bookCasualOcc(occ, 'catchup')}>
+                                      <Text style={[s.casualBookBtnText, { color: '#fff' }]}>CREDIT</Text>
+                                    </TouchableOpacity>
+                                  )}
+                                  {passEligible && (
+                                    <TouchableOpacity style={[s.casualBookBtn, { backgroundColor: 'rgba(124,58,237,0.15)', borderWidth: 1, borderColor: 'rgba(124,58,237,0.4)' }]} onPress={() => bookCasualOcc(occ, 'classpass')}>
+                                      <Text style={[s.casualBookBtnText, { color: '#b0a0ff' }]}>PASS</Text>
+                                    </TouchableOpacity>
+                                  )}
+                                  <TouchableOpacity style={s.casualBookBtn} onPress={() => bookCasualOcc(occ, 'casual')}>
+                                    <Text style={s.casualBookBtnText}>BOOK ${priceCasual}</Text>
                                   </TouchableOpacity>
                                 </View>
-                              ) : (
-                                <TouchableOpacity style={s.casualBookBtn} onPress={() => bookCasualOcc(occ, 'casual')} disabled={isProcessing}>
-                                  <Text style={s.casualBookBtnText}>{isProcessing ? '…' : `BOOK $${priceCasual}`}</Text>
-                                </TouchableOpacity>
                               )}
                             </View>
                           </View>
@@ -1661,6 +1766,15 @@ export default function BookScreen({ navigation }) {
         upcomingSeason={bookingSeason}
         onClose={() => setShowSeasonCheckout(false)}
         onConfirm={handleSeasonCheckout}
+      />
+
+      {/* ── Class pass checkout modal ─────────────────────────────────────── */}
+      <ClassPassCheckoutModal
+        visible={buyingPass}
+        price={priceClassPass}
+        size={classPassSize}
+        onClose={() => setBuyingPass(false)}
+        onSuccess={() => { setBuyingPass(false); refetchPasses() }}
       />
 
       {/* ── Exemption Request Modal ───────────────────────────────────────── */}
@@ -2056,6 +2170,14 @@ const s = StyleSheet.create({
   },
   creditsLabel: { fontSize: 16, fontWeight: '700', color: T.text },
   creditsExpiry: { fontSize: 12, color: T.muted, marginTop: 2 },
+  passPromoCard: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: 'rgba(124,58,237,0.06)', borderRadius: 14, padding: 16, marginBottom: 12,
+    borderWidth: 1, borderColor: 'rgba(124,58,237,0.25)',
+  },
+  passPromoTitle: { fontSize: 14, fontWeight: '700', color: '#b0a0ff', marginBottom: 2 },
+  passPromoSub: { fontSize: 12, color: T.muted },
+  passPromoArrow: { fontSize: 18, color: '#b0a0ff', fontWeight: '700', marginLeft: 10 },
 
   // filters card
   filtersCard: {

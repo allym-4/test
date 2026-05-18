@@ -67,6 +67,10 @@ export const attendance = {
   makeupCredits: {
     list: (params) => client.get('/api/attendance/makeup-credits/', { params }),
   },
+  classPasses: {
+    list: (params) => client.get('/api/attendance/class-passes/', { params }),
+    purchase: () => client.post('/api/attendance/class-passes/purchase/'),
+  },
 }
 
 export const helpdesk = {
