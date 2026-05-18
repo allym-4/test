@@ -35,13 +35,13 @@ export default function RegisterScreen({ navigation }) {
 
     setLoading(true)
     try {
-      await auth.register({
+      const { data: registered } = await auth.register({
         first_name: firstName.trim(),
         last_name: lastName.trim(),
         email: email.trim(),
         password,
       })
-      await login(email.trim(), password)
+      await login(registered.username, password)
     } catch (err) {
       const data = err.response?.data
       if (data && typeof data === 'object') {
