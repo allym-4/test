@@ -1,10 +1,16 @@
-import { registerRootComponent } from 'expo';
-import { LogBox } from 'react-native';
+// Patch console.error BEFORE any modules load (static imports are hoisted,
+// so we use require() throughout to control evaluation order).
+// @stripe/stripe-react-native calls React.forwardRef() at module eval time
+// with a single-param function, triggering a React 19 warning we can't fix.
+const _origErr = console.error.bind(console)
+console.error = (...args) => {
+  if (typeof args[0] === 'string' && args[0].includes('forwardRef render functions')) return
+  _origErr(...args)
+}
 
-// @stripe/stripe-react-native's PaymentMethodMessagingElement uses forwardRef
-// without a ref parameter — harmless, but React 19 warns about it.
-LogBox.ignoreLogs(['forwardRef render functions accept exactly two parameters']);
+const { LogBox } = require('react-native')
+LogBox.ignoreLogs(['forwardRef render functions accept exactly two parameters'])
 
-import App from './App';
-
-registerRootComponent(App);
+const { registerRootComponent } = require('expo')
+const App = require('./App').default
+registerRootComponent(App)
