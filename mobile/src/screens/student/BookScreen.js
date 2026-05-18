@@ -756,6 +756,7 @@ export default function BookScreen({ navigation }) {
   const [selectedSessions, setSelectedSessions] = useState([])
   const [headsUpSession, setHeadsUpSession] = useState(null)
   const [showSeasonCheckout, setShowSeasonCheckout] = useState(false)
+  const [selectedSeasonId, setSelectedSeasonId] = useState(null)
 
   // Casual tab state
   const [exemptionSession, setExemptionSession] = useState(null)
@@ -846,8 +847,10 @@ export default function BookScreen({ navigation }) {
   }
 
   const activeSeason = allSeasons.find(s => s.status === 'active')
-  // Booking season for the season tab: prefer upcoming, fall back to active
-  const bookingSeason = allSeasons.find(s => s.status === 'upcoming') ?? activeSeason
+  // Seasons available to book into
+  const bookableSeasons = allSeasons.filter(s => s.status === 'upcoming' || s.status === 'active')
+  const defaultBookingSeason = allSeasons.find(s => s.status === 'upcoming') ?? activeSeason
+  const bookingSeason = (selectedSeasonId ? allSeasons.find(s => s.id === selectedSeasonId) : null) ?? defaultBookingSeason
 
   // Sessions that belong to the booking season
   const bookingSeasonSessions = bookingSeason
@@ -1143,6 +1146,27 @@ export default function BookScreen({ navigation }) {
 
         {tab === 'season' && !(bookingSeason && bookingSeason.bookings_open === false) && (
           <>
+            {bookableSeasons.length > 1 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 2 }}>
+                {bookableSeasons.map(s2 => {
+                  const isActive = (bookingSeason?.id === s2.id)
+                  return (
+                    <TouchableOpacity
+                      key={s2.id}
+                      onPress={() => { setSelectedSeasonId(s2.id); setSelectedSessions([]) }}
+                      style={{
+                        paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
+                        backgroundColor: isActive ? T.lime : T.card,
+                        borderWidth: 1, borderColor: isActive ? T.lime : T.border,
+                      }}
+                    >
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: isActive ? '#000' : T.muted }}>{s2.name}</Text>
+                    </TouchableOpacity>
+                  )
+                })}
+              </ScrollView>
+            )}
+
             <View style={s.seasonInfoCard}>
               <View style={s.limeAccentBar} />
               <View style={s.seasonInfoBody}>
@@ -1193,10 +1217,6 @@ export default function BookScreen({ navigation }) {
                           session.instructor_detail?.display_name ?? session.instructor_detail?.first_name,
                         ].filter(Boolean).join('  ·  ')}
                       </Text>
-                      {spotsLeft > 0 && spotsLeft <= 3 && (
-                        <Text style={s.spotsWarning}>{spotsLeft} spot{spotsLeft !== 1 ? 's' : ''} left</Text>
-                      )}
-                      {isFull && <Text style={s.spotsFull}>Full</Text>}
                     </View>
                     {isBooked ? (
                       <Text style={s.bookedBadge}>✓ Booked</Text>
@@ -1380,10 +1400,8 @@ export default function BookScreen({ navigation }) {
                               {alreadySeason && !myBooking && <Text style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>Season class</Text>}
                             </View>
                             <View style={{ alignItems: 'flex-end', justifyContent: 'space-between', paddingLeft: 10, minWidth: 80 }}>
-                              {!myBooking && (
-                                <Text style={[s.casualCardSpots, isFull && s.casualCardSpotsFull]}>
-                                  {isFull ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''}`}
-                                </Text>
+                              {!myBooking && isFull && (
+                                <Text style={s.casualCardSpotsFull}>Class full</Text>
                               )}
                               {isProcessing ? (
                                 <ActivityIndicator color={T.lime} size="small" style={{ marginTop: 6 }} />
@@ -1405,6 +1423,7 @@ export default function BookScreen({ navigation }) {
                                   activeOpacity={0.8}
                                 >
                                   <Text style={s.casualBookBtnText}>BOOK</Text>
+                                  <Text style={{ fontSize: 10, color: T.lime, fontWeight: '700', marginTop: 1 }}>${priceCasual}</Text>
                                 </TouchableOpacity>
                               )}
                             </View>
