@@ -310,13 +310,27 @@ function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, upcomi
   async function handlePlanSubmit() {
     setStripeLoading(true)
     try {
-      const { data } = await payments.stripe.setupIntent()
-      const { error: initErr } = await initPaymentSheet({ merchantDisplayName: 'Duality Pole Studio', setupIntentClientSecret: data.client_secret, appearance: STRIPE_APPEARANCE })
-      if (initErr) { Alert.alert('Error', initErr.message); return }
-      const { error: presentErr } = await presentPaymentSheet()
-      if (presentErr) { if (presentErr.code !== 'Canceled') Alert.alert('Card not saved', presentErr.message); return }
       const schedule = calcPlanSchedule(planFrequency, planStartSeason, upcomingSeason, discountedTotal)
-      onConfirm('plan', discountedTotal, promoCodeClean, { frequency: planFrequency, startSeason: planStartSeason, schedule })
+      const depositAmount = schedule[0]?.amount ?? Math.round(discountedTotal / schedule.length)
+
+      if (planStartSeason) {
+        // Deferred start — collect a deposit today to secure the spot
+        const depositCents = Math.round(depositAmount * 100)
+        const { data } = await payments.stripe.createPaymentIntent({ amount_cents: depositCents, description: `Season deposit (payment plan) — first instalment`, save_method: true })
+        const { error: initErr } = await initPaymentSheet({ merchantDisplayName: 'Duality Pole Studio', paymentIntentClientSecret: data.client_secret, allowsDelayedPaymentMethods: false, appearance: STRIPE_APPEARANCE })
+        if (initErr) { Alert.alert('Error', initErr.message); return }
+        const { error: presentErr } = await presentPaymentSheet()
+        if (presentErr) { if (presentErr.code !== 'Canceled') Alert.alert('Payment failed', presentErr.message); return }
+      } else {
+        // Starting today — save card for future instalments, no charge now
+        const { data } = await payments.stripe.setupIntent()
+        const { error: initErr } = await initPaymentSheet({ merchantDisplayName: 'Duality Pole Studio', setupIntentClientSecret: data.client_secret, appearance: STRIPE_APPEARANCE })
+        if (initErr) { Alert.alert('Error', initErr.message); return }
+        const { error: presentErr } = await presentPaymentSheet()
+        if (presentErr) { if (presentErr.code !== 'Canceled') Alert.alert('Card not saved', presentErr.message); return }
+      }
+
+      onConfirm('plan', discountedTotal, promoCodeClean, { frequency: planFrequency, startSeason: planStartSeason, schedule, depositPaid: planStartSeason ? depositAmount : 0 })
     } catch (e) {
       Alert.alert('Error', e?.response?.data?.detail || e?.message || 'Could not set up payment plan.')
     } finally { setStripeLoading(false) }
@@ -369,17 +383,26 @@ function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, upcomi
               </View>
 
               <Text style={sc.subLabel}>When would you like to start payments?</Text>
-              {[
-                [false, 'Today'],
-                [true, 'When the season commences'],
-              ].map(([val, label]) => (
-                <TouchableOpacity key={label} style={[sc.option, planStartSeason === val && sc.optionSelected]} onPress={() => setPlanStartSeason(val)}>
-                  <View style={[sc.radio, planStartSeason === val && sc.radioSelected]}>
-                    {planStartSeason === val && <View style={sc.radioDot} />}
-                  </View>
-                  <Text style={sc.optionTitle}>{label}</Text>
-                </TouchableOpacity>
-              ))}
+              <TouchableOpacity style={[sc.option, planStartSeason === false && sc.optionSelected]} onPress={() => setPlanStartSeason(false)}>
+                <View style={[sc.radio, planStartSeason === false && sc.radioSelected]}>
+                  {planStartSeason === false && <View style={sc.radioDot} />}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={sc.optionTitle}>Today</Text>
+                  <Text style={[sc.optionSub ?? {}, { fontSize: 12, color: T.muted, marginTop: 2 }]}>First instalment charged now, card saved for the rest.</Text>
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity style={[sc.option, planStartSeason === true && sc.optionSelected]} onPress={() => setPlanStartSeason(true)}>
+                <View style={[sc.radio, planStartSeason === true && sc.radioSelected]}>
+                  {planStartSeason === true && <View style={sc.radioDot} />}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={sc.optionTitle}>When the season commences</Text>
+                  <Text style={[sc.optionSub ?? {}, { fontSize: 12, color: '#ffaa00', marginTop: 2 }]}>
+                    A deposit of ${schedule[0]?.amount ?? '—'} is required today to hold your spot.
+                  </Text>
+                </View>
+              </TouchableOpacity>
 
               <Text style={[sc.subLabel, { marginTop: 16, textTransform: 'uppercase', letterSpacing: 0.8, fontSize: 11 }]}>Your payment schedule</Text>
               <View style={sc.scheduleCard}>
@@ -408,7 +431,11 @@ function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, upcomi
               </View>
 
               <TouchableOpacity style={[sc.confirmBtn, stripeLoading && { opacity: 0.6 }]} onPress={handlePlanSubmit} disabled={stripeLoading}>
-                {stripeLoading ? <ActivityIndicator color="#000" /> : <Text style={sc.confirmBtnText}>SUBMIT PAYMENT PLAN REQUEST</Text>}
+                {stripeLoading ? <ActivityIndicator color="#000" /> : (
+                  <Text style={sc.confirmBtnText}>
+                    {planStartSeason ? `PAY DEPOSIT $${schedule[0]?.amount ?? '—'} & CONFIRM` : 'CONFIRM PAYMENT PLAN'}
+                  </Text>
+                )}
               </TouchableOpacity>
               <Text style={sc.disclaimer}>By booking you agree to our terms and conditions.</Text>
             </>
@@ -674,16 +701,20 @@ const pass = StyleSheet.create({
 })
 
 // ─── CasualBookingOptionsModal ────────────────────────────────────────────────
-function CasualBookingOptionsModal({ visible, occ, priceCasual, availableCredits, passClassesRemaining, classPassSize, activeSeason, currentSeasonWeek, onClose, onBook, onRequestExemption }) {
+function CasualBookingOptionsModal({ visible, occ, priceCasual, priceCasualEnrolled, priceClassPass, classPassSize, availableCredits, passClassesRemaining, activeSeason, bookingSeason, activeSeasonCount, currentSeasonWeek, onClose, onBook, onRequestExemption, onEnrolSeason }) {
   const sess = occ?.session_detail
   const sessName = sess?.name ?? 'Class'
   const time = fmtTime(sess?.start_time)
+  const instructor = sess?.instructor_detail?.display_name ?? sess?.instructor_detail?.first_name
   const inActiveSeason = activeSeason && sess?.season === activeSeason?.id
   const cutoffWeeks = sess?.catchup_cutoff_weeks ?? 3
   const pastCutoff = inActiveSeason && currentSeasonWeek > cutoffWeeks
   const creditEligible = availableCredits > 0 && inActiveSeason && !pastCutoff
   const creditBlocked = availableCredits > 0 && inActiveSeason && pastCutoff
   const passEligible = passClassesRemaining > 0
+  const isEnrolled = activeSeasonCount > 0
+  const casualRate = isEnrolled ? priceCasualEnrolled : priceCasual
+  const seasonCanEnrol = bookingSeason && bookingSeason.bookings_open !== false && sess?.season === bookingSeason?.id
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -692,44 +723,69 @@ function CasualBookingOptionsModal({ visible, occ, priceCasual, availableCredits
           <View style={bo.header}>
             <View style={{ flex: 1 }}>
               <Text style={bo.title}>{sessName}</Text>
-              {!!time && <Text style={bo.meta}>{time}</Text>}
+              {!!time && <Text style={bo.meta}>{[time, instructor].filter(Boolean).join('  ·  ')}</Text>}
             </View>
             <TouchableOpacity onPress={onClose} style={bo.closeBtn}>
               <Text style={bo.closeBtnText}>CLOSE</Text>
             </TouchableOpacity>
           </View>
 
+          {availableCredits > 0 && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 16 }}>
+              <View style={{ backgroundColor: 'rgba(124,58,237,0.15)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 }}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: '#b0a0ff' }}>{availableCredits} catch-up credit{availableCredits !== 1 ? 's' : ''} available</Text>
+              </View>
+            </View>
+          )}
+
           <Text style={bo.sectionLabel}>How would you like to book?</Text>
 
+          {/* Season enrolment upsell */}
+          {seasonCanEnrol && (
+            <TouchableOpacity style={[bo.option, { borderColor: 'rgba(204,255,0,0.25)', backgroundColor: 'rgba(204,255,0,0.04)' }]} onPress={() => { onClose(); onEnrolSeason() }} activeOpacity={0.8}>
+              <View style={[bo.radioCircle, { borderColor: T.lime }]} />
+              <View style={{ flex: 1 }}>
+                <Text style={[bo.optionTitle, { color: T.lime }]}>Enrol in the full {bookingSeason?.name ?? 'season'} instead</Text>
+                <Text style={bo.optionSub}>Add this class to your season · better value per session</Text>
+              </View>
+              <Text style={[bo.optionPrice, { color: T.lime, fontSize: 13 }]}>ENROL</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Catch-up credit */}
           {creditEligible && (
             <TouchableOpacity style={[bo.option, bo.optionCredit]} onPress={() => onBook('catchup')} activeOpacity={0.8}>
+              <View style={[bo.radioCircle, { borderColor: '#b0a0ff' }]} />
               <View style={{ flex: 1 }}>
-                <Text style={[bo.optionTitle, { color: '#b0a0ff' }]}>Use a catch-up credit</Text>
-                <Text style={bo.optionSub}>{availableCredits} credit{availableCredits !== 1 ? 's' : ''} available — no charge today</Text>
+                <Text style={[bo.optionTitle, { color: '#b0a0ff' }]}>Use class credit</Text>
+                <Text style={bo.optionSub}>You have {availableCredits} class credit{availableCredits !== 1 ? 's' : ''} available</Text>
               </View>
               <Text style={[bo.optionPrice, { color: '#b0a0ff' }]}>FREE</Text>
             </TouchableOpacity>
           )}
 
+          {/* Exemption request when past cutoff */}
           {creditBlocked && (
             <TouchableOpacity
               style={[bo.option, { borderColor: 'rgba(255,170,0,0.35)', backgroundColor: 'rgba(255,170,0,0.06)' }]}
               onPress={() => { onClose(); onRequestExemption(sess) }}
               activeOpacity={0.8}
             >
+              <View style={[bo.radioCircle, { borderColor: '#ffaa00' }]} />
               <View style={{ flex: 1 }}>
                 <Text style={[bo.optionTitle, { color: '#ffaa00' }]}>Request a make-up exemption</Text>
                 <Text style={bo.optionSub}>
-                  Catch-ups close after week {cutoffWeeks} — we're now in week {currentSeasonWeek}.
-                  Submit a request and the studio will review it.
+                  Catch-ups close after week {cutoffWeeks} (now week {currentSeasonWeek}) — submit a request for studio review.
                 </Text>
               </View>
-              <Text style={[bo.optionPrice, { color: '#ffaa00', fontSize: 13 }]}>REQUEST</Text>
+              <Text style={[bo.optionPrice, { color: '#ffaa00', fontSize: 12 }]}>REQUEST</Text>
             </TouchableOpacity>
           )}
 
+          {/* Class pass */}
           {passEligible && (
             <TouchableOpacity style={[bo.option, bo.optionPass]} onPress={() => onBook('classpass')} activeOpacity={0.8}>
+              <View style={[bo.radioCircle, { borderColor: '#b0a0ff' }]} />
               <View style={{ flex: 1 }}>
                 <Text style={[bo.optionTitle, { color: '#b0a0ff' }]}>{classPassSize}-class pass</Text>
                 <Text style={bo.optionSub}>{passClassesRemaining} credit{passClassesRemaining !== 1 ? 's' : ''} remaining on your pass</Text>
@@ -738,13 +794,27 @@ function CasualBookingOptionsModal({ visible, occ, priceCasual, availableCredits
             </TouchableOpacity>
           )}
 
+          {/* Pay casual rate */}
           <TouchableOpacity style={[bo.option, bo.optionPay]} onPress={() => onBook('casual')} activeOpacity={0.8}>
+            <View style={[bo.radioCircle, { borderColor: T.border }]} />
             <View style={{ flex: 1 }}>
               <Text style={bo.optionTitle}>Pay casual rate</Text>
-              <Text style={bo.optionSub}>Card payment via Stripe — saved securely</Text>
+              <Text style={bo.optionSub}>{isEnrolled ? 'Enrolled student rate' : 'Standard casual rate'} · Card via Stripe</Text>
             </View>
-            <Text style={bo.optionPrice}>${priceCasual}</Text>
+            <Text style={bo.optionPrice}>${casualRate}</Text>
           </TouchableOpacity>
+
+          {/* Buy a pass if none */}
+          {!passEligible && inActiveSeason && (
+            <TouchableOpacity style={[bo.option, { borderColor: 'rgba(124,58,237,0.2)', backgroundColor: 'rgba(124,58,237,0.04)' }]} onPress={() => { onClose(); onBook('buypass') }} activeOpacity={0.8}>
+              <View style={[bo.radioCircle, { borderColor: '#b0a0ff' }]} />
+              <View style={{ flex: 1 }}>
+                <Text style={[bo.optionTitle, { color: '#b0a0ff' }]}>Buy a {classPassSize}-class pass · save ${Math.round((priceCasual - (priceClassPass / classPassSize)) * classPassSize)}</Text>
+                <Text style={bo.optionSub}>${(priceClassPass / classPassSize).toFixed(0)}/class · use across any eligible casual or catch-up</Text>
+              </View>
+              <Text style={[bo.optionPrice, { color: '#b0a0ff' }]}>${priceClassPass}</Text>
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity style={bo.cancelBtn} onPress={onClose}>
             <Text style={bo.cancelBtnText}>Maybe later</Text>
@@ -764,7 +834,8 @@ const bo = StyleSheet.create({
   closeBtn: { paddingLeft: 12, paddingTop: 2 },
   closeBtnText: { color: '#555', fontSize: 12, fontWeight: '700', letterSpacing: 1 },
   sectionLabel: { fontSize: 11, color: '#555', fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 },
-  option: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 14, padding: 16, marginBottom: 10 },
+  option: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 14, padding: 16, marginBottom: 10, gap: 12 },
+  radioCircle: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, flexShrink: 0 },
   optionCredit: { borderColor: 'rgba(124,58,237,0.4)', backgroundColor: 'rgba(124,58,237,0.08)' },
   optionPass: { borderColor: 'rgba(124,58,237,0.25)', backgroundColor: 'rgba(124,58,237,0.05)' },
   optionPay: { borderColor: 'rgba(204,255,0,0.25)', backgroundColor: 'rgba(204,255,0,0.04)' },
@@ -1001,7 +1072,8 @@ export default function BookScreen({ navigation }) {
     ? (credits[0].expires_at ?? credits[0].expiry_date ?? null)
     : null
 
-  const priceCasual = parseFloat(studioSettings?.price_casual ?? 35)
+  const priceCasual = parseFloat(studioSettings?.price_casual ?? 40)
+  const priceCasualEnrolled = parseFloat(studioSettings?.price_casual_enrolled ?? 30)
   const priceTrial = parseFloat(studioSettings?.price_trial ?? 25)
   const priceClassPass = parseFloat(studioSettings?.price_class_pass ?? 140)
   const classPassSize = parseInt(studioSettings?.class_pass_size ?? 4)
@@ -1034,9 +1106,14 @@ export default function BookScreen({ navigation }) {
   }
 
   const activeSeason = allSeasons.find(s => s.status === 'active')
-  // Seasons available to book into
-  const bookableSeasons = allSeasons.filter(s => s.status === 'upcoming' || s.status === 'active')
-  const defaultBookingSeason = allSeasons.find(s => s.status === 'upcoming') ?? activeSeason
+  // Seasons available to book into — prefer upcoming with open bookings, then active
+  const bookableSeasons = allSeasons.filter(s =>
+    (s.status === 'upcoming' || s.status === 'active')
+  )
+  const defaultBookingSeason =
+    allSeasons.find(s => s.status === 'upcoming' && s.bookings_open !== false) ??
+    allSeasons.find(s => s.status === 'active') ??
+    allSeasons.find(s => s.status === 'upcoming')
   const bookingSeason = (selectedSeasonId ? allSeasons.find(s => s.id === selectedSeasonId) : null) ?? defaultBookingSeason
 
   // Sessions that belong to the booking season
@@ -1465,8 +1542,16 @@ export default function BookScreen({ navigation }) {
               </ScrollView>
             )}
 
-            {seasonFiltered.length === 0 && !sessLoading && (
-              <Text style={s.empty}>No classes match your filters.</Text>
+            {sessLoading && <ActivityIndicator color={T.lime} style={{ marginTop: 24 }} />}
+
+            {!sessLoading && seasonFiltered.length === 0 && bookingSeasonSessions.length === 0 && (
+              <Text style={s.empty}>
+                {bookingSeason ? `No classes are set up for ${bookingSeason.name} yet — check back soon.` : 'No classes available right now.'}
+              </Text>
+            )}
+
+            {!sessLoading && seasonFiltered.length === 0 && bookingSeasonSessions.length > 0 && (
+              <Text style={s.empty}>No classes match your current filters.</Text>
             )}
 
             {seasonFiltered.map(session => {
@@ -2022,13 +2107,18 @@ export default function BookScreen({ navigation }) {
         visible={!!bookingOptionsOcc}
         occ={bookingOptionsOcc}
         priceCasual={priceCasual}
+        priceCasualEnrolled={priceCasualEnrolled}
+        priceClassPass={priceClassPass}
+        classPassSize={classPassSize}
         availableCredits={availableCredits}
         passClassesRemaining={passClassesRemaining}
-        classPassSize={classPassSize}
         activeSeason={activeSeason}
+        bookingSeason={bookingSeason}
+        activeSeasonCount={activeSeasonCount}
         currentSeasonWeek={currentSeasonWeek}
         onClose={() => setBookingOptionsOcc(null)}
         onBook={(type) => {
+          if (type === 'buypass') { setBookingOptionsOcc(null); setBuyingPass(true); return }
           const occ = bookingOptionsOcc
           setBookingOptionsOcc(null)
           bookCasualOcc(occ, type)
@@ -2036,6 +2126,10 @@ export default function BookScreen({ navigation }) {
         onRequestExemption={(sess) => {
           setBookingOptionsOcc(null)
           setExemptionSession(sess)
+        }}
+        onEnrolSeason={() => {
+          setBookingOptionsOcc(null)
+          setTab('season')
         }}
       />
 

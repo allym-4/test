@@ -127,6 +127,7 @@ class StudioSettings(models.Model):
     instagram_username = models.CharField(max_length=100, blank=True)
     meta_app_id = models.CharField(max_length=100, blank=True)
     price_casual = models.DecimalField(max_digits=8, decimal_places=2, default=40)
+    price_casual_enrolled = models.DecimalField(max_digits=8, decimal_places=2, default=30)
     price_season = models.DecimalField(max_digits=8, decimal_places=2, default=270)
     price_trial = models.DecimalField(max_digits=8, decimal_places=2, default=35)
     price_class_pass = models.DecimalField(max_digits=8, decimal_places=2, default=120)
