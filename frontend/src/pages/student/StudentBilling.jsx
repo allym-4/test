@@ -290,27 +290,33 @@ export default function StudentBilling() {
         maxWidth: 700,
       }}>
         <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: isOwing ? 'var(--red)' : 'var(--grey)', marginBottom: 8 }}>
-          Account Balance
+          Current balance
         </div>
         {loadingBal ? (
           <div className="spinner" />
         ) : (
           <>
             <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 36, color: isOwing ? '#ff6b6b' : 'var(--lime)', marginBottom: 6 }}>
-              {isOwing ? `-$${Math.abs(bal).toFixed(2)}` : bal > 0 ? `$${bal.toFixed(2)} credit` : '$0.00'}
+              {isOwing ? `$${Math.abs(bal).toFixed(2)} owing` : bal > 0 ? `$${bal.toFixed(2)} credit` : '$0.00'}
             </div>
+            {isOwing && balData?.total_charged && (
+              <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 4 }}>
+                <span>${parseFloat(balData.total_charged).toFixed(2)} owed</span>
+                {parseFloat(balData.total_paid || 0) > 0 && (
+                  <> − <span style={{ color: '#4ade80' }}>${parseFloat(balData.total_paid).toFixed(2)} paid</span> = <strong style={{ color: 'var(--white)' }}>${Math.abs(bal).toFixed(2)} to pay</strong></>
+                )}
+              </div>
+            )}
             <div style={{ fontSize: 12, color: 'var(--grey)' }}>
               {isOwing
-                ? 'Outstanding balance — please contact your studio to make a payment'
+                ? 'Outstanding balance'
                 : bal > 0
                   ? 'Credit will be applied to your next booking automatically'
                   : 'No outstanding balance'}
             </div>
             {isOwing && (
               <div style={{ marginTop: 14 }}>
-                <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 10 }}>
-                  Total charged: ${parseFloat(balData?.total_charged || 0).toFixed(2)} · Total paid: ${parseFloat(balData?.total_paid || 0).toFixed(2)}
-                </div>
+                <div />
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <button
                     className="btn btn-primary btn-sm"

@@ -575,7 +575,7 @@ function PendingDisplacementBanner({ enrolment }) {
   )
 }
 
-function CasualBookingsTab({ bookings, refetch }) {
+function CasualBookingsTab({ bookings, credits, refetch }) {
   const [cancellingId, setCancellingId] = useState(null)
   const [actioningId, setActioningId] = useState(null)
   const [messageSentId, setMessageSentId] = useState(null)
@@ -639,8 +639,22 @@ function CasualBookingsTab({ bookings, refetch }) {
   const confirmed = items.filter(b => b.status === 'confirmed' && !b.displacement_offered_at)
   const waitlisted = items.filter(b => b.status === 'waitlisted')
 
+  const availableCredits = credits?.results || credits || []
+
   return (
     <div>
+      {availableCredits.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'rgba(176,160,255,0.06)', border: '1px solid rgba(176,160,255,0.25)', borderRadius: 12, padding: '14px 18px', marginBottom: 18 }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color: 'var(--lav)', lineHeight: 1 }}>{availableCredits.length}</div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--white)' }}>Catch-up credit{availableCredits.length !== 1 ? 's' : ''} available</div>
+            <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>
+              Use in the <Link to="/book" style={{ color: 'var(--lav)', textDecoration: 'none' }}>Book</Link> tab to join any eligible casual class at no charge
+            </div>
+          </div>
+        </div>
+      )}
+
       {error && <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 10 }}>{error}</div>}
 
       {displaced.length > 0 && (
@@ -786,6 +800,7 @@ export default function StudentMyClasses() {
   const { data: attData, refetch: refetchAtt } = useApi(() => attendance.list({ student: user?.id }), [user?.id])
   const { data: upcomingData, refetch: refetchUpcoming } = useApi(() => classesApi.occurrences({ student: user?.id, upcoming: true }), [user?.id])
   const { data: casualBookingsData, refetch: refetchCasual } = useApi(() => classesApi.casual.myBookings(), [])
+  const { data: creditsData, refetch: refetchCredits } = useApi(() => user?.id ? attendanceApi.makeupCredits.list({ student: user.id, status: 'available' }) : null, [user?.id])
   const { data: studioSettings } = useApi(() => settingsApi.get(), [])
 
   const [markAwayOcc, setMarkAwayOcc] = useState(null)
@@ -1031,7 +1046,7 @@ export default function StudentMyClasses() {
               )}
 
               {activeSubTab === 'casuals' && (
-                <CasualBookingsTab bookings={casualBookingsData} refetch={() => { refetchCasual(); refetchEnrol() }} />
+                <CasualBookingsTab bookings={casualBookingsData} credits={creditsData} refetch={() => { refetchCasual(); refetchEnrol(); refetchCredits() }} />
               )}
             </div>
           )}
