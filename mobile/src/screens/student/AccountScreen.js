@@ -640,6 +640,10 @@ export default function AccountScreen({ navigation, onSwitchToInstructor }) {
           <Text style={s.rowLabel}>Studio info</Text>
           <Text style={s.navArrow}>›</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={s.navRow} onPress={() => navigation.navigate('Shop')}>
+          <Text style={s.rowLabel}>Shop</Text>
+          <Text style={s.navArrow}>›</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={s.navRow} onPress={() => navigation.navigate('Support')}>
           <Text style={s.rowLabel}>Help & Support</Text>
           <Text style={s.navArrow}>›</Text>

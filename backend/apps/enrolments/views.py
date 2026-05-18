@@ -223,14 +223,20 @@ class EnrolmentListView(generics.ListCreateAPIView):
 
         # Block students with an outstanding balance from booking
         if user.role == 'student':
-            balance = Payment.objects.filter(student=user).aggregate(total=Sum('amount'))['total'] or 0
+            credit_types = ('payment', 'refund', 'credit')
+            debit_types = ('charge', 'no_show_fee')
+            total_paid = Payment.objects.filter(
+                student=user, payment_type__in=credit_types
+            ).aggregate(t=Sum('amount'))['t'] or 0
+            total_charged = Payment.objects.filter(
+                student=user, payment_type__in=debit_types
+            ).aggregate(t=Sum('amount'))['t'] or 0
+            balance = float(total_paid) - float(total_charged)
             if balance < 0:
                 raise PermissionDenied(
                     f'You have an outstanding balance of ${abs(balance):.2f}. '
                     'Please settle your account before booking.'
                 )
-
-        if user.role == 'student':
             enrolment = serializer.save(student=user)
         else:
             enrolment = serializer.save()

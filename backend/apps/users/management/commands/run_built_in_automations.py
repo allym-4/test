@@ -6,13 +6,14 @@ from datetime import timedelta
 
 
 class Command(BaseCommand):
-    help = 'Run all built-in daily automations: reengagement, welfare check-in, birthday, PAR-Q reminder'
+    help = 'Run all built-in daily automations: reengagement, welfare check-in, birthday, PAR-Q reminder, plus custom rules'
 
     def handle(self, *args, **options):
         self._reengagement()
         self._welfare_checkin()
         self._birthday()
         self._parq_reminder()
+        self._custom_rules()
 
     # ── 1. Re-engagement ────────────────────────────────────────────────────
     def _reengagement(self):
@@ -287,3 +288,129 @@ class Command(BaseCommand):
                     )
                 sent += 1
         self.stdout.write(f'parq_reminder: {sent} sent')
+
+    # ── 5. Custom rules ──────────────────────────────────────────────────────
+    def _custom_rules(self):
+        """
+        Execute custom AutomationRules created via the admin UI.
+        Trigger types supported: student_created, payment_overdue.
+        (Event-based triggers like enrolment_active fire at the point of the event
+        via signals — only scheduled/daily triggers are handled here.)
+        """
+        from apps.users.models import AutomationRule, AutomationRun, User, Notification, Tag, StudentTag
+        from apps.payments.models import Payment
+        from django.db.models import Sum
+
+        rules = AutomationRule.objects.filter(is_custom=True, enabled=True)
+        if not rules.exists():
+            return
+
+        processed = 0
+        for rule in rules:
+            trigger = rule.trigger_type
+
+            if trigger == 'payment_overdue':
+                # Find students whose balance is negative (money owed)
+                students = User.objects.filter(role='student', is_active=True)
+                for student in students:
+                    credit_types = ('payment', 'refund', 'credit')
+                    debit_types = ('charge', 'no_show_fee')
+                    total_paid = Payment.objects.filter(
+                        student=student, payment_type__in=credit_types
+                    ).aggregate(t=Sum('amount'))['t'] or 0
+                    total_charged = Payment.objects.filter(
+                        student=student, payment_type__in=debit_types
+                    ).aggregate(t=Sum('amount'))['t'] or 0
+                    balance = float(total_paid) - float(total_charged)
+                    if balance >= 0:
+                        continue
+
+                    # Check conditions
+                    if not self._check_conditions(rule.conditions, student):
+                        continue
+
+                    # Don't re-run within 7 days
+                    already = AutomationRun.objects.filter(
+                        rule=rule, student=student,
+                        created_at__gte=timezone.now() - timedelta(days=7),
+                    ).exists()
+                    if already:
+                        continue
+
+                    self._execute_actions(rule, student, {'balance': balance})
+                    processed += 1
+
+            elif trigger == 'student_created':
+                # Find students created in the last 24 hours
+                cutoff = timezone.now() - timedelta(hours=24)
+                students = User.objects.filter(role='student', is_active=True, date_joined__gte=cutoff)
+                for student in students:
+                    if not self._check_conditions(rule.conditions, student):
+                        continue
+                    already = AutomationRun.objects.filter(rule=rule, student=student).exists()
+                    if already:
+                        continue
+                    self._execute_actions(rule, student, {})
+                    processed += 1
+
+        self.stdout.write(f'custom_rules: {processed} actions taken')
+
+    def _check_conditions(self, conditions, student):
+        """Return True if student passes all conditions (AND logic)."""
+        from apps.users.models import StudentTag
+        for cond in conditions:
+            cond_type = cond.get('type')
+            value = cond.get('value', '')
+            if cond_type == 'has_tag':
+                has = StudentTag.objects.filter(student=student, tag__name__iexact=value).exists()
+                if not has:
+                    return False
+            elif cond_type == 'class_level':
+                from apps.enrolments.models import Enrolment
+                enrolled = Enrolment.objects.filter(
+                    student=student, status='active',
+                    class_session__name__icontains=value,
+                ).exists()
+                if not enrolled:
+                    return False
+        return True
+
+    def _execute_actions(self, rule, student, trigger_data):
+        """Execute each action in the rule and record a run."""
+        from apps.users.models import AutomationRun, Notification, Tag, StudentTag
+        actions_taken = []
+        for action in rule.actions:
+            action_type = action.get('type')
+            if action_type == 'send_notification':
+                Notification.objects.create(
+                    recipient=student,
+                    title=action.get('title', rule.name),
+                    body=action.get('body', ''),
+                    notification_type='info',
+                )
+                actions_taken.append(f'Sent notification: {action.get("title", "")}')
+            elif action_type == 'send_email':
+                if student.email:
+                    send_mail(
+                        subject=action.get('subject', rule.name),
+                        message=action.get('body', ''),
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[student.email],
+                        fail_silently=True,
+                    )
+                    actions_taken.append(f'Sent email: {action.get("subject", "")}')
+            elif action_type == 'add_tag':
+                tag_name = action.get('tag', '')
+                if tag_name:
+                    tag, _ = Tag.objects.get_or_create(name=tag_name)
+                    StudentTag.objects.get_or_create(student=student, tag=tag)
+                    actions_taken.append(f'Added tag: {tag_name}')
+
+        AutomationRun.objects.create(
+            rule=rule,
+            slug=rule.slug,
+            student=student,
+            trigger_data=trigger_data,
+            actions_taken=actions_taken,
+            status='completed',
+        )

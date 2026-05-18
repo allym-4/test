@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
-import { classes, payments, enrolments, orders, notifications, settings as settingsApi } from '../../api'
+import { classes, payments, enrolments, orders, notifications, settings as settingsApi, users } from '../../api'
 import client from '../../api/client'
 import '../StudentsPage.css'
 
@@ -115,6 +115,7 @@ export default function AdminDashboard() {
   const { data: exemptionData, refetch: refetchExemptions } = useApi(() => enrolments.list({ status: 'exemption_requested' }))
   const { data: trialsAndCasualsData, refetch: refetchTrialsAndCasuals } = useApi(() => enrolments.list({ enrolment_type: 'trial,casual' }))
   const { data: flaggedData, refetch: refetchFlagged } = useApi(() => enrolments.flagged())
+  const { data: recheckNotesData } = useApi(() => users.recheckNotesToday())
 
   const sessions = sessionsData?.results || []
   const plans = plansData?.results || plansData || []
@@ -124,6 +125,7 @@ export default function AdminDashboard() {
   const exemptions = exemptionData?.results || exemptionData || []
   const trialsAndCasuals = trialsAndCasualsData?.results || trialsAndCasualsData || []
   const flaggedEnrolments = flaggedData?.results || flaggedData || []
+  const recheckNotes = recheckNotesData || []
 
   const todayDow = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1
   const todaySessions = sessions.filter(s => s.day_of_week === todayDow)
@@ -246,6 +248,15 @@ export default function AdminDashboard() {
       sub: p.student_name || 'Student',
       time: fmtDate(p.created_at),
       urgent: false,
+    })),
+    ...recheckNotes.map(n => ({
+      id: `recheck-${n.id}`,
+      dot: n.tag === 'injury' ? 'var(--red)' : 'var(--lav)',
+      title: `Follow-up needed${n.tag ? ` · ${n.tag}` : ''}`,
+      sub: `${n.student_name} — ${n.body.slice(0, 60)}${n.body.length > 60 ? '…' : ''}`,
+      time: 'Today',
+      urgent: n.tag === 'injury',
+      link: `/admin/students/${n.student_id}`,
     })),
   ]
 

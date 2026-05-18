@@ -7,6 +7,7 @@ import { useStripe } from '@stripe/stripe-react-native'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { classes, enrolments, seasons, attendance, settings as settingsApi, payments } from '../../api'
+import client from '../../api/client'
 
 // ─── theme ───────────────────────────────────────────────────────────────────
 const T = {
@@ -230,6 +231,7 @@ function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, upcomi
   const [promoResult, setPromoResult] = useState(null)
   const [subView, setSubView] = useState(null) // null | 'plan' | 'cash'
   const [stripeLoading, setStripeLoading] = useState(false)
+  const [upsells, setUpsells] = useState([])
 
   // Plan sub-view
   const [planFrequency, setPlanFrequency] = useState('monthly')
@@ -253,6 +255,15 @@ function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, upcomi
       setPayOption('full'); setPromoCode(''); setPromoResult(null)
       setSubView(null); setPlanFrequency('monthly'); setPlanStartSeason(false)
       setCashDate(null); setStripeLoading(false)
+      // Fetch upsell suggestions for selected sessions
+      if (sessions?.length) {
+        const ids = sessions.map(s => s.id).filter(Boolean)
+        if (ids.length) {
+          client.get('/api/classes/upsells/suggest/', { params: { session_ids: ids.join(',') } })
+            .then(r => setUpsells(r.data?.results ?? r.data ?? []))
+            .catch(() => setUpsells([]))
+        }
+      }
     }
   }, [visible])
 
@@ -460,6 +471,19 @@ function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, upcomi
                 <Text style={sc.promoSuccess}>{promoResult.message ?? `Code applied! -$${discountAmount.toFixed(2)} off`}</Text>
               )}
               {!!promoResult?.error && <Text style={sc.promoError}>{promoResult.error}</Text>}
+
+              {upsells.length > 0 && (
+                <View style={{ marginTop: 16, marginBottom: 4 }}>
+                  <Text style={[sc.sectionLabel, { marginBottom: 8 }]}>You might also like</Text>
+                  {upsells.map(u => (
+                    <View key={u.id} style={{ background: undefined, backgroundColor: '#1a1a1a', borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#2a2a2a' }}>
+                      <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13, marginBottom: 2 }}>{u.session_name || u.name}</Text>
+                      {!!u.headline && <Text style={{ color: '#ccff00', fontSize: 12, marginBottom: 2 }}>{u.headline}</Text>}
+                      {!!u.body && <Text style={{ color: '#888', fontSize: 12 }}>{u.body}</Text>}
+                    </View>
+                  ))}
+                </View>
+              )}
 
               <Text style={sc.sectionLabel}>How would you like to pay?</Text>
 
@@ -767,6 +791,10 @@ export default function BookScreen({ navigation }) {
     () => user?.id ? enrolments.list({ student: user.id, limit: 1, page_size: 1 }) : null,
     [user?.id]
   )
+  const { data: balanceData } = useApi(
+    () => user?.id ? payments.balance(user.id) : null,
+    [user?.id]
+  )
 
   // ── derived data ───────────────────────────────────────────────────────────
   const allSessions = sessionsData?.results ?? sessionsData ?? []
@@ -791,6 +819,10 @@ export default function BookScreen({ navigation }) {
   const anyEnrolList = anyEnrolData?.results ?? anyEnrolData ?? []
   const anyEnrolCount = anyEnrolData?.count ?? anyEnrolList.length
   const isNewStudent = anyEnrolCount === 0
+
+  // Outstanding balance gate
+  const currentBalance = balanceData ? parseFloat(balanceData.balance) : null
+  const isOwing = currentBalance !== null && currentBalance < 0
 
   function getSeasonPriceForTotal(totalClasses) {
     const tier = seasonPricingConfig.find(r => {
@@ -1037,6 +1069,28 @@ export default function BookScreen({ navigation }) {
   // trial and season both use sessions data
 
   // ── render ─────────────────────────────────────────────────────────────────
+  if (isOwing) {
+    return (
+      <View style={s.root}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
+          <Text style={{ fontSize: 40, marginBottom: 16 }}>🔒</Text>
+          <Text style={{ fontFamily: 'Archivo Black', fontSize: 20, color: '#fff', marginBottom: 10, textAlign: 'center' }}>Outstanding balance</Text>
+          <Text style={{ fontSize: 14, color: '#888', textAlign: 'center', lineHeight: 22, marginBottom: 28 }}>
+            You have an outstanding balance of{' '}
+            <Text style={{ color: '#ff4444', fontWeight: '700' }}>${Math.abs(currentBalance).toFixed(2)}</Text>.{'\n'}
+            Please settle your account before booking another class.
+          </Text>
+          <TouchableOpacity
+            style={{ background: undefined, backgroundColor: '#DBFF00', borderRadius: 10, paddingHorizontal: 28, paddingVertical: 14 }}
+            onPress={() => navigation.navigate('Billing')}
+          >
+            <Text style={{ color: '#000', fontWeight: '700', fontSize: 15 }}>Pay now</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    )
+  }
+
   return (
     <View style={s.root}>
 

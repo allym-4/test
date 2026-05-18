@@ -54,11 +54,14 @@ class StaffNote(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='notes_authored')
     tag = models.CharField(max_length=50, blank=True)
     body = models.TextField()
+    archived = models.BooleanField(default=False)
+    recheck_date = models.DateField(null=True, blank=True)
+    is_permanent = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['archived', '-created_at']
 
     def __str__(self):
         return f'Note on {self.student} by {self.created_by} ({self.tag})'
