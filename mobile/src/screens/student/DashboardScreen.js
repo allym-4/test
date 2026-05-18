@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
   ScrollView, View, Text, TouchableOpacity, StyleSheet,
   RefreshControl, Alert, Modal, ActivityIndicator, TextInput,
@@ -141,6 +141,13 @@ function MarkAwayModal({ enrolment, onClose, onDone }) {
   )
   const nextOcc = occData?.results?.[0] || occData?.[0] || null
 
+  // Determine if we're within 4 hours of the next class
+  const withinCutoff = useMemo(() => {
+    if (!nextOcc?.date || !sess?.start_time) return false
+    const classDateTime = new Date(`${nextOcc.date}T${sess.start_time}`)
+    return (classDateTime - new Date()) < 4 * 60 * 60 * 1000
+  }, [nextOcc, sess])
+
   async function handleConfirm() {
     if (!nextOcc) { setError('No upcoming class found'); return }
     setConfirming(true)
@@ -156,6 +163,10 @@ function MarkAwayModal({ enrolment, onClose, onDone }) {
     }
   }
 
+  const nextDateLabel = nextOcc?.date
+    ? new Date(nextOcc.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
+    : null
+
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onClose}>
       <View style={s.overlay}>
@@ -168,17 +179,28 @@ function MarkAwayModal({ enrolment, onClose, onDone }) {
             <Text style={s.modalClassName}>{sess?.name}</Text>
             <Text style={s.modalClassMeta}>
               {sess?.day_of_week != null ? DAYS_FULL[sess.day_of_week] : ''} · {sess?.start_time?.slice(0, 5)}
+              {nextDateLabel ? `  ·  ${nextDateLabel}` : ''}
             </Text>
-            {nextOcc?.date && (
-              <Text style={s.modalNextDate}>
-                Next class: {new Date(nextOcc.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
-              </Text>
+
+            {!withinCutoff ? (
+              <View style={[s.infoBox, { borderColor: '#ccff00', backgroundColor: '#0f1600' }]}>
+                <Text style={[s.infoBoxHeading, { color: '#ccff00' }]}>You'll receive a catch-up credit</Text>
+                <Text style={s.infoBoxText}>
+                  This is more than 4 hours before your class — you're within the cancellation window. A catch-up credit will be added to your account to use within this season.
+                </Text>
+              </View>
+            ) : (
+              <View style={[s.infoBox, { borderColor: '#ffaa44', backgroundColor: '#1a0900' }]}>
+                <Text style={[s.infoBoxHeading, { color: '#ffaa44' }]}>No catch-up credit for this one</Text>
+                <Text style={s.infoBoxText}>
+                  This is within 4 hours of your class — the cancellation window has passed. You can still mark away so we know you're not coming, but no credit will be issued.{' '}
+                  If you don't mark away and don't attend, a{' '}
+                  <Text style={{ color: '#ffaa44', fontWeight: '600' }}>$20 no-show fee</Text>
+                  {' '}will be charged.
+                </Text>
+              </View>
             )}
-            <View style={s.infoBox}>
-              <Text style={s.infoBoxText}>
-                Marking away lets your instructor plan ahead. A makeup credit may be issued if eligible.
-              </Text>
-            </View>
+
             {!!error && <Text style={s.errorText}>{error}</Text>}
             {done ? (
               <Text style={s.doneText}>✓ Marked as away</Text>
@@ -192,7 +214,9 @@ function MarkAwayModal({ enrolment, onClose, onDone }) {
                   onPress={handleConfirm}
                   disabled={confirming || !nextOcc}
                 >
-                  <Text style={s.confirmBtnText}>{confirming ? 'Saving…' : 'Confirm Away'}</Text>
+                  <Text style={s.confirmBtnText}>
+                    {confirming ? 'Saving…' : withinCutoff ? 'Mark away anyway' : 'Confirm — mark me away'}
+                  </Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -703,6 +727,7 @@ const s = StyleSheet.create({
   modalClassMeta: { fontSize: 13, color: '#666', marginBottom: 4 },
   modalNextDate: { fontSize: 12, color: '#666', marginBottom: 16 },
   infoBox: { backgroundColor: 'rgba(204,255,0,0.05)', borderWidth: 1, borderColor: 'rgba(204,255,0,0.15)', borderRadius: 10, padding: 14, marginBottom: 16 },
+  infoBoxHeading: { fontWeight: '700', fontSize: 15, marginBottom: 6 },
   infoBoxText: { fontSize: 13, color: '#666', lineHeight: 20 },
   errorText: { color: '#ff4444', fontSize: 12, marginBottom: 12 },
   doneText: { textAlign: 'center', color: '#ccff00', fontWeight: '700', paddingVertical: 8 },
