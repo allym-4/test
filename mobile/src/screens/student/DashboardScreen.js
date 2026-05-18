@@ -1,11 +1,11 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   ScrollView, View, Text, TouchableOpacity, StyleSheet,
   RefreshControl, Alert, Modal, ActivityIndicator, TextInput,
 } from 'react-native'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, seasons, attendance as attendanceApi, skills as skillsApi, announcements as announcementsApi, payments } from '../../api'
+import { enrolments, seasons, attendance as attendanceApi, skills as skillsApi, announcements as announcementsApi, payments, notifications as notificationsApi } from '../../api'
 
 const DAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -253,6 +253,7 @@ export default function DashboardScreen({ navigation }) {
   const { data: annData, refetch: refetchAnn } = useApi(
     () => announcementsApi.list({ note_type: 'announcement' }), []
   )
+  const { data: notifData } = useApi(() => notificationsApi.list(), [])
   const { data: offersData, refetch: refetchOffers } = useApi(
     () => payments.cancellationOffers.mine(), []
   )
@@ -273,6 +274,38 @@ export default function DashboardScreen({ navigation }) {
 
   const allAnnouncements = annData?.results || annData || []
   const pendingAnnouncements = allAnnouncements.filter(a => !a.is_acknowledged)
+
+  const allNotifs = notifData?.results || notifData || []
+  const unreadNotifs = allNotifs.filter(n => !n.read).length
+  const unackAnns = allAnnouncements.filter(a => a.requires_acknowledgement && !a.is_acknowledged).length
+  const bellBadge = unreadNotifs + unackAnns
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Notifications')}
+          style={{ marginRight: 16, position: 'relative' }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Text style={{ fontSize: 22, color: '#ccff00' }}>🔔</Text>
+          {bellBadge > 0 && (
+            <View style={{
+              position: 'absolute', top: -4, right: -6,
+              backgroundColor: '#ccff00', borderRadius: 9,
+              minWidth: 18, height: 18,
+              alignItems: 'center', justifyContent: 'center',
+              paddingHorizontal: 3,
+            }}>
+              <Text style={{ color: '#000', fontSize: 10, fontWeight: '800' }}>
+                {bellBadge > 99 ? '99+' : bellBadge}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      ),
+    })
+  }, [bellBadge, navigation])
 
   async function acknowledgeAnn(id) {
     setAcknowledging(prev => ({ ...prev, [id]: true }))

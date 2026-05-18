@@ -129,6 +129,18 @@ export default function StudentShell() {
       <div className="student-topbar">
         <button className="student-hamburger" onClick={() => setMobileOpen(true)}>☰</button>
         <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, letterSpacing: 2, color: 'var(--lime)' }}>DUALITY</div>
+        <NavLink to="/portal/notifications" style={{ marginLeft: 'auto', position: 'relative', display: 'flex', alignItems: 'center', color: 'inherit', textDecoration: 'none' }}>
+          <span style={{ fontSize: 20 }}>🔔</span>
+          {notifBadge > 0 && (
+            <span style={{
+              position: 'absolute', top: -4, right: -6,
+              background: 'var(--lime)', color: '#000',
+              borderRadius: 9, minWidth: 18, height: 18,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 10, fontWeight: 800, padding: '0 3px',
+            }}>{notifBadge > 99 ? '99+' : notifBadge}</span>
+          )}
+        </NavLink>
       </div>
 
       <main className="student-main">
@@ -154,14 +166,25 @@ export default function StudentShell() {
       {/* Mobile bottom nav */}
       <nav className="student-bottom-nav">
         {[
-          { to: '/portal',          label: 'Dashboard', icon: '◆', end: true },
-          { to: '/portal/book',     label: 'Book',      icon: '+' },
-          { to: '/portal/classes',  label: 'My Classes', icon: '□' },
-          { to: '/portal/progress', label: 'Progress',  icon: '△' },
-          { to: '/portal/account',  label: 'Account',   icon: '■' },
-        ].map(({ to, label, icon, end }) => (
+          { to: '/portal',               label: 'Dashboard',    icon: '◆', end: true },
+          { to: '/portal/book',          label: 'Book',         icon: '+' },
+          { to: '/portal/classes',       label: 'My Classes',   icon: '□' },
+          { to: '/portal/notifications', label: 'Alerts',       icon: '🔔', isBell: true },
+          { to: '/portal/account',       label: 'Account',      icon: '■' },
+        ].map(({ to, label, icon, end, isBell }) => (
           <NavLink key={to} to={to} end={end} className={({ isActive }) => `student-bottom-item${isActive ? ' active' : ''}`}>
-            <span className="student-bottom-icon">{icon}</span>
+            <span className="student-bottom-icon" style={{ position: 'relative', display: 'inline-block' }}>
+              {icon}
+              {isBell && notifBadge > 0 && (
+                <span style={{
+                  position: 'absolute', top: -4, right: -6,
+                  background: 'var(--lime)', color: '#000',
+                  borderRadius: 9, minWidth: 16, height: 16,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 9, fontWeight: 800, padding: '0 2px',
+                }}>{notifBadge > 9 ? '9+' : notifBadge}</span>
+              )}
+            </span>
             <span>{label}</span>
           </NavLink>
         ))}
