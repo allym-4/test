@@ -4,23 +4,32 @@ from django.dispatch import receiver
 
 @receiver(pre_save, sender='classes.Season')
 def capture_old_season_status(sender, instance, **kwargs):
-    """Stash the previous status so post_save can detect transitions."""
+    """Stash the previous status and published_at so post_save can detect transitions."""
     if instance.pk:
         try:
-            instance._old_status = sender.objects.get(pk=instance.pk).status
+            old = sender.objects.get(pk=instance.pk)
+            instance._old_status = old.status
+            instance._old_published_at = old.published_at
         except sender.DoesNotExist:
             instance._old_status = None
+            instance._old_published_at = None
     else:
         instance._old_status = None
+        instance._old_published_at = None
 
 
 @receiver(post_save, sender='classes.Season')
 def handle_season_enrol_open(sender, instance, created, **kwargs):
-    """Notify all active students when a season is moved to 'upcoming'."""
+    """Notify all active students when a season is moved to 'upcoming' or published_at is set for the first time."""
     if created:
         return
     old_status = getattr(instance, '_old_status', None)
-    if old_status == instance.status or instance.status != 'upcoming':
+    old_published_at = getattr(instance, '_old_published_at', None)
+
+    status_triggered = (old_status != instance.status and instance.status == 'upcoming')
+    published_triggered = (old_published_at is None and instance.published_at is not None)
+
+    if not status_triggered and not published_triggered:
         return
 
     from apps.users.models import AutomationRule, Notification, AutomationRun, User
@@ -64,6 +73,36 @@ def handle_season_enrol_open(sender, instance, created, **kwargs):
             actions_taken=[f'Notified {students.count()} active students'],
             status='completed',
         )
+
+
+@receiver(post_save, sender='classes.Season')
+def handle_season_published_generate_occurrences(sender, instance, created, **kwargs):
+    """Auto-generate ClassOccurrence records when a season is published for the first time."""
+    if created:
+        return
+    old_published_at = getattr(instance, '_old_published_at', None)
+    if old_published_at is not None or instance.published_at is None:
+        return
+
+    import datetime
+    from apps.classes.models import ClassOccurrence
+
+    sessions = instance.sessions.filter(is_active=True)
+    for session in sessions:
+        # Find first weekday on or after start_date matching session.day_of_week
+        days_ahead = (session.day_of_week - instance.start_date.weekday()) % 7
+        first_date = instance.start_date + datetime.timedelta(days=days_ahead)
+
+        current = first_date
+        for _ in range(8):
+            if current > instance.end_date:
+                break
+            ClassOccurrence.objects.get_or_create(
+                session=session,
+                date=current,
+                defaults={'status': ClassOccurrence.Status.SCHEDULED},
+            )
+            current += datetime.timedelta(weeks=1)
 
 
 @receiver(post_save, sender='classes.ClassOccurrence')

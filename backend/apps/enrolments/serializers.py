@@ -18,5 +18,10 @@ class EnrolmentSerializer(serializers.ModelSerializer):
             'enrolment_type', 'status', 'enrolled_date', 'cancelled_date', 'notes',
             'is_first_visit', 'intro_email_sent', 'waiver_signed',
             'waitlist_offered_at', 'waitlist_expires_at', 'waitlist_urgent',
+            'displacement_casual_booking', 'displacement_expires_at',
         )
-        read_only_fields = ('id', 'enrolled_date', 'waitlist_offered_at', 'waitlist_expires_at', 'waitlist_urgent')
+        read_only_fields = (
+            'id', 'enrolled_date',
+            'waitlist_offered_at', 'waitlist_expires_at', 'waitlist_urgent',
+            'displacement_casual_booking', 'displacement_expires_at',
+        )

@@ -1,5 +1,8 @@
 import datetime
+import pytz
 from decimal import Decimal
+from django.conf import settings
+from django.core.mail import send_mail
 from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import generics, permissions, status
@@ -10,6 +13,111 @@ from django.shortcuts import get_object_or_404
 from .models import Enrolment
 from .serializers import EnrolmentSerializer
 from apps.users.permissions import IsAdminOrInstructor
+
+
+def get_displacement_window(occ_date, start_time):
+    sydney_tz = pytz.timezone('Australia/Sydney')
+    now = datetime.datetime.now(sydney_tz)
+    class_dt = sydney_tz.localize(datetime.datetime.combine(occ_date, start_time))
+    hours_until = (class_dt - now).total_seconds() / 3600
+    if hours_until < 4:
+        return datetime.timedelta(hours=1)
+    elif hours_until < 12:
+        return datetime.timedelta(hours=2)
+    else:
+        return datetime.timedelta(hours=12)
+
+
+def _trigger_displacement_if_needed(enrolment):
+    """Check if the new enrolment displaces casual bookings and handle accordingly."""
+    if enrolment.enrolment_type != 'course' or enrolment.status != 'active':
+        return
+
+    from apps.classes.models import CasualBooking, ClassOccurrence
+    from apps.users.models import Notification
+
+    session = enrolment.class_session
+    season_count = Enrolment.objects.filter(
+        class_session=session,
+        status__in=['active', 'pending_displacement'],
+        enrolment_type='course',
+    ).count()
+
+    if season_count < session.capacity:
+        return
+
+    # Class is at capacity with season students — check for casual bookings
+    today = datetime.date.today()
+    future_occs = ClassOccurrence.objects.filter(session=session, date__gte=today)
+    casuals = CasualBooking.objects.filter(
+        occurrence__in=future_occs, status='confirmed'
+    ).select_related('student', 'occurrence')
+
+    if not casuals.exists():
+        return
+
+    # Calculate window based on earliest upcoming occurrence
+    earliest_occ = casuals.order_by('occurrence__date').first().occurrence
+    window = get_displacement_window(earliest_occ.date, enrolment.class_session.start_time)
+
+    # Set the enrolment to pending_displacement
+    enrolment.status = 'pending_displacement'
+    enrolment.displacement_casual_booking = casuals.first()
+    enrolment.displacement_expires_at = timezone.now() + window
+    enrolment.save(update_fields=['status', 'displacement_casual_booking', 'displacement_expires_at'])
+
+    hours = int(window.total_seconds() / 3600)
+
+    for casual in casuals:
+        c_window = get_displacement_window(casual.occurrence.date, casual.occurrence.session.start_time)
+        c_expires_at = timezone.now() + c_window
+        c_hours = int(c_window.total_seconds() / 3600)
+        casual.displacement_offered_at = timezone.now()
+        casual.displacement_expires_at = c_expires_at
+        casual.save(update_fields=['displacement_offered_at', 'displacement_expires_at'])
+
+        Notification.objects.create(
+            recipient=casual.student,
+            title=f'Upgrade offer — {session.name}',
+            body=(
+                f'A student wants to enrol in {session.name} for the full season. '
+                f'Upgrade your casual booking to a full season enrolment within {c_hours} hour{"s" if c_hours != 1 else ""}, '
+                f'or unfortunately your spot will be released and your account credited with the amount paid.'
+            ),
+            notification_type='warning',
+            action_label='View Offer',
+            action_url='/portal/my-classes',
+        )
+        send_mail(
+            subject=f'Action required: Upgrade or release your spot — {session.name}',
+            message=(
+                f'Hi {casual.student.first_name},\n\n'
+                f'A student wants to enrol in {session.name} for the full season. '
+                f'You have {c_hours} hour{"s" if c_hours != 1 else ""} to decide:\n\n'
+                f'• Upgrade to a full season enrolment\n'
+                f'• Release your spot (your account will be credited ${casual.price_charged})\n'
+                f'• Message Duality if you have questions\n\n'
+                f'Log in to your student portal to respond:\n'
+                f'{getattr(settings, "FRONTEND_URL", "https://dualitypole.com.au")}/portal/my-classes\n\n'
+                f'Duality Pole Studio'
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[casual.student.email],
+            fail_silently=True,
+        )
+
+    Notification.objects.create(
+        recipient=enrolment.student,
+        title=f'Almost there — {session.name}',
+        body=(
+            f'There is a spot in the season, however a casual is taking up one of those spots. '
+            f"We've given the casual {hours} hour{'s' if hours != 1 else ''} to upgrade to a full season enrolment "
+            f"— and if they don't, the spot is yours! We'll confirm your spot as soon as it's resolved."
+        ),
+        notification_type='info',
+        action_label='View My Classes',
+        action_url='/portal/my-classes',
+    )
 
 
 SEASON_PRICES = {1: 270, 2: 440, 3: 580, 4: 700, 5: 800, 6: 900}
@@ -64,6 +172,9 @@ class EnrolmentListView(generics.ListCreateAPIView):
         # Students can only see their own enrolments
         if user.role == 'student':
             qs = qs.filter(student=user)
+            status_ = self.request.query_params.get('status')
+            if status_:
+                qs = qs.filter(status=status_)
         else:
             student_id = self.request.query_params.get('student')
             session_id = self.request.query_params.get('session')
@@ -91,7 +202,6 @@ class EnrolmentListView(generics.ListCreateAPIView):
         # Deduct a makeup credit for catchup enrolments
         if enrolment.enrolment_type in ('catchup', 'catch_up'):
             from apps.attendance.models import MakeupCredit
-            from django.utils import timezone
             credit = MakeupCredit.objects.filter(
                 student=enrolment.student, status='available'
             ).order_by('created_at').first()
@@ -99,6 +209,8 @@ class EnrolmentListView(generics.ListCreateAPIView):
                 credit.status = 'used'
                 credit.used_at = timezone.now()
                 credit.save(update_fields=['status', 'used_at'])
+
+        _trigger_displacement_if_needed(enrolment)
 
 
 class EnrolmentDetailView(generics.RetrieveUpdateDestroyAPIView):

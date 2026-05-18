@@ -41,6 +41,8 @@ export const classes = {
     book: (occurrenceId, data) => client.post(`/api/classes/occurrences/${occurrenceId}/casual-book/`, data),
     cancel: (occurrenceId) => client.post(`/api/classes/occurrences/${occurrenceId}/casual-cancel/`),
     myBookings: () => client.get('/api/classes/casual-bookings/'),
+    upgrade: (bookingId) => client.post(`/api/classes/casual-bookings/${bookingId}/upgrade/`),
+    release: (bookingId) => client.post(`/api/classes/casual-bookings/${bookingId}/release/`),
   },
   practice: {
     list: (params) => client.get('/api/classes/practice/', { params }),

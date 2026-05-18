@@ -112,6 +112,7 @@ class Season(models.Model):
     end_date = models.DateField()
     status = models.CharField(max_length=15, choices=Status.choices, default=Status.UPCOMING)
     notes = models.TextField(blank=True)
+    published_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -236,6 +237,8 @@ class CasualBooking(models.Model):
     is_free = models.BooleanField(default=False)
     waitlist_offered_at = models.DateTimeField(null=True, blank=True)
     waitlist_expires_at = models.DateTimeField(null=True, blank=True)
+    displacement_offered_at = models.DateTimeField(null=True, blank=True)
+    displacement_expires_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
