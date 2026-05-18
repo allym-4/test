@@ -247,6 +247,7 @@ function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, upcomi
   // Plan sub-view
   const [planFrequency, setPlanFrequency] = useState('monthly')
   const [planStartSeason, setPlanStartSeason] = useState(false)
+  const [planDepositInput, setPlanDepositInput] = useState('')
 
   // Cash sub-view
   const [cashDate, setCashDate] = useState(null)
@@ -311,12 +312,11 @@ function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, upcomi
     setStripeLoading(true)
     try {
       const schedule = calcPlanSchedule(planFrequency, planStartSeason, upcomingSeason, discountedTotal)
-      const depositAmount = schedule[0]?.amount ?? Math.round(discountedTotal / schedule.length)
 
       if (planStartSeason) {
-        // Deferred start — collect a deposit today to secure the spot
-        const depositCents = Math.round(depositAmount * 100)
-        const { data } = await payments.stripe.createPaymentIntent({ amount_cents: depositCents, description: `Season deposit (payment plan) — first instalment`, save_method: true })
+        // Deferred start — collect the chosen deposit today to hold the spot
+        const depositCents = Math.round(planDepositValue * 100)
+        const { data } = await payments.stripe.createPaymentIntent({ amount_cents: depositCents, description: `Season deposit (payment plan) — $${planDepositValue} upfront`, save_method: true })
         const { error: initErr } = await initPaymentSheet({ merchantDisplayName: 'Duality Pole Studio', paymentIntentClientSecret: data.client_secret, allowsDelayedPaymentMethods: false, appearance: STRIPE_APPEARANCE })
         if (initErr) { Alert.alert('Error', initErr.message); return }
         const { error: presentErr } = await presentPaymentSheet()
@@ -330,7 +330,7 @@ function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, upcomi
         if (presentErr) { if (presentErr.code !== 'Canceled') Alert.alert('Card not saved', presentErr.message); return }
       }
 
-      onConfirm('plan', discountedTotal, promoCodeClean, { frequency: planFrequency, startSeason: planStartSeason, schedule, depositPaid: planStartSeason ? depositAmount : 0 })
+      onConfirm('plan', discountedTotal, promoCodeClean, { frequency: planFrequency, startSeason: planStartSeason, schedule, depositPaid: planStartSeason ? planDepositValue : 0 })
     } catch (e) {
       Alert.alert('Error', e?.response?.data?.detail || e?.message || 'Could not set up payment plan.')
     } finally { setStripeLoading(false) }
@@ -353,6 +353,8 @@ function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, upcomi
 
   if (!visible || sessions.length === 0) return null
 
+  const minDeposit = sessions.length >= 2 ? 100 : 50
+  const planDepositValue = Math.max(minDeposit, Math.min(discountedTotal, parseFloat(planDepositInput) || minDeposit))
   const schedule = calcPlanSchedule(planFrequency, planStartSeason, upcomingSeason, discountedTotal)
   const seasonEndLabel = upcomingSeason?.end_date
     ? new Date(upcomingSeason.end_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
@@ -398,11 +400,44 @@ function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, upcomi
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={sc.optionTitle}>When the season commences</Text>
-                  <Text style={[sc.optionSub ?? {}, { fontSize: 12, color: '#ffaa00', marginTop: 2 }]}>
-                    A deposit of ${schedule[0]?.amount ?? '—'} is required today to hold your spot.
+                  <Text style={{ fontSize: 12, color: '#ffaa00', marginTop: 2 }}>
+                    A deposit is required today to hold your spot.
                   </Text>
                 </View>
               </TouchableOpacity>
+
+              {planStartSeason && (
+                <View style={{ marginBottom: 16, backgroundColor: T.card, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,170,0,0.3)', padding: 14 }}>
+                  <Text style={{ fontSize: 12, color: '#ffaa00', fontWeight: '700', marginBottom: 10 }}>
+                    Deposit amount (min ${minDeposit})
+                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Text style={{ fontSize: 22, fontWeight: '800', color: T.text }}>$</Text>
+                    <TextInput
+                      style={{
+                        flex: 1, fontSize: 28, fontWeight: '800', color: T.text,
+                        borderBottomWidth: 2, borderBottomColor: '#ffaa00', paddingBottom: 4,
+                      }}
+                      keyboardType="numeric"
+                      placeholder={String(minDeposit)}
+                      placeholderTextColor={T.muted}
+                      value={planDepositInput}
+                      onChangeText={setPlanDepositInput}
+                      returnKeyType="done"
+                    />
+                  </View>
+                  {planDepositInput !== '' && planDepositValue < discountedTotal && (
+                    <Text style={{ fontSize: 11, color: T.muted, marginTop: 8 }}>
+                      Remaining balance of ${(discountedTotal - planDepositValue).toFixed(2)} paid via your {planFrequency} plan.
+                    </Text>
+                  )}
+                  {parseFloat(planDepositInput) > 0 && parseFloat(planDepositInput) < minDeposit && (
+                    <Text style={{ fontSize: 11, color: '#ef4444', marginTop: 6, fontWeight: '600' }}>
+                      Minimum deposit is ${minDeposit} for {sessions.length} class{sessions.length !== 1 ? 'es' : ''}.
+                    </Text>
+                  )}
+                </View>
+              )}
 
               <Text style={[sc.subLabel, { marginTop: 16, textTransform: 'uppercase', letterSpacing: 0.8, fontSize: 11 }]}>Your payment schedule</Text>
               <View style={sc.scheduleCard}>
@@ -433,7 +468,7 @@ function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, upcomi
               <TouchableOpacity style={[sc.confirmBtn, stripeLoading && { opacity: 0.6 }]} onPress={handlePlanSubmit} disabled={stripeLoading}>
                 {stripeLoading ? <ActivityIndicator color="#000" /> : (
                   <Text style={sc.confirmBtnText}>
-                    {planStartSeason ? `PAY DEPOSIT $${schedule[0]?.amount ?? '—'} & CONFIRM` : 'CONFIRM PAYMENT PLAN'}
+                    {planStartSeason ? `PAY DEPOSIT $${planDepositValue} & CONFIRM` : 'CONFIRM PAYMENT PLAN'}
                   </Text>
                 )}
               </TouchableOpacity>
