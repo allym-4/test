@@ -1217,6 +1217,10 @@ export default function BookScreen({ navigation }) {
                           session.instructor_detail?.display_name ?? session.instructor_detail?.first_name,
                         ].filter(Boolean).join('  ·  ')}
                       </Text>
+                      {spotsLeft > 0 && spotsLeft <= 2 && (
+                        <Text style={s.spotsWarning}>{spotsLeft} spot{spotsLeft !== 1 ? 's' : ''} left</Text>
+                      )}
+                      {isFull && <Text style={s.spotsFull}>Full</Text>}
                     </View>
                     {isBooked ? (
                       <Text style={s.bookedBadge}>✓ Booked</Text>
@@ -1402,6 +1406,9 @@ export default function BookScreen({ navigation }) {
                             <View style={{ alignItems: 'flex-end', justifyContent: 'space-between', paddingLeft: 10, minWidth: 80 }}>
                               {!myBooking && isFull && (
                                 <Text style={s.casualCardSpotsFull}>Class full</Text>
+                              )}
+                              {!myBooking && !isFull && spotsLeft <= 2 && spotsLeft > 0 && (
+                                <Text style={s.casualCardSpots}>{spotsLeft} spot{spotsLeft !== 1 ? 's' : ''} left</Text>
                               )}
                               {isProcessing ? (
                                 <ActivityIndicator color={T.lime} size="small" style={{ marginTop: 6 }} />
