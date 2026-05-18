@@ -911,10 +911,12 @@ export default function MyClassesScreen({ navigation }) {
   )
   const { data: settingsData } = useApi(() => settingsApi.get(), [])
   const { data: casualBookingsData, refetch: refetchCasual } = useApi(() => classesApi.casual.myBookings(), [])
+  const { data: pastEnrolData } = useApi(() => enrolments.list({ status: 'completed' }), [])
 
   const activeEnrolments = enrolData?.results ?? enrolData ?? []
   const waitlistedEnrolments = waitlistData?.results ?? waitlistData ?? []
   const pendingDisplacementEnrolments = pendingDispData?.results ?? pendingDispData ?? []
+  const pastEnrolments = pastEnrolData?.results ?? pastEnrolData ?? []
   const history = historyData?.results ?? historyData ?? []
   const cancellationWindowHours = settingsData?.cancellation_window_hours ?? 24
 
@@ -1214,6 +1216,37 @@ export default function MyClassesScreen({ navigation }) {
               })}
             </View>
           )}
+
+          {/* Previous Seasons */}
+          {pastEnrolments.length > 0 && (
+            <View style={s.pastSection}>
+              <Text style={s.pastSectionTitle}>PREVIOUS SEASONS</Text>
+              {pastEnrolments.map(enr => {
+                const sess = enr.class_session_detail
+                const sessName = sess?.name ?? enr.class_name ?? 'Class'
+                const DAY = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+                const meta = [
+                  sess?.day_of_week != null ? DAY[sess.day_of_week] : null,
+                  sess?.start_time ? sess.start_time.slice(0, 5) : null,
+                  sess?.studio_detail?.name ?? null,
+                ].filter(Boolean).join(' · ')
+                return (
+                  <View key={enr.id} style={s.pastCard}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.pastName}>{sessName}</Text>
+                      {!!meta && <Text style={s.pastMeta}>{meta}</Text>}
+                      {enr.season_detail?.name && (
+                        <Text style={s.pastSeason}>{enr.season_detail.name}</Text>
+                      )}
+                    </View>
+                    <View style={s.pastBadge}>
+                      <Text style={s.pastBadgeText}>Completed</Text>
+                    </View>
+                  </View>
+                )
+              })}
+            </View>
+          )}
         </ScrollView>
       )}
 
@@ -1334,6 +1367,14 @@ const s = StyleSheet.create({
   waitlistMeta: { fontSize: 12, color: '#888' },
   waitlistPos: { fontSize: 11, fontWeight: '700', color: '#b0a0ff', marginTop: 3 },
   leaveWaitlist: { fontSize: 13, color: '#ef4444', fontWeight: '500' },
+  pastSection: { marginTop: 24 },
+  pastSectionTitle: { fontSize: 11, fontWeight: '800', color: '#444', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 },
+  pastCard: { backgroundColor: '#0d0d0d', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#1c1c1c', flexDirection: 'row', alignItems: 'center', gap: 12 },
+  pastName: { fontSize: 14, fontWeight: '600', color: '#666', marginBottom: 2 },
+  pastMeta: { fontSize: 12, color: '#444' },
+  pastSeason: { fontSize: 11, color: '#555', marginTop: 3 },
+  pastBadge: { backgroundColor: '#1a1a1a', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
+  pastBadgeText: { fontSize: 10, fontWeight: '700', color: '#555', textTransform: 'uppercase', letterSpacing: 0.5 },
   cancelBtn: { alignSelf: 'flex-start', paddingVertical: 4 },
   cancelBtnText: { fontSize: 13, color: '#ef4444' },
   topLinks: { flexDirection: 'row', gap: 10, padding: 12, backgroundColor: '#000', borderBottomWidth: 1, borderBottomColor: '#222' },
