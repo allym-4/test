@@ -299,11 +299,11 @@ function CancelPolicyModal({ enrolment, isWaitlist, onClose, onDone }) {
               ) : (
                 <>
                   <div style={{ background: 'rgba(255,68,68,0.07)', border: '1px solid rgba(255,68,68,0.2)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, color: 'var(--white)', lineHeight: 1.7 }}>
-                    <strong style={{ color: 'var(--red)' }}>Non-refundable enrolment</strong><br />
-                    Season enrolments are non-refundable in line with our terms and conditions. We don't offer cancellations once the season has begun.
+                    <strong style={{ color: 'var(--red)' }}>Non-refundable enrolment</strong><br /><br />
+                    When you enrolled, we reserved a pole and planned the season around you. As a small studio, every confirmed booking directly supports our ability to keep classes running — which is why season enrolments are non-refundable once the season begins, in line with our terms and conditions.
                   </div>
                   <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.6, marginBottom: 20 }}>
-                    If your circumstances have changed, we may be able to arrange a <strong style={{ color: 'var(--white)' }}>transfer</strong> to a different class. Submit a request and our team will be in touch.
+                    If your circumstances have changed, we'd love to find a solution. You can request a <strong style={{ color: 'var(--white)' }}>transfer</strong> to a different class and our team will be in touch.
                   </div>
                   <div style={{ display: 'flex', gap: 10 }}>
                     <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Close</button>

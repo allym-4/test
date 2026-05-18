@@ -323,7 +323,7 @@ function CancelPolicyModal({ enrolment, onClose }) {
               <View style={cp.policyBox}>
                 <Text style={cp.policyTitle}>Non-refundable enrolment</Text>
                 <Text style={cp.policyText}>
-                  Season enrolments are non-refundable in line with our terms and conditions. If your circumstances have changed, you can request a transfer to a different class.
+                  When you enrolled, we reserved a pole and planned the season around you. As a small studio, every confirmed booking directly supports our ability to keep classes running — which is why season enrolments are non-refundable once the season begins, in line with our terms and conditions.{'\n\n'}If your circumstances have changed, we'd love to find a solution.
                 </Text>
               </View>
               <TouchableOpacity style={cp.transferBtn} onPress={() => setSubView('transfer')}>
