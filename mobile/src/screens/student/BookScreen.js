@@ -476,8 +476,8 @@ function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, upcomi
                 <View style={{ marginTop: 16, marginBottom: 4 }}>
                   <Text style={[sc.sectionLabel, { marginBottom: 8 }]}>You might also like</Text>
                   {upsells.map(u => (
-                    <View key={u.id} style={{ background: undefined, backgroundColor: '#1a1a1a', borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#2a2a2a' }}>
-                      <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13, marginBottom: 2 }}>{u.session_name || u.name}</Text>
+                    <View key={u.id} style={{ backgroundColor: '#1a1a1a', borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#2a2a2a' }}>
+                      <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13, marginBottom: 2 }}>{u.suggested_session_name || u.session_name || u.name}</Text>
                       {!!u.headline && <Text style={{ color: '#ccff00', fontSize: 12, marginBottom: 2 }}>{u.headline}</Text>}
                       {!!u.body && <Text style={{ color: '#888', fontSize: 12 }}>{u.body}</Text>}
                     </View>
@@ -662,6 +662,87 @@ const pass = StyleSheet.create({
   cancelBtnText: { color: '#555', fontSize: 13 },
 })
 
+// ─── CasualBookingOptionsModal ────────────────────────────────────────────────
+function CasualBookingOptionsModal({ visible, occ, priceCasual, availableCredits, passClassesRemaining, classPassSize, activeSeason, onClose, onBook }) {
+  const sess = occ?.session_detail
+  const sessName = sess?.name ?? 'Class'
+  const time = fmtTime(sess?.start_time)
+  const creditEligible = availableCredits > 0 && activeSeason && sess?.season === activeSeason?.id
+  const passEligible = passClassesRemaining > 0
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={bo.overlay}>
+        <View style={bo.sheet}>
+          <View style={bo.header}>
+            <View style={{ flex: 1 }}>
+              <Text style={bo.title}>{sessName}</Text>
+              {!!time && <Text style={bo.meta}>{time}</Text>}
+            </View>
+            <TouchableOpacity onPress={onClose} style={bo.closeBtn}>
+              <Text style={bo.closeBtnText}>CLOSE</Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={bo.sectionLabel}>How would you like to book?</Text>
+
+          {creditEligible && (
+            <TouchableOpacity style={[bo.option, bo.optionCredit]} onPress={() => onBook('catchup')} activeOpacity={0.8}>
+              <View style={{ flex: 1 }}>
+                <Text style={[bo.optionTitle, { color: '#b0a0ff' }]}>Use a catch-up credit</Text>
+                <Text style={bo.optionSub}>{availableCredits} credit{availableCredits !== 1 ? 's' : ''} available — no charge today</Text>
+              </View>
+              <Text style={[bo.optionPrice, { color: '#b0a0ff' }]}>FREE</Text>
+            </TouchableOpacity>
+          )}
+
+          {passEligible && (
+            <TouchableOpacity style={[bo.option, bo.optionPass]} onPress={() => onBook('classpass')} activeOpacity={0.8}>
+              <View style={{ flex: 1 }}>
+                <Text style={[bo.optionTitle, { color: '#b0a0ff' }]}>{classPassSize}-class pass</Text>
+                <Text style={bo.optionSub}>{passClassesRemaining} credit{passClassesRemaining !== 1 ? 's' : ''} remaining on your pass</Text>
+              </View>
+              <Text style={[bo.optionPrice, { color: '#b0a0ff' }]}>PASS</Text>
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity style={[bo.option, bo.optionPay]} onPress={() => onBook('casual')} activeOpacity={0.8}>
+            <View style={{ flex: 1 }}>
+              <Text style={bo.optionTitle}>Pay casual rate</Text>
+              <Text style={bo.optionSub}>Card payment via Stripe — saved securely</Text>
+            </View>
+            <Text style={bo.optionPrice}>${priceCasual}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={bo.cancelBtn} onPress={onClose}>
+            <Text style={bo.cancelBtnText}>Maybe later</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  )
+}
+
+const bo = StyleSheet.create({
+  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.75)' },
+  sheet: { backgroundColor: '#111', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 44 },
+  header: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 20 },
+  title: { fontSize: 18, fontWeight: '800', color: '#fff' },
+  meta: { fontSize: 13, color: '#666', marginTop: 2 },
+  closeBtn: { paddingLeft: 12, paddingTop: 2 },
+  closeBtnText: { color: '#555', fontSize: 12, fontWeight: '700', letterSpacing: 1 },
+  sectionLabel: { fontSize: 11, color: '#555', fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 },
+  option: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 14, padding: 16, marginBottom: 10 },
+  optionCredit: { borderColor: 'rgba(124,58,237,0.4)', backgroundColor: 'rgba(124,58,237,0.08)' },
+  optionPass: { borderColor: 'rgba(124,58,237,0.25)', backgroundColor: 'rgba(124,58,237,0.05)' },
+  optionPay: { borderColor: 'rgba(204,255,0,0.25)', backgroundColor: 'rgba(204,255,0,0.04)' },
+  optionTitle: { fontSize: 15, fontWeight: '700', color: '#fff', marginBottom: 3 },
+  optionSub: { fontSize: 12, color: '#666', lineHeight: 18 },
+  optionPrice: { fontSize: 18, fontWeight: '900', color: '#ccff00', marginLeft: 12 },
+  cancelBtn: { alignItems: 'center', paddingVertical: 14 },
+  cancelBtnText: { color: '#555', fontSize: 13 },
+})
+
 // ─── main screen ─────────────────────────────────────────────────────────────
 export default function BookScreen({ navigation }) {
   const { user } = useAuth()
@@ -685,6 +766,7 @@ export default function BookScreen({ navigation }) {
   const [casualSelectedDate, setCasualSelectedDate] = useState(null)
   const [casualBookingId, setCasualBookingId] = useState(null)
   const [buyingPass, setBuyingPass] = useState(false)
+  const [bookingOptionsOcc, setBookingOptionsOcc] = useState(null)
 
   useEffect(() => {
     if (user?.level) setLevelFilter(user.level)
@@ -1002,7 +1084,7 @@ export default function BookScreen({ navigation }) {
             Please settle your account before booking another class.
           </Text>
           <TouchableOpacity
-            style={{ background: undefined, backgroundColor: '#DBFF00', borderRadius: 10, paddingHorizontal: 28, paddingVertical: 14 }}
+            style={{ backgroundColor: '#DBFF00', borderRadius: 10, paddingHorizontal: 28, paddingVertical: 14 }}
             onPress={() => navigation.navigate('Billing')}
           >
             <Text style={{ color: '#000', fontWeight: '700', fontSize: 15 }}>Pay now</Text>
@@ -1317,21 +1399,13 @@ export default function BookScreen({ navigation }) {
                                   <Text style={s.waitlistBtnText}>WAITLIST</Text>
                                 </TouchableOpacity>
                               ) : (
-                                <View style={{ gap: 6 }}>
-                                  {creditEligible && (
-                                    <TouchableOpacity style={[s.casualBookBtn, { backgroundColor: T.purple }]} onPress={() => bookCasualOcc(occ, 'catchup')}>
-                                      <Text style={[s.casualBookBtnText, { color: '#fff' }]}>CREDIT</Text>
-                                    </TouchableOpacity>
-                                  )}
-                                  {passEligible && (
-                                    <TouchableOpacity style={[s.casualBookBtn, { backgroundColor: 'rgba(124,58,237,0.15)', borderWidth: 1, borderColor: 'rgba(124,58,237,0.4)' }]} onPress={() => bookCasualOcc(occ, 'classpass')}>
-                                      <Text style={[s.casualBookBtnText, { color: '#b0a0ff' }]}>PASS</Text>
-                                    </TouchableOpacity>
-                                  )}
-                                  <TouchableOpacity style={s.casualBookBtn} onPress={() => bookCasualOcc(occ, 'casual')}>
-                                    <Text style={s.casualBookBtnText}>BOOK ${priceCasual}</Text>
-                                  </TouchableOpacity>
-                                </View>
+                                <TouchableOpacity
+                                  style={s.casualBookBtn}
+                                  onPress={() => setBookingOptionsOcc(occ)}
+                                  activeOpacity={0.8}
+                                >
+                                  <Text style={s.casualBookBtnText}>BOOK</Text>
+                                </TouchableOpacity>
                               )}
                             </View>
                           </View>
@@ -1556,6 +1630,23 @@ export default function BookScreen({ navigation }) {
         size={classPassSize}
         onClose={() => setBuyingPass(false)}
         onSuccess={() => { setBuyingPass(false); refetchPasses() }}
+      />
+
+      {/* ── Casual booking options modal ──────────────────────────────────── */}
+      <CasualBookingOptionsModal
+        visible={!!bookingOptionsOcc}
+        occ={bookingOptionsOcc}
+        priceCasual={priceCasual}
+        availableCredits={availableCredits}
+        passClassesRemaining={passClassesRemaining}
+        classPassSize={classPassSize}
+        activeSeason={activeSeason}
+        onClose={() => setBookingOptionsOcc(null)}
+        onBook={(type) => {
+          const occ = bookingOptionsOcc
+          setBookingOptionsOcc(null)
+          bookCasualOcc(occ, type)
+        }}
       />
 
       {/* ── Exemption Request Modal ───────────────────────────────────────── */}
