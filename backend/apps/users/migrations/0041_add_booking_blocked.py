@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("users", "0040_add_class_pass_settings"),
+        ("users", "0039_add_staffnote_archive_recheck"),
     ]
 
     operations = [
