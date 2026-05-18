@@ -101,6 +101,26 @@ class ClassOccurrence(models.Model):
         return f'{self.session.name} — {self.date}'
 
 
+class ClassUpsell(models.Model):
+    source_session = models.ForeignKey(
+        ClassSession, on_delete=models.CASCADE, related_name='upsells'
+    )
+    suggested_session = models.ForeignKey(
+        ClassSession, on_delete=models.CASCADE, related_name='upsell_suggestions'
+    )
+    headline = models.CharField(max_length=200)
+    body = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+        unique_together = [('source_session', 'suggested_session')]
+
+    def __str__(self):
+        return f'Upsell: {self.source_session.name} → {self.suggested_session.name}'
+
+
 class Season(models.Model):
     class Status(models.TextChoices):
         UPCOMING = 'upcoming', 'Upcoming'

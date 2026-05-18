@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, Workshop, WorkshopBooking, PracticeSlot, PracticeBooking, CasualBooking
+from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, Workshop, WorkshopBooking, PracticeSlot, PracticeBooking, CasualBooking, ClassUpsell
 from apps.users.serializers import UserMinimalSerializer
 
 
@@ -274,6 +274,23 @@ class PracticeSlotSerializer(serializers.ModelSerializer):
         if not request or not request.user.is_authenticated:
             return None
         return self._get_price(obj, request.user)
+
+
+class ClassUpsellSerializer(serializers.ModelSerializer):
+    suggested_session_name = serializers.CharField(source='suggested_session.name', read_only=True)
+    suggested_session_day = serializers.CharField(source='suggested_session.get_day_of_week_display', read_only=True)
+    suggested_session_time = serializers.TimeField(source='suggested_session.start_time', read_only=True)
+    suggested_session_category = serializers.CharField(source='suggested_session.category.name', read_only=True, allow_null=True)
+
+    class Meta:
+        model = ClassUpsell
+        fields = (
+            'id', 'source_session', 'suggested_session',
+            'suggested_session_name', 'suggested_session_day',
+            'suggested_session_time', 'suggested_session_category',
+            'headline', 'body', 'is_active', 'created_at',
+        )
+        read_only_fields = ('id', 'created_at')
 
 
 class PracticeBookingSerializer(serializers.ModelSerializer):

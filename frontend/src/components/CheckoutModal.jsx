@@ -7,7 +7,7 @@ import {
   useStripe,
   useElements,
 } from '@stripe/react-stripe-js'
-import { payments } from '../api'
+import { payments, classes as classesApi } from '../api'
 
 let stripePromise = null
 
@@ -212,6 +212,7 @@ export default function CheckoutModal({
   amount,          // dollars (e.g. 270.00)
   description,     // e.g. "Season 4 — Level 2 + Dance"
   saveMethod,      // whether to save the card
+  sessionIds,      // array of session IDs being booked (for upsell)
   onSuccess,
   onClose,
 }) {
@@ -220,13 +221,14 @@ export default function CheckoutModal({
   const [savedCards, setSavedCards] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [upsells, setUpsells] = useState([])
 
   const amountCents = Math.round(amount * 100)
 
   useEffect(() => {
     async function init() {
       try {
-        const [stripeInst, intentRes, cardsRes] = await Promise.all([
+        const fetches = [
           getStripe(),
           payments.stripe.createPaymentIntent({
             amount_cents: amountCents,
@@ -234,10 +236,13 @@ export default function CheckoutModal({
             save_method: saveMethod ?? true,
           }),
           payments.stripe.paymentMethods(),
-        ])
+        ]
+        if (sessionIds?.length) fetches.push(classesApi.upsells.suggest(sessionIds))
+        const [stripeInst, intentRes, cardsRes, upsellRes] = await Promise.all(fetches)
         setStripe(stripeInst)
         setClientSecret(intentRes.data.client_secret)
         setSavedCards(cardsRes.data.payment_methods || [])
+        if (upsellRes) setUpsells(upsellRes.data || [])
       } catch (err) {
         setError('Could not initialise payment. Please try again.')
       } finally {
@@ -270,6 +275,37 @@ export default function CheckoutModal({
             </span>
           </div>
         </div>
+
+        {upsells.length > 0 && (
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--grey)', textTransform: 'uppercase', marginBottom: 10 }}>
+              Before you checkout
+            </div>
+            {upsells.map(u => (
+              <div key={u.id} style={{
+                background: 'var(--card)', border: '1px solid var(--border)',
+                borderRadius: 10, padding: '14px 16px',
+              }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <span style={{ fontSize: 20, lineHeight: 1 }}>✦</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>
+                      {u.headline || u.suggested_session_name}
+                    </div>
+                    {u.body && (
+                      <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 8, lineHeight: 1.5 }}>
+                        {u.body}
+                      </div>
+                    )}
+                    <div style={{ fontSize: 13, color: 'var(--lime)', cursor: 'pointer', textDecoration: 'underline' }}>
+                      View class →
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
