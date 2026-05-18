@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+from django.db.models.signals import post_save
 from datetime import date, time, timedelta
 from apps.users.models import (
     User, StaffNote, StudioSettings, Announcement, Notification,
@@ -85,6 +86,16 @@ class Command(BaseCommand):
 
         # ── Users ─────────────────────────────────────────────────────────
         self.stdout.write('Creating users...')
+        # Disconnect all email signals so seed doesn't try to send emails
+        from apps.users.signals import send_welcome_email, handle_no_show_fee, handle_payment_overdue
+        from apps.enrolments.signals import handle_enrolment_change
+        from apps.enrolments.models import Enrolment as EnrolmentModel
+        from apps.attendance.models import AttendanceRecord as AttendanceModel
+        from apps.payments.models import PaymentPlanInstalment as InstalmentModel
+        post_save.disconnect(send_welcome_email, sender=User)
+        post_save.disconnect(handle_enrolment_change, sender=EnrolmentModel)
+        post_save.disconnect(handle_no_show_fee, sender=AttendanceModel)
+        post_save.disconnect(handle_payment_overdue, sender=InstalmentModel)
         admin = User.objects.create_superuser(
             username='admin', email='admin@dualitypole.com',
             password='admin1234', first_name='Mimi', last_name='Owner', role='admin',
