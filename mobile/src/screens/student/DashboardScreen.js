@@ -215,7 +215,7 @@ function MarkAwayModal({ enrolment, onClose, onDone }) {
                   disabled={confirming || !nextOcc}
                 >
                   <Text style={s.confirmBtnText}>
-                    {confirming ? 'Saving…' : withinCutoff ? 'Mark away anyway' : 'Confirm — mark me away'}
+                    {confirming ? 'Saving…' : withinCutoff ? 'Mark away anyway' : 'Confirm away'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -735,6 +735,6 @@ const s = StyleSheet.create({
   cancelBtn: { flex: 1, borderWidth: 1, borderColor: '#333', borderRadius: 10, paddingVertical: 11, alignItems: 'center' },
   cancelBtnText: { fontSize: 14, fontWeight: '600', color: '#fff' },
   confirmBtn: { flex: 1, backgroundColor: '#ccff00', borderRadius: 10, paddingVertical: 11, alignItems: 'center' },
-  confirmBtnText: { fontSize: 14, fontWeight: '700', color: '#000' },
+  confirmBtnText: { fontSize: 14, fontWeight: '700', color: '#000', numberOfLines: 1 },
   btnDisabled: { opacity: 0.5 },
 })
