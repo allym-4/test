@@ -547,3 +547,81 @@ class FlaggedEnrolmentsView(generics.ListAPIView):
         enrolment.flag_dismissed = True
         enrolment.save(update_fields=['flag_dismissed'])
         return Response({'status': 'dismissed'})
+
+
+class PendingTrialFeedbackView(APIView):
+    """Return trial enrolments that are past their class date and have no feedback yet."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from .models import TrialFeedback
+        from apps.classes.models import ClassOccurrence
+        from django.utils import timezone as tz
+
+        today = tz.localdate()
+        trial_enrolments = Enrolment.objects.filter(
+            student=request.user,
+            enrolment_type='trial',
+            enrolled_date__lte=today,
+        ).exclude(
+            trial_feedback__isnull=False
+        ).select_related('class_session__season', 'class_session__category')
+
+        results = []
+        for enrolment in trial_enrolments:
+            session = enrolment.class_session
+            season = getattr(session, 'season', None)
+
+            # Count remaining occurrences in the season
+            remaining = 0
+            if season and season.end_date:
+                remaining = ClassOccurrence.objects.filter(
+                    session=session,
+                    date__gt=today,
+                    date__lte=season.end_date,
+                ).count()
+
+            # Calculate enrol price (full season minus trial credit)
+            from apps.users.models import StudioSettings
+            studio = StudioSettings.get()
+            season_price = float(studio.price_season)
+            trial_price = float(studio.price_trial)
+            enrol_price = max(0, season_price - trial_price)
+
+            results.append({
+                'id': enrolment.id,
+                'session_name': session.name,
+                'season_name': season.name if season else None,
+                'remaining_classes': remaining,
+                'enrol_price': enrol_price,
+                'trial_price': trial_price,
+            })
+
+        return Response(results)
+
+
+class SubmitTrialFeedbackView(APIView):
+    """Submit (or skip) post-trial feedback for a trial enrolment."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        from .models import TrialFeedback
+
+        enrolment = get_object_or_404(
+            Enrolment, pk=pk, student=request.user, enrolment_type='trial'
+        )
+
+        if hasattr(enrolment, 'trial_feedback'):
+            return Response({'detail': 'Feedback already submitted.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        enrolled = bool(request.data.get('enrolled', False))
+        TrialFeedback.objects.create(
+            enrolment=enrolment,
+            enrolled=enrolled,
+            class_rating=request.data.get('class_rating') or None,
+            instructor_rating=request.data.get('instructor_rating') or None,
+            facilities_rating=request.data.get('facilities_rating') or None,
+            structure_rating=request.data.get('structure_rating') or None,
+            reason=request.data.get('reason', ''),
+        )
+        return Response({'status': 'ok'})

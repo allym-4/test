@@ -49,3 +49,17 @@ class Enrolment(models.Model):
 
     def __str__(self):
         return f'{self.student.display_name} → {self.class_session}'
+
+
+class TrialFeedback(models.Model):
+    enrolment = models.OneToOneField(Enrolment, on_delete=models.CASCADE, related_name='trial_feedback')
+    enrolled = models.BooleanField(default=False)  # True = they clicked "Yes - enrol now"
+    class_rating = models.PositiveSmallIntegerField(null=True, blank=True)
+    instructor_rating = models.PositiveSmallIntegerField(null=True, blank=True)
+    facilities_rating = models.PositiveSmallIntegerField(null=True, blank=True)
+    structure_rating = models.PositiveSmallIntegerField(null=True, blank=True)
+    reason = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'Feedback: {self.enrolment}'

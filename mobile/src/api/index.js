@@ -50,6 +50,10 @@ export const enrolments = {
   update: (id, data) => client.patch(`/api/enrolments/${id}/`, data),
   delete: (id) => client.delete(`/api/enrolments/${id}/`),
   claimSpot: (id) => client.post(`/api/enrolments/${id}/claim-spot/`),
+  trialFeedback: {
+    pending: () => client.get('/api/enrolments/trial-feedback/pending/'),
+    submit: (id, data) => client.post(`/api/enrolments/${id}/trial-feedback/`, data),
+  },
 }
 
 export const attendance = {

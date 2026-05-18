@@ -93,6 +93,10 @@ export const enrolments = {
   pricing: (student, session) => client.get('/api/enrolments/pricing/', { params: { student, session } }),
   flagged: () => client.get('/api/enrolments/flagged/'),
   dismissFlag: (id) => client.patch(`/api/enrolments/flagged/${id}/dismiss/`, {}),
+  trialFeedback: {
+    pending: () => client.get('/api/enrolments/trial-feedback/pending/'),
+    submit: (id, data) => client.post(`/api/enrolments/${id}/trial-feedback/`, data),
+  },
 }
 
 export const payments = {
