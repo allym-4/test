@@ -284,6 +284,30 @@ class StripeWebhookView(APIView):
             except PaymentPlanInstalment.DoesNotExist:
                 pass
 
+        # Send payment receipt email
+        from apps.users.models import Notification
+        from django.core.mail import send_mail
+        from django.conf import settings as django_settings
+        Notification.objects.create(
+            recipient=user,
+            title='Payment received',
+            body=f'Your payment of ${amount_dollars:.2f} for "{description}" has been received. Thank you!',
+            notification_type='success',
+        )
+        if user.email:
+            send_mail(
+                subject='Payment receipt — Duality Pole Studio',
+                message=(
+                    f'Hi {user.first_name},\n\n'
+                    f'We\'ve received your payment of ${amount_dollars:.2f} for "{description}". Thank you!\n\n'
+                    f'If you have any questions about this payment, please contact the studio.\n\n'
+                    f'Duality Pole Studio'
+                ),
+                from_email=django_settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                fail_silently=True,
+            )
+
     def _handle_payment_failed(self, intent):
         user_id = intent.metadata.get('user_id')
         if not user_id:
