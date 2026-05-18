@@ -173,6 +173,50 @@ def handle_enrolment_change(sender, instance, created, **kwargs):
         'class_level': getattr(session, 'level', '') or '',
     }
 
+    class_name = session.name if session else 'your class'
+    day = ''
+    if session and session.day_of_week is not None:
+        day = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][session.day_of_week]
+    time_str = ''
+    if session and session.start_time:
+        try:
+            t = session.start_time
+            hour = t.hour % 12 or 12
+            ampm = 'am' if t.hour < 12 else 'pm'
+            time_str = f' at {hour}:{t.minute:02d}{ampm}'
+        except Exception:
+            pass
+
+    # ── Booking confirmation ─────────────────────────────────────────────────
+    if created and instance.status == 'active' and student and student.email:
+        send_mail(
+            subject=f'Booking confirmed — {class_name}',
+            message=(
+                f'Hi {student.first_name},\n\n'
+                f'Your booking for {class_name} ({day}{time_str}) has been confirmed.\n\n'
+                f'We look forward to seeing you in class!\n\n'
+                f'Duality Pole Studio'
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[student.email],
+            fail_silently=True,
+        )
+
+    # ── Cancellation confirmation ────────────────────────────────────────────
+    if not created and instance.status == 'cancelled' and student and student.email:
+        send_mail(
+            subject=f'Enrolment cancelled — {class_name}',
+            message=(
+                f'Hi {student.first_name},\n\n'
+                f'Your enrolment in {class_name} ({day}{time_str}) has been cancelled.\n\n'
+                f'If you have any questions, please contact the studio.\n\n'
+                f'Duality Pole Studio'
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[student.email],
+            fail_silently=True,
+        )
+
     # When a spot opens, offer it to waitlisted students
     if not created and instance.status in ('cancelled', 'completed'):
         _offer_waitlist_spot(session)
