@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments as enrolmentsApi, attendance, classes as classesApi, helpdesk as helpdeskApi, attendance as attendanceApi } from '../../api'
+import { enrolments as enrolmentsApi, attendance, classes as classesApi, helpdesk as helpdeskApi, attendance as attendanceApi, settings as settingsApi } from '../../api'
 
 function WaitlistOfferBanner({ enrolment, onClaimed }) {
   const [claiming, setClaiming] = useState(false)
@@ -93,13 +93,18 @@ function ClassRoster({ sessionId }) {
   )
 }
 
-function MarkAwayModal({ occurrence, cancellationWindowHours, onClose, onDone }) {
+function MarkAwayModal({ occurrence, cancellationWindowHours, noShowFee, onClose, onDone }) {
   const [confirming, setConfirming] = useState(false)
 
   const occDate = new Date(occurrence.date + 'T' + (occurrence.session_detail?.start_time || '00:00'))
   const hoursUntil = (occDate - new Date()) / (1000 * 60 * 60)
   const windowHours = cancellationWindowHours || 24
-  const isLate = hoursUntil < windowHours && hoursUntil > 0
+  const isLate = hoursUntil > 0 && hoursUntil < windowHours
+  const feeAmount = noShowFee ? `$${parseFloat(noShowFee).toFixed(0)}` : '$20'
+
+  const sessionName = occurrence.session_detail?.name || occurrence.session_name
+  const dateLabel = new Date(occurrence.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+  const timeLabel = occurrence.session_detail?.start_time ? occurrence.session_detail.start_time.slice(0, 5) : ''
 
   async function confirm() {
     setConfirming(true)
@@ -116,35 +121,44 @@ function MarkAwayModal({ occurrence, cancellationWindowHours, onClose, onDone })
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
       onClick={e => e.target === e.currentTarget && onClose()}
     >
-      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, maxWidth: 420, width: '100%' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', borderBottom: '1px solid var(--border)' }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>Mark Away</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 18 }}>✕</button>
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, maxWidth: 440, width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px 12px' }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20 }}>Mark Away — {sessionName}</div>
+          <button onClick={onClose} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', cursor: 'pointer', fontSize: 12, fontWeight: 700, padding: '6px 12px', letterSpacing: 0.5 }}>CLOSE</button>
         </div>
-        <div style={{ padding: '18px 20px' }}>
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>{occurrence.session_detail?.name || occurrence.session_name}</div>
-            <div style={{ fontSize: 13, color: 'var(--grey)' }}>
-              {new Date(occurrence.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
-              {occurrence.session_detail?.start_time ? ` · ${occurrence.session_detail.start_time.slice(0, 5)}` : ''}
-            </div>
-          </div>
 
+        <div style={{ fontSize: 14, color: 'var(--grey)', padding: '0 24px 16px' }}>
+          {dateLabel}{timeLabel ? `, ${timeLabel}` : ''}
+        </div>
+
+        <div style={{ padding: '0 24px 20px' }}>
           {isLate ? (
-            <div style={{ background: 'rgba(255,170,0,0.08)', border: '1px solid rgba(255,170,0,0.25)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, color: 'var(--amber)', lineHeight: 1.6 }}>
-              <strong>Late cancellation notice:</strong> This class is within the {windowHours}-hour cancellation window. A late cancel fee may apply.
+            <div style={{ background: 'rgba(180,80,0,0.25)', border: '1px solid var(--amber)', borderRadius: 12, padding: '16px', marginBottom: 20 }}>
+              <div style={{ fontWeight: 800, color: 'var(--amber)', marginBottom: 8, fontSize: 15 }}>No catch-up credit for this one</div>
+              <div style={{ fontSize: 14, color: 'var(--white)', lineHeight: 1.6 }}>
+                This is within <strong>{windowHours} hours</strong> of your class — the cancellation window has passed. You can still mark away so we know you're not coming, but no credit will be issued. If you don't mark away and don't attend, a <strong style={{ color: 'var(--amber)' }}>{feeAmount} no-show fee</strong> will be charged.
+              </div>
             </div>
           ) : (
-            <div style={{ background: 'rgba(204,255,0,0.05)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
-              You're marking yourself as unable to attend this class. No late cancel fee applies.
+            <div style={{ background: 'rgba(204,255,0,0.07)', border: '1.5px solid var(--lime)', borderRadius: 12, padding: '16px', marginBottom: 20 }}>
+              <div style={{ fontWeight: 800, color: 'var(--lime)', marginBottom: 8, fontSize: 15 }}>You'll receive a catch-up credit</div>
+              <div style={{ fontSize: 14, color: 'var(--white)', lineHeight: 1.6 }}>
+                This is more than <strong>{windowHours} hours</strong> before your class — you're within the cancellation window. A catch-up credit will be added to your account to use within this season.
+              </div>
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
-            <button className="btn btn-lime btn-sm" style={{ flex: 1 }} onClick={confirm} disabled={confirming}>
-              {confirming ? 'Saving…' : 'Confirm Away'}
-            </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {isLate ? (
+              <button className="btn btn-ghost btn-sm" onClick={confirm} disabled={confirming} style={{ fontWeight: 900, letterSpacing: 0.5 }}>
+                {confirming ? 'Saving…' : 'MARK AWAY ANYWAY'}
+              </button>
+            ) : (
+              <button className="btn btn-lime btn-sm" onClick={confirm} disabled={confirming} style={{ fontWeight: 900, letterSpacing: 0.5 }}>
+                {confirming ? 'Saving…' : 'CONFIRM — MARK ME AWAY'}
+              </button>
+            )}
+            <button className="btn btn-ghost btn-sm" onClick={onClose} style={{ color: 'var(--grey)' }}>CANCEL</button>
           </div>
         </div>
       </div>
@@ -772,6 +786,7 @@ export default function StudentMyClasses() {
   const { data: attData, refetch: refetchAtt } = useApi(() => attendance.list({ student: user?.id }), [user?.id])
   const { data: upcomingData, refetch: refetchUpcoming } = useApi(() => classesApi.occurrences({ student: user?.id, upcoming: true }), [user?.id])
   const { data: casualBookingsData, refetch: refetchCasual } = useApi(() => classesApi.casual.myBookings(), [])
+  const { data: studioSettings } = useApi(() => settingsApi.get(), [])
 
   const [markAwayOcc, setMarkAwayOcc] = useState(null)
   const [cancelAwayOcc, setCancelAwayOcc] = useState(null)
@@ -1063,7 +1078,8 @@ export default function StudentMyClasses() {
       {markAwayOcc && (
         <MarkAwayModal
           occurrence={markAwayOcc}
-          cancellationWindowHours={24}
+          cancellationWindowHours={studioSettings?.cancellation_window_hours ?? 24}
+          noShowFee={studioSettings?.no_show_fee ?? 20}
           onClose={() => setMarkAwayOcc(null)}
           onDone={() => {
             setMarkAwayOcc(null)
