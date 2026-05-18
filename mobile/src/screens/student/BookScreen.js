@@ -222,7 +222,7 @@ function CashCalendar({ selected, onSelect }) {
 }
 
 function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, upcomingSeason, onClose, onConfirm }) {
-  const { initPaymentSheet, presentPaymentSheet, initSetupPaymentSheet, presentSetupPaymentSheet } = useStripe()
+  const { initPaymentSheet, presentPaymentSheet } = useStripe()
 
   const [payOption, setPayOption] = useState('full')
   const [promoCode, setPromoCode] = useState('')
@@ -289,9 +289,9 @@ function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, upcomi
     setStripeLoading(true)
     try {
       const { data } = await payments.stripe.setupIntent()
-      const { error: initErr } = await initSetupPaymentSheet({ merchantDisplayName: 'Duality Pole Studio', setupIntentClientSecret: data.client_secret, appearance: STRIPE_APPEARANCE })
+      const { error: initErr } = await initPaymentSheet({ merchantDisplayName: 'Duality Pole Studio', setupIntentClientSecret: data.client_secret, appearance: STRIPE_APPEARANCE })
       if (initErr) { Alert.alert('Error', initErr.message); return }
-      const { error: presentErr } = await presentSetupPaymentSheet()
+      const { error: presentErr } = await presentPaymentSheet()
       if (presentErr) { if (presentErr.code !== 'Canceled') Alert.alert('Card not saved', presentErr.message); return }
       const schedule = calcPlanSchedule(planFrequency, planStartSeason, upcomingSeason, discountedTotal)
       onConfirm('plan', discountedTotal, promoCodeClean, { frequency: planFrequency, startSeason: planStartSeason, schedule })
@@ -305,9 +305,9 @@ function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, upcomi
     setStripeLoading(true)
     try {
       const { data } = await payments.stripe.setupIntent()
-      const { error: initErr } = await initSetupPaymentSheet({ merchantDisplayName: 'Duality Pole Studio', setupIntentClientSecret: data.client_secret, appearance: STRIPE_APPEARANCE })
+      const { error: initErr } = await initPaymentSheet({ merchantDisplayName: 'Duality Pole Studio', setupIntentClientSecret: data.client_secret, appearance: STRIPE_APPEARANCE })
       if (initErr) { Alert.alert('Error', initErr.message); return }
-      const { error: presentErr } = await presentSetupPaymentSheet()
+      const { error: presentErr } = await presentPaymentSheet()
       if (presentErr) { if (presentErr.code !== 'Canceled') Alert.alert('Card not saved', presentErr.message); return }
       onConfirm('cash', 0, null, { cashDate })
     } catch (e) {
