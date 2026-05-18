@@ -116,7 +116,7 @@ const wl = StyleSheet.create({
   claimBtnText: { color: '#000', fontWeight: '800', fontSize: 13 },
 })
 
-function MarkAwayModal({ occurrence, session, cancellationWindowHours, onClose, onConfirm, confirming }) {
+function MarkAwayModal({ occurrence, session, cancellationWindowHours, noShowFee, onClose, onConfirm, confirming }) {
   const occDate = new Date(
     (occurrence.date || '') + 'T' + (occurrence.start_time || session?.start_time || '00:00')
   )
@@ -126,52 +126,69 @@ function MarkAwayModal({ occurrence, session, cancellationWindowHours, onClose, 
   const isPast = hoursUntil <= 0
 
   const dateLabel = new Date(occurrence.date + 'T00:00').toLocaleDateString('en-AU', {
-    weekday: 'long', day: 'numeric', month: 'long',
+    weekday: 'short', day: 'numeric', month: 'short',
   })
   const timeLabel = (occurrence.start_time || session?.start_time || '').slice(0, 5)
+  const feeAmount = noShowFee ? `$${parseFloat(noShowFee).toFixed(0)}` : '$20'
 
   return (
     <Modal visible animationType="fade" transparent onRequestClose={onClose}>
       <View style={ma.overlay}>
         <View style={ma.sheet}>
           <View style={ma.header}>
-            <Text style={ma.title}>Mark Away</Text>
-            <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Text style={ma.close}>✕</Text>
+            <Text style={ma.title}>Mark Away — {session?.name || 'Class'}</Text>
+            <TouchableOpacity onPress={onClose} style={ma.closeBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Text style={ma.closeText}>CLOSE</Text>
             </TouchableOpacity>
           </View>
 
-          <Text style={ma.className}>{session?.name || 'Class'}</Text>
-          <Text style={ma.classMeta}>{dateLabel}{timeLabel ? `  ·  ${timeLabel}` : ''}</Text>
+          <Text style={ma.classMeta}>{dateLabel}{timeLabel ? `, ${timeLabel}` : ''}</Text>
 
-          {isLate ? (
+          {isPast ? (
             <View style={ma.warnBox}>
-              <Text style={ma.warnText}>
-                <Text style={{ fontWeight: '700' }}>Late cancellation notice: </Text>
-                This class is within the {windowHours}-hour cancellation window. A late cancel fee may apply.
-              </Text>
+              <Text style={ma.warnTitle}>Class has passed</Text>
+              <Text style={ma.warnBody}>This class has already started or passed.</Text>
             </View>
-          ) : isPast ? (
-            <View style={ma.infoBox}>
-              <Text style={ma.infoText}>This class has already started or passed.</Text>
+          ) : isLate ? (
+            <View style={ma.warnBox}>
+              <Text style={ma.warnTitle}>No catch-up credit for this one</Text>
+              <Text style={ma.warnBody}>
+                {'This is within '}
+                <Text style={{ fontWeight: '700' }}>{windowHours} hours</Text>
+                {' of your class — the cancellation window has passed. You can still mark away so we know you\'re not coming, but no credit will be issued. If you don\'t mark away and don\'t attend, a '}
+                <Text style={{ fontWeight: '700', color: '#f59e0b' }}>{feeAmount} no-show fee</Text>
+                {' will be charged.'}
+              </Text>
             </View>
           ) : (
             <View style={ma.infoBox}>
-              <Text style={ma.infoText}>
-                You're marking yourself as unable to attend this class. No late cancel fee applies.
+              <Text style={ma.infoTitle}>You'll receive a catch-up credit</Text>
+              <Text style={ma.infoBody}>
+                {'This is more than '}
+                <Text style={{ fontWeight: '700' }}>{windowHours} hours</Text>
+                {' before your class — you\'re within the cancellation window. A catch-up credit will be added to your account to use within this season.'}
               </Text>
             </View>
           )}
 
           <View style={ma.actions}>
+            {isLate ? (
+              <TouchableOpacity style={ma.lateConfirmBtn} onPress={onConfirm} disabled={confirming || isPast}>
+                {confirming
+                  ? <ActivityIndicator size="small" color="#fff" />
+                  : <Text style={ma.lateConfirmText}>MARK AWAY ANYWAY</Text>
+                }
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={[ma.confirmBtn, isPast && { opacity: 0.4 }]} onPress={onConfirm} disabled={confirming || isPast}>
+                {confirming
+                  ? <ActivityIndicator size="small" color="#000" />
+                  : <Text style={ma.confirmBtnText}>CONFIRM — MARK ME AWAY</Text>
+                }
+              </TouchableOpacity>
+            )}
             <TouchableOpacity style={ma.cancelBtn} onPress={onClose}>
-              <Text style={ma.cancelBtnText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[ma.confirmBtn, isPast && { opacity: 0.5 }]} onPress={onConfirm} disabled={confirming || isPast}>
-              {confirming
-                ? <ActivityIndicator size="small" color="#000" />
-                : <Text style={ma.confirmBtnText}>Confirm Away</Text>
-              }
+              <Text style={ma.cancelBtnText}>CANCEL</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -181,22 +198,26 @@ function MarkAwayModal({ occurrence, session, cancellationWindowHours, onClose, 
 }
 
 const ma = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  sheet: { backgroundColor: '#1a1a1a', borderRadius: 16, width: '100%', overflow: 'hidden' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18, borderBottomWidth: 1, borderBottomColor: '#2a2a2a' },
-  title: { fontSize: 16, fontWeight: '800', color: '#fff' },
-  close: { fontSize: 18, color: '#666' },
-  className: { fontSize: 15, fontWeight: '700', color: '#fff', paddingHorizontal: 18, paddingTop: 16, marginBottom: 4 },
-  classMeta: { fontSize: 13, color: '#666', paddingHorizontal: 18, marginBottom: 14 },
-  infoBox: { marginHorizontal: 18, marginBottom: 18, backgroundColor: 'rgba(204,255,0,0.05)', borderWidth: 1, borderColor: 'rgba(204,255,0,0.15)', borderRadius: 10, padding: 14 },
-  infoText: { fontSize: 13, color: '#aaa', lineHeight: 20 },
-  warnBox: { marginHorizontal: 18, marginBottom: 18, backgroundColor: 'rgba(255,170,0,0.08)', borderWidth: 1, borderColor: 'rgba(255,170,0,0.25)', borderRadius: 10, padding: 14 },
-  warnText: { fontSize: 13, color: '#f59e0b', lineHeight: 20 },
-  actions: { flexDirection: 'row', gap: 10, padding: 18, paddingTop: 0 },
-  cancelBtn: { flex: 1, borderWidth: 1, borderColor: '#333', borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
-  cancelBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  confirmBtn: { flex: 1, backgroundColor: '#ccff00', borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
-  confirmBtnText: { color: '#000', fontWeight: '800', fontSize: 14 },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  sheet: { backgroundColor: '#1a1a1a', borderRadius: 20, width: '100%', overflow: 'hidden' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingBottom: 12 },
+  title: { fontSize: 18, fontWeight: '900', color: '#fff', flex: 1, marginRight: 12 },
+  closeBtn: { borderWidth: 1, borderColor: '#444', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
+  closeText: { color: '#fff', fontWeight: '700', fontSize: 12, letterSpacing: 0.5 },
+  classMeta: { fontSize: 14, color: '#888', paddingHorizontal: 20, marginBottom: 16 },
+  infoBox: { marginHorizontal: 20, marginBottom: 20, backgroundColor: 'rgba(204,255,0,0.07)', borderWidth: 1.5, borderColor: '#ccff00', borderRadius: 12, padding: 16 },
+  infoTitle: { fontSize: 15, fontWeight: '800', color: '#ccff00', marginBottom: 8 },
+  infoBody: { fontSize: 14, color: '#ccc', lineHeight: 22 },
+  warnBox: { marginHorizontal: 20, marginBottom: 20, backgroundColor: 'rgba(180,80,0,0.25)', borderWidth: 1.5, borderColor: '#f59e0b', borderRadius: 12, padding: 16 },
+  warnTitle: { fontSize: 15, fontWeight: '800', color: '#f59e0b', marginBottom: 8 },
+  warnBody: { fontSize: 14, color: '#ccc', lineHeight: 22 },
+  actions: { flexDirection: 'column', gap: 10, paddingHorizontal: 20, paddingBottom: 20 },
+  confirmBtn: { backgroundColor: '#ccff00', borderRadius: 12, paddingVertical: 16, alignItems: 'center' },
+  confirmBtnText: { color: '#000', fontWeight: '900', fontSize: 14, letterSpacing: 0.5 },
+  lateConfirmBtn: { borderWidth: 1.5, borderColor: '#555', borderRadius: 12, paddingVertical: 16, alignItems: 'center' },
+  lateConfirmText: { color: '#fff', fontWeight: '900', fontSize: 14, letterSpacing: 0.5 },
+  cancelBtn: { borderWidth: 1, borderColor: '#444', borderRadius: 12, paddingVertical: 16, alignItems: 'center' },
+  cancelBtnText: { color: '#aaa', fontWeight: '700', fontSize: 14, letterSpacing: 0.5 },
 })
 
 // ─── CancelPolicyModal ────────────────────────────────────────────────────────
@@ -1234,6 +1255,7 @@ export default function MyClassesScreen({ navigation }) {
           occurrence={markAwayModal.occurrence}
           session={markAwayModal.session}
           cancellationWindowHours={cancellationWindowHours}
+          noShowFee={settingsData?.no_show_fee}
           onClose={() => setMarkAwayModal(null)}
           onConfirm={confirmMarkAway}
           confirming={!!markingAway}
