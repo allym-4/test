@@ -147,8 +147,8 @@ function MarkAwayModal({ occurrence, session, cancellationWindowHours, onClose, 
           {isLate ? (
             <View style={ma.warnBox}>
               <Text style={ma.warnText}>
-                <Text style={{ fontWeight: '700' }}>Late cancellation: </Text>
-                This class is within the {windowHours}-hour cancellation window. A late cancel fee may apply and a makeup credit will not be issued.
+                <Text style={{ fontWeight: '700' }}>Late cancellation notice: </Text>
+                This class is within the {windowHours}-hour cancellation window. A late cancel fee may apply.
               </Text>
             </View>
           ) : isPast ? (
@@ -158,7 +158,7 @@ function MarkAwayModal({ occurrence, session, cancellationWindowHours, onClose, 
           ) : (
             <View style={ma.infoBox}>
               <Text style={ma.infoText}>
-                Marking away lets your instructor plan ahead. A makeup credit may be issued if eligible.
+                You're marking yourself as unable to attend this class. No late cancel fee applies.
               </Text>
             </View>
           )}
