@@ -303,11 +303,11 @@ function CancelPolicyModal({ enrolment, isWaitlist, onClose, onDone }) {
                     When you enrolled, we reserved a pole and planned the season around you. As a small studio, every confirmed booking directly supports our ability to keep classes running — which is why season enrolments are non-refundable once the season begins, in line with our terms and conditions.
                   </div>
                   <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.6, marginBottom: 20 }}>
-                    If your circumstances have changed, we'd love to find a solution. You can request a <strong style={{ color: 'var(--white)' }}>transfer</strong> to a different class and our team will be in touch.
+                    If your circumstances have changed, we'd love to find a solution which works for you.
                   </div>
                   <div style={{ display: 'flex', gap: 10 }}>
                     <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Close</button>
-                    <button className="btn btn-lime btn-sm" style={{ flex: 1 }} onClick={() => setStep('transfer')}>Request a Transfer →</button>
+                    <button className="btn btn-lime btn-sm" style={{ flex: 1 }} onClick={() => setStep('transfer')}>Contact Us →</button>
                   </div>
                 </>
               )}

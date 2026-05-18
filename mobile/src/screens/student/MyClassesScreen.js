@@ -323,11 +323,11 @@ function CancelPolicyModal({ enrolment, onClose }) {
               <View style={cp.policyBox}>
                 <Text style={cp.policyTitle}>Non-refundable enrolment</Text>
                 <Text style={cp.policyText}>
-                  When you enrolled, we reserved a pole and planned the season around you. As a small studio, every confirmed booking directly supports our ability to keep classes running — which is why season enrolments are non-refundable once the season begins, in line with our terms and conditions.{'\n\n'}If your circumstances have changed, we'd love to find a solution.
+                  When you enrolled, we reserved a pole and planned the season around you. As a small studio, every confirmed booking directly supports our ability to keep classes running — which is why season enrolments are non-refundable once the season begins, in line with our terms and conditions.{'\n\n'}If your circumstances have changed, we'd love to find a solution which works for you.
                 </Text>
               </View>
               <TouchableOpacity style={cp.transferBtn} onPress={() => setSubView('transfer')}>
-                <Text style={cp.transferBtnText}>REQUEST A TRANSFER</Text>
+                <Text style={cp.transferBtnText}>CONTACT US</Text>
               </TouchableOpacity>
               <TouchableOpacity style={cp.keepBtn} onPress={onClose}>
                 <Text style={cp.keepBtnText}>KEEP MY ENROLMENT</Text>
