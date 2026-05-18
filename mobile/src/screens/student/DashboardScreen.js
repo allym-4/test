@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   ScrollView, View, Text, TouchableOpacity, StyleSheet,
-  RefreshControl, Alert, Modal, ActivityIndicator,
+  RefreshControl, Alert, Modal, ActivityIndicator, TextInput,
 } from 'react-native'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
@@ -219,11 +219,20 @@ export default function DashboardScreen({ navigation }) {
   const { data: offersData, refetch: refetchOffers } = useApi(
     () => payments.cancellationOffers.mine(), []
   )
+  const { data: trialPendingData, refetch: refetchTrialFeedback } = useApi(
+    () => enrolments.trialFeedback.pending(), []
+  )
 
   const [markAwayEnrol, setMarkAwayEnrol] = useState(null)
   const [acknowledging, setAcknowledging] = useState({})
+  const [trialScreen, setTrialScreen] = useState('prompt')
+  const [trialRatings, setTrialRatings] = useState({ class: 0, instructor: 0, facilities: 0, structure: 0 })
+  const [trialReason, setTrialReason] = useState('')
+  const [trialSubmitting, setTrialSubmitting] = useState(false)
 
   const pendingOffers = offersData?.results ?? offersData ?? []
+  const pendingTrialFeedback = trialPendingData ?? []
+  const trialItem = pendingTrialFeedback[0] ?? null
 
   const allAnnouncements = annData?.results || annData || []
   const pendingAnnouncements = allAnnouncements.filter(a => !a.is_acknowledged)
@@ -453,11 +462,133 @@ export default function DashboardScreen({ navigation }) {
         />
       )}
 
-      {pendingOffers.length > 0 && (
+      {pendingOffers.length > 0 && !trialItem && (
         <CancellationOfferModal
           offers={pendingOffers}
           onResolved={refetchOffers}
         />
+      )}
+
+      {/* Post-trial feedback modal */}
+      {trialItem && (
+        <Modal transparent animationType="fade" visible>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+            <View style={{ backgroundColor: '#111', borderRadius: 16, width: '100%', maxWidth: 440, padding: 24 }}>
+
+              {trialScreen === 'prompt' && (
+                <>
+                  <Text style={{ fontSize: 36, textAlign: 'center', marginBottom: 14 }}>🎉</Text>
+                  <Text style={{ fontWeight: '800', fontSize: 20, color: '#fff', textAlign: 'center', marginBottom: 8 }}>We loved having you in class!</Text>
+                  <Text style={{ fontSize: 14, color: '#888', textAlign: 'center', lineHeight: 22, marginBottom: 22 }}>
+                    Did you love it as much as we did? Would you like to enrol in the rest of the course?
+                  </Text>
+                  <View style={{ backgroundColor: 'rgba(219,255,0,0.06)', borderWidth: 1, borderColor: 'rgba(219,255,0,0.2)', borderRadius: 10, padding: 14, marginBottom: 20 }}>
+                    <Text style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>
+                      {trialItem.season_name ? `${trialItem.season_name} · ` : ''}{trialItem.session_name}
+                      {trialItem.remaining_classes > 0 ? ` · ${trialItem.remaining_classes} classes remaining` : ''}
+                    </Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={{ fontSize: 15, color: '#fff', fontWeight: '500' }}>Enrol and lock in your spot</Text>
+                      <Text style={{ fontWeight: '800', fontSize: 20, color: '#DBFF00' }}>${trialItem.enrol_price}</Text>
+                    </View>
+                    <Text style={{ fontSize: 12, color: '#666', marginTop: 4 }}>Your trial class is credited toward the season price</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={{ backgroundColor: '#DBFF00', borderRadius: 10, padding: 16, alignItems: 'center', marginBottom: 10 }}
+                    disabled={trialSubmitting}
+                    onPress={async () => {
+                      setTrialSubmitting(true)
+                      try { await enrolments.trialFeedback.submit(trialItem.id, { enrolled: true }) } catch {}
+                      setTrialSubmitting(false)
+                      refetchTrialFeedback()
+                      navigation.navigate('Book')
+                    }}
+                  >
+                    <Text style={{ color: '#000', fontWeight: '700', fontSize: 15 }}>Yes — enrol now · ${trialItem.enrol_price}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{ borderWidth: 1, borderColor: '#333', borderRadius: 10, padding: 14, alignItems: 'center' }}
+                    onPress={() => setTrialScreen('feedback')}
+                  >
+                    <Text style={{ color: '#fff', fontSize: 15 }}>No thanks</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+
+              {trialScreen === 'feedback' && (
+                <>
+                  <Text style={{ fontWeight: '800', fontSize: 18, color: '#fff', marginBottom: 6 }}>Thanks for trying us out</Text>
+                  <Text style={{ fontSize: 14, color: '#888', marginBottom: 18, lineHeight: 20 }}>We'd love to know what you thought — takes 30 seconds.</Text>
+                  {[['class', 'Did you enjoy the class?'], ['instructor', 'Did you enjoy the instructor?'], ['facilities', 'Did you like the facilities?'], ['structure', 'Did you like the class structure?']].map(([key, label]) => (
+                    <View key={key} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                      <Text style={{ fontSize: 13, color: '#aaa', flex: 1 }}>{label}</Text>
+                      <View style={{ flexDirection: 'row', gap: 4 }}>
+                        {[1,2,3,4,5].map(n => (
+                          <TouchableOpacity key={n} onPress={() => setTrialRatings(r => ({ ...r, [key]: n }))}>
+                            <Text style={{ fontSize: 22, color: n <= (trialRatings[key] || 0) ? '#DBFF00' : '#333' }}>★</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
+                  ))}
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff', marginBottom: 6, marginTop: 4 }}>Why aren't you joining us for the season?</Text>
+                  <TextInput
+                    value={trialReason}
+                    onChangeText={setTrialReason}
+                    multiline
+                    numberOfLines={3}
+                    placeholder="e.g. timing doesn't work, trying another class first, budget..."
+                    placeholderTextColor="#555"
+                    style={{ backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333', borderRadius: 8, padding: 12, color: '#fff', fontSize: 14, marginBottom: 14, minHeight: 72 }}
+                  />
+                  <TouchableOpacity
+                    style={{ backgroundColor: '#DBFF00', borderRadius: 10, padding: 14, alignItems: 'center' }}
+                    disabled={trialSubmitting}
+                    onPress={async () => {
+                      const allRated = Object.values(trialRatings).every(v => v > 0)
+                      if (!allRated || trialReason.trim().length < 5) {
+                        Alert.alert('Missing info', 'Please rate each category and share a few words.')
+                        return
+                      }
+                      setTrialSubmitting(true)
+                      try {
+                        await enrolments.trialFeedback.submit(trialItem.id, {
+                          enrolled: false,
+                          class_rating: trialRatings.class,
+                          instructor_rating: trialRatings.instructor,
+                          facilities_rating: trialRatings.facilities,
+                          structure_rating: trialRatings.structure,
+                          reason: trialReason,
+                        })
+                        setTrialScreen('thanks')
+                      } catch { Alert.alert('Error', 'Could not submit feedback. Please try again.') }
+                      setTrialSubmitting(false)
+                    }}
+                  >
+                    <Text style={{ color: '#000', fontWeight: '700' }}>{trialSubmitting ? 'Submitting…' : 'Submit feedback'}</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+
+              {trialScreen === 'thanks' && (
+                <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+                  <Text style={{ fontSize: 42, marginBottom: 14 }}>💜</Text>
+                  <Text style={{ fontWeight: '800', fontSize: 20, color: '#fff', marginBottom: 10 }}>Thank you!</Text>
+                  <Text style={{ fontSize: 14, color: '#888', textAlign: 'center', lineHeight: 22, marginBottom: 24 }}>
+                    Your feedback means a lot. We hope to see you again — drop in for a casual class any time, or keep an eye out when the next season opens.
+                  </Text>
+                  <TouchableOpacity
+                    style={{ borderWidth: 1, borderColor: '#333', borderRadius: 10, paddingVertical: 14, paddingHorizontal: 28 }}
+                    onPress={() => refetchTrialFeedback()}
+                  >
+                    <Text style={{ color: '#fff', fontSize: 15 }}>Go to my dashboard</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+            </View>
+          </View>
+        </Modal>
       )}
     </ScrollView>
   )

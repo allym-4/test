@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { enrolments, seasons, attendance as attendanceApi, classes as classesApi, skills as skillsApi, announcements as announcementsApi, payments } from '../../api'
 import CancellationOfferPopup from '../../components/CancellationOfferPopup'
+import PostTrialPopup from '../../components/PostTrialPopup'
 
 import { Link } from 'react-router-dom'
 
@@ -100,6 +101,7 @@ export default function StudentDashboard() {
   const { data: creditsData } = useApi(() => attendanceApi.makeupCredits.list({ student: user?.id, status: 'available' }), [user?.id])
   const { data: annData, refetch: refetchAnn } = useApi(() => announcementsApi.list({ note_type: 'announcement' }), [])
   const { data: offersData, refetch: refetchOffers } = useApi(() => payments.cancellationOffers.mine(), [])
+  const { data: trialPendingData, refetch: refetchTrialFeedback } = useApi(() => enrolments.trialFeedback.pending(), [])
 
   const [markAwayEnrol, setMarkAwayEnrol] = useState(null)
   const [acknowledging, setAcknowledging] = useState({})
@@ -143,10 +145,17 @@ export default function StudentDashboard() {
 
   const hasEnrolments = enrolments_.length > 0
   const pendingOffers = offersData?.results || offersData || []
+  const pendingTrialFeedback = trialPendingData || []
 
   return (
     <div>
-      {pendingOffers.length > 0 && (
+      {pendingTrialFeedback.length > 0 && (
+        <PostTrialPopup
+          pending={pendingTrialFeedback}
+          onDone={() => refetchTrialFeedback()}
+        />
+      )}
+      {pendingOffers.length > 0 && pendingTrialFeedback.length === 0 && (
         <CancellationOfferPopup
           offers={pendingOffers}
           onResolved={() => refetchOffers()}

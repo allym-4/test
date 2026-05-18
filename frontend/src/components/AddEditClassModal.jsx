@@ -13,6 +13,7 @@ export default function AddEditClassModal({ session, onClose, onSaved }) {
     studio: session?.studio || '',
     category: session?.category || '',
     season: session?.season || '',
+    catchup_cutoff_weeks: session?.catchup_cutoff_weeks ?? '',
     day_of_week: session?.day_of_week ?? 0,
     start_time: session?.start_time?.slice(0, 5) || '18:00',
     duration_minutes: session?.duration_minutes || 90,
@@ -51,7 +52,11 @@ export default function AddEditClassModal({ session, onClose, onSaved }) {
     setLoading(true)
     setError(null)
     try {
-      const payload = { ...form, start_time: form.start_time + ':00' }
+      const payload = {
+        ...form,
+        start_time: form.start_time + ':00',
+        catchup_cutoff_weeks: form.catchup_cutoff_weeks === '' ? null : form.catchup_cutoff_weeks,
+      }
       const res = isEdit
         ? await client.patch(`/api/classes/sessions/${session.id}/`, payload)
         : await client.post('/api/classes/sessions/', payload)
@@ -142,12 +147,22 @@ export default function AddEditClassModal({ session, onClose, onSaved }) {
                 <option value="casual">Casual / Drop-in</option>
               </select>
             </div>
-            <div className="field" style={{ paddingTop: 22 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-                <input type="checkbox" checked={form.is_active} onChange={e => set('is_active', e.target.checked)} />
-                Active
-              </label>
+            <div className="field">
+              <label>No catch-ups after week <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(optional)</span></label>
+              <input
+                type="number"
+                value={form.catchup_cutoff_weeks}
+                onChange={e => set('catchup_cutoff_weeks', e.target.value === '' ? '' : parseInt(e.target.value))}
+                placeholder="e.g. 3"
+                min={1} max={52}
+              />
             </div>
+          </div>
+          <div className="field" style={{ marginTop: 4 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+              <input type="checkbox" checked={form.is_active} onChange={e => set('is_active', e.target.checked)} />
+              Active
+            </label>
           </div>
 
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>

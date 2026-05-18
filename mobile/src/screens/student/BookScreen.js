@@ -860,7 +860,7 @@ export default function BookScreen({ navigation }) {
   // Week-of-season for routine cutoff
   const seasonStartDate = activeSeason?.start_date ? new Date(activeSeason.start_date + 'T00:00') : null
   const currentSeasonWeek = seasonStartDate ? Math.ceil((new Date() - seasonStartDate) / (7 * 86400000)) : 0
-  const isPastWeek3 = currentSeasonWeek > 3
+  const isPastWeek3 = currentSeasonWeek > 3 // legacy alias kept for safety
 
   // Casual tab: sessions from active season + upcoming if it starts within 7 days
   const nextSeason = allSeasons.find(s => s.status === 'upcoming')
@@ -1126,7 +1126,19 @@ export default function BookScreen({ navigation }) {
         {/* ══════════════════════════════════════════════════════════════════
             BOOK A SEASON
         ══════════════════════════════════════════════════════════════════ */}
-        {tab === 'season' && (
+        {tab === 'season' && bookingSeason && bookingSeason.bookings_open === false && (
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, marginTop: 40 }}>
+            <Text style={{ fontSize: 44, marginBottom: 16 }}>🔒</Text>
+            <Text style={{ fontFamily: 'Archivo Black', fontSize: 20, color: '#fff', marginBottom: 10, textAlign: 'center' }}>
+              {bookingSeason.name}
+            </Text>
+            <Text style={{ fontSize: 14, color: '#888', textAlign: 'center', lineHeight: 22 }}>
+              Enrolments for this season aren't open yet.{'\n'}Check back soon or contact the studio.
+            </Text>
+          </View>
+        )}
+
+        {tab === 'season' && !(bookingSeason && bookingSeason.bookings_open === false) && (
           <>
             <View style={s.seasonInfoCard}>
               <View style={s.limeAccentBar} />
@@ -1283,7 +1295,9 @@ export default function BookScreen({ navigation }) {
 
                 // Eligibility checks
                 const levelOk = !levelFilter || !sess.level || String(sess.level) === String(levelFilter)
-                const routineBlocked = !isUpcomingSess && isPastWeek3 && sess.session_type === 'course'
+                const sessWeekCutoff = sess.catchup_cutoff_weeks ?? null
+                const catchupBlocked = !isUpcomingSess && sessWeekCutoff != null && currentSeasonWeek > sessWeekCutoff
+                const routineBlocked = !isUpcomingSess && catchupBlocked && sess.session_type === 'course'
                 const isGrayed = !levelOk || routineBlocked
 
                 const isBooked = booked[sess.id + '-casual'] || booked[sess.id + '-catchup'] || enrolledSessionIds.has(sess.id)
@@ -1292,7 +1306,7 @@ export default function BookScreen({ navigation }) {
                 if (showEligibleOnly && isGrayed) return null
 
                 let greyReason = null
-                if (routineBlocked) greyReason = `Week ${currentSeasonWeek} of season — routine classes closed to new drop-ins`
+                if (routineBlocked) greyReason = `Catch-ups closed after week ${sessWeekCutoff} (now week ${currentSeasonWeek})`
                 else if (!levelOk) greyReason = `This class is outside your current level`
 
                 return (

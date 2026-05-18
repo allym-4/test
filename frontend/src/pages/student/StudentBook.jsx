@@ -574,34 +574,46 @@ export default function StudentBook() {
 
       {tab === 'season' && (
         <div>
-          <div style={{ background: 'rgba(176,160,255,0.08)', border: '1px solid rgba(176,160,255,0.25)', borderRadius: 12, padding: '16px 18px', marginBottom: 20 }}>
-            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>
-              {upcomingSeason ? upcomingSeason.name : 'Next Season'}
-              {upcomingSeason?.enrolment_open_date ? ` — Opens ${new Date(upcomingSeason.enrolment_open_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}
+          {upcomingSeason && !upcomingSeason.bookings_open ? (
+            <div style={{ background: 'rgba(255,68,68,0.07)', border: '1px solid rgba(255,68,68,0.2)', borderRadius: 12, padding: '20px 20px', marginBottom: 20, textAlign: 'center' }}>
+              <div style={{ fontSize: 22, marginBottom: 10 }}>🔒</div>
+              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{upcomingSeason.name} — Bookings not open yet</div>
+              <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
+                Enrolments for this season haven't opened yet. Keep an eye on your email — we'll let you know the moment they do!
+                {upcomingSeason?.start_date && upcomingSeason?.end_date
+                  ? ` The season runs ${new Date(upcomingSeason.start_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} – ${new Date(upcomingSeason.end_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}.`
+                  : ''}
+              </div>
             </div>
+          ) : (
+          <div style={{ background: 'rgba(176,160,255,0.08)', border: '1px solid rgba(176,160,255,0.25)', borderRadius: 12, padding: '16px 18px', marginBottom: 20 }}>
+            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{upcomingSeason ? upcomingSeason.name : 'Next Season'}</div>
             <div style={{ fontSize: 12, color: 'var(--grey)', lineHeight: 1.6 }}>
               Season enrolment gives you a reserved spot in your class for the full term.
               {upcomingSeason?.start_date && upcomingSeason?.end_date
                 ? ` ${upcomingSeason.name} runs ${new Date(upcomingSeason.start_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} – ${new Date(upcomingSeason.end_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}.`
                 : ''}
-              {upcomingSeason?.enrolment_open_date ? ` Enrolments open ${new Date(upcomingSeason.enrolment_open_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'long' })}. Stay tuned for your reminder email!` : ''}
             </div>
           </div>
+          )}
 
-          <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 14, fontWeight: 600 }}>
-            Current Season Classes
-          </div>
-
-          {loading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-              {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-              {sessions.length === 0 ? <EmptyState /> : sessions.map(s => (
-                <ClassCard key={s.id} session={s} onAddToCart={(s, type) => addToCart(s, type || 'season', seasonPrice)} priceCasual={seasonPrice} cartSessionId={cartSessionId} isWaitlisted={booked.includes(s.id + '-waitlist')} waitlistType="waitlist" />
-              ))}
-            </div>
+          {(!upcomingSeason || upcomingSeason.bookings_open) && (
+            <>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 14, fontWeight: 600 }}>
+                Current Season Classes
+              </div>
+              {loading ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+                  {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+                  {sessions.length === 0 ? <EmptyState /> : sessions.map(s => (
+                    <ClassCard key={s.id} session={s} onAddToCart={(s, type) => addToCart(s, type || 'season', seasonPrice)} priceCasual={seasonPrice} cartSessionId={cartSessionId} isWaitlisted={booked.includes(s.id + '-waitlist')} waitlistType="waitlist" />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
@@ -735,9 +747,23 @@ export default function StudentBook() {
               </div>
             ) : sessions.length === 0 ? <EmptyState /> : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {sessions.map(s => (
-                  <OccurrenceBookingPanel key={s.id} session={s} enrolmentType="catchup" availableCredits={availableCredits} onCreditUsed={refetchCredits} />
-                ))}
+                {sessions.map(s => {
+                  const seasonStart = s.season_start_date ? new Date(s.season_start_date + 'T00:00:00') : null
+                  const weekNum = seasonStart ? Math.floor((new Date() - seasonStart) / (7 * 86400000)) + 1 : null
+                  const cutoffPassed = s.catchup_cutoff_weeks != null && weekNum != null && weekNum > s.catchup_cutoff_weeks
+                  if (cutoffPassed) {
+                    return (
+                      <div key={s.id} style={{ background: '#111', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.5 }}>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 13 }}>{s.name}</div>
+                          <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>Catch-ups closed after week {s.catchup_cutoff_weeks}</div>
+                        </div>
+                        <span style={{ fontSize: 11, color: 'var(--red)' }}>Closed</span>
+                      </div>
+                    )
+                  }
+                  return <OccurrenceBookingPanel key={s.id} session={s} enrolmentType="catchup" availableCredits={availableCredits} onCreditUsed={refetchCredits} />
+                })}
               </div>
             )
           )}

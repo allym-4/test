@@ -119,6 +119,19 @@ class SeasonDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAdminOrInstructor]
 
 
+class SeasonToggleBookingsView(APIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        try:
+            season = Season.objects.get(pk=pk)
+        except Season.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        season.bookings_open = not season.bookings_open
+        season.save(update_fields=['bookings_open'])
+        return Response({'bookings_open': season.bookings_open})
+
+
 class LockerListView(generics.ListCreateAPIView):
     serializer_class = LockerSerializer
     permission_classes = [IsAdminOrInstructor]
