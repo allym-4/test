@@ -603,15 +603,6 @@ export default function BillingScreen() {
         )}
       </View>
 
-      {/* Refund / credit request */}
-      <TouchableOpacity
-        style={s.refundBtn}
-        onPress={handleRefundRequest}
-        activeOpacity={0.7}
-      >
-        <Text style={s.refundBtnText}>Request refund / credit</Text>
-      </TouchableOpacity>
-
       <View style={s.bottomSpacer} />
 
       {/* Invoice modal */}

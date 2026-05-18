@@ -1005,7 +1005,7 @@ export default function MyClassesScreen({ navigation }) {
       const dayNum = sess?.day_of_week // 0=Mon..6=Sun
       const byday = dayNum != null ? DAYS[dayNum] : null
       const now = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z'
-      lines.push(
+      lines.push(...[
         'BEGIN:VEVENT',
         `UID:${enr.id}@dualitypolestudio`,
         `DTSTAMP:${now}`,
@@ -1015,7 +1015,7 @@ export default function MyClassesScreen({ navigation }) {
         `DTSTART;TZID=Australia/Sydney:20250101T${startTime}00`,
         `DTEND;TZID=Australia/Sydney:20250101T${endTime}00`,
         'END:VEVENT',
-      ).filter(Boolean)
+      ].filter(Boolean))
     })
     lines.push('END:VCALENDAR')
     const ics = lines.join('\r\n')
@@ -1083,7 +1083,7 @@ export default function MyClassesScreen({ navigation }) {
           {activeEnrolments.length > 0 && (
             <View style={s.pricingStrip}>
               <Text style={s.pricingText}>
-                {activeEnrolments.length} class{activeEnrolments.length !== 1 ? 'es' : ''} · Active season
+                Current enrolment
               </Text>
               {activeEnrolments.length === 1 && (
                 <Text style={s.pricingHint}>Add a 2nd class for a better rate</Text>
