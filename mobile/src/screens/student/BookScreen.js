@@ -1624,7 +1624,7 @@ export default function BookScreen({ navigation }) {
                       </Text>
                       {isOutOfLevel && (
                         <Text style={{ fontSize: 11, color: '#f59e0b', marginTop: 4, fontWeight: '600' }}>
-                          ⚠ Outside your current level — tap to request
+                          🔒 Outside your current level — tap to request
                         </Text>
                       )}
                       {!isOutOfLevel && spotsLeft > 0 && spotsLeft <= 2 && (
@@ -1637,7 +1637,7 @@ export default function BookScreen({ navigation }) {
                     ) : booked[session.id + '-waitlist'] ? (
                       <Text style={s.bookedBadge}>⏳ Waitlisted</Text>
                     ) : isOutOfLevel ? (
-                      <Text style={{ fontSize: 18, color: '#f59e0b' }}>⚠</Text>
+                      <Text style={{ fontSize: 18 }}>🔒</Text>
                     ) : isFull ? (
                       <TouchableOpacity
                         style={s.waitlistBtn}
