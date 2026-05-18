@@ -202,7 +202,7 @@ function StickyCart({ cart, priceCasual, onProceed, onClear, promoCode, promoDis
   )
 }
 
-function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, availableCredits, onCreditUsed }) {
+function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, availableCredits, onCreditUsed, seasonName, seasonPrice, alreadyEnrolled, onEnrolInSeason }) {
   const [open, setOpen] = useState(false)
   const [occurrences, setOccurrences] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -282,6 +282,19 @@ function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, available
 
       {open && (
         <div style={{ borderTop: '1px solid var(--border)', padding: '12px 18px 16px' }}>
+          {!alreadyEnrolled && onEnrolInSeason && seasonName && (
+            <div style={{ background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 10, padding: '13px 16px', marginBottom: 14 }}>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }} onClick={onEnrolInSeason}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 500 }}>Enrol in the full {seasonName} course instead</div>
+                  <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 3, lineHeight: 1.5 }}>
+                    Commit to the full season · {seasonPrice ? `$${seasonPrice} total` : 'season pricing'}
+                  </div>
+                </div>
+                <span style={{ marginLeft: 'auto', flexShrink: 0, fontSize: 12, color: 'var(--lime)', fontWeight: 600, whiteSpace: 'nowrap' }}>Season tab →</span>
+              </label>
+            </div>
+          )}
           {error && <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 10 }}>{error}</div>}
           {loading ? (
             <div style={{ fontSize: 13, color: 'var(--grey)', padding: '8px 0' }}>Loading dates…</div>
@@ -631,9 +644,23 @@ export default function StudentBook() {
             </div>
           ) : sessions.length === 0 ? <EmptyState /> : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {sessions.map(s => (
-                <OccurrenceBookingPanel key={s.id} session={s} enrolmentType="casual" priceCasual={priceCasual} />
-              ))}
+              {sessions.map(s => {
+                const alreadyEnrolled = (activeEnrolData?.results || activeEnrolData || []).some(
+                  e => e.class_session === s.id && e.enrolment_type === 'course'
+                )
+                return (
+                  <OccurrenceBookingPanel
+                    key={s.id}
+                    session={s}
+                    enrolmentType="casual"
+                    priceCasual={priceCasual}
+                    seasonName={upcomingSeason?.name}
+                    seasonPrice={seasonPrice}
+                    alreadyEnrolled={alreadyEnrolled}
+                    onEnrolInSeason={() => setTab('season')}
+                  />
+                )
+              })}
             </div>
           )}
         </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { enrolments, seasons, attendance as attendanceApi, classes as classesApi, skills as skillsApi, announcements as announcementsApi, payments } from '../../api'
@@ -33,12 +33,17 @@ function MarkAwayModal({ enrolment, onClose, onDone }) {
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
 
-  // Load upcoming occurrence for this session
   const { data: occData } = useApi(
     () => s?.id ? classesApi.occurrences({ session: s.id, upcoming: 'true' }) : null,
     [s?.id]
   )
   const nextOcc = occData?.results?.[0] || occData?.[0] || null
+
+  const withinCutoff = useMemo(() => {
+    if (!nextOcc?.date || !s?.start_time) return false
+    const classDateTime = new Date(`${nextOcc.date}T${s.start_time}`)
+    return (classDateTime - new Date()) < 4 * 60 * 60 * 1000
+  }, [nextOcc, s])
 
   async function handleConfirm() {
     if (!nextOcc) { setError('No upcoming class found'); return }
@@ -55,6 +60,10 @@ function MarkAwayModal({ enrolment, onClose, onDone }) {
     }
   }
 
+  const nextDateLabel = nextOcc?.date
+    ? new Date(nextOcc.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
+    : null
+
   return (
     <div
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
@@ -67,15 +76,30 @@ function MarkAwayModal({ enrolment, onClose, onDone }) {
         </div>
         <div style={{ padding: '18px 20px' }}>
           <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>{s?.name}</div>
-          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 4 }}>{DAYS_FULL[s?.day_of_week]} · {s?.start_time?.slice(0, 5)}</div>
-          {nextOcc?.date && (
-            <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16 }}>
-              Next class: {new Date(nextOcc.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: nextDateLabel ? 4 : 16 }}>
+            {DAYS_FULL[s?.day_of_week]} · {s?.start_time?.slice(0, 5)}
+          </div>
+          {nextDateLabel && (
+            <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16 }}>{nextDateLabel}</div>
+          )}
+
+          {!withinCutoff ? (
+            <div style={{ background: '#0f1600', border: '1px solid var(--lime)', borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: 'var(--lime)', marginBottom: 6 }}>You'll receive a catch-up credit</div>
+              <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
+                This is more than 4 hours before your class — you're within the cancellation window. A catch-up credit will be added to your account to use within this season.
+              </div>
+            </div>
+          ) : (
+            <div style={{ background: '#1a0900', border: '1px solid #ffaa44', borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: '#ffaa44', marginBottom: 6 }}>No catch-up credit for this one</div>
+              <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
+                This is within 4 hours of your class — the cancellation window has passed. You can still mark away so we know you're not coming, but no credit will be issued.{' '}
+                If you don't mark away and don't attend, a <strong style={{ color: '#ffaa44' }}>$20 no-show fee</strong> will be charged.
+              </div>
             </div>
           )}
-          <div style={{ background: 'rgba(204,255,0,0.05)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
-            Marking away lets your instructor plan ahead. A makeup credit may be issued if eligible.
-          </div>
+
           {error && <div style={{ color: 'var(--red)', fontSize: 12, marginBottom: 12 }}>{error}</div>}
           {done ? (
             <div style={{ textAlign: 'center', color: 'var(--lime)', fontWeight: 600, padding: '8px 0' }}>✓ Marked as away</div>
@@ -83,7 +107,7 @@ function MarkAwayModal({ enrolment, onClose, onDone }) {
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
               <button className="btn btn-lime btn-sm" style={{ flex: 1 }} onClick={handleConfirm} disabled={confirming || !nextOcc}>
-                {confirming ? 'Saving…' : 'Confirm Away'}
+                {confirming ? 'Saving…' : withinCutoff ? 'Mark away anyway' : 'Confirm — mark me away'}
               </button>
             </div>
           )}
