@@ -20,6 +20,7 @@ class User(AbstractUser):
     stripe_customer_id = models.CharField(max_length=100, blank=True)
     default_payment_method_id = models.CharField(max_length=100, blank=True)
     auto_charge_saved_card = models.BooleanField(default=False)
+    booking_blocked = models.BooleanField(default=False)
 
     pay_rate = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text='Per-class pay rate for instructors')
 
@@ -128,6 +129,8 @@ class StudioSettings(models.Model):
     price_casual = models.DecimalField(max_digits=8, decimal_places=2, default=40)
     price_season = models.DecimalField(max_digits=8, decimal_places=2, default=270)
     price_trial = models.DecimalField(max_digits=8, decimal_places=2, default=35)
+    price_class_pass = models.DecimalField(max_digits=8, decimal_places=2, default=120)
+    class_pass_size = models.PositiveIntegerField(default=4)
     season_pricing_config = models.JSONField(default=list, blank=True)
     form_health_enabled = models.BooleanField(default=True)
     form_photo_consent_enabled = models.BooleanField(default=True)
