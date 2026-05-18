@@ -453,6 +453,97 @@ function ClassWaitlistLeaveModal({ enrolment, onClose, onDone }) {
   )
 }
 
+function DisplacementPopupModal({ booking, onClose, onAction }) {
+  const [actioning, setActioning] = useState(null)
+  const [messageSent, setMessageSent] = useState(false)
+  const [error, setError] = useState('')
+
+  const d = booking.occurrence_detail
+  const dateLabel = d?.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' }) : '—'
+  const expiresAt = booking.displacement_expires_at ? new Date(booking.displacement_expires_at) : null
+  const hoursLeft = expiresAt ? Math.max(0, Math.round((expiresAt - new Date()) / 3600000)) : null
+
+  async function upgrade() {
+    setActioning('upgrade')
+    setError('')
+    try {
+      await classesApi.casual.upgrade(booking.id)
+      onAction()
+    } catch (e) {
+      setError(e.response?.data?.detail || 'Could not upgrade — please try again.')
+    } finally { setActioning(null) }
+  }
+
+  async function release() {
+    setActioning('release')
+    setError('')
+    try {
+      await classesApi.casual.release(booking.id)
+      onAction()
+    } catch (e) {
+      setError(e.response?.data?.detail || 'Could not release — please try again.')
+    } finally { setActioning(null) }
+  }
+
+  async function messageDuality() {
+    setActioning('message')
+    try {
+      await helpdeskApi.submitTicket({
+        subject: `Displacement Offer Question — ${d?.session_name || 'Class'}`,
+        body: `Student has a question about their casual spot displacement offer for ${d?.session_name || 'class'} on ${d?.date || 'upcoming date'}.`,
+      })
+      setMessageSent(true)
+    } catch { } finally { setActioning(null) }
+  }
+
+  const busy = !!actioning
+
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <div style={{ background: 'var(--card)', border: '2px solid rgba(255,170,0,0.4)', borderRadius: 18, maxWidth: 460, width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: '#f59e0b' }}>Action Required</div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 18 }}>✕</button>
+        </div>
+        <div style={{ padding: '20px 20px 22px' }}>
+          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 3 }}>{d?.session_name}</div>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 16 }}>
+            {[dateLabel, d?.start_time ? d.start_time.slice(0, 5) : null, d?.studio_name].filter(Boolean).join(' · ')}
+          </div>
+
+          <div style={{ background: 'rgba(255,170,0,0.07)', border: '1px solid rgba(255,170,0,0.2)', borderRadius: 12, padding: '14px 16px', marginBottom: 18, fontSize: 13, color: 'var(--grey)', lineHeight: 1.7 }}>
+            A student wants to enrol for the full season of {d?.session_name || 'this class'}.
+            Upgrade your casual booking to a full season enrolment
+            {hoursLeft !== null ? <strong style={{ color: 'var(--white)' }}> within {hoursLeft} hour{hoursLeft !== 1 ? 's' : ''}</strong> : ''}, or your spot will be released and your account credited with the amount paid.
+            Have questions? Message us below.
+          </div>
+
+          {error && <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 10 }}>{error}</div>}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <button className="btn btn-lime btn-sm" onClick={upgrade} disabled={busy} style={{ fontWeight: 700, fontSize: 14 }}>
+              {actioning === 'upgrade' ? '…' : 'Upgrade to Full Season'}
+            </button>
+            <button className="btn btn-ghost btn-sm" onClick={release} disabled={busy} style={{ color: 'var(--red)', fontSize: 13 }}>
+              {actioning === 'release' ? '…' : 'Release Spot'}
+            </button>
+            {messageSent ? (
+              <div style={{ fontSize: 12, color: 'var(--lime)', textAlign: 'center', paddingTop: 4 }}>Message sent — we'll be in touch!</div>
+            ) : (
+              <button className="btn btn-ghost btn-sm" onClick={messageDuality} disabled={busy} style={{ fontSize: 13 }}>
+                {actioning === 'message' ? '…' : 'Message Duality'}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function PendingDisplacementBanner({ enrolment }) {
   const s = enrolment.class_session_detail
   const expiresAt = enrolment.displacement_expires_at ? new Date(enrolment.displacement_expires_at) : null
@@ -688,6 +779,14 @@ export default function StudentMyClasses() {
   const [activeSubTab, setActiveSubTab] = useState('enrolled')
   const [cancelPolicyEnrol, setCancelPolicyEnrol] = useState(null)
   const [classWaitlistLeaveEnrol, setClassWaitlistLeaveEnrol] = useState(null)
+  const [displacementPopup, setDisplacementPopup] = useState(null)
+
+  // Auto-show popup when a displacement offer is waiting
+  useEffect(() => {
+    const items = casualBookingsData?.results || casualBookingsData || []
+    const displaced = items.find(b => b.status === 'confirmed' && b.displacement_offered_at)
+    if (displaced) setDisplacementPopup(displaced)
+  }, [casualBookingsData])
 
   const enrolments_ = enrolData?.results || enrolData || []
   const attHistory = attData?.results || attData || []
@@ -1004,6 +1103,18 @@ export default function StudentMyClasses() {
           onClose={() => setClassWaitlistLeaveEnrol(null)}
           onDone={() => {
             setClassWaitlistLeaveEnrol(null)
+            refetchEnrol()
+          }}
+        />
+      )}
+
+      {displacementPopup && (
+        <DisplacementPopupModal
+          booking={displacementPopup}
+          onClose={() => setDisplacementPopup(null)}
+          onAction={() => {
+            setDisplacementPopup(null)
+            refetchCasual()
             refetchEnrol()
           }}
         />
