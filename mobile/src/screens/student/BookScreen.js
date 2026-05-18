@@ -1616,10 +1616,10 @@ export default function BookScreen({ navigation }) {
       {/* ── Season sticky proceed bar ────────────────────────────────────── */}
       {tab === 'season' && selectedSessions.length > 0 && (
         <View style={s.proceedBar}>
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, marginRight: 12 }}>
             <Text style={s.proceedCount}>
               {selectedSessions.length} class{selectedSessions.length !== 1 ? 'es' : ''} selected
-              {activeSeasonCount > 0 ? ` · upgrading from ${activeSeasonCount}` : ''}
+              {activeSeasonCount > 0 ? ` · adding to ${activeSeasonCount}-class package` : ''}
             </Text>
             <Text style={s.proceedPrice}>${totalSeasonPrice}</Text>
           </View>
@@ -1987,7 +1987,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 20, paddingVertical: 14,
     paddingBottom: 28,
   },
-  proceedCount: { fontSize: 13, color: T.muted, fontWeight: '600' },
+  proceedCount: { fontSize: 13, color: T.muted, fontWeight: '600', flexShrink: 1 },
   proceedPrice: { fontSize: 22, fontWeight: '900', color: T.lime },
   proceedBtn: { backgroundColor: T.lime, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 14 },
   proceedBtnText: { color: '#000', fontWeight: '800', fontSize: 15 },
