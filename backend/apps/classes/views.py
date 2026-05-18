@@ -780,3 +780,157 @@ class MyCasualBookingsView(generics.ListAPIView):
         ).exclude(status='cancelled').select_related(
             'occurrence__session__studio'
         ).order_by('occurrence__date')
+
+
+class CasualUpgradeView(APIView):
+    """Student upgrades their casual booking to a full season enrolment."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            casual = CasualBooking.objects.select_related(
+                'occurrence__session', 'student'
+            ).get(pk=pk, student=request.user, displacement_offered_at__isnull=False)
+        except CasualBooking.DoesNotExist:
+            return Response({'detail': 'Casual booking not found or no upgrade offer active.'}, status=status.HTTP_404_NOT_FOUND)
+
+        from django.utils import timezone
+        if timezone.now() > casual.displacement_expires_at:
+            return Response({'detail': 'This upgrade offer has expired.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        from apps.enrolments.models import Enrolment
+        from apps.users.models import Notification
+
+        session = casual.occurrence.session
+
+        # Create a full season enrolment for the casual student
+        Enrolment.objects.get_or_create(
+            student=casual.student,
+            class_session=session,
+            defaults={'enrolment_type': 'course', 'status': 'active'},
+        )
+
+        # Cancel the casual booking and clear displacement fields
+        casual.status = 'cancelled'
+        casual.displacement_offered_at = None
+        casual.displacement_expires_at = None
+        casual.save(update_fields=['status', 'displacement_offered_at', 'displacement_expires_at'])
+
+        # Find the pending enrolment and waitlist them
+        pending_enrolment = casual.pending_enrolments.filter(status='pending_displacement').first()
+        if pending_enrolment:
+            pending_enrolment.status = 'waitlisted'
+            pending_enrolment.displacement_casual_booking = None
+            pending_enrolment.displacement_expires_at = None
+            pending_enrolment.save(update_fields=['status', 'displacement_casual_booking', 'displacement_expires_at'])
+            Notification.objects.create(
+                recipient=pending_enrolment.student,
+                title=f'Update on {session.name}',
+                body=(
+                    f"The casual student chose to upgrade to the full season, so they've kept the spot. "
+                    f"You've been added to the season waitlist and will be first in line if a spot opens."
+                ),
+                notification_type='info',
+            )
+
+        return Response({'detail': 'Upgrade successful. You are now enrolled for the full season.'}, status=status.HTTP_200_OK)
+
+
+class CasualReleaseView(APIView):
+    """Student releases their casual booking, giving the spot to the pending season enrolment."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            casual = CasualBooking.objects.select_related(
+                'occurrence__session', 'student'
+            ).get(pk=pk, student=request.user)
+        except CasualBooking.DoesNotExist:
+            return Response({'detail': 'Casual booking not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        from apps.enrolments.models import Enrolment
+        from apps.users.models import Notification
+
+        session = casual.occurrence.session
+
+        casual.status = 'cancelled'
+        casual.save(update_fields=['status'])
+
+        # Confirm the pending enrolment
+        pending_enrolment = casual.pending_enrolments.filter(status='pending_displacement').first()
+        if pending_enrolment:
+            pending_enrolment.status = 'active'
+            pending_enrolment.displacement_casual_booking = None
+            pending_enrolment.displacement_expires_at = None
+            pending_enrolment.save(update_fields=['status', 'displacement_casual_booking', 'displacement_expires_at'])
+            Notification.objects.create(
+                recipient=pending_enrolment.student,
+                title=f"You're in! — {session.name}",
+                body=f'The casual student released their spot. You\'re confirmed for the full season in {session.name}!',
+                notification_type='success',
+                action_label='View My Classes',
+                action_url='/portal/my-classes',
+            )
+
+        # Notify the casual student of credit
+        Notification.objects.create(
+            recipient=casual.student,
+            title=f'Spot released — {session.name}',
+            body=(
+                f'Your casual booking for {session.name} has been released. '
+                f'Your account has been credited ${casual.price_charged}.'
+            ),
+            notification_type='info',
+        )
+
+        return Response({'detail': 'Spot released successfully.'}, status=status.HTTP_200_OK)
+
+
+class CasualAdminDisplaceView(APIView):
+    """Admin force-displaces a casual booking."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        try:
+            casual = CasualBooking.objects.select_related(
+                'occurrence__session', 'student'
+            ).get(pk=pk)
+        except CasualBooking.DoesNotExist:
+            return Response({'detail': 'Casual booking not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        from apps.enrolments.models import Enrolment
+        from apps.users.models import Notification
+
+        session = casual.occurrence.session
+
+        casual.status = 'cancelled'
+        casual.save(update_fields=['status'])
+
+        # Confirm the pending enrolment
+        pending_enrolment = casual.pending_enrolments.filter(status='pending_displacement').first()
+        if pending_enrolment:
+            pending_enrolment.status = 'active'
+            pending_enrolment.displacement_casual_booking = None
+            pending_enrolment.displacement_expires_at = None
+            pending_enrolment.save(update_fields=['status', 'displacement_casual_booking', 'displacement_expires_at'])
+            Notification.objects.create(
+                recipient=pending_enrolment.student,
+                title=f"You're in! — {session.name}",
+                body=f'Your spot in {session.name} has been confirmed for the full season!',
+                notification_type='success',
+                action_label='View My Classes',
+                action_url='/portal/my-classes',
+            )
+
+        # Notify the casual student of credit
+        Notification.objects.create(
+            recipient=casual.student,
+            title=f'Spot released — {session.name}',
+            body=(
+                f'Your casual booking for {session.name} has been released by an admin. '
+                f'Your account has been credited ${casual.price_charged}.'
+            ),
+            notification_type='info',
+        )
+
+        return Response({'detail': 'Casual booking force-displaced.'}, status=status.HTTP_200_OK)

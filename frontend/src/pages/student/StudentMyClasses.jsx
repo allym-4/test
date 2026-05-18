@@ -453,8 +453,27 @@ function ClassWaitlistLeaveModal({ enrolment, onClose, onDone }) {
   )
 }
 
+function PendingDisplacementBanner({ enrolment }) {
+  const s = enrolment.class_session_detail
+  const expiresAt = enrolment.displacement_expires_at ? new Date(enrolment.displacement_expires_at) : null
+  const now = new Date()
+  const hoursLeft = expiresAt ? Math.max(0, Math.round((expiresAt - now) / 3600000)) : null
+  return (
+    <div style={{ background: 'rgba(255,170,0,0.06)', border: '2px solid rgba(255,170,0,0.25)', borderRadius: 14, padding: '16px 18px', marginBottom: 14 }}>
+      <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 13, color: '#f59e0b', marginBottom: 5 }}>Spot Pending Confirmation</div>
+      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{s?.name}</div>
+      <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
+        There is a spot in the season, however a casual is taking up one of those spots. We've given the casual
+        {hoursLeft !== null ? ` ${hoursLeft} hour${hoursLeft !== 1 ? 's' : ''}` : ' some time'} to upgrade to a full season enrolment — and if they don't, the spot is yours! We'll confirm your enrolment as soon as it's resolved.
+      </div>
+    </div>
+  )
+}
+
 function CasualBookingsTab({ bookings, refetch }) {
   const [cancellingId, setCancellingId] = useState(null)
+  const [actioningId, setActioningId] = useState(null)
+  const [messageSentId, setMessageSentId] = useState(null)
   const [error, setError] = useState('')
 
   const items = bookings?.results || bookings || []
@@ -472,14 +491,98 @@ function CasualBookingsTab({ bookings, refetch }) {
     }
   }
 
-  const confirmed = items.filter(b => b.status === 'confirmed')
+  async function upgrade(booking) {
+    setActioningId(booking.id)
+    setError('')
+    try {
+      await classesApi.casual.upgrade(booking.id)
+      refetch()
+    } catch (e) {
+      setError(e.response?.data?.detail || 'Could not upgrade — please try again.')
+    } finally {
+      setActioningId(null)
+    }
+  }
+
+  async function release(booking) {
+    setActioningId(booking.id)
+    setError('')
+    try {
+      await classesApi.casual.release(booking.id)
+      refetch()
+    } catch (e) {
+      setError(e.response?.data?.detail || 'Could not release — please try again.')
+    } finally {
+      setActioningId(null)
+    }
+  }
+
+  async function messageDuality(booking) {
+    setActioningId(booking.id)
+    try {
+      await helpdeskApi.submitTicket({
+        subject: `Displacement Offer Question — ${booking.occurrence_detail?.session_name || 'Class'}`,
+        body: `Student has a question about their casual spot displacement offer for ${booking.occurrence_detail?.session_name || 'class'} on ${booking.occurrence_detail?.date || 'upcoming date'}.`,
+      })
+      setMessageSentId(booking.id)
+    } catch { } finally {
+      setActioningId(null)
+    }
+  }
+
+  const displaced = items.filter(b => b.status === 'confirmed' && b.displacement_offered_at)
+  const confirmed = items.filter(b => b.status === 'confirmed' && !b.displacement_offered_at)
   const waitlisted = items.filter(b => b.status === 'waitlisted')
 
   return (
     <div>
       {error && <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 10 }}>{error}</div>}
 
-      {items.length === 0 ? (
+      {displaced.length > 0 && (
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>Action Required</div>
+          {displaced.map(b => {
+            const d = b.occurrence_detail
+            const dateLabel = d?.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : '—'
+            const expiresAt = b.displacement_expires_at ? new Date(b.displacement_expires_at) : null
+            const hoursLeft = expiresAt ? Math.max(0, Math.round((expiresAt - new Date()) / 3600000)) : null
+            const isActioning = actioningId === b.id
+            return (
+              <div key={b.id} style={{ background: 'rgba(255,170,0,0.05)', border: '2px solid rgba(255,170,0,0.25)', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 2 }}>{d?.session_name}</div>
+                <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 12 }}>
+                  {[dateLabel, d?.start_time ? d.start_time.slice(0, 5) : null, d?.studio_name].filter(Boolean).join(' · ')}
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.6, marginBottom: 14 }}>
+                  A student wants to enrol for the full season of {d?.session_name || 'this class'}. Upgrade your casual booking to a full season enrolment
+                  {hoursLeft !== null ? ` within ${hoursLeft} hour${hoursLeft !== 1 ? 's' : ''}` : ''}, or your spot will be released and your account credited with the amount paid.
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <button className="btn btn-lime btn-sm" onClick={() => upgrade(b)} disabled={isActioning} style={{ fontWeight: 700 }}>
+                    {isActioning ? '…' : 'Upgrade to Full Season'}
+                  </button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => release(b)} disabled={isActioning} style={{ color: 'var(--red)' }}>
+                    {isActioning ? '…' : 'Release Spot'}
+                  </button>
+                  {messageSentId === b.id ? (
+                    <div style={{ fontSize: 12, color: 'var(--lime)', textAlign: 'center', paddingTop: 4 }}>Message sent — we'll be in touch!</div>
+                  ) : (
+                    <button className="btn btn-ghost btn-sm" onClick={() => messageDuality(b)} disabled={isActioning}>
+                      Message Duality
+                    </button>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {items.length === displaced.length ? (
+        <div className="empty-state">
+          <div style={{ marginBottom: 8 }}>No other casual or catch-up bookings</div>
+        </div>
+      ) : items.length === 0 ? (
         <div className="empty-state">
           <div style={{ marginBottom: 8 }}>No casual or catch-up bookings yet</div>
         </div>
@@ -597,6 +700,7 @@ export default function StudentMyClasses() {
   )
 
   const active = enrolments_.filter(e => e.status === 'active')
+  const pendingDisplacement = enrolments_.filter(e => e.status === 'pending_displacement')
   const waitlisted = enrolments_.filter(e => e.status === 'waitlisted')
   const seasonWaitlisted = waitlisted.filter(e => e.enrolment_type === 'course')
   const classWaitlisted = waitlisted.filter(e => e.enrolment_type !== 'course')
@@ -684,6 +788,11 @@ export default function StudentMyClasses() {
                   {/* Waitlist offer banners */}
                   {waitlisted.filter(e => e.waitlist_offered_at).map(e => (
                     <WaitlistOfferBanner key={e.id} enrolment={e} onClaimed={refetchEnrol} />
+                  ))}
+
+                  {/* Pending displacement banners */}
+                  {pendingDisplacement.map(e => (
+                    <PendingDisplacementBanner key={e.id} enrolment={e} />
                   ))}
 
                   {active.length === 0 ? (
@@ -808,7 +917,7 @@ export default function StudentMyClasses() {
               )}
 
               {activeSubTab === 'casuals' && (
-                <CasualBookingsTab bookings={casualBookingsData} refetch={refetchCasual} />
+                <CasualBookingsTab bookings={casualBookingsData} refetch={() => { refetchCasual(); refetchEnrol() }} />
               )}
             </div>
           )}

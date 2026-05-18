@@ -36,4 +36,7 @@ urlpatterns = [
     path('occurrences/<int:pk>/casual-book/', views.CasualBookView.as_view(), name='casual-book'),
     path('occurrences/<int:pk>/casual-cancel/', views.CasualBookCancelView.as_view(), name='casual-cancel'),
     path('casual-bookings/', views.MyCasualBookingsView.as_view(), name='casual-bookings-mine'),
+    path('casual-bookings/<int:pk>/upgrade/', views.CasualUpgradeView.as_view(), name='casual-upgrade'),
+    path('casual-bookings/<int:pk>/release/', views.CasualReleaseView.as_view(), name='casual-release'),
+    path('casual-bookings/<int:pk>/admin-displace/', views.CasualAdminDisplaceView.as_view(), name='casual-admin-displace'),
 ]

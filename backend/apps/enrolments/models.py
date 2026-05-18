@@ -11,6 +11,7 @@ class Enrolment(models.Model):
         CANCELLED = 'cancelled', 'Cancelled'
         SUSPENDED = 'suspended', 'Suspended'
         EXEMPTION_REQUESTED = 'exemption_requested', 'Exemption Requested'
+        PENDING_DISPLACEMENT = 'pending_displacement', 'Pending Displacement'
 
     class EnrolmentType(models.TextChoices):
         COURSE = 'course', 'Course'
@@ -34,6 +35,13 @@ class Enrolment(models.Model):
     waitlist_offered_at = models.DateTimeField(null=True, blank=True)
     waitlist_expires_at = models.DateTimeField(null=True, blank=True)
     waitlist_urgent = models.BooleanField(default=False)  # True = everyone notified simultaneously
+
+    # Displacement tracking
+    displacement_casual_booking = models.ForeignKey(
+        'classes.CasualBooking', null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='pending_enrolments'
+    )
+    displacement_expires_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = [('student', 'class_session')]

@@ -89,7 +89,8 @@ class CasualBookingSerializer(serializers.ModelSerializer):
         model = CasualBooking
         fields = (
             'id', 'occurrence', 'occurrence_detail', 'enrolment_type', 'status',
-            'price_charged', 'is_free', 'waitlist_offered_at', 'waitlist_expires_at', 'created_at',
+            'price_charged', 'is_free', 'waitlist_offered_at', 'waitlist_expires_at',
+            'displacement_offered_at', 'displacement_expires_at', 'created_at',
         )
         read_only_fields = ('id', 'price_charged', 'is_free', 'created_at')
 
@@ -113,7 +114,7 @@ class SeasonSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Season
-        fields = ('id', 'name', 'start_date', 'end_date', 'status', 'notes', 'created_at', 'session_count', 'enrolled_count')
+        fields = ('id', 'name', 'start_date', 'end_date', 'status', 'notes', 'published_at', 'created_at', 'session_count', 'enrolled_count')
         read_only_fields = ('id', 'created_at', 'session_count', 'enrolled_count')
 
     def get_session_count(self, obj):

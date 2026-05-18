@@ -6,7 +6,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, attendance, roster, settings as settingsApi, helpdesk, classes as classesApi } from '../../api'
+import { enrolments, attendance, roster, settings as settingsApi, helpdesk as helpdeskApi, classes as classesApi } from '../../api'
 import { TextInput } from 'react-native'
 import LevelFilterBar from '../../components/LevelFilterBar'
 
@@ -221,7 +221,7 @@ function CancelPolicyModal({ enrolment, onClose }) {
   async function submitTransferRequest() {
     setSubmitting(true)
     try {
-      await helpdesk.submitTicket({
+      await helpdeskApi.submitTicket({
         subject: `Transfer request — ${sessionName}`,
         body: `Student is requesting a transfer out of ${sessionName}.\n\n${note.trim()}`,
       })
@@ -468,12 +468,90 @@ const cwl = StyleSheet.create({
   leaveBtnText: { color: '#ef4444', fontWeight: '800', fontSize: 13 },
 })
 
+function PendingDisplacementBanner({ enrolment }) {
+  const sess = enrolment.class_session_detail
+  const expiresAt = enrolment.displacement_expires_at ? new Date(enrolment.displacement_expires_at) : null
+  const hoursLeft = expiresAt ? Math.max(0, Math.round((expiresAt - new Date()) / 3600000)) : null
+  return (
+    <View style={pd.banner}>
+      <Text style={pd.title}>Spot Pending Confirmation</Text>
+      <Text style={pd.sessName}>{sess?.name}</Text>
+      <Text style={pd.body}>
+        There is a spot in the season, however a casual is taking up one of those spots. We've given the casual{hoursLeft !== null ? ` ${hoursLeft} hour${hoursLeft !== 1 ? 's' : ''}` : ' some time'} to upgrade to a full season enrolment — and if they don't, the spot is yours! We'll confirm your enrolment as soon as it's resolved.
+      </Text>
+    </View>
+  )
+}
+
+const pd = StyleSheet.create({
+  banner: { backgroundColor: 'rgba(255,170,0,0.06)', borderWidth: 2, borderColor: 'rgba(255,170,0,0.25)', borderRadius: 14, padding: 16, marginBottom: 12 },
+  title: { fontSize: 13, fontWeight: '800', color: '#f59e0b', marginBottom: 4 },
+  sessName: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 6 },
+  body: { fontSize: 13, color: '#888', lineHeight: 19 },
+})
+
 function CasualBookingsTab({ bookings, refetch, navigation }) {
   const [cancellingId, setCancellingId] = useState(null)
+  const [actioningId, setActioningId] = useState(null)
+  const [messageSentIds, setMessageSentIds] = useState([])
 
   const items = bookings?.results || bookings || []
-  const confirmed = items.filter(b => b.status === 'confirmed')
+  const displaced = items.filter(b => b.status === 'confirmed' && b.displacement_offered_at)
+  const confirmed = items.filter(b => b.status === 'confirmed' && !b.displacement_offered_at)
   const waitlisted = items.filter(b => b.status === 'waitlisted')
+
+  async function upgrade(booking) {
+    Alert.alert(
+      'Upgrade to Full Season?',
+      `Your casual spot will be converted to a full season enrolment. The casual fee you paid will be credited towards the season price.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Upgrade', onPress: async () => {
+            setActioningId(booking.id)
+            try {
+              await classesApi.casual.upgrade(booking.id)
+              refetch()
+            } catch (err) {
+              Alert.alert('Error', err.response?.data?.detail ?? 'Could not upgrade. Please try again.')
+            } finally { setActioningId(null) }
+          }
+        }
+      ]
+    )
+  }
+
+  async function release(booking) {
+    Alert.alert(
+      'Release Spot?',
+      'Your spot will be released and your account credited with the amount paid.',
+      [
+        { text: 'Keep My Spot', style: 'cancel' },
+        {
+          text: 'Release', style: 'destructive', onPress: async () => {
+            setActioningId(booking.id)
+            try {
+              await classesApi.casual.release(booking.id)
+              refetch()
+            } catch (err) {
+              Alert.alert('Error', err.response?.data?.detail ?? 'Could not release. Please try again.')
+            } finally { setActioningId(null) }
+          }
+        }
+      ]
+    )
+  }
+
+  async function messageDuality(booking) {
+    setActioningId(booking.id)
+    try {
+      await helpdeskApi.submitTicket({
+        subject: `Displacement Offer Question — ${booking.occurrence_detail?.session_name || 'Class'}`,
+        body: `Student has a question about their casual displacement offer for ${booking.occurrence_detail?.session_name || 'class'} on ${booking.occurrence_detail?.date || 'upcoming date'}.`,
+      })
+      setMessageSentIds(ids => [...ids, booking.id])
+    } catch { } finally { setActioningId(null) }
+  }
 
   async function cancel(booking) {
     Alert.alert(
@@ -540,7 +618,63 @@ function CasualBookingsTab({ bookings, refetch, navigation }) {
 
   return (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-      {items.length === 0 ? (
+      {displaced.length > 0 && (
+        <View style={{ marginBottom: 20 }}>
+          <Text style={[cb.sectionTitle, { color: '#f59e0b' }]}>ACTION REQUIRED</Text>
+          {displaced.map(b => {
+            const d = b.occurrence_detail
+            const dateLabel = d?.date
+              ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+              : '—'
+            const expiresAt = b.displacement_expires_at ? new Date(b.displacement_expires_at) : null
+            const hoursLeft = expiresAt ? Math.max(0, Math.round((expiresAt - new Date()) / 3600000)) : null
+            const isActioning = actioningId === b.id
+            const messageSent = messageSentIds.includes(b.id)
+            return (
+              <View key={b.id} style={disp.card}>
+                <Text style={disp.sessName}>{d?.session_name ?? 'Class'}</Text>
+                <Text style={disp.meta}>
+                  {[dateLabel, d?.start_time ? d.start_time.slice(0, 5) : null, d?.studio_name].filter(Boolean).join('  ·  ')}
+                </Text>
+                <Text style={disp.body}>
+                  A student wants to enrol for the full season of {d?.session_name || 'this class'}. Upgrade your casual booking{hoursLeft !== null ? ` within ${hoursLeft} hour${hoursLeft !== 1 ? 's' : ''}` : ''}, or your spot will be released and your account credited with the amount paid.
+                </Text>
+                <TouchableOpacity
+                  style={[disp.upgradeBtn, isActioning && { opacity: 0.5 }]}
+                  onPress={() => upgrade(b)}
+                  disabled={isActioning}
+                >
+                  {isActioning ? <ActivityIndicator color="#000" size="small" /> : <Text style={disp.upgradeBtnText}>UPGRADE TO FULL SEASON</Text>}
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[disp.releaseBtn, isActioning && { opacity: 0.5 }]}
+                  onPress={() => release(b)}
+                  disabled={isActioning}
+                >
+                  <Text style={disp.releaseBtnText}>RELEASE SPOT</Text>
+                </TouchableOpacity>
+                {messageSent ? (
+                  <Text style={disp.messageSent}>Message sent — we'll be in touch!</Text>
+                ) : (
+                  <TouchableOpacity
+                    style={[disp.messageBtn, isActioning && { opacity: 0.5 }]}
+                    onPress={() => messageDuality(b)}
+                    disabled={isActioning}
+                  >
+                    <Text style={disp.messageBtnText}>MESSAGE DUALITY</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )
+          })}
+        </View>
+      )}
+
+      {items.length === displaced.length ? (
+        <Text style={{ fontSize: 14, color: '#555', textAlign: 'center', marginTop: 20 }}>
+          No other casual or catch-up bookings.
+        </Text>
+      ) : items.length === 0 ? (
         <Text style={{ fontSize: 14, color: '#555', textAlign: 'center', marginTop: 40 }}>
           No casual or catch-up bookings yet.
         </Text>
@@ -569,6 +703,20 @@ function CasualBookingsTab({ bookings, refetch, navigation }) {
     </ScrollView>
   )
 }
+
+const disp = StyleSheet.create({
+  card: { backgroundColor: 'rgba(255,170,0,0.05)', borderWidth: 2, borderColor: 'rgba(255,170,0,0.25)', borderRadius: 14, padding: 16, marginBottom: 12 },
+  sessName: { fontSize: 15, fontWeight: '700', color: '#fff', marginBottom: 3 },
+  meta: { fontSize: 12, color: '#888', marginBottom: 12 },
+  body: { fontSize: 13, color: '#aaa', lineHeight: 19, marginBottom: 14 },
+  upgradeBtn: { backgroundColor: '#ccff00', borderRadius: 10, paddingVertical: 13, alignItems: 'center', marginBottom: 8 },
+  upgradeBtnText: { color: '#000', fontWeight: '800', fontSize: 13, letterSpacing: 0.3 },
+  releaseBtn: { borderRadius: 10, paddingVertical: 13, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)', backgroundColor: 'rgba(239,68,68,0.07)', marginBottom: 8 },
+  releaseBtnText: { color: '#ef4444', fontWeight: '700', fontSize: 13 },
+  messageBtn: { borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: '#333' },
+  messageBtnText: { color: '#888', fontWeight: '700', fontSize: 13 },
+  messageSent: { fontSize: 12, color: '#ccff00', textAlign: 'center', paddingVertical: 8 },
+})
 
 const cb = StyleSheet.create({
   sectionTitle: { fontSize: 11, fontWeight: '800', color: '#555', letterSpacing: 0.8, marginBottom: 10, textTransform: 'uppercase' },
@@ -607,6 +755,9 @@ export default function MyClassesScreen({ navigation }) {
   const { data: waitlistData, refetch: refetchWaitlist } = useApi(
     () => enrolments.list({ status: 'waitlisted' }), []
   )
+  const { data: pendingDispData, refetch: refetchPendingDisp } = useApi(
+    () => enrolments.list({ status: 'pending_displacement' }), []
+  )
   const { data: historyData, loading: histLoading, refetch: refetchHistory } = useApi(
     () => attendance.list({ limit: 30 }), []
   )
@@ -615,6 +766,7 @@ export default function MyClassesScreen({ navigation }) {
 
   const activeEnrolments = enrolData?.results ?? enrolData ?? []
   const waitlistedEnrolments = waitlistData?.results ?? waitlistData ?? []
+  const pendingDisplacementEnrolments = pendingDispData?.results ?? pendingDispData ?? []
   const history = historyData?.results ?? historyData ?? []
   const cancellationWindowHours = settingsData?.cancellation_window_hours ?? 24
 
@@ -767,6 +919,11 @@ export default function MyClassesScreen({ navigation }) {
             <WaitlistClaimBanner key={e.id} enrolment={e} onClaimed={() => { refetch(); refetchWaitlist() }} />
           ))}
 
+          {/* Pending displacement banners */}
+          {pendingDisplacementEnrolments.map(e => (
+            <PendingDisplacementBanner key={e.id} enrolment={e} />
+          ))}
+
           {/* Pricing summary strip */}
           {activeEnrolments.length > 0 && (
             <View style={s.pricingStrip}>
@@ -908,7 +1065,7 @@ export default function MyClassesScreen({ navigation }) {
       {tab === 'casuals' && (
         <CasualBookingsTab
           bookings={casualBookingsData}
-          refetch={refetchCasual}
+          refetch={() => { refetchCasual(); refetchPendingDisp() }}
           navigation={navigation}
         />
       )}
