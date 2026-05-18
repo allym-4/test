@@ -468,6 +468,132 @@ const cwl = StyleSheet.create({
   leaveBtnText: { color: '#ef4444', fontWeight: '800', fontSize: 13 },
 })
 
+function DisplacementModal({ booking, onClose, onAction }) {
+  const [actioning, setActioning] = useState(null)
+  const [messageSent, setMessageSent] = useState(false)
+  const d = booking.occurrence_detail
+  const dateLabel = d?.date
+    ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
+    : '—'
+  const expiresAt = booking.displacement_expires_at ? new Date(booking.displacement_expires_at) : null
+  const hoursLeft = expiresAt ? Math.max(0, Math.round((expiresAt - new Date()) / 3600000)) : null
+  const busy = !!actioning
+
+  async function upgrade() {
+    Alert.alert(
+      'Upgrade to Full Season?',
+      'Your casual spot will be converted to a full season enrolment. The casual fee paid will be credited towards the season price.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Upgrade', onPress: async () => {
+            setActioning('upgrade')
+            try {
+              await classesApi.casual.upgrade(booking.id)
+              onAction()
+            } catch (err) {
+              Alert.alert('Error', err.response?.data?.detail ?? 'Could not upgrade.')
+            } finally { setActioning(null) }
+          }
+        }
+      ]
+    )
+  }
+
+  async function release() {
+    Alert.alert(
+      'Release Spot?',
+      'Your spot will be released and your account credited with the amount paid.',
+      [
+        { text: 'Keep My Spot', style: 'cancel' },
+        {
+          text: 'Release', style: 'destructive', onPress: async () => {
+            setActioning('release')
+            try {
+              await classesApi.casual.release(booking.id)
+              onAction()
+            } catch (err) {
+              Alert.alert('Error', err.response?.data?.detail ?? 'Could not release.')
+            } finally { setActioning(null) }
+          }
+        }
+      ]
+    )
+  }
+
+  async function messageDuality() {
+    setActioning('message')
+    try {
+      await helpdeskApi.submitTicket({
+        subject: `Displacement Offer Question — ${d?.session_name || 'Class'}`,
+        body: `Student has a question about their casual displacement offer for ${d?.session_name || 'class'} on ${d?.date || 'upcoming date'}.`,
+      })
+      setMessageSent(true)
+    } catch { } finally { setActioning(null) }
+  }
+
+  return (
+    <Modal visible animationType="slide" transparent onRequestClose={onClose}>
+      <View style={dm.overlay}>
+        <View style={dm.sheet}>
+          <View style={dm.header}>
+            <Text style={dm.headerTitle}>Action Required</Text>
+            <TouchableOpacity onPress={onClose} style={dm.closeBtn}>
+              <Text style={dm.closeBtnText}>LATER</Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={dm.sessName}>{d?.session_name ?? 'Class'}</Text>
+          <Text style={dm.dateMeta}>
+            {[dateLabel, d?.start_time ? d.start_time.slice(0, 5) : null, d?.studio_name].filter(Boolean).join('  ·  ')}
+          </Text>
+
+          <View style={dm.infoBox}>
+            <Text style={dm.infoText}>
+              A student wants to enrol for the full season of {d?.session_name || 'this class'}. Upgrade your casual booking
+              {hoursLeft !== null ? <Text style={{ color: '#fff', fontWeight: '700' }}> within {hoursLeft} hour{hoursLeft !== 1 ? 's' : ''}</Text> : ''}, or your spot will be released and your account credited with the amount paid.
+            </Text>
+          </View>
+
+          <TouchableOpacity style={[dm.upgradeBtn, busy && { opacity: 0.5 }]} onPress={upgrade} disabled={busy}>
+            {actioning === 'upgrade' ? <ActivityIndicator color="#000" /> : <Text style={dm.upgradeBtnText}>UPGRADE TO FULL SEASON</Text>}
+          </TouchableOpacity>
+          <TouchableOpacity style={[dm.releaseBtn, busy && { opacity: 0.5 }]} onPress={release} disabled={busy}>
+            <Text style={dm.releaseBtnText}>RELEASE SPOT</Text>
+          </TouchableOpacity>
+          {messageSent ? (
+            <Text style={dm.messageSent}>Message sent — we'll be in touch!</Text>
+          ) : (
+            <TouchableOpacity style={[dm.messageBtn, busy && { opacity: 0.5 }]} onPress={messageDuality} disabled={busy}>
+              {actioning === 'message' ? <ActivityIndicator color="#888" size="small" /> : <Text style={dm.messageBtnText}>MESSAGE DUALITY</Text>}
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    </Modal>
+  )
+}
+
+const dm = StyleSheet.create({
+  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.8)' },
+  sheet: { backgroundColor: '#111', borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 24, paddingBottom: 44, borderTopWidth: 2, borderTopColor: 'rgba(255,170,0,0.4)' },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  headerTitle: { flex: 1, fontSize: 18, fontWeight: '800', color: '#f59e0b' },
+  closeBtn: { paddingLeft: 12 },
+  closeBtnText: { color: '#555', fontSize: 12, fontWeight: '700', letterSpacing: 1 },
+  sessName: { fontSize: 16, fontWeight: '700', color: '#fff', marginBottom: 3 },
+  dateMeta: { fontSize: 13, color: '#888', marginBottom: 18 },
+  infoBox: { backgroundColor: 'rgba(255,170,0,0.06)', borderWidth: 1, borderColor: 'rgba(255,170,0,0.2)', borderRadius: 12, padding: 14, marginBottom: 20 },
+  infoText: { fontSize: 13, color: '#aaa', lineHeight: 20 },
+  upgradeBtn: { backgroundColor: '#ccff00', borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginBottom: 10 },
+  upgradeBtnText: { color: '#000', fontWeight: '800', fontSize: 14, letterSpacing: 0.4 },
+  releaseBtn: { borderRadius: 12, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)', backgroundColor: 'rgba(239,68,68,0.07)', marginBottom: 10 },
+  releaseBtnText: { color: '#ef4444', fontWeight: '700', fontSize: 13 },
+  messageBtn: { borderRadius: 12, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: '#333' },
+  messageBtnText: { color: '#888', fontWeight: '700', fontSize: 13 },
+  messageSent: { fontSize: 12, color: '#ccff00', textAlign: 'center', paddingVertical: 10 },
+})
+
 function PendingDisplacementBanner({ enrolment }) {
   const sess = enrolment.class_session_detail
   const expiresAt = enrolment.displacement_expires_at ? new Date(enrolment.displacement_expires_at) : null
@@ -742,6 +868,7 @@ export default function MyClassesScreen({ navigation }) {
   const [cancellingAway, setCancellingAway] = useState(null)
   const [levelFilter, setLevelFilter] = useState(null)
   const [classWaitlistLeaveEnrol, setClassWaitlistLeaveEnrol] = useState(null)
+  const [displacementModal, setDisplacementModal] = useState(null)
 
   useEffect(() => {
     if (user?.id) {
@@ -769,6 +896,13 @@ export default function MyClassesScreen({ navigation }) {
   const pendingDisplacementEnrolments = pendingDispData?.results ?? pendingDispData ?? []
   const history = historyData?.results ?? historyData ?? []
   const cancellationWindowHours = settingsData?.cancellation_window_hours ?? 24
+
+  // Auto-show modal when a displacement offer is pending
+  useEffect(() => {
+    const items = casualBookingsData?.results ?? casualBookingsData ?? []
+    const displaced = items.find(b => b.status === 'confirmed' && b.displacement_offered_at)
+    if (displaced) setDisplacementModal(displaced)
+  }, [casualBookingsData])
 
   const availableLevels = [...new Set(
     activeEnrolments.map(e => e.class_session_detail?.level).filter(Boolean)
@@ -1123,6 +1257,18 @@ export default function MyClassesScreen({ navigation }) {
           onClose={(didLeave) => {
             setClassWaitlistLeaveEnrol(null)
             if (didLeave) { refetch(); refetchWaitlist() }
+          }}
+        />
+      )}
+
+      {displacementModal && (
+        <DisplacementModal
+          booking={displacementModal}
+          onClose={() => setDisplacementModal(null)}
+          onAction={() => {
+            setDisplacementModal(null)
+            refetchCasual()
+            refetchPendingDisp()
           }}
         />
       )}
