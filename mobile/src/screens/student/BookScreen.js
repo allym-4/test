@@ -23,10 +23,9 @@ const T = {
 
 // ─── tabs ────────────────────────────────────────────────────────────────────
 const TABS = [
-  { key: 'season',   label: 'Book a Season' },
-  { key: 'casual',   label: 'Casual / Drop-in' },
-  { key: 'catchup',  label: 'Catch-up Classes' },
-  { key: 'trial',    label: 'Trial Class' },
+  { key: 'season',    label: 'Book a Season' },
+  { key: 'casual',    label: 'Casual / Drop-in' },
+  { key: 'trial',     label: 'Trial Class' },
   { key: 'workshops', label: 'Workshops & Events' },
 ]
 
@@ -1700,6 +1699,26 @@ export default function BookScreen({ navigation }) {
 
           return (
             <>
+              {/* Catch-up credits banner */}
+              {availableCredits > 0 && (
+                <View style={{
+                  backgroundColor: 'rgba(204,255,0,0.06)', borderWidth: 1,
+                  borderColor: 'rgba(204,255,0,0.2)', borderRadius: 12, padding: 16, marginBottom: 14,
+                }}>
+                  <Text style={{ fontWeight: '700', fontSize: 15, color: T.text, marginBottom: 4 }}>
+                    {availableCredits} catch-up credit{availableCredits !== 1 ? 's' : ''} available
+                  </Text>
+                  <Text style={{ fontSize: 12, color: T.muted, lineHeight: 18 }}>
+                    Tap any class below and choose "Use class credit" to book a make-up — no charge.
+                  </Text>
+                  {creditExpiry && (
+                    <Text style={{ fontSize: 11, color: '#ffaa00', marginTop: 6, fontWeight: '600' }}>
+                      Expires {new Date(creditExpiry).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </Text>
+                  )}
+                </View>
+              )}
+
               {/* Trial banner */}
               {isNewStudent && (
                 <View style={s.trialBanner}>
@@ -1891,51 +1910,6 @@ export default function BookScreen({ navigation }) {
         {/* ══════════════════════════════════════════════════════════════════
             CATCH-UP CLASSES
         ══════════════════════════════════════════════════════════════════ */}
-        {tab === 'catchup' && (
-          <>
-            <View style={{
-              backgroundColor: availableCredits > 0 ? 'rgba(204,255,0,0.06)' : 'rgba(255,68,68,0.06)',
-              borderWidth: 1,
-              borderColor: availableCredits > 0 ? 'rgba(204,255,0,0.2)' : 'rgba(255,68,68,0.2)',
-              borderRadius: 12, padding: 16, marginBottom: 16,
-            }}>
-              <Text style={{ fontWeight: '700', fontSize: 15, color: T.text, marginBottom: 4 }}>
-                {availableCredits > 0
-                  ? `${availableCredits} catch-up credit${availableCredits !== 1 ? 's' : ''} available`
-                  : 'No catch-up credits available'}
-              </Text>
-              <Text style={{ fontSize: 12, color: T.muted, lineHeight: 18 }}>
-                {availableCredits > 0
-                  ? 'Tap a class below to expand upcoming dates. Each booking uses 1 credit — no charge.'
-                  : 'Credits are issued when you notify us of an absence in time. Contact the studio if you think this is incorrect.'}
-              </Text>
-              {creditExpiry && availableCredits > 0 && (
-                <Text style={{ fontSize: 11, color: '#ffaa00', marginTop: 6, fontWeight: '600' }}>
-                  Expires {new Date(creditExpiry).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
-                </Text>
-              )}
-            </View>
-
-            {sessLoading ? (
-              <ActivityIndicator color={T.lime} style={{ marginTop: 24 }} />
-            ) : casualSessions.length === 0 ? (
-              <Text style={s.empty}>No classes available right now.</Text>
-            ) : (
-              casualSessions.map(sess => (
-                <CatchupSessionPanel
-                  key={sess.id}
-                  session={sess}
-                  availableCredits={availableCredits}
-                  bookingId={casualBookingId}
-                  onBook={bookCasualOcc}
-                  onCancel={cancelCasualOcc}
-                  currentSeasonWeek={currentSeasonWeek}
-                  onRequestExemption={setExemptionSession}
-                />
-              ))
-            )}
-          </>
-        )}
 
         {/* ══════════════════════════════════════════════════════════════════
             TRIAL CLASS
