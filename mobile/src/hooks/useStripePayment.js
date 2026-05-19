@@ -35,8 +35,10 @@ export function useStripePayment() {
       throw new Error(presentError.message)
     }
 
-    // 4 — payment succeeded — create enrolment
-    await enrolments.create({ session: sessionId, status: 'active', enrolment_type: enrolmentType })
+    // 4 — payment succeeded — create enrolment (skip if no sessionId; caller handles it)
+    if (sessionId) {
+      await enrolments.create({ session: sessionId, status: 'active', enrolment_type: enrolmentType })
+    }
     if (onSuccess) onSuccess()
     return true
   }, [initPaymentSheet, presentPaymentSheet])

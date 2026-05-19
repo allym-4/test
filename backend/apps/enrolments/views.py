@@ -627,6 +627,108 @@ class SubmitTrialFeedbackView(APIView):
         return Response({'status': 'ok'})
 
 
+class StudentTrialEnrolView(APIView):
+    """Student self-service: convert their own trial into a full season enrolment."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        from apps.payments.models import Payment
+        from apps.users.models import StudioSettings, Notification
+        from apps.users.email_utils import send_branded_email
+        from decimal import Decimal
+
+        try:
+            enrolment = Enrolment.objects.select_related('student', 'class_session').get(
+                pk=pk, student=request.user, enrolment_type='trial'
+            )
+        except Enrolment.DoesNotExist:
+            return Response({'detail': 'Trial enrolment not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        studio = StudioSettings.get()
+        season_price = float(studio.price_season)
+        trial_price = float(studio.price_trial)
+        remaining = round(max(0, season_price - trial_price), 2)
+
+        payment_method = request.data.get('payment_method')  # 'stripe', 'plan', 'cash'
+        payment_intent_id = request.data.get('payment_intent_id', '')
+        amount = float(request.data.get('amount', remaining))
+
+        if payment_method not in ('stripe', 'plan', 'cash'):
+            return Response(
+                {'detail': 'payment_method must be stripe, plan, or cash.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Convert enrolment
+        enrolment.enrolment_type = 'course'
+        enrolment.save(update_fields=['enrolment_type'])
+        session_name = enrolment.class_session.name
+
+        if payment_method == 'stripe':
+            Payment.objects.create(
+                student=request.user,
+                payment_type=Payment.PaymentType.PAYMENT,
+                amount=Decimal(str(amount)),
+                description=f'Season enrolment — {session_name} (converted from trial)',
+                reference=payment_intent_id,
+                created_by=None,
+            )
+        elif payment_method == 'plan':
+            # Half now (paid via Stripe), half later (charge / owing)
+            half = round(amount / 2, 2)
+            remainder = round(amount - half, 2)
+            Payment.objects.create(
+                student=request.user,
+                payment_type=Payment.PaymentType.PAYMENT,
+                amount=Decimal(str(half)),
+                description=f'Season enrolment — {session_name}, instalment 1 of 2',
+                reference=payment_intent_id,
+                created_by=None,
+            )
+            Payment.objects.create(
+                student=request.user,
+                payment_type=Payment.PaymentType.CHARGE,
+                amount=Decimal(str(remainder)),
+                description=f'Season enrolment — {session_name}, instalment 2 of 2 (due in 30 days)',
+                created_by=None,
+            )
+        elif payment_method == 'cash':
+            Payment.objects.create(
+                student=request.user,
+                payment_type=Payment.PaymentType.CHARGE,
+                amount=Decimal(str(remaining)),
+                description=f'Season enrolment — {session_name} (pay at studio)',
+                created_by=None,
+            )
+
+        Notification.objects.create(
+            recipient=request.user,
+            title=f"You're enrolled in {session_name}!",
+            body=f"Welcome to the season. We can't wait to see you in class.",
+            notification_type='success',
+        )
+
+        if request.user.email:
+            send_branded_email(
+                to_email=request.user.email,
+                subject=f"You're enrolled — {session_name}",
+                template_name='payment_received',
+                context={
+                    'first_name': request.user.first_name,
+                    'amount': f'{amount:.2f}',
+                    'description': f'Season enrolment — {session_name}',
+                    'plain_text': (
+                        f"Hi {request.user.first_name},\n\n"
+                        f"You're all set for {session_name}! "
+                        f"We've recorded your enrolment and look forward to seeing you in class.\n\n"
+                        f"Duality Pole Studio"
+                    ),
+                }
+            )
+
+        return Response(EnrolmentSerializer(enrolment).data, status=status.HTTP_200_OK)
+
+
 SEASON_PRICES_CHANGE = {1: 270, 2: 440, 3: 580, 4: 700, 5: 800, 6: 900}
 
 

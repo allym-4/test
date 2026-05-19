@@ -59,6 +59,7 @@ export const enrolments = {
     mine: () => client.get('/api/enrolments/change-requests/'),
     create: (data) => client.post('/api/enrolments/change-requests/', data),
   },
+  enrolAfterTrial: (id, data) => client.post(`/api/enrolments/${id}/enrol-after-trial/`, data),
 }
 
 export const attendance = {

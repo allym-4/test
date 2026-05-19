@@ -6,6 +6,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { enrolments, seasons, attendance as attendanceApi, skills as skillsApi, announcements as announcementsApi, payments, notifications as notificationsApi } from '../../api'
+import { useStripePayment } from '../../hooks/useStripePayment'
 
 const DAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -158,6 +159,8 @@ export default function DashboardScreen({ navigation }) {
   const [trialRatings, setTrialRatings] = useState({ class: 0, instructor: 0, facilities: 0, structure: 0 })
   const [trialReason, setTrialReason] = useState('')
   const [trialSubmitting, setTrialSubmitting] = useState(false)
+  const [trialPayOption, setTrialPayOption] = useState(null) // 'stripe' | 'plan' | 'cash'
+  const { pay: stripePay } = useStripePayment()
 
   const pendingOffers = offersData?.results ?? offersData ?? []
   const pendingTrialFeedback = trialPendingData ?? []
@@ -553,14 +556,7 @@ export default function DashboardScreen({ navigation }) {
                   </View>
                   <TouchableOpacity
                     style={{ backgroundColor: '#DBFF00', borderRadius: 10, padding: 16, alignItems: 'center', marginBottom: 10 }}
-                    disabled={trialSubmitting}
-                    onPress={async () => {
-                      setTrialSubmitting(true)
-                      try { await enrolments.trialFeedback.submit(trialItem.id, { enrolled: true }) } catch {}
-                      setTrialSubmitting(false)
-                      refetchTrialFeedback()
-                      navigation.navigate('Book')
-                    }}
+                    onPress={() => setTrialScreen('payment')}
                   >
                     <Text style={{ color: '#000', fontWeight: '700', fontSize: 15 }}>Yes — enrol now · ${trialItem.enrol_price}</Text>
                   </TouchableOpacity>
@@ -571,6 +567,117 @@ export default function DashboardScreen({ navigation }) {
                     <Text style={{ color: '#fff', fontSize: 15 }}>No thanks</Text>
                   </TouchableOpacity>
                 </>
+              )}
+
+              {trialScreen === 'payment' && (() => {
+                const total = trialItem.enrol_price
+                const half = (Math.round(total * 100 / 2) / 100).toFixed(2)
+
+                async function handlePay(method) {
+                  setTrialPayOption(method)
+                  try {
+                    let paymentIntentId = ''
+                    const amountCents = method === 'plan'
+                      ? Math.round(total * 100 / 2)
+                      : Math.round(total * 100)
+
+                    if (method === 'stripe' || method === 'plan') {
+                      const paid = await stripePay({
+                        amountCents,
+                        description: `Season enrolment — ${trialItem.session_name}`,
+                        // don't create enrolment inside hook — we handle it below
+                        onSuccess: () => {},
+                      })
+                      if (!paid) { setTrialPayOption(null); return }
+                    }
+
+                    await enrolments.trialFeedback.submit(trialItem.id, { enrolled: true })
+                    await enrolments.enrolAfterTrial(trialItem.id, {
+                      payment_method: method,
+                      payment_intent_id: paymentIntentId,
+                      amount: method === 'plan' ? parseFloat(half) : total,
+                    })
+                    setTrialScreen('enrolled')
+                  } catch (e) {
+                    Alert.alert('Error', e.message || 'Something went wrong. Please try again or contact the studio.')
+                  } finally {
+                    setTrialPayOption(null)
+                  }
+                }
+
+                return (
+                  <>
+                    <TouchableOpacity onPress={() => setTrialScreen('prompt')} style={{ marginBottom: 16 }}>
+                      <Text style={{ fontSize: 13, color: '#555' }}>← Back</Text>
+                    </TouchableOpacity>
+                    <Text style={{ fontWeight: '800', fontSize: 18, color: '#fff', marginBottom: 4 }}>How would you like to pay?</Text>
+                    <Text style={{ fontSize: 13, color: '#666', marginBottom: 20 }}>{trialItem.session_name}</Text>
+
+                    {/* Full payment by card */}
+                    <TouchableOpacity
+                      style={{ backgroundColor: '#DBFF00', borderRadius: 12, padding: 16, marginBottom: 10, opacity: trialPayOption ? 0.6 : 1 }}
+                      disabled={!!trialPayOption}
+                      onPress={() => handlePay('stripe')}
+                    >
+                      {trialPayOption === 'stripe'
+                        ? <ActivityIndicator color="#000" />
+                        : <>
+                            <Text style={{ color: '#000', fontWeight: '800', fontSize: 15 }}>Pay in full — ${total}</Text>
+                            <Text style={{ color: '#000', fontSize: 12, marginTop: 3, opacity: 0.7 }}>Card, Apple Pay or Google Pay</Text>
+                          </>
+                      }
+                    </TouchableOpacity>
+
+                    {/* Split payment */}
+                    <TouchableOpacity
+                      style={{ backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333', borderRadius: 12, padding: 16, marginBottom: 10, opacity: trialPayOption ? 0.6 : 1 }}
+                      disabled={!!trialPayOption}
+                      onPress={() => handlePay('plan')}
+                    >
+                      {trialPayOption === 'plan'
+                        ? <ActivityIndicator color="#ccff00" />
+                        : <>
+                            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Split into 2 payments — ${half} now</Text>
+                            <Text style={{ color: '#666', fontSize: 12, marginTop: 3 }}>${half} now · ${half} in 30 days</Text>
+                          </>
+                      }
+                    </TouchableOpacity>
+
+                    {/* Pay at studio */}
+                    <TouchableOpacity
+                      style={{ borderWidth: 1, borderColor: '#333', borderRadius: 12, padding: 16, marginBottom: 10, opacity: trialPayOption ? 0.6 : 1 }}
+                      disabled={!!trialPayOption}
+                      onPress={() => handlePay('cash')}
+                    >
+                      {trialPayOption === 'cash'
+                        ? <ActivityIndicator color="#888" />
+                        : <>
+                            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Pay at the studio — ${total} owing</Text>
+                            <Text style={{ color: '#666', fontSize: 12, marginTop: 3 }}>Lock in your spot now, pay cash or card in person</Text>
+                          </>
+                      }
+                    </TouchableOpacity>
+                  </>
+                )
+              })()}
+
+              {trialScreen === 'enrolled' && (
+                <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+                  <Text style={{ fontSize: 42, marginBottom: 14 }}>🎉</Text>
+                  <Text style={{ fontWeight: '800', fontSize: 20, color: '#fff', marginBottom: 10, textAlign: 'center' }}>You're enrolled!</Text>
+                  <Text style={{ fontSize: 14, color: '#888', textAlign: 'center', lineHeight: 22, marginBottom: 8 }}>
+                    {trialItem?.session_name}
+                  </Text>
+                  <Text style={{ fontSize: 13, color: '#666', textAlign: 'center', lineHeight: 20, marginBottom: 24 }}>
+                    Welcome to the season! Your spot is locked in. You'll receive a confirmation email shortly.
+                  </Text>
+                  <TouchableOpacity
+                    style={{ backgroundColor: '#DBFF00', borderRadius: 10, paddingVertical: 14, paddingHorizontal: 28, width: '100%', alignItems: 'center' }}
+                    onPress={() => refetchTrialFeedback()}
+                  >
+                    <Text style={{ color: '#000', fontWeight: '700', fontSize: 15 }}>Go to my schedule</Text>
+                  </TouchableOpacity>
+                </View>
               )}
 
               {trialScreen === 'feedback' && (

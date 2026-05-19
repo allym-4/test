@@ -15,5 +15,6 @@ urlpatterns = [
     path('<int:pk>/convert-trial/', views.ConvertTrialView.as_view(), name='enrolment-convert-trial'),
     path('<int:pk>/claim-spot/', views.ClaimWaitlistSpotView.as_view(), name='enrolment-claim-spot'),
     path('<int:pk>/trial-feedback/', views.SubmitTrialFeedbackView.as_view(), name='trial-feedback-submit'),
+    path('<int:pk>/enrol-after-trial/', views.StudentTrialEnrolView.as_view(), name='student-trial-enrol'),
     path('calendar.ics', views.CalendarIcsView.as_view(), name='enrolment-calendar-ics'),
 ]
