@@ -13,7 +13,7 @@ const TYPE_BADGE = {
 export default function StudentProgress() {
   const { user } = useAuth()
   const [mainTab, setMainTab] = useState('tricks')
-  const [activeClassId, setActiveClassId] = useState(null)
+  const [selectedLevel, setSelectedLevel] = useState(null)
   const [chatClassId, setChatClassId] = useState(null)
 
   // Enrolments
@@ -23,8 +23,13 @@ export default function StudentProgress() {
   )
   const enrolList = enrolData?.results || enrolData || []
 
+  // Unique levels from enrolments (deduplicated)
+  const enrolledLevels = [...new Set(
+    enrolList.map(e => e.class_session_detail?.level || e.class_session_detail?.name).filter(Boolean)
+  )]
+  const activeLevel = selectedLevel || enrolledLevels[0] || null
+
   useEffect(() => {
-    if (enrolList.length && !activeClassId) setActiveClassId(enrolList[0].id)
     if (enrolList.length && !chatClassId) setChatClassId(enrolList[0].id)
   }, [enrolList.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -67,12 +72,10 @@ export default function StudentProgress() {
     ).then(all => setSkillDefs(all.flat())).catch(() => setSkillDefs([]))
   }, [skillLevels.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Active enrolment
-  const activeEnrol = enrolList.find(e => e.id === activeClassId)
-  const classSkills = skillDefs // show all tricks; could filter by class level
-
-  const unlockedCount = classSkills.filter(d => skillProgress[d.name]?.teacher).length
-  const totalCount = classSkills.length
+  // Skills filtered to the selected level
+  const levelSkills = skillDefs.filter(d => !activeLevel || d.levelName === activeLevel)
+  const unlockedCount = levelSkills.filter(d => skillProgress[d.name]?.teacher).length
+  const totalCount = levelSkills.length
 
   function toggleSelf(skillName) {
     setSelfAssessed(prev => ({ ...prev, [skillName]: !prev[skillName] }))
@@ -250,45 +253,33 @@ export default function StudentProgress() {
             <div className="empty-state">No active enrolments found</div>
           ) : (
             <>
-              {/* Class selector */}
+              {/* Level selector */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-                {enrolList.map(e => {
-                  const name = e.class_session_detail?.name || `Class ${e.id}`
-                  const active = e.id === activeClassId
-                  return (
-                    <button
-                      key={e.id}
-                      onClick={() => setActiveClassId(e.id)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        borderBottom: `2px solid ${active ? 'var(--lime)' : 'transparent'}`,
-                        color: active ? 'var(--white)' : 'var(--grey)',
-                        padding: '6px 14px',
-                        fontSize: 13,
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                        transition: 'color 0.15s',
-                      }}
-                    >
-                      {name}
-                    </button>
-                  )
-                })}
+                {enrolledLevels.map(level => (
+                  <button
+                    key={level}
+                    onClick={() => setSelectedLevel(level)}
+                    style={{
+                      borderBottom: `2px solid ${activeLevel === level ? 'var(--lime)' : 'transparent'}`,
+                      color: activeLevel === level ? 'var(--white)' : 'var(--grey)',
+                      padding: '6px 14px',
+                      fontSize: 13,
+                      cursor: 'pointer',
+                      transition: 'color 0.15s',
+                    }}
+                  >
+                    {level}
+                  </button>
+                ))}
               </div>
 
-              {activeEnrol && (
+              {activeLevel && (
                 <>
                   {/* Progress card */}
                   <div className="card" style={{ marginBottom: 20 }}>
                     <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 2 }}>
-                      {activeEnrol.class_session_detail?.name || 'Your Class'}
+                      {activeLevel}
                     </div>
-                    {activeEnrol.class_session_detail?.studio_detail?.name && (
-                      <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 12 }}>
-                        {activeEnrol.class_session_detail.studio_detail.name}
-                      </div>
-                    )}
                     {totalCount > 0 ? (
                       <>
                         <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 8 }}>
@@ -311,7 +302,7 @@ export default function StudentProgress() {
                   </div>
 
                   {/* Trick grid */}
-                  {classSkills.length === 0 ? (
+                  {levelSkills.length === 0 ? (
                     <div className="empty-state">Your instructor will track tricks here</div>
                   ) : (
                     <div
@@ -322,7 +313,7 @@ export default function StudentProgress() {
                       }}
                       className="trick-grid"
                     >
-                      {classSkills.map(def => {
+                      {levelSkills.map(def => {
                         const prog = skillProgress[def.name] || {}
                         const unlocked = prog.teacher
                         const isSelf = selfAssessed[def.name]
