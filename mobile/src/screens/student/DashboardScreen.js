@@ -443,20 +443,26 @@ export default function DashboardScreen({ navigation }) {
       )}
 
       {/* Quick Links */}
-      <Text style={s.sectionTitle}>Quick Links</Text>
+      <Text style={s.sectionTitle}>Quick links</Text>
       <View style={s.quickLinks}>
         <TouchableOpacity style={s.quickLink} onPress={() => navigation.navigate('Book')}>
-          <Text style={s.quickLinkIcon}>○</Text>
+          <View style={s.quickLinkIconWrap}>
+            <View style={{ width: 12, height: 12, borderRadius: 6, borderWidth: 2, borderColor: '#000' }} />
+          </View>
           <Text style={s.quickLinkLabel}>Makeup or casual class</Text>
           <Text style={s.quickLinkSub}>Drop into any eligible class</Text>
         </TouchableOpacity>
         <TouchableOpacity style={s.quickLink} onPress={() => navigation.navigate('Book', { screen: 'Practice' })}>
-          <Text style={s.quickLinkIcon}>■</Text>
+          <View style={s.quickLinkIconWrap}>
+            <View style={{ width: 10, height: 10, backgroundColor: '#000', borderRadius: 2 }} />
+          </View>
           <Text style={s.quickLinkLabel}>Book practice time</Text>
           <Text style={s.quickLinkSub}>Open studio – $20</Text>
         </TouchableOpacity>
         <TouchableOpacity style={s.quickLink} onPress={() => navigation.navigate('Progress')}>
-          <Text style={s.quickLinkIcon}>△</Text>
+          <View style={s.quickLinkIconWrap}>
+            <View style={{ width: 0, height: 0, borderLeftWidth: 6, borderRightWidth: 6, borderBottomWidth: 11, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: '#000' }} />
+          </View>
           <Text style={s.quickLinkLabel}>See my progress</Text>
           <Text style={s.quickLinkSub}>Tricks, levels and resources</Text>
         </TouchableOpacity>
@@ -697,7 +703,7 @@ const s = StyleSheet.create({
   // Quick links
   quickLinks: { gap: 10, marginBottom: 24 },
   quickLink: { backgroundColor: '#111', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#222' },
-  quickLinkIcon: { fontSize: 22, color: '#ccff00', marginBottom: 8 },
+  quickLinkIconWrap: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#ccff00', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   quickLinkLabel: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 4 },
   quickLinkSub: { fontSize: 13, color: '#666' },
 
