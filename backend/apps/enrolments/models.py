@@ -70,6 +70,10 @@ class ClassChangeRequest(models.Model):
     admin_notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
+    ticket = models.ForeignKey(
+        'helpdesk.Ticket', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='change_requests'
+    )
 
     class Meta:
         ordering = ['-created_at']

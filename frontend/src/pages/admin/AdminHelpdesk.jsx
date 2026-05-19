@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
-import { helpdesk, users } from '../../api'
+import { helpdesk, users, enrolments } from '../../api'
 import '../StudentsPage.css'
 
 const STATUS_STYLE = {
@@ -64,8 +65,11 @@ function NewTicketModal({ students, onClose, onCreated }) {
 }
 
 export default function AdminHelpdesk() {
+  const navigate = useNavigate()
   const { data, loading } = useApi(() => helpdesk.list())
   const { data: studentsData } = useApi(() => users.list({ role: 'student' }))
+  const { data: changeReqData, loading: changeReqLoading, refetch: refetchChangeReqs } = useApi(() => enrolments.changeRequests.list())
+  const [mainTab, setMainTab] = useState('tickets') // 'tickets' | 'change-requests'
   const [filter, setFilter] = useState('all')
   const [activeTicket, setActiveTicket] = useState(null)
   const [thread, setThread] = useState([])
@@ -81,6 +85,10 @@ export default function AdminHelpdesk() {
   const filtered = allTickets.filter(t => filter === 'all' || t.status === filter)
   const openCount = allTickets.filter(t => t.status === 'open').length
   const pendingCount = allTickets.filter(t => t.status === 'pending').length
+
+  const allChangeReqs = changeReqData?.results || changeReqData || []
+  const pendingChangeReqs = allChangeReqs.filter(r => r.status === 'pending')
+  const [changeReqFilter, setChangeReqFilter] = useState('pending')
 
   async function openTicket(ticket) {
     setActiveTicket(ticket)

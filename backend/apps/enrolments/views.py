@@ -701,6 +701,8 @@ class ClassChangeRequestListCreateView(generics.ListCreateAPIView):
             sender=user,
             body=body,
         )
+        change_request.ticket = ticket
+        change_request.save(update_fields=['ticket'])
 
         from apps.users.models import Notification
         Notification.objects.create(
@@ -753,6 +755,11 @@ class ClassChangeRequestApproveView(APIView):
         enrolment = change_request.current_enrolment
         old_session = enrolment.class_session
         student = change_request.student
+
+        # Check capacity on target session
+        active_count = Enrolment.objects.filter(class_session=new_session, status='active').count()
+        if active_count >= new_session.capacity:
+            return Response({'detail': f'{new_session.name} is at capacity ({new_session.capacity} students).'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Check target session is not already enrolled
         if Enrolment.objects.filter(student=student, class_session=new_session, status='active').exists():
@@ -823,6 +830,11 @@ class ClassChangeRequestApproveView(APIView):
         change_request.resolved_at = timezone.now()
         change_request.save(update_fields=['status', 'admin_notes', 'resolved_at'])
 
+        # Close the linked helpdesk ticket if present
+        if change_request.ticket:
+            change_request.ticket.status = 'resolved'
+            change_request.ticket.save(update_fields=['status'])
+
         # Notify student
         Notification.objects.create(
             recipient=student,
@@ -830,6 +842,22 @@ class ClassChangeRequestApproveView(APIView):
             body=f'Your class has been changed from {old_session.name} to {new_session.name}.',
             notification_type='success',
         )
+
+        # Email student
+        if student.email:
+            send_mail(
+                subject=f'Class change approved — {new_session.name}',
+                message=(
+                    f'Hi {student.first_name},\n\n'
+                    f'Your request to change from {old_session.name} to {new_session.name} has been approved.\n\n'
+                    + (f'{admin_notes}\n\n' if admin_notes else '')
+                    + f'Your class schedule has been updated. See you in {new_session.name}!\n\n'
+                    f'Duality Pole Studio'
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[student.email],
+                fail_silently=True,
+            )
 
         return Response(ClassChangeRequestSerializer(change_request).data)
 
@@ -850,11 +878,32 @@ class ClassChangeRequestRejectView(APIView):
         change_request.resolved_at = timezone.now()
         change_request.save(update_fields=['status', 'admin_notes', 'resolved_at'])
 
+        # Close the linked helpdesk ticket if present
+        if change_request.ticket:
+            change_request.ticket.status = 'resolved'
+            change_request.ticket.save(update_fields=['status'])
+
         Notification.objects.create(
             recipient=change_request.student,
             title='Class change request update',
             body=f'Your class change request has been reviewed. {admin_notes}' if admin_notes else 'Your class change request could not be approved at this time. Please contact the studio for more information.',
             notification_type='info',
         )
+
+        # Email student
+        session_name = change_request.current_enrolment.class_session.name
+        if change_request.student.email:
+            send_mail(
+                subject='Class change request — update',
+                message=(
+                    f'Hi {change_request.student.first_name},\n\n'
+                    f'We\'ve reviewed your class change request for {session_name}.\n\n'
+                    + (f'{admin_notes}\n\n' if admin_notes else 'Unfortunately we\'re unable to approve this change at this time. Please contact the studio for more information.\n\n')
+                    + f'Duality Pole Studio'
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[change_request.student.email],
+                fail_silently=True,
+            )
 
         return Response(ClassChangeRequestSerializer(change_request).data)

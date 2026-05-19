@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useApi } from '../hooks/useApi'
 import client from '../api/client'
-import { helpdesk, users } from '../api'
+import { helpdesk, users, enrolments } from '../api'
 import './AdminShell.css'
 
 const NAV_GROUPS = [
@@ -193,6 +193,7 @@ export default function AdminShell() {
   // ── Feature 3: Unread badges ─────────────────────────────────────────────
   const { data: convData } = useApi(() => helpdesk.conversations(), [])
   const { data: ticketData } = useApi(() => client.get('/api/helpdesk/tickets/?status=open'), [])
+  const { data: changeReqData } = useApi(() => client.get('/api/enrolments/change-requests/?status=pending'), [])
 
   const messagesUnread = (() => {
     const items = convData?.results || convData || []
@@ -200,8 +201,15 @@ export default function AdminShell() {
   })()
 
   const helpdeskUnread = (() => {
-    const items = ticketData?.results || ticketData || []
-    return Array.isArray(items) ? items.length : 0
+    const openTickets = (() => {
+      const items = ticketData?.results || ticketData || []
+      return Array.isArray(items) ? items.length : 0
+    })()
+    const pendingChangeRequests = (() => {
+      const items = changeReqData?.results || changeReqData || []
+      return Array.isArray(items) ? items.length : 0
+    })()
+    return openTickets + pendingChangeRequests
   })()
 
   const badgeCounts = { messages: messagesUnread, helpdesk: helpdeskUnread }
