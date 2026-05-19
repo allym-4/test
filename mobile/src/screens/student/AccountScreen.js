@@ -369,12 +369,15 @@ export default function AccountScreen({ navigation, onSwitchToInstructor }) {
       {/* Balance */}
       <View style={s.section}>
         <Text style={s.sectionTitle}>Billing</Text>
-        <View style={[s.row, { alignItems: 'center' }]}>
+        <TouchableOpacity style={[s.row, { alignItems: 'center' }]} onPress={() => navigation.navigate('Billing')}>
           <Text style={s.rowLabel}>Account balance</Text>
-          <Text style={[s.rowValue, balanceNum < 0 && s.negative, balanceNum > 0 && s.positive]}>
-            {balance != null ? `$${Math.abs(balanceNum).toFixed(2)} ${balanceNum < 0 ? 'owed' : balanceNum > 0 ? 'credit' : ''}` : '—'}
-          </Text>
-        </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text style={[s.rowValue, balanceNum < 0 && s.negative, balanceNum > 0 && s.positive]}>
+              {balance != null ? `$${Math.abs(balanceNum).toFixed(2)} ${balanceNum < 0 ? 'owed' : balanceNum > 0 ? 'credit' : ''}` : '—'}
+            </Text>
+            <Text style={s.navArrow}>›</Text>
+          </View>
+        </TouchableOpacity>
         <TouchableOpacity style={s.navRow} onPress={() => navigation.navigate('Billing')}>
           <Text style={s.rowLabel}>Billing & payment history</Text>
           <Text style={s.navArrow}>›</Text>
