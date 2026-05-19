@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import DashboardScreen from '../screens/student/DashboardScreen'
 import BookScreen from '../screens/student/BookScreen'
 import MyClassesScreen from '../screens/student/MyClassesScreen'
+import UpcomingClassesScreen from '../screens/student/UpcomingClassesScreen'
 import CommunityScreen from '../screens/student/CommunityScreen'
 import AccountScreen from '../screens/student/AccountScreen'
 
@@ -58,6 +59,7 @@ function ClassesStack() {
   return (
     <Stack.Navigator screenOptions={headerStyle}>
       <Stack.Screen name="MyClasses" component={MyClassesScreen} options={{ title: 'My Classes' }} />
+      <Stack.Screen name="UpcomingClasses" component={UpcomingClassesScreen} options={{ title: 'Upcoming Classes', headerStyle: { backgroundColor: '#000' }, headerTintColor: '#fff' }} />
       <Stack.Screen name="Progress" component={ProgressScreen} options={{ title: 'My Progress' }} />
       <Stack.Screen name="Homework" component={HomeworkScreen} options={{ title: 'Homework' }} />
     </Stack.Navigator>

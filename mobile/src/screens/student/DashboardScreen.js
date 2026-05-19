@@ -353,6 +353,9 @@ export default function DashboardScreen({ navigation }) {
 
       {/* Classes This Week */}
       <Text style={s.sectionTitle}>Classes This Week</Text>
+      <TouchableOpacity onPress={() => navigation.navigate('UpcomingClasses')} style={{ alignSelf: 'flex-end', marginTop: -8, marginBottom: 8 }}>
+        <Text style={{ fontSize: 12, color: '#ccff00', fontWeight: '600' }}>View all upcoming →</Text>
+      </TouchableOpacity>
       {enrolList.length === 0 && !loading ? (
         <Text style={s.empty}>No classes enrolled yet. Contact your studio to get set up.</Text>
       ) : (
