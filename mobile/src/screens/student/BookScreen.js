@@ -1492,7 +1492,7 @@ export default function BookScreen({ navigation }) {
 
         {tab === 'season' && !(bookingSeason && bookingSeason.bookings_open === false) && (
           <>
-            {bookableSeasons.length > 1 && (
+            {bookableSeasons.length > 0 && (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 2 }}>
                 {bookableSeasons.map(s2 => {
                   const isActive = (bookingSeason?.id === s2.id)
