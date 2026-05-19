@@ -44,6 +44,7 @@ function HomeStack() {
       <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Notifications' }} />
       <Stack.Screen name="StudioInfo" component={StudioInfoScreen} options={{ title: 'Studio Info' }} />
       <Stack.Screen name="UpcomingClasses" component={UpcomingClassesScreen} options={{ title: 'Upcoming Classes' }} />
+      <Stack.Screen name="Support" component={SupportScreen} options={{ title: 'Help & Support' }} />
     </Stack.Navigator>
   )
 }

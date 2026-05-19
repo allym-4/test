@@ -495,6 +495,13 @@ export default function DashboardScreen({ navigation }) {
           <Text style={s.quickLinkLabel}>See my progress</Text>
           <Text style={s.quickLinkSub}>Tricks, levels and resources</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={s.quickLink} onPress={() => navigation.navigate('Support')}>
+          <View style={s.quickLinkIconWrap}>
+            <Text style={{ fontSize: 14, fontWeight: '800', color: '#000' }}>?</Text>
+          </View>
+          <Text style={s.quickLinkLabel}>I need help</Text>
+          <Text style={s.quickLinkSub}>FAQs and contact</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Upsell strip */}
