@@ -168,7 +168,110 @@ export default function AdminHelpdesk() {
         </div>
       </div>
 
-      {loading ? (
+      {/* Main tab switcher */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 16, background: '#111', borderRadius: 10, padding: 4, alignSelf: 'flex-start' }}>
+        <button
+          onClick={() => setMainTab('tickets')}
+          style={{ padding: '6px 16px', borderRadius: 7, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13, background: mainTab === 'tickets' ? 'var(--lime)' : 'transparent', color: mainTab === 'tickets' ? '#000' : 'var(--grey)' }}
+        >
+          Tickets {openCount > 0 && <span style={{ marginLeft: 4, background: mainTab === 'tickets' ? 'rgba(0,0,0,0.2)' : '#222', color: mainTab === 'tickets' ? '#000' : 'var(--amber)', borderRadius: 10, padding: '1px 6px', fontSize: 10 }}>{openCount}</span>}
+        </button>
+        <button
+          onClick={() => setMainTab('change-requests')}
+          style={{ padding: '6px 16px', borderRadius: 7, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13, background: mainTab === 'change-requests' ? 'var(--lime)' : 'transparent', color: mainTab === 'change-requests' ? '#000' : 'var(--grey)' }}
+        >
+          Change Requests {pendingChangeReqs.length > 0 && <span style={{ marginLeft: 4, background: mainTab === 'change-requests' ? 'rgba(0,0,0,0.2)' : '#222', color: mainTab === 'change-requests' ? '#000' : 'var(--amber)', borderRadius: 10, padding: '1px 6px', fontSize: 10 }}>{pendingChangeReqs.length}</span>}
+        </button>
+      </div>
+
+      {mainTab === 'change-requests' ? (
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
+            {[['pending', 'Pending'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['all', 'All']].map(([key, label]) => (
+              <span key={key} onClick={() => setChangeReqFilter(key)} style={{ fontSize: 11, padding: '4px 12px', borderRadius: 20, cursor: 'pointer', background: changeReqFilter === key ? 'var(--lime)' : '#1a1a1a', color: changeReqFilter === key ? '#000' : 'var(--grey)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', border: '1px solid var(--border)' }}>{label}</span>
+            ))}
+            <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--grey)' }}>{pendingChangeReqs.length} pending</span>
+            <button className="btn btn-ghost btn-sm" onClick={refetchChangeReqs}>Refresh</button>
+          </div>
+          {changeReqLoading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}><div className="spinner" /></div>
+          ) : (() => {
+            const displayReqs = changeReqFilter === 'all' ? allChangeReqs : allChangeReqs.filter(r => r.status === changeReqFilter)
+            if (displayReqs.length === 0) return (
+              <div style={{ textAlign: 'center', color: 'var(--grey)', fontSize: 13, padding: '48px 0' }}>No {changeReqFilter === 'all' ? '' : changeReqFilter} change requests</div>
+            )
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {displayReqs.map(r => {
+                  const statusColor = r.status === 'pending' ? 'var(--amber)' : r.status === 'approved' ? 'var(--lime)' : 'var(--grey)'
+                  const studentName = r.student_detail?.display_name || r.student_name || `Student #${r.student}`
+                  const currentClass = r.current_enrolment_detail?.class_session_detail?.name || r.current_class_name || '—'
+                  const requestedClass = r.requested_session_detail?.name || r.requested_session_name || 'Not specified'
+                  const studentId = r.student_detail?.id || r.student
+                  return (
+                    <div key={r.id} style={{ background: '#111', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px', display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                          <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--lav)', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
+                            {(studentName[0] || '?').toUpperCase()}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: 14 }}>{studentName}</div>
+                            <div style={{ fontSize: 11, color: 'var(--grey)' }}>
+                              {new Date(r.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </div>
+                          </div>
+                          <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: statusColor, background: `${statusColor}22`, borderRadius: 20, padding: '3px 10px', border: `1px solid ${statusColor}44` }}>
+                            {r.status}
+                          </span>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
+                          <div style={{ background: '#1a1a1a', borderRadius: 7, padding: '8px 12px' }}>
+                            <div style={{ fontSize: 10, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>Current Class</div>
+                            <div style={{ fontSize: 13, fontWeight: 500 }}>{currentClass}</div>
+                          </div>
+                          <div style={{ background: '#1a1a1a', borderRadius: 7, padding: '8px 12px' }}>
+                            <div style={{ fontSize: 10, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>Requested Class</div>
+                            <div style={{ fontSize: 13, fontWeight: 500 }}>{requestedClass}</div>
+                          </div>
+                        </div>
+                        {r.notes && (
+                          <div style={{ fontSize: 13, color: '#aaa', lineHeight: 1.5, background: '#1a1a1a', borderRadius: 7, padding: '8px 12px', marginBottom: 8, borderLeft: '3px solid var(--border)' }}>
+                            {r.notes}
+                          </div>
+                        )}
+                        {r.admin_notes && (
+                          <div style={{ fontSize: 12, color: 'var(--grey)', fontStyle: 'italic', marginTop: 4 }}>
+                            Admin note: {r.admin_notes}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+                        <button
+                          className="btn btn-ghost btn-xs"
+                          onClick={() => navigate(`/admin/students/${studentId}`)}
+                          style={{ whiteSpace: 'nowrap' }}
+                        >
+                          View Student →
+                        </button>
+                        {r.ticket && (
+                          <button
+                            className="btn btn-ghost btn-xs"
+                            onClick={() => { setMainTab('tickets') }}
+                            style={{ whiteSpace: 'nowrap', fontSize: 10 }}
+                          >
+                            View Ticket #{r.ticket}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })()}
+        </div>
+      ) : loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}><div className="spinner" /></div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr 240px', flex: 1, border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', minHeight: 0 }}>
@@ -313,7 +416,7 @@ export default function AdminHelpdesk() {
         </div>
       )}
 
-      {showNew && <NewTicketModal students={students} onClose={() => setShowNew(false)} onCreated={ticket => { setTicketList(prev => [ticket, ...(prev ?? allTickets)]); openTicket(ticket) }} />}
+      {showNew && mainTab === 'tickets' && <NewTicketModal students={students} onClose={() => setShowNew(false)} onCreated={ticket => { setTicketList(prev => [ticket, ...(prev ?? allTickets)]); openTicket(ticket) }} />}
     </div>
   )
 }
