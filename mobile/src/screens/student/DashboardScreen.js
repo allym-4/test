@@ -129,117 +129,6 @@ function KpiCard({ label, value, color = '#ccff00' }) {
   )
 }
 
-function getNextClassDate(sess) {
-  // Compute the next calendar date for this session from day_of_week + start_time
-  if (sess?.day_of_week == null || !sess?.start_time) return null
-  const djangoDow = sess.day_of_week // 0=Mon … 6=Sun
-  const jsDow = djangoDow === 6 ? 0 : djangoDow + 1 // JS: 0=Sun … 6=Sat
-  const now = new Date()
-  let daysAhead = jsDow - now.getDay()
-  if (daysAhead < 0) daysAhead += 7
-  if (daysAhead === 0) {
-    const [h, m] = sess.start_time.split(':').map(Number)
-    const classToday = new Date(now); classToday.setHours(h, m, 0, 0)
-    if (classToday <= now) daysAhead = 7
-  }
-  const d = new Date(now)
-  d.setDate(now.getDate() + daysAhead)
-  const [h, m] = sess.start_time.split(':').map(Number)
-  d.setHours(h, m, 0, 0)
-  return d
-}
-
-function MarkAwayModal({ enrolment, onClose, onDone }) {
-  const sess = enrolment.class_session_detail
-  const [confirming, setConfirming] = useState(false)
-  const [done, setDone] = useState(false)
-  const [error, setError] = useState('')
-
-  const nextClassDate = useMemo(() => getNextClassDate(sess), [sess])
-
-  const withinCutoff = useMemo(() => {
-    if (!nextClassDate) return false
-    return (nextClassDate - new Date()) < 4 * 60 * 60 * 1000
-  }, [nextClassDate])
-
-  const nextDateLabel = nextClassDate
-    ? nextClassDate.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
-    : null
-
-  async function handleConfirm() {
-    setConfirming(true)
-    setError('')
-    try {
-      await attendanceApi.markAway(null, enrolment.id)
-      setDone(true)
-      setTimeout(onDone, 1200)
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Could not mark away')
-    } finally {
-      setConfirming(false)
-    }
-  }
-
-  return (
-    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-      <View style={s.overlay}>
-        <View style={s.modal}>
-          <View style={s.modalHeader}>
-            <Text style={s.modalTitle}>Mark Away</Text>
-            <TouchableOpacity onPress={onClose}><Text style={s.modalClose}>✕</Text></TouchableOpacity>
-          </View>
-          <View style={s.modalBody}>
-            <Text style={s.modalClassName}>{sess?.name}</Text>
-            <Text style={s.modalClassMeta}>
-              {sess?.day_of_week != null ? DAYS_FULL[sess.day_of_week] : ''} · {sess?.start_time?.slice(0, 5)}
-              {nextDateLabel ? `  ·  ${nextDateLabel}` : ''}
-            </Text>
-
-            {!withinCutoff ? (
-              <View style={[s.infoBox, { borderColor: '#ccff00', backgroundColor: '#0f1600' }]}>
-                <Text style={[s.infoBoxHeading, { color: '#ccff00' }]}>You'll receive a catch-up credit</Text>
-                <Text style={s.infoBoxText}>
-                  This is more than 4 hours before your class — you're within the cancellation window. A catch-up credit will be added to your account to use within this season.
-                </Text>
-              </View>
-            ) : (
-              <View style={[s.infoBox, { borderColor: '#ffaa44', backgroundColor: '#1a0900' }]}>
-                <Text style={[s.infoBoxHeading, { color: '#ffaa44' }]}>No catch-up credit for this one</Text>
-                <Text style={s.infoBoxText}>
-                  This is within 4 hours of your class — the cancellation window has passed. You can still mark away so we know you're not coming, but no credit will be issued.{' '}
-                  If you don't mark away and don't attend, a{' '}
-                  <Text style={{ color: '#ffaa44', fontWeight: '600' }}>$20 no-show fee</Text>
-                  {' '}will be charged.
-                </Text>
-              </View>
-            )}
-
-            {!!error && <Text style={s.errorText}>{error}</Text>}
-            {done ? (
-              <Text style={s.doneText}>✓ Marked as away</Text>
-            ) : (
-              <View style={s.modalActions}>
-                <TouchableOpacity style={s.cancelBtn} onPress={onClose}>
-                  <Text style={s.cancelBtnText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[s.confirmBtn, confirming && s.btnDisabled]}
-                  onPress={handleConfirm}
-                  disabled={confirming}
-                >
-                  <Text style={s.confirmBtnText} numberOfLines={1}>
-                    {confirming ? 'Saving…' : withinCutoff ? 'Mark away anyway' : 'Confirm away'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </View>
-      </View>
-    </Modal>
-  )
-}
-
 export default function DashboardScreen({ navigation }) {
   const { user } = useAuth()
   const { data: enrolData, loading, refetch: refetchEnrol } = useApi(
@@ -261,7 +150,8 @@ export default function DashboardScreen({ navigation }) {
     () => enrolments.trialFeedback.pending(), []
   )
 
-  const [markAwayEnrol, setMarkAwayEnrol] = useState(null)
+  const [markingAway, setMarkingAway] = useState({})
+  const [cancellingAway, setCancellingAway] = useState({})
   const [acknowledging, setAcknowledging] = useState({})
   const [trialScreen, setTrialScreen] = useState('prompt')
   const [trialRatings, setTrialRatings] = useState({ class: 0, instructor: 0, facilities: 0, structure: 0 })
@@ -288,7 +178,11 @@ export default function DashboardScreen({ navigation }) {
           style={{ marginRight: 16, position: 'relative' }}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Text style={{ fontSize: 22, color: '#ccff00' }}>🔔</Text>
+          <View style={{ width: 24, height: 24, alignItems: 'center', justifyContent: 'flex-end' }}>
+              <View style={{ width: 16, height: 13, backgroundColor: '#ccff00', borderTopLeftRadius: 8, borderTopRightRadius: 8 }} />
+              <View style={{ width: 20, height: 2.5, backgroundColor: '#ccff00', borderRadius: 1, marginBottom: 1 }} />
+              <View style={{ width: 6, height: 6, backgroundColor: '#ccff00', borderRadius: 3 }} />
+            </View>
           {bellBadge > 0 && (
             <View style={{
               position: 'absolute', top: -4, right: -6,
@@ -306,6 +200,30 @@ export default function DashboardScreen({ navigation }) {
       ),
     })
   }, [bellBadge, navigation])
+
+  async function handleMarkAway(occ, enrolId) {
+    setMarkingAway(prev => ({ ...prev, [occ.id]: true }))
+    try {
+      await attendanceApi.markAway(occ.id, enrolId)
+      refetchEnrol()
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.detail || 'Could not mark away')
+    } finally {
+      setMarkingAway(prev => ({ ...prev, [occ.id]: false }))
+    }
+  }
+
+  async function handleCancelAway(occId) {
+    setCancellingAway(prev => ({ ...prev, [occId]: true }))
+    try {
+      await attendanceApi.cancelAway(occId)
+      refetchEnrol()
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.detail || 'Could not update')
+    } finally {
+      setCancellingAway(prev => ({ ...prev, [occId]: false }))
+    }
+  }
 
   async function acknowledgeAnn(id) {
     setAcknowledging(prev => ({ ...prev, [id]: true }))
@@ -445,18 +363,55 @@ export default function DashboardScreen({ navigation }) {
             : (sess?.instructor_name || '—')
           return (
             <View key={e.id} style={s.classCard}>
-              <View style={{ flex: 1 }}>
-                {sess?.day_of_week != null && (
-                  <Text style={s.classDay}>
-                    {DAYS_FULL[sess.day_of_week]} · {sess.start_time?.slice(0, 5)}
-                  </Text>
-                )}
-                <Text style={s.className}>{sess?.name} · {sess?.studio_detail?.name}</Text>
-                <Text style={s.classInstructor}>with {instructorName}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                <View style={{ flex: 1 }}>
+                  {sess?.day_of_week != null && (
+                    <Text style={s.classDay}>
+                      {DAYS_FULL[sess.day_of_week]} · {sess.start_time?.slice(0, 5)}
+                    </Text>
+                  )}
+                  <Text style={s.className}>{sess?.name} · {sess?.studio_detail?.name}</Text>
+                  <Text style={s.classInstructor}>with {instructorName}</Text>
+                </View>
               </View>
-              <TouchableOpacity style={s.awayBtn} onPress={() => setMarkAwayEnrol(e)}>
-                <Text style={s.awayBtnText}>Mark Away</Text>
-              </TouchableOpacity>
+              {(e.upcoming_occurrences ?? []).length > 0 && (
+                <View style={{ marginTop: 10, borderTopWidth: 1, borderTopColor: '#222', paddingTop: 10, gap: 8 }}>
+                  {(e.upcoming_occurrences ?? []).map((occ, idx) => {
+                    const isAway = occ.marked_away
+                    const dateStr = new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+                    return (
+                      <View key={occ.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Text style={[s.nextDate, isAway && { color: '#ffaa00' }]}>
+                          {dateStr}{isAway ? '  · AWAY' : ''}
+                        </Text>
+                        {isAway ? (
+                          <TouchableOpacity
+                            style={s.canMakeItBtn}
+                            disabled={!!cancellingAway[occ.id]}
+                            onPress={() => handleCancelAway(occ.id)}
+                          >
+                            {cancellingAway[occ.id]
+                              ? <ActivityIndicator size="small" color="#ccff00" />
+                              : <Text style={s.canMakeItText}>I can make it!</Text>
+                            }
+                          </TouchableOpacity>
+                        ) : (
+                          <TouchableOpacity
+                            style={s.awayBtn}
+                            disabled={!!markingAway[occ.id]}
+                            onPress={() => handleMarkAway(occ, e.id)}
+                          >
+                            {markingAway[occ.id]
+                              ? <ActivityIndicator size="small" color="#ccff00" />
+                              : <Text style={s.awayBtnText}>Mark away</Text>
+                            }
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    )
+                  })}
+                </View>
+              )}
             </View>
           )
         })
@@ -522,14 +477,6 @@ export default function DashboardScreen({ navigation }) {
             <Text style={s.upsellBtnText}>Add a class</Text>
           </TouchableOpacity>
         </View>
-      )}
-
-      {markAwayEnrol && (
-        <MarkAwayModal
-          enrolment={markAwayEnrol}
-          onClose={() => setMarkAwayEnrol(null)}
-          onDone={() => setMarkAwayEnrol(null)}
-        />
       )}
 
       {pendingOffers.length > 0 && !trialItem && (
@@ -726,6 +673,9 @@ const s = StyleSheet.create({
   classInstructor: { fontSize: 12, color: '#666' },
   awayBtn: { backgroundColor: '#1a1a1a', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#333' },
   awayBtnText: { fontSize: 12, fontWeight: '600', color: '#ccff00' },
+  canMakeItBtn: { backgroundColor: '#0f1600', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#ccff00' },
+  canMakeItText: { fontSize: 12, fontWeight: '600', color: '#ccff00' },
+  nextDate: { fontSize: 13, color: '#ccc', fontWeight: '500', flex: 1 },
 
   // Level progression
   progressCard: {
