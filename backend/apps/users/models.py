@@ -34,6 +34,7 @@ class User(AbstractUser):
         default='first_name',
     )
     nickname = models.CharField(max_length=50, blank=True)
+    level = models.CharField(max_length=50, blank=True)
 
     # Staff permission flags (only meaningful for instructor/admin/staff roles)
     perm_billing = models.BooleanField(default=False)
