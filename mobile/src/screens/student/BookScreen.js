@@ -741,14 +741,16 @@ function CasualBookingOptionsModal({ visible, occ, priceCasual, priceCasualEnrol
   const sessName = sess?.name ?? 'Class'
   const time = fmtTime(sess?.start_time)
   const instructor = sess?.instructor_detail?.display_name ?? sess?.instructor_detail?.first_name
-  const inActiveSeason = activeSeason && sess?.season === activeSeason?.id
+  // Treat session with no season assigned as potentially in the active season
+  const inActiveSeason = !!activeSeason && (sess?.season == null || sess?.season === activeSeason?.id)
   const cutoffWeeks = sess?.catchup_cutoff_weeks ?? 3
   const pastCutoff = inActiveSeason && currentSeasonWeek > cutoffWeeks
   const creditEligible = availableCredits > 0 && inActiveSeason && !pastCutoff
   const passEligible = passClassesRemaining > 0
   const isEnrolled = activeSeasonCount > 0
   const casualRate = isEnrolled ? priceCasualEnrolled : priceCasual
-  const seasonCanEnrol = bookingSeason && bookingSeason.bookings_open !== false && sess?.season === bookingSeason?.id
+  // Show season enrol upsell whenever bookings are open — don't restrict to sess.season match
+  const seasonCanEnrol = !!(bookingSeason && bookingSeason.bookings_open !== false)
   const passSaving = Math.round((priceCasual - (priceClassPass / classPassSize)) * classPassSize)
 
   // Default to the best / cheapest available option
@@ -857,7 +859,7 @@ function CasualBookingOptionsModal({ visible, occ, priceCasual, priceCasualEnrol
             />
           )}
 
-          {!passEligible && inActiveSeason && passSaving > 0 && (
+          {!passEligible && !!activeSeason && passSaving > 0 && (
             <OptionRow id="buypass"
               title={<Text><Text>Buy a {classPassSize}-class pass · </Text><Text style={{ color: T.lime }}>save ${passSaving}</Text></Text>}
               sub={`$${(priceClassPass / classPassSize).toFixed(0)}/class · use across any eligible casual or catch-up`}
