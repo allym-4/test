@@ -1061,6 +1061,19 @@ export default function BookScreen({ navigation }) {
   const [casualBookingId, setCasualBookingId] = useState(null)
   const [buyingPass, setBuyingPass] = useState(false)
   const [bookingOptionsOcc, setBookingOptionsOcc] = useState(null)
+  const [casualWarning, setCasualWarning] = useState(null) // { occ, type: 'level'|'cutoff' }
+
+  function openCasualBooking(occ) {
+    const sess = occ.session_detail
+    const sessLevel = sess?.level ?? sess?.level_name
+    const isOutOfLevel = sessLevel && levelFilter && String(sessLevel) !== String(levelFilter)
+    const inActiveSeason = activeSeason && sess?.season === activeSeason?.id
+    const cutoffWeeks = sess?.catchup_cutoff_weeks ?? 3
+    const pastCutoff = inActiveSeason && currentSeasonWeek > cutoffWeeks
+    if (isOutOfLevel) { setCasualWarning({ occ, type: 'level' }); return }
+    if (pastCutoff) { setCasualWarning({ occ, type: 'cutoff' }); return }
+    setBookingOptionsOcc(occ)
+  }
 
   useEffect(() => {
     if (user?.level) setLevelFilter(user.level)
@@ -1856,7 +1869,7 @@ export default function BookScreen({ navigation }) {
                               ) : (
                                 <TouchableOpacity
                                   style={s.casualBookBtn}
-                                  onPress={() => setBookingOptionsOcc(occ)}
+                                  onPress={() => openCasualBooking(occ)}
                                   activeOpacity={0.8}
                                 >
                                   <Text style={s.casualBookBtnText}>BOOK</Text>
@@ -2136,6 +2149,57 @@ export default function BookScreen({ navigation }) {
         onClose={() => setBuyingPass(false)}
         onSuccess={() => { setBuyingPass(false); refetchPasses() }}
       />
+
+      {/* ── Casual warning modal (out-of-level / post-cutoff) ─────────────── */}
+      {!!casualWarning && (
+        <Modal visible animationType="slide" transparent onRequestClose={() => setCasualWarning(null)}>
+          <View style={hu.overlay}>
+            <View style={hu.sheet}>
+              <View style={hu.header}>
+                <Text style={hu.title}>{casualWarning.type === 'level' ? 'Outside your level' : 'Past catch-up window'}</Text>
+                <TouchableOpacity onPress={() => setCasualWarning(null)} style={hu.closeBtn}>
+                  <Text style={hu.closeBtnText}>CLOSE</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={hu.warn}>{casualWarning.type === 'level' ? '🔒' : '⏰'}</Text>
+              <Text style={hu.classLine}>
+                {getSessionName(casualWarning.occ.session_detail)}
+                {casualWarning.occ.session_detail?.day_of_week != null
+                  ? ` · ${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][casualWarning.occ.session_detail.day_of_week]}`
+                  : ''}
+              </Text>
+              <Text style={hu.body}>
+                {casualWarning.type === 'level'
+                  ? "This class is outside your current level. You'll need to submit an exemption request — your instructor will review it before confirming your spot."
+                  : `Catch-up credits can't be used after week ${casualWarning.occ.session_detail?.catchup_cutoff_weeks ?? 3} of the season (currently week ${currentSeasonWeek}). Submit an exemption request and the studio will review it.`}
+              </Text>
+              <View style={hu.actions}>
+                <TouchableOpacity
+                  style={hu.confirmBtn}
+                  onPress={() => {
+                    const sess = casualWarning.occ.session_detail
+                    setCasualWarning(null)
+                    setExemptionSession(sess)
+                  }}
+                >
+                  <Text style={hu.confirmText}>REQUEST EXEMPTION</Text>
+                </TouchableOpacity>
+                {casualWarning.type === 'cutoff' && (
+                  <TouchableOpacity
+                    style={[hu.cancelBtn, { borderWidth: 1, borderColor: T.border, borderRadius: 12, padding: 14, alignItems: 'center', marginTop: 8 }]}
+                    onPress={() => { const occ = casualWarning.occ; setCasualWarning(null); setBookingOptionsOcc(occ) }}
+                  >
+                    <Text style={[hu.cancelText, { color: T.text }]}>PAY CASUAL RATE INSTEAD</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity style={hu.cancelBtn} onPress={() => setCasualWarning(null)}>
+                  <Text style={hu.cancelText}>CANCEL</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
 
       {/* ── Casual booking options modal ──────────────────────────────────── */}
       <CasualBookingOptionsModal
