@@ -102,11 +102,11 @@ export default function StudentChat() {
     },
     {
       id: 'human',
-      name: 'Mimi & the Team',
+      name: 'Mimi & Chloe',
       avatar: 'D',
       avatarBg: 'var(--lime)',
       avatarColor: '#000',
-      sub: 'Studio team',
+      sub: 'Speak to Mimi & Chloe',
     },
   ]
 
@@ -189,7 +189,7 @@ export default function StudentChat() {
                   style={{ fontSize: 12, flexShrink: 0 }}
                   onClick={() => setActiveThread('human')}
                 >
-                  Speak to Mimi &amp; the Team
+                  Speak to Mimi &amp; Chloe
                 </button>
               </div>
 
@@ -226,7 +226,7 @@ export default function StudentChat() {
                     style={{ background: 'var(--lav)', color: '#000', fontSize: 12 }}
                     onClick={() => setActiveThread('human')}
                   >
-                    Speak to Mimi &amp; the Team
+                    Speak to Mimi &amp; Chloe
                   </button>
                 </div>
               </div>
@@ -258,8 +258,8 @@ export default function StudentChat() {
                   D
                 </div>
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>Mimi &amp; the Team</div>
-                  <div style={{ fontSize: 11, color: 'var(--grey)' }}>Studio team · Usually replies within a few hours</div>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>Mimi &amp; Chloe</div>
+                  <div style={{ fontSize: 11, color: 'var(--grey)' }}>Speak to Mimi & Chloe · Usually replies within a few hours</div>
                 </div>
               </div>
 
