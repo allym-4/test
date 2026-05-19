@@ -375,7 +375,14 @@ export default function DashboardScreen({ navigation }) {
         <Text style={{ fontSize: 12, color: '#ccff00', fontWeight: '600' }}>View all upcoming →</Text>
       </TouchableOpacity>
       {enrolList.length === 0 && !loading ? (
-        <Text style={s.empty}>No classes enrolled yet. Contact your studio to get set up.</Text>
+        <TouchableOpacity
+          style={{ backgroundColor: '#111', borderRadius: 14, borderWidth: 1, borderColor: '#222', padding: 20, alignItems: 'center', gap: 8 }}
+          onPress={() => navigation.navigate('Book')}
+          activeOpacity={0.8}
+        >
+          <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>Book your first class</Text>
+          <Text style={{ fontSize: 13, color: '#666', textAlign: 'center' }}>Browse trial classes, casual drop-ins or enrol for the season →</Text>
+        </TouchableOpacity>
       ) : (
         enrolList.map(e => {
           const sess = e.class_session_detail

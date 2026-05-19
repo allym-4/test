@@ -57,6 +57,7 @@ export function useViewMode(user) {
 function RootNavigator() {
   const { user, loading } = useAuth()
   const [onboardingDone, setOnboardingDone] = useState(null)
+  const [postOnboardingNav, setPostOnboardingNav] = useState(false)
   const navigationRef = useRef(null)
   const { viewMode, setViewMode } = useViewMode(user)
 
@@ -66,6 +67,13 @@ function RootNavigator() {
       setOnboardingDone(!!val)
     })
   }, [user])
+
+  useEffect(() => {
+    if (postOnboardingNav && navigationRef.current) {
+      setPostOnboardingNav(false)
+      navigationRef.current.navigate('Book')
+    }
+  }, [postOnboardingNav, onboardingDone])
 
   usePushNotifications({
     user,
@@ -93,7 +101,7 @@ function RootNavigator() {
     return (
       <OnboardingScreen
         userId={user.id}
-        onDone={() => setOnboardingDone(true)}
+        onDone={() => { setOnboardingDone(true); setPostOnboardingNav(true) }}
       />
     )
   }
