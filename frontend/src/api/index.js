@@ -63,6 +63,7 @@ export const classes = {
     suggest: (sessionIds) => client.get('/api/classes/upsells/suggest/', { params: { session_ids: sessionIds.join(',') } }),
   },
   myUpcoming: () => client.get('/api/classes/my-upcoming/'),
+  emailClass: (sessionId, data) => client.post(`/api/classes/sessions/${sessionId}/email/`, data),
 }
 
 export const studios = {
@@ -155,6 +156,7 @@ export const seasons = {
   update: (id, data) => client.patch(`/api/classes/seasons/${id}/`, data),
   delete: (id) => client.delete(`/api/classes/seasons/${id}/`),
   toggleBookings: (id) => client.post(`/api/classes/seasons/${id}/toggle-bookings/`),
+  close: (id) => client.post(`/api/classes/seasons/${id}/close/`),
 }
 
 export const lockers = {

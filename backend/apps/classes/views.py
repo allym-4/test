@@ -1014,6 +1014,89 @@ class CasualAdminDisplaceView(APIView):
         return Response({'detail': 'Casual booking force-displaced.'}, status=status.HTTP_200_OK)
 
 
+class ClassEmailView(APIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, session_pk):
+        from apps.enrolments.models import Enrolment
+        from apps.users.models import Notification
+        from django.core.mail import send_mail
+        from django.conf import settings
+
+        subject = request.data.get('subject', '').strip()
+        message = request.data.get('message', '').strip()
+        if not subject or not message:
+            return Response({'detail': 'subject and message are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            session = ClassSession.objects.get(pk=session_pk)
+        except ClassSession.DoesNotExist:
+            return Response({'detail': 'Session not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        enrolments = Enrolment.objects.filter(
+            class_session=session, status='active'
+        ).select_related('student')
+
+        sent_count = 0
+        for enrolment in enrolments:
+            student = enrolment.student
+            Notification.objects.create(
+                recipient=student,
+                title=subject,
+                body=message,
+                notification_type='info',
+            )
+            if student.email:
+                from apps.users.email_utils import send_branded_email
+                send_branded_email(
+                    to_email=student.email,
+                    subject=subject,
+                    template_name='class_message',
+                    context={
+                        'first_name': student.first_name,
+                        'greeting': f'Hi {student.first_name},',
+                        'message': message,
+                        'plain_text': f'Hi {student.first_name},\n\n{message}\n\nDuality Pole Studio',
+                    }
+                )
+                sent_count += 1
+
+        return Response({'sent': sent_count, 'total': enrolments.count()})
+
+
+class SeasonCloseView(APIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        from apps.enrolments.models import Enrolment
+
+        try:
+            season = Season.objects.get(pk=pk)
+        except Season.DoesNotExist:
+            return Response({'detail': 'Season not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if season.status == 'completed':
+            return Response({'detail': 'Season is already completed.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Mark all active enrolments in this season's sessions as completed
+        session_ids = list(season.sessions.values_list('id', flat=True))
+        completed_count = Enrolment.objects.filter(
+            class_session_id__in=session_ids,
+            status='active'
+        ).update(status='completed')
+
+        # Mark the season as completed
+        season.status = 'completed'
+        season.bookings_open = False
+        season.save(update_fields=['status', 'bookings_open'])
+
+        from .serializers import SeasonSerializer
+        return Response({
+            'season': SeasonSerializer(season).data,
+            'enrolments_completed': completed_count,
+        })
+
+
 class MyUpcomingClassesView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 

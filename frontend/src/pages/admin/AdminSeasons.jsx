@@ -235,13 +235,16 @@ function SeasonModal({ season, onClose, onSaved, allSeasons = [] }) {
   )
 }
 
-function SeasonDrawer({ season, onClose, onEdit, onStatusChange, onBookingsToggle }) {
+function SeasonDrawer({ season, onClose, onEdit, onStatusChange, onBookingsToggle, onCloseSeason }) {
   const { data: sessionsData, loading: loadingSessions } = useApi(
     () => classesApi.list({ season: season.id }),
     [season.id]
   )
   const sessions = sessionsData?.results || sessionsData || []
   const [toggling, setToggling] = useState(false)
+  const [confirmClose, setConfirmClose] = useState(false)
+  const [closing, setClosing] = useState(false)
+  const [closeResult, setCloseResult] = useState(null)
 
   const statusCls = { active: 'tag-lime', upcoming: 'tag-lav', completed: 'tag-grey' }
   const wr = weeksRemaining(season.end_date)
@@ -249,6 +252,17 @@ function SeasonDrawer({ season, onClose, onEdit, onStatusChange, onBookingsToggl
   async function handleToggleBookings() {
     setToggling(true)
     try { await onBookingsToggle() } finally { setToggling(false) }
+  }
+
+  async function handleCloseSeason() {
+    setClosing(true)
+    try {
+      const result = await onCloseSeason()
+      setCloseResult(result)
+      setConfirmClose(false)
+    } finally {
+      setClosing(false)
+    }
   }
 
   return (
@@ -389,18 +403,50 @@ function SeasonDrawer({ season, onClose, onEdit, onStatusChange, onBookingsToggl
           </div>
 
           {/* Status actions */}
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexDirection: 'column' }}>
             {season.status === 'upcoming' && (
-              <button className="btn btn-sm" style={{ background: 'rgba(176,160,255,0.15)', color: 'var(--lav)', border: '1px solid rgba(176,160,255,0.3)' }}
-                onClick={() => onStatusChange('active')}>
-                Activate Season
-              </button>
+              <div>
+                <button className="btn btn-sm" style={{ background: 'rgba(176,160,255,0.15)', color: 'var(--lav)', border: '1px solid rgba(176,160,255,0.3)' }}
+                  onClick={() => onStatusChange('active')}>
+                  Activate Season
+                </button>
+              </div>
             )}
-            {season.status === 'active' && (
-              <button className="btn btn-sm" style={{ background: 'rgba(102,102,102,0.15)', color: 'var(--grey)', border: '1px solid rgba(102,102,102,0.3)' }}
-                onClick={() => onStatusChange('completed')}>
-                Close Season
-              </button>
+            {closeResult && (
+              <div style={{ background: 'rgba(204,255,0,0.1)', border: '1px solid rgba(204,255,0,0.25)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--lime)' }}>
+                Season closed — {closeResult.enrolments_completed} enrolment{closeResult.enrolments_completed !== 1 ? 's' : ''} archived
+              </div>
+            )}
+            {season.status !== 'completed' && !closeResult && (
+              <div>
+                {!confirmClose ? (
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    style={{ color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)' }}
+                    onClick={() => setConfirmClose(true)}
+                  >
+                    Close Season
+                  </button>
+                ) : (
+                  <div style={{ background: 'rgba(255,68,68,0.08)', border: '1px solid rgba(255,68,68,0.25)', borderRadius: 8, padding: '12px 14px' }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--red)' }}>Close this season?</div>
+                    <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 12 }}>
+                      This will archive all active enrolments, close bookings, and mark the season as completed. This cannot be undone.
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        className="btn btn-sm"
+                        style={{ background: 'rgba(255,68,68,0.15)', color: 'var(--red)', border: '1px solid rgba(255,68,68,0.3)' }}
+                        onClick={handleCloseSeason}
+                        disabled={closing}
+                      >
+                        {closing ? 'Closing…' : 'Yes, close season'}
+                      </button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => setConfirmClose(false)}>Cancel</button>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -538,6 +584,13 @@ export default function AdminSeasons() {
             const updated = { ...drawerSeason, bookings_open: res.data.bookings_open }
             setDrawerSeason(updated)
             refetch()
+          }}
+          onCloseSeason={async () => {
+            const res = await seasons.close(drawerSeason.id)
+            const updated = res.data.season
+            setDrawerSeason(updated)
+            setSeasonList(prev => (prev ?? allSeasons).map(s => s.id === updated.id ? updated : s))
+            return res.data
           }}
         />
       )}

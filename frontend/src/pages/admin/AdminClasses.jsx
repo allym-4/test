@@ -379,6 +379,76 @@ function WorkshopBookingsModal({ workshop, onClose }) {
   )
 }
 
+function ClassEmailModal({ session, onClose }) {
+  const [subject, setSubject] = useState('')
+  const [message, setMessage] = useState('')
+  const [sending, setSending] = useState(false)
+  const [result, setResult] = useState(null)
+  const [error, setError] = useState(null)
+
+  async function handleSend(e) {
+    e.preventDefault()
+    setSending(true)
+    setError(null)
+    try {
+      const res = await classes.emailClass(session.id, { subject, message })
+      setResult(res.data)
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to send email.')
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 480 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>✉ Email Class — {session.name}</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="sd-body">
+          {result ? (
+            <div style={{ textAlign: 'center', padding: '24px 0' }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
+              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>Sent to {result.sent} student{result.sent !== 1 ? 's' : ''}!</div>
+              <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 20 }}>{result.total} enrolled · {result.sent} with email addresses</div>
+              <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
+            </div>
+          ) : (
+            <form onSubmit={handleSend}>
+              {error && (
+                <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>
+                  {error}
+                </div>
+              )}
+              <div className="field">
+                <label>Subject *</label>
+                <input value={subject} onChange={e => setSubject(e.target.value)} required placeholder="e.g. Important class update" />
+              </div>
+              <div className="field">
+                <label>Message *</label>
+                <textarea
+                  rows={6}
+                  value={message}
+                  onChange={e => setMessage(e.target.value)}
+                  required
+                  placeholder="Write your message to all active students in this class…"
+                  style={{ width: '100%', background: 'var(--input)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', padding: '9px 12px', fontSize: 13, resize: 'vertical' }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+                <button type="submit" className="btn btn-lime btn-sm" disabled={sending}>{sending ? 'Sending…' : 'Send Email'}</button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminClasses() {
   const [tab, setTab] = useState('classes')
   const [typeFilter, setTypeFilter] = useState('all')
@@ -391,6 +461,7 @@ export default function AdminClasses() {
   const [confirmDeleteWorkshopId, setConfirmDeleteWorkshopId] = useState(null)
   const [bookingsWorkshop, setBookingsWorkshop] = useState(null)
   const [createMenuOpen, setCreateMenuOpen] = useState(false)
+  const [emailSession, setEmailSession] = useState(null)
 
   const { data: sessData, loading, refetch } = useApi(() => classes.list(), [])
   const { data: instrData } = useApi(() => users.list({ role: 'instructor' }), [])
@@ -457,6 +528,9 @@ export default function AdminClasses() {
       )}
       {bookingsWorkshop && (
         <WorkshopBookingsModal workshop={bookingsWorkshop} onClose={() => setBookingsWorkshop(null)} />
+      )}
+      {emailSession && (
+        <ClassEmailModal session={emailSession} onClose={() => setEmailSession(null)} />
       )}
 
       <div className="page-header">
@@ -538,6 +612,7 @@ export default function AdminClasses() {
                         <div style={{ display: 'flex', gap: 4 }}>
                           <button className="btn btn-ghost btn-xs" title="View" onClick={() => setModal(s)}>👁</button>
                           <button className="btn btn-ghost btn-xs" title="Edit" onClick={() => setModal(s)}>✏</button>
+                          <button className="btn btn-ghost btn-xs" title="Email Class" onClick={() => setEmailSession(s)}>✉</button>
                           <button className="btn btn-ghost btn-xs" title="Duplicate" onClick={() => { const copy = { ...s, id: undefined, name: s.name + ' (copy)' }; setModal(copy) }}>⧉</button>
                           {confirmDeleteId === s.id ? (
                             <>
