@@ -1,6 +1,6 @@
 import datetime
 from rest_framework import serializers
-from .models import Enrolment
+from .models import Enrolment, ClassChangeRequest
 from apps.users.serializers import UserMinimalSerializer
 from apps.classes.serializers import ClassSessionSerializer
 
@@ -56,3 +56,20 @@ class EnrolmentSerializer(serializers.ModelSerializer):
             'displacement_casual_booking', 'displacement_expires_at',
             'upcoming_occurrences',
         )
+
+
+class ClassChangeRequestSerializer(serializers.ModelSerializer):
+    student_name = serializers.CharField(source='student.display_name', read_only=True)
+    current_enrolment_detail = EnrolmentSerializer(source='current_enrolment', read_only=True)
+    requested_session_detail = ClassSessionSerializer(source='requested_session', read_only=True)
+
+    class Meta:
+        model = ClassChangeRequest
+        fields = (
+            'id', 'student', 'student_name',
+            'current_enrolment', 'current_enrolment_detail',
+            'requested_session', 'requested_session_detail',
+            'notes', 'status', 'admin_notes',
+            'created_at', 'resolved_at',
+        )
+        read_only_fields = ('id', 'student', 'status', 'admin_notes', 'created_at', 'resolved_at')

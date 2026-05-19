@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi, settings as settingsApi } from '../../api'
+import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi, settings as settingsApi, classes } from '../../api'
 import client from '../../api/client'
 import '../StudentsPage.css'
 import EditStudentModal from '../../components/EditStudentModal'
@@ -226,6 +226,16 @@ export default function AdminStudentDetail() {
   const [resetPwError, setResetPwError] = useState(null)
   const [resetPwSuccess, setResetPwSuccess] = useState(false)
   const [savingResetPw, setSavingResetPw] = useState(false)
+  const [changeRequestsData, setChangeRequestsData] = useState(null)
+  const [showChangeRequestModal, setShowChangeRequestModal] = useState(null)
+  const [changeReqNewSession, setChangeReqNewSession] = useState('')
+  const [changeReqRefundAction, setChangeReqRefundAction] = useState('none')
+  const [changeReqRefundAmount, setChangeReqRefundAmount] = useState('')
+  const [changeReqChargeAmount, setChangeReqChargeAmount] = useState('')
+  const [changeReqAdminNotes, setChangeReqAdminNotes] = useState('')
+  const [processingChangeReq, setProcessingChangeReq] = useState(false)
+  const [changeReqError, setChangeReqError] = useState(null)
+  const [allSessions, setAllSessions] = useState(null)
 
   useEffect(() => {
     users.get(id).then(res => {
@@ -280,6 +290,14 @@ export default function AdminStudentDetail() {
       const lockers = lockerRes.data?.results || lockerRes.data || []
       setLockerData(lockers[0] || null)
     }).finally(() => setLoading(false))
+
+    enrolments.changeRequests.list({ student: student.id })
+      .then(r => setChangeRequestsData(r.data.results || r.data || []))
+      .catch(() => {})
+
+    classes.list({ session_type: 'course', is_active: true })
+      .then(r => setAllSessions(r.data.results || r.data || []))
+      .catch(() => {})
   }, [student?.id])
 
   async function reloadBalance() {
@@ -580,6 +598,72 @@ export default function AdminStudentDetail() {
                           {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][e.class_session_detail?.day_of_week]} {e.class_session_detail?.start_time?.slice(0,5)}
                         </div>
                         <span className="tag tag-amber" style={{ fontSize: 10 }}>Waitlisted</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Class Change Requests */}
+                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 10, marginTop: 8 }}>
+                  Class Change Requests
+                  {(changeRequestsData || []).filter(r => r.status === 'pending').length > 0 && (
+                    <span style={{ background: 'var(--lime)', color: '#000', borderRadius: 12, fontSize: 10, fontWeight: 700, padding: '1px 7px', marginLeft: 8 }}>
+                      {(changeRequestsData || []).filter(r => r.status === 'pending').length} pending
+                    </span>
+                  )}
+                </div>
+                {(changeRequestsData || []).length === 0 ? (
+                  <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 20 }}>No change requests</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+                    {(changeRequestsData || []).map(req => (
+                      <div key={req.id} className="card" style={{ padding: 16 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                              {req.current_enrolment_detail?.class_session_detail?.name || 'Unknown class'}
+                            </div>
+                            {req.requested_session_detail && (
+                              <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 4 }}>
+                                → Requesting: {req.requested_session_detail.name}
+                              </div>
+                            )}
+                            {req.notes && (
+                              <div style={{ fontSize: 13, color: 'var(--white)', marginTop: 4, padding: '8px 10px', background: '#1a1a1a', borderRadius: 6 }}>
+                                "{req.notes}"
+                              </div>
+                            )}
+                            <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 6 }}>
+                              {new Date(req.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </div>
+                            {req.admin_notes && (
+                              <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 4, fontStyle: 'italic' }}>
+                                Admin: {req.admin_notes}
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                            <span className={`tag ${req.status === 'pending' ? 'tag-amber' : req.status === 'approved' ? 'tag-lime' : 'tag-red'}`} style={{ fontSize: 10 }}>
+                              {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+                            </span>
+                            {req.status === 'pending' && (
+                              <button
+                                className="btn btn-lime btn-xs"
+                                onClick={() => {
+                                  setShowChangeRequestModal(req)
+                                  setChangeReqNewSession(req.requested_session?.toString() || '')
+                                  setChangeReqRefundAction('none')
+                                  setChangeReqRefundAmount('')
+                                  setChangeReqChargeAmount('')
+                                  setChangeReqAdminNotes('')
+                                  setChangeReqError(null)
+                                }}
+                              >
+                                Process →
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1251,6 +1335,149 @@ export default function AdminStudentDetail() {
               )}
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
                 <button className="btn btn-ghost btn-sm" onClick={() => setShowTransferCancel(false)}>Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Process Change Request Modal */}
+      {showChangeRequestModal && (
+        <div className="sd-overlay" onClick={e => e.target === e.currentTarget && setShowChangeRequestModal(null)}>
+          <div className="sd-modal" style={{ maxWidth: 500 }}>
+            <div className="sd-header">
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>Process Class Change Request</div>
+              <button className="modal-close-btn" onClick={() => setShowChangeRequestModal(null)}>✕</button>
+            </div>
+            <div className="sd-body">
+              <div style={{ background: '#111', borderRadius: 8, padding: '12px 14px', marginBottom: 16, fontSize: 13 }}>
+                <div style={{ color: 'var(--grey)', marginBottom: 4 }}>Current class</div>
+                <div style={{ fontWeight: 600, color: 'var(--white)' }}>
+                  {showChangeRequestModal.current_enrolment_detail?.class_session_detail?.name || 'Unknown'}
+                </div>
+                {showChangeRequestModal.notes && (
+                  <div style={{ marginTop: 8, padding: '8px 10px', background: '#1a1a1a', borderRadius: 6, color: 'var(--grey)', fontStyle: 'italic', fontSize: 12 }}>
+                    "{showChangeRequestModal.notes}"
+                  </div>
+                )}
+              </div>
+
+              {changeReqError && (
+                <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>
+                  {changeReqError}
+                </div>
+              )}
+
+              <div className="field">
+                <label>Move to class</label>
+                <select
+                  value={changeReqNewSession}
+                  onChange={e => setChangeReqNewSession(e.target.value)}
+                >
+                  <option value="">— Select new class —</option>
+                  {(allSessions || []).map(s => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} · {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][s.day_of_week]} {s.start_time?.slice(0,5)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="field">
+                <label>Payment adjustment</label>
+                <select value={changeReqRefundAction} onChange={e => setChangeReqRefundAction(e.target.value)}>
+                  <option value="none">No adjustment</option>
+                  <option value="credit">Issue studio credit</option>
+                  <option value="stripe">Refund to card (Stripe)</option>
+                  <option value="charge">Charge extra</option>
+                </select>
+              </div>
+
+              {(changeReqRefundAction === 'credit' || changeReqRefundAction === 'stripe') && (
+                <div className="field">
+                  <label>Refund / credit amount ($)</label>
+                  <input
+                    type="number" step="0.01" min="0"
+                    value={changeReqRefundAmount}
+                    onChange={e => setChangeReqRefundAmount(e.target.value)}
+                    placeholder="0.00"
+                  />
+                </div>
+              )}
+
+              {changeReqRefundAction === 'charge' && (
+                <div className="field">
+                  <label>Additional charge amount ($)</label>
+                  <input
+                    type="number" step="0.01" min="0"
+                    value={changeReqChargeAmount}
+                    onChange={e => setChangeReqChargeAmount(e.target.value)}
+                    placeholder="0.00"
+                  />
+                </div>
+              )}
+
+              <div className="field">
+                <label>Admin notes <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(sent to student)</span></label>
+                <input
+                  value={changeReqAdminNotes}
+                  onChange={e => setChangeReqAdminNotes(e.target.value)}
+                  placeholder="Optional note to include in the student notification"
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  style={{ color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)' }}
+                  disabled={processingChangeReq}
+                  onClick={async () => {
+                    setProcessingChangeReq(true)
+                    setChangeReqError(null)
+                    try {
+                      await enrolments.changeRequests.reject(showChangeRequestModal.id, { admin_notes: changeReqAdminNotes })
+                      const r = await enrolments.changeRequests.list({ student: student.id })
+                      setChangeRequestsData(r.data.results || r.data || [])
+                      setShowChangeRequestModal(null)
+                    } catch (err) {
+                      setChangeReqError(err.response?.data?.detail || 'Failed to reject.')
+                    } finally {
+                      setProcessingChangeReq(false)
+                    }
+                  }}
+                >
+                  Reject
+                </button>
+                <button
+                  className="btn btn-lime btn-sm"
+                  disabled={processingChangeReq || !changeReqNewSession}
+                  onClick={async () => {
+                    setProcessingChangeReq(true)
+                    setChangeReqError(null)
+                    try {
+                      await enrolments.changeRequests.approve(showChangeRequestModal.id, {
+                        new_session_id: parseInt(changeReqNewSession),
+                        refund_action: changeReqRefundAction === 'charge' ? 'none' : changeReqRefundAction,
+                        refund_amount: (changeReqRefundAction === 'credit' || changeReqRefundAction === 'stripe') ? parseFloat(changeReqRefundAmount || 0) : undefined,
+                        charge_amount: changeReqRefundAction === 'charge' ? parseFloat(changeReqChargeAmount || 0) : undefined,
+                        admin_notes: changeReqAdminNotes,
+                      })
+                      const [enrolRes, reqRes] = await Promise.all([
+                        enrolments.list({ student: student.id }),
+                        enrolments.changeRequests.list({ student: student.id }),
+                      ])
+                      setEnrolData(enrolRes.data.results || [])
+                      setChangeRequestsData(reqRes.data.results || reqRes.data || [])
+                      setShowChangeRequestModal(null)
+                    } catch (err) {
+                      setChangeReqError(err.response?.data?.detail || 'Failed to approve.')
+                    } finally {
+                      setProcessingChangeReq(false)
+                    }
+                  }}
+                >
+                  {processingChangeReq ? 'Processing…' : 'Approve & Move'}
+                </button>
               </div>
             </div>
           </div>

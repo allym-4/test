@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import {
   ScrollView, View, Text, TouchableOpacity, StyleSheet,
-  RefreshControl, ActivityIndicator, Modal,
+  RefreshControl, ActivityIndicator, Modal, TextInput,
 } from 'react-native'
 import { useApi } from '../../hooks/useApi'
-import { classes as classesApi, attendance as attendanceApi } from '../../api'
+import { classes as classesApi, attendance as attendanceApi, enrolments as enrolmentsApi } from '../../api'
 
 const TYPE_LABELS = {
   enrolled: 'Enrolled',
@@ -256,8 +256,90 @@ function ItemRow({ item, onMarkAway, onUndoAway, onCancel }) {
   )
 }
 
+function RequestChangeModal({ enrolment, onClose, onSuccess }) {
+  const [notes, setNotes] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [done, setDone] = useState(false)
+  const [error, setError] = useState('')
+
+  async function submit() {
+    if (!notes.trim()) { setError('Please describe what you\'d like to change.'); return }
+    setSaving(true)
+    setError('')
+    try {
+      await enrolmentsApi.changeRequests.create({
+        current_enrolment: enrolment.id,
+        notes,
+      })
+      setDone(true)
+    } catch (e) {
+      setError(e.response?.data?.detail || e.response?.data?.current_enrolment?.[0] || 'Something went wrong.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+        <View style={{ backgroundColor: '#111', borderRadius: 16, width: '100%', borderWidth: 1, borderColor: '#222', padding: 24 }}>
+          {done ? (
+            <>
+              <Text style={{ fontSize: 18, fontWeight: '800', color: '#ccff00', marginBottom: 8 }}>Request sent!</Text>
+              <Text style={{ fontSize: 14, color: '#888', lineHeight: 22, marginBottom: 24 }}>
+                We've received your request and opened a support ticket. We'll be in touch soon.
+              </Text>
+              <TouchableOpacity style={s.btnLime} onPress={onSuccess}>
+                <Text style={s.btnLimeText}>Done</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <Text style={{ fontSize: 17, fontWeight: '800', color: '#fff' }}>Request a class change</Text>
+                <TouchableOpacity onPress={onClose}><Text style={{ color: '#555', fontSize: 18 }}>✕</Text></TouchableOpacity>
+              </View>
+              <Text style={{ fontSize: 12, color: '#555', marginBottom: 16 }}>{enrolment.class_session_name || enrolment.session_name}</Text>
+              <Text style={{ fontSize: 13, color: '#888', lineHeight: 20, marginBottom: 12 }}>
+                Tell us what you'd like to change — which class you'd prefer, why, and any other details.
+                We'll review your request and follow up via the support portal.
+              </Text>
+              {error ? (
+                <View style={{ backgroundColor: 'rgba(255,68,68,0.08)', borderRadius: 8, padding: 10, marginBottom: 12 }}>
+                  <Text style={{ fontSize: 13, color: '#ff4444' }}>{error}</Text>
+                </View>
+              ) : null}
+              <TextInput
+                style={{
+                  backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333', borderRadius: 10,
+                  color: '#fff', padding: 12, fontSize: 14, minHeight: 100, textAlignVertical: 'top', marginBottom: 16,
+                }}
+                placeholder="e.g. I'd like to move from Thursday Level 2 to Friday Dance if there's a spot available…"
+                placeholderTextColor="#444"
+                multiline
+                value={notes}
+                onChangeText={setNotes}
+              />
+              <TouchableOpacity style={s.btnLime} onPress={submit} disabled={saving}>
+                <Text style={s.btnLimeText}>{saving ? 'Sending…' : 'Submit request'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[s.btnGhost, { marginTop: 10 }]} onPress={onClose}>
+                <Text style={s.btnGhostText}>Cancel</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      </View>
+    </Modal>
+  )
+}
+
 export default function UpcomingClassesScreen({ navigation }) {
   const { data, loading, refetch } = useApi(() => classesApi.myUpcoming(), [])
+  const { data: enrolData, refetch: refetchEnrol } = useApi(
+    () => enrolmentsApi.list({ status: 'active', enrolment_type: 'course' }),
+    []
+  )
 
   const [view, setView] = useState('list')
   const [selectedDate, setSelectedDate] = useState(null)
@@ -266,6 +348,7 @@ export default function UpcomingClassesScreen({ navigation }) {
   const [markingAway, setMarkingAway] = useState(false)
   const [actionError, setActionError] = useState('')
   const [refreshing, setRefreshing] = useState(false)
+  const [changeRequestEnrolment, setChangeRequestEnrolment] = useState(null)
 
   const items = data || []
 
@@ -282,7 +365,7 @@ export default function UpcomingClassesScreen({ navigation }) {
 
   async function onRefresh() {
     setRefreshing(true)
-    await refetch()
+    await Promise.all([refetch(), refetchEnrol()])
     setRefreshing(false)
   }
 
@@ -389,6 +472,56 @@ export default function UpcomingClassesScreen({ navigation }) {
         </>
       )}
 
+      {/* Season Enrolments section */}
+      {(() => {
+        const activeEnrolments = (enrolData?.results ?? enrolData ?? []).filter(
+          e => e.status === 'active' && e.enrolment_type === 'course'
+        )
+        if (!activeEnrolments.length) return null
+
+        // Group by season name
+        const seasons = {}
+        for (const e of activeEnrolments) {
+          const sName = e.class_session_detail?.season?.name || e.season_name || 'Current Season'
+          if (!seasons[sName]) seasons[sName] = []
+          seasons[sName].push(e)
+        }
+
+        return (
+          <View style={{ marginTop: 24 }}>
+            <Text style={[s.dateLabel, { marginBottom: 12 }]}>Season Enrolments</Text>
+            {Object.entries(seasons).map(([seasonName, enrols]) => (
+              <View key={seasonName} style={[s.card, { marginBottom: 12 }]}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#555', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 }}>
+                  {seasonName}
+                </Text>
+                {enrols.map(e => (
+                  <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderColor: '#1c1c1c' }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 14, color: '#fff', fontWeight: '600' }}>
+                        {e.class_session_detail?.name || e.class_name}
+                      </Text>
+                      <Text style={{ fontSize: 12, color: '#555', marginTop: 2 }}>
+                        {e.class_session_detail?.day_of_week_display || ''}{e.class_session_detail?.start_time ? ` · ${e.class_session_detail.start_time.slice(0, 5)}` : ''}
+                      </Text>
+                    </View>
+                    <View style={[s.badge, { backgroundColor: 'rgba(204,255,0,0.08)', borderColor: 'rgba(204,255,0,0.2)', alignSelf: 'flex-start' }]}>
+                      <Text style={[s.badgeText, { color: '#ccff00' }]}>Enrolled</Text>
+                    </View>
+                  </View>
+                ))}
+                <TouchableOpacity
+                  style={{ marginTop: 14, flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: '#333', alignSelf: 'flex-start' }}
+                  onPress={() => setChangeRequestEnrolment(enrols[0])}
+                >
+                  <Text style={{ fontSize: 13, color: '#888' }}>✏️ Request a change to your enrolment</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )
+      })()}
+
       {madeMistakeItem && (
         <MadeMistakeModal
           item={madeMistakeItem}
@@ -439,6 +572,14 @@ export default function UpcomingClassesScreen({ navigation }) {
           </Modal>
         )
       })()}
+
+      {changeRequestEnrolment && (
+        <RequestChangeModal
+          enrolment={changeRequestEnrolment}
+          onClose={() => setChangeRequestEnrolment(null)}
+          onSuccess={() => { setChangeRequestEnrolment(null); refetchEnrol() }}
+        />
+      )}
     </ScrollView>
   )
 }

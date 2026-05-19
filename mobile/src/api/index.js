@@ -55,6 +55,10 @@ export const enrolments = {
     pending: () => client.get('/api/enrolments/trial-feedback/pending/'),
     submit: (id, data) => client.post(`/api/enrolments/${id}/trial-feedback/`, data),
   },
+  changeRequests: {
+    mine: () => client.get('/api/enrolments/change-requests/'),
+    create: (data) => client.post('/api/enrolments/change-requests/', data),
+  },
 }
 
 export const attendance = {

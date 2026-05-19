@@ -98,6 +98,11 @@ export const enrolments = {
     pending: () => client.get('/api/enrolments/trial-feedback/pending/'),
     submit: (id, data) => client.post(`/api/enrolments/${id}/trial-feedback/`, data),
   },
+  changeRequests: {
+    list: (params) => client.get('/api/enrolments/change-requests/', { params }),
+    approve: (id, data) => client.post(`/api/enrolments/change-requests/${id}/approve/`, data),
+    reject: (id, data) => client.post(`/api/enrolments/change-requests/${id}/reject/`, data),
+  },
 }
 
 export const payments = {

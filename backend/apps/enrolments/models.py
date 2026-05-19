@@ -51,6 +51,33 @@ class Enrolment(models.Model):
         return f'{self.student.display_name} → {self.class_session}'
 
 
+class ClassChangeRequest(models.Model):
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        APPROVED = 'approved', 'Approved'
+        REJECTED = 'rejected', 'Rejected'
+
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='change_requests')
+    current_enrolment = models.ForeignKey(
+        Enrolment, on_delete=models.CASCADE, related_name='change_requests'
+    )
+    requested_session = models.ForeignKey(
+        ClassSession, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='incoming_change_requests'
+    )
+    notes = models.TextField(blank=True)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
+    admin_notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.student.display_name} — change request ({self.status})'
+
+
 class TrialFeedback(models.Model):
     enrolment = models.OneToOneField(Enrolment, on_delete=models.CASCADE, related_name='trial_feedback')
     enrolled = models.BooleanField(default=False)  # True = they clicked "Yes - enrol now"

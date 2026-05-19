@@ -10,8 +10,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from .models import Enrolment
-from .serializers import EnrolmentSerializer
+from .models import Enrolment, ClassChangeRequest
+from .serializers import EnrolmentSerializer, ClassChangeRequestSerializer
 from apps.users.permissions import IsAdminOrInstructor
 
 
@@ -625,3 +625,236 @@ class SubmitTrialFeedbackView(APIView):
             reason=request.data.get('reason', ''),
         )
         return Response({'status': 'ok'})
+
+
+SEASON_PRICES_CHANGE = {1: 270, 2: 440, 3: 580, 4: 700, 5: 800, 6: 900}
+
+
+class ClassChangeRequestListCreateView(generics.ListCreateAPIView):
+    serializer_class = ClassChangeRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'student':
+            return ClassChangeRequest.objects.filter(student=user).select_related(
+                'current_enrolment__class_session', 'requested_session'
+            )
+        qs = ClassChangeRequest.objects.select_related(
+            'student', 'current_enrolment__class_session', 'requested_session'
+        )
+        student_id = self.request.query_params.get('student')
+        status_ = self.request.query_params.get('status')
+        if student_id:
+            qs = qs.filter(student_id=student_id)
+        if status_:
+            qs = qs.filter(status=status_)
+        return qs
+
+    def perform_create(self, serializer):
+        from rest_framework.exceptions import PermissionDenied, ValidationError
+        user = self.request.user
+        enrolment_id = self.request.data.get('current_enrolment')
+        if not enrolment_id:
+            raise ValidationError('current_enrolment is required.')
+
+        try:
+            enrolment = Enrolment.objects.select_related('student', 'class_session__season').get(
+                pk=enrolment_id, student=user, status='active', enrolment_type='course'
+            )
+        except Enrolment.DoesNotExist:
+            raise ValidationError('Active course enrolment not found for this student.')
+
+        # Prevent duplicate pending requests for same enrolment
+        if ClassChangeRequest.objects.filter(
+            current_enrolment=enrolment, status='pending'
+        ).exists():
+            raise ValidationError('A change request for this enrolment is already pending.')
+
+        change_request = serializer.save(student=user)
+
+        # Create a helpdesk ticket for the request
+        from apps.helpdesk.models import Ticket, TicketMessage
+        session_name = enrolment.class_session.name
+        requested = change_request.requested_session
+        requested_name = requested.name if requested else 'a different class'
+        subject = f'Class change request — {session_name} → {requested_name}'
+        body = (
+            f'Hi,\n\n'
+            f'I\'d like to request a change to my season enrolment.\n\n'
+            f'Currently enrolled in: {session_name}\n'
+            f'Requesting to change to: {requested_name}\n'
+        )
+        if change_request.notes:
+            body += f'\nAdditional notes: {change_request.notes}\n'
+        body += f'\nPlease let me know if this is possible. Thank you!'
+
+        ticket = Ticket.objects.create(
+            subject=subject,
+            student=user,
+            status=Ticket.Status.OPEN,
+            priority=Ticket.Priority.MEDIUM,
+            category=Ticket.Category.BOOKING,
+        )
+        TicketMessage.objects.create(
+            ticket=ticket,
+            sender=user,
+            body=body,
+        )
+
+        from apps.users.models import Notification
+        Notification.objects.create(
+            recipient=user,
+            title='Change request received',
+            body=f'Your request to change from {session_name} to {requested_name} has been received. We\'ll be in touch shortly.',
+            notification_type='info',
+        )
+
+
+class ClassChangeRequestDetailView(generics.RetrieveAPIView):
+    serializer_class = ClassChangeRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'student':
+            return ClassChangeRequest.objects.filter(student=user)
+        return ClassChangeRequest.objects.all()
+
+
+class ClassChangeRequestApproveView(APIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        from apps.classes.models import ClassSession
+        from apps.payments.models import Payment
+        from apps.users.models import Notification
+        import stripe
+        from django.conf import settings as django_settings
+
+        change_request = get_object_or_404(ClassChangeRequest, pk=pk)
+        if change_request.status != 'pending':
+            return Response({'detail': 'Request is not pending.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        new_session_id = request.data.get('new_session_id')
+        refund_action = request.data.get('refund_action', 'none')  # 'none', 'credit', 'stripe'
+        refund_amount = request.data.get('refund_amount')
+        charge_amount = request.data.get('charge_amount')
+        admin_notes = request.data.get('admin_notes', '')
+
+        if not new_session_id:
+            return Response({'detail': 'new_session_id is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            new_session = ClassSession.objects.get(pk=new_session_id)
+        except ClassSession.DoesNotExist:
+            return Response({'detail': 'Session not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        enrolment = change_request.current_enrolment
+        old_session = enrolment.class_session
+        student = change_request.student
+
+        # Check target session is not already enrolled
+        if Enrolment.objects.filter(student=student, class_session=new_session, status='active').exists():
+            return Response(
+                {'detail': 'Student is already enrolled in the target session.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Move the enrolment
+        enrolment.class_session = new_session
+        enrolment.save(update_fields=['class_session'])
+
+        # Handle payment difference
+        if refund_amount and float(refund_amount) > 0:
+            if refund_action == 'credit':
+                Payment.objects.create(
+                    student=student,
+                    payment_type=Payment.PaymentType.CREDIT,
+                    amount=Decimal(str(refund_amount)),
+                    description=f'Class change credit: {old_session.name} → {new_session.name}',
+                    created_by=request.user,
+                )
+            elif refund_action == 'stripe':
+                # Attempt Stripe refund using last payment reference
+                stripe.api_key = django_settings.STRIPE_SECRET_KEY
+                last_payment = Payment.objects.filter(
+                    student=student,
+                    payment_type__in=['payment', 'charge'],
+                    reference__startswith='pi_',
+                ).order_by('-created_at').first()
+                if last_payment and last_payment.reference:
+                    try:
+                        stripe.Refund.create(
+                            payment_intent=last_payment.reference,
+                            amount=int(float(refund_amount) * 100),
+                        )
+                        Payment.objects.create(
+                            student=student,
+                            payment_type=Payment.PaymentType.REFUND,
+                            amount=Decimal(str(refund_amount)),
+                            description=f'Class change refund: {old_session.name} → {new_session.name}',
+                            reference=last_payment.reference,
+                            created_by=request.user,
+                        )
+                    except Exception as e:
+                        return Response(
+                            {'detail': f'Stripe refund failed: {str(e)}. Consider issuing studio credit instead.'},
+                            status=status.HTTP_502_BAD_GATEWAY,
+                        )
+                else:
+                    return Response(
+                        {'detail': 'No Stripe payment found for this student. Issue credit instead.'},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+        if charge_amount and float(charge_amount) > 0:
+            Payment.objects.create(
+                student=student,
+                payment_type=Payment.PaymentType.CHARGE,
+                amount=Decimal(str(charge_amount)),
+                description=f'Class change upgrade: {old_session.name} → {new_session.name}',
+                created_by=request.user,
+            )
+
+        # Resolve the request
+        change_request.status = ClassChangeRequest.Status.APPROVED
+        change_request.admin_notes = admin_notes
+        change_request.resolved_at = timezone.now()
+        change_request.save(update_fields=['status', 'admin_notes', 'resolved_at'])
+
+        # Notify student
+        Notification.objects.create(
+            recipient=student,
+            title='Class change approved',
+            body=f'Your class has been changed from {old_session.name} to {new_session.name}.',
+            notification_type='success',
+        )
+
+        return Response(ClassChangeRequestSerializer(change_request).data)
+
+
+class ClassChangeRequestRejectView(APIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        from apps.users.models import Notification
+
+        change_request = get_object_or_404(ClassChangeRequest, pk=pk)
+        if change_request.status != 'pending':
+            return Response({'detail': 'Request is not pending.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        admin_notes = request.data.get('admin_notes', '')
+        change_request.status = ClassChangeRequest.Status.REJECTED
+        change_request.admin_notes = admin_notes
+        change_request.resolved_at = timezone.now()
+        change_request.save(update_fields=['status', 'admin_notes', 'resolved_at'])
+
+        Notification.objects.create(
+            recipient=change_request.student,
+            title='Class change request update',
+            body=f'Your class change request has been reviewed. {admin_notes}' if admin_notes else 'Your class change request could not be approved at this time. Please contact the studio for more information.',
+            notification_type='info',
+        )
+
+        return Response(ClassChangeRequestSerializer(change_request).data)
