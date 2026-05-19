@@ -262,6 +262,8 @@ export default function UpcomingClassesScreen({ navigation }) {
   const [view, setView] = useState('list')
   const [selectedDate, setSelectedDate] = useState(null)
   const [madeMistakeItem, setMadeMistakeItem] = useState(null)
+  const [markAwayItem, setMarkAwayItem] = useState(null)
+  const [markingAway, setMarkingAway] = useState(false)
   const [actionError, setActionError] = useState('')
   const [refreshing, setRefreshing] = useState(false)
 
@@ -284,13 +286,17 @@ export default function UpcomingClassesScreen({ navigation }) {
     setRefreshing(false)
   }
 
-  async function handleMarkAway(item) {
-    setActionError('')
+  async function confirmMarkAway(item) {
+    setMarkingAway(true)
     try {
       await attendanceApi.markAway(item.occurrence_id, item.enrolment_id)
+      setMarkAwayItem(null)
       refetch()
     } catch (e) {
       setActionError(e.response?.data?.detail || 'Failed to mark away.')
+      setMarkAwayItem(null)
+    } finally {
+      setMarkingAway(false)
     }
   }
 
@@ -370,7 +376,7 @@ export default function UpcomingClassesScreen({ navigation }) {
                       <ItemRow
                         key={item.id}
                         item={item}
-                        onMarkAway={handleMarkAway}
+                        onMarkAway={(item) => setMarkAwayItem(item)}
                         onUndoAway={setMadeMistakeItem}
                         onCancel={handleCancel}
                       />
@@ -390,6 +396,49 @@ export default function UpcomingClassesScreen({ navigation }) {
           onDone={() => { setMadeMistakeItem(null); refetch() }}
         />
       )}
+
+      {/* Mark Away confirmation modal */}
+      {markAwayItem && (() => {
+        const [h, m] = (markAwayItem.start_time || '00:00').split(':').map(Number)
+        const classDateTime = new Date(markAwayItem.date + 'T00:00')
+        classDateTime.setHours(h, m, 0, 0)
+        const withinCutoff = (classDateTime - Date.now()) < 4 * 60 * 60 * 1000
+        const dateLabel = new Date(markAwayItem.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
+        return (
+          <Modal visible transparent animationType="fade" onRequestClose={() => setMarkAwayItem(null)}>
+            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+              <View style={{ backgroundColor: '#111', borderRadius: 16, width: '100%', borderWidth: 1, borderColor: '#222', padding: 24 }}>
+                <Text style={{ fontSize: 18, fontWeight: '800', color: '#fff', marginBottom: 4 }}>Mark away?</Text>
+                <Text style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>{markAwayItem.session_name} · {dateLabel}</Text>
+                {withinCutoff ? (
+                  <View style={{ backgroundColor: 'rgba(255,170,0,0.08)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,170,0,0.25)', padding: 14, marginBottom: 20 }}>
+                    <Text style={{ fontWeight: '700', color: '#ffaa00', marginBottom: 4 }}>No catch-up credit for this one</Text>
+                    <Text style={{ fontSize: 13, color: '#888', lineHeight: 20 }}>This is within 4 hours of your class — the cancellation window has passed. No credit will be issued. You can still mark away so we know you're not coming.</Text>
+                  </View>
+                ) : (
+                  <View style={{ backgroundColor: 'rgba(204,255,0,0.06)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(204,255,0,0.2)', padding: 14, marginBottom: 20 }}>
+                    <Text style={{ fontWeight: '700', color: '#ccff00', marginBottom: 4 }}>You'll receive a catch-up credit</Text>
+                    <Text style={{ fontSize: 13, color: '#888', lineHeight: 20 }}>More than 4 hours away — you're within the cancellation window. A catch-up credit will be added to your account to use within this season.</Text>
+                  </View>
+                )}
+                <TouchableOpacity
+                  style={{ backgroundColor: '#ccff00', borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 10 }}
+                  disabled={markingAway}
+                  onPress={() => confirmMarkAway(markAwayItem)}
+                >
+                  <Text style={{ color: '#000', fontWeight: '700', fontSize: 15 }}>{markingAway ? 'Saving…' : 'Confirm away'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ borderRadius: 10, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#333' }}
+                  onPress={() => setMarkAwayItem(null)}
+                >
+                  <Text style={{ color: '#888', fontSize: 15 }}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+        )
+      })()}
     </ScrollView>
   )
 }
