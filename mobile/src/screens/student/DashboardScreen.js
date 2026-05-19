@@ -175,15 +175,35 @@ export default function DashboardScreen({ navigation }) {
   }, [navigation])
 
   async function handleMarkAway(occ, enrolId) {
-    setMarkingAway(prev => ({ ...prev, [occ.id]: true }))
-    try {
-      await attendanceApi.markAway(occ.id, enrolId)
-      refetchEnrol()
-    } catch (err) {
-      Alert.alert('Error', err.response?.data?.detail || 'Could not mark away')
-    } finally {
-      setMarkingAway(prev => ({ ...prev, [occ.id]: false }))
-    }
+    const classDate = new Date(occ.date + 'T00:00')
+    const dateLabel = classDate.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
+    const hoursUntil = (classDate.setHours(...(occ.start_time?.split(':').map(Number) ?? [0,0])), (classDate - Date.now()) / 3600000)
+    const withinCutoff = hoursUntil < 4
+    const creditMsg = withinCutoff
+      ? 'This is within 4 hours of your class — no catch-up credit will be issued.'
+      : "You'll receive a catch-up credit to use within this season."
+
+    Alert.alert(
+      'Mark away?',
+      `${dateLabel}\n\n${creditMsg}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm away',
+          onPress: async () => {
+            setMarkingAway(prev => ({ ...prev, [occ.id]: true }))
+            try {
+              await attendanceApi.markAway(occ.id, enrolId)
+              refetchEnrol()
+            } catch (err) {
+              Alert.alert('Error', err.response?.data?.detail || 'Could not mark away')
+            } finally {
+              setMarkingAway(prev => ({ ...prev, [occ.id]: false }))
+            }
+          },
+        },
+      ]
+    )
   }
 
   async function handleCancelAway(occId) {
