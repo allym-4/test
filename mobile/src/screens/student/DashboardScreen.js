@@ -114,6 +114,12 @@ const co = StyleSheet.create({
   optionSub: { fontSize: 12, color: '#888', lineHeight: 18 },
 })
 
+const REQUIRED_FORM_LABELS = {
+  parq: 'PAR-Q Health Questionnaire',
+  photo_consent: 'Photo & Video Consent',
+  season_agreement: 'Season Agreement',
+}
+
 const WAIVER_TEXT = [
   {
     heading: 'Physical Activity Risk',
@@ -238,7 +244,7 @@ export default function DashboardScreen({ navigation }) {
   const { data: trialPendingData, refetch: refetchTrialFeedback } = useApi(
     () => enrolments.trialFeedback.pending(), []
   )
-  const { data: formsData, refetch: refetchForms } = useApi(() => formsApi.list(), [user?.id])
+  const { data: pendingRequiredData, refetch: refetchPendingRequired } = useApi(() => formsApi.pendingRequired(), [user?.id])
   const { data: surveysData } = useApi(() => surveysApi.mine(), [user?.id])
 
   const [markingAway, setMarkingAway] = useState({})
@@ -343,8 +349,9 @@ export default function DashboardScreen({ navigation }) {
   const hasEnrolments = enrolList.length > 0
   const profileIncomplete = !user?.phone || !user?.emergency_contact_name || !user?.emergency_contact_phone
 
-  const submittedForms = formsData?.results ?? formsData ?? []
-  const waiverSigned = !formsData || submittedForms.some(f => f.form_type === 'waiver')
+  const pendingRequiredForms = pendingRequiredData ?? []
+  const waiverRequired = pendingRequiredForms.includes('waiver')
+  const otherRequiredForms = pendingRequiredForms.filter(ft => ft !== 'waiver')
   const pendingSurveys = surveysData?.results ?? surveysData ?? []
 
   // Level progression
@@ -354,6 +361,7 @@ export default function DashboardScreen({ navigation }) {
   function onRefresh() {
     refetchEnrol()
     refetchAnn()
+    refetchPendingRequired()
   }
 
   return (
@@ -418,6 +426,25 @@ export default function DashboardScreen({ navigation }) {
             <Text style={s.profileBannerBtnText}>Update</Text>
           </TouchableOpacity>
         </View>
+      )}
+
+      {/* Required forms banner (non-waiver — waiver has its own blocking modal) */}
+      {otherRequiredForms.length > 0 && (
+        <TouchableOpacity
+          style={s.requiredFormsBanner}
+          onPress={() => navigation.navigate('Account', { screen: 'Forms' })}
+          activeOpacity={0.7}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={s.requiredFormsBannerTitle}>Action required</Text>
+            <Text style={s.requiredFormsBannerBody}>
+              {otherRequiredForms.length === 1
+                ? `${REQUIRED_FORM_LABELS[otherRequiredForms[0]] ?? 'A form'} needs to be completed`
+                : `${otherRequiredForms.length} required forms need to be completed`}
+            </Text>
+          </View>
+          <Text style={{ fontSize: 16, color: '#ffaa00' }}>→</Text>
+        </TouchableOpacity>
       )}
 
       {/* Pending surveys banner */}
@@ -636,9 +663,9 @@ export default function DashboardScreen({ navigation }) {
         </View>
       )}
 
-      {!waiverSigned && <WaiverModal onDone={refetchForms} />}
+      {waiverRequired && <WaiverModal onDone={refetchPendingRequired} />}
 
-      {waiverSigned && pendingOffers.length > 0 && !trialItem && (
+      {!waiverRequired && pendingOffers.length > 0 && !trialItem && (
         <CancellationOfferModal
           offers={pendingOffers}
           onResolved={refetchOffers}
@@ -646,7 +673,7 @@ export default function DashboardScreen({ navigation }) {
       )}
 
       {/* Post-trial feedback modal */}
-      {waiverSigned && trialItem && (
+      {!waiverRequired && trialItem && (
         <Modal transparent animationType="fade" visible>
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
             <View style={{ backgroundColor: '#111', borderRadius: 16, width: '100%', maxWidth: 440, padding: 24 }}>
@@ -939,6 +966,15 @@ const s = StyleSheet.create({
   profileBannerBody: { fontSize: 13, color: '#666' },
   profileBannerBtn: { backgroundColor: '#b0a0ff', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
   profileBannerBtnText: { color: '#000', fontSize: 13, fontWeight: '700' },
+
+  // Required forms banner
+  requiredFormsBanner: {
+    backgroundColor: 'rgba(255,170,0,0.07)', borderWidth: 1, borderColor: 'rgba(255,170,0,0.25)',
+    borderRadius: 12, padding: 14, marginBottom: 16,
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+  },
+  requiredFormsBannerTitle: { fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.7, color: '#ffaa00', marginBottom: 3, fontWeight: '700' },
+  requiredFormsBannerBody: { fontSize: 13, color: '#ccc', fontWeight: '600' },
 
   // Survey banner
   surveyBanner: {

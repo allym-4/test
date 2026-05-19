@@ -25,6 +25,7 @@ urlpatterns = [
     path('availability/', views.InstructorAvailabilityView.as_view(), name='instructor-availability'),
     path('unavailable-dates/', views.InstructorUnavailableDateView.as_view(), name='instructor-unavailable-dates'),
     path('unavailable-dates/<int:pk>/', views.InstructorUnavailableDateDetailView.as_view(), name='instructor-unavailable-date-detail'),
+    path('forms/pending-required/', views.StudentFormPendingRequiredView.as_view(), name='forms-pending-required'),
     path('forms/', views.StudentFormView.as_view(), name='student-forms'),
     path('pay-records/', views.InstructorPayRecordListView.as_view(), name='instructor-pay-records'),
     path('pay-records/<int:pk>/', views.InstructorPayRecordDetailView.as_view(), name='instructor-pay-record-detail'),

@@ -157,6 +157,7 @@ export const users = {
 export const forms = {
   list: () => client.get('/api/users/forms/'),
   submit: (form_type, responses) => client.post('/api/users/forms/', { form_type, responses }),
+  pendingRequired: () => client.get('/api/users/forms/pending-required/'),
 }
 
 export const settings = {

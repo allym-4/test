@@ -127,6 +127,7 @@ class StudioSettingsSerializer(serializers.ModelSerializer):
             'price_casual', 'price_casual_enrolled', 'price_season', 'price_trial', 'price_class_pass', 'class_pass_size', 'season_pricing_config',
             'studio_code',
             'form_health_enabled', 'form_photo_consent_enabled', 'form_waiver_enabled', 'form_season_agreement_enabled',
+            'form_health_required', 'form_photo_consent_required', 'form_waiver_required', 'form_season_agreement_required',
             'mailchimp_api_key', 'mailchimp_list_id', 'mailchimp_connected',
             'xero_client_id', 'xero_client_secret', 'xero_tenant_id', 'xero_connected',
             'overdue_reminder_schedule',
@@ -148,6 +149,7 @@ class StudioSettingsPublicSerializer(serializers.ModelSerializer):
             'price_casual', 'price_casual_enrolled', 'price_season', 'price_trial', 'price_class_pass', 'class_pass_size', 'season_pricing_config',
             'studio_code', 'trial_intro_headline', 'trial_intro_body',
             'form_health_enabled', 'form_photo_consent_enabled', 'form_waiver_enabled', 'form_season_agreement_enabled',
+            'form_health_required', 'form_photo_consent_required', 'form_waiver_required', 'form_season_agreement_required',
         )
 
 

@@ -881,22 +881,33 @@ export default function AdminSettings() {
 
       {tab === 'forms' && (
         <Section title="Forms & Documents">
+          <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 14, lineHeight: 1.6 }}>
+            <strong style={{ color: 'var(--text)' }}>Active</strong> — the form appears in the student app.&nbsp;
+            <strong style={{ color: 'var(--text)' }}>Required</strong> — students are prompted on every login until the form is completed; the waiver blocks access until signed.
+          </div>
           {[
-            ['Health / PAR-Q Questionnaire', 'Medical pre-screening for new students', 'form_health_enabled'],
-            ['Photo & Video Consent', 'Permission to photograph/film in class', 'form_photo_consent_enabled'],
-            ['Studio Waiver', 'Liability waiver and code of conduct', 'form_waiver_enabled'],
-            ['Season Agreement', 'Season enrolment terms and conditions', 'form_season_agreement_enabled'],
-          ].map(([name, desc, key]) => {
+            ['Health / PAR-Q Questionnaire', 'Medical pre-screening for new students', 'form_health_enabled', 'form_health_required'],
+            ['Photo & Video Consent', 'Permission to photograph/film in class', 'form_photo_consent_enabled', 'form_photo_consent_required'],
+            ['Studio Waiver', 'Liability waiver and code of conduct', 'form_waiver_enabled', 'form_waiver_required'],
+            ['Season Agreement', 'Season enrolment terms and conditions', 'form_season_agreement_enabled', 'form_season_agreement_required'],
+          ].map(([name, desc, key, reqKey]) => {
             const enabled = form?.[key] ?? true
+            const required = form?.[reqKey] ?? false
             return (
               <div key={name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 0', borderBottom: '1px solid #1a1a1a' }}>
-                <div>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: 13 }}>{name}</div>
                   <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{desc}</div>
                 </div>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <Toggle checked={enabled} onChange={val => set(key, val)} />
-                  <span className={`tag ${enabled ? 'tag-lime' : 'tag-grey'}`} style={{ fontSize: 10 }}>{enabled ? 'Active' : 'Inactive'}</span>
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexShrink: 0 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                    <Toggle checked={enabled} onChange={val => set(key, val)} />
+                    <span style={{ fontSize: 11, color: 'var(--grey)' }}>Active</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                    <Toggle checked={required} onChange={val => set(reqKey, val)} />
+                    <span style={{ fontSize: 11, color: required ? '#ffaa00' : 'var(--grey)', fontWeight: required ? 600 : 400 }}>Required</span>
+                  </label>
                   <button className="btn btn-ghost btn-xs" onClick={() => setPreviewForm(name)}>Preview</button>
                 </div>
               </div>

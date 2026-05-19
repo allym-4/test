@@ -774,6 +774,29 @@ class StudentFormView(APIView):
         return Response(StudentFormSerializer(obj).data)
 
 
+class StudentFormPendingRequiredView(APIView):
+    """Returns form_type keys that are marked required in StudioSettings but not yet completed by the current user."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        settings = StudioSettings.get()
+        required_map = {
+            'parq': settings.form_health_required,
+            'waiver': settings.form_waiver_required,
+            'photo_consent': settings.form_photo_consent_required,
+            'season_agreement': settings.form_season_agreement_required,
+        }
+        required_types = [k for k, v in required_map.items() if v]
+        if not required_types:
+            return Response([])
+        completed_types = set(
+            StudentForm.objects.filter(
+                student=request.user, form_type__in=required_types, completed=True,
+            ).values_list('form_type', flat=True)
+        )
+        return Response([ft for ft in required_types if ft not in completed_types])
+
+
 class InstructorPayRecordListView(generics.ListCreateAPIView):
     serializer_class = InstructorPayRecordSerializer
 
