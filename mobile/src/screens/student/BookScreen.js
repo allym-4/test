@@ -1922,7 +1922,7 @@ export default function BookScreen({ navigation }) {
                                   activeOpacity={0.8}
                                 >
                                   <Text style={s.casualBookBtnText}>BOOK</Text>
-                                  <Text style={{ fontSize: 10, color: '#000', fontWeight: '700', marginTop: 1 }}>${priceCasual}</Text>
+                                  <Text style={{ fontSize: 10, color: '#000', fontWeight: '700', marginTop: 1 }}>${activeSeasonCount > 0 ? priceCasualEnrolled : priceCasual}</Text>
                                 </TouchableOpacity>
                               )}
                             </View>

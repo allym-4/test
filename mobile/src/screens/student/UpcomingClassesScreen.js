@@ -525,6 +525,7 @@ const s = StyleSheet.create({
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
+    alignSelf: 'flex-start',
   },
   badgeText: {
     fontSize: 10,
