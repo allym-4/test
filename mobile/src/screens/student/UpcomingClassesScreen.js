@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
   ScrollView, View, Text, TouchableOpacity, StyleSheet,
   RefreshControl, ActivityIndicator, Modal, TextInput,
@@ -256,6 +256,22 @@ function ItemRow({ item, onMarkAway, onUndoAway, onCancel }) {
   )
 }
 
+function ChangeRequestBadge({ status }) {
+  const configs = {
+    pending:     { label: 'Change pending',     color: '#ffaa00', bg: 'rgba(255,170,0,0.12)',  border: 'rgba(255,170,0,0.3)'  },
+    in_progress: { label: 'Change in progress', color: '#4fc3f7', bg: 'rgba(0,180,255,0.10)', border: 'rgba(0,180,255,0.25)' },
+    approved:    { label: 'Change approved',    color: '#ccff00', bg: 'rgba(204,255,0,0.10)', border: 'rgba(204,255,0,0.25)' },
+    resolved:    { label: 'Change resolved',    color: '#ccff00', bg: 'rgba(204,255,0,0.10)', border: 'rgba(204,255,0,0.25)' },
+    rejected:    { label: 'Change declined',    color: '#ff4444', bg: 'rgba(255,68,68,0.10)', border: 'rgba(255,68,68,0.25)' },
+  }
+  const cfg = configs[status] || configs.pending
+  return (
+    <View style={[s.badge, { backgroundColor: cfg.bg, borderColor: cfg.border }]}>
+      <Text style={[s.badgeText, { color: cfg.color }]}>{cfg.label}</Text>
+    </View>
+  )
+}
+
 function RequestChangeModal({ enrolment, onClose, onSuccess }) {
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
@@ -340,6 +356,9 @@ export default function UpcomingClassesScreen({ navigation }) {
     () => enrolmentsApi.list({ status: 'active', enrolment_type: 'course' }),
     []
   )
+  const { data: changeRequestData, refetch: refetchChangeRequests } = useApi(
+    () => enrolmentsApi.changeRequests.mine(), []
+  )
 
   const [view, setView] = useState('list')
   const [selectedDate, setSelectedDate] = useState(null)
@@ -350,6 +369,17 @@ export default function UpcomingClassesScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false)
   const [changeRequestEnrolment, setChangeRequestEnrolment] = useState(null)
   const [cancelEnrolPending, setCancelEnrolPending] = useState(null)
+
+  const changeRequestMap = useMemo(() => {
+    const requests = changeRequestData?.results ?? changeRequestData ?? []
+    const map = {}
+    for (const req of requests) {
+      if (!map[req.current_enrolment] || req.id > map[req.current_enrolment].id) {
+        map[req.current_enrolment] = req
+      }
+    }
+    return map
+  }, [changeRequestData])
 
   const items = data || []
 
@@ -366,7 +396,7 @@ export default function UpcomingClassesScreen({ navigation }) {
 
   async function onRefresh() {
     setRefreshing(true)
-    await Promise.all([refetch(), refetchEnrol()])
+    await Promise.all([refetch(), refetchEnrol(), refetchChangeRequests()])
     setRefreshing(false)
   }
 
@@ -496,32 +526,43 @@ export default function UpcomingClassesScreen({ navigation }) {
                 <Text style={{ fontSize: 11, fontWeight: '700', color: '#555', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 }}>
                   {seasonName}
                 </Text>
-                {enrols.map(e => (
-                  <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderColor: '#1c1c1c' }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 14, color: '#fff', fontWeight: '600' }}>
-                        {e.class_session_detail?.name || e.class_name}
-                      </Text>
-                      <Text style={{ fontSize: 12, color: '#555', marginTop: 2 }}>
-                        {e.class_session_detail?.day_of_week_display || ''}{e.class_session_detail?.start_time ? ` · ${e.class_session_detail.start_time.slice(0, 5)}` : ''}
-                      </Text>
-                    </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <View style={[s.badge, { backgroundColor: 'rgba(204,255,0,0.08)', borderColor: 'rgba(204,255,0,0.2)', alignSelf: 'flex-start' }]}>
-                        <Text style={[s.badgeText, { color: '#ccff00' }]}>Enrolled</Text>
+                {enrols.map(e => {
+                  const pendingCR = changeRequestMap[e.id]
+                  const hasOpenCR = pendingCR && (pendingCR.status === 'pending' || pendingCR.status === 'in_progress')
+                  return (
+                    <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderColor: '#1c1c1c' }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 14, color: '#fff', fontWeight: '600' }}>
+                          {e.class_session_detail?.name || e.class_name}
+                        </Text>
+                        <Text style={{ fontSize: 12, color: '#555', marginTop: 2 }}>
+                          {e.class_session_detail?.day_of_week_display || ''}{e.class_session_detail?.start_time ? ` · ${e.class_session_detail.start_time.slice(0, 5)}` : ''}
+                        </Text>
+                        {pendingCR && (
+                          <View style={{ marginTop: 5 }}>
+                            <ChangeRequestBadge status={pendingCR.status} />
+                          </View>
+                        )}
                       </View>
-                      <TouchableOpacity
-                        style={{ paddingVertical: 3, paddingHorizontal: 8, borderRadius: 6, borderWidth: 1, borderColor: '#333' }}
-                        onPress={() => setChangeRequestEnrolment(e)}
-                      >
-                        <Text style={{ fontSize: 11, color: '#666' }}>✏️ Change</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => setCancelEnrolPending(e)}>
-                        <Text style={{ fontSize: 11, color: '#ff4444' }}>Cancel</Text>
-                      </TouchableOpacity>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <View style={[s.badge, { backgroundColor: 'rgba(204,255,0,0.08)', borderColor: 'rgba(204,255,0,0.2)', alignSelf: 'flex-start' }]}>
+                          <Text style={[s.badgeText, { color: '#ccff00' }]}>Enrolled</Text>
+                        </View>
+                        {!hasOpenCR && (
+                          <TouchableOpacity
+                            style={{ paddingVertical: 3, paddingHorizontal: 8, borderRadius: 6, borderWidth: 1, borderColor: '#333' }}
+                            onPress={() => setChangeRequestEnrolment(e)}
+                          >
+                            <Text style={{ fontSize: 11, color: '#666' }}>✏️ Change</Text>
+                          </TouchableOpacity>
+                        )}
+                        <TouchableOpacity onPress={() => setCancelEnrolPending(e)}>
+                          <Text style={{ fontSize: 11, color: '#ff4444' }}>Cancel</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
-                  </View>
-                ))}
+                  )
+                })}
               </View>
             ))}
           </View>

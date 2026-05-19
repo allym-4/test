@@ -5,7 +5,7 @@ import {
 } from 'react-native'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, seasons, attendance as attendanceApi, skills as skillsApi, announcements as announcementsApi, payments, notifications as notificationsApi } from '../../api'
+import { enrolments, seasons, attendance as attendanceApi, skills as skillsApi, announcements as announcementsApi, payments, notifications as notificationsApi, forms as formsApi, surveys as surveysApi } from '../../api'
 import { useStripePayment } from '../../hooks/useStripePayment'
 
 const DAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -114,6 +114,94 @@ const co = StyleSheet.create({
   optionSub: { fontSize: 12, color: '#888', lineHeight: 18 },
 })
 
+const WAIVER_TEXT = [
+  {
+    heading: 'Physical Activity Risk',
+    body: 'Dance is a physical activity involving movement, jumps, floor work, and contact with other participants. You voluntarily assume all risks of injury or illness that may arise from participation.',
+  },
+  {
+    heading: 'Release of Liability',
+    body: 'You release the studio, its owners, instructors, and staff from any claims, damages, or liabilities arising from your participation in classes or use of studio facilities, to the fullest extent permitted by law.',
+  },
+  {
+    heading: 'Health & Fitness',
+    body: 'You confirm you are in adequate physical health to participate in dance activities. If you have medical conditions, injuries, or concerns, consult a healthcare professional before joining class.',
+  },
+  {
+    heading: 'Consent to Emergency Care',
+    body: 'In the event of a medical emergency, you authorise the studio to contact emergency services and provide assistance on your behalf.',
+  },
+  {
+    heading: 'Studio Rules',
+    body: 'You agree to respect studio policies, follow instructor guidance, and treat all participants with courtesy.',
+  },
+]
+
+function WaiverModal({ onDone }) {
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  async function agree() {
+    setSaving(true)
+    setError('')
+    try {
+      await formsApi.submit('waiver', { agreed: true })
+      onDone()
+    } catch {
+      setError('Something went wrong — please try again.')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Modal visible transparent animationType="slide">
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'flex-end' }}>
+        <View style={{ backgroundColor: '#111', borderTopLeftRadius: 20, borderTopRightRadius: 20, borderWidth: 1, borderColor: '#222', maxHeight: '88%' }}>
+          <View style={{ padding: 24, paddingBottom: 12 }}>
+            <Text style={{ fontSize: 11, fontWeight: '700', color: '#ffaa00', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
+              Required before continuing
+            </Text>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: '#fff', marginBottom: 4 }}>Liability Waiver</Text>
+            <Text style={{ fontSize: 13, color: '#666', lineHeight: 20 }}>
+              Please read and agree to the following before participating in classes.
+            </Text>
+          </View>
+          <ScrollView
+            contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 12 }}
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={{ fontSize: 12, color: '#888', fontStyle: 'italic', lineHeight: 18, marginBottom: 16 }}>
+              PARTICIPATION IN DANCE ACTIVITIES IS VOLUNTARY AND INVOLVES PHYSICAL RISK.
+            </Text>
+            {WAIVER_TEXT.map(({ heading, body }) => (
+              <View key={heading} style={{ marginBottom: 14 }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: '#ccc', marginBottom: 4 }}>{heading}</Text>
+                <Text style={{ fontSize: 13, color: '#666', lineHeight: 20 }}>{body}</Text>
+              </View>
+            ))}
+            <Text style={{ fontSize: 12, color: '#444', lineHeight: 18, marginTop: 4 }}>
+              This waiver applies to all classes, sessions, and studio activities during your enrolment.
+            </Text>
+          </ScrollView>
+          <View style={{ padding: 24, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#1a1a1a' }}>
+            {!!error && <Text style={{ color: '#ff4444', fontSize: 13, marginBottom: 10 }}>{error}</Text>}
+            <TouchableOpacity
+              style={{ backgroundColor: '#ccff00', borderRadius: 12, paddingVertical: 16, alignItems: 'center', opacity: saving ? 0.6 : 1 }}
+              onPress={agree}
+              disabled={saving}
+            >
+              {saving
+                ? <ActivityIndicator color="#000" />
+                : <Text style={{ color: '#000', fontWeight: '800', fontSize: 16 }}>I Agree</Text>
+              }
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  )
+}
+
 function greeting() {
   const h = new Date().getHours()
   if (h < 12) return 'Good morning'
@@ -150,6 +238,8 @@ export default function DashboardScreen({ navigation }) {
   const { data: trialPendingData, refetch: refetchTrialFeedback } = useApi(
     () => enrolments.trialFeedback.pending(), []
   )
+  const { data: formsData, refetch: refetchForms } = useApi(() => formsApi.list(), [user?.id])
+  const { data: surveysData } = useApi(() => surveysApi.mine(), [user?.id])
 
   const [markingAway, setMarkingAway] = useState({})
   const [cancellingAway, setCancellingAway] = useState({})
@@ -253,6 +343,10 @@ export default function DashboardScreen({ navigation }) {
   const hasEnrolments = enrolList.length > 0
   const profileIncomplete = !user?.phone || !user?.emergency_contact_name || !user?.emergency_contact_phone
 
+  const submittedForms = formsData?.results ?? formsData ?? []
+  const waiverSigned = !formsData || submittedForms.some(f => f.form_type === 'waiver')
+  const pendingSurveys = surveysData?.results ?? surveysData ?? []
+
   // Level progression
   const allSkills = skillsData?.results || skillsData || []
   const nextLevelSkills = allSkills.filter(sk => !sk.achieved && sk.required_for_next_level)
@@ -324,6 +418,25 @@ export default function DashboardScreen({ navigation }) {
             <Text style={s.profileBannerBtnText}>Update</Text>
           </TouchableOpacity>
         </View>
+      )}
+
+      {/* Pending surveys banner */}
+      {pendingSurveys.length > 0 && (
+        <TouchableOpacity
+          style={s.surveyBanner}
+          onPress={() => navigation.navigate('Account', { screen: 'Forms' })}
+          activeOpacity={0.7}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={s.surveyBannerTitle}>Survey pending</Text>
+            <Text style={s.surveyBannerBody}>
+              {pendingSurveys.length === 1
+                ? pendingSurveys[0].name
+                : `${pendingSurveys.length} surveys to complete`}
+            </Text>
+          </View>
+          <Text style={{ fontSize: 16, color: '#b0a0ff' }}>→</Text>
+        </TouchableOpacity>
       )}
 
       {/* Enrolled classes summary */}
@@ -523,7 +636,9 @@ export default function DashboardScreen({ navigation }) {
         </View>
       )}
 
-      {pendingOffers.length > 0 && !trialItem && (
+      {!waiverSigned && <WaiverModal onDone={refetchForms} />}
+
+      {waiverSigned && pendingOffers.length > 0 && !trialItem && (
         <CancellationOfferModal
           offers={pendingOffers}
           onResolved={refetchOffers}
@@ -531,7 +646,7 @@ export default function DashboardScreen({ navigation }) {
       )}
 
       {/* Post-trial feedback modal */}
-      {trialItem && (
+      {waiverSigned && trialItem && (
         <Modal transparent animationType="fade" visible>
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
             <View style={{ backgroundColor: '#111', borderRadius: 16, width: '100%', maxWidth: 440, padding: 24 }}>
@@ -824,6 +939,15 @@ const s = StyleSheet.create({
   profileBannerBody: { fontSize: 13, color: '#666' },
   profileBannerBtn: { backgroundColor: '#b0a0ff', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
   profileBannerBtnText: { color: '#000', fontSize: 13, fontWeight: '700' },
+
+  // Survey banner
+  surveyBanner: {
+    backgroundColor: 'rgba(176,160,255,0.06)', borderWidth: 1, borderColor: 'rgba(176,160,255,0.2)',
+    borderRadius: 12, padding: 14, marginBottom: 16,
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+  },
+  surveyBannerTitle: { fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.7, color: '#b0a0ff', marginBottom: 3, fontWeight: '700' },
+  surveyBannerBody: { fontSize: 13, color: '#ccc', fontWeight: '600' },
 
   enrolledSummary: { fontSize: 14, color: '#666', marginBottom: 20 },
 
