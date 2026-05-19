@@ -1,0 +1,10 @@
+{% extends "emails/base.html" %}
+{% block content %}
+Great news — your class change has been approved!
+<div class="highlight-box">
+  <strong>From:</strong> {{ old_session }}<br>
+  <strong>To:</strong> {{ new_session }}
+</div>
+{% if admin_notes %}<p>{{ admin_notes }}</p>{% endif %}
+Your class schedule has been updated. We'll see you in {{ new_session }}!
+{% endblock %}

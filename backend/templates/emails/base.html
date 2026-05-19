@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ subject }}</title>
+  <style>
+    body { margin: 0; padding: 0; background: #f4f4f4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .wrapper { max-width: 600px; margin: 0 auto; background: #ffffff; }
+    .header { background: #000000; padding: 32px 40px; text-align: center; }
+    .header-title { color: #ccff00; font-size: 22px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
+    .header-sub { color: #666; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; margin-top: 4px; }
+    .body { padding: 40px; color: #333; }
+    .greeting { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: #111; }
+    .content { font-size: 15px; line-height: 1.7; color: #444; }
+    .highlight-box { background: #f8f8f8; border-left: 4px solid #ccff00; padding: 16px 20px; margin: 24px 0; border-radius: 0 8px 8px 0; }
+    .btn { display: inline-block; background: #ccff00; color: #000; font-weight: 700; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-size: 14px; margin: 24px 0; }
+    .footer { background: #f4f4f4; padding: 24px 40px; text-align: center; font-size: 12px; color: #999; }
+    .footer a { color: #666; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <div class="header-title">DUALITY POLE</div>
+      <div class="header-sub">Studio</div>
+    </div>
+    <div class="body">
+      {% if greeting %}<div class="greeting">{{ greeting }}</div>{% endif %}
+      <div class="content">{% block content %}{% endblock %}</div>
+    </div>
+    <div class="footer">
+      Duality Pole Studio · <a href="https://dualitypole.com.au">dualitypole.com.au</a><br>
+      {% block footer_extra %}{% endblock %}
+    </div>
+  </div>
+</body>
+</html>

@@ -286,8 +286,6 @@ class StripeWebhookView(APIView):
 
         # Send payment receipt email
         from apps.users.models import Notification
-        from django.core.mail import send_mail
-        from django.conf import settings as django_settings
         Notification.objects.create(
             recipient=user,
             title='Payment received',
@@ -295,17 +293,18 @@ class StripeWebhookView(APIView):
             notification_type='success',
         )
         if user.email:
-            send_mail(
-                subject='Payment receipt — Duality Pole Studio',
-                message=(
-                    f'Hi {user.first_name},\n\n'
-                    f'We\'ve received your payment of ${amount_dollars:.2f} for "{description}". Thank you!\n\n'
-                    f'If you have any questions about this payment, please contact the studio.\n\n'
-                    f'Duality Pole Studio'
-                ),
-                from_email=django_settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[user.email],
-                fail_silently=True,
+            from apps.users.email_utils import send_branded_email
+            send_branded_email(
+                to_email=user.email,
+                subject='Payment received — Duality Pole Studio',
+                template_name='payment_received',
+                context={
+                    'first_name': user.first_name,
+                    'greeting': f'Hi {user.first_name},',
+                    'amount': f'{amount_dollars:.2f}',
+                    'description': description,
+                    'plain_text': f'Hi {user.first_name},\n\nWe\'ve received your payment of ${amount_dollars:.2f} for "{description}". Thank you!\n\nDuality Pole Studio',
+                }
             )
 
     def _handle_payment_failed(self, intent):

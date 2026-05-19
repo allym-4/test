@@ -845,18 +845,19 @@ class ClassChangeRequestApproveView(APIView):
 
         # Email student
         if student.email:
-            send_mail(
+            from apps.users.email_utils import send_branded_email
+            send_branded_email(
+                to_email=student.email,
                 subject=f'Class change approved — {new_session.name}',
-                message=(
-                    f'Hi {student.first_name},\n\n'
-                    f'Your request to change from {old_session.name} to {new_session.name} has been approved.\n\n'
-                    + (f'{admin_notes}\n\n' if admin_notes else '')
-                    + f'Your class schedule has been updated. See you in {new_session.name}!\n\n'
-                    f'Duality Pole Studio'
-                ),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[student.email],
-                fail_silently=True,
+                template_name='class_change_approved',
+                context={
+                    'first_name': student.first_name,
+                    'greeting': f'Hi {student.first_name},',
+                    'old_session': old_session.name,
+                    'new_session': new_session.name,
+                    'admin_notes': admin_notes,
+                    'plain_text': f'Hi {student.first_name},\n\nYour class has been changed from {old_session.name} to {new_session.name}.\n\nDuality Pole Studio',
+                }
             )
 
         return Response(ClassChangeRequestSerializer(change_request).data)
@@ -893,17 +894,23 @@ class ClassChangeRequestRejectView(APIView):
         # Email student
         session_name = change_request.current_enrolment.class_session.name
         if change_request.student.email:
-            send_mail(
+            from apps.users.email_utils import send_branded_email
+            send_branded_email(
+                to_email=change_request.student.email,
                 subject='Class change request — update',
-                message=(
-                    f'Hi {change_request.student.first_name},\n\n'
-                    f'We\'ve reviewed your class change request for {session_name}.\n\n'
-                    + (f'{admin_notes}\n\n' if admin_notes else 'Unfortunately we\'re unable to approve this change at this time. Please contact the studio for more information.\n\n')
-                    + f'Duality Pole Studio'
-                ),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[change_request.student.email],
-                fail_silently=True,
+                template_name='class_change_rejected',
+                context={
+                    'first_name': change_request.student.first_name,
+                    'greeting': f'Hi {change_request.student.first_name},',
+                    'session_name': session_name,
+                    'admin_notes': admin_notes,
+                    'plain_text': (
+                        f'Hi {change_request.student.first_name},\n\n'
+                        f'We\'ve reviewed your class change request for {session_name}.\n\n'
+                        + (f'{admin_notes}\n\n' if admin_notes else 'Unfortunately we\'re unable to approve this change at this time. Please contact the studio for more information.\n\n')
+                        + f'Duality Pole Studio'
+                    ),
+                }
             )
 
         return Response(ClassChangeRequestSerializer(change_request).data)

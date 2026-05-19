@@ -1,0 +1,5 @@
+{% extends "emails/base.html" %}
+{% block content %}
+We've reviewed your class change request for <strong>{{ session_name }}</strong>.
+{% if admin_notes %}<div class="highlight-box">{{ admin_notes }}</div>{% else %}<p>Unfortunately we're unable to approve this change at this time. Please contact the studio for more information.</p>{% endif %}
+{% endblock %}

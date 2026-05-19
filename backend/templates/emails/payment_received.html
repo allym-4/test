@@ -1,0 +1,9 @@
+{% extends "emails/base.html" %}
+{% block content %}
+We've received your payment of <strong>${{ amount }}</strong> for <em>{{ description }}</em>. Thank you!
+<div class="highlight-box">
+  <strong>Amount:</strong> ${{ amount }}<br>
+  <strong>For:</strong> {{ description }}
+</div>
+If you have any questions about this payment, please reply to this email or contact the studio.
+{% endblock %}
