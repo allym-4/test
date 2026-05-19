@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { settings as settingsApi, membershipTypes, users, studios as studiosApi, packages as packagesApi, xero as xeroApi } from '../../api'
+import { settings as settingsApi, membershipTypes, users, studios as studiosApi, packages as packagesApi, xero as xeroApi, helpdesk as helpdeskApi } from '../../api'
 import { useApi } from '../../hooks/useApi'
 
 const FORM_FIELDS = {
@@ -228,6 +228,14 @@ export default function AdminSettings() {
   const [confirmDeleteOfferId, setConfirmDeleteOfferId] = useState(null)
   const [confirmXeroDisconnect, setConfirmXeroDisconnect] = useState(false)
 
+  // FAQs tab
+  const { data: faqData, refetch: refetchFaqs } = useApi(() => helpdeskApi.faqs.list(), [])
+  const faqList = faqData || []
+  const [faqDraft, setFaqDraft] = useState({}) // { [id]: {field: val} } for inline edits
+  const [faqSaving, setFaqSaving] = useState({}) // { [id]: true }
+  const [newFaq, setNewFaq] = useState(null) // null | draft object for a new FAQ row
+  const [confirmDeleteFaqId, setConfirmDeleteFaqId] = useState(null)
+
   // Memberships tab
   const { data: membershipData, loading: membershipLoading, refetch: refetchMemberships } = useApi(() => membershipTypes.list(), [])
   const membershipList = membershipData?.results || membershipData || []
@@ -389,6 +397,56 @@ export default function AdminSettings() {
     }
   }
 
+  function faqField(id, field) {
+    return faqDraft[id]?.[field] !== undefined ? faqDraft[id][field] : (faqList.find(f => f.id === id)?.[field] ?? '')
+  }
+
+  function setFaqField(id, field, val) {
+    setFaqDraft(prev => ({ ...prev, [id]: { ...(prev[id] || {}), [field]: val } }))
+  }
+
+  async function saveFaq(faq) {
+    const changes = faqDraft[faq.id]
+    if (!changes || Object.keys(changes).length === 0) return
+    setFaqSaving(prev => ({ ...prev, [faq.id]: true }))
+    try {
+      await helpdeskApi.faqs.update(faq.id, changes)
+      setFaqDraft(prev => { const next = { ...prev }; delete next[faq.id]; return next })
+      refetchFaqs()
+    } finally {
+      setFaqSaving(prev => ({ ...prev, [faq.id]: false }))
+    }
+  }
+
+  async function toggleFaqActive(faq) {
+    setFaqSaving(prev => ({ ...prev, [faq.id]: true }))
+    try {
+      await helpdeskApi.faqs.update(faq.id, { is_active: !faq.is_active })
+      refetchFaqs()
+    } finally {
+      setFaqSaving(prev => ({ ...prev, [faq.id]: false }))
+    }
+  }
+
+  async function deleteFaq(id) {
+    setConfirmDeleteFaqId(null)
+    await helpdeskApi.faqs.delete(id)
+    refetchFaqs()
+  }
+
+  async function createFaq() {
+    if (!newFaq?.question?.trim()) return
+    await helpdeskApi.faqs.create({
+      question: newFaq.question || '',
+      answer: newFaq.answer || '',
+      icon: newFaq.icon || '❓',
+      order: newFaq.order !== undefined ? Number(newFaq.order) : faqList.length,
+      is_active: true,
+    })
+    setNewFaq(null)
+    refetchFaqs()
+  }
+
   if (!form) return <div style={{ padding: 32, color: 'var(--grey)' }}>Loading settings…</div>
 
   return (
@@ -410,7 +468,7 @@ export default function AdminSettings() {
       )}
 
       <div className="subtabs" style={{ marginBottom: 24 }}>
-        {[['studio', 'Studio'], ['policies', 'Policies'], ['pricing', 'Pricing'], ['memberships', 'Memberships'], ['staff', 'Staff & Permissions'], ['integrations', 'Integrations'], ['forms', 'Forms & Docs']].map(([key, label]) => (
+        {[['studio', 'Studio'], ['policies', 'Policies'], ['pricing', 'Pricing'], ['memberships', 'Memberships'], ['staff', 'Staff & Permissions'], ['integrations', 'Integrations'], ['forms', 'Forms & Docs'], ['faqs', 'FAQs']].map(([key, label]) => (
           <div key={key} className={`subtab ${tab === key ? 'active' : ''}`} onClick={() => setTab(key)}>{label}</div>
         ))}
       </div>
@@ -844,6 +902,118 @@ export default function AdminSettings() {
             <button className="btn btn-lime btn-sm" onClick={saveAll} disabled={saving}>{saving ? 'Saving…' : saved ? '✓ Saved' : 'Save Changes'}</button>
           </div>
         </Section>
+      )}
+
+      {tab === 'faqs' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', fontWeight: 600 }}>FAQ Items</div>
+            <button className="btn btn-lime btn-sm" onClick={() => setNewFaq({ icon: '❓', question: '', answer: '', order: faqList.length })}>+ Add FAQ</button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {faqList.map(faq => {
+              const isSaving = !!faqSaving[faq.id]
+              const hasDraft = !!faqDraft[faq.id] && Object.keys(faqDraft[faq.id]).length > 0
+              return (
+                <div key={faq.id} className="section" style={{ padding: '16px 20px', opacity: faq.is_active ? 1 : 0.55 }}>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 10 }}>
+                    <input
+                      value={faqField(faq.id, 'icon')}
+                      onChange={e => setFaqField(faq.id, 'icon', e.target.value)}
+                      style={{ width: 52, textAlign: 'center', fontSize: 18, background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--white)', padding: '4px 6px', flexShrink: 0 }}
+                      title="Icon"
+                    />
+                    <input
+                      value={faqField(faq.id, 'order')}
+                      onChange={e => setFaqField(faq.id, 'order', e.target.value)}
+                      type="number"
+                      min="0"
+                      style={{ width: 60, textAlign: 'center', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--white)', padding: '6px 8px', flexShrink: 0 }}
+                      title="Order"
+                    />
+                    <input
+                      value={faqField(faq.id, 'question')}
+                      onChange={e => setFaqField(faq.id, 'question', e.target.value)}
+                      style={{ flex: 1, background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--white)', padding: '6px 10px', fontSize: 13 }}
+                      placeholder="Question"
+                    />
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+                      <Toggle checked={faq.is_active} onChange={() => toggleFaqActive(faq)} />
+                      <span style={{ fontSize: 11, color: 'var(--grey)' }}>{faq.is_active ? 'Active' : 'Inactive'}</span>
+                    </div>
+                  </div>
+                  <textarea
+                    rows={4}
+                    value={faqField(faq.id, 'answer')}
+                    onChange={e => setFaqField(faq.id, 'answer', e.target.value)}
+                    style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--white)', padding: '8px 10px', fontSize: 12, resize: 'vertical', fontFamily: 'inherit', marginBottom: 10 }}
+                    placeholder="Answer"
+                  />
+                  <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                    {hasDraft && (
+                      <button className="btn btn-lime btn-sm" onClick={() => saveFaq(faq)} disabled={isSaving}>
+                        {isSaving ? 'Saving…' : 'Save'}
+                      </button>
+                    )}
+                    {confirmDeleteFaqId === faq.id ? (
+                      <>
+                        <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => deleteFaq(faq.id)}>Confirm delete</button>
+                        <button className="btn btn-ghost btn-xs" onClick={() => setConfirmDeleteFaqId(null)}>Cancel</button>
+                      </>
+                    ) : (
+                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => setConfirmDeleteFaqId(faq.id)}>Delete</button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+
+            {newFaq && (
+              <div className="section" style={{ padding: '16px 20px', border: '1px solid rgba(176,255,100,0.25)' }}>
+                <div style={{ fontSize: 12, color: 'var(--lime)', marginBottom: 10, fontWeight: 600 }}>New FAQ</div>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 10 }}>
+                  <input
+                    value={newFaq.icon}
+                    onChange={e => setNewFaq(prev => ({ ...prev, icon: e.target.value }))}
+                    style={{ width: 52, textAlign: 'center', fontSize: 18, background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--white)', padding: '4px 6px', flexShrink: 0 }}
+                    title="Icon"
+                  />
+                  <input
+                    value={newFaq.order}
+                    onChange={e => setNewFaq(prev => ({ ...prev, order: e.target.value }))}
+                    type="number"
+                    min="0"
+                    style={{ width: 60, textAlign: 'center', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--white)', padding: '6px 8px', flexShrink: 0 }}
+                    title="Order"
+                  />
+                  <input
+                    value={newFaq.question}
+                    onChange={e => setNewFaq(prev => ({ ...prev, question: e.target.value }))}
+                    style={{ flex: 1, background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--white)', padding: '6px 10px', fontSize: 13 }}
+                    placeholder="Question *"
+                    autoFocus
+                  />
+                </div>
+                <textarea
+                  rows={4}
+                  value={newFaq.answer}
+                  onChange={e => setNewFaq(prev => ({ ...prev, answer: e.target.value }))}
+                  style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--white)', padding: '8px 10px', fontSize: 12, resize: 'vertical', fontFamily: 'inherit', marginBottom: 10 }}
+                  placeholder="Answer"
+                />
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setNewFaq(null)}>Cancel</button>
+                  <button className="btn btn-lime btn-sm" onClick={createFaq} disabled={!newFaq.question?.trim()}>Create FAQ</button>
+                </div>
+              </div>
+            )}
+
+            {faqList.length === 0 && !newFaq && (
+              <div style={{ color: 'var(--grey)', fontSize: 13, padding: 12 }}>No FAQs yet. Click "Add FAQ" to create the first one.</div>
+            )}
+          </div>
+        </div>
       )}
 
       {membershipModal && (

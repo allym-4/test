@@ -81,3 +81,17 @@ class DirectMessage(models.Model):
 
     def __str__(self):
         return f'DM from {self.sender} in convo #{self.conversation_id}'
+
+
+class FAQ(models.Model):
+    question = models.TextField()
+    answer = models.TextField()
+    icon = models.CharField(max_length=10, blank=True, default='❓')
+    order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return self.question[:80]

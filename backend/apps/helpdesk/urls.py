@@ -12,4 +12,6 @@ urlpatterns = [
     path('my-tickets/', views.MyTicketListView.as_view(), name='my-ticket-list'),
     path('my-tickets/<int:ticket_pk>/messages/', views.MyTicketMessageView.as_view(), name='my-ticket-messages'),
     path('submit/', views.StudentTicketCreateView.as_view(), name='student-ticket-create'),
+    path('faqs/', views.FAQListView.as_view(), name='faq-list'),
+    path('faqs/<int:pk>/', views.FAQDetailView.as_view(), name='faq-detail'),
 ]

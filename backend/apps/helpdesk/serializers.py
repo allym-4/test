@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Ticket, TicketMessage, Conversation, DirectMessage
+from .models import Ticket, TicketMessage, Conversation, DirectMessage, FAQ
 from apps.users.serializers import UserMinimalSerializer
 
 
@@ -89,3 +89,9 @@ class ConversationListSerializer(serializers.ModelSerializer):
     def get_last_message_preview(self, obj):
         last = obj.messages.last()
         return last.body[:80] if last else ''
+
+
+class FAQSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FAQ
+        fields = ('id', 'question', 'answer', 'icon', 'order', 'is_active')

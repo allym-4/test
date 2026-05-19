@@ -1,12 +1,13 @@
 from rest_framework import generics, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Ticket, TicketMessage, Conversation, DirectMessage
+from .models import Ticket, TicketMessage, Conversation, DirectMessage, FAQ
 from .serializers import (
     TicketSerializer, TicketListSerializer, TicketMessageSerializer,
     ConversationSerializer, ConversationListSerializer, DirectMessageSerializer,
+    FAQSerializer,
 )
-from apps.users.permissions import IsAdminOrInstructor
+from apps.users.permissions import IsAdminOrInstructor, IsAdminUser
 
 
 class TicketListView(generics.ListCreateAPIView):
@@ -141,3 +142,28 @@ class MyTicketMessageView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         ticket = Ticket.objects.get(pk=self.kwargs['ticket_pk'], student=self.request.user)
         serializer.save(sender=self.request.user, ticket=ticket)
+
+
+class FAQListView(generics.ListCreateAPIView):
+    serializer_class = FAQSerializer
+
+    def get_queryset(self):
+        qs = FAQ.objects.all()
+        if not (self.request.user.is_authenticated and self.request.user.role == 'admin'):
+            qs = qs.filter(is_active=True)
+        return qs
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [permissions.IsAuthenticated()]
+        return [IsAdminUser()]
+
+
+class FAQDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = FAQ.objects.all()
+    serializer_class = FAQSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [permissions.IsAuthenticated()]
+        return [IsAdminUser()]

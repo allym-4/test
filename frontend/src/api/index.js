@@ -184,6 +184,12 @@ export const helpdesk = {
   myTickets: () => client.get('/api/helpdesk/my-tickets/'),
   myTicketMessages: (ticketId) => client.get(`/api/helpdesk/my-tickets/${ticketId}/messages/`),
   myTicketReply: (ticketId, data) => client.post(`/api/helpdesk/my-tickets/${ticketId}/messages/`, data),
+  faqs: {
+    list: () => client.get('/api/helpdesk/faqs/'),
+    create: (d) => client.post('/api/helpdesk/faqs/', d),
+    update: (id, d) => client.patch('/api/helpdesk/faqs/' + id + '/', d),
+    delete: (id) => client.delete('/api/helpdesk/faqs/' + id + '/'),
+  },
 }
 
 export const homework = {
