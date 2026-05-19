@@ -1008,3 +1008,122 @@ class CasualAdminDisplaceView(APIView):
         )
 
         return Response({'detail': 'Casual booking force-displaced.'}, status=status.HTTP_200_OK)
+
+
+class MyUpcomingClassesView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from apps.enrolments.models import Enrolment
+        from apps.attendance.models import AttendanceRecord, MakeupCredit
+        import datetime
+
+        student = request.user
+        today = datetime.date.today()
+        items = []
+
+        # 1. Enrolled class occurrences (active enrolments) — all upcoming, including away
+        active_enrolments = Enrolment.objects.filter(
+            student=student, status='active'
+        ).select_related('class_session__studio', 'class_session__instructor')
+
+        session_ids = [e.class_session_id for e in active_enrolments if e.class_session_id]
+        enrolment_by_session = {e.class_session_id: e for e in active_enrolments}
+
+        if session_ids:
+            occurrences = (ClassOccurrence.objects
+                .filter(session_id__in=session_ids, date__gte=today, status='scheduled')
+                .select_related('session__studio', 'session__instructor')
+                .order_by('date', 'session__start_time'))
+
+            # Get absence records for these occurrences
+            absence_records = {
+                ar.occurrence_id: ar
+                for ar in AttendanceRecord.objects.filter(
+                    student=student, occurrence__in=occurrences, status='absent'
+                )
+            }
+
+            for occ in occurrences:
+                sess = occ.session
+                enrolment = enrolment_by_session.get(sess.id)
+                absence = absence_records.get(occ.id)
+                # Count confirmed spots to check capacity
+                enrolled_count = AttendanceRecord.objects.filter(
+                    occurrence=occ
+                ).exclude(status__in=['absent', 'no_show']).count()
+
+                items.append({
+                    'id': f'enrol-{occ.id}',
+                    'type': 'enrolled',
+                    'date': str(occ.date),
+                    'start_time': str(sess.start_time)[:5] if sess.start_time else None,
+                    'session_name': sess.name,
+                    'studio_name': sess.studio.name if sess.studio else None,
+                    'instructor_name': (
+                        f"{sess.instructor.first_name} {sess.instructor.last_name}".strip()
+                        if sess.instructor else sess.instructor_name or None
+                    ),
+                    'status': 'away' if absence else 'attending',
+                    'occurrence_id': occ.id,
+                    'enrolment_id': enrolment.id if enrolment else None,
+                    'makeup_credit_issued': absence is not None,
+                    'spots_left': max(0, sess.capacity - enrolled_count),
+                    'is_past': occ.date < today,
+                })
+
+        # 2. Casual / catch-up / class-pass bookings
+        casual_bookings = (CasualBooking.objects
+            .filter(student=student, status__in=['confirmed', 'waitlisted'])
+            .select_related('occurrence__session__studio', 'occurrence__session__instructor')
+            .filter(occurrence__date__gte=today)
+            .order_by('occurrence__date', 'occurrence__session__start_time'))
+
+        for cb in casual_bookings:
+            occ = cb.occurrence
+            sess = occ.session
+            items.append({
+                'id': f'casual-{cb.id}',
+                'type': cb.enrolment_type,  # 'casual', 'catchup', 'classpass'
+                'date': str(occ.date),
+                'start_time': str(sess.start_time)[:5] if sess.start_time else None,
+                'session_name': sess.name,
+                'studio_name': sess.studio.name if sess.studio else None,
+                'instructor_name': (
+                    f"{sess.instructor.first_name} {sess.instructor.last_name}".strip()
+                    if sess.instructor else sess.instructor_name or None
+                ),
+                'status': cb.status,  # 'confirmed' or 'waitlisted'
+                'booking_id': cb.id,
+                'occurrence_id': occ.id,
+                'spots_left': None,
+                'is_past': False,
+            })
+
+        # 3. Practice bookings
+        practice_bookings = (PracticeBooking.objects
+            .filter(student=student, status='confirmed')
+            .select_related('slot__studio')
+            .filter(slot__date__gte=today)
+            .order_by('slot__date', 'slot__start_time'))
+
+        for pb in practice_bookings:
+            slot = pb.slot
+            items.append({
+                'id': f'practice-{pb.id}',
+                'type': 'practice',
+                'date': str(slot.date),
+                'start_time': str(slot.start_time)[:5] if slot.start_time else None,
+                'session_name': 'Practice Time',
+                'studio_name': slot.studio.name if slot.studio else None,
+                'instructor_name': None,
+                'status': 'confirmed',
+                'booking_id': pb.id,
+                'occurrence_id': None,
+                'spots_left': None,
+                'is_past': False,
+            })
+
+        # Sort all items by date then time
+        items.sort(key=lambda x: (x['date'], x['start_time'] or ''))
+        return Response(items)

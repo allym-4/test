@@ -62,6 +62,7 @@ export const classes = {
     delete: (id) => client.delete(`/api/classes/upsells/${id}/`),
     suggest: (sessionIds) => client.get('/api/classes/upsells/suggest/', { params: { session_ids: sessionIds.join(',') } }),
   },
+  myUpcoming: () => client.get('/api/classes/my-upcoming/'),
 }
 
 export const studios = {

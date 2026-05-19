@@ -43,4 +43,5 @@ urlpatterns = [
     path('upsells/', views.ClassUpsellListView.as_view(), name='upsell-list'),
     path('upsells/<int:pk>/', views.ClassUpsellDetailView.as_view(), name='upsell-detail'),
     path('upsells/suggest/', views.UpsellSuggestView.as_view(), name='upsell-suggest'),
+    path('my-upcoming/', views.MyUpcomingClassesView.as_view(), name='my-upcoming-classes'),
 ]

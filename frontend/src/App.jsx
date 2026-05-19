@@ -70,6 +70,7 @@ import StudentHomework from './pages/student/StudentHomework'
 import StudentForms from './pages/student/StudentForms'
 import StudentPractice from './pages/student/StudentPractice'
 import StudentShop from './pages/student/StudentShop'
+import StudentUpcomingClasses from './pages/student/StudentUpcomingClasses'
 
 // Instructor pages (extra)
 import InstructorMessages from './pages/InstructorMessages'
@@ -211,6 +212,7 @@ export default function App() {
             <Route path="forms" element={<StudentForms />} />
             <Route path="practice" element={<StudentPractice />} />
             <Route path="shop" element={<StudentShop />} />
+            <Route path="upcoming-classes" element={<StudentUpcomingClasses />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

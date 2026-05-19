@@ -868,6 +868,13 @@ export default function StudentMyClasses() {
         </button>
       </div>
 
+      {/* View all upcoming link */}
+      <div style={{ marginBottom: 16 }}>
+        <Link to="/portal/upcoming-classes" style={{ fontSize: 13, color: 'var(--lav)', textDecoration: 'none', fontWeight: 600 }}>
+          View all upcoming →
+        </Link>
+      </div>
+
       {/* Top-level tabs */}
       <div className="subtabs" style={{ marginBottom: 20 }}>
         {[['active', 'Active Season'], ['future', 'Future Season'], ['past', 'Past Seasons']].map(([key, label]) => (

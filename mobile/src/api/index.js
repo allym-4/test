@@ -38,6 +38,7 @@ export const classes = {
     cancel: (id) => client.post(`/api/classes/practice/${id}/cancel/`),
     myBookings: () => client.get('/api/classes/practice/my-bookings/'),
   },
+  myUpcoming: () => client.get('/api/classes/my-upcoming/'),
 }
 
 export const media = {
