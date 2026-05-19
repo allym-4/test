@@ -518,12 +518,12 @@ export default function StudentBook() {
 
   const priceCasual = parseFloat(studioSettings?.price_casual || 40)
   const priceCasualEnrolled = parseFloat(studioSettings?.price_casual_enrolled || 30)
-  const casualRate = activeSeasonCount > 0 ? priceCasualEnrolled : priceCasual
   const priceSeason = parseFloat(studioSettings?.price_season || 270)
   const priceTrial = parseFloat(studioSettings?.price_trial || 25)
 
   // Season multi-class pricing: look up price for (current active enrolments + 1)
   const activeSeasonCount = (activeEnrolData?.results || activeEnrolData || []).filter(e => e.enrolment_type === 'course').length
+  const casualRate = activeSeasonCount > 0 ? priceCasualEnrolled : priceCasual
   const seasonPricingConfig = (studioSettings?.season_pricing_config || []).filter(r => r.label)
   function getSeasonPrice(addingCount = 1) {
     const totalClasses = activeSeasonCount + addingCount
