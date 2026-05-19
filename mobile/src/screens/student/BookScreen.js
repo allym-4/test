@@ -778,31 +778,31 @@ function CasualBookingOptionsModal({ visible, occ, priceCasual, priceCasualEnrol
     onBook(selected === 'credit' ? 'catchup' : selected === 'pass' ? 'classpass' : selected === 'buypass' ? 'buypass' : 'casual')
   }
 
-  const OptionRow = ({ id, title, sub, price, accent, checkbox }) => {
+  const OptionRow = ({ id, title, sub, price, accent, disabled }) => {
     const isSelected = selected === id
-    const accentColor = accent ?? T.border
+    const accentColor = accent ?? '#ccff00'
     return (
       <TouchableOpacity
         style={[bo.option,
-          isSelected
-            ? { borderColor: accentColor, backgroundColor: accentColor === T.border ? 'rgba(255,255,255,0.04)' : `${accentColor}18` }
-            : { borderColor: T.border, backgroundColor: 'transparent' },
+          disabled
+            ? { borderColor: '#222', backgroundColor: 'transparent', opacity: 0.38 }
+            : isSelected
+              ? { borderColor: accentColor, backgroundColor: `${accentColor}18` }
+              : { borderColor: '#2a2a2a', backgroundColor: 'transparent' },
         ]}
-        onPress={() => setSelected(id)}
-        activeOpacity={0.8}
+        onPress={() => !disabled && setSelected(id)}
+        activeOpacity={disabled ? 1 : 0.8}
       >
         <View style={[
-          checkbox ? bo.checkbox : bo.radio,
-          { borderColor: isSelected ? accentColor : '#444' },
-          isSelected && !checkbox && { backgroundColor: accentColor },
-        ]}>
-          {isSelected && checkbox && <Text style={{ fontSize: 10, color: accentColor, fontWeight: '900' }}>✓</Text>}
-        </View>
+          bo.radio,
+          { borderColor: disabled ? '#333' : isSelected ? accentColor : '#444' },
+          isSelected && !disabled && { backgroundColor: accentColor },
+        ]} />
         <View style={{ flex: 1 }}>
-          <Text style={[bo.optionTitle, isSelected && accent && { color: accentColor }]}>{title}</Text>
+          <Text style={[bo.optionTitle, isSelected && !disabled && { color: accentColor }]}>{title}</Text>
           {!!sub && <Text style={bo.optionSub}>{sub}</Text>}
         </View>
-        {!!price && <Text style={[bo.optionPrice, isSelected && accent && { color: accentColor }]}>{price}</Text>}
+        {!!price && <Text style={[bo.optionPrice, isSelected && !disabled && { color: accentColor }]}>{price}</Text>}
       </TouchableOpacity>
     )
   }
@@ -821,56 +821,61 @@ function CasualBookingOptionsModal({ visible, occ, priceCasual, priceCasualEnrol
             </TouchableOpacity>
           </View>
 
-          {availableCredits > 0 && (
-            <Text style={{ fontSize: 13, color: '#b0a0ff', fontWeight: '700', marginBottom: 16 }}>
-              <Text style={{ color: T.lime }}>{availableCredits}</Text> catch-up credit{availableCredits !== 1 ? 's' : ''} available
-            </Text>
-          )}
+          {/* Credit option — always shown, disabled if none available */}
+          <OptionRow id="credit"
+            title="Use a credit"
+            sub={availableCredits > 0
+              ? `${availableCredits} catch-up credit${availableCredits !== 1 ? 's' : ''} available`
+              : inActiveSeason ? 'No credits — cancel 4+ hrs early to earn one' : 'Not eligible for this class'}
+            price={availableCredits > 0 ? 'FREE' : null}
+            accent="#b0a0ff"
+            disabled={!creditEligible}
+          />
 
-          {seasonCanEnrol && (
-            <OptionRow id="season" checkbox
-              title={`Enrol in the full ${bookingSeason?.name ?? 'season'} course instead`}
-              sub={`Add this class to your season · $${bookingSeason ? Math.round(parseFloat(bookingSeason.price ?? 0)) : '—'} total`}
-              accent={T.lime}
-            />
-          )}
-
-          {creditEligible && (
-            <OptionRow id="credit"
-              title="Use class credit"
-              sub={`You have ${availableCredits} class credit${availableCredits !== 1 ? 's' : ''} available`}
-              price="FREE"
-              accent="#b0a0ff"
-            />
-          )}
-
+          {/* Casual / enrolled rate */}
           <OptionRow id="casual"
-            title="Pay casual rate"
-            sub={isEnrolled ? 'Enrolled student rate · Card via Stripe' : 'Standard casual rate · Card via Stripe'}
+            title={isEnrolled ? 'Pay enrolled student rate' : 'Pay casual rate'}
+            sub="Card via Stripe"
             price={`$${casualRate}`}
           />
 
-          {passEligible && (
+          {/* Class pass — use existing or buy */}
+          {passEligible ? (
             <OptionRow id="pass"
-              title={`${classPassSize}-class pass`}
+              title={`Use ${classPassSize}-class pass`}
               sub={`${passClassesRemaining} credit${passClassesRemaining !== 1 ? 's' : ''} remaining on your pass`}
               price="FREE"
               accent="#b0a0ff"
             />
-          )}
-
-          {!passEligible && !!activeSeason && passSaving > 0 && (
+          ) : !!activeSeason && passSaving > 0 ? (
             <OptionRow id="buypass"
-              title={<Text><Text>Buy a {classPassSize}-class pass · </Text><Text style={{ color: T.lime }}>save ${passSaving}</Text></Text>}
-              sub={`$${(priceClassPass / classPassSize).toFixed(0)}/class · use across any eligible casual or catch-up`}
+              title={`Buy a ${classPassSize}-class pass`}
+              sub={`Save $${passSaving} · $${(priceClassPass / classPassSize).toFixed(0)}/class across eligible casuals`}
               price={`$${priceClassPass}`}
               accent="#b0a0ff"
             />
-          )}
+          ) : null}
 
           <TouchableOpacity style={bo.actionBtn} onPress={handleConfirm} activeOpacity={0.85}>
             <Text style={bo.actionBtnText}>{actionLabel}</Text>
           </TouchableOpacity>
+
+          {/* Season upsell */}
+          {seasonCanEnrol && (
+            <TouchableOpacity
+              style={bo.seasonCard}
+              onPress={() => { onClose(); onEnrolSeason() }}
+              activeOpacity={0.8}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={bo.seasonCardTitle}>Enrol in the full season instead</Text>
+                <Text style={bo.seasonCardSub}>
+                  {bookingSeason?.name ?? 'Season'} · ${bookingSeason ? Math.round(parseFloat(bookingSeason.price ?? 0)) : '—'} total · better value
+                </Text>
+              </View>
+              <Text style={bo.seasonCardArrow}>→</Text>
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity style={bo.cancelBtn} onPress={onClose}>
             <Text style={bo.cancelBtnText}>Maybe later</Text>
@@ -899,6 +904,10 @@ const bo = StyleSheet.create({
   optionPrice: { fontSize: 18, fontWeight: '900', color: '#ccff00', marginLeft: 12 },
   cancelBtn: { alignItems: 'center', paddingVertical: 14 },
   cancelBtnText: { color: '#555', fontSize: 13 },
+  seasonCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(204,255,0,0.06)', borderWidth: 1, borderColor: 'rgba(204,255,0,0.2)', borderRadius: 14, padding: 16, marginTop: 4, marginBottom: 4, gap: 12 },
+  seasonCardTitle: { fontSize: 14, fontWeight: '700', color: '#ccff00', marginBottom: 3 },
+  seasonCardSub: { fontSize: 12, color: '#888', lineHeight: 18 },
+  seasonCardArrow: { fontSize: 18, color: '#ccff00', fontWeight: '700' },
 })
 
 // ─── CatchupSessionPanel ──────────────────────────────────────────────────────
