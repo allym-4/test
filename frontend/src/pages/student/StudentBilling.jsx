@@ -32,7 +32,7 @@ export default function StudentBilling() {
   const [refundType, setRefundType] = useState('refund')
   const [refundReason, setRefundReason] = useState('')
   const [refundSending, setRefundSending] = useState(false)
-  const [refundSent, setRefundSent] = useState(false)
+  const [refundError, setRefundError] = useState('')
 
   const { data: balData, loading: loadingBal, refetch: refetchBal } = useApi(() => user ? payments.balance(user.id) : null, [user?.id])
   const { data: paymentsData, loading: loadingPayments, refetch: refetchPayments } = useApi(() => payments.list({ student: user?.id }), [user?.id])
@@ -87,17 +87,17 @@ export default function StudentBilling() {
   async function handleRefundSubmit() {
     if (!refundReason.trim()) return
     setRefundSending(true)
+    setRefundError('')
     try {
       await helpdesk.submitTicket({
         subject: `${refundType === 'credit' ? 'Credit' : 'Refund'} request`,
         body: refundReason,
         category: 'billing',
       })
-      setRefundSent(true)
-      setTimeout(() => { setRefundSent(false); setShowRefundModal(false); setRefundReason('') }, 2500)
-    } catch {
-      setRefundSent(true)
-      setTimeout(() => { setRefundSent(false); setShowRefundModal(false); setRefundReason('') }, 2500)
+      setShowRefundModal(false)
+      setRefundReason('')
+    } catch (err) {
+      setRefundError(err?.response?.data?.detail || 'Failed to submit — please try again.')
     } finally {
       setRefundSending(false)
     }
@@ -221,9 +221,9 @@ export default function StudentBilling() {
                 style={{ width: '100%', background: 'var(--input)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', padding: '9px 12px', fontSize: 13, resize: 'vertical' }}
               />
             </div>
-            {refundSent && <div style={{ fontSize: 12, color: 'var(--lime)', marginBottom: 12 }}>Request submitted — we'll be in touch soon.</div>}
+            {refundError && <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 12 }}>{refundError}</div>}
             <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn btn-lime btn-sm" onClick={handleRefundSubmit} disabled={refundSending || refundSent || !refundReason.trim()}>
+              <button className="btn btn-lime btn-sm" onClick={handleRefundSubmit} disabled={refundSending || !refundReason.trim()}>
                 {refundSending ? 'Submitting…' : 'Submit'}
               </button>
               <button className="btn btn-ghost btn-sm" onClick={() => setShowRefundModal(false)}>Cancel</button>
