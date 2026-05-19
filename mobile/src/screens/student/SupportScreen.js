@@ -11,32 +11,64 @@ import { helpdesk } from '../../api'
 
 const FAQS = [
   {
-    q: 'How do I cancel or reschedule a class?',
-    a: 'You can cancel a booking up to 24 hours before class without a fee. Go to My Classes and tap the booking to cancel. Late cancellations (within 24 hours) incur a $10 fee. No-shows incur a $20 fee.',
+    icon: '🔒',
+    q: "I can't access the studio",
+    a: "The door auto-unlocks 15 minutes before each class and stays unlocked until 1 minute after it starts — just push the door, no app needed during that window.\n\nOutside that window, use the Kisi app (you'll have received an email with access before your first class). You'll need Kisi if you're arriving more than 15 minutes early or are a couple of minutes late.\n\n5 minutes late or more? Unfortunately the door is locked and you'll be marked as a no-show. Warm-up is essential for safety and we can't disrupt the class — no exceptions. If you haven't set up Kisi yet or are having trouble with it, email us at intrigued@dualitypole.com.",
   },
   {
-    q: 'Can I freeze my membership?',
-    a: 'Yes! You can freeze your season membership for up to 8 weeks once per season. Freezes require 7 days notice. Message us via the Chat tab or email hello@dualitypole.com.au to request a freeze.',
+    icon: '❌',
+    q: 'I need to cancel',
+    a: "Cancel at least 4 hours before your class and you'll receive a makeup credit to use within the same season.\n\nCancel less than 4 hours before? You'll forfeit the class — no credit issued. We still encourage you to cancel in the app even past the cut-off, so we know you're not coming.\n\nDon't cancel at all and don't show up? That's a $20 no-show fee.\n\nTo cancel, go to My Classes, tap the booking, and hit Cancel.",
   },
   {
+    icon: '🎫',
     q: 'How do makeup credits work?',
-    a: 'If you have an approved absence (illness, injury, emergency), we may issue a makeup credit. Credits can be used to book any equivalent or lower-level class within 60 days. Check your credits in Billing.',
+    a: "If you cancel at least 4 hours before your class, you'll automatically get a makeup credit.\n\nYou can use that credit to book a catch-up class within the same season — credits don't carry over to future seasons, so make sure you use them!\n\nNot sure which classes you can catch up in? See 'What classes can I catch up in?' below.",
   },
   {
-    q: 'What should I wear to class?',
-    a: 'Activewear that leaves your legs, arms, and midriff exposed — your skin helps you grip the pole. Avoid moisturisers or fake tan before class. Grippy socks for warm-up and cool-down.',
+    icon: '🗓️',
+    q: 'What classes can I catch up in?',
+    a: "Depends on your level! Here's what you can book into:\n\nLevel 1 — Level 1, Kiki, Unravel, Dance Virgin, Spin Virgin\nLevel 2 — Level 2, Kiki, Unravel, Dance Virgin/Dance, Spin Virgin, Invert Tech\nLevel 3 — Level 3, Kiki, Unravel, Dance Virgin/Dance, Spin Virgin, Invert Tech, Dirty Dance\n\nFor specialty classes catch up in Kiki, Unravel, Dance Virgin, Spin Virgin, or Dirty Dance.\n\nStill not sure? Email us.",
   },
   {
-    q: 'Is there parking nearby?',
-    a: 'Street parking on Kippax St and surrounding streets. The nearest train station is Central.',
+    icon: '🩰',
+    q: "Why can't I join a class mid-season?",
+    a: "Levelled classes build toward a full routine over the season — each week adds to what came before, so joining too late means you'd be missing too much of the foundation.\n\nIf you're already enrolled and just missed a week, no stress — you can pick back up. But if you're looking to join fresh mid-season, you'll need to wait for the next one.\n\nIn the meantime, plenty of classes are open any time.",
   },
   {
-    q: 'What happens if a class is cancelled?',
-    a: "If we cancel a class you'll be notified by email as soon as possible. A makeup credit will automatically be added to your account to use within 60 days.",
+    icon: '🤔',
+    q: "I don't know what class I should do",
+    a: "Never done pole before? Start with a Virgin class — low pressure, beginner-friendly, and a great way to try it before committing to a full season. Ready to go all in? Level 1 is your starting point, no experience needed.\n\nDone pole before elsewhere? Email us at intrigued@dualitypole.com with a bit about your background and we'll place you in the right level.",
   },
   {
-    q: 'How do I enrol for a new season?',
-    a: "Season enrolments open approximately 4 weeks before the new season starts. Current students get priority access for the first 48 hours. You'll receive an email when enrolments open.",
+    icon: '👜',
+    q: 'What do I bring?',
+    a: "Every class: two towels (one for you, one to wipe down your equipment) and a water bottle.\n\nPole/tricks classes: bare legs to grip the pole, and grip aid — we have Griptinite at reception.\n\nSpecialty classes (Strip, Chair, Floor, Chole etc.): knee pads are recommended — we sell them at reception.\n\nKiki & Unravel: just comfortable activewear, no grip needed.",
+  },
+  {
+    icon: '📍',
+    q: 'Where are you / how do I find you?',
+    a: "We're on Level 1 at 88 Kippax St, Surry Hills.\n\nHead through the double doors on Kippax St — you'll hit a small staircase. Turn right down the corridor and you'll find our very recognisable steps.\n\nReception is at the top. You're welcome to arrive up to 15 minutes before your class.",
+  },
+  {
+    icon: '🏋️',
+    q: 'Can I book practice time?',
+    a: "Yes! Practice time is bookable through the app (look for it on the timetable).\n\nIf you're doing 3 or more classes a week, one practice session per week is on us. Otherwise it's $20 for enrolled students and $30 for non-enrolled.\n\nSame cancellation rules apply — cancel before the cut-off or your card will be charged.",
+  },
+  {
+    icon: '📅',
+    q: 'When do season enrolments open?',
+    a: "New season enrolments usually open around 4 weeks before the season starts. Current students get 48 hours of priority access before spots open to the public.\n\nKeep an eye on your notifications and email — we'll let you know as soon as enrolments are live.",
+  },
+  {
+    icon: '📱',
+    q: 'How do I set up Kisi (door access)?',
+    a: "1. Check your email for an invitation from Kisi — it'll come from noreply@kisi.io.\n\n2. Tap the link to create your Kisi account. Download the Kisi app.\n\n3. Once logged in, you'll see Duality Pole in your places. Tap it, then tap 'Unlock'.\n\n4. Make sure Bluetooth and location are enabled on your phone.\n\nStill having trouble? Email us at intrigued@dualitypole.com.",
+  },
+  {
+    icon: '💳',
+    q: 'I have a billing question',
+    a: "You can view all your charges, credits, and payment history under Account → Billing history.\n\nIf something looks wrong, email us at intrigued@dualitypole.com with the date and amount and we'll look into it.",
   },
 ]
 
@@ -72,14 +104,17 @@ function statusColor(status) {
 
 function FaqItem({ faq, open, onToggle }) {
   return (
-    <View style={s.faqCard}>
+    <View style={[s.faqCard, open && s.faqCardOpen]}>
       <TouchableOpacity style={s.faqHeader} onPress={onToggle} activeOpacity={0.7}>
+        {faq.icon ? <Text style={s.faqIcon}>{faq.icon}</Text> : null}
         <Text style={s.faqQ}>{faq.q}</Text>
-        <Text style={[s.faqChevron, open && s.faqChevronOpen]}>+</Text>
+        <Text style={[s.faqChevron, open && s.faqChevronOpen]}>{open ? '×' : '+'}</Text>
       </TouchableOpacity>
       {open && (
         <View style={s.faqBody}>
-          <Text style={s.faqA}>{faq.a}</Text>
+          {faq.a.split('\n\n').map((para, i) => (
+            <Text key={i} style={[s.faqA, i > 0 && { marginTop: 10 }]}>{para}</Text>
+          ))}
         </View>
       )}
     </View>
@@ -427,12 +462,14 @@ const s = StyleSheet.create({
   sectionHeading: { fontSize: 16, fontWeight: '700', color: '#fff', marginBottom: 14 },
 
   faqCard: { backgroundColor: '#111', borderRadius: 12, marginBottom: 8, borderWidth: 1, borderColor: '#222', overflow: 'hidden' },
-  faqHeader: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
+  faqCardOpen: { borderColor: 'rgba(204,255,0,0.2)' },
+  faqHeader: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 10 },
+  faqIcon: { fontSize: 18, flexShrink: 0 },
   faqQ: { flex: 1, fontSize: 14, fontWeight: '600', color: '#fff', lineHeight: 20 },
-  faqChevron: { fontSize: 22, color: '#555', fontWeight: '300', lineHeight: 24 },
+  faqChevron: { fontSize: 20, color: '#555', fontWeight: '300', lineHeight: 24 },
   faqChevronOpen: { color: '#ccff00' },
   faqBody: { paddingHorizontal: 16, paddingBottom: 16, borderTopWidth: 1, borderTopColor: '#1a1a1a', paddingTop: 12 },
-  faqA: { fontSize: 13, color: '#888', lineHeight: 21 },
+  faqA: { fontSize: 13, color: '#aaa', lineHeight: 21 },
 
   contactPrompt: { marginTop: 20, alignItems: 'center', gap: 6 },
   contactPromptText: { fontSize: 13, color: '#555' },

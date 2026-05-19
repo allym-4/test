@@ -137,7 +137,7 @@ export default function HelpPanel({ open, onClose }) {
                 }}>+</span>
               </button>
               {expanded === i && (
-                <div style={{ padding: '0 14px 14px 42px', fontSize: 12, color: 'var(--grey)', lineHeight: 1.7, borderTop: '1px solid #111', paddingTop: 10 }}>
+                <div style={{ padding: '0 14px 14px 42px', fontSize: 12, color: '#aaa', lineHeight: 1.8, borderTop: '1px solid #1a1a1a', paddingTop: 10 }}>
                   {p.answer.split('\n\n').map((para, j) => (
                     <p key={j} style={{ margin: 0, marginBottom: j < p.answer.split('\n\n').length - 1 ? 10 : 0 }}>{para}</p>
                   ))}
