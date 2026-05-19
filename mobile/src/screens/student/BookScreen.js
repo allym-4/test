@@ -1922,7 +1922,7 @@ export default function BookScreen({ navigation }) {
                                   activeOpacity={0.8}
                                 >
                                   <Text style={s.casualBookBtnText}>BOOK</Text>
-                                  <Text style={{ fontSize: 10, color: T.lime, fontWeight: '700', marginTop: 1 }}>${priceCasual}</Text>
+                                  <Text style={{ fontSize: 10, color: '#000', fontWeight: '700', marginTop: 1 }}>${priceCasual}</Text>
                                 </TouchableOpacity>
                               )}
                             </View>
@@ -2683,13 +2683,14 @@ const s = StyleSheet.create({
   casualCardSpotsFull: { color: '#ef4444' },
   casualBookBtn: {
     backgroundColor: T.lime,
-    borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    borderRadius: 20,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
     alignItems: 'center',
+    minWidth: 64,
   },
   casualBookBtnDisabled: { backgroundColor: '#222' },
-  casualBookBtnText: { fontSize: 12, fontWeight: '800', color: '#000' },
+  casualBookBtnText: { fontSize: 11, fontWeight: '800', color: '#000', letterSpacing: 0.5 },
   exemptBtn: {
     borderRadius: 10,
     paddingVertical: 8,

@@ -114,12 +114,15 @@ export default function StudentShell() {
               </div>
             </div>
             {bal !== null && (
-              <div style={{ background: isOwing ? 'rgba(255,68,68,0.08)' : 'rgba(0,23,0,0.8)', border: `1px solid ${isOwing ? 'rgba(255,68,68,0.2)' : '#1e3800'}`, borderRadius: 8, padding: '8px 12px' }}>
-                <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.07em', color: isOwing ? 'var(--red)' : 'var(--grey)', marginBottom: 2 }}>Account balance</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: isOwing ? 'var(--red)' : 'var(--lime)' }}>
-                  {isOwing ? `-$${Math.abs(bal).toFixed(2)} owing` : bal > 0 ? `$${bal.toFixed(2)} credit` : '$0.00'}
+              <NavLink to="/portal/billing" style={{ textDecoration: 'none' }} onClick={() => setMobileOpen(false)}>
+                <div style={{ background: isOwing ? 'rgba(255,68,68,0.08)' : 'rgba(0,23,0,0.8)', border: `1px solid ${isOwing ? 'rgba(255,68,68,0.2)' : '#1e3800'}`, borderRadius: 8, padding: '8px 12px', cursor: 'pointer' }}>
+                  <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.07em', color: isOwing ? 'var(--red)' : 'var(--grey)', marginBottom: 2 }}>Account balance</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: isOwing ? 'var(--red)' : 'var(--lime)' }}>
+                    {isOwing ? `-$${Math.abs(bal).toFixed(2)} owing` : bal > 0 ? `$${bal.toFixed(2)} credit` : '$0.00'}
+                  </div>
+                  {isOwing && <div style={{ fontSize: 10, color: 'var(--red)', marginTop: 3, opacity: 0.7 }}>Tap to view billing →</div>}
                 </div>
-              </div>
+              </NavLink>
             )}
           </div>
           <button className="btn btn-ghost btn-xs" onClick={handleLogout} style={{ width: '100%' }}>Log out</button>

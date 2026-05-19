@@ -113,7 +113,11 @@ function FaqItem({ faq, open, onToggle }) {
       {open && (
         <View style={s.faqBody}>
           {faq.a.split('\n\n').map((para, i) => (
-            <Text key={i} style={[s.faqA, i > 0 && { marginTop: 10 }]}>{para}</Text>
+            <View key={i} style={i > 0 ? { marginTop: 10 } : {}}>
+              {para.split('\n').map((line, j) => (
+                <Text key={j} style={[s.faqA, j > 0 && { marginTop: 3 }]}>{line}</Text>
+              ))}
+            </View>
           ))}
         </View>
       )}

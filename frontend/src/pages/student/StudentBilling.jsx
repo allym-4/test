@@ -255,7 +255,7 @@ export default function StudentBilling() {
               <span style={{ fontSize: 16, fontWeight: 'normal', fontFamily: "'Archivo', sans-serif", color: 'var(--grey)' }}>credits available</span>
             </div>
             <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 4 }}>
-              Credits expire 60 days from issue &nbsp;·&nbsp; <span style={{ color: 'var(--lav)' }}>Use when booking a casual or catch-up class</span>
+              Credits are valid within the season they were issued &nbsp;·&nbsp; <span style={{ color: 'var(--lav)' }}>Use when booking a catch-up class</span>
             </div>
           </div>
         </div>
