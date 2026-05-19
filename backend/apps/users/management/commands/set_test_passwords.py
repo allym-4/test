@@ -2,33 +2,31 @@ from django.core.management.base import BaseCommand
 from apps.users.models import User
 
 
-TEST_ACCOUNTS = [
-    ('admin',  'admin1234'),
-    ('chloe',  'chloe1234'),
-    ('jess',   'student1234'),
-    ('tara',   'student1234'),
-    ('dana',   'student1234'),
-    ('nina',   'student1234'),
-    ('sophie', 'student1234'),
-    ('alex',   'student1234'),
-    ('riley',  'student1234'),
-    ('morgan', 'student1234'),
-    ('jade',   'student1234'),
-    ('sam',    'student1234'),
-]
-
-
 class Command(BaseCommand):
-    help = 'Reset passwords for demo/test accounts'
+    help = 'Reset passwords for all demo/test accounts'
 
     def handle(self, *args, **options):
+        self.stdout.write('Current users in DB:')
+        for u in User.objects.all().order_by('role', 'username'):
+            self.stdout.write(f'  {u.username} ({u.role})')
+
         updated = 0
-        for username, password in TEST_ACCOUNTS:
-            try:
-                user = User.objects.get(username=username)
-                user.set_password(password)
-                user.save(update_fields=['password'])
-                updated += 1
-            except User.DoesNotExist:
-                pass
-        self.stdout.write(self.style.SUCCESS(f'Reset passwords for {updated} test account(s).'))
+        for user in User.objects.filter(role='student'):
+            user.set_password('student1234')
+            user.save(update_fields=['password'])
+            self.stdout.write(f'  Reset: {user.username} -> student1234')
+            updated += 1
+
+        for user in User.objects.filter(role='instructor'):
+            user.set_password('chloe1234')
+            user.save(update_fields=['password'])
+            self.stdout.write(f'  Reset: {user.username} -> chloe1234')
+            updated += 1
+
+        for user in User.objects.filter(role='admin'):
+            user.set_password('admin1234')
+            user.save(update_fields=['password'])
+            self.stdout.write(f'  Reset: {user.username} -> admin1234')
+            updated += 1
+
+        self.stdout.write(self.style.SUCCESS(f'Reset passwords for {updated} account(s).'))
