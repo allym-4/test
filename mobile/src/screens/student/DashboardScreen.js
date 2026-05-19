@@ -153,6 +153,7 @@ export default function DashboardScreen({ navigation }) {
   const [markingAway, setMarkingAway] = useState({})
   const [cancellingAway, setCancellingAway] = useState({})
   const [acknowledging, setAcknowledging] = useState({})
+  const [markAwayPending, setMarkAwayPending] = useState(null) // { occ, enrolId, withinCutoff, dateLabel }
   const [trialScreen, setTrialScreen] = useState('prompt')
   const [trialRatings, setTrialRatings] = useState({ class: 0, instructor: 0, facilities: 0, structure: 0 })
   const [trialReason, setTrialReason] = useState('')
@@ -174,7 +175,7 @@ export default function DashboardScreen({ navigation }) {
     navigation.setOptions({ headerShown: false })
   }, [navigation])
 
-  async function handleMarkAway(occ, enrolId) {
+  function handleMarkAway(occ, enrolId) {
     const dateLabel = new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', {
       weekday: 'long', day: 'numeric', month: 'long',
     })
@@ -185,31 +186,22 @@ export default function DashboardScreen({ navigation }) {
       classDateTime.setHours(h, m, 0, 0)
       withinCutoff = (classDateTime - Date.now()) < 4 * 60 * 60 * 1000
     }
-    const creditMsg = withinCutoff
-      ? 'This is within 4 hours of your class — no catch-up credit will be issued.'
-      : "You'll receive a catch-up credit to use within this season."
+    setMarkAwayPending({ occ, enrolId, withinCutoff, dateLabel })
+  }
 
-    Alert.alert(
-      'Mark away?',
-      `${dateLabel}\n\n${creditMsg}`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm away',
-          onPress: async () => {
-            setMarkingAway(prev => ({ ...prev, [occ.id]: true }))
-            try {
-              await attendanceApi.markAway(occ.id, enrolId)
-              refetchEnrol()
-            } catch (err) {
-              Alert.alert('Error', err.response?.data?.detail || 'Could not mark away')
-            } finally {
-              setMarkingAway(prev => ({ ...prev, [occ.id]: false }))
-            }
-          },
-        },
-      ]
-    )
+  async function confirmMarkAway() {
+    if (!markAwayPending) return
+    const { occ, enrolId } = markAwayPending
+    setMarkingAway(prev => ({ ...prev, [occ.id]: true }))
+    setMarkAwayPending(null)
+    try {
+      await attendanceApi.markAway(occ.id, enrolId)
+      refetchEnrol()
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.detail || 'Could not mark away')
+    } finally {
+      setMarkingAway(prev => ({ ...prev, [occ.id]: false }))
+    }
   }
 
   async function handleCancelAway(occId) {
@@ -645,6 +637,42 @@ export default function DashboardScreen({ navigation }) {
                 </View>
               )}
 
+            </View>
+          </View>
+        </Modal>
+      )}
+      {markAwayPending && (
+        <Modal visible transparent animationType="fade" onRequestClose={() => setMarkAwayPending(null)}>
+          <View style={s.overlay}>
+            <View style={s.modal}>
+              <View style={s.modalHeader}>
+                <Text style={s.modalTitle}>Mark away?</Text>
+                <TouchableOpacity onPress={() => setMarkAwayPending(null)}>
+                  <Text style={s.modalClose}>✕</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={s.modalBody}>
+                <Text style={s.modalClassMeta}>{markAwayPending.dateLabel}</Text>
+                {markAwayPending.withinCutoff ? (
+                  <View style={[s.infoBox, { backgroundColor: 'rgba(255,170,0,0.06)', borderColor: 'rgba(255,170,0,0.2)' }]}>
+                    <Text style={[s.infoBoxHeading, { color: '#ffaa00' }]}>No catch-up credit for this one</Text>
+                    <Text style={s.infoBoxText}>This is within 4 hours of your class — the cancellation window has passed. You can still mark away so we know you're not coming.</Text>
+                  </View>
+                ) : (
+                  <View style={s.infoBox}>
+                    <Text style={[s.infoBoxHeading, { color: '#ccff00' }]}>You'll receive a catch-up credit</Text>
+                    <Text style={s.infoBoxText}>More than 4 hours away — a catch-up credit will be added to your account to use within this season.</Text>
+                  </View>
+                )}
+                <View style={s.modalActions}>
+                  <TouchableOpacity style={s.cancelBtn} onPress={() => setMarkAwayPending(null)}>
+                    <Text style={s.cancelBtnText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={s.confirmBtn} onPress={confirmMarkAway}>
+                    <Text style={s.confirmBtnText}>Confirm away</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
           </View>
         </Modal>
