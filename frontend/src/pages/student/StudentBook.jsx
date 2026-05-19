@@ -202,7 +202,7 @@ function StickyCart({ cart, priceCasual, onProceed, onClear, promoCode, promoDis
   )
 }
 
-function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, availableCredits, onCreditUsed, seasonName, seasonPrice, alreadyEnrolled, onEnrolInSeason, passCredits, onPassUsed, onBuyPass }) {
+function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, isEnrolledRate, priceClassPass, classPassSize, availableCredits, onCreditUsed, seasonName, seasonPrice, alreadyEnrolled, onEnrolInSeason, passCredits, onPassUsed, onBuyPass }) {
   const [open, setOpen] = useState(false)
   const [occurrences, setOccurrences] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -277,7 +277,12 @@ function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, available
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          {isCasual && <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--lime)' }}>${priceCasual}</span>}
+          {isCasual && (
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--lime)' }}>${priceCasual}</div>
+              {isEnrolledRate && <div style={{ fontSize: 10, color: 'var(--grey)', marginTop: 1 }}>enrolled rate</div>}
+            </div>
+          )}
           {isCasual && hasPassCredits && <span className="tag" style={{ fontSize: 10, background: 'rgba(204,255,0,0.1)', color: 'var(--lime)', border: '1px solid rgba(204,255,0,0.3)' }}>{passCredits} pass</span>}
           {isCatchup && <span className="tag tag-lime" style={{ fontSize: 10 }}>Uses 1 credit</span>}
           <span style={{ fontSize: 16, color: 'var(--grey)', transition: 'transform 0.2s', display: 'inline-block', transform: open ? 'rotate(180deg)' : 'none' }}>▾</span>
@@ -300,16 +305,16 @@ function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, available
             </div>
           )}
 
-          {isCasual && (
+          {isCasual && !hasPassCredits && priceClassPass && (
             <div style={{ background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 10, padding: '13px 16px', marginBottom: 14, cursor: 'pointer' }} onClick={onBuyPass}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 500 }}>
-                    Buy a 4 class pass · <span style={{ color: 'var(--lime)' }}>save $20</span>
+                    Buy a {classPassSize}-class pass · <span style={{ color: 'var(--lime)' }}>save ${Math.round((priceCasual - priceClassPass / classPassSize) * classPassSize)}</span>
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 3 }}>$35/class · use across any eligible casual or catch-up</div>
+                  <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 3 }}>${(priceClassPass / classPassSize).toFixed(0)}/class · use across any eligible casual or catch-up</div>
                 </div>
-                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, flexShrink: 0 }}>$140</div>
+                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, flexShrink: 0 }}>${priceClassPass}</div>
               </div>
             </div>
           )}
@@ -403,7 +408,9 @@ export default function StudentBook() {
   const { data: creditsData, refetch: refetchCredits } = useApi(() => user?.id ? attendanceApi.makeupCredits.list({ student: user.id, status: 'available' }) : null, [user?.id])
   const { data: passData, refetch: refetchPasses } = useApi(() => user?.id ? attendanceApi.classPasses.list({ student: user.id }) : null, [user?.id])
 
-  const priceCasual = parseFloat(studioSettings?.price_casual || 35)
+  const priceCasual = parseFloat(studioSettings?.price_casual || 40)
+  const priceCasualEnrolled = parseFloat(studioSettings?.price_casual_enrolled || 30)
+  const casualRate = activeSeasonCount > 0 ? priceCasualEnrolled : priceCasual
   const priceSeason = parseFloat(studioSettings?.price_season || 270)
   const priceTrial = parseFloat(studioSettings?.price_trial || 25)
 
@@ -706,7 +713,10 @@ export default function StudentBook() {
                     key={s.id}
                     session={s}
                     enrolmentType="casual"
-                    priceCasual={priceCasual}
+                    priceCasual={casualRate}
+                    isEnrolledRate={activeSeasonCount > 0}
+                    priceClassPass={priceClassPass}
+                    classPassSize={classPassSize}
                     seasonName={upcomingSeason?.name}
                     seasonPrice={seasonPrice}
                     alreadyEnrolled={alreadyEnrolled}
