@@ -1964,8 +1964,8 @@ export default function BookScreen({ navigation }) {
             {/* Hero card */}
             <View style={s.trialHero}>
               <View style={{ flex: 1 }}>
-                <Text style={s.trialHeroTitle}>Try Your First Class</Text>
-                <Text style={s.trialHeroBody}>Your first class, no experience needed. Wear comfortable activewear, bring water — we'll do the rest.</Text>
+                <Text style={s.trialHeroTitle}>{studioSettings?.trial_intro_headline || 'Try Your First Class'}</Text>
+                <Text style={s.trialHeroBody}>{studioSettings?.trial_intro_body || "Your first class, no experience needed. Wear comfortable activewear, bring water — we'll do the rest."}</Text>
               </View>
               <View style={s.trialPriceBox}>
                 <Text style={s.trialPrice}>${priceTrial}</Text>

@@ -75,6 +75,7 @@ export const attendance = {
 }
 
 export const helpdesk = {
+  faqs: () => client.get('/api/helpdesk/faqs/'),
   myTickets: () => client.get('/api/helpdesk/my-tickets/'),
   myTicketMessages: (ticketId) =>
     client.get(`/api/helpdesk/my-tickets/${ticketId}/messages/`),

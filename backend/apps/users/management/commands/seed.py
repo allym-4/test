@@ -64,6 +64,8 @@ class Command(BaseCommand):
             enquiries_email='intrigued@dualitypole.com',
             urgent_email='staff@dualitypole.com',
             phone='(02) 9160 0223',
+            address='Level 1, 88 Kippax St, Surry Hills NSW 2010',
+            website='https://dualitypole.com.au',
             instagram='@dualitypole',
             tagline='Move boldly. Feel everything.',
             description=(

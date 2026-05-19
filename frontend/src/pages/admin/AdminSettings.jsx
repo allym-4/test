@@ -480,6 +480,8 @@ export default function AdminSettings() {
               <FieldRow label="Studio name"><input value={form.studio_name} onChange={e => set('studio_name', e.target.value)} /></FieldRow>
               <FieldRow label="Email"><input type="email" value={form.email} onChange={e => set('email', e.target.value)} /></FieldRow>
               <FieldRow label="Phone"><input type="tel" value={form.phone} onChange={e => set('phone', e.target.value)} /></FieldRow>
+              <FieldRow label="Address"><input value={form.address || ''} onChange={e => set('address', e.target.value)} placeholder="e.g. Level 1, 88 Kippax St, Surry Hills NSW 2010" /></FieldRow>
+              <FieldRow label="Website"><input type="url" value={form.website || ''} onChange={e => set('website', e.target.value)} placeholder="https://..." /></FieldRow>
               <FieldRow label="Instagram"><input value={form.instagram} onChange={e => set('instagram', e.target.value)} /></FieldRow>
               <FieldRow label="Timezone">
                 <select value={form.timezone} onChange={e => set('timezone', e.target.value)}>
@@ -639,6 +641,8 @@ export default function AdminSettings() {
                 <span style={{ fontSize: 12, color: 'var(--grey)' }}>first class</span>
               </div>
             </FieldRow>
+            <FieldRow label="Trial page headline"><input value={form.trial_intro_headline || ''} onChange={e => set('trial_intro_headline', e.target.value)} placeholder="Try Your First Class" /></FieldRow>
+            <FieldRow label="Trial page body"><textarea rows={3} value={form.trial_intro_body || ''} onChange={e => set('trial_intro_body', e.target.value)} placeholder="What to expect, what to wear…" style={{ width: '100%', resize: 'vertical' }} /></FieldRow>
           </Section>
         </div>
       )}

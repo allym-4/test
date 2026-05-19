@@ -268,6 +268,9 @@ export default function SupportScreen() {
   const [tab, setTab] = useState('faqs')
   const [openFaq, setOpenFaq] = useState(null)
 
+  const { data: faqData, loading: faqLoading } = useApi(() => helpdesk.faqs(), [])
+  const faqs = (faqData?.results ?? faqData ?? []).map(f => ({ icon: f.icon, q: f.question, a: f.answer }))
+
   const [category, setCategory] = useState('')
   const [subject, setSubject] = useState('')
   const [message, setMessage] = useState('')
@@ -325,7 +328,9 @@ export default function SupportScreen() {
       {tab === 'faqs' && (
         <ScrollView contentContainerStyle={s.content}>
           <Text style={s.sectionHeading}>Frequently Asked Questions</Text>
-          {FAQS.map((faq, i) => (
+          {faqLoading ? (
+            <ActivityIndicator color="#ccff00" style={{ marginTop: 24 }} />
+          ) : faqs.map((faq, i) => (
             <FaqItem
               key={i}
               faq={faq}

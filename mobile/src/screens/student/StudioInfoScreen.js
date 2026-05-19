@@ -147,13 +147,16 @@ export default function StudioInfoScreen() {
     },
   ]
 
+  const studioAddress = studio.address || 'Level 1, 88 Kippax St, Surry Hills NSW 2010'
+  const studioPhone = studio.phone || '(02) 9160 0223'
+  const studioInstagram = studio.instagram_username || studio.instagram?.replace('@', '') || 'dualitypole'
+
   function openMaps() {
-    const addr = studio.studio_address || 'Level 1, 88 Kippax St, Surry Hills NSW 2010'
-    Linking.openURL(`https://maps.google.com/?q=${encodeURIComponent(addr)}`)
+    Linking.openURL(`https://maps.google.com/?q=${encodeURIComponent(studioAddress)}`)
   }
 
   function openPhone(ph) {
-    Linking.openURL(`tel:${ph.replace(/\s/g, '')}`)
+    Linking.openURL(`tel:${ph.replace(/[\s()]/g, '')}`)
   }
 
   function openEmail(em) {
@@ -161,7 +164,7 @@ export default function StudioInfoScreen() {
   }
 
   function openInstagram() {
-    Linking.openURL('https://instagram.com/dualitypole')
+    Linking.openURL(`https://instagram.com/${studioInstagram}`)
   }
 
   return (
@@ -204,11 +207,11 @@ export default function StudioInfoScreen() {
           {/* Contact */}
           <View style={s.card}>
             <Text style={s.cardTitle}>Get in Touch</Text>
-            <InfoRow icon="✉️" label="General enquiries" value="intrigued@dualitypole.com" onPress={() => openEmail('intrigued@dualitypole.com')} />
-            <InfoRow icon="✉️" label="Urgent (same-day)" value="staff@dualitypole.com" onPress={() => openEmail('staff@dualitypole.com')} />
-            <InfoRow icon="📞" label="Phone" value="(02) 9160 0223" onPress={() => openPhone('0291600223')} />
-            <InfoRow icon="📸" label="Instagram" value="@dualitypole" onPress={openInstagram} />
-            <InfoRow icon="📍" label="Address" value={studio.studio_address || 'Level 1, 88 Kippax St, Surry Hills NSW 2010'} onPress={openMaps} />
+            {studio.enquiries_email ? <InfoRow icon="✉️" label="General enquiries" value={studio.enquiries_email} onPress={() => openEmail(studio.enquiries_email)} /> : null}
+            {studio.urgent_email ? <InfoRow icon="✉️" label="Urgent (same-day)" value={studio.urgent_email} onPress={() => openEmail(studio.urgent_email)} /> : null}
+            {studioPhone ? <InfoRow icon="📞" label="Phone" value={studioPhone} onPress={() => openPhone(studioPhone)} /> : null}
+            {studioInstagram ? <InfoRow icon="📸" label="Instagram" value={`@${studioInstagram}`} onPress={openInstagram} /> : null}
+            {studioAddress ? <InfoRow icon="📍" label="Address" value={studioAddress} onPress={openMaps} /> : null}
             <View style={s.urgentNote}>
               <Text style={s.urgentNoteText}>
                 For same-day issues (e.g. can't access Kisi, running late) email{' '}
@@ -236,7 +239,7 @@ export default function StudioInfoScreen() {
       {!loading && activeTab === 'our-studio' && (
         <ScrollView contentContainerStyle={s.content}>
           <TouchableOpacity onPress={openMaps} style={s.addressRow}>
-            <Text style={s.addressText}>📍 Level 1, 88 Kippax St, Surry Hills NSW 2010 · (02) 9160 0223</Text>
+            <Text style={s.addressText}>📍 {studioAddress}{studioPhone ? ` · ${studioPhone}` : ''}</Text>
           </TouchableOpacity>
 
           {LOCATIONS.map(loc => (
