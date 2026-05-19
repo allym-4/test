@@ -494,11 +494,6 @@ function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, isEnrolle
     </>
   )
 }
-        </div>
-      )}
-    </div>
-  )
-}
 
 export default function StudentBook() {
   const { user } = useAuth()
