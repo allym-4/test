@@ -202,6 +202,133 @@ function StickyCart({ cart, priceCasual, onProceed, onClear, promoCode, promoDis
   )
 }
 
+function CasualBookingModal({ occ, session, priceCasual, isEnrolledRate, priceClassPass, classPassSize, availableCredits, passCredits, seasonName, seasonPrice, alreadyEnrolled, onClose, onBook, onEnrolInSeason, onBuyPass }) {
+  const sessName = session?.name ?? 'Class'
+  const time = session?.start_time?.slice(0, 5)
+  const instructor = session?.instructor_detail?.display_name ?? session?.instructor_detail?.first_name
+  const dateLabel = occ?.date ? new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : null
+  const hasCredits = availableCredits > 0
+  const hasPass = (passCredits ?? 0) > 0
+  const passSaving = priceClassPass && classPassSize ? Math.round((priceCasual - priceClassPass / classPassSize) * classPassSize) : 0
+  const perSession = priceClassPass && classPassSize ? (priceClassPass / classPassSize).toFixed(0) : null
+
+  const defaultSelected = hasCredits ? 'credit' : hasPass ? 'pass' : 'casual'
+  const [selected, setSelected] = useState(defaultSelected)
+
+  const actionLabel = selected === 'credit' ? 'BOOK FOR FREE'
+    : selected === 'pass' ? 'USE PASS — FREE'
+    : selected === 'casual' ? `PAY $${priceCasual}`
+    : selected === 'buypass' ? `BUY PASS — $${priceClassPass}`
+    : selected === 'season' ? 'ENROL IN SEASON →'
+    : 'BOOK'
+
+  function handleConfirm() {
+    if (selected === 'season') { onClose(); onEnrolInSeason(); return }
+    if (selected === 'buypass') { onClose(); onBuyPass(); return }
+    onBook(selected === 'credit' ? 'catchup' : selected === 'pass' ? 'classpass' : 'casual')
+  }
+
+  const OptionRow = ({ id, title, sub, price, accent, checkbox }) => {
+    const isSel = selected === id
+    return (
+      <div
+        onClick={() => setSelected(id)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px',
+          borderRadius: 12, border: `1px solid ${isSel ? (accent ?? '#555') : '#222'}`,
+          background: isSel && accent ? `${accent}12` : 'transparent',
+          cursor: 'pointer', marginBottom: 10,
+        }}
+      >
+        <div style={{
+          width: 18, height: 18, flexShrink: 0,
+          borderRadius: checkbox ? 4 : 9,
+          border: `2px solid ${isSel ? (accent ?? '#ccff00') : '#444'}`,
+          background: isSel && !checkbox ? (accent ?? '#ccff00') : 'transparent',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {isSel && checkbox && <span style={{ fontSize: 10, color: accent ?? '#ccff00', fontWeight: 900 }}>✓</span>}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 700, fontSize: 15, color: isSel && accent ? accent : '#fff', marginBottom: 3 }}>{title}</div>
+          {sub && <div style={{ fontSize: 12, color: '#666', lineHeight: 1.5 }}>{sub}</div>}
+        </div>
+        {price && <div style={{ fontSize: 18, fontWeight: 900, color: isSel && accent ? accent : '#ccff00', flexShrink: 0, marginLeft: 8 }}>{price}</div>}
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: 'rgba(0,0,0,0.75)' }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background: '#111', borderRadius: '20px 20px 0 0', padding: 28, width: '100%', maxWidth: 560, maxHeight: '92vh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, lineHeight: 1.1, marginBottom: 6 }}>{sessName}</div>
+            <div style={{ fontSize: 13, color: '#666' }}>{[dateLabel, time, instructor].filter(Boolean).join(' · ')}</div>
+          </div>
+          <button onClick={onClose} style={{ background: '#222', border: '1px solid #333', borderRadius: 10, padding: '8px 14px', color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, cursor: 'pointer', flexShrink: 0, marginLeft: 16 }}>CLOSE</button>
+        </div>
+
+        {hasCredits && (
+          <div style={{ fontSize: 13, color: '#999', marginBottom: 18 }}>
+            <span style={{ color: '#b0a0ff', fontWeight: 700 }}>{availableCredits}</span> catch-up credit{availableCredits !== 1 ? 's' : ''} available
+          </div>
+        )}
+
+        {!alreadyEnrolled && seasonName && (
+          <OptionRow id="season" checkbox
+            title={`Enrol in the full ${seasonName} course instead`}
+            sub={`Add this class to your season${seasonPrice ? ` · $${seasonPrice} total` : ''}`}
+          />
+        )}
+
+        {hasCredits && (
+          <OptionRow id="credit"
+            title="Use class credit"
+            sub={`You have ${availableCredits} class credit${availableCredits !== 1 ? 's' : ''} available`}
+            price="FREE"
+            accent="#b0a0ff"
+          />
+        )}
+
+        <OptionRow id="casual"
+          title="Pay casual rate"
+          sub={isEnrolledRate ? 'Enrolled student rate · Card via Stripe' : 'Standard casual rate · Card via Stripe'}
+          price={`$${priceCasual}`}
+        />
+
+        {hasPass && (
+          <OptionRow id="pass"
+            title={`${classPassSize}-class pass`}
+            sub={`${passCredits} credit${passCredits !== 1 ? 's' : ''} remaining on your pass`}
+            price="FREE"
+            accent="#b0a0ff"
+          />
+        )}
+
+        {!hasPass && priceClassPass && passSaving > 0 && (
+          <OptionRow id="buypass"
+            title={<>Buy a {classPassSize}-class pass · <span style={{ color: '#ccff00' }}>save ${passSaving}</span></>}
+            sub={`$${perSession}/class · use across any eligible casual or catch-up`}
+            price={`$${priceClassPass}`}
+            accent="#b0a0ff"
+          />
+        )}
+
+        <button
+          onClick={handleConfirm}
+          style={{ width: '100%', background: '#ccff00', color: '#000', border: 'none', borderRadius: 14, padding: '18px 0', fontSize: 15, fontWeight: 900, letterSpacing: 0.5, cursor: 'pointer', marginTop: 8 }}
+        >
+          {actionLabel}
+        </button>
+        <div style={{ textAlign: 'center', marginTop: 14 }}>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', fontSize: 13, cursor: 'pointer' }}>Maybe later</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, isEnrolledRate, priceClassPass, classPassSize, availableCredits, onCreditUsed, seasonName, seasonPrice, alreadyEnrolled, onEnrolInSeason, passCredits, onPassUsed, onBuyPass }) {
   const [open, setOpen] = useState(false)
   const [occurrences, setOccurrences] = useState(null)
@@ -209,6 +336,7 @@ function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, isEnrolle
   const [bookingId, setBookingId] = useState(null)
   const [cancellingId, setCancellingId] = useState(null)
   const [error, setError] = useState('')
+  const [modalOcc, setModalOcc] = useState(null)
 
   async function load() {
     if (occurrences !== null) return
@@ -228,10 +356,10 @@ function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, isEnrolle
     setOpen(o => !o)
   }
 
-  async function book(occ, usePass = false) {
+  async function book(occ, type) {
     setBookingId(occ.id)
+    setModalOcc(null)
     setError('')
-    const type = usePass ? 'classpass' : enrolmentType
     try {
       const res = await classes.casual.book(occ.id, { enrolment_type: type })
       const updated = { ...occ, my_booking: res.data, spots_left: res.data.status === 'confirmed' ? occ.spots_left - 1 : occ.spots_left }
@@ -264,123 +392,108 @@ function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, isEnrolle
   const hasPassCredits = isCasual && (passCredits ?? 0) > 0
 
   return (
-    <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
-      <button
-        onClick={toggle}
-        style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, textAlign: 'left' }}
-      >
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, marginBottom: 3 }}>{session.name}</div>
-          <div style={{ fontSize: 12, color: 'var(--grey)' }}>
-            {DAYS[session.day_of_week]} · {session.start_time?.slice(0, 5)}
-            {session.studio_detail ? ` · ${session.studio_detail.name}` : ''}
+    <>
+      {modalOcc && (
+        <CasualBookingModal
+          occ={modalOcc}
+          session={session}
+          priceCasual={priceCasual}
+          isEnrolledRate={isEnrolledRate}
+          priceClassPass={priceClassPass}
+          classPassSize={classPassSize}
+          availableCredits={availableCredits}
+          passCredits={passCredits}
+          seasonName={seasonName}
+          seasonPrice={seasonPrice}
+          alreadyEnrolled={alreadyEnrolled}
+          onClose={() => setModalOcc(null)}
+          onBook={(type) => book(modalOcc, type)}
+          onEnrolInSeason={onEnrolInSeason}
+          onBuyPass={onBuyPass}
+        />
+      )}
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+        <button
+          onClick={toggle}
+          style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, textAlign: 'left' }}
+        >
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, marginBottom: 3 }}>{session.name}</div>
+            <div style={{ fontSize: 12, color: 'var(--grey)' }}>
+              {DAYS[session.day_of_week]} · {session.start_time?.slice(0, 5)}
+              {session.studio_detail ? ` · ${session.studio_detail.name}` : ''}
+            </div>
           </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          {isCasual && (
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--lime)' }}>${priceCasual}</div>
-              {isEnrolledRate && <div style={{ fontSize: 10, color: 'var(--grey)', marginTop: 1 }}>enrolled rate</div>}
-            </div>
-          )}
-          {isCasual && hasPassCredits && <span className="tag" style={{ fontSize: 10, background: 'rgba(204,255,0,0.1)', color: 'var(--lime)', border: '1px solid rgba(204,255,0,0.3)' }}>{passCredits} pass</span>}
-          {isCatchup && <span className="tag tag-lime" style={{ fontSize: 10 }}>Uses 1 credit</span>}
-          <span style={{ fontSize: 16, color: 'var(--grey)', transition: 'transform 0.2s', display: 'inline-block', transform: open ? 'rotate(180deg)' : 'none' }}>▾</span>
-        </div>
-      </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+            {isCasual && <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--lime)' }}>${priceCasual}</span>}
+            {isCasual && hasPassCredits && <span className="tag" style={{ fontSize: 10, background: 'rgba(204,255,0,0.1)', color: 'var(--lime)', border: '1px solid rgba(204,255,0,0.3)' }}>{passCredits} pass</span>}
+            {isCatchup && <span className="tag tag-lime" style={{ fontSize: 10 }}>Uses 1 credit</span>}
+            <span style={{ fontSize: 16, color: 'var(--grey)', transition: 'transform 0.2s', display: 'inline-block', transform: open ? 'rotate(180deg)' : 'none' }}>▾</span>
+          </div>
+        </button>
 
-      {open && (
-        <div style={{ borderTop: '1px solid var(--border)', padding: '12px 18px 16px' }}>
-          {!alreadyEnrolled && onEnrolInSeason && seasonName && (
-            <div style={{ background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 10, padding: '13px 16px', marginBottom: 10 }}>
-              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }} onClick={onEnrolInSeason}>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 500 }}>Enrol in the full {seasonName} course instead</div>
-                  <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 3, lineHeight: 1.5 }}>
-                    Commit to the full season · {seasonPrice ? `$${seasonPrice} total` : 'season pricing'}
-                  </div>
-                </div>
-                <span style={{ marginLeft: 'auto', flexShrink: 0, fontSize: 12, color: 'var(--lime)', fontWeight: 600, whiteSpace: 'nowrap' }}>Season tab →</span>
-              </label>
-            </div>
-          )}
+        {open && (
+          <div style={{ borderTop: '1px solid var(--border)', padding: '12px 18px 16px' }}>
+            {error && <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 10 }}>{error}</div>}
+            {loading ? (
+              <div style={{ fontSize: 13, color: 'var(--grey)', padding: '8px 0' }}>Loading dates…</div>
+            ) : !occurrences || occurrences.length === 0 ? (
+              <div style={{ fontSize: 13, color: 'var(--grey)', padding: '8px 0' }}>No upcoming dates scheduled yet.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {occurrences.map(occ => {
+                  const dateLabel = new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+                  const spotsLeft = occ.spots_left ?? 0
+                  const isFull = spotsLeft <= 0
+                  const myBooking = occ.my_booking
+                  const isBooked = myBooking?.status === 'confirmed'
+                  const isWaitlisted = myBooking?.status === 'waitlisted'
+                  const hasOffer = isWaitlisted && myBooking?.waitlist_offered_at
+                  const isBooking = bookingId === occ.id
+                  const isCancelling = cancellingId === occ.id
 
-          {isCasual && !hasPassCredits && priceClassPass && (
-            <div style={{ background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 10, padding: '13px 16px', marginBottom: 14, cursor: 'pointer' }} onClick={onBuyPass}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 500 }}>
-                    Buy a {classPassSize}-class pass · <span style={{ color: 'var(--lime)' }}>save ${Math.round((priceCasual - priceClassPass / classPassSize) * classPassSize)}</span>
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 3 }}>${(priceClassPass / classPassSize).toFixed(0)}/class · use across any eligible casual or catch-up</div>
-                </div>
-                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, flexShrink: 0 }}>${priceClassPass}</div>
-              </div>
-            </div>
-          )}
-
-          {error && <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 10 }}>{error}</div>}
-          {loading ? (
-            <div style={{ fontSize: 13, color: 'var(--grey)', padding: '8px 0' }}>Loading dates…</div>
-          ) : !occurrences || occurrences.length === 0 ? (
-            <div style={{ fontSize: 13, color: 'var(--grey)', padding: '8px 0' }}>No upcoming dates scheduled yet.</div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {occurrences.map(occ => {
-                const dateLabel = new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
-                const spotsLeft = occ.spots_left ?? 0
-                const isFull = spotsLeft <= 0
-                const myBooking = occ.my_booking
-                const isBooked = myBooking?.status === 'confirmed'
-                const isWaitlisted = myBooking?.status === 'waitlisted'
-                const hasOffer = isWaitlisted && myBooking?.waitlist_offered_at
-                const isBooking = bookingId === occ.id
-                const isCancelling = cancellingId === occ.id
-
-                return (
-                  <div key={occ.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '10px 12px', background: isBooked ? 'rgba(204,255,0,0.05)' : isWaitlisted ? 'rgba(255,170,0,0.05)' : 'rgba(255,255,255,0.03)', borderRadius: 8, border: `1px solid ${isBooked ? 'rgba(204,255,0,0.2)' : isWaitlisted ? 'rgba(255,170,0,0.2)' : 'rgba(255,255,255,0.07)'}` }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600 }}>{dateLabel}</div>
-                      {isFull && !myBooking && <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 2 }}>Full</div>}
-                      {!isFull && !myBooking && <div style={{ fontSize: 11, color: spotsLeft <= 3 ? 'var(--amber)' : 'var(--grey)', marginTop: 2 }}>{spotsLeft} spot{spotsLeft !== 1 ? 's' : ''} left</div>}
-                      {isBooked && <div style={{ fontSize: 11, color: 'var(--lime)', marginTop: 2 }}>Booked ✓</div>}
-                      {isWaitlisted && !hasOffer && <div style={{ fontSize: 11, color: 'var(--amber)', marginTop: 2 }}>On waitlist</div>}
-                      {hasOffer && <div style={{ fontSize: 11, color: 'var(--lime)', marginTop: 2 }}>🎉 Spot offered!</div>}
-                    </div>
-                    <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
-                      {isBooked || (isWaitlisted && !hasOffer) ? (
-                        <button
-                          className="btn btn-ghost btn-xs"
-                          style={{ fontSize: 11, color: 'var(--red)' }}
-                          onClick={() => cancel(occ)}
-                          disabled={isCancelling}
-                        >
-                          {isCancelling ? '…' : isWaitlisted ? 'Leave' : 'Cancel'}
-                        </button>
-                      ) : hasOffer ? (
-                        <span style={{ fontSize: 11, color: 'var(--lime)', fontWeight: 700 }}>Claim →</span>
-                      ) : isFull ? (
-                        <button className="btn btn-ghost btn-xs" style={{ fontSize: 11 }} onClick={() => book(occ)} disabled={isBooking}>
-                          {isBooking ? '…' : 'Join Waitlist'}
-                        </button>
-                      ) : (
-                        <>
-                          <button className="btn btn-lime btn-xs" style={{ fontSize: 11 }} onClick={() => book(occ)} disabled={isBooking}>
-                            {isBooking ? '…' : isCatchup ? 'Book (Credit)' : `Book $${priceCasual}`}
+                  return (
+                    <div key={occ.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '10px 12px', background: isBooked ? 'rgba(204,255,0,0.05)' : isWaitlisted ? 'rgba(255,170,0,0.05)' : 'rgba(255,255,255,0.03)', borderRadius: 8, border: `1px solid ${isBooked ? 'rgba(204,255,0,0.2)' : isWaitlisted ? 'rgba(255,170,0,0.2)' : 'rgba(255,255,255,0.07)'}` }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>{dateLabel}</div>
+                        {isFull && !myBooking && <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 2 }}>Full</div>}
+                        {!isFull && !myBooking && <div style={{ fontSize: 11, color: spotsLeft <= 3 ? 'var(--amber)' : 'var(--grey)', marginTop: 2 }}>{spotsLeft} spot{spotsLeft !== 1 ? 's' : ''} left</div>}
+                        {isBooked && <div style={{ fontSize: 11, color: 'var(--lime)', marginTop: 2 }}>Booked ✓</div>}
+                        {isWaitlisted && !hasOffer && <div style={{ fontSize: 11, color: 'var(--amber)', marginTop: 2 }}>On waitlist</div>}
+                        {hasOffer && <div style={{ fontSize: 11, color: 'var(--lime)', marginTop: 2 }}>🎉 Spot offered!</div>}
+                      </div>
+                      <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
+                        {isBooked || (isWaitlisted && !hasOffer) ? (
+                          <button className="btn btn-ghost btn-xs" style={{ fontSize: 11, color: 'var(--red)' }} onClick={() => cancel(occ)} disabled={isCancelling}>
+                            {isCancelling ? '…' : isWaitlisted ? 'Leave' : 'Cancel'}
                           </button>
-                          {hasPassCredits && (
-                            <button className="btn btn-ghost btn-xs" style={{ fontSize: 10, color: 'var(--lime)' }} onClick={() => book(occ, true)} disabled={isBooking}>
-                              Use pass
-                            </button>
-                          )}
-                        </>
-                      )}
+                        ) : hasOffer ? (
+                          <span style={{ fontSize: 11, color: 'var(--lime)', fontWeight: 700 }}>Claim →</span>
+                        ) : isFull ? (
+                          <button className="btn btn-ghost btn-xs" style={{ fontSize: 11 }} onClick={() => book(occ, 'casual')} disabled={isBooking}>
+                            {isBooking ? '…' : 'Join Waitlist'}
+                          </button>
+                        ) : isCatchup ? (
+                          <button className="btn btn-lime btn-xs" style={{ fontSize: 11 }} onClick={() => book(occ, 'catchup')} disabled={isBooking}>
+                            {isBooking ? '…' : 'Book (Credit)'}
+                          </button>
+                        ) : (
+                          <button className="btn btn-lime btn-xs" style={{ fontSize: 11 }} onClick={() => setModalOcc(occ)} disabled={isBooking}>
+                            {isBooking ? '…' : 'Book'}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
         </div>
       )}
     </div>
