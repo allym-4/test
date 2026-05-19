@@ -824,9 +824,11 @@ function CasualBookingOptionsModal({ visible, occ, priceCasual, priceCasualEnrol
           {/* Credit option — always shown, disabled if none available */}
           <OptionRow id="credit"
             title="Use a credit"
-            sub={availableCredits > 0
+            sub={availableCredits > 0 && creditEligible
               ? `${availableCredits} catch-up credit${availableCredits !== 1 ? 's' : ''} available`
-              : inActiveSeason ? 'No credits — cancel 4+ hrs early to earn one' : 'Not eligible for this class'}
+              : availableCredits > 0
+              ? 'Your credits can\'t be used for this class'
+              : 'No credits available'}
             price={availableCredits > 0 ? 'FREE' : null}
             accent="#b0a0ff"
             disabled={!creditEligible}

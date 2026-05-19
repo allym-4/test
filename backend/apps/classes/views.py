@@ -111,7 +111,11 @@ class ClassOccurrenceDetailView(generics.RetrieveUpdateAPIView):
 class SeasonListView(generics.ListCreateAPIView):
     queryset = Season.objects.all()
     serializer_class = SeasonSerializer
-    permission_classes = [IsAdminOrInstructor]
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [permissions.IsAuthenticated()]
+        return [IsAdminOrInstructor()]
 
 
 class SeasonDetailView(generics.RetrieveUpdateDestroyAPIView):
