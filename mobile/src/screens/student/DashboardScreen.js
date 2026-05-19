@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import {
   ScrollView, View, Text, TouchableOpacity, StyleSheet,
-  RefreshControl, Alert, Modal, ActivityIndicator, TextInput,
+  RefreshControl, Alert, Modal, ActivityIndicator, TextInput, Platform, StatusBar,
 } from 'react-native'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
@@ -171,36 +171,8 @@ export default function DashboardScreen({ navigation }) {
   const bellBadge = unreadNotifs + unackAnns
 
   useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Notifications')}
-          style={{ marginRight: 16, position: 'relative', backgroundColor: 'transparent' }}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          activeOpacity={0.7}
-        >
-          <View style={{ width: 26, height: 26, alignItems: 'center', justifyContent: 'flex-end', backgroundColor: 'transparent' }}>
-            <View style={{ width: 16, height: 13, backgroundColor: '#ccff00', borderTopLeftRadius: 8, borderTopRightRadius: 8 }} />
-            <View style={{ width: 20, height: 2.5, backgroundColor: '#ccff00', borderRadius: 1, marginBottom: 1 }} />
-            <View style={{ width: 6, height: 6, backgroundColor: '#ccff00', borderRadius: 3 }} />
-          </View>
-          {bellBadge > 0 && (
-            <View style={{
-              position: 'absolute', top: -4, right: -6,
-              backgroundColor: '#ccff00', borderRadius: 9,
-              minWidth: 18, height: 18,
-              alignItems: 'center', justifyContent: 'center',
-              paddingHorizontal: 3,
-            }}>
-              <Text style={{ color: '#000', fontSize: 10, fontWeight: '800' }}>
-                {bellBadge > 99 ? '99+' : bellBadge}
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      ),
-    })
-  }, [bellBadge, navigation])
+    navigation.setOptions({ headerShown: false })
+  }, [navigation])
 
   async function handleMarkAway(occ, enrolId) {
     setMarkingAway(prev => ({ ...prev, [occ.id]: true }))
@@ -275,8 +247,35 @@ export default function DashboardScreen({ navigation }) {
       contentContainerStyle={s.content}
       refreshControl={<RefreshControl refreshing={loading} onRefresh={onRefresh} tintColor="#ccff00" />}
     >
-      {/* Greeting */}
-      <Text style={s.greeting}>{greeting()}, {user?.first_name || 'there'} 👋</Text>
+      {/* Custom header row with bell */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <Text style={[s.greeting, { marginBottom: 0 }]}>{greeting()}, {user?.first_name || 'there'} 👋</Text>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Notifications')}
+          style={{ position: 'relative', padding: 4 }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          activeOpacity={0.7}
+        >
+          <View style={{ width: 26, height: 26, alignItems: 'center', justifyContent: 'flex-end' }}>
+            <View style={{ width: 16, height: 13, backgroundColor: '#ccff00', borderTopLeftRadius: 8, borderTopRightRadius: 8 }} />
+            <View style={{ width: 20, height: 2.5, backgroundColor: '#ccff00', borderRadius: 1, marginBottom: 1 }} />
+            <View style={{ width: 6, height: 6, backgroundColor: '#ccff00', borderRadius: 3 }} />
+          </View>
+          {bellBadge > 0 && (
+            <View style={{
+              position: 'absolute', top: -2, right: -4,
+              backgroundColor: '#ccff00', borderRadius: 9,
+              minWidth: 17, height: 17,
+              alignItems: 'center', justifyContent: 'center',
+              paddingHorizontal: 3,
+            }}>
+              <Text style={{ color: '#000', fontSize: 10, fontWeight: '800' }}>
+                {bellBadge > 99 ? '99+' : bellBadge}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
       <Text style={s.dateText}>
         {new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
       </Text>
@@ -623,7 +622,10 @@ export default function DashboardScreen({ navigation }) {
 
 const s = StyleSheet.create({
   root: { flex: 1, width: '100%', backgroundColor: '#000' },
-  content: { padding: 20, paddingBottom: 40, width: '100%' },
+  content: {
+    padding: 20, paddingBottom: 40, width: '100%',
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) + 12 : 56,
+  },
 
   greeting: { fontSize: 22, fontWeight: '700', color: '#fff', marginBottom: 2 },
   dateText: { fontSize: 13, color: '#666', marginBottom: 16 },
