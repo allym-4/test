@@ -9,14 +9,6 @@ function avatarColor(name) {
   return AVATAR_COLORS[h]
 }
 
-const CODE = [
-  { icon: '💪', title: 'Show up', body: 'Consistency is how you grow. If you need to miss a class, let us know in advance.' },
-  { icon: '🤝', title: 'Support each other', body: "We celebrate every win in this studio — yours and your classmates'. Cheer each other on." },
-  { icon: '🙏', title: 'Be respectful', body: 'Of the space, the equipment, the instructors, and each other. We look after this place together.' },
-  { icon: '📱', title: 'Phones on silent', body: 'Be present in class. You can share your journey after, not during.' },
-  { icon: '🚫', title: 'No unsolicited filming', body: "Always ask before filming other students. Everyone's comfort matters." },
-  { icon: '💚', title: 'Your pace is your pace', body: "Never compare your chapter 1 to someone else's chapter 10. Progress is personal." },
-]
 
 export default function StudentStudioInfo() {
   const [tab, setTab] = useState('about')
@@ -240,10 +232,10 @@ export default function StudentStudioInfo() {
         <div style={{ maxWidth: 560 }}>
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, marginBottom: 6 }}>The Duality Code</div>
           <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 20, lineHeight: 1.6 }}>
-            These are the values that make Duality the space it is. We ask every student to embrace them.
+            A very important guide on being a good human within our space.
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {CODE.map((item, i) => (
+            {(s.studio_code || []).map((item, i) => (
               <div key={i} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 18px', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
                 <span style={{ fontSize: 24, flexShrink: 0 }}>{item.icon}</span>
                 <div>

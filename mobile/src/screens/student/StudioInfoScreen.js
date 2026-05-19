@@ -14,14 +14,6 @@ const TABS = [
   ['code', 'The Code'],
 ]
 
-const CODE = [
-  { icon: '💪', title: 'Show up', body: 'Consistency is how you grow. If you need to miss a class, let us know in advance.' },
-  { icon: '🤝', title: 'Support each other', body: "We celebrate every win in this studio — yours and your classmates'. Cheer each other on." },
-  { icon: '🙏', title: 'Be respectful', body: 'Of the space, the equipment, the instructors, and each other. We look after this place together.' },
-  { icon: '📱', title: 'Phones on silent', body: 'Be present in class. You can share your journey after, not during.' },
-  { icon: '🚫', title: 'No unsolicited filming', body: "Always ask before filming other students. Everyone's comfort matters." },
-  { icon: '💚', title: 'Your pace is your pace', body: "Never compare your chapter 1 to someone else's chapter 10. Progress is personal." },
-]
 
 const LOCATIONS = [
   {
@@ -303,8 +295,8 @@ export default function StudioInfoScreen() {
       {!loading && activeTab === 'code' && (
         <ScrollView contentContainerStyle={s.content}>
           <Text style={s.sectionHeading}>The Duality Code</Text>
-          <Text style={s.codeSubtitle}>These are the values that make Duality the space it is. We ask every student to embrace them.</Text>
-          {CODE.map((item, i) => (
+          <Text style={s.codeSubtitle}>A very important guide on being a good human within our space.</Text>
+          {(studio.studio_code || []).map((item, i) => (
             <View key={i} style={s.codeCard}>
               <Text style={s.codeIcon}>{item.icon}</Text>
               <View style={{ flex: 1 }}>

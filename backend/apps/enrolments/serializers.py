@@ -1,3 +1,4 @@
+import datetime
 from rest_framework import serializers
 from .models import Enrolment
 from apps.users.serializers import UserMinimalSerializer
@@ -9,6 +10,34 @@ class EnrolmentSerializer(serializers.ModelSerializer):
     class_session_detail = ClassSessionSerializer(source='class_session', read_only=True)
     student_name = serializers.CharField(source='student.display_name', read_only=True)
     class_name = serializers.CharField(source='class_session.name', read_only=True)
+    upcoming_occurrences = serializers.SerializerMethodField()
+
+    def get_upcoming_occurrences(self, obj):
+        from apps.classes.models import ClassOccurrence
+        from apps.attendance.models import AttendanceRecord
+        if not obj.class_session_id:
+            return []
+        today = datetime.date.today()
+        occs = (
+            ClassOccurrence.objects
+            .filter(session_id=obj.class_session_id, date__gte=today)
+            .select_related('session')
+            .order_by('date')[:4]
+        )
+        absent_ids = set(
+            AttendanceRecord.objects
+            .filter(student=obj.student, occurrence__in=occs, status='absent')
+            .values_list('occurrence_id', flat=True)
+        )
+        return [
+            {
+                'id': occ.id,
+                'date': occ.date.isoformat(),
+                'start_time': str(occ.session.start_time)[:5] if occ.session.start_time else None,
+                'marked_away': occ.id in absent_ids,
+            }
+            for occ in occs
+        ]
 
     class Meta:
         model = Enrolment
@@ -19,9 +48,11 @@ class EnrolmentSerializer(serializers.ModelSerializer):
             'is_first_visit', 'intro_email_sent', 'waiver_signed',
             'waitlist_offered_at', 'waitlist_expires_at', 'waitlist_urgent',
             'displacement_casual_booking', 'displacement_expires_at',
+            'upcoming_occurrences',
         )
         read_only_fields = (
             'id', 'enrolled_date',
             'waitlist_offered_at', 'waitlist_expires_at', 'waitlist_urgent',
             'displacement_casual_booking', 'displacement_expires_at',
+            'upcoming_occurrences',
         )

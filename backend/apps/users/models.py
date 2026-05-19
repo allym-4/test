@@ -135,6 +135,7 @@ class StudioSettings(models.Model):
     price_class_pass = models.DecimalField(max_digits=8, decimal_places=2, default=120)
     class_pass_size = models.PositiveIntegerField(default=4)
     season_pricing_config = models.JSONField(default=list, blank=True)
+    studio_code = models.JSONField(default=list, blank=True)
     form_health_enabled = models.BooleanField(default=True)
     form_photo_consent_enabled = models.BooleanField(default=True)
     form_waiver_enabled = models.BooleanField(default=True)

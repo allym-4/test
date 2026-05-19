@@ -96,6 +96,48 @@ class Command(BaseCommand):
             late_cancel_fee=10,
             credit_expiry_days=60,
             max_freeze_weeks=8,
+            studio_code=[
+                {
+                    'icon': '🚫',
+                    'title': 'No talk of weight — anything',
+                    'body': 'We are firm believers in working out to feel good within your own body. Fitness should celebrate what your body can do, not punish or reward it. Please refrain from speaking about weight-related goals in the space — it can be triggering. Focus on how you want your body to feel, or what you want to enable it to achieve.',
+                },
+                {
+                    'icon': '🏳️‍🌈',
+                    'title': 'Active support & allies',
+                    'body': 'Duality acknowledges the Gadigal people, the traditional owners of the land on which we dance. We honour and respect the pioneers of pole dance — past and present sex workers. We are proudly sex-worker positive, LGBTQIA+ and neurodivergent friendly. Your body, skin, preferences, occupation or gender do not define you here. Any offensive behaviour will not be tolerated.',
+                },
+                {
+                    'icon': '🎓',
+                    'title': 'Class time is for everyone',
+                    'body': 'Duality is a place of solace. Use your phone to film your progress, but step away from messages and calls — you deserve to be present. Our instructors have trained for years; please respect that and do not talk over them or teach other students. Classes start on time — once warm-up begins, we cannot allow late entry for safety reasons.',
+                },
+                {
+                    'icon': '🤒',
+                    'title': 'Stay home if you\'re unwell',
+                    'body': 'The health and safety of our instructors and community is everything. Many people in our community have low immunity or are at higher risk if they get sick. Please stay home if you are feeling any way unwell — you can make up the class when you are 100%. If you arrive visibly sick or with a high temperature, you will kindly be asked to leave.',
+                },
+                {
+                    'icon': '🎟️',
+                    'title': 'Catch-up classes',
+                    'body': 'If life gets in the way, let us know at least 4 hours before your class and you will receive a catch-up credit. This credit is valid within the same season you booked into. If you do not show up for your allocated catch-up class, you will forfeit the credit. The same rule applies for casual and Kiki bookings.',
+                },
+                {
+                    'icon': '🌸',
+                    'title': 'Give instructors a bit of space',
+                    'body': 'Our instructors love connecting with you, but they need time out too. Feel free to reach out via studio channels, but do not message them about class requests on personal accounts, and be mindful they may not respond immediately. Contact us via Instagram @dualitypole or email intrigued@dualitypole.com.',
+                },
+                {
+                    'icon': '✨',
+                    'title': 'Keep it clean — for all',
+                    'body': 'We clean our studio and bathrooms daily. We ask that you wipe down your apparatus before and after your class, and keep personal hygiene in mind — deodorant and baby wipes are available at reception. Please take your rubbish with you. We sell reusable bottles and have a water filter on site.',
+                },
+                {
+                    'icon': '🎥',
+                    'title': 'Ask before filming',
+                    'body': 'We love a good video, but many people around you may not want to be filmed. Before you press record, check with everyone nearby. Our instructors will call out when it is time to film — if you do not want to be in the video, speak up. You are not permitted to film warm-up or class content without instructor consent.',
+                },
+            ],
         )
 
         # ── Users ─────────────────────────────────────────────────────────

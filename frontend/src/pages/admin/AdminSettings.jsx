@@ -453,6 +453,21 @@ export default function AdminSettings() {
               <FieldRow label="Studio description"><textarea rows={6} value={form.description || ''} onChange={e => set('description', e.target.value)} style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', padding: '8px 12px', fontSize: 13, resize: 'vertical', fontFamily: 'inherit' }} /></FieldRow>
             </Section>
 
+            <Section title="The Code">
+              <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 14 }}>Shown on the Studio Info page. Each item has an emoji, title, and body text.</div>
+              {(form.studio_code || []).map((item, i) => (
+                <div key={i} style={{ background: '#0d0d0d', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px', marginBottom: 10 }}>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+                    <input value={item.icon || ''} onChange={e => { const c = (form.studio_code || []).map((it, j) => j === i ? { ...it, icon: e.target.value } : it); set('studio_code', c) }} style={{ width: 54, textAlign: 'center', fontSize: 18, background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--white)', padding: '4px 6px' }} placeholder="🔥" />
+                    <input value={item.title || ''} onChange={e => { const c = (form.studio_code || []).map((it, j) => j === i ? { ...it, title: e.target.value } : it); set('studio_code', c) }} style={{ flex: 1 }} placeholder="Title" />
+                    <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)', flexShrink: 0 }} onClick={() => set('studio_code', (form.studio_code || []).filter((_, j) => j !== i))}>Remove</button>
+                  </div>
+                  <textarea rows={3} value={item.body || ''} onChange={e => { const c = (form.studio_code || []).map((it, j) => j === i ? { ...it, body: e.target.value } : it); set('studio_code', c) }} style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--white)', padding: '6px 10px', fontSize: 12, resize: 'vertical', fontFamily: 'inherit' }} placeholder="Body text…" />
+                </div>
+              ))}
+              <button className="btn btn-ghost btn-sm" style={{ fontSize: 12 }} onClick={() => set('studio_code', [...(form.studio_code || []), { icon: '', title: '', body: '' }])}>+ Add item</button>
+            </Section>
+
             <Section title="Contact for Students">
               <FieldRow label="General enquiries"><input value={form.enquiries_email} onChange={e => set('enquiries_email', e.target.value)} /></FieldRow>
               <FieldRow label="Urgent contact"><input value={form.urgent_email} onChange={e => set('urgent_email', e.target.value)} /></FieldRow>

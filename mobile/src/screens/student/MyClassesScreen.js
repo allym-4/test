@@ -1041,39 +1041,42 @@ export default function MyClassesScreen({ navigation }) {
         {sess?.studio_detail?.name && (
           <Text style={s.cardMeta}>{sess.studio_detail.name}</Text>
         )}
-        {enr.next_occurrence && (
+        {(enr.upcoming_occurrences ?? (enr.next_occurrence ? [{ ...enr.next_occurrence, marked_away: enr.next_occurrence.my_status === 'absent' || enr.next_occurrence.marked_away }] : [])).length > 0 && (
           <View style={s.nextClass}>
-            <Text style={s.nextLabel}>Next class</Text>
-            <Text style={s.nextDate}>
-              {new Date(enr.next_occurrence.date).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short' })}
-              {enr.next_occurrence.start_time ? `  ·  ${enr.next_occurrence.start_time.slice(0, 5)}` : ''}
-            </Text>
-            {enr.next_occurrence.my_status === 'absent' || enr.next_occurrence.marked_away ? (
-              <View style={s.awayRow}>
-                <View style={s.awayBadge}><Text style={s.awayBadgeText}>Marked away</Text></View>
-                <TouchableOpacity
-                  style={s.canMakeItBtn}
-                  disabled={cancellingAway === enr.next_occurrence.id}
-                  onPress={() => handleCancelAway(enr.next_occurrence.id, sessName)}
-                >
-                  {cancellingAway === enr.next_occurrence.id
-                    ? <ActivityIndicator size="small" color="#ccff00" />
-                    : <Text style={s.canMakeItText}>I can make it!</Text>
-                  }
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <TouchableOpacity
-                style={s.awayBtn}
-                disabled={markingAway === enr.next_occurrence.id}
-                onPress={() => handleMarkAway(enr.next_occurrence, sess)}
-              >
-                {markingAway === enr.next_occurrence.id
-                  ? <ActivityIndicator size="small" color="#ccff00" />
-                  : <Text style={s.awayBtnText}>Mark away</Text>
-                }
-              </TouchableOpacity>
-            )}
+            <Text style={s.nextLabel}>Upcoming</Text>
+            {(enr.upcoming_occurrences ?? [{ ...enr.next_occurrence, marked_away: enr.next_occurrence?.my_status === 'absent' || enr.next_occurrence?.marked_away }]).map((occ, idx) => {
+              const isAway = occ.marked_away
+              const dateStr = new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+              const timeStr = occ.start_time ? `  ·  ${occ.start_time.slice(0, 5)}` : ''
+              return (
+                <View key={occ.id} style={[s.occRow, idx > 0 && { marginTop: 8 }]}>
+                  <Text style={[s.nextDate, isAway && { color: '#ffaa00' }]}>{dateStr}{timeStr}{isAway ? '  · AWAY' : ''}</Text>
+                  {isAway ? (
+                    <TouchableOpacity
+                      style={s.canMakeItBtn}
+                      disabled={cancellingAway === occ.id}
+                      onPress={() => handleCancelAway(occ.id, sessName)}
+                    >
+                      {cancellingAway === occ.id
+                        ? <ActivityIndicator size="small" color="#ccff00" />
+                        : <Text style={s.canMakeItText}>I can make it!</Text>
+                      }
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      style={s.awayBtn}
+                      disabled={markingAway === occ.id}
+                      onPress={() => handleMarkAway(occ, sess)}
+                    >
+                      {markingAway === occ.id
+                        ? <ActivityIndicator size="small" color="#ccff00" />
+                        : <Text style={s.awayBtnText}>Mark away</Text>
+                      }
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )
+            })}
           </View>
         )}
         {(sess?.id ?? enr.class_session) && (
@@ -1332,9 +1335,10 @@ const s = StyleSheet.create({
   cardMeta: { fontSize: 13, color: '#888', marginBottom: 10 },
   nextClass: { backgroundColor: '#0a0a0a', borderRadius: 10, padding: 12, marginBottom: 10, borderWidth: 1, borderColor: '#222' },
   nextLabel: { fontSize: 11, fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
-  nextDate: { fontSize: 14, color: '#fff', fontWeight: '500', marginBottom: 8 },
+  nextDate: { fontSize: 13, color: '#ccc', fontWeight: '500', flex: 1 },
   awayBtn: { alignSelf: 'flex-start', backgroundColor: '#1a1a1a', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#333' },
   awayBtnText: { fontSize: 13, fontWeight: '600', color: '#ccff00' },
+  occRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   awayRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   awayBadge: { backgroundColor: 'rgba(255,170,0,0.1)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(255,170,0,0.3)' },
   awayBadgeText: { fontSize: 11, fontWeight: '700', color: '#f59e0b' },
