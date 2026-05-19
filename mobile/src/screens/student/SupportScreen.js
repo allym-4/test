@@ -61,6 +61,11 @@ const FAQS = [
     a: "New season enrolments usually open around 4 weeks before the season starts. Current students get 48 hours of priority access before spots open to the public.\n\nKeep an eye on your notifications and email — we'll let you know as soon as enrolments are live.",
   },
   {
+    icon: '🎬',
+    q: 'Where are the routine videos?',
+    a: "Routine videos get uploaded around week 5 of the season.\n\nFind them in Progress → Resources, alongside your music playlist and warm-up guide.",
+  },
+  {
     icon: '📱',
     q: 'How do I set up Kisi (door access)?',
     a: "1. Check your email for an invitation from Kisi — it'll come from noreply@kisi.io.\n\n2. Tap the link to create your Kisi account. Download the Kisi app.\n\n3. Once logged in, you'll see Duality Pole in your places. Tap it, then tap 'Unlock'.\n\n4. Make sure Bluetooth and location are enabled on your phone.\n\nStill having trouble? Email us at intrigued@dualitypole.com.",

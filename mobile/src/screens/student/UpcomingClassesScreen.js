@@ -161,12 +161,12 @@ function MonthCalendar({ items, selectedDate, onSelectDate }) {
   return (
     <View>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <TouchableOpacity style={s.btnGhost} onPress={prevMonth}>
-          <Text style={s.btnGhostText}>‹</Text>
+        <TouchableOpacity onPress={prevMonth} style={s.calNavBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <Text style={s.calNavText}>‹</Text>
         </TouchableOpacity>
         <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>{monthLabel}</Text>
-        <TouchableOpacity style={s.btnGhost} onPress={nextMonth}>
-          <Text style={s.btnGhostText}>›</Text>
+        <TouchableOpacity onPress={nextMonth} style={s.calNavBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <Text style={s.calNavText}>›</Text>
         </TouchableOpacity>
       </View>
 
@@ -506,6 +506,12 @@ const s = StyleSheet.create({
     fontWeight: '700',
     fontSize: 14,
   },
+  calNavBtn: {
+    width: 36, height: 36, borderRadius: 8,
+    borderWidth: 1, borderColor: '#333',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  calNavText: { color: '#888', fontSize: 20, fontWeight: '600', lineHeight: 24 },
   btnGhost: {
     borderWidth: 1,
     borderColor: '#333',
