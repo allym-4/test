@@ -34,6 +34,7 @@ class ClassSessionSerializer(serializers.ModelSerializer):
             'session_type', 'is_active', 'category', 'category_name',
             'season', 'season_name', 'season_start_date', 'season_bookings_open',
             'catchup_cutoff_weeks',
+            'first_timer_headline', 'first_timer_body',
         )
 
     season_bookings_open = serializers.SerializerMethodField()

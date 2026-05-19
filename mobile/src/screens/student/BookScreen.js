@@ -3,6 +3,7 @@ import {
   ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet,
   RefreshControl, Alert, ActivityIndicator, Modal, Switch,
 } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useStripe } from '@stripe/stripe-react-native'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
@@ -1070,6 +1071,16 @@ export default function BookScreen({ navigation }) {
   const [booking, setBooking] = useState(null)
   const [booked, setBooked] = useState({})
   const [levelFilter, setLevelFilter] = useState(null)
+  const [firstTimerModal, setFirstTimerModal] = useState(null) // { headline, body }
+
+  async function maybeShowFirstTimerInfo(sess) {
+    if (!sess?.first_timer_body && !sess?.first_timer_headline) return
+    const key = `first_timer_seen_${user?.id}_${sess.id}`
+    const seen = await AsyncStorage.getItem(key)
+    if (seen) return
+    await AsyncStorage.setItem(key, 'true')
+    setFirstTimerModal({ headline: sess.first_timer_headline, body: sess.first_timer_body, name: sess.name })
+  }
 
   // Season tab state
   const [selectedSessions, setSelectedSessions] = useState([])
@@ -1287,6 +1298,7 @@ export default function BookScreen({ navigation }) {
       const newBooked = {}
       selectedSessions.forEach(s => { newBooked[s.id + '-season'] = true })
       setBooked(b => ({ ...b, ...newBooked }))
+      selectedSessions.forEach(s => maybeShowFirstTimerInfo(s))
       setSelectedSessions([])
       refetchActiveEnrol()
 
@@ -1367,6 +1379,7 @@ export default function BookScreen({ navigation }) {
       ))
       if (enrolmentType === 'catchup' && res.data.status === 'confirmed') refetchCredits()
       if (enrolmentType === 'classpass' && res.data.status === 'confirmed') refetchPasses()
+      if (res.data.status === 'confirmed') maybeShowFirstTimerInfo(occ.session_detail)
     } catch (err) {
       Alert.alert('Error', err.response?.data?.detail ?? 'Could not complete booking. Please try again.')
     } finally {
@@ -2023,6 +2036,7 @@ export default function BookScreen({ navigation }) {
                             await enrolments.create({ student: user.id, class_session: sess.id, status: 'active', enrolment_type: 'trial' })
                             setBooked(b => ({ ...b, [sess.id + '-trial']: true }))
                             Alert.alert('Trial booked! 🎉', `Payment of $${priceTrial} confirmed. See you in class!`)
+                            maybeShowFirstTimerInfo(sess)
                           } catch (err) {
                             Alert.alert('Booking failed', err.response?.data?.detail ?? 'Could not book trial. Please try again.')
                           } finally {
@@ -2281,6 +2295,35 @@ export default function BookScreen({ navigation }) {
               >
                 <Text style={ms.confirmBtnText}>{submittingExemption ? 'SUBMITTING…' : 'SUBMIT REQUEST'}</Text>
               </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* First-timer info modal */}
+      {firstTimerModal && (
+        <Modal visible transparent animationType="fade" onRequestClose={() => setFirstTimerModal(null)}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+            <View style={{ backgroundColor: '#111', borderRadius: 20, width: '100%', borderWidth: 1, borderColor: '#222', overflow: 'hidden' }}>
+              <View style={{ backgroundColor: '#ccff00', padding: 20 }}>
+                <Text style={{ fontSize: 11, fontWeight: '800', color: '#000', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 6 }}>
+                  {firstTimerModal.name}
+                </Text>
+                <Text style={{ fontSize: 20, fontWeight: '800', color: '#000', lineHeight: 26 }}>
+                  {firstTimerModal.headline || 'Welcome to your first class!'}
+                </Text>
+              </View>
+              <View style={{ padding: 20 }}>
+                <Text style={{ fontSize: 14, color: '#ccc', lineHeight: 22 }}>
+                  {firstTimerModal.body}
+                </Text>
+                <TouchableOpacity
+                  style={{ backgroundColor: '#ccff00', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 20 }}
+                  onPress={() => setFirstTimerModal(null)}
+                >
+                  <Text style={{ color: '#000', fontWeight: '800', fontSize: 15 }}>Got it — see you there!</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </Modal>

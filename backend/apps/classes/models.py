@@ -67,6 +67,14 @@ class ClassSession(models.Model):
         null=True, blank=True,
         help_text='No catch-up bookings accepted after this many weeks into the season. Leave blank to allow catch-ups any time.'
     )
+    first_timer_headline = models.CharField(
+        max_length=200, blank=True,
+        help_text='Short headline shown to students booking this class for the first time.'
+    )
+    first_timer_body = models.TextField(
+        blank=True,
+        help_text='Detailed info shown to first-time students after they book this class.'
+    )
 
     class Meta:
         ordering = ['day_of_week', 'start_time']

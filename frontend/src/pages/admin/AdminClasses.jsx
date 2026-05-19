@@ -174,6 +174,8 @@ function ClassModal({ cls, instructors, studios: studioList, allSessions, onSave
     instructor: cls?.instructor || '',
     studio: cls?.studio || '',
     is_active: cls?.is_active ?? true,
+    first_timer_headline: cls?.first_timer_headline || '',
+    first_timer_body: cls?.first_timer_body || '',
   })
   const [saving, setSaving] = useState(false)
 
@@ -211,11 +213,43 @@ function ClassModal({ cls, instructors, studios: studioList, allSessions, onSave
         {cls?.id && (
           <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border)', marginBottom: 16 }}>
             <div style={tabStyle('details')} onClick={() => setTab('details')}>Details</div>
+            <div style={tabStyle('firsttimer')} onClick={() => setTab('firsttimer')}>First-timer</div>
             <div style={tabStyle('upsells')} onClick={() => setTab('upsells')}>Upsells</div>
           </div>
         )}
 
-        {tab === 'details' ? (
+        {tab === 'firsttimer' ? (
+          <form onSubmit={handleSubmit}>
+            <p style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 16 }}>
+              This info is shown to students the first time they book this class. Leave blank to show nothing.
+            </p>
+            <div style={{ marginBottom: 14 }}>
+              <label className="form-label">Headline</label>
+              <input
+                className="input"
+                value={form.first_timer_headline}
+                onChange={e => set('first_timer_headline', e.target.value)}
+                placeholder="e.g. Everything you need to know before you walk in"
+                style={{ width: '100%' }}
+              />
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label className="form-label">Body</label>
+              <textarea
+                className="input"
+                value={form.first_timer_body}
+                onChange={e => set('first_timer_body', e.target.value)}
+                placeholder="What to wear, what to bring, what to expect…"
+                rows={6}
+                style={{ width: '100%', resize: 'vertical' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
+              <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
+            </div>
+          </form>
+        ) : tab === 'details' ? (
           <form onSubmit={handleSubmit}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <div style={{ gridColumn: '1/-1' }}>
