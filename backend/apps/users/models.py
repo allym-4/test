@@ -111,6 +111,7 @@ class StudioSettings(models.Model):
     instagram = models.CharField(max_length=100, blank=True)
     timezone = models.CharField(max_length=50, default='Australia/Sydney')
     tagline = models.CharField(max_length=200, blank=True)
+    description = models.TextField(blank=True)
     primary_colour = models.CharField(max_length=20, default='#CCFF00')
     enquiries_email = models.EmailField(blank=True)
     urgent_email = models.EmailField(blank=True)

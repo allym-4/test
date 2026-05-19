@@ -8,7 +8,7 @@ import { settings, users } from '../../api'
 
 const TABS = [
   ['about', 'About'],
-  ['locations', 'Locations'],
+  ['our-studio', 'Our Studio'],
   ['team', 'Team'],
   ['policies', 'Policies'],
   ['code', 'The Code'],
@@ -146,10 +146,6 @@ export default function StudioInfoScreen() {
       body: `Approved absences (illness, injury, or emergency) may receive a makeup credit. Credits expire ${creditExpiry} days after issue. Maximum 2 credits per season. Credits are non-transferable.`,
     },
     {
-      title: 'Membership Freeze',
-      body: `You can freeze your season membership for up to ${maxFreeze} weeks, once per season. 7 days notice required. Freeze is free of charge.`,
-    },
-    {
       title: 'Refund Policy',
       body: "Season enrolments are non-refundable after the season commences. If you are unable to continue due to medical reasons, please contact us — we'll do our best to help.",
     },
@@ -198,12 +194,9 @@ export default function StudioInfoScreen() {
         <ScrollView contentContainerStyle={s.content}>
           <View style={s.card}>
             <Text style={s.tagline}>{studio.tagline || 'Our purpose-built playground for all things pole.'}</Text>
-            <Text style={s.aboutText}>
-              Welcome to Duality, our purpose-built playground for all things pole. Tucked high in the trees on vibrant Gadigal Land in Surry Hills, our dreamy studio is designed for one thing: the ultimate pole experience.
-            </Text>
-            <Text style={[s.aboutText, { marginTop: 10 }]}>
-              Inside you will find not one, not two, but three stunning pole studios ready to set the stage for your spins, flips and hair flicks. The reception is spacious and luxe, change rooms to slip into your duality with ease, gender-neutral bathrooms with shower, Dyson tap-and-dryer, and lockers for the season.
-            </Text>
+            {(studio.description || '').split('\n\n').map((para, i) => (
+              <Text key={i} style={[s.aboutText, i > 0 && { marginTop: 10 }]}>{para}</Text>
+            ))}
           </View>
 
           {/* Stats */}
@@ -247,8 +240,8 @@ export default function StudioInfoScreen() {
         </ScrollView>
       )}
 
-      {/* Locations */}
-      {!loading && activeTab === 'locations' && (
+      {/* Our Studio */}
+      {!loading && activeTab === 'our-studio' && (
         <ScrollView contentContainerStyle={s.content}>
           <TouchableOpacity onPress={openMaps} style={s.addressRow}>
             <Text style={s.addressText}>📍 Level 1, 88 Kippax St, Surry Hills NSW 2010 · (02) 9160 0223</Text>

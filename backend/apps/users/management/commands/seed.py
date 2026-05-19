@@ -60,10 +60,24 @@ class Command(BaseCommand):
         StudioSettings.objects.create(
             pk=1,
             studio_name='Duality Pole Studio',
-            email='hello@dualitypole.com.au',
-            phone='(02) 9000 0000',
-            instagram='@dualitypolestudio',
+            email='intrigued@dualitypole.com',
+            enquiries_email='intrigued@dualitypole.com',
+            urgent_email='staff@dualitypole.com',
+            phone='(02) 9160 0223',
+            instagram='@dualitypole',
             tagline='Move boldly. Feel everything.',
+            description=(
+                'Welcome to Duality, our purpose-built playground for all things pole. '
+                'Tucked high in the trees on vibrant Gadigal Land in Surry Hills, our dreamy studio is designed for one thing: the ultimate pole experience.\n\n'
+                'Inside you will find not one, not two, but three stunning pole studios ready to set the stage for your spins, flips and hair flicks. '
+                'The reception is spacious and luxe, perfect for a pre-class catch-up or post-class debrief. '
+                'We have change rooms to slip into your duality with ease, gender-neutral bathrooms with two stalls and a shower, '
+                'a Dyson tap-and-dryer because we love looking good while staying sustainable. '
+                'You can also grab a locker for the season to stash your grip, shoes or secret snacks.\n\n'
+                'Every corner of Duality is designed to feel otherworldly. From the moment you step inside you leave the everyday behind. '
+                'The lights, the mirrors, the music, the energy — it is dreamy, a little cheeky and completely transportive. '
+                'Think of it as stepping into another dimension — one where you are powerful, playful and free to move however you want.'
+            ),
             price_casual=35,
             price_season=270,
             price_trial=25,
@@ -77,7 +91,7 @@ class Command(BaseCommand):
                 {'label': '5 classes/week', 'price': '800', 'discount': '$20.00 per class'},
                 {'label': '6 classes/week', 'price': '900', 'discount': '$18.75 per class'},
             ],
-            cancellation_window_hours=24,
+            cancellation_window_hours=4,
             no_show_fee=20,
             late_cancel_fee=10,
             credit_expiry_days=60,

@@ -34,7 +34,7 @@ export default function StudentBilling() {
   const [refundSending, setRefundSending] = useState(false)
   const [refundSent, setRefundSent] = useState(false)
 
-  const { data: balData, loading: loadingBal, refetch: refetchBal } = useApi(() => payments.balance(user?.id), [user?.id])
+  const { data: balData, loading: loadingBal, refetch: refetchBal } = useApi(() => user ? payments.balance(user.id) : null, [user?.id])
   const { data: paymentsData, loading: loadingPayments, refetch: refetchPayments } = useApi(() => payments.list({ student: user?.id }), [user?.id])
   const { data: plansData } = useApi(() => payments.plans.list({ student: user?.id }), [user?.id])
   const { data: creditsData } = useApi(() => attendance.makeupCredits.list({ student: user?.id }), [user?.id])
@@ -76,8 +76,8 @@ export default function StudentBilling() {
     }
   }
 
-  const bal = balData ? parseFloat(balData.balance) : 0
-  const isOwing = bal < 0
+  const bal = balData ? parseFloat(balData.balance) : null
+  const isOwing = bal !== null && bal < 0
   const allPayments = paymentsData?.results || []
   const plans = plansData?.results || []
   const catchupCredits = creditsData?.results || creditsData || []
@@ -292,7 +292,7 @@ export default function StudentBilling() {
         <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: isOwing ? 'var(--red)' : 'var(--grey)', marginBottom: 8 }}>
           Current balance
         </div>
-        {loadingBal ? (
+        {loadingBal || bal === null ? (
           <div className="spinner" />
         ) : (
           <>

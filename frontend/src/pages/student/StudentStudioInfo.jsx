@@ -46,10 +46,6 @@ export default function StudentStudioInfo() {
       body: `Approved absences (illness, injury, or emergency) may receive a makeup credit. Credits expire ${creditExpiry} days after issue. Maximum 2 credits per season. Credits are non-transferable.`,
     },
     {
-      title: 'Membership Freeze',
-      body: `You can freeze your season membership for up to ${maxFreeze} weeks, once per season. 7 days notice required. Freeze is free of charge.`,
-    },
-    {
       title: 'Refund Policy',
       body: "Season enrolments are non-refundable after the season commences. If you are unable to continue due to medical reasons, please contact us — we'll do our best to help.",
     },
@@ -67,7 +63,7 @@ export default function StudentStudioInfo() {
       </div>
 
       <div className="tab-strip" style={{ marginBottom: 20 }}>
-        {[['about', 'About'], ['locations', 'Locations'], ['team', 'Our Team'], ['policies', 'Policies'], ['code', 'The Code']].map(([key, label]) => (
+        {[['about', 'About'], ['our-studio', 'Our Studio'], ['team', 'Our Team'], ['policies', 'Policies'], ['code', 'The Code']].map(([key, label]) => (
           <button key={key} className={`tab-btn ${tab === key ? 'active' : ''}`} onClick={() => setTab(key)}>{label}</button>
         ))}
       </div>
@@ -78,15 +74,9 @@ export default function StudentStudioInfo() {
             <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, marginBottom: 14, color: 'var(--lime)' }}>
               {s.tagline || 'Our purpose-built playground for all things pole.'}
             </div>
-            <div style={{ fontSize: 14, color: 'var(--grey)', lineHeight: 1.8, marginBottom: 14 }}>
-              Welcome to Duality, our purpose-built playground for all things pole. Tucked high in the trees on vibrant Gadigal Land in Surry Hills, our dreamy studio is designed for one thing: the ultimate pole experience.
-            </div>
-            <div style={{ fontSize: 14, color: 'var(--grey)', lineHeight: 1.8, marginBottom: 14 }}>
-              Inside you will find not one, not two, but three stunning pole studios ready to set the stage for your spins, flips and hair flicks. The reception is spacious and luxe, perfect for a pre-class catch-up or post-class debrief. We have change rooms to slip into your duality with ease, gender-neutral bathrooms with two stalls and a shower, a Dyson tap-and-dryer because we love looking good while staying sustainable. You can also grab a locker for the season to stash your grip, shoes or secret snacks.
-            </div>
-            <div style={{ fontSize: 14, color: 'var(--grey)', lineHeight: 1.8 }}>
-              Every corner of Duality is designed to feel otherworldly. From the moment you step inside you leave the everyday behind. The lights, the mirrors, the music, the energy — it is dreamy, a little cheeky and completely transportive. Think of it as stepping into another dimension — one where you are powerful, playful and free to move however you want.
-            </div>
+            {(s.description || '').split('\n\n').map((para, i) => (
+              <div key={i} style={{ fontSize: 14, color: 'var(--grey)', lineHeight: 1.8, marginBottom: 14 }}>{para}</div>
+            ))}
             <div style={{ marginTop: 18, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
               <a href="mailto:intrigued@dualitypole.com" style={{ fontSize: 13, color: 'var(--lime)', textDecoration: 'none' }}>✉ intrigued@dualitypole.com</a>
               <span style={{ fontSize: 13, color: 'var(--grey)' }}>📞 (02) 9160 0223</span>
@@ -143,7 +133,7 @@ export default function StudentStudioInfo() {
         </div>
       )}
 
-      {tab === 'locations' && (
+      {tab === 'our-studio' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 640 }}>
           <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 4 }}>
             📍 Level 1, 88 Kippax St, Surry Hills NSW 2010 · (02) 9160 0223

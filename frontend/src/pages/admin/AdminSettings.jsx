@@ -450,6 +450,7 @@ export default function AdminSettings() {
             <Section title="Branding">
               <FieldRow label="Primary colour"><input value={form.primary_colour} onChange={e => set('primary_colour', e.target.value)} /></FieldRow>
               <FieldRow label="App tagline"><input value={form.tagline} onChange={e => set('tagline', e.target.value)} /></FieldRow>
+              <FieldRow label="Studio description"><textarea rows={6} value={form.description || ''} onChange={e => set('description', e.target.value)} style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', padding: '8px 12px', fontSize: 13, resize: 'vertical', fontFamily: 'inherit' }} /></FieldRow>
             </Section>
 
             <Section title="Contact for Students">
