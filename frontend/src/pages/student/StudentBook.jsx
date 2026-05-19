@@ -830,6 +830,8 @@ export default function StudentBook() {
                     isEnrolledRate={activeSeasonCount > 0}
                     priceClassPass={priceClassPass}
                     classPassSize={classPassSize}
+                    availableCredits={availableCredits}
+                    onCreditUsed={refetchCredits}
                     seasonName={upcomingSeason?.name}
                     seasonPrice={seasonPrice}
                     alreadyEnrolled={alreadyEnrolled}
