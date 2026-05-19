@@ -175,14 +175,15 @@ export default function DashboardScreen({ navigation }) {
       headerRight: () => (
         <TouchableOpacity
           onPress={() => navigation.navigate('Notifications')}
-          style={{ marginRight: 16, position: 'relative' }}
+          style={{ marginRight: 16, position: 'relative', backgroundColor: 'transparent' }}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          activeOpacity={0.7}
         >
-          <View style={{ width: 24, height: 24, alignItems: 'center', justifyContent: 'flex-end' }}>
-              <View style={{ width: 16, height: 13, backgroundColor: '#ccff00', borderTopLeftRadius: 8, borderTopRightRadius: 8 }} />
-              <View style={{ width: 20, height: 2.5, backgroundColor: '#ccff00', borderRadius: 1, marginBottom: 1 }} />
-              <View style={{ width: 6, height: 6, backgroundColor: '#ccff00', borderRadius: 3 }} />
-            </View>
+          <View style={{ width: 26, height: 26, alignItems: 'center', justifyContent: 'flex-end', backgroundColor: 'transparent' }}>
+            <View style={{ width: 16, height: 13, backgroundColor: '#ccff00', borderTopLeftRadius: 8, borderTopRightRadius: 8 }} />
+            <View style={{ width: 20, height: 2.5, backgroundColor: '#ccff00', borderRadius: 1, marginBottom: 1 }} />
+            <View style={{ width: 6, height: 6, backgroundColor: '#ccff00', borderRadius: 3 }} />
+          </View>
           {bellBadge > 0 && (
             <View style={{
               position: 'absolute', top: -4, right: -6,
@@ -675,7 +676,7 @@ const s = StyleSheet.create({
   // Class cards
   classCard: {
     backgroundColor: '#111', borderRadius: 12, padding: 16, marginBottom: 10,
-    flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#222',
+    borderWidth: 1, borderColor: '#222',
   },
   classDay: { fontSize: 12, color: '#666', marginBottom: 2 },
   className: { fontWeight: '600', color: '#fff', fontSize: 14, marginBottom: 2 },

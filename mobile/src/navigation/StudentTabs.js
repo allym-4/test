@@ -29,6 +29,7 @@ const headerStyle = {
   headerStyle: { backgroundColor: '#000' },
   headerTitleStyle: { fontWeight: '700', color: '#fff' },
   headerTintColor: '#ccff00',
+  headerButtonStyle: { backgroundColor: 'transparent' },
 }
 
 function AccountHome(props) {
