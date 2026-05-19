@@ -78,7 +78,7 @@ class Command(BaseCommand):
                 'The lights, the mirrors, the music, the energy — it is dreamy, a little cheeky and completely transportive. '
                 'Think of it as stepping into another dimension — one where you are powerful, playful and free to move however you want.'
             ),
-            price_casual=35,
+            price_casual=40,
             price_season=270,
             price_trial=25,
             price_class_pass=120,
