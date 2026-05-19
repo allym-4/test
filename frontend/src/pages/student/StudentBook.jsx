@@ -513,6 +513,7 @@ export default function StudentBook() {
   const { data: workshopsData, loading: loadingWorkshops, refetch: refetchWorkshops } = useApi(() => classes.workshops.list())
   const { data: seasonsData } = useApi(() => seasonsApi.list())
   const { data: activeEnrolData } = useApi(() => user?.id ? enrolments.list({ student: user.id, status: 'active' }) : null, [user?.id])
+  const { data: enrolHistoryData } = useApi(() => user?.id ? enrolments.list({ student: user.id, page_size: 1 }) : null, [user?.id])
   const { data: creditsData, refetch: refetchCredits } = useApi(() => user?.id ? attendanceApi.makeupCredits.list({ student: user.id, status: 'available' }) : null, [user?.id])
   const { data: passData, refetch: refetchPasses } = useApi(() => user?.id ? attendanceApi.classPasses.list({ student: user.id }) : null, [user?.id])
 
@@ -667,11 +668,13 @@ export default function StudentBook() {
     setBooked(b => [...b, session.id])
   }
 
+  const hasEverEnrolled = (enrolHistoryData?.count ?? (enrolHistoryData?.results || enrolHistoryData || []).length) > 0
+  const showTrial = !hasEverEnrolled
+
   const TABS = [
     ['season', 'Season Enrolment'],
-    ['casual', 'Casual / Drop-in'],
-    ['trial', 'Trial Class'],
-    ['catchup', 'Catch-up Classes'],
+    ['casual', 'Drop-in & Make-ups'],
+    ...(showTrial ? [['trial', 'Trial Class']] : []),
     ['workshop', 'Workshops'],
   ]
 
@@ -801,9 +804,24 @@ export default function StudentBook() {
 
       {tab === 'casual' && (
         <div>
-          <div style={{ background: 'rgba(204,255,0,0.06)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 12, padding: '14px 18px', marginBottom: 20 }}>
-            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>Drop-in Rate: ${priceCasual} per class</div>
-            <div style={{ fontSize: 12, color: 'var(--grey)' }}>Select a class below, then pick the specific date you'd like to attend.</div>
+          <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 220, background: 'rgba(204,255,0,0.06)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 12, padding: '14px 18px' }}>
+              <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>Drop-in Rate: ${casualRate} per class</div>
+              <div style={{ fontSize: 12, color: 'var(--grey)' }}>Pick a class below then choose the date you want to attend.</div>
+            </div>
+            <div style={{
+              flex: 1, minWidth: 220,
+              background: availableCredits > 0 ? 'rgba(176,160,255,0.08)' : 'rgba(255,255,255,0.03)',
+              border: `1px solid ${availableCredits > 0 ? 'rgba(176,160,255,0.3)' : 'var(--border)'}`,
+              borderRadius: 12, padding: '14px 18px',
+            }}>
+              <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2, color: availableCredits > 0 ? '#b0a0ff' : 'var(--white)' }}>
+                {availableCredits > 0 ? `${availableCredits} make-up credit${availableCredits !== 1 ? 's' : ''} available` : 'No make-up credits'}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--grey)' }}>
+                {availableCredits > 0 ? 'Select a class and use a credit for free.' : 'Credits are earned when you cancel 4+ hours before class.'}
+              </div>
+            </div>
           </div>
 
           {loading ? (
@@ -920,55 +938,6 @@ export default function StudentBook() {
                 </div>
               ))}
             </div>
-          )}
-        </div>
-      )}
-
-      {tab === 'catchup' && (
-        <div>
-          <div style={{
-            background: availableCredits > 0 ? 'rgba(204,255,0,0.06)' : 'rgba(255,68,68,0.06)',
-            border: `1px solid ${availableCredits > 0 ? 'rgba(204,255,0,0.2)' : 'rgba(255,68,68,0.2)'}`,
-            borderRadius: 12, padding: '14px 18px', marginBottom: 20,
-          }}>
-            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>
-              {availableCredits > 0
-                ? `You have ${availableCredits} catch-up credit${availableCredits !== 1 ? 's' : ''} available`
-                : 'No catch-up credits available'}
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--grey)' }}>
-              {availableCredits > 0
-                ? 'Select a class and pick the specific date you want to catch up. Each booking uses 1 credit.'
-                : 'Credits are issued when you notify us of an absence within the cancellation window. Contact the studio if you believe this is incorrect.'}
-            </div>
-          </div>
-
-          {availableCredits > 0 && (
-            loading ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
-              </div>
-            ) : sessions.length === 0 ? <EmptyState /> : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {sessions.map(s => {
-                  const seasonStart = s.season_start_date ? new Date(s.season_start_date + 'T00:00:00') : null
-                  const weekNum = seasonStart ? Math.floor((new Date() - seasonStart) / (7 * 86400000)) + 1 : null
-                  const cutoffPassed = s.catchup_cutoff_weeks != null && weekNum != null && weekNum > s.catchup_cutoff_weeks
-                  if (cutoffPassed) {
-                    return (
-                      <div key={s.id} style={{ background: '#111', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.5 }}>
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: 13 }}>{s.name}</div>
-                          <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>Catch-ups closed after week {s.catchup_cutoff_weeks}</div>
-                        </div>
-                        <span style={{ fontSize: 11, color: 'var(--red)' }}>Closed</span>
-                      </div>
-                    )
-                  }
-                  return <OccurrenceBookingPanel key={s.id} session={s} enrolmentType="catchup" availableCredits={availableCredits} onCreditUsed={refetchCredits} />
-                })}
-              </div>
-            )
           )}
         </div>
       )}
