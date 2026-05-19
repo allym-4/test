@@ -2,5 +2,5 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "python manage.py migrate && python manage.py seed && gunicorn config.wsgi --log-file -"
+startCommand = "python manage.py migrate && python manage.py seed && python manage.py set_test_passwords && gunicorn config.wsgi --log-file -"
 restartPolicyType = "on_failure"
