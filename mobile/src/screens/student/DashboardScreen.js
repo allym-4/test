@@ -618,8 +618,8 @@ export default function DashboardScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#000' },
-  content: { padding: 20, paddingBottom: 40 },
+  root: { flex: 1, width: '100%', backgroundColor: '#000' },
+  content: { padding: 20, paddingBottom: 40, width: '100%' },
 
   greeting: { fontSize: 22, fontWeight: '700', color: '#fff', marginBottom: 2 },
   dateText: { fontSize: 13, color: '#666', marginBottom: 16 },
