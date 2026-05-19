@@ -151,6 +151,16 @@ class SurveySendView(APIView):
         return Response(SurveySerializer(survey).data)
 
 
+class SurveyMineView(APIView):
+    """Return active surveys the logged-in student hasn't completed yet."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        responded_ids = SurveyResponse.objects.filter(student=request.user).values_list('survey_id', flat=True)
+        pending = Survey.objects.filter(status='active').exclude(id__in=responded_ids).prefetch_related('questions')
+        return Response(SurveySerializer(pending, many=True).data)
+
+
 class SurveyExportCsvView(APIView):
     """Return survey responses as a downloadable CSV file."""
     permission_classes = [IsAdminOrInstructor]

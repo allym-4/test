@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     path('', views.SurveyListView.as_view()),
+    path('mine/', views.SurveyMineView.as_view()),
     path('<int:pk>/', views.SurveyDetailView.as_view()),
     path('<int:pk>/send/', views.SurveySendView.as_view()),
     path('<int:pk>/export-csv/', views.SurveyExportCsvView.as_view()),

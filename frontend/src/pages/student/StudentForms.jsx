@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useApi } from '../../hooks/useApi'
-import { forms } from '../../api'
+import { forms, surveys } from '../../api'
 
 const PARQ_QUESTIONS = [
   { id: 'heart', label: 'Has a doctor ever said you have a heart condition?' },
@@ -102,16 +102,115 @@ const FORM_DEFS = [
   { type: 'season_agreement', title: 'Season Agreement',           desc: 'Season enrolment terms including cancellation and makeup credit policy.',            icon: '📋' },
 ]
 
+function CustomSurveyForm({ survey, onDone }) {
+  const [answers, setAnswers] = useState({})
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  const questions = survey.questions || []
+  const allRequired = questions.filter(q => q.required).every(q => answers[q.id] !== undefined && answers[q.id] !== '')
+
+  function setAnswer(qId, val) { setAnswers(a => ({ ...a, [qId]: val })) }
+
+  async function submit() {
+    setSaving(true)
+    setError('')
+    try {
+      await surveys.respond({
+        survey: survey.id,
+        answers: Object.entries(answers).map(([question, answer_text]) => ({ question: parseInt(question), answer_text: String(answer_text) })),
+      })
+      onDone()
+    } catch {
+      setError('Failed to submit — please try again.')
+    } finally {
+      setSaving(false) }
+  }
+
+  return (
+    <div>
+      {survey.description && <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.7, marginBottom: 20 }}>{survey.description}</div>}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 20 }}>
+        {questions.map((q, i) => (
+          <div key={q.id} style={{ background: '#111', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10, lineHeight: 1.6 }}>
+              {i + 1}. {q.question_text}{q.required && <span style={{ color: 'var(--red)', marginLeft: 4 }}>*</span>}
+            </div>
+            {q.question_type === 'text' && (
+              <input value={answers[q.id] || ''} onChange={e => setAnswer(q.id, e.target.value)} placeholder="Your answer…" style={{ width: '100%' }} />
+            )}
+            {q.question_type === 'textarea' && (
+              <textarea rows={3} value={answers[q.id] || ''} onChange={e => setAnswer(q.id, e.target.value)} placeholder="Your answer…" style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--white)', padding: '8px 10px', fontSize: 13, resize: 'vertical', fontFamily: 'inherit' }} />
+            )}
+            {q.question_type === 'yes_no' && (
+              <div style={{ display: 'flex', gap: 8 }}>
+                {[['Yes', 'yes'], ['No', 'no']].map(([label, val]) => (
+                  <button key={val} type="button" onClick={() => setAnswer(q.id, val)}
+                    style={{ padding: '6px 22px', borderRadius: 8, border: `1px solid ${answers[q.id] === val ? (val === 'yes' ? 'var(--amber)' : 'var(--lime)') : 'var(--border)'}`, background: answers[q.id] === val ? (val === 'yes' ? 'rgba(255,170,0,0.12)' : 'rgba(204,255,0,0.08)') : 'transparent', color: answers[q.id] === val ? (val === 'yes' ? 'var(--amber)' : 'var(--lime)') : 'var(--grey)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+                  >{label}</button>
+                ))}
+              </div>
+            )}
+            {q.question_type === 'rating' && (
+              <div style={{ display: 'flex', gap: 6 }}>
+                {[1,2,3,4,5].map(n => (
+                  <button key={n} type="button" onClick={() => setAnswer(q.id, n)}
+                    style={{ width: 36, height: 36, borderRadius: 8, border: `1px solid ${answers[q.id] >= n ? 'var(--lime)' : 'var(--border)'}`, background: answers[q.id] >= n ? 'rgba(204,255,0,0.1)' : 'transparent', color: answers[q.id] >= n ? 'var(--lime)' : 'var(--grey)', cursor: 'pointer', fontSize: 18 }}
+                  >★</button>
+                ))}
+              </div>
+            )}
+            {q.question_type === 'scale' && (
+              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                {Array.from({length: 10}, (_, i) => i + 1).map(n => (
+                  <button key={n} type="button" onClick={() => setAnswer(q.id, n)}
+                    style={{ width: 36, height: 36, borderRadius: 8, border: `1px solid ${answers[q.id] === n ? 'var(--lime)' : 'var(--border)'}`, background: answers[q.id] === n ? 'rgba(204,255,0,0.12)' : 'transparent', color: answers[q.id] === n ? 'var(--lime)' : 'var(--grey)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+                  >{n}</button>
+                ))}
+              </div>
+            )}
+            {(q.question_type === 'multiple_choice' || q.question_type === 'checkbox') && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {(q.options || []).map(opt => {
+                  const isMulti = q.question_type === 'checkbox'
+                  const selected = isMulti ? (answers[q.id] || []).includes(opt) : answers[q.id] === opt
+                  return (
+                    <button key={opt} type="button" onClick={() => {
+                      if (isMulti) {
+                        const cur = answers[q.id] || []
+                        setAnswer(q.id, selected ? cur.filter(x => x !== opt) : [...cur, opt])
+                      } else { setAnswer(q.id, opt) }
+                    }}
+                      style={{ textAlign: 'left', padding: '8px 14px', borderRadius: 8, border: `1px solid ${selected ? 'var(--lime)' : 'var(--border)'}`, background: selected ? 'rgba(204,255,0,0.08)' : 'transparent', color: selected ? 'var(--lime)' : 'var(--grey)', cursor: 'pointer', fontSize: 13 }}
+                    >{opt}</button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      {error && <div style={{ color: 'var(--red)', fontSize: 12, marginBottom: 12 }}>{error}</div>}
+      <button className="btn btn-lime btn-sm" style={{ width: '100%' }} disabled={!allRequired || saving} onClick={submit}>
+        {saving ? 'Submitting…' : 'Submit'}
+      </button>
+    </div>
+  )
+}
+
 export default function StudentForms() {
   const { data, loading, refetch } = useApi(() => forms.list())
+  const { data: surveyData, refetch: refetchSurveys } = useApi(() => surveys.mine())
   const [activeForm, setActiveForm] = useState(null)
   const [saving, setSaving] = useState(false)
 
   const submitted = data || []
+  const pendingSurveys = surveyData || []
   function getForm(type) { return submitted.find(f => f.form_type === type) }
 
   const pending = FORM_DEFS.filter(f => !getForm(f.type)?.completed)
   const done = FORM_DEFS.filter(f => getForm(f.type)?.completed)
+  const totalPending = pending.length + pendingSurveys.length
 
   async function submitSimple(type, responses) {
     setSaving(true)
@@ -133,9 +232,9 @@ export default function StudentForms() {
         <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}><div className="spinner" /></div>
       ) : (
         <>
-          {pending.length > 0 && (
+          {totalPending > 0 && (
             <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--lime)', marginBottom: 12, fontWeight: 600 }}>Action Required ({pending.length})</div>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--lime)', marginBottom: 12, fontWeight: 600 }}>Action Required ({totalPending})</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {pending.map(f => (
                   <div key={f.type} style={{ background: 'rgba(204,255,0,0.04)', border: '1px solid rgba(204,255,0,0.25)', borderLeft: '3px solid var(--lime)', borderRadius: 12, padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
@@ -147,6 +246,19 @@ export default function StudentForms() {
                       </div>
                     </div>
                     <button className="btn btn-lime btn-sm" style={{ flexShrink: 0 }} onClick={() => setActiveForm(f.type)}>Complete</button>
+                  </div>
+                ))}
+                {pendingSurveys.map(sv => (
+                  <div key={`survey-${sv.id}`} style={{ background: 'rgba(176,160,255,0.04)', border: '1px solid rgba(176,160,255,0.25)', borderLeft: '3px solid var(--lav)', borderRadius: 12, padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                      <span style={{ fontSize: 24, flexShrink: 0 }}>📋</span>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{sv.name}</div>
+                        {sv.description && <div style={{ fontSize: 12, color: 'var(--grey)', lineHeight: 1.6 }}>{sv.description}</div>}
+                        <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>{sv.questions?.length || 0} question{sv.questions?.length !== 1 ? 's' : ''}</div>
+                      </div>
+                    </div>
+                    <button className="btn btn-ghost btn-sm" style={{ flexShrink: 0, borderColor: 'rgba(176,160,255,0.4)', color: 'var(--lav)' }} onClick={() => setActiveForm(`survey-${sv.id}`)}>Complete</button>
                   </div>
                 ))}
               </div>
@@ -178,7 +290,7 @@ export default function StudentForms() {
             </div>
           )}
 
-          {pending.length === 0 && (
+          {totalPending === 0 && (
             <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--grey)' }}>
               <div style={{ fontSize: 36, marginBottom: 12 }}>✓</div>
               <div style={{ fontWeight: 600, marginBottom: 4 }}>All done!</div>
@@ -234,6 +346,17 @@ I understand that if I cancel my enrolment mid-season without a medical certific
           />
         </Modal>
       )}
+
+      {typeof activeForm === 'string' && activeForm.startsWith('survey-') && (() => {
+        const svId = parseInt(activeForm.replace('survey-', ''))
+        const sv = pendingSurveys.find(s => s.id === svId)
+        if (!sv) return null
+        return (
+          <Modal title={`📋 ${sv.name}`} onClose={() => setActiveForm(null)}>
+            <CustomSurveyForm survey={sv} onDone={() => { refetchSurveys(); setActiveForm(null) }} />
+          </Modal>
+        )
+      })()}
     </div>
   )
 }

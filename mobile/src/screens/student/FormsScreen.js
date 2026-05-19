@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import {
-  ScrollView, View, Text, TouchableOpacity,
-  StyleSheet, Alert, ActivityIndicator, RefreshControl,
+  ScrollView, View, Text, TouchableOpacity, TextInput,
+  StyleSheet, Alert, ActivityIndicator, RefreshControl, Modal,
 } from 'react-native'
 import { useApi } from '../../hooks/useApi'
-import { forms } from '../../api'
+import { forms, surveys } from '../../api'
 
 const FORM_DEFS = [
   {
@@ -109,13 +109,118 @@ function ParqModal({ onClose, onSubmit, submitting }) {
   )
 }
 
+function SurveyModal({ survey, onClose, onDone }) {
+  const [answers, setAnswers] = useState({})
+  const [submitting, setSubmitting] = useState(false)
+
+  function setAnswer(qId, val) { setAnswers(a => ({ ...a, [qId]: val })) }
+
+  async function submit() {
+    setSubmitting(true)
+    try {
+      await surveys.respond({
+        survey: survey.id,
+        answers: Object.entries(answers).map(([question, answer_text]) => ({
+          question: parseInt(question), answer_text: String(answer_text),
+        })),
+      })
+      onDone()
+    } catch {
+      Alert.alert('Error', 'Failed to submit — please try again.')
+    } finally { setSubmitting(false) }
+  }
+
+  const questions = survey.questions || []
+  const allRequired = questions.filter(q => q.required).every(q => answers[q.id] !== undefined && answers[q.id] !== '')
+
+  return (
+    <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: '#000' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1, borderBottomColor: '#222' }}>
+          <Text style={{ fontSize: 17, fontWeight: '700', color: '#fff', flex: 1, marginRight: 12 }} numberOfLines={1}>{survey.name}</Text>
+          <TouchableOpacity onPress={onClose}><Text style={{ color: '#666', fontSize: 16 }}>✕</Text></TouchableOpacity>
+        </View>
+        <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+          {survey.description ? <Text style={{ fontSize: 13, color: '#888', lineHeight: 20, marginBottom: 20 }}>{survey.description}</Text> : null}
+          {questions.map((q, i) => (
+            <View key={q.id} style={{ backgroundColor: '#111', borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#222' }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: '#fff', marginBottom: 10, lineHeight: 20 }}>
+                {i + 1}. {q.question_text}{q.required ? <Text style={{ color: '#ef4444' }}> *</Text> : null}
+              </Text>
+              {q.question_type === 'text' && (
+                <TextInput value={answers[q.id] || ''} onChangeText={t => setAnswer(q.id, t)} placeholder="Your answer…" placeholderTextColor="#555" style={{ color: '#fff', borderWidth: 1, borderColor: '#333', borderRadius: 8, padding: 10, fontSize: 13 }} />
+              )}
+              {q.question_type === 'yes_no' && (
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  {[['Yes', 'yes'], ['No', 'no']].map(([label, val]) => (
+                    <TouchableOpacity key={val} onPress={() => setAnswer(q.id, val)}
+                      style={{ flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: answers[q.id] === val ? '#ccff00' : '#333', backgroundColor: answers[q.id] === val ? 'rgba(204,255,0,0.1)' : 'transparent', alignItems: 'center' }}>
+                      <Text style={{ color: answers[q.id] === val ? '#ccff00' : '#666', fontWeight: '600' }}>{label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+              {q.question_type === 'rating' && (
+                <View style={{ flexDirection: 'row', gap: 6 }}>
+                  {[1,2,3,4,5].map(n => (
+                    <TouchableOpacity key={n} onPress={() => setAnswer(q.id, n)}
+                      style={{ width: 40, height: 40, borderRadius: 8, borderWidth: 1, borderColor: (answers[q.id] || 0) >= n ? '#ccff00' : '#333', backgroundColor: (answers[q.id] || 0) >= n ? 'rgba(204,255,0,0.1)' : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ fontSize: 20, color: (answers[q.id] || 0) >= n ? '#ccff00' : '#555' }}>★</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+              {q.question_type === 'scale' && (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                  {Array.from({length: 10}, (_, i) => i + 1).map(n => (
+                    <TouchableOpacity key={n} onPress={() => setAnswer(q.id, n)}
+                      style={{ width: 40, height: 40, borderRadius: 8, borderWidth: 1, borderColor: answers[q.id] === n ? '#ccff00' : '#333', backgroundColor: answers[q.id] === n ? 'rgba(204,255,0,0.12)' : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ color: answers[q.id] === n ? '#ccff00' : '#666', fontWeight: '600', fontSize: 13 }}>{n}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+              {(q.question_type === 'multiple_choice' || q.question_type === 'checkbox') && (
+                <View style={{ gap: 6 }}>
+                  {(q.options || []).map(opt => {
+                    const isMulti = q.question_type === 'checkbox'
+                    const selected = isMulti ? (answers[q.id] || []).includes(opt) : answers[q.id] === opt
+                    return (
+                      <TouchableOpacity key={opt} onPress={() => {
+                        if (isMulti) {
+                          const cur = answers[q.id] || []
+                          setAnswer(q.id, selected ? cur.filter(x => x !== opt) : [...cur, opt])
+                        } else { setAnswer(q.id, opt) }
+                      }}
+                        style={{ paddingVertical: 10, paddingHorizontal: 14, borderRadius: 8, borderWidth: 1, borderColor: selected ? '#ccff00' : '#333', backgroundColor: selected ? 'rgba(204,255,0,0.08)' : 'transparent' }}>
+                        <Text style={{ color: selected ? '#ccff00' : '#888', fontSize: 13 }}>{opt}</Text>
+                      </TouchableOpacity>
+                    )
+                  })}
+                </View>
+              )}
+            </View>
+          ))}
+          <TouchableOpacity style={{ backgroundColor: '#ccff00', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 8, opacity: allRequired && !submitting ? 1 : 0.4 }}
+            onPress={submit} disabled={!allRequired || submitting}>
+            {submitting ? <ActivityIndicator color="#000" /> : <Text style={{ color: '#000', fontWeight: '700', fontSize: 15 }}>Submit</Text>}
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+    </Modal>
+  )
+}
+
 export default function FormsScreen() {
   const { data: formsData, loading, refetch } = useApi(() => forms.list(), [])
+  const { data: surveysData, refetch: refetchSurveys } = useApi(() => surveys.mine(), [])
 
   const [showParq, setShowParq] = useState(false)
+  const [activeSurvey, setActiveSurvey] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   // Optimistic local completions: { form_type: submitted_at }
   const [localCompleted, setLocalCompleted] = useState({})
+  const pendingSurveys = surveysData?.results ?? surveysData ?? []
 
   const submittedForms = formsData?.results ?? formsData ?? []
 
@@ -217,6 +322,23 @@ export default function FormsScreen() {
             </View>
           )
         })}
+
+        {pendingSurveys.map(sv => (
+          <View key={`sv-${sv.id}`} style={[s.card, { borderColor: 'rgba(176,160,255,0.3)', borderLeftWidth: 3, borderLeftColor: '#b0a0ff' }]}>
+            <View style={s.cardHeader}>
+              <Text style={s.cardIcon}>📋</Text>
+              <View style={s.cardMeta}>
+                <Text style={s.cardTitle}>{sv.name}</Text>
+                {sv.description ? <Text style={s.cardDesc}>{sv.description}</Text> : null}
+                <Text style={{ fontSize: 11, color: '#555', marginTop: 4 }}>{sv.questions?.length || 0} question{sv.questions?.length !== 1 ? 's' : ''}</Text>
+              </View>
+            </View>
+            <TouchableOpacity style={[s.completeBtn, { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#b0a0ff' }]}
+              onPress={() => setActiveSurvey(sv)}>
+              <Text style={[s.completeBtnText, { color: '#b0a0ff' }]}>Complete</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
       </ScrollView>
 
       {showParq && (
@@ -224,6 +346,13 @@ export default function FormsScreen() {
           onClose={() => setShowParq(false)}
           onSubmit={handleParqSubmit}
           submitting={submitting}
+        />
+      )}
+      {activeSurvey && (
+        <SurveyModal
+          survey={activeSurvey}
+          onClose={() => setActiveSurvey(null)}
+          onDone={() => { setActiveSurvey(null); refetchSurveys() }}
         />
       )}
     </View>

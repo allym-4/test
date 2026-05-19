@@ -383,6 +383,7 @@ export const community = {
 }
 
 export const surveys = {
+  mine: () => client.get('/api/surveys/mine/'),
   list: (params) => client.get('/api/surveys/', { params }),
   get: (id) => client.get(`/api/surveys/${id}/`),
   create: (data) => client.post('/api/surveys/', data),

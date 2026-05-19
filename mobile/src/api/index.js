@@ -229,3 +229,9 @@ export const orders = {
   list: () => client.get('/api/users/orders/'),
   create: (data) => client.post('/api/users/orders/', data),
 }
+
+
+export const surveys = {
+  mine: () => client.get('/api/surveys/mine/'),
+  respond: (data) => client.post('/api/surveys/responses/', data),
+}
