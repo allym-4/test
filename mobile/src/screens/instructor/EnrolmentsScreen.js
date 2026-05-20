@@ -17,7 +17,7 @@ function EnrolmentCard({ enr }) {
           </Text>
         </View>
       </View>
-      <Text style={s.sessionName}>{enr.session?.name ?? 'Class'}</Text>
+      <Text style={s.sessionName}>{enr.class_session_detail?.name ?? enr.session?.name ?? 'Class'}</Text>
       {enr.student?.email && <Text style={s.email}>{enr.student.email}</Text>}
       {enr.student?.phone && <Text style={s.email}>{enr.student.phone}</Text>}
     </View>
@@ -32,7 +32,7 @@ export default function EnrolmentsScreen() {
   const sessionList = sessionsData?.results ?? sessionsData ?? []
 
   const { data: enrData, loading: enrLoading, refetch } = useApi(
-    () => selectedSession ? enrolments.list({ session: selectedSession.id, status: 'active' }) : null,
+    () => selectedSession ? enrolments.list({ class_session: selectedSession.id, status: 'active' }) : null,
     [selectedSession?.id]
   )
 
@@ -48,13 +48,13 @@ export default function EnrolmentsScreen() {
     return (
       <View style={s.root}>
         <Text style={s.heading}>My Classes</Text>
-        {sessLoading && <ActivityIndicator style={{ marginTop: 40 }} color="#6366f1" />}
+        {sessLoading && <ActivityIndicator style={{ marginTop: 40 }} color="#ccff00" />}
         {!sessLoading && sessionList.length === 0 && (
           <Text style={s.empty}>No classes assigned to you.</Text>
         )}
         <FlatList
           data={sessionList}
-          keyExtractor={s => String(s.id)}
+          keyExtractor={item => String(item.id)}
           contentContainerStyle={s.list}
           renderItem={({ item }) => (
             <TouchableOpacity style={s.sessionCard} onPress={() => setSelectedSession(item)}>
@@ -79,7 +79,7 @@ export default function EnrolmentsScreen() {
       <TextInput
         style={s.search}
         placeholder="Search students..."
-        placeholderTextColor="#9ca3af"
+        placeholderTextColor="#555"
         value={search}
         onChangeText={setSearch}
       />
@@ -88,7 +88,7 @@ export default function EnrolmentsScreen() {
         data={filtered}
         keyExtractor={e => String(e.id)}
         contentContainerStyle={s.list}
-        refreshControl={<RefreshControl refreshing={enrLoading} onRefresh={refetch} />}
+        refreshControl={<RefreshControl refreshing={enrLoading} onRefresh={refetch} tintColor="#ccff00" />}
         ListEmptyComponent={
           <Text style={s.empty}>{enrLoading ? '' : 'No enrolments found.'}</Text>
         }
@@ -99,24 +99,24 @@ export default function EnrolmentsScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f9fafb' },
-  heading: { fontSize: 20, fontWeight: '700', color: '#111827', padding: 16, paddingBottom: 4 },
-  subheading: { fontSize: 13, color: '#6b7280', paddingHorizontal: 16, marginBottom: 8 },
+  root: { flex: 1, backgroundColor: '#000' },
+  heading: { fontSize: 20, fontWeight: '700', color: '#fff', padding: 16, paddingBottom: 4 },
+  subheading: { fontSize: 13, color: '#888', paddingHorizontal: 16, marginBottom: 8 },
   back: { padding: 16, paddingBottom: 4 },
-  backText: { color: '#6366f1', fontWeight: '600', fontSize: 15 },
-  search: { marginHorizontal: 16, marginBottom: 8, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 15, color: '#111827', backgroundColor: '#fff' },
+  backText: { color: '#ccff00', fontWeight: '600', fontSize: 15 },
+  search: { marginHorizontal: 16, marginBottom: 8, borderWidth: 1, borderColor: '#333', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 15, color: '#fff', backgroundColor: '#111' },
   list: { padding: 16, paddingBottom: 40 },
-  empty: { textAlign: 'center', color: '#9ca3af', marginTop: 40 },
-  sessionCard: { backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-  sessionName: { fontSize: 16, fontWeight: '700', color: '#111827' },
-  sessionMeta: { fontSize: 13, color: '#6b7280', marginTop: 4 },
-  sessionArrow: { fontSize: 13, color: '#6366f1', fontWeight: '600', marginTop: 8 },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 8, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 },
+  empty: { textAlign: 'center', color: '#555', marginTop: 40 },
+  sessionCard: { backgroundColor: '#111', borderRadius: 14, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#222' },
+  sessionName: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  sessionMeta: { fontSize: 13, color: '#888', marginTop: 4 },
+  sessionArrow: { fontSize: 13, color: '#ccff00', fontWeight: '600', marginTop: 8 },
+  card: { backgroundColor: '#111', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#222' },
   cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 },
-  studentName: { fontSize: 15, fontWeight: '600', color: '#111827', flex: 1 },
-  typeBadge: { backgroundColor: '#e0e7ff', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  typeBadgeText: { fontSize: 11, fontWeight: '600', color: '#4338ca', textTransform: 'capitalize' },
-  trialBadge: { backgroundColor: '#fef3c7' },
-  trialBadgeText: { color: '#92400e' },
-  email: { fontSize: 12, color: '#9ca3af', marginTop: 2 },
+  studentName: { fontSize: 15, fontWeight: '600', color: '#fff', flex: 1 },
+  typeBadge: { backgroundColor: 'rgba(176,160,255,0.15)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  typeBadgeText: { fontSize: 11, fontWeight: '600', color: '#b0a0ff', textTransform: 'capitalize' },
+  trialBadge: { backgroundColor: 'rgba(245,158,11,0.15)' },
+  trialBadgeText: { color: '#f59e0b' },
+  email: { fontSize: 12, color: '#555', marginTop: 2 },
 })

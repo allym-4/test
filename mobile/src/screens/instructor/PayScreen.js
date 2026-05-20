@@ -53,17 +53,16 @@ export default function PayScreen() {
         data={records}
         keyExtractor={item => String(item.id)}
         contentContainerStyle={s.listContent}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} tintColor="#6366f1" />}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} tintColor="#ccff00" />}
         ListHeaderComponent={
           <View>
             <Text style={s.heading}>Pay & Earnings</Text>
             <Text style={s.subheading}>Your payment history from the studio</Text>
 
-            {/* Total card */}
             <View style={s.totalCard}>
               <Text style={s.totalLabel}>Total Earnings</Text>
               {loading
-                ? <ActivityIndicator color="#6366f1" style={{ marginTop: 8 }} />
+                ? <ActivityIndicator color="#ccff00" style={{ marginTop: 8 }} />
                 : <Text style={s.totalAmount}>${total.toFixed(2)}</Text>
               }
             </View>
@@ -86,34 +85,32 @@ export default function PayScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f9fafb' },
+  root: { flex: 1, backgroundColor: '#000' },
   listContent: { padding: 16, paddingBottom: 40 },
 
-  heading: { fontSize: 20, fontWeight: '700', color: '#111827', marginBottom: 2 },
-  subheading: { fontSize: 13, color: '#6b7280', marginBottom: 16 },
+  heading: { fontSize: 20, fontWeight: '700', color: '#fff', marginBottom: 2 },
+  subheading: { fontSize: 13, color: '#888', marginBottom: 16 },
 
-  // Total card
-  totalCard: { backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 20, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, elevation: 3, borderLeftWidth: 4, borderLeftColor: '#6366f1' },
-  totalLabel: { fontSize: 11, fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 },
-  totalAmount: { fontSize: 36, fontWeight: '800', color: '#6366f1' },
+  totalCard: { backgroundColor: '#111', borderRadius: 16, padding: 20, marginBottom: 20, borderWidth: 1, borderColor: '#333', borderLeftWidth: 4, borderLeftColor: '#ccff00' },
+  totalLabel: { fontSize: 11, fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 },
+  totalAmount: { fontSize: 36, fontWeight: '800', color: '#ccff00' },
 
-  sectionLabel: { fontSize: 11, fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 },
+  sectionLabel: { fontSize: 11, fontWeight: '700', color: '#555', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 },
 
-  // Record rows
-  recordRow: { backgroundColor: '#fff', borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 },
-  recordDesc: { fontSize: 15, fontWeight: '600', color: '#111827', marginBottom: 3 },
-  recordPeriod: { fontSize: 12, color: '#9ca3af' },
+  recordRow: { backgroundColor: '#111', borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#222' },
+  recordDesc: { fontSize: 15, fontWeight: '600', color: '#fff', marginBottom: 3 },
+  recordPeriod: { fontSize: 12, color: '#555' },
   recordRight: { alignItems: 'flex-end', gap: 6 },
   statusBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  statusPaid: { backgroundColor: '#d1fae5' },
-  statusPending: { backgroundColor: '#fef3c7' },
+  statusPaid: { backgroundColor: 'rgba(204,255,0,0.12)' },
+  statusPending: { backgroundColor: 'rgba(245,158,11,0.12)' },
   statusText: { fontSize: 11, fontWeight: '700' },
-  statusPaidText: { color: '#065f46' },
-  statusPendingText: { color: '#92400e' },
+  statusPaidText: { color: '#ccff00' },
+  statusPendingText: { color: '#f59e0b' },
   recordAmount: { fontSize: 16, fontWeight: '800' },
-  amountPaid: { color: '#10b981' },
+  amountPaid: { color: '#ccff00' },
   amountPending: { color: '#f59e0b' },
 
   separator: { height: 8 },
-  empty: { textAlign: 'center', color: '#9ca3af', marginTop: 40, fontSize: 14 },
+  empty: { textAlign: 'center', color: '#555', marginTop: 40, fontSize: 14 },
 })

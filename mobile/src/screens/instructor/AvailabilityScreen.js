@@ -192,7 +192,7 @@ function TimeOffTab() {
                 value={dateFrom}
                 onChangeText={setDateFrom}
                 placeholder="2024-12-25"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor="#555"
                 keyboardType="numbers-and-punctuation"
               />
               <Text style={s.fieldLabel}>To (YYYY-MM-DD)</Text>
@@ -201,7 +201,7 @@ function TimeOffTab() {
                 value={dateTo}
                 onChangeText={setDateTo}
                 placeholder="2024-12-31"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor="#555"
                 keyboardType="numbers-and-punctuation"
               />
               <Text style={s.fieldLabel}>Reason (optional)</Text>
@@ -210,7 +210,7 @@ function TimeOffTab() {
                 value={reason}
                 onChangeText={setReason}
                 placeholder="e.g. Holiday, illness…"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor="#555"
                 multiline
                 numberOfLines={3}
               />
@@ -294,7 +294,7 @@ export default function AvailabilityScreen() {
       </View>
 
       {loading ? (
-        <ActivityIndicator style={{ marginTop: 40 }} color="#6366f1" />
+        <ActivityIndicator style={{ marginTop: 40 }} color="#ccff00" />
       ) : activeTab === 'availability' ? (
         <AvailabilityTab availData={data} refetch={refetch} />
       ) : (
@@ -305,55 +305,55 @@ export default function AvailabilityScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f9fafb' },
-  heading: { fontSize: 20, fontWeight: '700', color: '#111827', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 2 },
-  subheading: { fontSize: 13, color: '#6b7280', paddingHorizontal: 16, marginBottom: 12 },
+  root: { flex: 1, backgroundColor: '#000' },
+  heading: { fontSize: 20, fontWeight: '700', color: '#fff', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 2 },
+  subheading: { fontSize: 13, color: '#888', paddingHorizontal: 16, marginBottom: 12 },
 
   // Tabs
-  tabRow: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 12, backgroundColor: '#e5e7eb', borderRadius: 10, padding: 3 },
+  tabRow: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 12, backgroundColor: '#2a2a2a', borderRadius: 10, padding: 3 },
   tab: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8 },
-  tabActive: { backgroundColor: '#fff', shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
-  tabText: { fontSize: 14, fontWeight: '600', color: '#6b7280' },
-  tabTextActive: { color: '#6366f1' },
+  tabActive: { backgroundColor: '#111', shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
+  tabText: { fontSize: 14, fontWeight: '600', color: '#888' },
+  tabTextActive: { color: '#ccff00' },
 
   // Availability grid
   scrollContent: { padding: 16, paddingBottom: 100 },
-  gridCard: { backgroundColor: '#fff', borderRadius: 14, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-  headerRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
-  slotLabelCell: { width: 72, padding: 10, justifyContent: 'center', borderRightWidth: 1, borderRightColor: '#f3f4f6' },
+  gridCard: { backgroundColor: '#111', borderRadius: 14, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  headerRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#1a1a1a' },
+  slotLabelCell: { width: 72, padding: 10, justifyContent: 'center', borderRightWidth: 1, borderRightColor: '#1a1a1a' },
   dayCell: { flex: 1, alignItems: 'center', padding: 10 },
-  dayLabel: { fontSize: 11, fontWeight: '700', color: '#6b7280', textTransform: 'uppercase' },
+  dayLabel: { fontSize: 11, fontWeight: '700', color: '#888', textTransform: 'uppercase' },
   slotRow: { flexDirection: 'row' },
-  slotRowBorder: { borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
-  slotLabel: { fontSize: 11, fontWeight: '700', color: '#374151' },
-  slotSub: { fontSize: 9, color: '#9ca3af', marginTop: 1 },
-  cell: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderLeftWidth: 1, borderLeftColor: '#f3f4f6' },
+  slotRowBorder: { borderBottomWidth: 1, borderBottomColor: '#1a1a1a' },
+  slotLabel: { fontSize: 11, fontWeight: '700', color: '#ccc' },
+  slotSub: { fontSize: 9, color: '#555', marginTop: 1 },
+  cell: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderLeftWidth: 1, borderLeftColor: '#1a1a1a' },
   cellActive: { backgroundColor: '#eef2ff' },
-  cellText: { fontSize: 14, color: '#d1d5db' },
-  cellTextActive: { color: '#6366f1', fontWeight: '700' },
-  hint: { fontSize: 12, color: '#9ca3af', marginTop: 10, textAlign: 'center' },
+  cellText: { fontSize: 14, color: '#444' },
+  cellTextActive: { color: '#ccff00', fontWeight: '700' },
+  hint: { fontSize: 12, color: '#555', marginTop: 10, textAlign: 'center' },
 
   // Save button
-  saveBtn: { position: 'absolute', bottom: 24, left: 16, right: 16, backgroundColor: '#6366f1', borderRadius: 14, padding: 16, alignItems: 'center' },
+  saveBtn: { position: 'absolute', bottom: 24, left: 16, right: 16, backgroundColor: '#ccff00', borderRadius: 14, padding: 16, alignItems: 'center' },
   saveBtnDisabled: { backgroundColor: '#a5b4fc' },
   saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
 
   // Time Off tab
-  addBtn: { backgroundColor: '#fff', borderRadius: 12, padding: 14, alignItems: 'center', marginBottom: 12, borderWidth: 1.5, borderColor: '#6366f1', borderStyle: 'dashed' },
-  addBtnText: { color: '#6366f1', fontWeight: '700', fontSize: 15 },
-  addCard: { backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-  addCardTitle: { fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 14 },
-  fieldLabel: { fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 6 },
-  input: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: '#111827', backgroundColor: '#f9fafb', marginBottom: 12 },
+  addBtn: { backgroundColor: '#111', borderRadius: 12, padding: 14, alignItems: 'center', marginBottom: 12, borderWidth: 1.5, borderColor: '#ccff00', borderStyle: 'dashed' },
+  addBtnText: { color: '#ccff00', fontWeight: '700', fontSize: 15 },
+  addCard: { backgroundColor: '#111', borderRadius: 14, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  addCardTitle: { fontSize: 16, fontWeight: '700', color: '#fff', marginBottom: 14 },
+  fieldLabel: { fontSize: 12, fontWeight: '600', color: '#ccc', marginBottom: 6 },
+  input: { borderWidth: 1, borderColor: '#333', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: '#fff', backgroundColor: '#000', marginBottom: 12 },
   inputMulti: { height: 72, textAlignVertical: 'top' },
   addCardBtns: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  cancelBtn: { flex: 1, borderRadius: 10, padding: 12, alignItems: 'center', backgroundColor: '#f3f4f6' },
-  cancelBtnText: { fontWeight: '600', color: '#374151', fontSize: 14 },
-  submitBtn: { flex: 1, borderRadius: 10, padding: 12, alignItems: 'center', backgroundColor: '#6366f1' },
-  dateCard: { backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 8, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 },
-  dateRange: { fontSize: 14, fontWeight: '600', color: '#111827' },
-  dateReason: { fontSize: 12, color: '#6b7280', marginTop: 3 },
+  cancelBtn: { flex: 1, borderRadius: 10, padding: 12, alignItems: 'center', backgroundColor: '#1a1a1a' },
+  cancelBtnText: { fontWeight: '600', color: '#ccc', fontSize: 14 },
+  submitBtn: { flex: 1, borderRadius: 10, padding: 12, alignItems: 'center', backgroundColor: '#ccff00' },
+  dateCard: { backgroundColor: '#111', borderRadius: 12, padding: 14, marginBottom: 8, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 },
+  dateRange: { fontSize: 14, fontWeight: '600', color: '#fff' },
+  dateReason: { fontSize: 12, color: '#888', marginTop: 3 },
   deleteBtn: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: '#fee2e2', marginLeft: 10 },
   deleteBtnText: { fontSize: 12, fontWeight: '600', color: '#ef4444' },
-  empty: { textAlign: 'center', color: '#9ca3af', marginTop: 40 },
+  empty: { textAlign: 'center', color: '#555', marginTop: 40 },
 })

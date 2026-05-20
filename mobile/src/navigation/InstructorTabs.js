@@ -36,9 +36,9 @@ function AccountStackNav() {
   return (
     <AccountStack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: '#fff' },
-        headerTitleStyle: { fontWeight: '700', color: '#111827' },
-        headerTintColor: '#6366f1',
+        headerStyle: { backgroundColor: '#000' },
+        headerTitleStyle: { fontWeight: '700', color: '#fff' },
+        headerTintColor: '#ccff00',
       }}
     >
       <AccountStack.Screen name="AccountHome" component={InstructorAccountHome} options={{ title: 'Account' }} />
@@ -57,10 +57,12 @@ export default function InstructorTabs({ onSwitchToStudent }) {
       <Tab.Navigator
         screenOptions={({ route }) => ({
           tabBarIcon: ({ focused }) => <Icon name={route.name} focused={focused} />,
-          tabBarActiveTintColor: '#6366f1',
-          tabBarInactiveTintColor: '#9ca3af',
-          headerStyle: { backgroundColor: '#fff' },
-          headerTitleStyle: { fontWeight: '700', color: '#111827' },
+          tabBarActiveTintColor: '#ccff00',
+          tabBarInactiveTintColor: '#555',
+          tabBarStyle: { backgroundColor: '#000', borderTopColor: '#222' },
+          headerStyle: { backgroundColor: '#000' },
+          headerTitleStyle: { fontWeight: '700', color: '#fff' },
+          headerTintColor: '#ccff00',
         })}
       >
         <Tab.Screen name="Attendance" component={AttendanceScreen} options={{ title: 'Attendance' }} />

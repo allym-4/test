@@ -61,18 +61,18 @@ export default function InstructorAccountScreen({ navigation, route }) {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f9fafb' },
+  root: { flex: 1, backgroundColor: '#000' },
   content: { padding: 16, paddingBottom: 40 },
-  profileCard: { alignItems: 'center', backgroundColor: '#fff', borderRadius: 14, padding: 24, marginBottom: 16 },
-  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#6366f1', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  profileCard: { alignItems: 'center', backgroundColor: '#111', borderRadius: 14, padding: 24, marginBottom: 16, borderWidth: 1, borderColor: '#222' },
+  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#7c3aed', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   avatarImg: { width: 80, height: 80, borderRadius: 40, marginBottom: 12 },
   avatarText: { color: '#fff', fontSize: 28, fontWeight: '700' },
-  name: { fontSize: 18, fontWeight: '700', color: '#111827' },
-  role: { fontSize: 13, color: '#6b7280', marginTop: 2 },
-  section: { backgroundColor: '#fff', borderRadius: 14, overflow: 'hidden' },
-  navRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  name: { fontSize: 18, fontWeight: '700', color: '#fff' },
+  role: { fontSize: 13, color: '#ccff00', marginTop: 2, fontWeight: '600' },
+  section: { backgroundColor: '#111', borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: '#222' },
+  navRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' },
   navIcon: { fontSize: 18, marginRight: 12 },
-  navLabel: { flex: 1, fontSize: 15, color: '#111827' },
+  navLabel: { flex: 1, fontSize: 15, color: '#fff' },
   navLabelDanger: { color: '#ef4444' },
-  navArrow: { fontSize: 18, color: '#9ca3af' },
+  navArrow: { fontSize: 18, color: '#444' },
 })

@@ -8,7 +8,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { auth } from '../../api'
 
 export default function InstructorProfileScreen({ navigation }) {
-  const { user, login } = useAuth()
+  const { user } = useAuth()
   const [firstName, setFirstName] = useState(user?.first_name ?? '')
   const [lastName, setLastName] = useState(user?.last_name ?? '')
   const [bio, setBio] = useState(user?.bio ?? '')
@@ -74,22 +74,23 @@ export default function InstructorProfileScreen({ navigation }) {
           </View>
         )}
         {uploadingPhoto
-          ? <ActivityIndicator style={s.avatarOverlay} color="#fff" />
+          ? <ActivityIndicator style={s.avatarOverlay} color="#ccff00" />
           : <Text style={s.avatarHint}>Tap to change photo</Text>
         }
       </TouchableOpacity>
 
       <View style={s.card}>
         <Text style={s.label}>First name</Text>
-        <TextInput style={s.input} value={firstName} onChangeText={setFirstName} placeholder="First name" />
+        <TextInput style={s.input} value={firstName} onChangeText={setFirstName} placeholder="First name" placeholderTextColor="#555" />
         <Text style={s.label}>Last name</Text>
-        <TextInput style={s.input} value={lastName} onChangeText={setLastName} placeholder="Last name" />
+        <TextInput style={s.input} value={lastName} onChangeText={setLastName} placeholder="Last name" placeholderTextColor="#555" />
         <Text style={s.label}>Bio</Text>
         <TextInput
           style={[s.input, s.textarea]}
           value={bio}
           onChangeText={setBio}
           placeholder="A short bio shown to students..."
+          placeholderTextColor="#555"
           multiline
           numberOfLines={4}
           textAlignVertical="top"
@@ -98,7 +99,7 @@ export default function InstructorProfileScreen({ navigation }) {
 
       <TouchableOpacity style={s.saveBtn} onPress={handleSave} disabled={saving}>
         {saving
-          ? <ActivityIndicator color="#fff" />
+          ? <ActivityIndicator color="#000" />
           : <Text style={s.saveBtnText}>Save profile</Text>
         }
       </TouchableOpacity>
@@ -107,18 +108,18 @@ export default function InstructorProfileScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f9fafb' },
+  root: { flex: 1, backgroundColor: '#000' },
   content: { padding: 20, paddingBottom: 40 },
   avatarWrap: { alignItems: 'center', marginBottom: 24 },
-  avatar: { width: 90, height: 90, borderRadius: 45, backgroundColor: '#6366f1', alignItems: 'center', justifyContent: 'center' },
+  avatar: { width: 90, height: 90, borderRadius: 45, backgroundColor: '#7c3aed', alignItems: 'center', justifyContent: 'center' },
   avatarImg: { width: 90, height: 90, borderRadius: 45 },
   avatarText: { color: '#fff', fontSize: 30, fontWeight: '700' },
   avatarOverlay: { position: 'absolute' },
-  avatarHint: { fontSize: 12, color: '#6366f1', marginTop: 6 },
-  card: { backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 16 },
-  label: { fontSize: 12, fontWeight: '600', color: '#6b7280', marginBottom: 4, marginTop: 12 },
-  input: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, color: '#111827', backgroundColor: '#fafafa' },
+  avatarHint: { fontSize: 12, color: '#ccff00', marginTop: 6 },
+  card: { backgroundColor: '#111', borderRadius: 14, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#222' },
+  label: { fontSize: 12, fontWeight: '600', color: '#888', marginBottom: 4, marginTop: 12 },
+  input: { borderWidth: 1, borderColor: '#333', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, color: '#fff', backgroundColor: '#1a1a1a' },
   textarea: { height: 100, paddingTop: 10 },
-  saveBtn: { backgroundColor: '#6366f1', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
-  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  saveBtn: { backgroundColor: '#ccff00', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  saveBtnText: { color: '#000', fontSize: 16, fontWeight: '700' },
 })

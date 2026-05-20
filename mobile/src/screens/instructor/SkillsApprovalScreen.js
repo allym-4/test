@@ -8,16 +8,16 @@ import { useAuth } from '../../contexts/AuthContext'
 import { skills } from '../../api'
 
 const LEVEL_COLORS = {
-  beginner:     { bg: '#dbeafe', text: '#1d4ed8' },
-  intermediate: { bg: '#fef3c7', text: '#92400e' },
-  advanced:     { bg: '#d1fae5', text: '#065f46' },
-  expert:       { bg: '#ede9fe', text: '#5b21b6' },
+  beginner:     { bg: 'rgba(29,78,216,0.2)', text: '#93bbff' },
+  intermediate: { bg: 'rgba(245,158,11,0.15)', text: '#f59e0b' },
+  advanced:     { bg: 'rgba(204,255,0,0.12)', text: '#ccff00' },
+  expert:       { bg: 'rgba(176,160,255,0.15)', text: '#b0a0ff' },
 }
 
 function LevelBadge({ level }) {
   if (!level) return null
   const key = level.toLowerCase()
-  const colors = LEVEL_COLORS[key] ?? { bg: '#f3f4f6', text: '#374151' }
+  const colors = LEVEL_COLORS[key] ?? { bg: '#1a1a1a', text: '#aaa' }
   return (
     <View style={[s.levelBadge, { backgroundColor: colors.bg }]}>
       <Text style={[s.levelBadgeText, { color: colors.text }]}>
@@ -124,7 +124,7 @@ export default function SkillsApprovalScreen() {
     return (
       <View style={s.root}>
         <Text style={s.heading}>Skill Approvals</Text>
-        <ActivityIndicator style={{ marginTop: 40 }} color="#6366f1" />
+        <ActivityIndicator style={{ marginTop: 40 }} color="#ccff00" />
       </View>
     )
   }
@@ -174,15 +174,15 @@ export default function SkillsApprovalScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f9fafb' },
-  heading: { fontSize: 20, fontWeight: '700', color: '#111827', padding: 16, paddingBottom: 2 },
-  subheading: { fontSize: 13, color: '#6b7280', paddingHorizontal: 16, marginBottom: 8 },
+  root: { flex: 1, backgroundColor: '#000' },
+  heading: { fontSize: 20, fontWeight: '700', color: '#fff', padding: 16, paddingBottom: 2 },
+  subheading: { fontSize: 13, color: '#888', paddingHorizontal: 16, marginBottom: 8 },
   list: { padding: 16, paddingBottom: 40 },
   errorText: { textAlign: 'center', color: '#ef4444', marginTop: 40, paddingHorizontal: 24 },
 
   // Student group card
   groupCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#111',
     borderRadius: 14,
     marginBottom: 14,
     overflow: 'hidden',
@@ -199,8 +199,8 @@ const s = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#e5e7eb',
   },
-  groupStudentName: { fontSize: 15, fontWeight: '700', color: '#111827' },
-  groupCount: { fontSize: 12, color: '#6b7280', marginTop: 2 },
+  groupStudentName: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  groupCount: { fontSize: 12, color: '#888', marginTop: 2 },
   groupBody: { paddingHorizontal: 16, paddingBottom: 6 },
 
   // Skill row
@@ -210,10 +210,10 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#f3f4f6',
+    borderBottomColor: '#1a1a1a',
   },
   skillInfo: { flexDirection: 'row', alignItems: 'center', flex: 1, flexWrap: 'wrap', gap: 8 },
-  skillName: { fontSize: 14, fontWeight: '500', color: '#111827' },
+  skillName: { fontSize: 14, fontWeight: '500', color: '#fff' },
 
   // Level badge
   levelBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
@@ -236,6 +236,6 @@ const s = StyleSheet.create({
   // Empty state
   emptyState: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 32 },
   emptyIcon: { fontSize: 40, marginBottom: 12 },
-  emptyTitle: { fontSize: 16, fontWeight: '700', color: '#374151', marginBottom: 6 },
-  emptyBody: { fontSize: 13, color: '#9ca3af', textAlign: 'center', lineHeight: 19 },
+  emptyTitle: { fontSize: 16, fontWeight: '700', color: '#ccc', marginBottom: 6 },
+  emptyBody: { fontSize: 13, color: '#555', textAlign: 'center', lineHeight: 19 },
 })

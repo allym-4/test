@@ -15,7 +15,7 @@ function ConversationList({ onSelect }) {
   const convs = data?.results ?? data ?? []
 
   if (loading) {
-    return <ActivityIndicator style={{ marginTop: 40 }} color="#6366f1" />
+    return <ActivityIndicator style={{ marginTop: 40 }} color="#ccff00" />
   }
 
   if (convs.length === 0) {
@@ -117,7 +117,7 @@ function Thread({ conv, onBack }) {
 
       {/* Messages */}
       {loadingMsgs ? (
-        <ActivityIndicator style={{ flex: 1 }} color="#6366f1" />
+        <ActivityIndicator style={{ flex: 1 }} color="#ccff00" />
       ) : (
         <FlatList
           ref={flatRef}
@@ -171,7 +171,7 @@ function Thread({ conv, onBack }) {
           value={text}
           onChangeText={setText}
           placeholder="Type a message…"
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor="#555"
           multiline
           maxLength={2000}
         />
@@ -209,51 +209,51 @@ export default function MessagesScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f9fafb' },
+  root: { flex: 1, backgroundColor: '#000' },
 
   // List view
-  heading: { fontSize: 20, fontWeight: '700', color: '#111827', padding: 16, paddingBottom: 2 },
-  subheading: { fontSize: 13, color: '#6b7280', paddingHorizontal: 16, marginBottom: 8 },
+  heading: { fontSize: 20, fontWeight: '700', color: '#fff', padding: 16, paddingBottom: 2 },
+  subheading: { fontSize: 13, color: '#888', paddingHorizontal: 16, marginBottom: 8 },
   list: { paddingBottom: 24 },
-  empty: { textAlign: 'center', color: '#9ca3af', marginTop: 40, paddingHorizontal: 24 },
+  empty: { textAlign: 'center', color: '#555', marginTop: 40, paddingHorizontal: 24 },
 
   convRow: {
-    backgroundColor: '#fff',
+    backgroundColor: '#111',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: '#2a2a2a',
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
   convRowInner: { flexDirection: 'row', alignItems: 'center' },
   unreadDot: {
     width: 8, height: 8, borderRadius: 4,
-    backgroundColor: '#6366f1', marginRight: 8, flexShrink: 0,
+    backgroundColor: '#ccff00', marginRight: 8, flexShrink: 0,
   },
   convText: { flex: 1, minWidth: 0 },
   convMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 },
-  convName: { fontSize: 14, fontWeight: '600', color: '#111827' },
-  convNameUnread: { color: '#6366f1' },
+  convName: { fontSize: 14, fontWeight: '600', color: '#fff' },
+  convNameUnread: { color: '#ccff00' },
   unreadBadge: {
-    backgroundColor: '#6366f1', borderRadius: 10,
+    backgroundColor: '#ccff00', borderRadius: 10,
     paddingHorizontal: 7, paddingVertical: 1,
   },
   unreadBadgeText: { fontSize: 10, fontWeight: '700', color: '#fff' },
-  convPreview: { fontSize: 12, color: '#6b7280' },
-  chevron: { fontSize: 20, color: '#d1d5db', marginLeft: 8 },
+  convPreview: { fontSize: 12, color: '#888' },
+  chevron: { fontSize: 20, color: '#444', marginLeft: 8 },
 
   // Thread header
   threadHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#111',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: '#2a2a2a',
     paddingHorizontal: 4,
     paddingVertical: 10,
   },
   back: { paddingHorizontal: 12, paddingVertical: 4 },
-  backText: { color: '#6366f1', fontWeight: '600', fontSize: 15 },
-  threadTitle: { flex: 1, fontSize: 16, fontWeight: '700', color: '#111827', marginRight: 16 },
+  backText: { color: '#ccff00', fontWeight: '600', fontSize: 15 },
+  threadTitle: { flex: 1, fontSize: 16, fontWeight: '700', color: '#fff', marginRight: 16 },
 
   // Messages
   messageList: { padding: 16, paddingBottom: 8 },
@@ -263,13 +263,13 @@ const s = StyleSheet.create({
   bubble: {
     maxWidth: '75%', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10,
   },
-  bubbleLeft: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#e5e7eb' },
+  bubbleLeft: { backgroundColor: '#111', borderWidth: 1, borderColor: '#333' },
   bubbleRight: { backgroundColor: '#eef2ff', borderWidth: 1, borderColor: '#c7d2fe' },
-  bubbleSender: { fontSize: 10, color: '#9ca3af', marginBottom: 3 },
+  bubbleSender: { fontSize: 10, color: '#555', marginBottom: 3 },
   bubbleBody: { fontSize: 14, lineHeight: 20 },
-  bubbleBodyLeft: { color: '#111827' },
+  bubbleBodyLeft: { color: '#fff' },
   bubbleBodyRight: { color: '#3730a3' },
-  bubbleTime: { fontSize: 10, color: '#9ca3af', marginTop: 4, textAlign: 'right' },
+  bubbleTime: { fontSize: 10, color: '#555', marginTop: 4, textAlign: 'right' },
 
   // Input
   inputRow: {
@@ -277,24 +277,24 @@ const s = StyleSheet.create({
     alignItems: 'flex-end',
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: '#fff',
+    backgroundColor: '#111',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#e5e7eb',
+    borderTopColor: '#2a2a2a',
   },
   input: {
     flex: 1,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#1a1a1a',
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: 10,
     fontSize: 14,
-    color: '#111827',
+    color: '#fff',
     maxHeight: 100,
     marginRight: 10,
   },
   sendBtn: {
-    backgroundColor: '#6366f1',
+    backgroundColor: '#ccff00',
     borderRadius: 20,
     paddingHorizontal: 18,
     paddingVertical: 10,
