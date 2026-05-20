@@ -481,6 +481,7 @@ class WorkshopBookView(APIView):
         if student.email:
             from django.core.mail import send_mail
             from django.conf import settings
+            import threading
             date_str = workshop.date.strftime('%-d %B %Y') if workshop.date else ''
             time_str = workshop.start_time.strftime('%I:%M %p').lstrip('0') if workshop.start_time else ''
             studio_name = workshop.studio.name if workshop.studio else 'our studio'
@@ -505,8 +506,12 @@ class WorkshopBookView(APIView):
                     f"We'll let you know as soon as a spot opens up.\n\n"
                     f'Duality Pole Studio'
                 )
-            send_mail(subject=subject, message=body, from_email=settings.DEFAULT_FROM_EMAIL,
-                      recipient_list=[student.email], fail_silently=True)
+            threading.Thread(
+                target=send_mail,
+                kwargs=dict(subject=subject, message=body, from_email=settings.DEFAULT_FROM_EMAIL,
+                            recipient_list=[student.email], fail_silently=True),
+                daemon=True,
+            ).start()
 
         return Response({'id': booking.id, 'status': booking.status, 'workshop': workshop.name}, status=201)
 
