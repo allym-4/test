@@ -329,7 +329,7 @@ function CasualBookingModal({ occ, session, priceCasual, isEnrolledRate, priceCl
   )
 }
 
-function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, isEnrolledRate, priceClassPass, classPassSize, availableCredits, onCreditUsed, seasonName, seasonPrice, alreadyEnrolled, onEnrolInSeason, passCredits, onPassUsed, onBuyPass }) {
+function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, isEnrolledRate, priceClassPass, classPassSize, availableCredits, onCreditUsed, seasonName, seasonPrice, alreadyEnrolled, onEnrolInSeason, passCredits, onPassUsed, onBuyPass, isNewStudent = false, seasonStartDate = null }) {
   const [open, setOpen] = useState(false)
   const [occurrences, setOccurrences] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -337,6 +337,51 @@ function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, isEnrolle
   const [cancellingId, setCancellingId] = useState(null)
   const [error, setError] = useState('')
   const [modalOcc, setModalOcc] = useState(null)
+  const [waitlistOcc, setWaitlistOcc] = useState(null)
+  const [waitlistJoining, setWaitlistJoining] = useState(false)
+  const [exemptionOcc, setExemptionOcc] = useState(null)
+  const [exemptionSending, setExemptionSending] = useState(false)
+  const [headsUpOcc, setHeadsUpOcc] = useState(null)
+
+  const currentSeasonWeek = getCurrentSeasonWeek(seasonStartDate)
+  const isRoutine = isRoutineClass(session.name)
+  const isBeginnerFriendly = isBeginnerFriendlyClass(session.name)
+  const requiresExemption = isRoutine && currentSeasonWeek > 3 && !alreadyEnrolled
+
+  function handleOpenBooking(occ) {
+    if (isNewStudent && !isBeginnerFriendly) {
+      setHeadsUpOcc(occ)
+      return
+    }
+    if (requiresExemption) {
+      setExemptionOcc(occ)
+      return
+    }
+    setModalOcc(occ)
+  }
+
+  async function joinWaitlist(occ) {
+    setWaitlistJoining(true)
+    try {
+      await book(occ, 'casual')
+    } finally {
+      setWaitlistJoining(false)
+      setWaitlistOcc(null)
+    }
+  }
+
+  async function sendExemptionRequest(occ, reason) {
+    setExemptionSending(true)
+    try {
+      await classes.casual.exemptionRequest({ session: session.id, occ_id: occ.id, reason }).catch(() => {
+        // fallback: just record locally if API doesn't exist yet
+      })
+      setExemptionOcc(null)
+      alert('Exemption request sent! Your instructor will review and get back to you.')
+    } finally {
+      setExemptionSending(false)
+    }
+  }
 
   async function load() {
     if (occurrences !== null) return
@@ -412,6 +457,33 @@ function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, isEnrolle
           onBuyPass={onBuyPass}
         />
       )}
+      {waitlistOcc && (
+        <WaitlistModal
+          session={session}
+          occ={waitlistOcc}
+          joining={waitlistJoining}
+          onConfirm={() => joinWaitlist(waitlistOcc)}
+          onCancel={() => setWaitlistOcc(null)}
+        />
+      )}
+      {exemptionOcc && (
+        <ExemptionModal
+          session={session}
+          occ={exemptionOcc}
+          seasonWeek={currentSeasonWeek}
+          sending={exemptionSending}
+          onSend={(reason) => sendExemptionRequest(exemptionOcc, reason)}
+          onCancel={() => setExemptionOcc(null)}
+        />
+      )}
+      {headsUpOcc && (
+        <HeadsUpModal
+          session={session}
+          occ={headsUpOcc}
+          onConfirm={() => { const o = headsUpOcc; setHeadsUpOcc(null); requiresExemption ? setExemptionOcc(o) : setModalOcc(o) }}
+          onCancel={() => setHeadsUpOcc(null)}
+        />
+      )}
       <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
         <button
           onClick={toggle}
@@ -470,16 +542,16 @@ function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, isEnrolle
                         ) : hasOffer ? (
                           <span style={{ fontSize: 11, color: 'var(--lime)', fontWeight: 700 }}>Claim →</span>
                         ) : isFull ? (
-                          <button className="btn btn-ghost btn-xs" style={{ fontSize: 11 }} onClick={() => book(occ, 'casual')} disabled={isBooking}>
+                          <button className="btn btn-ghost btn-xs" style={{ fontSize: 11 }} onClick={() => setWaitlistOcc(occ)} disabled={isBooking}>
                             {isBooking ? '…' : 'Join Waitlist'}
                           </button>
                         ) : isCatchup ? (
-                          <button className="btn btn-lime btn-xs" style={{ fontSize: 11 }} onClick={() => book(occ, 'catchup')} disabled={isBooking}>
-                            {isBooking ? '…' : 'Book (Credit)'}
+                          <button className="btn btn-lime btn-xs" style={{ fontSize: 11 }} onClick={() => handleOpenBooking(occ)} disabled={isBooking}>
+                            {isBooking ? '…' : requiresExemption ? 'Request Exemption' : 'Book (Credit)'}
                           </button>
                         ) : (
-                          <button className="btn btn-lime btn-xs" style={{ fontSize: 11 }} onClick={() => setModalOcc(occ)} disabled={isBooking}>
-                            {isBooking ? '…' : 'Book'}
+                          <button className="btn btn-lime btn-xs" style={{ fontSize: 11 }} onClick={() => handleOpenBooking(occ)} disabled={isBooking}>
+                            {isBooking ? '…' : requiresExemption ? 'Request Exemption' : 'Book'}
                           </button>
                         )}
                       </div>
@@ -492,6 +564,173 @@ function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, isEnrolle
         )}
       </div>
     </>
+  )
+}
+
+// ─── Class type helpers ───────────────────────────────────────────────────────
+
+function isRoutineClass(name) {
+  if (!name) return false
+  const n = name.toLowerCase()
+  if (/level\s*[1-6]/.test(n)) return true
+  if (n.includes('strip') || n.includes('floor virgin') || n.includes('jazz') || n.includes('chair')) return true
+  return false
+}
+
+function isBeginnerFriendlyClass(name) {
+  if (!name) return true
+  const n = name.toLowerCase()
+  return /virgin|level\s*1|practice/.test(n)
+}
+
+function getCurrentSeasonWeek(startDate) {
+  if (!startDate) return 0
+  const start = new Date(startDate + 'T00:00:00')
+  const diffDays = Math.floor((new Date() - start) / (1000 * 60 * 60 * 24))
+  return Math.max(0, Math.floor(diffDays / 7) + 1)
+}
+
+// ─── Booking modals ───────────────────────────────────────────────────────────
+
+function WaitlistModal({ session, occ, onConfirm, onCancel, joining }) {
+  const dateLabel = occ?.date
+    ? new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+    : null
+  const instructor = session?.instructor_detail?.display_name || session?.instructor_detail?.first_name
+  const timeLabel = session?.start_time?.slice(0, 5)
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1002, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)', padding: 16 }}
+      onClick={e => e.target === e.currentTarget && onCancel()}>
+      <div style={{ background: '#111', borderRadius: 20, padding: '28px 24px', width: '100%', maxWidth: 480 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>Join waitlist</div>
+          <button onClick={onCancel} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 10, color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, padding: '8px 14px', cursor: 'pointer' }}>CLOSE</button>
+        </div>
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>{session?.name}</div>
+        <div style={{ fontSize: 13, color: '#666', marginBottom: 20 }}>
+          {[dateLabel, timeLabel, instructor].filter(Boolean).join(' · ')}
+        </div>
+        <div style={{ background: 'rgba(176,160,255,0.1)', border: '1px solid rgba(176,160,255,0.3)', borderRadius: 12, padding: '18px 20px', marginBottom: 24, fontSize: 15, color: '#ccc', lineHeight: 1.7 }}>
+          We'll notify you by push notification and email the moment a spot opens in this class. You'll have <strong style={{ color: '#b0a0ff' }}>12 hours</strong> to confirm before the spot is offered to the next person.
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={onConfirm}
+            disabled={joining}
+            style={{ flex: 1, background: '#b0a0ff', color: '#000', border: 'none', borderRadius: 12, padding: '18px 0', fontWeight: 900, fontSize: 13, letterSpacing: 0.5, cursor: joining ? 'default' : 'pointer' }}
+          >
+            {joining ? '…' : 'ADD ME TO THE WAITLIST'}
+          </button>
+          <button
+            onClick={onCancel}
+            style={{ flex: 1, background: '#1a1a1a', color: '#888', border: '1px solid #333', borderRadius: 12, padding: '18px 0', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+          >
+            CANCEL
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ExemptionModal({ session, occ, seasonWeek, onSend, onCancel, sending }) {
+  const [reason, setReason] = useState('')
+  const dateLabel = occ?.date
+    ? new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+    : null
+  const instructor = session?.instructor_detail?.display_name || session?.instructor_detail?.first_name
+  const timeLabel = session?.start_time?.slice(0, 5)
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1002, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)', padding: 16 }}
+      onClick={e => e.target === e.currentTarget && onCancel()}>
+      <div style={{ background: '#111', borderRadius: 20, padding: '28px 24px', width: '100%', maxWidth: 520 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26, lineHeight: 1.2 }}>Apply for an<br />exemption</div>
+          <button onClick={onCancel} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 10, color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, padding: '8px 14px', cursor: 'pointer', flexShrink: 0, marginLeft: 16 }}>CLOSE</button>
+        </div>
+        <div style={{ fontSize: 13, color: '#666', marginBottom: 18 }}>
+          {[session?.name, dateLabel, timeLabel, instructor].filter(Boolean).join(' · ')}
+        </div>
+        <div style={{ background: 'rgba(255,140,0,0.1)', border: '1px solid rgba(255,140,0,0.3)', borderRadius: 10, padding: '14px 16px', marginBottom: 22 }}>
+          <span style={{ color: '#ffaa00', fontWeight: 700 }}>Heads up: </span>
+          <span style={{ fontSize: 14, color: '#ccc', lineHeight: 1.6 }}>
+            This class runs a routine and you'd be joining in week {seasonWeek} of 8. You'll be behind the group from day one — instructors may not be able to catch you up mid-season.
+          </span>
+        </div>
+        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>Why do you want to join this class?</div>
+        <div style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>Tell us a bit about your background and why you'd like to join mid-season. Your instructor will review and get back to you.</div>
+        <textarea
+          value={reason}
+          onChange={e => setReason(e.target.value)}
+          placeholder="e.g. I've done this routine before at another studio, or I have a strong background in this style and feel confident catching up..."
+          rows={4}
+          style={{ width: '100%', background: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: 10, color: '#fff', fontSize: 13, padding: '12px 14px', resize: 'vertical', boxSizing: 'border-box', outline: 'none', marginBottom: 20, lineHeight: 1.6 }}
+        />
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={() => onSend(reason)}
+            disabled={sending || !reason.trim()}
+            style={{ flex: 1, background: reason.trim() ? '#ccff00' : '#333', color: reason.trim() ? '#000' : '#666', border: 'none', borderRadius: 12, padding: '18px 0', fontWeight: 900, fontSize: 13, letterSpacing: 0.5, cursor: reason.trim() ? 'pointer' : 'default' }}
+          >
+            {sending ? '…' : 'SEND REQUEST'}
+          </button>
+          <button
+            onClick={onCancel}
+            style={{ flex: 1, background: '#1a1a1a', color: '#888', border: '1px solid #333', borderRadius: 12, padding: '18px 0', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+          >
+            CANCEL
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function HeadsUpModal({ session, occ, onConfirm, onCancel }) {
+  const [checked, setChecked] = useState(false)
+  const dateLabel = occ?.date ? new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : null
+  const instructor = session?.instructor_detail?.display_name || session?.instructor_detail?.first_name
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1002, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)', padding: 16 }}
+      onClick={e => e.target === e.currentTarget && onCancel()}>
+      <div style={{ background: '#111', borderRadius: 20, padding: '32px 28px', width: '100%', maxWidth: 520 }}>
+        <div style={{ textAlign: 'center', fontSize: 40, marginBottom: 14 }}>⚠️</div>
+        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, textAlign: 'center', marginBottom: 10 }}>Heads up</div>
+        <div style={{ fontSize: 13, color: '#666', textAlign: 'center', marginBottom: 20 }}>
+          {[session?.name, dateLabel, session?.start_time?.slice(0, 5), instructor].filter(Boolean).join(' · ')}
+        </div>
+        <div style={{ fontSize: 15, color: '#fff', lineHeight: 1.7, marginBottom: 24, textAlign: 'center' }}>
+          This class isn't designed for first-timers. It may involve techniques and terminology that assume prior experience. We recommend starting with a Virgin or Level 1 class first.
+        </div>
+        <div
+          onClick={() => setChecked(c => !c)}
+          style={{ display: 'flex', alignItems: 'flex-start', gap: 14, cursor: 'pointer', marginBottom: 24, padding: '14px 16px', borderRadius: 10, border: `1px solid ${checked ? '#ccff00' : '#333'}`, background: checked ? 'rgba(204,255,0,0.04)' : 'transparent' }}
+        >
+          <div style={{ width: 20, height: 20, borderRadius: 4, border: `2px solid ${checked ? '#ccff00' : '#555'}`, background: checked ? '#ccff00' : 'transparent', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
+            {checked && <span style={{ fontSize: 12, color: '#000', fontWeight: 900 }}>✓</span>}
+          </div>
+          <span style={{ fontSize: 14, lineHeight: 1.5 }}>I understand this isn't a beginner class and I'm happy to proceed with the booking.</span>
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={onConfirm}
+            disabled={!checked}
+            style={{ flex: 1, background: checked ? '#ccff00' : '#333', color: checked ? '#000' : '#666', border: 'none', borderRadius: 12, padding: '16px 0', fontWeight: 900, fontSize: 13, letterSpacing: 0.5, cursor: checked ? 'pointer' : 'default' }}
+          >
+            CONTINUE TO BOOKING
+          </button>
+          <button
+            onClick={onCancel}
+            style={{ flex: 1, background: '#1a1a1a', color: '#888', border: '1px solid #333', borderRadius: 12, padding: '16px 0', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+          >
+            CANCEL
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -1153,6 +1392,10 @@ export default function StudentBook() {
   const [cancellingWorkshopId, setCancellingWorkshopId] = useState(null)
   const [workshopBooked, setWorkshopBooked] = useState({})
   const [workshopError, setWorkshopError] = useState('')
+  const [casualViewMode, setCasualViewMode] = useState('list')
+  const [casualEligibleOnly, setCasualEligibleOnly] = useState(false)
+  const [casualHideUnavailable, setCasualHideUnavailable] = useState(false)
+  const [casualWeekOffset, setCasualWeekOffset] = useState(0)
 
   function addToCart(session, type, price) {
     if (type === 'waitlist' || type === 'casual-waitlist') {
@@ -1234,13 +1477,42 @@ export default function StudentBook() {
     const sessionIds = selectedSessions.map(s => s.id)
     const count = selectedSessions.length
     const description = `Season enrolment — ${count} class${count !== 1 ? 'es' : ''}`
+    const season = allSeasons.find(s => s.id === selectedSessions[0]?.season)
     setCheckout({
+      sessions: selectedSessions,
       sessionIds,
       type: 'season',
       amount: incrementalPrice,
       description,
-      session: selectedSessions[0], // kept for legacy compat
+      seasonStartDate: season?.start_date || null,
+      session: selectedSessions[0],
     })
+  }
+
+  async function handleCashPayment() {
+    if (!checkout) return
+    const ids = checkout.sessionIds || (checkout.session ? [checkout.session.id] : [])
+    for (const sessionId of ids) {
+      try {
+        await enrolments.create({ session: sessionId, status: 'active', enrolment_type: checkout.type || 'casual', payment_method: 'cash' })
+      } catch {}
+    }
+    setBooked(b => [...b, ...ids])
+    setCheckout(null)
+  }
+
+  async function handlePaymentPlan() {
+    if (!checkout) return
+    const ids = checkout.sessionIds || (checkout.session ? [checkout.session.id] : [])
+    try {
+      await paymentsApi.plans.create({
+        description: checkout.description,
+        total_amount: checkout.amount,
+        session_ids: ids,
+      })
+    } catch {}
+    setCheckout(null)
+    alert('Payment plan request submitted. Admin will be in touch shortly.')
   }
 
   async function cancelWorkshop(workshop) {
@@ -1331,10 +1603,15 @@ export default function StudentBook() {
         <CheckoutModal
           amount={checkout.amount}
           description={checkout.description}
+          sessions={checkout.sessions}
           sessionIds={checkout.sessionIds}
           saveMethod={true}
+          allowDeposit={checkout.type === 'season'}
+          seasonStartDate={checkout.seasonStartDate}
           onSuccess={handlePaymentSuccess}
           onClose={() => setCheckout(null)}
+          onCash={checkout.type === 'season' ? handleCashPayment : null}
+          onPaymentPlan={checkout.type === 'season' ? handlePaymentPlan : null}
         />
       )}
 
@@ -1397,59 +1674,205 @@ export default function StudentBook() {
 
       {tab === 'casual' && (
         <div>
-          <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-            <div style={{ flex: 1, minWidth: 220, background: 'rgba(204,255,0,0.06)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 12, padding: '14px 18px' }}>
-              <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>Drop-in Rate: ${casualRate} per class</div>
-              <div style={{ fontSize: 12, color: 'var(--grey)' }}>Pick a class below then choose the date you want to attend.</div>
-            </div>
-            <div style={{
-              flex: 1, minWidth: 220,
-              background: availableCredits > 0 ? 'rgba(176,160,255,0.08)' : 'rgba(255,255,255,0.03)',
-              border: `1px solid ${availableCredits > 0 ? 'rgba(176,160,255,0.3)' : 'var(--border)'}`,
-              borderRadius: 12, padding: '14px 18px',
-            }}>
-              <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2, color: availableCredits > 0 ? '#b0a0ff' : 'var(--white)' }}>
-                {availableCredits > 0 ? `${availableCredits} make-up credit${availableCredits !== 1 ? 's' : ''} available` : 'No make-up credits'}
+          {/* First time banner */}
+          {!hasEverEnrolled && (
+            <div style={{ background: 'rgba(204,255,0,0.07)', border: '1px solid rgba(204,255,0,0.25)', borderRadius: 14, padding: '16px 20px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+              <div>
+                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, color: '#ccff00', marginBottom: 4 }}>First time? 🔥</div>
+                <div style={{ fontSize: 13, color: '#fff', marginBottom: 2 }}>Book a trial class for just <span style={{ color: '#ccff00' }}>${priceTrial}</span> and see if pole is for you.</div>
+                <div style={{ fontSize: 12, color: '#666' }}>No experience needed — beginner-friendly intro</div>
               </div>
-              <div style={{ fontSize: 12, color: 'var(--grey)' }}>
-                {availableCredits > 0 ? 'Select a class and use a credit for free.' : 'Credits are earned when you cancel 4+ hours before class.'}
-              </div>
-            </div>
-          </div>
-
-          {loading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
-            </div>
-          ) : sessions.length === 0 ? <EmptyState /> : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {sessions.map(s => {
-                const alreadyEnrolled = (activeEnrolData?.results || activeEnrolData || []).some(
-                  e => e.class_session === s.id && e.enrolment_type === 'course'
-                )
-                return (
-                  <OccurrenceBookingPanel
-                    key={s.id}
-                    session={s}
-                    enrolmentType="casual"
-                    priceCasual={casualRate}
-                    isEnrolledRate={activeSeasonCount > 0}
-                    priceClassPass={priceClassPass}
-                    classPassSize={classPassSize}
-                    availableCredits={availableCredits}
-                    onCreditUsed={refetchCredits}
-                    seasonName={upcomingSeason?.name}
-                    seasonPrice={seasonPrice}
-                    alreadyEnrolled={alreadyEnrolled}
-                    onEnrolInSeason={() => setTab('season')}
-                    passCredits={availablePassCredits}
-                    onPassUsed={refetchPasses}
-                    onBuyPass={() => setBuyingPass(true)}
-                  />
-                )
-              })}
+              <button onClick={() => setTab('trial')} style={{ background: '#ccff00', color: '#000', border: 'none', borderRadius: 10, padding: '12px 20px', fontWeight: 900, fontSize: 12, letterSpacing: 0.5, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                BOOK TRIAL →
+              </button>
             </div>
           )}
+
+          {/* Credits banner */}
+          {availableCredits > 0 && (
+            <div style={{ background: 'rgba(176,160,255,0.08)', border: '1px solid rgba(176,160,255,0.3)', borderRadius: 12, padding: '12px 16px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ background: '#b0a0ff', color: '#000', borderRadius: 8, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 14, flexShrink: 0 }}>{availableCredits}</div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#b0a0ff' }}>Catch-up credit{availableCredits !== 1 ? 's' : ''} available</div>
+                <div style={{ fontSize: 12, color: '#666' }}>
+                  Expires end of {upcomingSeason?.name || 'current season'} — use {availableCredits === 1 ? 'it' : 'them'} to attend any eligible class for free
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Level info bar */}
+          {user?.level && (
+            <div style={{ background: 'rgba(176,160,255,0.07)', border: '1px solid rgba(176,160,255,0.2)', borderRadius: 10, padding: '10px 14px', marginBottom: 12, fontSize: 13, color: '#b0a0ff', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 14 }}>◆</span>
+              Showing classes eligible for Level {user.level}. Classes outside your level are shown with a lock.
+            </div>
+          )}
+
+          {/* Toggles */}
+          <div style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: 12, padding: '4px 0', marginBottom: 12 }}>
+            {[
+              { label: 'Show my eligible classes only', value: casualEligibleOnly, onChange: setCasualEligibleOnly },
+              { label: 'Hide unavailable classes', sub: 'Hides routine-based classes you can\'t join mid-season', value: casualHideUnavailable, onChange: setCasualHideUnavailable },
+            ].map(({ label, sub, value, onChange }) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: sub ? '1px solid #111' : 'none' }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 500 }}>{label}</div>
+                  {sub && <div style={{ fontSize: 12, color: '#555', marginTop: 2 }}>{sub}</div>}
+                </div>
+                <button
+                  onClick={() => onChange(v => !v)}
+                  style={{ width: 44, height: 24, borderRadius: 12, background: value ? '#ccff00' : '#333', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}
+                >
+                  <span style={{ position: 'absolute', top: 3, left: value ? 22 : 3, width: 18, height: 18, borderRadius: 9, background: '#000', transition: 'left 0.2s' }} />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* List / Calendar toggle */}
+          <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
+            {[['list', '≡ List'], ['calendar', '▦ Calendar']].map(([mode, label]) => (
+              <button
+                key={mode}
+                onClick={() => setCasualViewMode(mode)}
+                style={{ padding: '8px 18px', borderRadius: 8, border: `1px solid ${casualViewMode === mode ? '#ccff00' : '#333'}`, background: casualViewMode === mode ? 'rgba(204,255,0,0.1)' : 'transparent', color: casualViewMode === mode ? '#ccff00' : '#666', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Calendar view */}
+          {casualViewMode === 'calendar' && (() => {
+            const today = new Date()
+            const dayOfWeek = today.getDay()
+            const monday = new Date(today)
+            monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) + casualWeekOffset * 7)
+            const weekDays = Array.from({ length: 6 }, (_, i) => { const d = new Date(monday); d.setDate(monday.getDate() + i); return d })
+            const weekLabel = `Week of ${monday.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} – ${weekDays[5].toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`
+
+            function sessionChipColor(name) {
+              const n = (name || '').toLowerCase()
+              if (/practice/.test(n)) return { bg: 'rgba(13,115,119,0.5)', border: '#0d7377', text: '#4dd0d4' }
+              if (/level\s*1/.test(n)) return { bg: 'rgba(204,255,0,0.2)', border: 'rgba(204,255,0,0.4)', text: '#ccff00' }
+              if (/level\s*2/.test(n)) return { bg: 'rgba(176,160,255,0.25)', border: 'rgba(176,160,255,0.5)', text: '#b0a0ff' }
+              if (/level\s*[3-6]/.test(n)) return { bg: 'rgba(255,140,0,0.2)', border: 'rgba(255,140,0,0.4)', text: '#ff9500' }
+              if (/virgin/.test(n)) return { bg: 'rgba(120,80,220,0.3)', border: 'rgba(120,80,220,0.5)', text: '#9575d9' }
+              if (/dance/.test(n)) return { bg: 'rgba(255,80,160,0.2)', border: 'rgba(255,80,160,0.35)', text: '#ff70b8' }
+              return { bg: 'rgba(80,80,80,0.25)', border: '#333', text: '#888' }
+            }
+
+            const activeSeason = allSeasons.find(s => s.status === 'active')
+            const activeEnrols = activeEnrolData?.results || activeEnrolData || []
+
+            let calendarSessions = sessions
+            if (casualEligibleOnly && user?.level) {
+              calendarSessions = calendarSessions.filter(s => {
+                const cl = getClassLevel(s.name)
+                return cl === 0 || cl <= user.level
+              })
+            }
+            if (casualHideUnavailable && activeSeason) {
+              const week = getCurrentSeasonWeek(activeSeason.start_date)
+              if (week > 3) {
+                calendarSessions = calendarSessions.filter(s => !isRoutineClass(s.name) || activeEnrols.some(e => e.class_session === s.id))
+              }
+            }
+
+            return (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <button onClick={() => setCasualWeekOffset(w => w - 1)} style={{ background: 'none', border: '1px solid #333', borderRadius: 8, color: '#888', padding: '6px 14px', fontSize: 13, cursor: 'pointer' }}>← Prev</button>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#ccc' }}>{weekLabel}</span>
+                  <button onClick={() => setCasualWeekOffset(w => w + 1)} style={{ background: 'none', border: '1px solid #333', borderRadius: 8, color: '#888', padding: '6px 14px', fontSize: 13, cursor: 'pointer' }}>Next →</button>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6 }}>
+                  {weekDays.map((date, idx) => {
+                    const daySessions = calendarSessions.filter(s => s.day_of_week === idx)
+                    const dayNames = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+                    const isToday = date.toDateString() === today.toDateString()
+                    return (
+                      <div key={idx}>
+                        <div style={{ textAlign: 'center', marginBottom: 6 }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: '#555', letterSpacing: '0.5px' }}>{dayNames[idx]}</div>
+                          <div style={{ fontSize: 15, fontWeight: 700, color: isToday ? '#ccff00' : '#fff' }}>{date.getDate()}</div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          {daySessions.map(s => {
+                            const c = sessionChipColor(s.name)
+                            const isFull = (s.capacity || 14) - (s.enrolled_count || 0) <= 0
+                            return (
+                              <button
+                                key={s.id}
+                                onClick={() => setCasualViewMode('list')}
+                                style={{ background: isFull ? 'rgba(40,40,40,0.5)' : c.bg, border: `1px solid ${isFull ? '#222' : c.border}`, borderRadius: 6, padding: '4px 6px', fontSize: 10, color: isFull ? '#444' : c.text, cursor: 'pointer', textAlign: 'left', width: '100%', lineHeight: 1.3, fontWeight: 600, wordBreak: 'break-word' }}
+                              >
+                                {s.name}
+                                {isFull && <span style={{ fontSize: 9, display: 'block', color: '#555', marginTop: 1 }}>full</span>}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
+
+          {/* List view */}
+          {casualViewMode === 'list' && (() => {
+            const activeSeason = allSeasons.find(s => s.status === 'active')
+            const activeEnrols = activeEnrolData?.results || activeEnrolData || []
+            const seasonWeek = getCurrentSeasonWeek(activeSeason?.start_date)
+
+            let filteredSessions = sessions
+            if (casualEligibleOnly && user?.level) {
+              filteredSessions = filteredSessions.filter(s => {
+                const cl = getClassLevel(s.name)
+                return cl === 0 || cl <= user.level
+              })
+            }
+            if (casualHideUnavailable && activeSeason && seasonWeek > 3) {
+              filteredSessions = filteredSessions.filter(s => !isRoutineClass(s.name) || activeEnrols.some(e => e.class_session === s.id))
+            }
+
+            return loading ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
+              </div>
+            ) : filteredSessions.length === 0 ? <EmptyState /> : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {filteredSessions.map(s => {
+                  const alreadyEnrolled = activeEnrols.some(e => e.class_session === s.id && e.enrolment_type === 'course')
+                  return (
+                    <OccurrenceBookingPanel
+                      key={s.id}
+                      session={s}
+                      enrolmentType="casual"
+                      priceCasual={casualRate}
+                      isEnrolledRate={activeSeasonCount > 0}
+                      priceClassPass={priceClassPass}
+                      classPassSize={classPassSize}
+                      availableCredits={availableCredits}
+                      onCreditUsed={refetchCredits}
+                      seasonName={upcomingSeason?.name}
+                      seasonPrice={seasonPrice}
+                      alreadyEnrolled={alreadyEnrolled}
+                      onEnrolInSeason={() => setTab('season')}
+                      passCredits={availablePassCredits}
+                      onPassUsed={refetchPasses}
+                      onBuyPass={() => setBuyingPass(true)}
+                      isNewStudent={!hasEverEnrolled}
+                      seasonStartDate={activeSeason?.start_date}
+                    />
+                  )
+                })}
+              </div>
+            )
+          })()}
         </div>
       )}
 
