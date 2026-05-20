@@ -714,6 +714,7 @@ function SeasonTab({
   activeSeasonCount,
   seasonPricingConfig,
   priceSeason,
+  discountTiers,
   userLevel,
   onProceedToCheckout,
 }) {
@@ -750,7 +751,17 @@ function SeasonTab({
     ? sessions.filter(s => s.season === activeSeason.id)
     : []
 
-  // discountTiers / incrementalPrice calculated below after studioSettings is loaded
+  function getClassIncrementalPrice(session, position) {
+    const base = parseFloat(session.season_base_price ?? priceSeason)
+    const discount = parseFloat((discountTiers || {})[position] ?? (discountTiers || {})[String(position)] ?? 0)
+    return Math.max(0, base - discount)
+  }
+
+  const incrementalPrice = selectedSessions.reduce((sum, session, idx) => {
+    const position = activeSeasonCount + idx + 1
+    return sum + getClassIncrementalPrice(session, position)
+  }, 0)
+  const totalPrice = incrementalPrice
 
   function toggleSession(session) {
     setSelectedSessions(prev => {
@@ -1077,6 +1088,7 @@ export default function StudentBook() {
   const priceTrial = parseFloat(studioSettings?.price_trial || 25)
 
   const discountTiers = studioSettings?.season_discount_tiers || {2:100,3:130,4:150,5:170,6:170}
+  // passed to SeasonTab which owns selectedSessions state
 
   // Season multi-class pricing: look up price for (current active enrolments + 1)
   const activeSeasonCount = (activeEnrolData?.results || activeEnrolData || []).filter(e => e.enrolment_type === 'course').length
@@ -1091,18 +1103,6 @@ export default function StudentBook() {
     return tier ? parseFloat(tier.price) : priceSeason
   }
   const seasonPrice = getSeasonPrice(1)
-
-  function getClassIncrementalPrice(session, position) {
-    const base = parseFloat(session.season_base_price ?? priceSeason)
-    const discount = parseFloat(discountTiers[position] ?? discountTiers[String(position)] ?? 0)
-    return Math.max(0, base - discount)
-  }
-
-  const incrementalPrice = selectedSessions.reduce((sum, session, idx) => {
-    const position = activeSeasonCount + idx + 1
-    return sum + getClassIncrementalPrice(session, position)
-  }, 0)
-  const totalPrice = incrementalPrice
 
   const availableCredits = (creditsData?.results || creditsData || []).length
 
@@ -1351,6 +1351,7 @@ export default function StudentBook() {
           activeSeasonCount={activeSeasonCount}
           seasonPricingConfig={seasonPricingConfig}
           priceSeason={priceSeason}
+          discountTiers={discountTiers}
           userLevel={user?.level || null}
           onProceedToCheckout={handleSeasonProceed}
         />
