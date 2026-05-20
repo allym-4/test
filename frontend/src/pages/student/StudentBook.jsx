@@ -754,6 +754,45 @@ function HeadsUpModal({ session, occ, onConfirm, onCancel }) {
   )
 }
 
+function SeasonLevelHeadsUpModal({ session, onConfirm, onCancel }) {
+  const dayLabel = DAYS_SHORT[session?.day_of_week] || ''
+  const timeLabel = session?.start_time ? formatTime(session.start_time) : ''
+  const classLevel = getClassLevel(session?.name || '')
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1002, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)', padding: 16 }}
+      onClick={e => e.target === e.currentTarget && onCancel()}>
+      <div style={{ background: '#111', borderRadius: 20, padding: '32px 28px', width: '100%', maxWidth: 520 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28 }}>Heads up</div>
+          <button onClick={onCancel} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 10, color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, padding: '8px 14px', cursor: 'pointer' }}>CLOSE</button>
+        </div>
+        <div style={{ textAlign: 'center', fontSize: 36, marginBottom: 20, color: '#888' }}>△</div>
+        <div style={{ fontSize: 18, fontWeight: 700, textAlign: 'center', marginBottom: 12 }}>
+          {session?.name} · {dayLabel} {timeLabel}
+        </div>
+        <div style={{ fontSize: 15, color: '#ccc', lineHeight: 1.7, textAlign: 'center', marginBottom: 32 }}>
+          Your current level doesn't match this class. Please make sure you've checked with your instructor before enrolling — they'll be able to confirm if you're ready to step up.
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={onConfirm}
+            style={{ flex: 1, background: '#ccff00', color: '#000', border: 'none', borderRadius: 12, padding: '18px 0', fontWeight: 900, fontSize: 13, letterSpacing: 0.5, cursor: 'pointer' }}
+          >
+            I'VE CHECKED — BOOK IT
+          </button>
+          <button
+            onClick={onCancel}
+            style={{ flex: 1, background: '#1a1a1a', color: '#888', border: '1px solid #333', borderRadius: 12, padding: '18px 0', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+          >
+            CANCEL
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Season booking helpers ──────────────────────────────────────────────────
 
 function getClassLevel(name) {
@@ -780,7 +819,7 @@ function formatTime(timeStr) {
   return `${hour}:${String(m).padStart(2, '0')}${ampm}`
 }
 
-function SeasonClassRow({ session, userLevel, selected, onToggle, onJoinWaitlist, demoNoLevel }) {
+function SeasonClassRow({ session, userLevel, selected, onToggle, onJoinWaitlist, onLevelOverride, demoNoLevel }) {
   const classLevel = getClassLevel(session.name)
   const effectiveUserLevel = demoNoLevel ? null : userLevel
   const spotsLeft = (session.capacity || 14) - (session.enrolled_count || 0)
@@ -815,7 +854,10 @@ function SeasonClassRow({ session, userLevel, selected, onToggle, onJoinWaitlist
 
   return (
     <div
-      onClick={() => !locked && !isFull && onToggle(session)}
+      onClick={() => {
+        if (locked && !isFull && onLevelOverride) { onLevelOverride(session); return }
+        if (!locked && !isFull) onToggle(session)
+      }}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -1021,6 +1063,7 @@ function SeasonTab({
   const [filterLevel, setFilterLevel] = useState('all')
   const [showEligibleOnly, setShowEligibleOnly] = useState(false)
   const [demoNoLevel, setDemoNoLevel] = useState(false)
+  const [levelOverrideSession, setLevelOverrideSession] = useState(null)
 
   // Pick the first bookable season by default
   const activeSeason = bookableSeasons.find(s => s.id === selectedSeasonId) || bookableSeasons[0] || null
@@ -1324,6 +1367,7 @@ function SeasonTab({
                       selected={!!selectedSessions.find(sel => sel.id === s.id)}
                       onToggle={toggleSession}
                       onJoinWaitlist={onJoinSeasonWaitlist}
+                      onLevelOverride={setLevelOverrideSession}
                       demoNoLevel={demoNoLevel}
                     />
                   ))}
@@ -1344,6 +1388,14 @@ function SeasonTab({
         onProceed={handleProceed}
         onRemove={removeSession}
       />
+
+      {levelOverrideSession && (
+        <SeasonLevelHeadsUpModal
+          session={levelOverrideSession}
+          onConfirm={() => { toggleSession(levelOverrideSession); setLevelOverrideSession(null) }}
+          onCancel={() => setLevelOverrideSession(null)}
+        />
+      )}
     </div>
   )
 }

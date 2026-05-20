@@ -159,38 +159,150 @@ export default function StudentBilling() {
       )}
 
       {/* Invoice modal */}
-      {showInvoiceModal && (
-        <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          onClick={e => { if (e.target === e.currentTarget) setShowInvoiceModal(null) }}
-        >
-          <div className="card" style={{ width: 'min(380px, calc(100vw - 32px))', padding: 24 }}>
-            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 4 }}>
-              Invoice #{showInvoiceModal.id}
+      {showInvoiceModal && (() => {
+        const inv = showInvoiceModal
+        const isCharge = inv.payment_type === 'charge' || inv.payment_type === 'no_show_fee'
+        const isPayment = inv.payment_type === 'payment'
+        const amount = Math.abs(parseFloat(inv.amount || 0))
+        const dateStr = new Date(inv.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })
+        const statusLabel = isPayment ? 'PAID' : isCharge ? 'CHARGED' : 'ISSUED'
+        const statusColor = isPayment ? '#ccff00' : isCharge ? '#ff6b6b' : '#b0a0ff'
+
+        function printInvoice() {
+          const w = window.open('', '_blank')
+          w.document.write(`<!DOCTYPE html><html><head><title>Invoice #${inv.id} — Duality Pole Studio</title><style>
+            @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;600;700&display=swap');
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: 'Archivo', Arial, sans-serif; background: #fff; color: #111; padding: 48px; max-width: 680px; margin: 0 auto; }
+            .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; padding-bottom: 24px; border-bottom: 2px solid #111; }
+            .studio-name { font-family: 'Archivo Black', Arial Black, sans-serif; font-size: 24px; letter-spacing: -0.5px; }
+            .studio-sub { font-size: 13px; color: #666; margin-top: 4px; }
+            .inv-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 4px; }
+            .inv-num { font-size: 22px; font-weight: 700; }
+            .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 40px; }
+            .meta-block label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: #888; display: block; margin-bottom: 4px; }
+            .meta-block span { font-size: 14px; font-weight: 600; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 32px; }
+            thead th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: #888; padding: 10px 0; border-bottom: 1px solid #ddd; text-align: left; }
+            thead th:last-child { text-align: right; }
+            tbody td { padding: 16px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+            tbody td:last-child { text-align: right; font-weight: 700; }
+            .total-row { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; }
+            .total-label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+            .total-amount { font-size: 26px; font-weight: 900; }
+            .status-badge { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; background: ${isPayment ? '#ccff00' : isCharge ? '#ffe0e0' : '#ede9ff'}; color: ${isPayment ? '#000' : isCharge ? '#c00' : '#5538c8'}; }
+            .footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }
+            @media print { body { padding: 24px; } }
+          </style></head><body>
+            <div class="header">
+              <div>
+                <div class="studio-name">DUALITY POLE</div>
+                <div class="studio-sub">dualitypole.com · Level 1, 88 Kippax St, Surry Hills</div>
+              </div>
+              <div style="text-align:right">
+                <div class="inv-label">Invoice</div>
+                <div class="inv-num">#${inv.id}</div>
+              </div>
             </div>
-            <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 16 }}>
-              {showInvoiceModal.description || showInvoiceModal.payment_type?.replace(/_/g, ' ')}
+            <div class="meta">
+              <div class="meta-block">
+                <label>Billed to</label>
+                <span>${user?.first_name || ''} ${user?.last_name || ''}</span>
+              </div>
+              <div class="meta-block" style="text-align:right">
+                <label>Date issued</label>
+                <span>${dateStr}</span>
+              </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, fontWeight: 500, marginBottom: 6 }}>
-              <span>Amount</span>
-              <span>${Math.abs(parseFloat(showInvoiceModal.amount || 0)).toFixed(2)}</span>
+            <table>
+              <thead><tr><th>Description</th><th>Type</th><th>Amount</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>${inv.description || inv.payment_type?.replace(/_/g, ' ')}</td>
+                  <td><span class="status-badge">${statusLabel}</span></td>
+                  <td>$${amount.toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="total-row">
+              <span class="total-label">Total</span>
+              <span class="total-amount">$${amount.toFixed(2)}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--grey)', marginBottom: 20 }}>
-              <span>Date</span>
-              <span>{new Date(showInvoiceModal.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+            <div class="footer">
+              Thank you for being part of Duality Pole Studio. · intrigued@dualitypole.com
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn btn-lime btn-sm" onClick={() => {
-                const w = window.open('', '_blank')
-                w.document.write(`<html><head><title>Invoice #${showInvoiceModal.id}</title><style>body{font-family:sans-serif;padding:32px;max-width:400px}h2{margin-bottom:24px}table{width:100%;border-collapse:collapse}td{padding:8px 0;border-bottom:1px solid #eee}td:last-child{text-align:right}</style></head><body><h2>Invoice #${showInvoiceModal.id}</h2><table><tr><td>Description</td><td>${showInvoiceModal.description || showInvoiceModal.payment_type?.replace(/_/g, ' ')}</td></tr><tr><td>Amount</td><td>$${Math.abs(parseFloat(showInvoiceModal.amount || 0)).toFixed(2)}</td></tr><tr><td>Date</td><td>${new Date(showInvoiceModal.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}</td></tr></table></body></html>`)
-                w.document.close()
-                w.print()
-              }}>Download</button>
-              <button className="btn btn-ghost btn-sm" onClick={() => setShowInvoiceModal(null)}>Close</button>
+            <script>window.onload = function(){ window.print() }</script>
+          </body></html>`)
+          w.document.close()
+        }
+
+        return (
+          <div
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+            onClick={e => { if (e.target === e.currentTarget) setShowInvoiceModal(null) }}
+          >
+            <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: 20, width: '100%', maxWidth: 480, overflow: 'hidden' }}>
+              {/* Invoice header */}
+              <div style={{ background: '#000', padding: '24px 28px', borderBottom: '1px solid #222' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, letterSpacing: '-0.3px', marginBottom: 2 }}>DUALITY POLE</div>
+                    <div style={{ fontSize: 11, color: '#555' }}>dualitypole.com</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.8px', color: '#555', marginBottom: 2 }}>Invoice</div>
+                    <div style={{ fontSize: 20, fontWeight: 700 }}>#{inv.id}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Invoice body */}
+              <div style={{ padding: '24px 28px' }}>
+                {/* Meta row */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
+                  <div>
+                    <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.8px', color: '#555', marginBottom: 3 }}>Date</div>
+                    <div style={{ fontSize: 14, fontWeight: 600 }}>{dateStr}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.8px', color: '#555', marginBottom: 3 }}>Status</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: statusColor, border: `1px solid ${statusColor}40`, borderRadius: 20, padding: '2px 10px', display: 'inline-block' }}>{statusLabel}</div>
+                  </div>
+                </div>
+
+                {/* Line item */}
+                <div style={{ background: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: 12, padding: '16px 18px', marginBottom: 20 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 3 }}>{inv.description || inv.payment_type?.replace(/_/g, ' ')}</div>
+                      <div style={{ fontSize: 11, color: '#555' }}>Duality Pole Studio · Level 1, 88 Kippax St, Surry Hills</div>
+                    </div>
+                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: statusColor, flexShrink: 0 }}>
+                      ${amount.toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Total */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4, marginBottom: 24 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#666' }}>Total</span>
+                  <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>${amount.toFixed(2)}</span>
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button className="btn btn-lime btn-sm" style={{ flex: 1, fontWeight: 700 }} onClick={printInvoice}>
+                    Download Invoice
+                  </button>
+                  <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={() => setShowInvoiceModal(null)}>
+                    Close
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* Refund modal */}
       {showRefundModal && (
@@ -481,11 +593,37 @@ export default function StudentBilling() {
       {/* Footer actions */}
       <div style={{ maxWidth: 700, display: 'flex', alignItems: 'center', gap: 12 }}>
         <button className="btn btn-ghost btn-sm" onClick={() => {
-          const rows = (paymentsData?.results || []).map(p => `<tr><td>#${p.id}</td><td>${p.description || p.payment_type?.replace(/_/g, ' ')}</td><td>$${Math.abs(parseFloat(p.amount || 0)).toFixed(2)}</td><td>${new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}</td></tr>`).join('')
+          const rows = (paymentsData?.results || []).map(p => {
+            const amt = Math.abs(parseFloat(p.amount || 0)).toFixed(2)
+            const d = new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
+            const isCharge = p.payment_type === 'charge' || p.payment_type === 'no_show_fee'
+            return `<tr><td style="color:#888">#${p.id}</td><td>${p.description || p.payment_type?.replace(/_/g, ' ')}</td><td style="color:${isCharge ? '#c00' : '#007700'};font-weight:600">${isCharge ? '-' : '+'}$${amt}</td><td style="color:#888">${d}</td></tr>`
+          }).join('')
           const w = window.open('', '_blank')
-          w.document.write(`<html><head><title>All Invoices</title><style>body{font-family:sans-serif;padding:32px}h2{margin-bottom:24px}table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}th{font-weight:bold}</style></head><body><h2>All Invoices</h2><table><thead><tr><th>#</th><th>Description</th><th>Amount</th><th>Date</th></tr></thead><tbody>${rows}</tbody></table></body></html>`)
+          w.document.write(`<!DOCTYPE html><html><head><title>Payment History — Duality Pole Studio</title><style>
+            @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;600&display=swap');
+            * { margin:0; padding:0; box-sizing:border-box; }
+            body { font-family: 'Archivo', Arial, sans-serif; color:#111; padding:48px; max-width:700px; margin:0 auto; }
+            .header { display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:20px; border-bottom:2px solid #111; margin-bottom:32px; }
+            .studio { font-family:'Archivo Black',Arial Black,sans-serif; font-size:22px; }
+            .studio-sub { font-size:12px; color:#888; margin-top:3px; }
+            h2 { font-size:18px; font-weight:700; margin-bottom:4px; }
+            .sub { font-size:13px; color:#666; margin-bottom:24px; }
+            table { width:100%; border-collapse:collapse; }
+            th { font-size:11px; text-transform:uppercase; letter-spacing:0.8px; color:#888; padding:8px 0; border-bottom:1px solid #ddd; text-align:left; }
+            td { padding:12px 0; border-bottom:1px solid #f0f0f0; font-size:13px; }
+            @media print { body { padding:24px; } }
+          </style></head><body>
+            <div class="header">
+              <div><div class="studio">DUALITY POLE</div><div class="studio-sub">dualitypole.com</div></div>
+              <div style="text-align:right"><div style="font-size:11px;color:#888;margin-bottom:2px">Generated</div><div style="font-weight:600">${new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}</div></div>
+            </div>
+            <h2>Payment History</h2>
+            <div class="sub">${user?.first_name || ''} ${user?.last_name || ''}</div>
+            <table><thead><tr><th>#</th><th>Description</th><th>Amount</th><th>Date</th></tr></thead><tbody>${rows}</tbody></table>
+            <script>window.onload=function(){window.print()}</script>
+          </body></html>`)
           w.document.close()
-          w.print()
         }}>
           Download all invoices
         </button>
