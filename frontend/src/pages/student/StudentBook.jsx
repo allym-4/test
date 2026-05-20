@@ -750,20 +750,20 @@ function SeasonTab({
     ? sessions.filter(s => s.season === activeSeason.id)
     : []
 
-  function getSeasonPriceForTotal(count) {
-    if (count <= 0) return 0
-    const tier = seasonPricingConfig.find(r => {
-      const n = parseInt((r.label || '').match(/(\d+)/)?.[1] || '0')
-      return n === count
-    })
-    return tier ? parseFloat(tier.price) : priceSeason
+  const discountTiers = studioSettings?.season_discount_tiers || {2:100,3:130,4:150,5:170,6:170}
+
+  function getClassIncrementalPrice(session, position) {
+    const base = parseFloat(session.season_base_price ?? priceSeason)
+    const discount = parseFloat(discountTiers[position] ?? discountTiers[String(position)] ?? 0)
+    return Math.max(0, base - discount)
   }
 
-  const incrementalPrice = selectedSessions.length > 0
-    ? getSeasonPriceForTotal(activeSeasonCount + selectedSessions.length) - getSeasonPriceForTotal(activeSeasonCount)
-    : 0
+  const incrementalPrice = selectedSessions.reduce((sum, session, idx) => {
+    const position = activeSeasonCount + idx + 1
+    return sum + getClassIncrementalPrice(session, position)
+  }, 0)
 
-  const totalPrice = getSeasonPriceForTotal(activeSeasonCount + selectedSessions.length)
+  const totalPrice = incrementalPrice
 
   function toggleSession(session) {
     setSelectedSessions(prev => {

@@ -24,6 +24,7 @@ class ClassSessionSerializer(serializers.ModelSerializer):
     category_name = serializers.StringRelatedField(source='category', read_only=True)
     season_name = serializers.CharField(source='season.name', read_only=True, allow_null=True)
     season_start_date = serializers.DateField(source='season.start_date', read_only=True, allow_null=True)
+    season_base_price = serializers.SerializerMethodField()
 
     class Meta:
         model = ClassSession
@@ -35,7 +36,15 @@ class ClassSessionSerializer(serializers.ModelSerializer):
             'season', 'season_name', 'season_start_date', 'season_bookings_open',
             'catchup_cutoff_weeks',
             'first_timer_headline', 'first_timer_body',
+            'season_base_price',
         )
+
+    def get_season_base_price(self, obj):
+        if obj.category and obj.category.standalone_price is not None:
+            return float(obj.category.standalone_price)
+        from apps.users.models import StudioSettings
+        s = StudioSettings.objects.first()
+        return float(s.price_season) if s else 270.0
 
     season_bookings_open = serializers.SerializerMethodField()
 

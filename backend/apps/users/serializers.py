@@ -125,7 +125,7 @@ class StudioSettingsSerializer(serializers.ModelSerializer):
             'credit_expiry_days', 'max_freeze_weeks', 'gst_registered', 'abn',
             'kisi_api_key', 'kisi_org_id',
             'instagram_access_token', 'instagram_page_id', 'instagram_username', 'meta_app_id',
-            'price_casual', 'price_casual_enrolled', 'price_season', 'price_trial', 'price_class_pass', 'class_pass_size', 'season_pricing_config',
+            'price_casual', 'price_casual_enrolled', 'price_season', 'price_trial', 'price_class_pass', 'class_pass_size', 'season_pricing_config', 'season_discount_tiers',
             'studio_code',
             'form_health_enabled', 'form_photo_consent_enabled', 'form_waiver_enabled', 'form_season_agreement_enabled',
             'form_health_required', 'form_photo_consent_required', 'form_waiver_required', 'form_season_agreement_required',

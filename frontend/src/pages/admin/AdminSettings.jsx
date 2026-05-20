@@ -645,19 +645,49 @@ export default function AdminSettings() {
 
       {tab === 'pricing' && (
         <div>
-          <Section title="Booking Prices">
+          <Section title="Season Class Pricing">
+            <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 14, lineHeight: 1.6 }}>
+              Set the default base price per class. Individual class categories can override this with their own base price (set in Categories). Multi-class discounts are applied per position — each additional class is cheaper by the discount amount for that slot.
+            </div>
+            <FieldRow label="Default base price (1st class)">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ color: 'var(--grey)' }}>$</span>
+                <input type="number" step="0.01" min="0" style={{ maxWidth: 120 }} value={form.price_season} onChange={e => set('price_season', e.target.value)} />
+                <span style={{ fontSize: 12, color: 'var(--grey)' }}>per class, per season</span>
+              </div>
+            </FieldRow>
+            {[2,3,4,5,6].map(pos => {
+              const tiers = form.season_discount_tiers || {}
+              const defaults = {2:100, 3:130, 4:150, 5:170, 6:170}
+              const val = tiers[pos] ?? tiers[String(pos)] ?? defaults[pos] ?? 0
+              return (
+                <FieldRow key={pos} label={`${pos}${pos===2?'nd':pos===3?'rd':'th'} class discount`}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ color: 'var(--grey)' }}>$</span>
+                    <input type="number" min="0" step="1" style={{ maxWidth: 100 }}
+                      value={val}
+                      onChange={e => {
+                        const updated = { ...(form.season_discount_tiers || {2:100,3:130,4:150,5:170,6:170}) }
+                        updated[pos] = parseInt(e.target.value) || 0
+                        set('season_discount_tiers', updated)
+                      }}
+                    />
+                    <span style={{ fontSize: 12, color: 'var(--grey)' }}>off base price</span>
+                    <span style={{ fontSize: 12, color: 'var(--lime)' }}>
+                      → ${Math.max(0, parseFloat(form.price_season||270) - val)} effective
+                    </span>
+                  </div>
+                </FieldRow>
+              )
+            })}
+          </Section>
+
+          <Section title="Other Prices">
             <FieldRow label="Casual / drop-in">
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ color: 'var(--grey)' }}>$</span>
                 <input type="number" step="0.01" min="0" style={{ maxWidth: 120 }} value={form.price_casual} onChange={e => set('price_casual', e.target.value)} />
                 <span style={{ fontSize: 12, color: 'var(--grey)' }}>per class</span>
-              </div>
-            </FieldRow>
-            <FieldRow label="Season enrolment">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ color: 'var(--grey)' }}>$</span>
-                <input type="number" step="0.01" min="0" style={{ maxWidth: 120 }} value={form.price_season} onChange={e => set('price_season', e.target.value)} />
-                <span style={{ fontSize: 12, color: 'var(--grey)' }}>per season</span>
               </div>
             </FieldRow>
             <FieldRow label="Trial class">
