@@ -329,6 +329,14 @@ class Command(BaseCommand):
             if created:
                 user.set_password(DEMO_PASSWORD)
                 user.save()
+            else:
+                # Always keep demo fields in sync
+                update_fields = []
+                if user.level != level:
+                    user.level = level
+                    update_fields.append('level')
+                if update_fields:
+                    user.save(update_fields=update_fields)
             students[slug] = user
         self.stdout.write(f'  {len(students)} demo students ready')
 
