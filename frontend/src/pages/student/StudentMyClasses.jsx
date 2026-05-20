@@ -1,77 +1,27 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { enrolments as enrolmentsApi, attendance, classes as classesApi, helpdesk as helpdeskApi, attendance as attendanceApi, settings as settingsApi } from '../../api'
 
-function WaitlistOfferBanner({ enrolment, onClaimed }) {
-  const [claiming, setClaiming] = useState(false)
-  const [error, setError] = useState('')
-  const expiresAt = enrolment.waitlist_expires_at ? new Date(enrolment.waitlist_expires_at) : null
-  const now = new Date()
-  const minutesLeft = expiresAt ? Math.max(0, Math.round((expiresAt - now) / 60000)) : null
-  const session = enrolment.class_session_detail
-
-  async function claim() {
-    setClaiming(true)
-    setError('')
-    try {
-      await enrolmentsApi.claimSpot(enrolment.id)
-      onClaimed()
-    } catch (e) {
-      setError(e.response?.data?.detail || 'Failed to claim spot. Please try again.')
-    } finally {
-      setClaiming(false)
-    }
-  }
-
-  return (
-    <div style={{ background: 'rgba(204,255,0,0.08)', border: '2px solid var(--lime)', borderRadius: 14, padding: '16px 18px', marginBottom: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: 'var(--lime)', marginBottom: 4 }}>
-            🎉 A spot opened up!
-          </div>
-          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>{session?.name}</div>
-          {enrolment.waitlist_urgent ? (
-            <div style={{ fontSize: 12, color: 'var(--grey)', lineHeight: 1.5 }}>
-              Class starts soon — all waitlisted students were notified. First to confirm gets it!
-            </div>
-          ) : (
-            <div style={{ fontSize: 12, color: 'var(--grey)', lineHeight: 1.5 }}>
-              {minutesLeft !== null ? (
-                minutesLeft > 60
-                  ? `You have ${Math.round(minutesLeft / 60)}h ${minutesLeft % 60}m to claim your spot.`
-                  : minutesLeft > 0
-                    ? `⏰ Only ${minutesLeft} minutes left to claim!`
-                    : 'Your offer may have expired — try claiming and we\'ll check.'
-              ) : 'Claim your spot before it\'s offered to the next person.'}
-            </div>
-          )}
-          {error && <div style={{ fontSize: 12, color: 'var(--red)', marginTop: 6 }}>{error}</div>}
-        </div>
-        <button className="btn btn-lime btn-sm" onClick={claim} disabled={claiming} style={{ flexShrink: 0, fontWeight: 700 }}>
-          {claiming ? 'Claiming…' : 'Claim My Spot →'}
-        </button>
-      </div>
-    </div>
-  )
-}
-
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+// ─── ClassRoster ──────────────────────────────────────────────────────────────
 
 function ClassRoster({ sessionId }) {
   const [names, setNames] = useState(null)
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
-    if (!open || names !== null) return
+    if (!open || names !== null || !sessionId) return
     classesApi.roster(sessionId).then(r => setNames(r.data.names || [])).catch(() => setNames([]))
   }, [open, sessionId, names])
 
+  if (!sessionId) return null
+
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 11, color: 'var(--grey)', textDecoration: 'underline', textDecorationStyle: 'dotted', marginTop: 6 }}>
+      <button onClick={() => setOpen(true)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 11, color: 'var(--grey)', textDecoration: 'underline', textDecorationStyle: 'dotted', marginTop: 8 }}>
         Who's coming?
       </button>
     )
@@ -92,6 +42,8 @@ function ClassRoster({ sessionId }) {
     </div>
   )
 }
+
+// ─── MarkAwayModal ────────────────────────────────────────────────────────────
 
 function MarkAwayModal({ occurrence, cancellationWindowHours, noShowFee, onClose, onDone }) {
   const [confirming, setConfirming] = useState(false)
@@ -166,6 +118,8 @@ function MarkAwayModal({ occurrence, cancellationWindowHours, noShowFee, onClose
   )
 }
 
+// ─── CancelAwayDialog ─────────────────────────────────────────────────────────
+
 function CancelAwayDialog({ occurrence, onClose, onDone }) {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
@@ -224,6 +178,8 @@ function CancelAwayDialog({ occurrence, onClose, onDone }) {
     </div>
   )
 }
+
+// ─── CancelPolicyModal ────────────────────────────────────────────────────────
 
 function CancelPolicyModal({ enrolment, isWaitlist, onClose, onDone }) {
   const [step, setStep] = useState('policy')
@@ -286,12 +242,7 @@ function CancelPolicyModal({ enrolment, isWaitlist, onClose, onDone }) {
                   {error && <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 8 }}>{error}</div>}
                   <div style={{ display: 'flex', gap: 10 }}>
                     <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Keep My Spot</button>
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      style={{ flex: 1, color: 'var(--red)' }}
-                      onClick={leaveWaitlist}
-                      disabled={submitting}
-                    >
+                    <button className="btn btn-ghost btn-sm" style={{ flex: 1, color: 'var(--red)' }} onClick={leaveWaitlist} disabled={submitting}>
                       {submitting ? '…' : 'Leave Waitlist'}
                     </button>
                   </div>
@@ -351,13 +302,14 @@ function CancelPolicyModal({ enrolment, isWaitlist, onClose, onDone }) {
   )
 }
 
+// ─── ClassWaitlistLeaveModal ──────────────────────────────────────────────────
+
 function ClassWaitlistLeaveModal({ enrolment, onClose, onDone }) {
   const [joining, setJoining] = useState(false)
   const [leaving, setLeaving] = useState(false)
   const [error, setError] = useState('')
   const s = enrolment.class_session_detail
 
-  // day_of_week model: 0=Mon…6=Sun; JS getDay(): 0=Sun…6=Sat
   const jsDay = s?.day_of_week != null ? (s.day_of_week + 1) % 7 : null
   let hoursUntil = null
   if (jsDay !== null && s?.start_time) {
@@ -382,18 +334,12 @@ function ClassWaitlistLeaveModal({ enrolment, onClose, onDone }) {
     setJoining(true)
     setError('')
     try {
-      await enrolmentsApi.create({
-        session: enrolment.class_session,
-        status: 'waitlisted',
-        enrolment_type: 'course',
-      })
+      await enrolmentsApi.create({ session: enrolment.class_session, status: 'waitlisted', enrolment_type: 'course' })
       await enrolmentsApi.delete(enrolment.id)
       onDone()
     } catch (e) {
       setError(e.response?.data?.detail || 'Failed — please try again.')
-    } finally {
-      setJoining(false)
-    }
+    } finally { setJoining(false) }
   }
 
   async function leaveWaitlist() {
@@ -404,9 +350,7 @@ function ClassWaitlistLeaveModal({ enrolment, onClose, onDone }) {
       onDone()
     } catch (e) {
       setError(e.response?.data?.detail || 'Failed — please try again.')
-    } finally {
-      setLeaving(false)
-    }
+    } finally { setLeaving(false) }
   }
 
   return (
@@ -422,7 +366,6 @@ function ClassWaitlistLeaveModal({ enrolment, onClose, onDone }) {
         <div style={{ padding: '18px 20px' }}>
           <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{s?.name}</div>
           <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16 }}>{DAYS[s?.day_of_week]} · {s?.studio_detail?.name}</div>
-
           {withinWindow ? (
             <div style={{ background: 'rgba(255,170,0,0.08)', border: '1px solid rgba(255,170,0,0.25)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, color: 'var(--amber)', lineHeight: 1.6 }}>
               <strong>Heads up:</strong> The next class is less than 4 hours away. If you leave now, you may lose your spot to the next person on the list.
@@ -432,31 +375,18 @@ function ClassWaitlistLeaveModal({ enrolment, onClose, onDone }) {
               You can freely leave the class waitlist or upgrade to the season waitlist instead.
             </div>
           )}
-
           <div style={{ background: 'rgba(176,160,255,0.08)', border: '1px solid rgba(176,160,255,0.2)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, lineHeight: 1.6 }}>
             <strong style={{ color: 'var(--lav)' }}>Want to join the season instead?</strong><br />
             <span style={{ color: 'var(--grey)' }}>Season waitlist gives you priority for a full-term reserved spot when one becomes available.</span>
           </div>
-
           {error && <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 8 }}>{error}</div>}
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <button
-              className="btn btn-sm"
-              style={{ background: 'rgba(176,160,255,0.15)', border: '1px solid rgba(176,160,255,0.3)', color: 'var(--lav)', fontWeight: 600 }}
-              onClick={joinSeasonWaitlist}
-              disabled={joining || leaving}
-            >
+            <button className="btn btn-sm" style={{ background: 'rgba(176,160,255,0.15)', border: '1px solid rgba(176,160,255,0.3)', color: 'var(--lav)', fontWeight: 600 }} onClick={joinSeasonWaitlist} disabled={joining || leaving}>
               {joining ? 'Moving…' : 'Join Season Waitlist Instead'}
             </button>
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
-              <button
-                className="btn btn-ghost btn-sm"
-                style={{ flex: 1, color: 'var(--red)' }}
-                onClick={leaveWaitlist}
-                disabled={leaving || joining}
-              >
+              <button className="btn btn-ghost btn-sm" style={{ flex: 1, color: 'var(--red)' }} onClick={leaveWaitlist} disabled={leaving || joining}>
                 {leaving ? '…' : 'Leave Class Waitlist'}
               </button>
             </div>
@@ -466,6 +396,8 @@ function ClassWaitlistLeaveModal({ enrolment, onClose, onDone }) {
     </div>
   )
 }
+
+// ─── DisplacementPopupModal ───────────────────────────────────────────────────
 
 function DisplacementPopupModal({ booking, onClose, onAction }) {
   const [actioning, setActioning] = useState(null)
@@ -478,25 +410,17 @@ function DisplacementPopupModal({ booking, onClose, onAction }) {
   const hoursLeft = expiresAt ? Math.max(0, Math.round((expiresAt - new Date()) / 3600000)) : null
 
   async function upgrade() {
-    setActioning('upgrade')
-    setError('')
-    try {
-      await classesApi.casual.upgrade(booking.id)
-      onAction()
-    } catch (e) {
-      setError(e.response?.data?.detail || 'Could not upgrade — please try again.')
-    } finally { setActioning(null) }
+    setActioning('upgrade'); setError('')
+    try { await classesApi.casual.upgrade(booking.id); onAction() }
+    catch (e) { setError(e.response?.data?.detail || 'Could not upgrade — please try again.') }
+    finally { setActioning(null) }
   }
 
   async function release() {
-    setActioning('release')
-    setError('')
-    try {
-      await classesApi.casual.release(booking.id)
-      onAction()
-    } catch (e) {
-      setError(e.response?.data?.detail || 'Could not release — please try again.')
-    } finally { setActioning(null) }
+    setActioning('release'); setError('')
+    try { await classesApi.casual.release(booking.id); onAction() }
+    catch (e) { setError(e.response?.data?.detail || 'Could not release — please try again.') }
+    finally { setActioning(null) }
   }
 
   async function messageDuality() {
@@ -527,27 +451,23 @@ function DisplacementPopupModal({ booking, onClose, onAction }) {
           <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 16 }}>
             {[dateLabel, d?.start_time ? d.start_time.slice(0, 5) : null, d?.studio_name].filter(Boolean).join(' · ')}
           </div>
-
           <div style={{ background: 'rgba(255,170,0,0.07)', border: '1px solid rgba(255,170,0,0.2)', borderRadius: 12, padding: '14px 16px', marginBottom: 18, fontSize: 13, color: 'var(--grey)', lineHeight: 1.7 }}>
             A student wants to enrol for the full season of {d?.session_name || 'this class'}.
             Upgrade your casual booking to a full season enrolment
-            {hoursLeft !== null ? <strong style={{ color: 'var(--white)' }}> within {hoursLeft} hour{hoursLeft !== 1 ? 's' : ''}</strong> : ''}, or your spot will be released and your account credited with the amount paid.
-            Have questions? Message us below.
+            {hoursLeft !== null ? <strong style={{ color: 'var(--white)' }}> within {hoursLeft} hour{hoursLeft !== 1 ? 's' : ''}</strong> : ''}, or your spot will be released and your account credited.
           </div>
-
           {error && <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 10 }}>{error}</div>}
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <button className="btn btn-lime btn-sm" onClick={upgrade} disabled={busy} style={{ fontWeight: 700, fontSize: 14 }}>
+            <button className="btn btn-lime btn-sm" onClick={upgrade} disabled={busy} style={{ fontWeight: 700 }}>
               {actioning === 'upgrade' ? '…' : 'Upgrade to Full Season'}
             </button>
-            <button className="btn btn-ghost btn-sm" onClick={release} disabled={busy} style={{ color: 'var(--red)', fontSize: 13 }}>
+            <button className="btn btn-ghost btn-sm" onClick={release} disabled={busy} style={{ color: 'var(--red)' }}>
               {actioning === 'release' ? '…' : 'Release Spot'}
             </button>
             {messageSent ? (
               <div style={{ fontSize: 12, color: 'var(--lime)', textAlign: 'center', paddingTop: 4 }}>Message sent — we'll be in touch!</div>
             ) : (
-              <button className="btn btn-ghost btn-sm" onClick={messageDuality} disabled={busy} style={{ fontSize: 13 }}>
+              <button className="btn btn-ghost btn-sm" onClick={messageDuality} disabled={busy}>
                 {actioning === 'message' ? '…' : 'Message Duality'}
               </button>
             )}
@@ -558,241 +478,65 @@ function DisplacementPopupModal({ booking, onClose, onAction }) {
   )
 }
 
+// ─── PendingDisplacementBanner ────────────────────────────────────────────────
+
 function PendingDisplacementBanner({ enrolment }) {
   const s = enrolment.class_session_detail
   const expiresAt = enrolment.displacement_expires_at ? new Date(enrolment.displacement_expires_at) : null
-  const now = new Date()
-  const hoursLeft = expiresAt ? Math.max(0, Math.round((expiresAt - now) / 3600000)) : null
+  const hoursLeft = expiresAt ? Math.max(0, Math.round((expiresAt - new Date()) / 3600000)) : null
   return (
     <div style={{ background: 'rgba(255,170,0,0.06)', border: '2px solid rgba(255,170,0,0.25)', borderRadius: 14, padding: '16px 18px', marginBottom: 14 }}>
       <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 13, color: '#f59e0b', marginBottom: 5 }}>Spot Pending Confirmation</div>
       <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{s?.name}</div>
       <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
-        There is a spot in the season, however a casual is taking up one of those spots. We've given the casual
-        {hoursLeft !== null ? ` ${hoursLeft} hour${hoursLeft !== 1 ? 's' : ''}` : ' some time'} to upgrade to a full season enrolment — and if they don't, the spot is yours! We'll confirm your enrolment as soon as it's resolved.
+        A casual is taking up one of the available spots. We've given them
+        {hoursLeft !== null ? ` ${hoursLeft} hour${hoursLeft !== 1 ? 's' : ''}` : ' some time'} to upgrade — if they don't, the spot is yours!
       </div>
     </div>
   )
 }
 
-function CasualBookingsTab({ bookings, credits, refetch }) {
-  const [cancellingId, setCancellingId] = useState(null)
-  const [actioningId, setActioningId] = useState(null)
-  const [messageSentId, setMessageSentId] = useState(null)
+// ─── WaitlistOfferBanner ──────────────────────────────────────────────────────
+
+function WaitlistOfferBanner({ enrolment, onClaimed }) {
+  const [claiming, setClaiming] = useState(false)
   const [error, setError] = useState('')
+  const expiresAt = enrolment.waitlist_expires_at ? new Date(enrolment.waitlist_expires_at) : null
+  const minutesLeft = expiresAt ? Math.max(0, Math.round((expiresAt - new Date()) / 60000)) : null
+  const session = enrolment.class_session_detail
 
-  const items = bookings?.results || bookings || []
-
-  async function cancel(booking) {
-    setCancellingId(booking.id)
-    setError('')
-    try {
-      await classesApi.casual.cancel(booking.occurrence)
-      refetch()
-    } catch (e) {
-      setError(e.response?.data?.detail || 'Could not cancel — please try again.')
-    } finally {
-      setCancellingId(null)
-    }
+  async function claim() {
+    setClaiming(true); setError('')
+    try { await enrolmentsApi.claimSpot(enrolment.id); onClaimed() }
+    catch (e) { setError(e.response?.data?.detail || 'Failed to claim spot. Please try again.') }
+    finally { setClaiming(false) }
   }
-
-  async function upgrade(booking) {
-    setActioningId(booking.id)
-    setError('')
-    try {
-      await classesApi.casual.upgrade(booking.id)
-      refetch()
-    } catch (e) {
-      setError(e.response?.data?.detail || 'Could not upgrade — please try again.')
-    } finally {
-      setActioningId(null)
-    }
-  }
-
-  async function release(booking) {
-    setActioningId(booking.id)
-    setError('')
-    try {
-      await classesApi.casual.release(booking.id)
-      refetch()
-    } catch (e) {
-      setError(e.response?.data?.detail || 'Could not release — please try again.')
-    } finally {
-      setActioningId(null)
-    }
-  }
-
-  async function messageDuality(booking) {
-    setActioningId(booking.id)
-    try {
-      await helpdeskApi.submitTicket({
-        subject: `Displacement Offer Question — ${booking.occurrence_detail?.session_name || 'Class'}`,
-        body: `Student has a question about their casual spot displacement offer for ${booking.occurrence_detail?.session_name || 'class'} on ${booking.occurrence_detail?.date || 'upcoming date'}.`,
-      })
-      setMessageSentId(booking.id)
-    } catch { } finally {
-      setActioningId(null)
-    }
-  }
-
-  const displaced = items.filter(b => b.status === 'confirmed' && b.displacement_offered_at)
-  const confirmed = items.filter(b => b.status === 'confirmed' && !b.displacement_offered_at)
-  const waitlisted = items.filter(b => b.status === 'waitlisted')
-
-  const availableCredits = credits?.results || credits || []
 
   return (
-    <div>
-      {availableCredits.length > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'rgba(176,160,255,0.06)', border: '1px solid rgba(176,160,255,0.25)', borderRadius: 12, padding: '14px 18px', marginBottom: 18 }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color: 'var(--lav)', lineHeight: 1 }}>{availableCredits.length}</div>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--white)' }}>Catch-up credit{availableCredits.length !== 1 ? 's' : ''} available</div>
-            <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>
-              Use in the <Link to="/book" style={{ color: 'var(--lav)', textDecoration: 'none' }}>Book</Link> tab to join any eligible casual class at no charge
-            </div>
+    <div style={{ background: 'rgba(204,255,0,0.08)', border: '2px solid var(--lime)', borderRadius: 14, padding: '16px 18px', marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: 'var(--lime)', marginBottom: 4 }}>🎉 A spot opened up!</div>
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>{session?.name}</div>
+          <div style={{ fontSize: 12, color: 'var(--grey)', lineHeight: 1.5 }}>
+            {enrolment.waitlist_urgent ? 'Class starts soon — first to confirm gets it!' :
+              minutesLeft !== null ? (
+                minutesLeft > 60 ? `You have ${Math.round(minutesLeft / 60)}h ${minutesLeft % 60}m to claim your spot.` :
+                  minutesLeft > 0 ? `⏰ Only ${minutesLeft} minutes left to claim!` :
+                    'Your offer may have expired — try claiming and we\'ll check.'
+              ) : 'Claim your spot before it\'s offered to the next person.'}
           </div>
+          {error && <div style={{ fontSize: 12, color: 'var(--red)', marginTop: 6 }}>{error}</div>}
         </div>
-      )}
-
-      {error && <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 10 }}>{error}</div>}
-
-      {displaced.length > 0 && (
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>Action Required</div>
-          {displaced.map(b => {
-            const d = b.occurrence_detail
-            const dateLabel = d?.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : '—'
-            const expiresAt = b.displacement_expires_at ? new Date(b.displacement_expires_at) : null
-            const hoursLeft = expiresAt ? Math.max(0, Math.round((expiresAt - new Date()) / 3600000)) : null
-            const isActioning = actioningId === b.id
-            return (
-              <div key={b.id} style={{ background: 'rgba(255,170,0,0.05)', border: '2px solid rgba(255,170,0,0.25)', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
-                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 2 }}>{d?.session_name}</div>
-                <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 12 }}>
-                  {[dateLabel, d?.start_time ? d.start_time.slice(0, 5) : null, d?.studio_name].filter(Boolean).join(' · ')}
-                </div>
-                <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.6, marginBottom: 14 }}>
-                  A student wants to enrol for the full season of {d?.session_name || 'this class'}. Upgrade your casual booking to a full season enrolment
-                  {hoursLeft !== null ? ` within ${hoursLeft} hour${hoursLeft !== 1 ? 's' : ''}` : ''}, or your spot will be released and your account credited with the amount paid.
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <button className="btn btn-lime btn-sm" onClick={() => upgrade(b)} disabled={isActioning} style={{ fontWeight: 700 }}>
-                    {isActioning ? '…' : 'Upgrade to Full Season'}
-                  </button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => release(b)} disabled={isActioning} style={{ color: 'var(--red)' }}>
-                    {isActioning ? '…' : 'Release Spot'}
-                  </button>
-                  {messageSentId === b.id ? (
-                    <div style={{ fontSize: 12, color: 'var(--lime)', textAlign: 'center', paddingTop: 4 }}>Message sent — we'll be in touch!</div>
-                  ) : (
-                    <button className="btn btn-ghost btn-sm" onClick={() => messageDuality(b)} disabled={isActioning}>
-                      Message Duality
-                    </button>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {items.length === displaced.length ? (
-        <div className="empty-state">
-          <div style={{ marginBottom: 8 }}>No other casual or catch-up bookings</div>
-        </div>
-      ) : items.length === 0 ? (
-        <div className="empty-state">
-          <div style={{ marginBottom: 8 }}>No casual or catch-up bookings yet</div>
-        </div>
-      ) : (
-        <>
-          {confirmed.length > 0 && (
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>Booked</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {confirmed.map(b => {
-                  const d = b.occurrence_detail
-                  const dateLabel = d?.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : '—'
-                  const isCancelling = cancellingId === b.id
-                  return (
-                    <div key={b.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>{d?.session_name}</div>
-                        <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>
-                          {dateLabel}
-                          {d?.start_time ? ` · ${d.start_time.slice(0, 5)}` : ''}
-                          {d?.studio_name ? ` · ${d.studio_name}` : ''}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                        <span className="tag tag-lime" style={{ fontSize: 10 }}>{b.enrolment_type === 'catchup' ? 'Catch-up' : 'Casual'}</span>
-                        <button
-                          className="btn btn-ghost btn-xs"
-                          style={{ fontSize: 11, color: 'var(--red)' }}
-                          onClick={() => cancel(b)}
-                          disabled={isCancelling}
-                        >
-                          {isCancelling ? '…' : 'Cancel'}
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {waitlisted.length > 0 && (
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>Waitlisted</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {waitlisted.map(b => {
-                  const d = b.occurrence_detail
-                  const dateLabel = d?.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : '—'
-                  const hasOffer = !!b.waitlist_offered_at
-                  const isCancelling = cancellingId === b.id
-                  return (
-                    <div key={b.id} style={{ background: 'var(--card)', border: `1px solid ${hasOffer ? 'var(--lime)' : 'var(--border)'}`, borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>{d?.session_name}</div>
-                        <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>
-                          {dateLabel}
-                          {d?.start_time ? ` · ${d.start_time.slice(0, 5)}` : ''}
-                          {d?.studio_name ? ` · ${d.studio_name}` : ''}
-                        </div>
-                        {hasOffer && <div style={{ fontSize: 11, color: 'var(--lime)', marginTop: 4 }}>🎉 A spot opened — claim it!</div>}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                        <span className="tag tag-amber" style={{ fontSize: 10 }}>Waitlist</span>
-                        {!hasOffer && (
-                          <button
-                            className="btn btn-ghost btn-xs"
-                            style={{ fontSize: 11, color: 'var(--red)' }}
-                            onClick={() => cancel(b)}
-                            disabled={isCancelling}
-                          >
-                            {isCancelling ? '…' : 'Leave'}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
-      <div style={{ marginTop: 4 }}>
-        <Link to="/portal/book">
-          <button className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>+ Book a casual or catch-up</button>
-        </Link>
+        <button className="btn btn-lime btn-sm" onClick={claim} disabled={claiming} style={{ flexShrink: 0, fontWeight: 700 }}>
+          {claiming ? 'Claiming…' : 'Claim My Spot →'}
+        </button>
       </div>
     </div>
   )
 }
+
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export default function StudentMyClasses() {
   const { user } = useAuth()
@@ -800,18 +544,16 @@ export default function StudentMyClasses() {
   const { data: attData, refetch: refetchAtt } = useApi(() => attendance.list({ student: user?.id }), [user?.id])
   const { data: upcomingData, refetch: refetchUpcoming } = useApi(() => classesApi.occurrences({ student: user?.id, upcoming: true }), [user?.id])
   const { data: casualBookingsData, refetch: refetchCasual } = useApi(() => classesApi.casual.myBookings(), [])
-  const { data: creditsData, refetch: refetchCredits } = useApi(() => user?.id ? attendanceApi.makeupCredits.list({ student: user.id, status: 'available' }) : null, [user?.id])
+  const { data: creditsData } = useApi(() => user?.id ? attendanceApi.makeupCredits.list({ student: user.id, status: 'available' }) : null, [user?.id])
   const { data: studioSettings } = useApi(() => settingsApi.get(), [])
 
   const [markAwayOcc, setMarkAwayOcc] = useState(null)
   const [cancelAwayOcc, setCancelAwayOcc] = useState(null)
-  const [topTab, setTopTab] = useState('active')
-  const [activeSubTab, setActiveSubTab] = useState('enrolled')
+  const [tab, setTab] = useState('current')
   const [cancelPolicyEnrol, setCancelPolicyEnrol] = useState(null)
   const [classWaitlistLeaveEnrol, setClassWaitlistLeaveEnrol] = useState(null)
   const [displacementPopup, setDisplacementPopup] = useState(null)
 
-  // Auto-show popup when a displacement offer is waiting
   useEffect(() => {
     const items = casualBookingsData?.results || casualBookingsData || []
     const displaced = items.find(b => b.status === 'confirmed' && b.displacement_offered_at)
@@ -821,23 +563,110 @@ export default function StudentMyClasses() {
   const enrolments_ = enrolData?.results || enrolData || []
   const attHistory = attData?.results || attData || []
   const upcomingOccurrences = upcomingData?.results || upcomingData || []
+  const casualItems = casualBookingsData?.results || casualBookingsData || []
+  const availableCredits = creditsData?.results || creditsData || []
 
-  // Upcoming occurrences where student marked away
   const today = new Date().toISOString().slice(0, 10)
-  const absentUpcoming = upcomingOccurrences.filter(occ =>
-    occ.date >= today && attHistory.some(a => a.occurrence === occ.id && a.status === 'absent')
-  )
-
   const active = enrolments_.filter(e => e.status === 'active')
   const pendingDisplacement = enrolments_.filter(e => e.status === 'pending_displacement')
   const waitlisted = enrolments_.filter(e => e.status === 'waitlisted')
   const seasonWaitlisted = waitlisted.filter(e => e.enrolment_type === 'course')
   const classWaitlisted = waitlisted.filter(e => e.enrolment_type !== 'course')
-  const casual = enrolments_.filter(e => ['casual', 'catchup', 'catch_up'].includes(e.enrolment_type) || ['casual', 'catchup'].includes(e.status))
   const past = enrolments_.filter(e => ['completed', 'cancelled', 'expired'].includes(e.status))
 
-  // Pricing summary
-  const totalPrice = active.reduce((sum, e) => sum + (parseFloat(e.price || e.amount || 0)), 0)
+  // Split active into current-season vs future-season
+  const currentEnrolments = active.filter(e => {
+    const start = e.class_session_detail?.season_start_date
+    return !start || start <= today
+  })
+  const futureEnrolments = active.filter(e => {
+    const start = e.class_session_detail?.season_start_date
+    return start && start > today
+  })
+
+  // Season info from first current enrolment
+  const seasonInfo = useMemo(() => {
+    const enr = currentEnrolments[0]
+    if (!enr) return null
+    const sess = enr.class_session_detail
+    const name = enr.season_detail?.name ?? sess?.season_name ?? null
+    const start = sess?.season_start_date ?? null
+    const end = sess?.season_end_date ?? null
+    if (!name && !start) return null
+    const fmt = d => d ? new Date(d + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : null
+    return { name, start: fmt(start), end: fmt(end) }
+  }, [currentEnrolments])
+
+  // Build unified chronological list for Current tab
+  const currentItems = useMemo(() => {
+    const list = []
+    // Add upcoming occurrences from enrolled classes
+    currentEnrolments.forEach(enr => {
+      const sess = enr.class_session_detail
+      const occurrences = enr.upcoming_occurrences || []
+      occurrences.forEach(occ => {
+        list.push({
+          key: `enr-${enr.id}-${occ.id}`,
+          type: 'enrolled',
+          date: occ.date,
+          time: occ.start_time || sess?.start_time || '',
+          sessionName: sess?.name || enr.class_name || 'Class',
+          studio: sess?.studio_detail?.name || null,
+          sessionId: enr.class_session,
+          enrolment: enr,
+          occurrence: { ...occ, session_detail: sess },
+          isAway: occ.marked_away || occ.my_status === 'absent',
+        })
+      })
+    })
+    // Add casual/catch-up bookings (non-displaced)
+    casualItems
+      .filter(b => b.status === 'confirmed' && !b.displacement_offered_at)
+      .forEach(b => {
+        const d = b.occurrence_detail
+        if (!d?.date) return
+        list.push({
+          key: `casual-${b.id}`,
+          type: b.enrolment_type === 'catchup' ? 'catchup' : 'casual',
+          date: d.date,
+          time: d.start_time || '',
+          sessionName: d.session_name || 'Class',
+          studio: d.studio_name || null,
+          sessionId: d.session_id || d.session || null,
+          booking: b,
+        })
+      })
+    list.sort((a, b) => {
+      const da = `${a.date}T${a.time || '00:00'}`
+      const db = `${b.date}T${b.time || '00:00'}`
+      return da < db ? -1 : da > db ? 1 : 0
+    })
+    return list
+  }, [currentEnrolments, casualItems])
+
+  // Group by date
+  const groupedItems = useMemo(() => {
+    const groups = []
+    let lastDate = null
+    currentItems.forEach(item => {
+      if (item.date !== lastDate) { groups.push({ date: item.date, items: [] }); lastDate = item.date }
+      groups[groups.length - 1].items.push(item)
+    })
+    return groups
+  }, [currentItems])
+
+  const displacedCasuals = casualItems.filter(b => b.status === 'confirmed' && b.displacement_offered_at)
+  const waitlistedCasuals = casualItems.filter(b => b.status === 'waitlisted')
+
+  async function cancelCasual(booking) {
+    if (!window.confirm(booking.status === 'waitlisted' ? 'Leave the waitlist for this class?' : 'Cancel this booking?')) return
+    try {
+      await classesApi.casual.cancel(booking.occurrence)
+      refetchCasual()
+    } catch (e) {
+      alert(e.response?.data?.detail || 'Could not cancel — please try again.')
+    }
+  }
 
   return (
     <div>
@@ -853,9 +682,7 @@ export default function StudentMyClasses() {
             try {
               const token = localStorage.getItem('access_token')
               const baseUrl = import.meta.env.VITE_API_URL || ''
-              const res = await fetch(`${baseUrl}/api/enrolments/calendar.ics`, {
-                headers: { Authorization: `Bearer ${token}` }
-              })
+              const res = await fetch(`${baseUrl}/api/enrolments/calendar.ics`, { headers: { Authorization: `Bearer ${token}` } })
               const blob = await res.blob()
               const url = URL.createObjectURL(blob)
               const a = document.createElement('a')
@@ -868,17 +695,16 @@ export default function StudentMyClasses() {
         </button>
       </div>
 
-      {/* View all upcoming link */}
       <div style={{ marginBottom: 16 }}>
         <Link to="/portal/upcoming-classes" style={{ fontSize: 13, color: 'var(--lav)', textDecoration: 'none', fontWeight: 600 }}>
           View all upcoming →
         </Link>
       </div>
 
-      {/* Top-level tabs */}
+      {/* Tabs */}
       <div className="subtabs" style={{ marginBottom: 20 }}>
-        {[['active', 'Active Season'], ['future', 'Future Season'], ['past', 'Past Seasons']].map(([key, label]) => (
-          <button key={key} className={`subtab${topTab === key ? ' active' : ''}`} onClick={() => setTopTab(key)}>{label}</button>
+        {[['current', 'Current'], ['future', 'Future'], ['past', 'Past']].map(([key, label]) => (
+          <button key={key} className={`subtab${tab === key ? ' active' : ''}`} onClick={() => setTab(key)}>{label}</button>
         ))}
       </div>
 
@@ -886,261 +712,324 @@ export default function StudentMyClasses() {
         <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}><div className="spinner" /></div>
       ) : (
         <>
-          {/* Active Season */}
-          {topTab === 'active' && (
+          {/* ── Current tab ── */}
+          {tab === 'current' && (
             <div>
-              {/* Marked Away — can undo */}
-              {absentUpcoming.length > 0 && (
-                <div style={{ background: 'rgba(255,170,0,0.06)', border: '1px solid rgba(255,170,0,0.2)', borderRadius: 12, padding: '14px 16px', marginBottom: 18 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--amber)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 10 }}>Marked Away</div>
+              {/* Season header */}
+              {seasonInfo && (
+                <div style={{ background: 'rgba(204,255,0,0.05)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 12, padding: '14px 16px', marginBottom: 16 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>{seasonInfo.name ?? 'Current Season'}</div>
+                  {seasonInfo.start && seasonInfo.end && (
+                    <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{seasonInfo.start} — {seasonInfo.end}</div>
+                  )}
+                </div>
+              )}
+
+              {/* Catch-up credits */}
+              {availableCredits.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'rgba(176,160,255,0.06)', border: '1px solid rgba(176,160,255,0.25)', borderRadius: 12, padding: '12px 16px', marginBottom: 16 }}>
+                  <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26, color: 'var(--lav)', lineHeight: 1 }}>{availableCredits.length}</div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>Catch-up credit{availableCredits.length !== 1 ? 's' : ''} available</div>
+                    <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 1 }}>
+                      Use in <Link to="/portal/book" style={{ color: 'var(--lav)', textDecoration: 'none' }}>Book a Class</Link> to join any eligible class at no charge
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Waitlist claim banners */}
+              {waitlisted.filter(e => e.waitlist_offered_at).map(e => (
+                <WaitlistOfferBanner key={e.id} enrolment={e} onClaimed={refetchEnrol} />
+              ))}
+
+              {/* Pending displacement banners */}
+              {pendingDisplacement.map(e => (
+                <PendingDisplacementBanner key={e.id} enrolment={e} />
+              ))}
+
+              {/* Displaced casual action cards */}
+              {displacedCasuals.length > 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>Action Required</div>
+                  {displacedCasuals.map(b => {
+                    const d = b.occurrence_detail
+                    const dateLabel = d?.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : '—'
+                    const expiresAt = b.displacement_expires_at ? new Date(b.displacement_expires_at) : null
+                    const hoursLeft = expiresAt ? Math.max(0, Math.round((expiresAt - new Date()) / 3600000)) : null
+                    return (
+                      <div key={b.id}
+                        onClick={() => setDisplacementPopup(b)}
+                        style={{ background: 'rgba(255,170,0,0.05)', border: '2px solid rgba(255,170,0,0.25)', borderRadius: 14, padding: '14px 16px', marginBottom: 10, cursor: 'pointer' }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>{d?.session_name}</div>
+                        <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 6 }}>
+                          {[dateLabel, d?.start_time?.slice(0, 5), d?.studio_name].filter(Boolean).join(' · ')}
+                        </div>
+                        <div style={{ fontSize: 12, color: '#f59e0b' }}>Season enrolment offer — {hoursLeft !== null ? `respond within ${hoursLeft}h` : 'respond now'}</div>
+                        <div style={{ fontSize: 11, color: 'var(--lime)', marginTop: 2 }}>Click to upgrade or release →</div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Empty state */}
+              {currentItems.length === 0 && displacedCasuals.length === 0 && (
+                <div className="empty-state">
+                  <div style={{ marginBottom: 8 }}>No upcoming classes this season</div>
+                  <Link to="/portal/book"><button className="btn btn-lime btn-sm" style={{ marginTop: 8 }}>Book a class →</button></Link>
+                </div>
+              )}
+
+              {/* Chronological list grouped by date */}
+              {groupedItems.map(group => (
+                <div key={group.date} style={{ marginBottom: 4 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', margin: '16px 0 8px' }}>
+                    {new Date(group.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
+                  </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {absentUpcoming.map(occ => (
-                      <div key={occ.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 600 }}>{occ.session_detail?.name}</div>
-                          <div style={{ fontSize: 12, color: 'var(--grey)' }}>
-                            {new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
-                            {occ.session_detail?.start_time ? ` · ${occ.session_detail.start_time.slice(0, 5)}` : ''}
+                    {group.items.map(item => {
+                      const isEnrolled = item.type === 'enrolled'
+                      const isCatchup = item.type === 'catchup'
+                      const isCasual = item.type === 'casual'
+                      return (
+                        <div key={item.key} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                <span style={{ fontWeight: 600, fontSize: 14 }}>{item.sessionName}</span>
+                                {(isCasual || isCatchup) && (
+                                  <span className={`tag ${isCatchup ? 'tag-lav' : 'tag-lime'}`} style={{ fontSize: 10 }}>
+                                    {isCatchup ? 'Catch-up' : 'Casual'}
+                                  </span>
+                                )}
+                                {item.isAway && (
+                                  <span style={{ fontSize: 10, fontWeight: 700, color: '#f59e0b', background: 'rgba(255,170,0,0.1)', borderRadius: 4, padding: '1px 6px' }}>AWAY</span>
+                                )}
+                              </div>
+                              {(item.time || item.studio) && (
+                                <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>
+                                  {[item.time ? item.time.slice(0, 5) : null, item.studio].filter(Boolean).join(' · ')}
+                                </div>
+                              )}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                              {isEnrolled && !item.isAway && (
+                                <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }} onClick={() => setMarkAwayOcc(item.occurrence)}>
+                                  Mark away
+                                </button>
+                              )}
+                              {isEnrolled && item.isAway && (
+                                <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--lime)', borderColor: 'rgba(204,255,0,0.3)' }} onClick={() => setCancelAwayOcc(item.occurrence)}>
+                                  I can make it!
+                                </button>
+                              )}
+                              {(isCasual || isCatchup) && (
+                                <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)' }} onClick={() => cancelCasual(item.booking)}>
+                                  Cancel
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Who's coming */}
+                          <ClassRoster sessionId={item.sessionId} />
+
+                          {/* Cancel enrolment link */}
+                          {isEnrolled && (
+                            <button onClick={() => setCancelPolicyEnrol(item.enrolment)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 11, color: 'var(--grey)', marginTop: 8, textDecoration: 'underline', textDecorationStyle: 'dotted' }}>
+                              Cancel enrolment
+                            </button>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+
+              {/* Waitlisted casuals */}
+              {waitlistedCasuals.length > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 8 }}>On Waitlist</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {waitlistedCasuals.map(b => {
+                      const d = b.occurrence_detail
+                      const dateLabel = d?.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : '—'
+                      return (
+                        <div key={b.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: 13 }}>{d?.session_name}</div>
+                            <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>
+                              {[dateLabel, d?.start_time?.slice(0, 5), d?.studio_name].filter(Boolean).join(' · ')}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span className="tag tag-amber" style={{ fontSize: 10 }}>Waitlist</span>
+                            <button className="btn btn-ghost btn-xs" style={{ fontSize: 11, color: 'var(--red)' }} onClick={() => cancelCasual(b)}>Leave</button>
                           </div>
                         </div>
-                        <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--lime)', borderColor: 'rgba(204,255,0,0.3)', flexShrink: 0 }} onClick={() => setCancelAwayOcc(occ)}>
-                          I can make it!
-                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {currentItems.length > 0 && (
+                <div style={{ marginTop: 20 }}>
+                  <Link to="/portal/book">
+                    <button className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>+ Book a casual or catch-up</button>
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Future tab ── */}
+          {tab === 'future' && (
+            <div>
+              {/* Waitlist claim banners for future season */}
+              {waitlisted.filter(e => e.waitlist_offered_at).map(e => (
+                <WaitlistOfferBanner key={e.id} enrolment={e} onClaimed={refetchEnrol} />
+              ))}
+
+              {futureEnrolments.length === 0 && seasonWaitlisted.length === 0 && classWaitlisted.length === 0 && (
+                <div className="empty-state">
+                  <div style={{ marginBottom: 8 }}>Your next season classes will appear here once booked</div>
+                  <Link to="/portal/book"><button className="btn btn-lime btn-sm" style={{ marginTop: 8 }}>Browse Classes →</button></Link>
+                </div>
+              )}
+
+              {futureEnrolments.length > 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>Enrolled — Upcoming Season</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {futureEnrolments.map(e => {
+                      const s = e.class_session_detail
+                      const seasonName = e.season_detail?.name ?? s?.season_name ?? null
+                      return (
+                        <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 600, fontSize: 14 }}>{s?.name}</div>
+                            <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{DAYS[s?.day_of_week]} · {s?.start_time?.slice(0, 5)} · {s?.studio_detail?.name}</div>
+                            {seasonName && <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 3 }}>{seasonName}</div>}
+                          </div>
+                          <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)', flexShrink: 0 }} onClick={() => setCancelPolicyEnrol(e)}>Cancel</button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {seasonWaitlisted.length > 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--lav)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>Season Waitlist</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {seasonWaitlisted.map(e => {
+                      const s = e.class_session_detail
+                      return (
+                        <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 600, fontSize: 14 }}>{s?.name}</div>
+                            <div style={{ fontSize: 12, color: 'var(--grey)' }}>{DAYS[s?.day_of_week]} · {s?.studio_detail?.name}</div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                            {e.waitlist_position != null && <span className="tag tag-lav" style={{ fontSize: 10 }}>#{e.waitlist_position}</span>}
+                            <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)' }} onClick={() => setCancelPolicyEnrol({ ...e, _isWaitlist: true })}>Leave</button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {classWaitlisted.length > 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>Class Waitlist</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {classWaitlisted.map(e => {
+                      const s = e.class_session_detail
+                      return (
+                        <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 600, fontSize: 14 }}>{s?.name}</div>
+                            <div style={{ fontSize: 12, color: 'var(--grey)' }}>{DAYS[s?.day_of_week]} · {s?.studio_detail?.name}</div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                            {e.waitlist_position != null && <span className="tag tag-grey" style={{ fontSize: 10 }}>#{e.waitlist_position}</span>}
+                            <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)' }} onClick={() => setClassWaitlistLeaveEnrol(e)}>Leave</button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Past tab ── */}
+          {tab === 'past' && (
+            <div>
+              {attHistory.length === 0 && past.length === 0 && (
+                <div className="empty-state"><div>No history yet</div></div>
+              )}
+
+              {attHistory.length > 0 && (
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>Attendance</div>
+                  <div className="list-card">
+                    {attHistory.map(rec => (
+                      <div key={rec.id} className="list-row">
+                        <div className="list-body">
+                          <div className="list-title">{rec.occurrence?.session?.name ?? 'Class'}</div>
+                          <div className="list-sub">
+                            {rec.occurrence?.date ? new Date(rec.occurrence.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+                          </div>
+                        </div>
+                        <span className={`tag tag-${rec.status === 'present' ? 'lime' : rec.status === 'absent' ? 'amber' : 'grey'}`} style={{ fontSize: 10, textTransform: 'capitalize' }}>
+                          {rec.status?.replace('_', ' ')}
+                        </span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Sub-tabs */}
-              <div className="subtabs" style={{ marginBottom: 18 }}>
-                {[['enrolled', 'Enrolled Classes'], ['casuals', 'Casual & Catch-ups']].map(([key, label]) => (
-                  <button key={key} className={`subtab${activeSubTab === key ? ' active' : ''}`} onClick={() => setActiveSubTab(key)}>{label}</button>
-                ))}
-              </div>
-
-              {activeSubTab === 'enrolled' && (
+              {past.length > 0 && (
                 <div>
-                  {/* Waitlist offer banners */}
-                  {waitlisted.filter(e => e.waitlist_offered_at).map(e => (
-                    <WaitlistOfferBanner key={e.id} enrolment={e} onClaimed={refetchEnrol} />
-                  ))}
-
-                  {/* Pending displacement banners */}
-                  {pendingDisplacement.map(e => (
-                    <PendingDisplacementBanner key={e.id} enrolment={e} />
-                  ))}
-
-                  {active.length === 0 ? (
-                    <div className="empty-state">
-                      <div style={{ marginBottom: 8 }}>No active enrolments</div>
-                      <div style={{ fontSize: 12 }}>Contact your studio to get enrolled</div>
-                    </div>
-                  ) : (
-                    <>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
-                        {active.map(e => {
-                          const s = e.class_session_detail
-                          const instructorName = s?.instructor_detail
-                            ? `${s.instructor_detail.first_name || ''} ${s.instructor_detail.last_name || ''}`.trim()
-                            : (s?.instructor_name || '—')
-                          return (
-                            <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 2 }}>
-                                    {DAYS[s?.day_of_week]} · {s?.start_time?.slice(0, 5)}
-                                  </div>
-                                  <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{s?.name} · {s?.studio_detail?.name}</div>
-                                  <div style={{ fontSize: 12, color: 'var(--grey)' }}>with {instructorName}</div>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                                  <span className="tag tag-lime" style={{ fontSize: 10 }}>Active</span>
-                                  <button
-                                    className="btn btn-ghost btn-sm"
-                                    style={{ fontSize: 11, color: 'var(--red)' }}
-                                    onClick={() => setCancelPolicyEnrol(e)}
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              </div>
-                              {/* Upcoming occurrences — mark away / can make it */}
-                              {(() => {
-                                const cardOccs = e.upcoming_occurrences || []
-                                if (!cardOccs.length) return null
-                                return (
-                                  <div style={{ marginTop: 12, borderTop: '1px solid var(--border)', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>Upcoming</div>
-                                    {cardOccs.map(occ => {
-                                      const isAway = occ.marked_away
-                                      const dateStr = new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
-                                      const timeStr = occ.start_time ? ` · ${occ.start_time.slice(0, 5)}` : ''
-                                      const occWithSession = { ...occ, session_detail: e.class_session_detail }
-                                      return (
-                                        <div key={occ.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                                          <div style={{ fontSize: 12, color: isAway ? 'var(--amber)' : 'var(--grey)' }}>
-                                            {dateStr}{timeStr}
-                                            {isAway && <span style={{ marginLeft: 6, fontSize: 10, color: 'var(--amber)', fontWeight: 600 }}>AWAY</span>}
-                                          </div>
-                                          {isAway ? (
-                                            <button className="btn btn-ghost btn-sm" style={{ fontSize: 10, color: 'var(--lime)', borderColor: 'rgba(204,255,0,0.3)', flexShrink: 0 }} onClick={() => setCancelAwayOcc(occWithSession)}>
-                                              I can make it!
-                                            </button>
-                                          ) : (
-                                            <button className="btn btn-ghost btn-sm" style={{ fontSize: 10, flexShrink: 0 }} onClick={() => setMarkAwayOcc(occWithSession)}>
-                                              Mark away
-                                            </button>
-                                          )}
-                                        </div>
-                                      )
-                                    })}
-                                  </div>
-                                )
-                              })()}
-                              {e.class_session && <ClassRoster sessionId={e.class_session} />}
-                            </div>
-                          )
-                        })}
-                      </div>
-
-                      {/* Pricing summary strip */}
-                      <div style={{ background: 'rgba(176,160,255,0.08)', border: '1px solid rgba(176,160,255,0.2)', borderRadius: 12, padding: '14px 18px', marginBottom: 20 }}>
-                        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: active.length === 1 ? 8 : 0 }}>
-                          {active.length} class{active.length !== 1 ? 'es' : ''} · Season{totalPrice > 0 ? ` — $${totalPrice.toFixed(0)} total` : ''}
-                        </div>
-                        {active.length === 1 && (
-                          <div style={{ fontSize: 12, color: 'var(--grey)' }}>
-                            Add a 2nd class for a better rate →{' '}
-                            <Link to="/portal/book" style={{ color: 'var(--lav)', textDecoration: 'none', fontWeight: 600 }}>Browse classes</Link>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>Previous Seasons</div>
+                  <div className="list-card">
+                    {past.map(e => {
+                      const s = e.class_session_detail
+                      return (
+                        <div key={e.id} className="list-row" style={{ opacity: 0.7 }}>
+                          <div className="list-body">
+                            <div className="list-title">{s?.name}</div>
+                            <div className="list-sub">{DAYS[s?.day_of_week]} · {s?.studio_detail?.name}{e.season_detail?.name ? ` · ${e.season_detail.name}` : ''}</div>
                           </div>
-                        )}
-                      </div>
-                    </>
-                  )}
-
-                  {/* Season Waitlist */}
-                  {seasonWaitlisted.length > 0 && (
-                    <div style={{ marginBottom: 20 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: 'var(--lav)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Season Waitlist</div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {seasonWaitlisted.map(e => {
-                          const s = e.class_session_detail
-                          return (
-                            <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{s?.name}</div>
-                                <div style={{ fontSize: 12, color: 'var(--grey)' }}>{DAYS[s?.day_of_week]} · {s?.studio_detail?.name}</div>
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                                {e.waitlist_position != null && (
-                                  <span className="tag tag-lav" style={{ fontSize: 10 }}>#{e.waitlist_position}</span>
-                                )}
-                                <button
-                                  className="btn btn-ghost btn-sm"
-                                  style={{ fontSize: 11, color: 'var(--red)' }}
-                                  onClick={() => setCancelPolicyEnrol({ ...e, _isWaitlist: true })}
-                                >
-                                  Leave
-                                </button>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Class Waitlist */}
-                  {classWaitlisted.length > 0 && (
-                    <div style={{ marginBottom: 20 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Class Waitlist</div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {classWaitlisted.map(e => {
-                          const s = e.class_session_detail
-                          return (
-                            <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{s?.name}</div>
-                                <div style={{ fontSize: 12, color: 'var(--grey)' }}>{DAYS[s?.day_of_week]} · {s?.studio_detail?.name}</div>
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                                {e.waitlist_position != null && (
-                                  <span className="tag tag-grey" style={{ fontSize: 10 }}>#{e.waitlist_position}</span>
-                                )}
-                                <button
-                                  className="btn btn-ghost btn-sm"
-                                  style={{ fontSize: 11, color: 'var(--red)' }}
-                                  onClick={() => setClassWaitlistLeaveEnrol(e)}
-                                >
-                                  Leave
-                                </button>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {activeSubTab === 'casuals' && (
-                <CasualBookingsTab bookings={casualBookingsData} credits={creditsData} refetch={() => { refetchCasual(); refetchEnrol(); refetchCredits() }} />
-              )}
-            </div>
-          )}
-
-          {/* Future Season */}
-          {topTab === 'future' && (
-            <div className="empty-state">
-              <div style={{ marginBottom: 8 }}>Your next season classes will appear here once booked</div>
-              <Link to="/portal/book">
-                <button className="btn btn-lime btn-sm" style={{ marginTop: 8 }}>Browse Classes →</button>
-              </Link>
-            </div>
-          )}
-
-          {/* Past Seasons */}
-          {topTab === 'past' && (
-            <div>
-              {past.length === 0 ? (
-                <div className="empty-state">
-                  <div>No past season records</div>
-                </div>
-              ) : (
-                <div className="list-card">
-                  {past.map(e => {
-                    const s = e.class_session_detail
-                    return (
-                      <div key={e.id} className="list-row" style={{ opacity: 0.7 }}>
-                        <div className="list-body">
-                          <div className="list-title">{s?.name}</div>
-                          <div className="list-sub">{DAYS[s?.day_of_week]} · {s?.studio_detail?.name}</div>
+                          <span className="tag tag-grey" style={{ fontSize: 10 }}>Completed</span>
                         </div>
-                        <span className="tag tag-grey" style={{ fontSize: 10 }}>{e.status}</span>
-                      </div>
-                    )
-                  })}
+                      )
+                    })}
+                  </div>
                 </div>
               )}
             </div>
           )}
-
         </>
       )}
 
+      {/* Modals */}
       {markAwayOcc && (
         <MarkAwayModal
           occurrence={markAwayOcc}
           cancellationWindowHours={studioSettings?.cancellation_window_hours ?? 4}
           noShowFee={studioSettings?.no_show_fee ?? 20}
           onClose={() => setMarkAwayOcc(null)}
-          onDone={() => {
-            setMarkAwayOcc(null)
-            refetchAtt()
-            refetchEnrol()
-          }}
+          onDone={() => { setMarkAwayOcc(null); refetchAtt(); refetchEnrol() }}
         />
       )}
 
@@ -1148,12 +1037,7 @@ export default function StudentMyClasses() {
         <CancelAwayDialog
           occurrence={cancelAwayOcc}
           onClose={() => setCancelAwayOcc(null)}
-          onDone={() => {
-            setCancelAwayOcc(null)
-            refetchAtt()
-            refetchEnrol()
-            refetchUpcoming()
-          }}
+          onDone={() => { setCancelAwayOcc(null); refetchAtt(); refetchEnrol(); refetchUpcoming() }}
         />
       )}
 
@@ -1162,10 +1046,7 @@ export default function StudentMyClasses() {
           enrolment={cancelPolicyEnrol}
           isWaitlist={!!cancelPolicyEnrol._isWaitlist}
           onClose={() => setCancelPolicyEnrol(null)}
-          onDone={() => {
-            setCancelPolicyEnrol(null)
-            refetchEnrol()
-          }}
+          onDone={() => { setCancelPolicyEnrol(null); refetchEnrol() }}
         />
       )}
 
@@ -1173,10 +1054,7 @@ export default function StudentMyClasses() {
         <ClassWaitlistLeaveModal
           enrolment={classWaitlistLeaveEnrol}
           onClose={() => setClassWaitlistLeaveEnrol(null)}
-          onDone={() => {
-            setClassWaitlistLeaveEnrol(null)
-            refetchEnrol()
-          }}
+          onDone={() => { setClassWaitlistLeaveEnrol(null); refetchEnrol() }}
         />
       )}
 
@@ -1184,11 +1062,7 @@ export default function StudentMyClasses() {
         <DisplacementPopupModal
           booking={displacementPopup}
           onClose={() => setDisplacementPopup(null)}
-          onAction={() => {
-            setDisplacementPopup(null)
-            refetchCasual()
-            refetchEnrol()
-          }}
+          onAction={() => { setDisplacementPopup(null); refetchCasual(); refetchEnrol() }}
         />
       )}
     </div>
