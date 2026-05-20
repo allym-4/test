@@ -1551,9 +1551,42 @@ export default function BookScreen({ navigation }) {
             <Text style={{ fontFamily: 'Archivo Black', fontSize: 20, color: '#fff', marginBottom: 10, textAlign: 'center' }}>
               {bookingSeason.name}
             </Text>
-            <Text style={{ fontSize: 14, color: '#888', textAlign: 'center', lineHeight: 22 }}>
-              Enrolments for this season aren't open yet.{'\n'}Check back soon or contact the studio.
+            <Text style={{ fontSize: 14, color: '#888', textAlign: 'center', lineHeight: 22, marginBottom: 24 }}>
+              {bookingSeason.published_at
+                ? `Bookings open on ${new Date(bookingSeason.published_at).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })} at 8am.`
+                : "Bookings for this season aren't open yet."
+              }
             </Text>
+            <TouchableOpacity
+              style={{ backgroundColor: T.lime, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 14, marginBottom: 16, width: '100%', alignItems: 'center' }}
+              onPress={() => {
+                const openDate = bookingSeason.published_at ? new Date(bookingSeason.published_at) : null
+                const dateStr = openDate
+                  ? openDate.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
+                  : 'when bookings open'
+                Alert.alert(
+                  'Set a reminder',
+                  `We'll remind you on ${dateStr} at 8am when bookings go live for ${bookingSeason.name}.`,
+                  [{ text: 'Not now', style: 'cancel' }, { text: 'Remind me', onPress: () => Alert.alert('Reminder set', `We'll notify you when ${bookingSeason.name} bookings open.`) }]
+                )
+              }}
+            >
+              <Text style={{ color: '#000', fontWeight: '800', fontSize: 14 }}>Set a reminder</Text>
+            </TouchableOpacity>
+            {bookableSeasons.filter(s => s.bookings_open !== false && s.id !== bookingSeason.id).length > 0 && (
+              <View style={{ width: '100%', marginTop: 8 }}>
+                <Text style={{ fontSize: 12, color: '#555', textAlign: 'center', marginBottom: 10 }}>Or browse an open season:</Text>
+                {bookableSeasons.filter(s => s.bookings_open !== false && s.id !== bookingSeason.id).map(s2 => (
+                  <TouchableOpacity
+                    key={s2.id}
+                    onPress={() => { setSelectedSeasonId(s2.id); setSelectedSessions([]) }}
+                    style={{ borderWidth: 1, borderColor: T.border, borderRadius: 12, padding: 14, marginBottom: 8, alignItems: 'center' }}
+                  >
+                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>{s2.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
         )}
 
