@@ -1,9 +1,11 @@
 {% extends "emails/base.html" %}
 {% block content %}
-We've received your payment of <strong>${{ amount }}</strong> for <em>{{ description }}</em>. Thank you!
+<p>We've received your payment of <strong>${{ amount }}</strong> for <em>{{ description }}</em>. Thank you!</p>
 <div class="highlight-box">
-  <strong>Amount:</strong> ${{ amount }}<br>
-  <strong>For:</strong> {{ description }}
+  <strong>Amount paid:</strong> ${{ amount }}<br>
+  <strong>For:</strong> {{ description }}<br>
+  <strong>Business:</strong> Duality Pole Studio<br>
+  <strong>ABN:</strong> [ABN_PLACEHOLDER]
 </div>
-If you have any questions about this payment, please reply to this email or contact the studio.
+<p>Please keep this email as your receipt. If you have any questions, reply to this email or contact us at intrigued@dualitypole.com.</p>
 {% endblock %}

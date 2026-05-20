@@ -4,32 +4,32 @@ import { helpdesk } from '../../api'
 
 const FAQS = [
   {
-    q: 'How do I cancel or reschedule a class?',
-    a: 'You can cancel a booking up to 24 hours before the class starts without a fee. To cancel, go to My Classes and tap the booking. Cancellations within 24 hours may incur a late cancellation fee of $10. If you miss a class without cancelling, a $20 no-show fee applies.',
+    q: 'How do I mark away from a class?',
+    a: "Go to My Classes and tap 'Mark away' on the relevant class. If you mark away more than 4 hours before class, you'll receive a catch-up credit to use within the current season. Within 4 hours, no credit is issued — but please still mark away so we know you're not coming. If you don't attend and don't mark away, a $20 no-show fee applies.",
   },
   {
-    q: 'Can I freeze my membership?',
-    a: 'Yes! You can freeze your season membership for up to 8 weeks once per season. Freezes require 7 days notice. To request a freeze, message us via the Messages tab or email hello@dualitypole.com.au.',
+    q: 'Can I cancel my enrolment?',
+    a: "Season enrolments are non-refundable, as we reserve your spot and plan the season around you. If your circumstances have changed, contact us via the 'Contact Us' tab and we'll do our best to find a solution — we may be able to arrange a transfer.",
   },
   {
-    q: 'How do makeup credits work?',
-    a: 'If you have an approved absence (e.g., illness, injury), we may issue a makeup credit. Credits can be used to book any equivalent or lower level class within 60 days. You can see your credits in your Billing section.',
+    q: 'How do catch-up credits work?',
+    a: 'When you mark away more than 4 hours before class, a catch-up credit is added to your account. You can use it to book into any eligible class in the same season — conditioning classes and dance classes can be caught up any week, but level and routine classes can only be caught up up to and including Week 3.',
+  },
+  {
+    q: 'How does practice time work?',
+    a: 'If you\'re enrolled in 3 classes this season, you get 1 free practice session per week (Mon–Sun). Enrolled in 4 or more classes = unlimited free practice. Non-free rates: $20/hr if enrolled this season, $30/hr otherwise. Book via the Practice Time tab.',
   },
   {
     q: 'What should I wear to class?',
-    a: 'Wear comfortable activewear that leaves your legs, arms, and midriff exposed — your skin helps you grip the pole! Avoid moisturisers or fake tan before class. Bring grippy socks for warm-up and cool-down.',
+    a: 'Wear activewear that leaves your legs, arms, and midriff exposed — skin contact helps you grip the pole. Avoid moisturiser or fake tan before class. Bring water.',
   },
   {
     q: 'Is there parking nearby?',
-    a: 'The Box (Surry Hills): Street parking on Kippax St and surrounding streets. Rhapsody (Crown St): Limited street parking. The nearest train station is Central.',
+    a: 'Rhapsody is on Crown St, Surry Hills — street parking on Crown St and nearby streets. Public transport: bus stops on Crown St, short walk from Central or Museum station.',
   },
   {
-    q: 'What happens if a class is cancelled?',
-    a: "If we cancel a class, you'll be notified by email as soon as possible. A makeup credit will automatically be added to your account. You can use this credit to book any equivalent class within 60 days.",
-  },
-  {
-    q: 'How do I enrol for a new season?',
-    a: "Season enrolments open approximately 4 weeks before the new season starts. Current students get priority access for the first 48 hours. You'll receive an email when enrolments open.",
+    q: 'When do new season enrolments open?',
+    a: "In Week 5 of the current season, the next season becomes available to book. You'll get an email when it opens — current students get access from 8am Sydney time on opening day.",
   },
 ]
 

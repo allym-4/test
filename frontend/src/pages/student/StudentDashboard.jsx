@@ -378,7 +378,7 @@ export default function StudentDashboard() {
         <div style={{ background: '#0d0d0d', border: '1px solid var(--border)', borderRadius: 12, padding: '22px 26px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, marginBottom: 8, flexWrap: 'wrap' }}>
           <div>
             <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 6 }}>You're on {enrolments_.length} class{enrolments_.length !== 1 ? 'es' : ''} per week</div>
-            <div style={{ fontSize: 14, color: 'var(--grey)' }}>Add a 3rd class to unlock <span style={{ color: 'var(--lime)' }}>1 free practice session per week</span>.</div>
+            <div style={{ fontSize: 14, color: 'var(--grey)' }}>Add {3 - enrolments_.length} more class{3 - enrolments_.length !== 1 ? 'es' : ''} to unlock <span style={{ color: 'var(--lime)' }}>1 free practice session per week</span>.</div>
           </div>
           <Link to="/portal/book"><button className="btn btn-ghost btn-sm" style={{ whiteSpace: 'nowrap' }}>Add a class</button></Link>
         </div>

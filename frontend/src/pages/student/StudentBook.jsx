@@ -495,12 +495,579 @@ function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, isEnrolle
   )
 }
 
+// ─── Season booking helpers ──────────────────────────────────────────────────
+
+function getClassLevel(name) {
+  if (!name) return 0
+  if (/level\s*1/i.test(name)) return 1
+  if (/level\s*2/i.test(name)) return 2
+  if (/level\s*3/i.test(name)) return 3
+  if (/level\s*4/i.test(name)) return 4
+  if (/level\s*5/i.test(name)) return 5
+  if (/level\s*6/i.test(name)) return 6
+  return 0
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return ''
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
+}
+
+function formatTime(timeStr) {
+  if (!timeStr) return ''
+  const [h, m] = timeStr.split(':').map(Number)
+  const ampm = h >= 12 ? 'pm' : 'am'
+  const hour = h > 12 ? h - 12 : h === 0 ? 12 : h
+  return `${hour}:${String(m).padStart(2, '0')}${ampm}`
+}
+
+function SeasonClassRow({ session, userLevel, selected, onToggle, demoNoLevel }) {
+  const classLevel = getClassLevel(session.name)
+  const effectiveUserLevel = demoNoLevel ? null : userLevel
+
+  // Determine lock/badge
+  let locked = false
+  let badge = null
+
+  if (classLevel === 0) {
+    // Conditioning / dance / open
+    const isVirgin = /virgin/i.test(session.name)
+    badge = { label: isVirgin ? 'BEGINNER' : 'ALL LEVELS', color: '#888', bg: 'rgba(255,255,255,0.07)', locked: false }
+  } else if (effectiveUserLevel == null) {
+    // No level assigned — lock all level classes
+    locked = true
+    badge = { label: `LEVEL ${classLevel}+`, color: '#ff4444', bg: 'rgba(255,68,68,0.1)', locked: true }
+  } else if (classLevel > effectiveUserLevel) {
+    locked = true
+    badge = { label: `LEVEL ${classLevel}+`, color: '#ff4444', bg: 'rgba(255,68,68,0.1)', locked: true }
+  } else if (classLevel === effectiveUserLevel) {
+    badge = { label: 'YOUR LEVEL', color: '#ccff00', bg: 'rgba(204,255,0,0.15)', locked: false, highlight: true }
+  } else {
+    badge = { label: `LEVEL ${classLevel}`, color: '#ccff00', bg: 'rgba(204,255,0,0.08)', locked: false }
+  }
+
+  const isSelected = selected
+  const instructor = session.instructor_detail?.display_name || session.instructor_detail?.first_name || ''
+  const studio = session.studio_detail?.name || ''
+  const dayLabel = DAYS_SHORT[session.day_of_week]?.toUpperCase() || ''
+  const timeLabel = formatTime(session.start_time)
+
+  return (
+    <div
+      onClick={() => !locked && onToggle(session)}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        padding: '14px 16px',
+        borderRadius: 10,
+        border: `1px solid ${isSelected ? '#ccff00' : '#222'}`,
+        background: isSelected ? 'rgba(204,255,0,0.04)' : locked ? 'rgba(255,255,255,0.01)' : 'transparent',
+        cursor: locked ? 'not-allowed' : 'pointer',
+        opacity: locked ? 0.5 : 1,
+        marginBottom: 4,
+        transition: 'border-color 0.15s, background 0.15s',
+      }}
+    >
+      {/* Day/time */}
+      <div style={{ width: 52, flexShrink: 0, textAlign: 'center' }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: '#666', letterSpacing: '0.6px', textTransform: 'uppercase' }}>{dayLabel}</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#ccff00', marginTop: 2 }}>{timeLabel}</div>
+      </div>
+
+      {/* Class info */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 2 }}>{session.name}</div>
+        <div style={{ fontSize: 12, color: '#555' }}>
+          {[instructor, studio].filter(Boolean).join(' · ')}
+          {' '}
+          <span style={{ color: '#444', fontSize: 11 }}>More info</span>
+        </div>
+      </div>
+
+      {/* Badge + radio */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        {badge && (
+          <span style={{
+            fontSize: 10,
+            fontWeight: 700,
+            padding: '3px 7px',
+            borderRadius: 5,
+            background: badge.bg,
+            color: badge.color,
+            border: badge.highlight ? '1px solid rgba(204,255,0,0.4)' : '1px solid transparent',
+            whiteSpace: 'nowrap',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+          }}>
+            {badge.locked && <span style={{ fontSize: 10 }}>🔒</span>}
+            {badge.label}
+          </span>
+        )}
+        <div style={{
+          width: 20,
+          height: 20,
+          borderRadius: 10,
+          border: `2px solid ${isSelected ? '#ccff00' : '#444'}`,
+          background: isSelected ? '#ccff00' : 'transparent',
+          flexShrink: 0,
+          transition: 'background 0.15s, border-color 0.15s',
+        }} />
+      </div>
+    </div>
+  )
+}
+
+function SeasonSidebar({ selectedSessions, seasonName, totalPrice, incrementalPrice, onProceed, onRemove }) {
+  const count = selectedSessions.length
+  const perSessionWeekly = count > 0 ? (incrementalPrice / (8 * count)).toFixed(2) : null
+
+  return (
+    <div style={{
+      position: 'sticky',
+      top: 20,
+      width: 280,
+      flexShrink: 0,
+      background: '#111',
+      border: '1px solid #222',
+      borderRadius: 14,
+      padding: '20px 18px',
+    }}>
+      <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 16 }}>Your {seasonName}</div>
+
+      {count === 0 ? (
+        <div style={{ fontSize: 13, color: '#555', marginBottom: 16 }}>No classes selected yet.</div>
+      ) : (
+        <div style={{ marginBottom: 16 }}>
+          {selectedSessions.map(s => (
+            <div key={s.id} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 1 }}>{s.name}</div>
+                <div style={{ fontSize: 11, color: '#555' }}>
+                  {DAYS_SHORT[s.day_of_week]} · {formatTime(s.start_time)}
+                </div>
+              </div>
+              <button
+                onClick={() => onRemove(s)}
+                style={{ background: 'none', border: 'none', color: '#555', fontSize: 12, cursor: 'pointer', padding: '2px 0', flexShrink: 0, textDecoration: 'underline' }}
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Pricing box */}
+      <div style={{
+        background: 'rgba(204,255,0,0.06)',
+        border: '1px solid rgba(204,255,0,0.2)',
+        borderRadius: 10,
+        padding: '14px 14px',
+        marginBottom: 16,
+      }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '1px', color: '#666', textTransform: 'uppercase', marginBottom: 6 }}>Season Pricing</div>
+        {count > 0 ? (
+          <>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color: '#ccff00', lineHeight: 1 }}>${incrementalPrice}</div>
+            <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
+              {count} class{count !== 1 ? 'es' : ''} — ${perSessionWeekly}/class/week
+            </div>
+          </>
+        ) : (
+          <div style={{ fontSize: 13, color: '#444' }}>Select classes to see pricing</div>
+        )}
+      </div>
+
+      {count > 0 && (
+        <>
+          <button
+            onClick={onProceed}
+            style={{
+              width: '100%',
+              background: '#ccff00',
+              color: '#000',
+              border: 'none',
+              borderRadius: 12,
+              padding: '16px 0',
+              fontWeight: 900,
+              fontSize: 13,
+              letterSpacing: '0.5px',
+              cursor: 'pointer',
+              marginBottom: 8,
+            }}
+          >
+            CHOOSE PAYMENT OPTION
+          </button>
+          <div style={{ textAlign: 'center', fontSize: 11, color: '#444' }}>Secure payment via Stripe</div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function SeasonTab({
+  allSeasons,
+  sessions,
+  loading,
+  activeSeasonCount,
+  seasonPricingConfig,
+  priceSeason,
+  userLevel,
+  onProceedToCheckout,
+}) {
+  // Bookable seasons: active OR upcoming with bookings_open
+  const bookableSeasons = allSeasons
+    .filter(s => s.status === 'active' || (s.status === 'upcoming' && s.bookings_open))
+    .sort((a, b) => {
+      // newest first: compare start_date descending
+      if (a.start_date && b.start_date) return new Date(b.start_date) - new Date(a.start_date)
+      return 0
+    })
+
+  const [selectedSeasonId, setSelectedSeasonId] = useState(null)
+  const [selectedSessions, setSelectedSessions] = useState([])
+  const [filterDay, setFilterDay] = useState('all')
+  const [filterInstructor, setFilterInstructor] = useState('all')
+  const [filterType, setFilterType] = useState('all')
+  const [filterLevel, setFilterLevel] = useState('all')
+  const [showEligibleOnly, setShowEligibleOnly] = useState(false)
+  const [demoNoLevel, setDemoNoLevel] = useState(false)
+
+  // Pick the first bookable season by default
+  const activeSeason = bookableSeasons.find(s => s.id === selectedSeasonId) || bookableSeasons[0] || null
+
+  // When seasons load, set default
+  useEffect(() => {
+    if (!selectedSeasonId && bookableSeasons.length > 0) {
+      setSelectedSeasonId(bookableSeasons[0].id)
+    }
+  }, [bookableSeasons.length])
+
+  // Filter sessions to selected season
+  const seasonSessions = activeSeason
+    ? sessions.filter(s => s.season === activeSeason.id)
+    : []
+
+  function getSeasonPriceForTotal(count) {
+    if (count <= 0) return 0
+    const tier = seasonPricingConfig.find(r => {
+      const n = parseInt((r.label || '').match(/(\d+)/)?.[1] || '0')
+      return n === count
+    })
+    return tier ? parseFloat(tier.price) : priceSeason
+  }
+
+  const incrementalPrice = selectedSessions.length > 0
+    ? getSeasonPriceForTotal(activeSeasonCount + selectedSessions.length) - getSeasonPriceForTotal(activeSeasonCount)
+    : 0
+
+  const totalPrice = getSeasonPriceForTotal(activeSeasonCount + selectedSessions.length)
+
+  function toggleSession(session) {
+    setSelectedSessions(prev => {
+      const exists = prev.find(s => s.id === session.id)
+      if (exists) return prev.filter(s => s.id !== session.id)
+      return [...prev, session]
+    })
+  }
+
+  function removeSession(session) {
+    setSelectedSessions(prev => prev.filter(s => s.id !== session.id))
+  }
+
+  // Build filter options
+  const instructorOptions = Array.from(
+    new Map(
+      seasonSessions
+        .filter(s => s.instructor_detail)
+        .map(s => [s.instructor_detail.id, s.instructor_detail.display_name || s.instructor_detail.first_name])
+    ).entries()
+  )
+
+  const classTypeOptions = Array.from(new Set(seasonSessions.map(s => {
+    // Derive a broad type from name
+    if (/level/i.test(s.name)) return 'Level Classes'
+    if (/virgin/i.test(s.name)) return 'Beginner'
+    if (/practice/i.test(s.name)) return 'Practice'
+    if (/dance/i.test(s.name)) return 'Dance'
+    return 'Conditioning'
+  })))
+
+  const levelOptions = ['All levels', 'Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5', 'Level 6']
+
+  // Apply filters
+  const effectiveUserLevel = demoNoLevel ? null : userLevel
+  let filtered = seasonSessions
+
+  if (filterDay !== 'all') {
+    const dayIdx = DAYS_SHORT.map(d => d.toLowerCase()).indexOf(filterDay.toLowerCase())
+    if (dayIdx >= 0) filtered = filtered.filter(s => s.day_of_week === dayIdx)
+  }
+
+  if (filterInstructor !== 'all') {
+    filtered = filtered.filter(s => String(s.instructor_detail?.id) === filterInstructor)
+  }
+
+  if (filterType !== 'all') {
+    filtered = filtered.filter(s => {
+      if (filterType === 'Level Classes') return /level/i.test(s.name)
+      if (filterType === 'Beginner') return /virgin/i.test(s.name)
+      if (filterType === 'Practice') return /practice/i.test(s.name)
+      if (filterType === 'Dance') return /dance/i.test(s.name)
+      return true
+    })
+  }
+
+  if (filterLevel !== 'all') {
+    const lvlNum = parseInt(filterLevel.match(/(\d+)/)?.[1] || '0')
+    if (lvlNum > 0) filtered = filtered.filter(s => getClassLevel(s.name) === lvlNum)
+  }
+
+  if (showEligibleOnly) {
+    filtered = filtered.filter(s => {
+      const cl = getClassLevel(s.name)
+      if (cl === 0) return true
+      if (effectiveUserLevel == null) return false
+      return cl <= effectiveUserLevel
+    })
+  }
+
+  // Group by day_of_week
+  const grouped = DAYS_SHORT.reduce((acc, day, idx) => {
+    const daySessions = filtered.filter(s => s.day_of_week === idx)
+    if (daySessions.length > 0) acc.push({ day, idx, sessions: daySessions })
+    return acc
+  }, [])
+
+  function handleProceed() {
+    onProceedToCheckout(selectedSessions, incrementalPrice)
+  }
+
+  if (bookableSeasons.length === 0) {
+    // Check if there's a season that exists but isn't open yet
+    const nextSeason = allSeasons.find(s => s.status === 'upcoming') || allSeasons.find(s => s.status === 'active')
+    return (
+      <div style={{ background: 'rgba(255,68,68,0.07)', border: '1px solid rgba(255,68,68,0.2)', borderRadius: 12, padding: '20px', textAlign: 'center' }}>
+        <div style={{ fontSize: 22, marginBottom: 10 }}>🔒</div>
+        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>
+          {nextSeason ? `${nextSeason.name} — Bookings not open yet` : 'No seasons available to book'}
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
+          {nextSeason
+            ? `Enrolments for this season haven't opened yet. Keep an eye on your email — we'll let you know the moment they do!${nextSeason.start_date && nextSeason.end_date ? ` The season runs ${formatDate(nextSeason.start_date)} – ${formatDate(nextSeason.end_date)}.` : ''}`
+            : 'Check back soon or contact us for more information.'}
+        </div>
+      </div>
+    )
+  }
+
+  const seasonLabel = (s) => {
+    const start = s.start_date ? formatDate(s.start_date) : ''
+    const end = s.end_date ? formatDate(s.end_date) : ''
+    return `${s.name}${start && end ? ` ${start}–${end}` : ''}`
+  }
+
+  return (
+    <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+      {/* Main content */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Season sub-tabs */}
+        {bookableSeasons.length > 1 && (
+          <div className="tab-strip" style={{ marginBottom: 20 }}>
+            {bookableSeasons.map(s => (
+              <button
+                key={s.id}
+                className={`tab-btn ${activeSeason?.id === s.id ? 'active' : ''}`}
+                onClick={() => { setSelectedSeasonId(s.id); setSelectedSessions([]) }}
+              >
+                {seasonLabel(s)}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {activeSeason && (
+          <>
+            {/* Season header */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, marginBottom: 4 }}>
+                Book for {activeSeason.name}
+              </div>
+              {activeSeason.start_date && activeSeason.end_date && (
+                <div style={{ fontSize: 13, color: '#666' }}>
+                  Season runs {formatDate(activeSeason.start_date)} – {formatDate(activeSeason.end_date)}
+                </div>
+              )}
+            </div>
+
+            {/* Notice bar */}
+            <div style={{ background: 'rgba(204,255,0,0.08)', border: '1px solid rgba(204,255,0,0.2)', borderRadius: 10, padding: '12px 16px', marginBottom: 18, fontSize: 13, color: '#ccff00' }}>
+              {activeSeason.name} bookings are open.
+              {activeSeason.start_date && activeSeason.end_date && ` ${activeSeason.name} runs ${formatDate(activeSeason.start_date)} – ${formatDate(activeSeason.end_date)}.`}
+              {' '}Bookings close end of Week 3.
+            </div>
+
+            {/* Demo toggle */}
+            <div style={{ background: '#111', border: '1px solid #222', borderRadius: 10, padding: '10px 14px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 11, color: '#666', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Demo:</span>
+              <button
+                onClick={() => setDemoNoLevel(false)}
+                style={{
+                  background: !demoNoLevel ? 'rgba(204,255,0,0.12)' : 'transparent',
+                  border: `1px solid ${!demoNoLevel ? 'rgba(204,255,0,0.3)' : '#333'}`,
+                  borderRadius: 6,
+                  padding: '4px 10px',
+                  fontSize: 11,
+                  color: !demoNoLevel ? '#ccff00' : '#555',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                }}
+              >
+                Level assigned {userLevel ? `(Level ${userLevel})` : '(none)'}
+              </button>
+              <button
+                onClick={() => setDemoNoLevel(true)}
+                style={{
+                  background: demoNoLevel ? 'rgba(255,68,68,0.1)' : 'transparent',
+                  border: `1px solid ${demoNoLevel ? 'rgba(255,68,68,0.3)' : '#333'}`,
+                  borderRadius: 6,
+                  padding: '4px 10px',
+                  fontSize: 11,
+                  color: demoNoLevel ? '#ff4444' : '#555',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                }}
+              >
+                No level assigned
+              </button>
+            </div>
+
+            {/* Instruction */}
+            <div style={{ fontSize: 13, color: '#666', marginBottom: 18, lineHeight: 1.6 }}>
+              Select your classes below — your pricing updates automatically as you add more. Only classes you're eligible for based on your current level are shown.
+            </div>
+
+            {/* Filters */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+              <select
+                value={filterDay}
+                onChange={e => setFilterDay(e.target.value)}
+                style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 8, color: '#fff', padding: '7px 10px', fontSize: 12, outline: 'none' }}
+              >
+                <option value="all">All days</option>
+                {DAYS_SHORT.map(d => <option key={d} value={d.toLowerCase()}>{d}</option>)}
+              </select>
+
+              <select
+                value={filterInstructor}
+                onChange={e => setFilterInstructor(e.target.value)}
+                style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 8, color: '#fff', padding: '7px 10px', fontSize: 12, outline: 'none' }}
+              >
+                <option value="all">All instructors</option>
+                {instructorOptions.map(([id, name]) => <option key={id} value={String(id)}>{name}</option>)}
+              </select>
+
+              <select
+                value={filterType}
+                onChange={e => setFilterType(e.target.value)}
+                style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 8, color: '#fff', padding: '7px 10px', fontSize: 12, outline: 'none' }}
+              >
+                <option value="all">All class types</option>
+                {classTypeOptions.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+
+              <select
+                value={filterLevel}
+                onChange={e => setFilterLevel(e.target.value)}
+                style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 8, color: '#fff', padding: '7px 10px', fontSize: 12, outline: 'none' }}
+              >
+                <option value="all">All experience levels</option>
+                {levelOptions.map(l => <option key={l} value={l}>{l}</option>)}
+              </select>
+            </div>
+
+            {/* Eligible toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+              <button
+                onClick={() => setShowEligibleOnly(v => !v)}
+                style={{
+                  width: 36,
+                  height: 20,
+                  borderRadius: 10,
+                  background: showEligibleOnly ? '#ccff00' : '#333',
+                  border: 'none',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  transition: 'background 0.2s',
+                  flexShrink: 0,
+                }}
+              >
+                <span style={{
+                  position: 'absolute',
+                  top: 2,
+                  left: showEligibleOnly ? 18 : 2,
+                  width: 16,
+                  height: 16,
+                  borderRadius: 8,
+                  background: '#000',
+                  transition: 'left 0.2s',
+                }} />
+              </button>
+              <span style={{ fontSize: 13, color: '#666' }}>Show my eligible classes only</span>
+            </div>
+
+            {/* Class list */}
+            {loading ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {[1, 2, 3, 4].map(i => <SkeletonCard key={i} />)}
+              </div>
+            ) : grouped.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 24px', color: '#555' }}>
+                <div style={{ fontSize: 14, marginBottom: 6 }}>No classes match your filters.</div>
+                <div style={{ fontSize: 12 }}>Try adjusting the filters above.</div>
+              </div>
+            ) : (
+              grouped.map(({ day, sessions: daySessions }) => (
+                <div key={day} style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: '#555', marginBottom: 8 }}>{day}</div>
+                  {daySessions.map(s => (
+                    <SeasonClassRow
+                      key={s.id}
+                      session={s}
+                      userLevel={userLevel}
+                      selected={!!selectedSessions.find(sel => sel.id === s.id)}
+                      onToggle={toggleSession}
+                      demoNoLevel={demoNoLevel}
+                    />
+                  ))}
+                </div>
+              ))
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Sidebar */}
+      <SeasonSidebar
+        selectedSessions={selectedSessions}
+        seasonName={activeSeason?.name || 'Season'}
+        totalPrice={totalPrice}
+        incrementalPrice={incrementalPrice}
+        onProceed={handleProceed}
+        onRemove={removeSession}
+      />
+    </div>
+  )
+}
+
 export default function StudentBook() {
   const { user } = useAuth()
-  const [tab, setTab] = useState('casual')
+  const [tab, setTab] = useState('season')
   const [booked, setBooked] = useState([])
   const [cart, setCart] = useState(null) // { session, type, price, label }
-  const [checkout, setCheckout] = useState(null) // { session, type, amount, description }
+  const [checkout, setCheckout] = useState(null) // { sessionIds, type, amount, description }
   const [buyingPass, setBuyingPass] = useState(false)
   const [promoCode, setPromoCode] = useState('')
   const [promoDiscount, setPromoDiscount] = useState(null)
@@ -623,6 +1190,21 @@ export default function StudentBook() {
     setCheckout({ session, type, amount: effectivePrice, description, sessionIds: [session.id] })
   }
 
+  // Season multi-select checkout
+  function handleSeasonProceed(selectedSessions, incrementalPrice) {
+    if (!selectedSessions.length) return
+    const sessionIds = selectedSessions.map(s => s.id)
+    const count = selectedSessions.length
+    const description = `Season enrolment — ${count} class${count !== 1 ? 'es' : ''}`
+    setCheckout({
+      sessionIds,
+      type: 'season',
+      amount: incrementalPrice,
+      description,
+      session: selectedSessions[0], // kept for legacy compat
+    })
+  }
+
   async function cancelWorkshop(workshop) {
     setCancellingWorkshopId(workshop.id)
     try {
@@ -653,7 +1235,8 @@ export default function StudentBook() {
   }
 
   async function handlePaymentSuccess() {
-    const { session, type } = checkout
+    const { type, sessionIds } = checkout
+    const ids = sessionIds || (checkout.session ? [checkout.session.id] : [])
     setCheckout(null)
     setCart(null)
     setPromoDiscount(null)
@@ -661,21 +1244,24 @@ export default function StudentBook() {
       paymentsApi.promoCodes.use({ code: appliedPromoCode }).catch(() => {})
       setAppliedPromoCode('')
     }
-    try {
-      await enrolments.create({ session: session.id, status: 'active', enrolment_type: type || 'casual' })
-    } catch {}
+    // Create enrolments for all session IDs
+    for (const sessionId of ids) {
+      try {
+        await enrolments.create({ session: sessionId, status: 'active', enrolment_type: type || 'casual' })
+      } catch {}
+    }
     if (type === 'catchup') refetchCredits()
-    setBooked(b => [...b, session.id])
+    setBooked(b => [...b, ...ids])
   }
 
   const hasEverEnrolled = (enrolHistoryData?.count ?? (enrolHistoryData?.results || enrolHistoryData || []).length) > 0
   const showTrial = !hasEverEnrolled
 
   const TABS = [
-    ['season', 'Season Enrolment'],
-    ['casual', 'Drop-in & Make-ups'],
+    ['season', 'Book a Season'],
+    ['casual', 'Casual and Catch-ups'],
     ...(showTrial ? [['trial', 'Trial Class']] : []),
-    ['workshop', 'Workshops'],
+    ['workshop', 'Workshops and Events'],
   ]
 
   const cartSessionId = cart?.session?.id
@@ -757,49 +1343,16 @@ export default function StudentBook() {
       </div>
 
       {tab === 'season' && (
-        <div>
-          {upcomingSeason && !upcomingSeason.bookings_open ? (
-            <div style={{ background: 'rgba(255,68,68,0.07)', border: '1px solid rgba(255,68,68,0.2)', borderRadius: 12, padding: '20px 20px', marginBottom: 20, textAlign: 'center' }}>
-              <div style={{ fontSize: 22, marginBottom: 10 }}>🔒</div>
-              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{upcomingSeason.name} — Bookings not open yet</div>
-              <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
-                Enrolments for this season haven't opened yet. Keep an eye on your email — we'll let you know the moment they do!
-                {upcomingSeason?.start_date && upcomingSeason?.end_date
-                  ? ` The season runs ${new Date(upcomingSeason.start_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} – ${new Date(upcomingSeason.end_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}.`
-                  : ''}
-              </div>
-            </div>
-          ) : (
-          <div style={{ background: 'rgba(176,160,255,0.08)', border: '1px solid rgba(176,160,255,0.25)', borderRadius: 12, padding: '16px 18px', marginBottom: 20 }}>
-            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{upcomingSeason ? upcomingSeason.name : 'Next Season'}</div>
-            <div style={{ fontSize: 12, color: 'var(--grey)', lineHeight: 1.6 }}>
-              Season enrolment gives you a reserved spot in your class for the full term.
-              {upcomingSeason?.start_date && upcomingSeason?.end_date
-                ? ` ${upcomingSeason.name} runs ${new Date(upcomingSeason.start_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} – ${new Date(upcomingSeason.end_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}.`
-                : ''}
-            </div>
-          </div>
-          )}
-
-          {(!upcomingSeason || upcomingSeason.bookings_open) && (
-            <>
-              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 14, fontWeight: 600 }}>
-                Current Season Classes
-              </div>
-              {loading ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-                  {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
-                </div>
-              ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-                  {sessions.length === 0 ? <EmptyState /> : sessions.map(s => (
-                    <ClassCard key={s.id} session={s} onAddToCart={(s, type) => addToCart(s, type || 'season', seasonPrice)} priceCasual={seasonPrice} cartSessionId={cartSessionId} isWaitlisted={booked.includes(s.id + '-waitlist')} waitlistType="waitlist" />
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </div>
+        <SeasonTab
+          allSeasons={allSeasons}
+          sessions={sessions}
+          loading={loading}
+          activeSeasonCount={activeSeasonCount}
+          seasonPricingConfig={seasonPricingConfig}
+          priceSeason={priceSeason}
+          userLevel={user?.level || null}
+          onProceedToCheckout={handleSeasonProceed}
+        />
       )}
 
       {tab === 'casual' && (

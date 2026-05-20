@@ -666,7 +666,7 @@ export default function DashboardScreen({ navigation }) {
               You're on {enrolList.length} class{enrolList.length !== 1 ? 'es' : ''} per week
             </Text>
             <Text style={s.upsellBody}>
-              Add a 3rd class to unlock <Text style={{ color: '#ccff00' }}>1 free practice session per week</Text>.
+              Add {3 - enrolList.length} more class{3 - enrolList.length !== 1 ? 'es' : ''} to unlock <Text style={{ color: '#ccff00' }}>1 free practice session per week</Text>.
             </Text>
           </View>
           <TouchableOpacity style={s.upsellBtn} onPress={() => navigation.navigate('Book')}>
