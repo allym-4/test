@@ -211,12 +211,72 @@ function SurveyModal({ survey, onClose, onDone }) {
   )
 }
 
-export default function FormsScreen({ route }) {
+function WaiverModal({ def, onClose, onSubmit, submitting }) {
+  const [name, setName] = useState('')
+  const [agreed, setAgreed] = useState(false)
+  const canSubmit = name.trim().length > 0 && agreed && !submitting
+  const today = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })
+
+  return (
+    <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: '#000' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1, borderBottomColor: '#222' }}>
+          <Text style={{ fontSize: 17, fontWeight: '700', color: '#fff', flex: 1, marginRight: 12 }}>{def.title}</Text>
+          <TouchableOpacity onPress={onClose}><Text style={{ color: '#666', fontSize: 16 }}>✕</Text></TouchableOpacity>
+        </View>
+        <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+          <View style={{ backgroundColor: '#111', borderRadius: 12, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: '#222' }}>
+            <Text style={{ fontSize: 13, color: '#aaa', lineHeight: 22 }}>{def.description}</Text>
+          </View>
+
+          <Text style={{ fontSize: 12, color: '#555', marginBottom: 4, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>Full name (signature)</Text>
+          <TextInput
+            style={{ backgroundColor: '#111', borderWidth: 1, borderColor: name.trim() ? '#ccff00' : '#333', borderRadius: 10, color: '#fff', fontSize: 16, padding: 14, marginBottom: 20 }}
+            placeholder="Type your full name"
+            placeholderTextColor="#444"
+            value={name}
+            onChangeText={setName}
+            autoCapitalize="words"
+          />
+
+          <TouchableOpacity
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#111', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: agreed ? '#ccff00' : '#333', marginBottom: 8 }}
+            onPress={() => setAgreed(a => !a)}
+            activeOpacity={0.8}
+          >
+            <View style={{ width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: agreed ? '#ccff00' : '#555', backgroundColor: agreed ? '#ccff00' : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+              {agreed && <Text style={{ color: '#000', fontWeight: '900', fontSize: 13 }}>✓</Text>}
+            </View>
+            <Text style={{ flex: 1, fontSize: 13, color: agreed ? '#fff' : '#888', lineHeight: 19 }}>
+              I agree to the terms described above and confirm this is my legally binding signature.
+            </Text>
+          </TouchableOpacity>
+
+          <Text style={{ fontSize: 12, color: '#444', marginBottom: 24, paddingHorizontal: 4 }}>Date: {today}</Text>
+
+          <TouchableOpacity
+            style={{ backgroundColor: '#ccff00', borderRadius: 12, paddingVertical: 16, alignItems: 'center', opacity: canSubmit ? 1 : 0.4 }}
+            onPress={() => canSubmit && onSubmit({ agreed: true, signature_name: name.trim(), signed_at: new Date().toISOString() })}
+            disabled={!canSubmit}
+          >
+            {submitting
+              ? <ActivityIndicator color="#000" />
+              : <Text style={{ color: '#000', fontWeight: '800', fontSize: 15 }}>Submit</Text>
+            }
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+    </Modal>
+  )
+}
+
+
   const { data: formsData, loading, refetch } = useApi(() => forms.list(), [])
   const { data: pendingRequiredData } = useApi(() => forms.pendingRequired(), [])
   const { data: surveysData, refetch: refetchSurveys } = useApi(() => surveys.mine(), [])
 
   const [showParq, setShowParq] = useState(false)
+  const [activeWaiver, setActiveWaiver] = useState(null)
   const [activeSurvey, setActiveSurvey] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [localCompleted, setLocalCompleted] = useState({})
@@ -259,22 +319,6 @@ export default function FormsScreen({ route }) {
     if (ok) setShowParq(false)
   }
 
-  function handleSimpleForm(def) {
-    Alert.alert(
-      def.title,
-      def.description + '\n\nBy confirming, you agree to the terms described above.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'I agree',
-          onPress: async () => {
-            await submitForm(def.key, { agreed: true })
-          },
-        },
-      ],
-    )
-  }
-
   function handleComplete(def) {
     if (def.key === 'parq') {
       Alert.alert(
@@ -286,7 +330,7 @@ export default function FormsScreen({ route }) {
         ],
       )
     } else {
-      handleSimpleForm(def)
+      setActiveWaiver(def)
     }
   }
 
@@ -367,6 +411,17 @@ export default function FormsScreen({ route }) {
           onClose={() => setShowParq(false)}
           onSubmit={handleParqSubmit}
           submitting={submitting}
+        />
+      )}
+      {activeWaiver && (
+        <WaiverModal
+          def={activeWaiver}
+          onClose={() => setActiveWaiver(null)}
+          submitting={submitting}
+          onSubmit={async (responses) => {
+            const ok = await submitForm(activeWaiver.key, responses)
+            if (ok) setActiveWaiver(null)
+          }}
         />
       )}
       {activeSurvey && (

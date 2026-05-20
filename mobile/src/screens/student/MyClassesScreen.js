@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   ScrollView, View, Text, TouchableOpacity, StyleSheet,
   RefreshControl, Alert, ActivityIndicator, Share, Modal,
@@ -10,10 +10,12 @@ import { TextInput } from 'react-native'
 
 function WhoComing({ sessionId }) {
   const [open, setOpen] = useState(false)
-  const { data, loading, refetch } = useApi(
+  const { data, loading } = useApi(
     () => open ? roster.get(sessionId) : null, [open, sessionId]
   )
   const names = data?.names ?? data ?? []
+
+  if (!sessionId) return null
 
   if (!open) {
     return (
@@ -218,9 +220,8 @@ const ma = StyleSheet.create({
   cancelBtnText: { color: '#aaa', fontWeight: '700', fontSize: 14, letterSpacing: 0.5 },
 })
 
-// ─── CancelPolicyModal ────────────────────────────────────────────────────────
 function CancelPolicyModal({ enrolment, onClose }) {
-  const [subView, setSubView] = useState(null) // null | 'transfer'
+  const [subView, setSubView] = useState(null)
   const [note, setNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -266,7 +267,6 @@ function CancelPolicyModal({ enrolment, onClose }) {
           <Text style={cp.sessionName}>{sessionName}</Text>
 
           {isWaitlist ? (
-            // Waitlist — simple confirm leave
             <>
               <View style={cp.infoBox}>
                 <Text style={cp.infoText}>You'll be removed from the waitlist for this class. You can rejoin at any time if a spot opens up.</Text>
@@ -276,7 +276,6 @@ function CancelPolicyModal({ enrolment, onClose }) {
               </TouchableOpacity>
             </>
           ) : submitted ? (
-            // Transfer request submitted
             <>
               <View style={cp.successBox}>
                 <Text style={cp.successText}>✓  Transfer request submitted</Text>
@@ -287,7 +286,6 @@ function CancelPolicyModal({ enrolment, onClose }) {
               </TouchableOpacity>
             </>
           ) : subView === 'transfer' ? (
-            // Transfer request form
             <>
               <View style={cp.policyBox}>
                 <Text style={cp.policyText}>Transfers are handled case-by-case. The studio will review your request and propose options for a different class.</Text>
@@ -316,7 +314,6 @@ function CancelPolicyModal({ enrolment, onClose }) {
               </TouchableOpacity>
             </>
           ) : (
-            // Default: policy + options
             <>
               <View style={cp.policyBox}>
                 <Text style={cp.policyTitle}>Non-refundable enrolment</Text>
@@ -372,16 +369,13 @@ function ClassWaitlistLeaveModal({ enrolment, cancellationWindowHours, onClose }
   const sess = enrolment?.class_session_detail
   const sessName = sess?.name ?? enrolment?.class_name ?? 'this class'
 
-  // Calculate hours until next occurrence
   let hoursUntil = null
   if (sess?.day_of_week != null && sess?.start_time) {
     const now = new Date()
-    const targetDay = sess.day_of_week // 0=Mon, 1=Tue, ... 6=Sun
-    // JS day: 0=Sun,1=Mon...6=Sat; model day: 0=Mon...6=Sun
+    const targetDay = sess.day_of_week
     const jsDay = (targetDay + 1) % 7
     let daysUntil = (jsDay - now.getDay() + 7) % 7
     if (daysUntil === 0) {
-      // same day — check if time has passed
       const [h, m] = sess.start_time.split(':').map(Number)
       const todayOcc = new Date(now); todayOcc.setHours(h, m, 0, 0)
       if (todayOcc <= now) daysUntil = 7
@@ -392,7 +386,7 @@ function ClassWaitlistLeaveModal({ enrolment, cancellationWindowHours, onClose }
     nextDate.setHours(h, m, 0, 0)
     hoursUntil = (nextDate - now) / (1000 * 60 * 60)
   }
-  const windowHours = cancellationWindowHours ?? 24
+  const windowHours = cancellationWindowHours ?? 4
   const isLate = hoursUntil != null && hoursUntil > 0 && hoursUntil < windowHours
 
   async function handleLeave() {
@@ -635,259 +629,563 @@ const pd = StyleSheet.create({
   body: { fontSize: 13, color: '#888', lineHeight: 19 },
 })
 
-function CasualBookingsTab({ bookings, refetch, navigation }) {
-  const [cancellingId, setCancellingId] = useState(null)
-  const [actioningId, setActioningId] = useState(null)
-  const [messageSentIds, setMessageSentIds] = useState([])
+// ─── Current Tab ─────────────────────────────────────────────────────────────
 
-  const items = bookings?.results || bookings || []
-  const displaced = items.filter(b => b.status === 'confirmed' && b.displacement_offered_at)
-  const confirmed = items.filter(b => b.status === 'confirmed' && !b.displacement_offered_at)
-  const waitlisted = items.filter(b => b.status === 'waitlisted')
+function CurrentTab({
+  currentEnrolments,
+  casualBookings,
+  waitlistedEnrolments,
+  pendingDisplacementEnrolments,
+  cancellationWindowHours,
+  noShowFee,
+  cancellingAway,
+  markingAway,
+  onMarkAway,
+  onCancelAway,
+  onCancelEnrolment,
+  onCancelCasual,
+  onUpgradeCasual,
+  onDisplacementAction,
+  refetch,
+  refetchWaitlist,
+  loading,
+  navigation,
+}) {
+  // Build a flat list of upcoming items: enrolled occurrences + casual bookings
+  const items = useMemo(() => {
+    const list = []
 
-  async function upgrade(booking) {
-    Alert.alert(
-      'Upgrade to Full Season?',
-      `Your casual spot will be converted to a full season enrolment. The casual fee you paid will be credited towards the season price.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Upgrade', onPress: async () => {
-            setActioningId(booking.id)
-            try {
-              await classesApi.casual.upgrade(booking.id)
-              refetch()
-            } catch (err) {
-              Alert.alert('Error', err.response?.data?.detail ?? 'Could not upgrade. Please try again.')
-            } finally { setActioningId(null) }
-          }
-        }
-      ]
-    )
-  }
-
-  async function release(booking) {
-    Alert.alert(
-      'Release Spot?',
-      'Your spot will be released and your account credited with the amount paid.',
-      [
-        { text: 'Keep My Spot', style: 'cancel' },
-        {
-          text: 'Release', style: 'destructive', onPress: async () => {
-            setActioningId(booking.id)
-            try {
-              await classesApi.casual.release(booking.id)
-              refetch()
-            } catch (err) {
-              Alert.alert('Error', err.response?.data?.detail ?? 'Could not release. Please try again.')
-            } finally { setActioningId(null) }
-          }
-        }
-      ]
-    )
-  }
-
-  async function messageDuality(booking) {
-    setActioningId(booking.id)
-    try {
-      await helpdeskApi.submitTicket({
-        subject: `Displacement Offer Question — ${booking.occurrence_detail?.session_name || 'Class'}`,
-        body: `Student has a question about their casual displacement offer for ${booking.occurrence_detail?.session_name || 'class'} on ${booking.occurrence_detail?.date || 'upcoming date'}.`,
+    // Add upcoming occurrences from enrolled classes
+    currentEnrolments.forEach(enr => {
+      const sess = enr.class_session_detail
+      const occurrences = enr.upcoming_occurrences ?? (enr.next_occurrence ? [enr.next_occurrence] : [])
+      occurrences.forEach(occ => {
+        list.push({
+          key: `enr-${enr.id}-${occ.id}`,
+          type: 'enrolled',
+          date: occ.date,
+          time: occ.start_time || sess?.start_time || '',
+          sessionName: sess?.name ?? enr.class_name ?? 'Class',
+          studio: sess?.studio_detail?.name ?? null,
+          sessionId: sess?.id ?? enr.class_session,
+          enrolment: enr,
+          occurrence: occ,
+          isAway: occ.marked_away || occ.my_status === 'absent',
+        })
       })
-      setMessageSentIds(ids => [...ids, booking.id])
-    } catch { } finally { setActioningId(null) }
-  }
+    })
 
-  async function cancel(booking) {
-    Alert.alert(
-      booking.status === 'waitlisted' ? 'Leave Waitlist?' : 'Cancel Booking?',
-      booking.status === 'waitlisted'
-        ? 'You will lose your waitlist position for this date.'
-        : 'Are you sure you want to cancel this booking?',
-      [
-        { text: 'No', style: 'cancel' },
-        {
-          text: 'Yes', style: 'destructive',
-          onPress: async () => {
-            setCancellingId(booking.id)
-            try {
-              await classesApi.casual.cancel(booking.occurrence)
-              refetch()
-            } catch (err) {
-              Alert.alert('Error', err.response?.data?.detail ?? 'Could not cancel. Please try again.')
-            } finally {
-              setCancellingId(null)
-            }
-          }
-        }
-      ]
-    )
-  }
+    // Add confirmed casual/catch-up bookings (non-displaced)
+    const casuals = casualBookings?.results ?? casualBookings ?? []
+    casuals
+      .filter(b => b.status === 'confirmed' && !b.displacement_offered_at)
+      .forEach(b => {
+        const d = b.occurrence_detail
+        if (!d?.date) return
+        list.push({
+          key: `casual-${b.id}`,
+          type: b.enrolment_type === 'catchup' ? 'catchup' : 'casual',
+          date: d.date,
+          time: d.start_time || '',
+          sessionName: d.session_name ?? 'Class',
+          studio: d.studio_name ?? null,
+          sessionId: d.session_id ?? d.session ?? null,
+          booking: b,
+        })
+      })
 
-  function renderBookingRow(b, isWait) {
-    const d = b.occurrence_detail
-    const dateLabel = d?.date
-      ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
-      : '—'
-    const hasOffer = isWait && !!b.waitlist_offered_at
-    const isCancelling = cancellingId === b.id
+    // Sort chronologically
+    list.sort((a, b) => {
+      const da = `${a.date}T${a.time || '00:00'}`
+      const db = `${b.date}T${b.time || '00:00'}`
+      return da < db ? -1 : da > db ? 1 : 0
+    })
 
-    return (
-      <View key={b.id} style={cb.row}>
-        <View style={{ flex: 1 }}>
-          <Text style={cb.sessionName}>{d?.session_name ?? 'Class'}</Text>
-          <Text style={cb.dateMeta}>
-            {[dateLabel, d?.start_time ? d.start_time.slice(0, 5) : null, d?.studio_name].filter(Boolean).join('  ·  ')}
-          </Text>
-          {hasOffer && (
-            <Text style={cb.offerText}>🎉 A spot opened — claim it!</Text>
-          )}
-        </View>
-        <View style={{ alignItems: 'flex-end', gap: 4 }}>
-          <View style={[cb.badge, isWait ? cb.badgeAmber : cb.badgeLime]}>
-            <Text style={cb.badgeText}>{b.enrolment_type === 'catchup' ? 'Catch-up' : 'Casual'}</Text>
-          </View>
-          {!hasOffer && (
-            isCancelling
-              ? <ActivityIndicator size="small" color="#ff4444" />
-              : (
-                <TouchableOpacity onPress={() => cancel(b)}>
-                  <Text style={cb.cancelText}>{isWait ? 'Leave' : 'Cancel'}</Text>
-                </TouchableOpacity>
-              )
-          )}
-        </View>
-      </View>
-    )
+    return list
+  }, [currentEnrolments, casualBookings])
+
+  // Derive season info from the first current enrolment
+  const seasonInfo = useMemo(() => {
+    const enr = currentEnrolments[0]
+    if (!enr) return null
+    const sess = enr.class_session_detail
+    const name = enr.season_detail?.name ?? sess?.season_name ?? null
+    const start = sess?.season_start_date ?? null
+    const end = sess?.season_end_date ?? null
+    if (!name && !start) return null
+    const fmt = (d) => d ? new Date(d + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : null
+    return { name, start: fmt(start), end: fmt(end) }
+  }, [currentEnrolments])
+
+  // Displaced casual bookings needing action
+  const displacedBookings = useMemo(() => {
+    const casuals = casualBookings?.results ?? casualBookings ?? []
+    return casuals.filter(b => b.status === 'confirmed' && b.displacement_offered_at)
+  }, [casualBookings])
+
+  // Waitlisted casual bookings
+  const waitlistedCasuals = useMemo(() => {
+    const casuals = casualBookings?.results ?? casualBookings ?? []
+    return casuals.filter(b => b.status === 'waitlisted')
+  }, [casualBookings])
+
+  // Group items by date for display
+  const groupedByDate = useMemo(() => {
+    const groups = []
+    let lastDate = null
+    items.forEach(item => {
+      if (item.date !== lastDate) {
+        groups.push({ date: item.date, items: [] })
+        lastDate = item.date
+      }
+      groups[groups.length - 1].items.push(item)
+    })
+    return groups
+  }, [items])
+
+  function formatDateHeader(dateStr) {
+    return new Date(dateStr + 'T00:00').toLocaleDateString('en-AU', {
+      weekday: 'long', day: 'numeric', month: 'long',
+    })
   }
 
   return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-      {displaced.length > 0 && (
-        <View style={{ marginBottom: 20 }}>
-          <Text style={[cb.sectionTitle, { color: '#f59e0b' }]}>ACTION REQUIRED</Text>
-          {displaced.map(b => {
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+      refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} />}
+    >
+      {/* Season header */}
+      {seasonInfo && (
+        <View style={ct.seasonHeader}>
+          <Text style={ct.seasonName}>{seasonInfo.name ?? 'Current Season'}</Text>
+          {seasonInfo.start && seasonInfo.end && (
+            <Text style={ct.seasonDates}>{seasonInfo.start} — {seasonInfo.end}</Text>
+          )}
+        </View>
+      )}
+
+      {/* Waitlist claim banners */}
+      {waitlistedEnrolments.filter(e => e.waitlist_offered_at).map(e => (
+        <WaitlistClaimBanner key={e.id} enrolment={e} onClaimed={() => { refetch(); refetchWaitlist() }} />
+      ))}
+
+      {/* Displacement action banners */}
+      {pendingDisplacementEnrolments.map(e => (
+        <PendingDisplacementBanner key={e.id} enrolment={e} />
+      ))}
+
+      {/* Displaced casual action cards */}
+      {displacedBookings.length > 0 && (
+        <View style={{ marginBottom: 16 }}>
+          <Text style={ct.sectionLabel}>ACTION REQUIRED</Text>
+          {displacedBookings.map(b => {
             const d = b.occurrence_detail
             const dateLabel = d?.date
               ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
               : '—'
             const expiresAt = b.displacement_expires_at ? new Date(b.displacement_expires_at) : null
             const hoursLeft = expiresAt ? Math.max(0, Math.round((expiresAt - new Date()) / 3600000)) : null
-            const isActioning = actioningId === b.id
-            const messageSent = messageSentIds.includes(b.id)
             return (
-              <View key={b.id} style={disp.card}>
-                <Text style={disp.sessName}>{d?.session_name ?? 'Class'}</Text>
-                <Text style={disp.meta}>
-                  {[dateLabel, d?.start_time ? d.start_time.slice(0, 5) : null, d?.studio_name].filter(Boolean).join('  ·  ')}
+              <TouchableOpacity key={b.id} style={ct.displacedCard} onPress={() => onDisplacementAction(b)}>
+                <Text style={ct.displacedTitle}>{d?.session_name ?? 'Class'}</Text>
+                <Text style={ct.displacedMeta}>
+                  {[dateLabel, d?.start_time?.slice(0, 5), d?.studio_name].filter(Boolean).join('  ·  ')}
                 </Text>
-                <Text style={disp.body}>
-                  A student wants to enrol for the full season of {d?.session_name || 'this class'}. Upgrade your casual booking{hoursLeft !== null ? ` within ${hoursLeft} hour${hoursLeft !== 1 ? 's' : ''}` : ''}, or your spot will be released and your account credited with the amount paid.
+                <Text style={ct.displacedBody}>
+                  Season enrolment offer — {hoursLeft !== null ? `respond within ${hoursLeft}h` : 'respond now'}
                 </Text>
-                <TouchableOpacity
-                  style={[disp.upgradeBtn, isActioning && { opacity: 0.5 }]}
-                  onPress={() => upgrade(b)}
-                  disabled={isActioning}
-                >
-                  {isActioning ? <ActivityIndicator color="#000" size="small" /> : <Text style={disp.upgradeBtnText}>UPGRADE TO FULL SEASON</Text>}
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[disp.releaseBtn, isActioning && { opacity: 0.5 }]}
-                  onPress={() => release(b)}
-                  disabled={isActioning}
-                >
-                  <Text style={disp.releaseBtnText}>RELEASE SPOT</Text>
-                </TouchableOpacity>
-                {messageSent ? (
-                  <Text style={disp.messageSent}>Message sent — we'll be in touch!</Text>
-                ) : (
-                  <TouchableOpacity
-                    style={[disp.messageBtn, isActioning && { opacity: 0.5 }]}
-                    onPress={() => messageDuality(b)}
-                    disabled={isActioning}
-                  >
-                    <Text style={disp.messageBtnText}>MESSAGE DUALITY</Text>
+                <Text style={ct.displacedCta}>Tap to upgrade or release →</Text>
+              </TouchableOpacity>
+            )
+          })}
+        </View>
+      )}
+
+      {/* Empty state */}
+      {items.length === 0 && !loading && displacedBookings.length === 0 && (
+        <View style={ct.emptyBox}>
+          <Text style={ct.emptyText}>No upcoming classes this season.</Text>
+          <TouchableOpacity style={ct.bookBtn} onPress={() => navigation.navigate('Book')}>
+            <Text style={ct.bookBtnText}>+ BOOK A CLASS</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Chronological list grouped by date */}
+      {groupedByDate.map(group => (
+        <View key={group.date} style={{ marginBottom: 8 }}>
+          <Text style={ct.dateHeader}>{formatDateHeader(group.date)}</Text>
+          {group.items.map(item => (
+            <ClassItem
+              key={item.key}
+              item={item}
+              cancellationWindowHours={cancellationWindowHours}
+              noShowFee={noShowFee}
+              cancellingAway={cancellingAway}
+              markingAway={markingAway}
+              onMarkAway={onMarkAway}
+              onCancelAway={onCancelAway}
+              onCancelEnrolment={onCancelEnrolment}
+              onCancelCasual={onCancelCasual}
+            />
+          ))}
+        </View>
+      ))}
+
+      {/* Waitlisted casuals */}
+      {waitlistedCasuals.length > 0 && (
+        <View style={{ marginTop: 8 }}>
+          <Text style={ct.sectionLabel}>ON WAITLIST</Text>
+          {waitlistedCasuals.map(b => {
+            const d = b.occurrence_detail
+            const dateLabel = d?.date
+              ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+              : '—'
+            return (
+              <View key={b.id} style={ct.waitlistRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={ct.waitlistName}>{d?.session_name ?? 'Class'}</Text>
+                  <Text style={ct.waitlistMeta}>
+                    {[dateLabel, d?.start_time?.slice(0, 5), d?.studio_name].filter(Boolean).join('  ·  ')}
+                  </Text>
+                </View>
+                <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                  <View style={ct.waitBadge}><Text style={ct.waitBadgeText}>Waitlist</Text></View>
+                  <TouchableOpacity onPress={() => onCancelCasual(b)}>
+                    <Text style={ct.leaveText}>Leave</Text>
                   </TouchableOpacity>
-                )}
+                </View>
               </View>
             )
           })}
         </View>
       )}
 
-      {items.length === displaced.length ? (
-        <Text style={{ fontSize: 14, color: '#555', textAlign: 'center', marginTop: 20 }}>
-          No other casual or catch-up bookings.
-        </Text>
-      ) : items.length === 0 ? (
-        <Text style={{ fontSize: 14, color: '#555', textAlign: 'center', marginTop: 40 }}>
-          No casual or catch-up bookings yet.
-        </Text>
-      ) : (
-        <>
-          {confirmed.length > 0 && (
-            <View style={{ marginBottom: 20 }}>
-              <Text style={cb.sectionTitle}>BOOKED</Text>
-              {confirmed.map(b => renderBookingRow(b, false))}
-            </View>
-          )}
-          {waitlisted.length > 0 && (
-            <View style={{ marginBottom: 20 }}>
-              <Text style={cb.sectionTitle}>WAITLISTED</Text>
-              {waitlisted.map(b => renderBookingRow(b, true))}
-            </View>
-          )}
-        </>
+      {items.length > 0 && (
+        <TouchableOpacity style={ct.bookMoreBtn} onPress={() => navigation.navigate('Book')}>
+          <Text style={ct.bookMoreBtnText}>+ BOOK A CASUAL OR CATCH-UP</Text>
+        </TouchableOpacity>
       )}
-      <TouchableOpacity
-        style={cb.bookBtn}
-        onPress={() => navigation.navigate('Book')}
-      >
-        <Text style={cb.bookBtnText}>+ BOOK A CASUAL OR CATCH-UP</Text>
-      </TouchableOpacity>
     </ScrollView>
   )
 }
 
-const disp = StyleSheet.create({
-  card: { backgroundColor: 'rgba(255,170,0,0.05)', borderWidth: 2, borderColor: 'rgba(255,170,0,0.25)', borderRadius: 14, padding: 16, marginBottom: 12 },
-  sessName: { fontSize: 15, fontWeight: '700', color: '#fff', marginBottom: 3 },
-  meta: { fontSize: 12, color: '#888', marginBottom: 12 },
-  body: { fontSize: 13, color: '#aaa', lineHeight: 19, marginBottom: 14 },
-  upgradeBtn: { backgroundColor: '#ccff00', borderRadius: 10, paddingVertical: 13, alignItems: 'center', marginBottom: 8 },
-  upgradeBtnText: { color: '#000', fontWeight: '800', fontSize: 13, letterSpacing: 0.3 },
-  releaseBtn: { borderRadius: 10, paddingVertical: 13, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)', backgroundColor: 'rgba(239,68,68,0.07)', marginBottom: 8 },
-  releaseBtnText: { color: '#ef4444', fontWeight: '700', fontSize: 13 },
-  messageBtn: { borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: '#333' },
-  messageBtnText: { color: '#888', fontWeight: '700', fontSize: 13 },
-  messageSent: { fontSize: 12, color: '#ccff00', textAlign: 'center', paddingVertical: 8 },
+function ClassItem({ item, cancellationWindowHours, cancellingAway, markingAway, onMarkAway, onCancelAway, onCancelEnrolment, onCancelCasual }) {
+  const timeStr = item.time ? item.time.slice(0, 5) : null
+  const isEnrolled = item.type === 'enrolled'
+  const isCatchup = item.type === 'catchup'
+  const isCasual = item.type === 'casual'
+
+  return (
+    <View style={ct.classCard}>
+      <View style={ct.classCardTop}>
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <Text style={ct.className}>{item.sessionName}</Text>
+            {(isCasual || isCatchup) && (
+              <View style={[ct.typePill, isCatchup && ct.typePillCatchup]}>
+                <Text style={ct.typePillText}>{isCatchup ? 'Catch-up' : 'Casual'}</Text>
+              </View>
+            )}
+            {item.isAway && (
+              <View style={ct.awayPill}><Text style={ct.awayPillText}>AWAY</Text></View>
+            )}
+          </View>
+          {(timeStr || item.studio) && (
+            <Text style={ct.classMeta}>
+              {[timeStr, item.studio].filter(Boolean).join('  ·  ')}
+            </Text>
+          )}
+        </View>
+
+        {/* Action buttons */}
+        {isEnrolled && !item.isAway && (
+          <TouchableOpacity
+            style={ct.awayBtn}
+            disabled={markingAway === item.occurrence?.id}
+            onPress={() => onMarkAway(item.occurrence, item.enrolment.class_session_detail)}
+          >
+            {markingAway === item.occurrence?.id
+              ? <ActivityIndicator size="small" color="#ccff00" />
+              : <Text style={ct.awayBtnText}>Mark away</Text>
+            }
+          </TouchableOpacity>
+        )}
+        {isEnrolled && item.isAway && (
+          <TouchableOpacity
+            style={ct.canMakeItBtn}
+            disabled={cancellingAway === item.occurrence?.id}
+            onPress={() => onCancelAway(item.occurrence?.id, item.sessionName)}
+          >
+            {cancellingAway === item.occurrence?.id
+              ? <ActivityIndicator size="small" color="#ccff00" />
+              : <Text style={ct.canMakeItText}>I can make it!</Text>
+            }
+          </TouchableOpacity>
+        )}
+        {(isCasual || isCatchup) && (
+          <TouchableOpacity onPress={() => onCancelCasual(item.booking)}>
+            <Text style={ct.cancelCasualText}>Cancel</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Who's coming */}
+      <WhoComing sessionId={item.sessionId} />
+
+      {/* Cancel enrolment link */}
+      {isEnrolled && (
+        <TouchableOpacity style={ct.cancelEnrolLink} onPress={() => onCancelEnrolment(item.enrolment)}>
+          <Text style={ct.cancelEnrolText}>Cancel enrolment</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  )
+}
+
+const ct = StyleSheet.create({
+  seasonHeader: { backgroundColor: 'rgba(204,255,0,0.06)', borderWidth: 1, borderColor: 'rgba(204,255,0,0.15)', borderRadius: 12, padding: 14, marginBottom: 16 },
+  seasonName: { fontSize: 15, fontWeight: '700', color: '#fff', marginBottom: 2 },
+  seasonDates: { fontSize: 13, color: '#888' },
+  sectionLabel: { fontSize: 11, fontWeight: '800', color: '#555', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 },
+  dateHeader: { fontSize: 12, fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6, marginTop: 8 },
+  classCard: { backgroundColor: '#111', borderRadius: 14, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#222' },
+  classCardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
+  className: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  classMeta: { fontSize: 13, color: '#666', marginTop: 3 },
+  typePill: { backgroundColor: 'rgba(204,255,0,0.1)', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 },
+  typePillCatchup: { backgroundColor: 'rgba(124,58,237,0.15)' },
+  typePillText: { fontSize: 10, fontWeight: '800', color: '#ccff00' },
+  awayPill: { backgroundColor: 'rgba(255,170,0,0.12)', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 },
+  awayPillText: { fontSize: 10, fontWeight: '800', color: '#f59e0b' },
+  awayBtn: { backgroundColor: '#1a1a1a', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#333', flexShrink: 0 },
+  awayBtnText: { fontSize: 12, fontWeight: '600', color: '#ccff00' },
+  canMakeItBtn: { paddingVertical: 4, flexShrink: 0 },
+  canMakeItText: { fontSize: 13, fontWeight: '600', color: '#ccff00' },
+  cancelCasualText: { fontSize: 12, color: '#ef4444', fontWeight: '600', paddingTop: 4 },
+  cancelEnrolLink: { marginTop: 6, alignSelf: 'flex-start' },
+  cancelEnrolText: { fontSize: 12, color: '#444' },
+  displacedCard: { backgroundColor: 'rgba(255,170,0,0.05)', borderWidth: 2, borderColor: 'rgba(255,170,0,0.3)', borderRadius: 14, padding: 14, marginBottom: 8 },
+  displacedTitle: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 2 },
+  displacedMeta: { fontSize: 12, color: '#888', marginBottom: 8 },
+  displacedBody: { fontSize: 13, color: '#f59e0b', marginBottom: 4 },
+  displacedCta: { fontSize: 12, color: '#ccff00', fontWeight: '600' },
+  waitlistRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#111', borderRadius: 12, borderWidth: 1, borderColor: '#222', padding: 14, marginBottom: 8 },
+  waitlistName: { fontSize: 14, fontWeight: '600', color: '#fff', marginBottom: 2 },
+  waitlistMeta: { fontSize: 12, color: '#666' },
+  waitBadge: { backgroundColor: 'rgba(255,170,0,0.1)', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 },
+  waitBadgeText: { fontSize: 10, fontWeight: '800', color: '#f59e0b' },
+  leaveText: { fontSize: 11, color: '#ef4444', fontWeight: '700' },
+  emptyBox: { alignItems: 'center', marginTop: 40, gap: 16 },
+  emptyText: { fontSize: 15, color: '#555' },
+  bookBtn: { backgroundColor: '#111', borderRadius: 12, borderWidth: 1, borderColor: '#333', paddingHorizontal: 20, paddingVertical: 14 },
+  bookBtnText: { fontSize: 13, fontWeight: '800', color: '#ccff00', letterSpacing: 0.5 },
+  bookMoreBtn: { borderRadius: 12, borderWidth: 1, borderColor: '#333', padding: 16, alignItems: 'center', marginTop: 16 },
+  bookMoreBtnText: { fontSize: 13, fontWeight: '800', color: '#666', letterSpacing: 0.5 },
 })
 
-const cb = StyleSheet.create({
-  sectionTitle: { fontSize: 11, fontWeight: '800', color: '#555', letterSpacing: 0.8, marginBottom: 10, textTransform: 'uppercase' },
-  row: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#111', borderRadius: 12, borderWidth: 1, borderColor: '#222', padding: 14, marginBottom: 8 },
-  sessionName: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 3 },
-  dateMeta: { fontSize: 12, color: '#666' },
-  offerText: { fontSize: 12, color: '#ccff00', marginTop: 4 },
-  badge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  badgeLime: { backgroundColor: 'rgba(204,255,0,0.12)' },
-  badgeAmber: { backgroundColor: 'rgba(255,170,0,0.12)' },
-  badgeText: { fontSize: 10, fontWeight: '800', color: '#ccff00' },
-  cancelText: { fontSize: 11, color: '#ff4444', fontWeight: '700' },
-  bookBtn: { borderRadius: 12, borderWidth: 1, borderColor: '#333', padding: 16, alignItems: 'center', marginTop: 8 },
-  bookBtnText: { fontSize: 13, fontWeight: '800', color: '#666', letterSpacing: 0.5 },
+// ─── Future Tab ───────────────────────────────────────────────────────────────
+
+function FutureTab({ upcomingEnrolments, waitlistedEnrolments, onCancelEnrolment, refetch, refetchWaitlist, loading, setClassWaitlistLeaveEnrol }) {
+  const seasonWaitlist = waitlistedEnrolments.filter(e => !e.waitlist_offered_at && e.enrolment_type === 'course')
+  const classWaitlist = waitlistedEnrolments.filter(e => !e.waitlist_offered_at && e.enrolment_type !== 'course')
+  const claimable = waitlistedEnrolments.filter(e => e.waitlist_offered_at)
+
+  return (
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+      refreshControl={<RefreshControl refreshing={loading} onRefresh={() => { refetch(); refetchWaitlist() }} />}
+    >
+      {claimable.map(e => (
+        <WaitlistClaimBanner key={e.id} enrolment={e} onClaimed={() => { refetch(); refetchWaitlist() }} />
+      ))}
+
+      {upcomingEnrolments.length === 0 && seasonWaitlist.length === 0 && classWaitlist.length === 0 && (
+        <Text style={{ fontSize: 14, color: '#555', textAlign: 'center', marginTop: 40 }}>No upcoming season enrolments.</Text>
+      )}
+
+      {upcomingEnrolments.length > 0 && (
+        <View style={{ marginBottom: 20 }}>
+          <Text style={ft.sectionLabel}>ENROLLED — UPCOMING SEASON</Text>
+          {upcomingEnrolments.map(enr => {
+            const sess = enr.class_session_detail
+            const sessName = sess?.name ?? enr.class_name ?? 'Class'
+            const seasonName = enr.season_detail?.name ?? sess?.season_name ?? null
+            const DAY = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+            const meta = [
+              sess?.day_of_week != null ? DAY[sess.day_of_week] : null,
+              sess?.start_time ? sess.start_time.slice(0, 5) : null,
+              sess?.studio_detail?.name ?? null,
+            ].filter(Boolean).join(' · ')
+            return (
+              <View key={enr.id} style={ft.card}>
+                <View style={{ flex: 1 }}>
+                  <Text style={ft.name}>{sessName}</Text>
+                  {!!meta && <Text style={ft.meta}>{meta}</Text>}
+                  {seasonName && <Text style={ft.season}>{seasonName}</Text>}
+                </View>
+                <TouchableOpacity onPress={() => onCancelEnrolment(enr)}>
+                  <Text style={ft.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            )
+          })}
+        </View>
+      )}
+
+      {seasonWaitlist.length > 0 && (
+        <View style={{ marginBottom: 20 }}>
+          <Text style={ft.sectionLabel}>SEASON WAITLIST</Text>
+          {seasonWaitlist.map(e => {
+            const s2 = e.class_session_detail
+            return (
+              <View key={e.id} style={ft.card}>
+                <View style={{ flex: 1 }}>
+                  <Text style={ft.name}>{s2?.name ?? 'Class'}</Text>
+                  <Text style={ft.meta}>
+                    {[s2?.day_of_week != null ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][s2.day_of_week] : null, s2?.studio_detail?.name].filter(Boolean).join(' · ')}
+                  </Text>
+                  {e.waitlist_position != null && (
+                    <Text style={ft.position}>Position #{e.waitlist_position}</Text>
+                  )}
+                </View>
+                <TouchableOpacity onPress={() => onCancelEnrolment(e)}>
+                  <Text style={ft.cancelText}>Leave</Text>
+                </TouchableOpacity>
+              </View>
+            )
+          })}
+        </View>
+      )}
+
+      {classWaitlist.length > 0 && (
+        <View style={{ marginBottom: 20 }}>
+          <Text style={ft.sectionLabel}>CLASS WAITLIST</Text>
+          {classWaitlist.map(e => {
+            const s2 = e.class_session_detail
+            return (
+              <View key={e.id} style={ft.card}>
+                <View style={{ flex: 1 }}>
+                  <Text style={ft.name}>{s2?.name ?? 'Class'}</Text>
+                  <Text style={ft.meta}>
+                    {[s2?.day_of_week != null ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][s2.day_of_week] : null, s2?.studio_detail?.name].filter(Boolean).join(' · ')}
+                  </Text>
+                  {e.waitlist_position != null && (
+                    <Text style={ft.position}>Position #{e.waitlist_position}</Text>
+                  )}
+                </View>
+                <TouchableOpacity onPress={() => setClassWaitlistLeaveEnrol(e)}>
+                  <Text style={ft.cancelText}>Leave</Text>
+                </TouchableOpacity>
+              </View>
+            )
+          })}
+        </View>
+      )}
+    </ScrollView>
+  )
+}
+
+const ft = StyleSheet.create({
+  sectionLabel: { fontSize: 11, fontWeight: '800', color: '#555', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 },
+  card: { backgroundColor: '#111', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#222', flexDirection: 'row', alignItems: 'center', gap: 12 },
+  name: { fontSize: 14, fontWeight: '600', color: '#fff', marginBottom: 2 },
+  meta: { fontSize: 12, color: '#666' },
+  season: { fontSize: 11, color: '#888', marginTop: 3 },
+  position: { fontSize: 11, fontWeight: '700', color: '#b0a0ff', marginTop: 3 },
+  cancelText: { fontSize: 13, color: '#ef4444', fontWeight: '500' },
 })
+
+// ─── Past Tab ─────────────────────────────────────────────────────────────────
+
+function PastTab({ history, pastEnrolments, loading, refetchHistory }) {
+  return (
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+      refreshControl={<RefreshControl refreshing={loading} onRefresh={refetchHistory} />}
+    >
+      {history.length === 0 && !loading && pastEnrolments.length === 0 && (
+        <Text style={{ textAlign: 'center', color: '#555', marginTop: 40 }}>No history yet.</Text>
+      )}
+
+      {history.length > 0 && (
+        <View style={{ marginBottom: 24 }}>
+          <Text style={pt.sectionLabel}>ATTENDANCE</Text>
+          {history.map(rec => (
+            <View key={rec.id} style={pt.row}>
+              <View style={pt.info}>
+                <Text style={pt.className}>{rec.occurrence?.session?.name ?? 'Class'}</Text>
+                <Text style={pt.date}>
+                  {rec.occurrence?.date
+                    ? new Date(rec.occurrence.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : ''}
+                </Text>
+              </View>
+              <StatusBadge status={rec.status} />
+            </View>
+          ))}
+        </View>
+      )}
+
+      {pastEnrolments.length > 0 && (
+        <View>
+          <Text style={pt.sectionLabel}>PREVIOUS SEASONS</Text>
+          {pastEnrolments.map(enr => {
+            const sess = enr.class_session_detail
+            const sessName = sess?.name ?? enr.class_name ?? 'Class'
+            const DAY = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+            const meta = [
+              sess?.day_of_week != null ? DAY[sess.day_of_week] : null,
+              sess?.start_time ? sess.start_time.slice(0, 5) : null,
+              sess?.studio_detail?.name ?? null,
+            ].filter(Boolean).join(' · ')
+            return (
+              <View key={enr.id} style={pt.pastCard}>
+                <View style={{ flex: 1 }}>
+                  <Text style={pt.pastName}>{sessName}</Text>
+                  {!!meta && <Text style={pt.pastMeta}>{meta}</Text>}
+                  {enr.season_detail?.name && <Text style={pt.pastSeason}>{enr.season_detail.name}</Text>}
+                </View>
+                <View style={pt.completedBadge}>
+                  <Text style={pt.completedBadgeText}>Completed</Text>
+                </View>
+              </View>
+            )
+          })}
+        </View>
+      )}
+    </ScrollView>
+  )
+}
+
+const pt = StyleSheet.create({
+  sectionLabel: { fontSize: 11, fontWeight: '800', color: '#555', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 },
+  row: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#111', borderRadius: 10, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#222' },
+  info: { flex: 1 },
+  className: { fontWeight: '600', color: '#fff', fontSize: 14 },
+  date: { fontSize: 12, color: '#888', marginTop: 2 },
+  pastCard: { backgroundColor: '#0d0d0d', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#1c1c1c', flexDirection: 'row', alignItems: 'center', gap: 12 },
+  pastName: { fontSize: 14, fontWeight: '600', color: '#555', marginBottom: 2 },
+  pastMeta: { fontSize: 12, color: '#444' },
+  pastSeason: { fontSize: 11, color: '#444', marginTop: 3 },
+  completedBadge: { backgroundColor: '#1a1a1a', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
+  completedBadgeText: { fontSize: 10, fontWeight: '700', color: '#444', textTransform: 'uppercase', letterSpacing: 0.5 },
+})
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function MyClassesScreen({ navigation }) {
   const { user } = useAuth()
-  const [tab, setTab] = useState('active')
+  const [tab, setTab] = useState('current')
   const [markingAway, setMarkingAway] = useState(null)
-  const [markAwayModal, setMarkAwayModal] = useState(null) // { occurrence, session }
+  const [markAwayModal, setMarkAwayModal] = useState(null)
   const [cancelPolicyEnrol, setCancelPolicyEnrol] = useState(null)
   const [cancellingAway, setCancellingAway] = useState(null)
   const [classWaitlistLeaveEnrol, setClassWaitlistLeaveEnrol] = useState(null)
   const [displacementModal, setDisplacementModal] = useState(null)
-
 
   const { data: enrolData, loading, refetch } = useApi(
     () => enrolments.list({ status: 'active' }), []
@@ -912,7 +1210,6 @@ export default function MyClassesScreen({ navigation }) {
   const history = historyData?.results ?? historyData ?? []
   const cancellationWindowHours = settingsData?.cancellation_window_hours ?? 4
 
-  // Auto-show modal when a displacement offer is pending
   useEffect(() => {
     const items = casualBookingsData?.results ?? casualBookingsData ?? []
     const displaced = items.find(b => b.status === 'confirmed' && b.displacement_offered_at)
@@ -928,9 +1225,6 @@ export default function MyClassesScreen({ navigation }) {
     const start = e.class_session_detail?.season_start_date
     return start && start > today
   })
-  const filteredCurrent = currentEnrolments
-  const filteredUpcoming = upcomingEnrolments
-  const filteredEnrolments = [...currentEnrolments, ...upcomingEnrolments]
 
   async function handleCancelAway(occurrenceId, name) {
     Alert.alert(
@@ -963,10 +1257,6 @@ export default function MyClassesScreen({ navigation }) {
     )
   }
 
-  function handleMarkAway(occurrence, session) {
-    setMarkAwayModal({ occurrence, session })
-  }
-
   async function confirmMarkAway() {
     if (!markAwayModal) return
     setMarkingAway(markAwayModal.occurrence.id)
@@ -988,6 +1278,29 @@ export default function MyClassesScreen({ navigation }) {
     }
   }
 
+  async function handleCancelCasual(booking) {
+    Alert.alert(
+      booking.status === 'waitlisted' ? 'Leave Waitlist?' : 'Cancel Booking?',
+      booking.status === 'waitlisted'
+        ? 'You will lose your waitlist position for this date.'
+        : 'Are you sure you want to cancel this booking?',
+      [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Yes', style: 'destructive',
+          onPress: async () => {
+            try {
+              await classesApi.casual.cancel(booking.occurrence)
+              refetchCasual()
+            } catch (err) {
+              Alert.alert('Error', err.response?.data?.detail ?? 'Could not cancel. Please try again.')
+            }
+          }
+        }
+      ]
+    )
+  }
+
   function handleExportCalendar() {
     if (activeEnrolments.length === 0) {
       Alert.alert('No classes', 'You have no active enrolments to export.')
@@ -1001,7 +1314,7 @@ export default function MyClassesScreen({ navigation }) {
       const studio = sess?.studio_detail?.name ?? sess?.studio?.name ?? 'Duality Pole Studio'
       const startTime = sess?.start_time?.replace(/:/g, '').slice(0, 4) ?? '0900'
       const endTime = sess?.end_time?.replace(/:/g, '').slice(0, 4) ?? '1000'
-      const dayNum = sess?.day_of_week // 0=Mon..6=Sun
+      const dayNum = sess?.day_of_week
       const byday = dayNum != null ? DAYS[dayNum] : null
       const now = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z'
       lines.push(...[
@@ -1021,76 +1334,9 @@ export default function MyClassesScreen({ navigation }) {
     Share.share({ message: ics, title: 'My Pole Classes' })
   }
 
-  function handleCancelEnrolment(enrolment) {
-    setCancelPolicyEnrol(enrolment)
-  }
-
-  function renderEnrolmentCard(enr) {
-    const sess = enr.class_session_detail
-    const sessName = sess?.name ?? enr.class_name ?? 'Class'
-    return (
-      <View key={enr.id} style={s.card}>
-        <View style={s.cardHeader}>
-          <Text style={s.cardTitle}>{sessName}</Text>
-          {enr.enrolment_type && (
-            <View style={s.typeBadge}>
-              <Text style={s.typeBadgeText}>{enr.enrolment_type}</Text>
-            </View>
-          )}
-        </View>
-        {sess?.studio_detail?.name && (
-          <Text style={s.cardMeta}>{sess.studio_detail.name}</Text>
-        )}
-        {(enr.upcoming_occurrences ?? (enr.next_occurrence ? [{ ...enr.next_occurrence, marked_away: enr.next_occurrence.my_status === 'absent' || enr.next_occurrence.marked_away }] : [])).length > 0 && (
-          <View style={s.nextClass}>
-            <Text style={s.nextLabel}>Upcoming</Text>
-            {(enr.upcoming_occurrences ?? [{ ...enr.next_occurrence, marked_away: enr.next_occurrence?.my_status === 'absent' || enr.next_occurrence?.marked_away }]).map((occ, idx) => {
-              const isAway = occ.marked_away
-              const dateStr = new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
-              const timeStr = occ.start_time ? `  ·  ${occ.start_time.slice(0, 5)}` : ''
-              return (
-                <View key={occ.id} style={[s.occRow, idx > 0 && { marginTop: 8 }]}>
-                  <Text style={[s.nextDate, isAway && { color: '#ffaa00' }]}>{dateStr}{timeStr}{isAway ? '  · AWAY' : ''}</Text>
-                  {isAway ? (
-                    <TouchableOpacity
-                      style={s.canMakeItBtn}
-                      disabled={cancellingAway === occ.id}
-                      onPress={() => handleCancelAway(occ.id, sessName)}
-                    >
-                      {cancellingAway === occ.id
-                        ? <ActivityIndicator size="small" color="#ccff00" />
-                        : <Text style={s.canMakeItText}>I can make it!</Text>
-                      }
-                    </TouchableOpacity>
-                  ) : (
-                    <TouchableOpacity
-                      style={s.awayBtn}
-                      disabled={markingAway === occ.id}
-                      onPress={() => handleMarkAway(occ, sess)}
-                    >
-                      {markingAway === occ.id
-                        ? <ActivityIndicator size="small" color="#ccff00" />
-                        : <Text style={s.awayBtnText}>Mark away</Text>
-                      }
-                    </TouchableOpacity>
-                  )}
-                </View>
-              )
-            })}
-          </View>
-        )}
-        {(sess?.id ?? enr.class_session) && (
-          <WhoComing sessionId={sess?.id ?? enr.class_session} />
-        )}
-        <TouchableOpacity style={s.cancelBtn} onPress={() => handleCancelEnrolment(enr)}>
-          <Text style={s.cancelBtnText}>Cancel enrolment</Text>
-        </TouchableOpacity>
-      </View>
-    )
-  }
-
   return (
     <View style={s.root}>
+      {/* Quick links */}
       <View style={s.topLinks}>
         <TouchableOpacity style={s.topLink} onPress={() => navigation.navigate('Progress')}>
           <Text style={s.topLinkText}>⭐ Progress</Text>
@@ -1103,170 +1349,56 @@ export default function MyClassesScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-
+      {/* Tabs */}
       <View style={s.tabs}>
-        {[['active', 'My Classes'], ['casuals', 'Casuals'], ['history', 'Attendance']].map(([key, label]) => (
+        {[['current', 'Current'], ['future', 'Future'], ['past', 'Past']].map(([key, label]) => (
           <TouchableOpacity key={key} style={[s.tab, tab === key && s.tabActive]} onPress={() => setTab(key)}>
             <Text style={[s.tabText, tab === key && s.tabTextActive]}>{label}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {tab === 'active' && (
-        <ScrollView
-          style={s.scroll}
-          contentContainerStyle={s.content}
-          refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} />}
-        >
-          {/* Waitlist claim banners */}
-          {waitlistedEnrolments.filter(e => e.waitlist_offered_at).map(e => (
-            <WaitlistClaimBanner key={e.id} enrolment={e} onClaimed={() => { refetch(); refetchWaitlist() }} />
-          ))}
-
-          {/* Pending displacement banners */}
-          {pendingDisplacementEnrolments.map(e => (
-            <PendingDisplacementBanner key={e.id} enrolment={e} />
-          ))}
-
-          {filteredEnrolments.length === 0 && !loading && (
-            <Text style={s.empty}>No active enrolments.</Text>
-          )}
-
-          {/* Current enrolments */}
-          {filteredCurrent.length > 0 && (
-            <View style={s.pricingStrip}>
-              <Text style={s.pricingText}>Current enrolment</Text>
-              {currentEnrolments.length === 1 && (
-                <Text style={s.pricingHint}>Add a 2nd class for a better rate</Text>
-              )}
-            </View>
-          )}
-          {filteredCurrent.map(enr => renderEnrolmentCard(enr))}
-
-          {/* Upcoming enrolments */}
-          {filteredUpcoming.length > 0 && (
-            <View style={[s.pricingStrip, { marginTop: filteredCurrent.length > 0 ? 16 : 0, borderColor: 'rgba(124,58,237,0.3)', backgroundColor: 'rgba(124,58,237,0.05)' }]}>
-              <Text style={[s.pricingText, { color: '#b0a0ff' }]}>Upcoming season</Text>
-            </View>
-          )}
-          {filteredUpcoming.map(enr => renderEnrolmentCard(enr))}
-
-          {/* Season Waitlist */}
-          {waitlistedEnrolments.filter(e => !e.waitlist_offered_at && e.enrolment_type === 'course').length > 0 && (
-            <View style={s.waitlistSection}>
-              <Text style={s.waitlistSectionTitle}>SEASON WAITLIST</Text>
-              {waitlistedEnrolments.filter(e => !e.waitlist_offered_at && e.enrolment_type === 'course').map(e => {
-                const s2 = e.class_session_detail
-                return (
-                  <View key={e.id} style={s.waitlistCard}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={s.waitlistName}>{s2?.name ?? 'Class'}</Text>
-                      <Text style={s.waitlistMeta}>
-                        {[s2?.day_of_week != null ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][s2.day_of_week] : null, s2?.studio_detail?.name].filter(Boolean).join(' · ')}
-                      </Text>
-                      {e.waitlist_position != null && (
-                        <Text style={s.waitlistPos}>Position #{e.waitlist_position}</Text>
-                      )}
-                    </View>
-                    <TouchableOpacity onPress={() => handleCancelEnrolment(e)}>
-                      <Text style={s.leaveWaitlist}>Leave</Text>
-                    </TouchableOpacity>
-                  </View>
-                )
-              })}
-            </View>
-          )}
-
-          {/* Class Waitlist */}
-          {waitlistedEnrolments.filter(e => !e.waitlist_offered_at && e.enrolment_type !== 'course').length > 0 && (
-            <View style={s.waitlistSection}>
-              <Text style={s.waitlistSectionTitle}>CLASS WAITLIST</Text>
-              {waitlistedEnrolments.filter(e => !e.waitlist_offered_at && e.enrolment_type !== 'course').map(e => {
-                const s2 = e.class_session_detail
-                return (
-                  <View key={e.id} style={s.waitlistCard}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={s.waitlistName}>{s2?.name ?? 'Class'}</Text>
-                      <Text style={s.waitlistMeta}>
-                        {[s2?.day_of_week != null ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][s2.day_of_week] : null, s2?.studio_detail?.name].filter(Boolean).join(' · ')}
-                      </Text>
-                      {e.waitlist_position != null && (
-                        <Text style={s.waitlistPos}>Position #{e.waitlist_position}</Text>
-                      )}
-                    </View>
-                    <TouchableOpacity onPress={() => setClassWaitlistLeaveEnrol(e)}>
-                      <Text style={s.leaveWaitlist}>Leave</Text>
-                    </TouchableOpacity>
-                  </View>
-                )
-              })}
-            </View>
-          )}
-
-          {/* Previous Seasons */}
-          {pastEnrolments.length > 0 && (
-            <View style={s.pastSection}>
-              <Text style={s.pastSectionTitle}>PREVIOUS SEASONS</Text>
-              {pastEnrolments.map(enr => {
-                const sess = enr.class_session_detail
-                const sessName = sess?.name ?? enr.class_name ?? 'Class'
-                const DAY = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
-                const meta = [
-                  sess?.day_of_week != null ? DAY[sess.day_of_week] : null,
-                  sess?.start_time ? sess.start_time.slice(0, 5) : null,
-                  sess?.studio_detail?.name ?? null,
-                ].filter(Boolean).join(' · ')
-                return (
-                  <View key={enr.id} style={s.pastCard}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={s.pastName}>{sessName}</Text>
-                      {!!meta && <Text style={s.pastMeta}>{meta}</Text>}
-                      {enr.season_detail?.name && (
-                        <Text style={s.pastSeason}>{enr.season_detail.name}</Text>
-                      )}
-                    </View>
-                    <View style={s.pastBadge}>
-                      <Text style={s.pastBadgeText}>Completed</Text>
-                    </View>
-                  </View>
-                )
-              })}
-            </View>
-          )}
-        </ScrollView>
-      )}
-
-      {tab === 'casuals' && (
-        <CasualBookingsTab
-          bookings={casualBookingsData}
-          refetch={() => { refetchCasual(); refetchPendingDisp() }}
+      {tab === 'current' && (
+        <CurrentTab
+          currentEnrolments={currentEnrolments}
+          casualBookings={casualBookingsData}
+          waitlistedEnrolments={waitlistedEnrolments}
+          pendingDisplacementEnrolments={pendingDisplacementEnrolments}
+          cancellationWindowHours={cancellationWindowHours}
+          noShowFee={settingsData?.no_show_fee}
+          cancellingAway={cancellingAway}
+          markingAway={markingAway}
+          onMarkAway={(occ, sess) => setMarkAwayModal({ occurrence: occ, session: sess })}
+          onCancelAway={handleCancelAway}
+          onCancelEnrolment={enr => setCancelPolicyEnrol(enr)}
+          onCancelCasual={handleCancelCasual}
+          onDisplacementAction={booking => setDisplacementModal(booking)}
+          refetch={refetch}
+          refetchWaitlist={refetchWaitlist}
+          loading={loading}
           navigation={navigation}
         />
       )}
 
-      {tab === 'history' && (
-        <ScrollView
-          style={s.scroll}
-          contentContainerStyle={s.content}
-          refreshControl={<RefreshControl refreshing={histLoading} onRefresh={refetchHistory} />}
-        >
-          {history.length === 0 && !histLoading && (
-            <Text style={s.empty}>No attendance history yet.</Text>
-          )}
-          {history.map(rec => (
-            <View key={rec.id} style={s.histRow}>
-              <View style={s.histInfo}>
-                <Text style={s.histClass}>{rec.occurrence?.session?.name ?? 'Class'}</Text>
-                <Text style={s.histDate}>
-                  {rec.occurrence?.date
-                    ? new Date(rec.occurrence.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
-                    : ''}
-                </Text>
-              </View>
-              <StatusBadge status={rec.status} />
-            </View>
-          ))}
-        </ScrollView>
+      {tab === 'future' && (
+        <FutureTab
+          upcomingEnrolments={upcomingEnrolments}
+          waitlistedEnrolments={waitlistedEnrolments}
+          onCancelEnrolment={enr => setCancelPolicyEnrol(enr)}
+          refetch={refetch}
+          refetchWaitlist={refetchWaitlist}
+          loading={loading}
+          setClassWaitlistLeaveEnrol={setClassWaitlistLeaveEnrol}
+        />
+      )}
+
+      {tab === 'past' && (
+        <PastTab
+          history={history}
+          pastEnrolments={pastEnrolments}
+          loading={histLoading}
+          refetchHistory={refetchHistory}
+        />
       )}
 
       {markAwayModal && (
@@ -1324,58 +1456,14 @@ const s = StyleSheet.create({
   tabActive: { borderBottomWidth: 2, borderBottomColor: '#ccff00' },
   tabText: { fontSize: 14, fontWeight: '500', color: '#666' },
   tabTextActive: { color: '#ccff00', fontWeight: '700' },
-  scroll: { flex: 1 },
-  content: { padding: 16, paddingBottom: 40 },
-  empty: { textAlign: 'center', color: '#666', marginTop: 40 },
-  card: { backgroundColor: '#111', borderRadius: 14, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#222' },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: '#fff', flex: 1 },
-  typeBadge: { backgroundColor: '#1a1a2a', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: '#333' },
-  typeBadgeText: { fontSize: 11, fontWeight: '600', color: '#ccff00', textTransform: 'capitalize' },
-  cardMeta: { fontSize: 13, color: '#888', marginBottom: 10 },
-  nextClass: { backgroundColor: '#0a0a0a', borderRadius: 10, padding: 12, marginBottom: 10, borderWidth: 1, borderColor: '#222' },
-  nextLabel: { fontSize: 11, fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
-  nextDate: { fontSize: 13, color: '#ccc', fontWeight: '500', flex: 1 },
-  awayBtn: { alignSelf: 'flex-start', backgroundColor: '#1a1a1a', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#333' },
-  awayBtnText: { fontSize: 13, fontWeight: '600', color: '#ccff00' },
-  occRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  awayRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  awayBadge: { backgroundColor: 'rgba(255,170,0,0.1)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(255,170,0,0.3)' },
-  awayBadgeText: { fontSize: 11, fontWeight: '700', color: '#f59e0b' },
-  canMakeItBtn: { paddingVertical: 4 },
-  canMakeItText: { fontSize: 13, fontWeight: '600', color: '#ccff00' },
-  pricingStrip: { backgroundColor: 'rgba(176,160,255,0.08)', borderWidth: 1, borderColor: 'rgba(176,160,255,0.2)', borderRadius: 12, padding: 14, marginBottom: 12 },
-  pricingText: { fontSize: 14, fontWeight: '600', color: '#fff' },
-  pricingHint: { fontSize: 12, color: '#888', marginTop: 2 },
-  waitlistSection: { marginTop: 8 },
-  waitlistSectionTitle: { fontSize: 11, fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 },
-  waitlistCard: { backgroundColor: '#111', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#222', flexDirection: 'row', alignItems: 'center', gap: 12 },
-  waitlistName: { fontSize: 14, fontWeight: '600', color: '#fff', marginBottom: 2 },
-  waitlistMeta: { fontSize: 12, color: '#888' },
-  waitlistPos: { fontSize: 11, fontWeight: '700', color: '#b0a0ff', marginTop: 3 },
-  leaveWaitlist: { fontSize: 13, color: '#ef4444', fontWeight: '500' },
-  pastSection: { marginTop: 24 },
-  pastSectionTitle: { fontSize: 11, fontWeight: '800', color: '#444', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 },
-  pastCard: { backgroundColor: '#0d0d0d', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#1c1c1c', flexDirection: 'row', alignItems: 'center', gap: 12 },
-  pastName: { fontSize: 14, fontWeight: '600', color: '#666', marginBottom: 2 },
-  pastMeta: { fontSize: 12, color: '#444' },
-  pastSeason: { fontSize: 11, color: '#555', marginTop: 3 },
-  pastBadge: { backgroundColor: '#1a1a1a', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
-  pastBadgeText: { fontSize: 10, fontWeight: '700', color: '#555', textTransform: 'uppercase', letterSpacing: 0.5 },
-  cancelBtn: { alignSelf: 'flex-start', paddingVertical: 4 },
-  cancelBtnText: { fontSize: 13, color: '#ef4444' },
   topLinks: { flexDirection: 'row', gap: 10, padding: 12, backgroundColor: '#000', borderBottomWidth: 1, borderBottomColor: '#222' },
   topLink: { flex: 1, backgroundColor: '#111', borderRadius: 10, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: '#222' },
   topLinkText: { fontSize: 13, fontWeight: '600', color: '#ccff00' },
-  histRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#111', borderRadius: 10, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#222' },
-  histInfo: { flex: 1 },
-  histClass: { fontWeight: '600', color: '#fff', fontSize: 14 },
-  histDate: { fontSize: 12, color: '#888', marginTop: 2 },
   badge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   badgeText: { fontSize: 12, fontWeight: '600', textTransform: 'capitalize' },
-  whoBtn: { alignSelf: 'flex-start', paddingVertical: 6, marginBottom: 4 },
+  whoBtn: { alignSelf: 'flex-start', paddingVertical: 6, marginTop: 6 },
   whoBtnText: { fontSize: 13, color: '#ccff00', fontWeight: '600' },
-  whoPanel: { backgroundColor: '#0a0a0a', borderRadius: 8, padding: 10, marginBottom: 8, borderWidth: 1, borderColor: '#222' },
+  whoPanel: { backgroundColor: '#0a0a0a', borderRadius: 8, padding: 10, marginTop: 6, borderWidth: 1, borderColor: '#222' },
   whoLabel: { fontSize: 11, fontWeight: '700', color: '#ccff00', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
   whoEmpty: { fontSize: 13, color: '#666' },
   whoNames: { fontSize: 14, color: '#ccc', lineHeight: 20 },
