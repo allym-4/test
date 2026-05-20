@@ -50,7 +50,7 @@ const PROMPTS = [
   {
     icon: '📅',
     label: 'When do season enrolments open?',
-    answer: "New season enrolments usually open around 4 weeks before the season starts. Current students get 48 hours of priority access before spots open to the public.\n\nKeep an eye on your notifications and email — we'll let you know as soon as enrolments are live.",
+    answer: "New season enrolments typically open around 4 weeks before the season starts, at 8am Sydney time on booking day.\n\nKeep an eye on your notifications and email — we'll let you know as soon as enrolments are live.",
   },
   {
     icon: '🎬',
