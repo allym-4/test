@@ -639,7 +639,7 @@ export default function DashboardScreen({ navigation }) {
           <Text style={s.quickLinkLabel}>Book practice time</Text>
           <Text style={s.quickLinkSub}>Open studio – $20</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={s.quickLink} onPress={() => navigation.navigate('Progress')}>
+        <TouchableOpacity style={s.quickLink} onPress={() => navigation.navigate('Classes', { screen: 'Progress' })}>
           <View style={s.quickLinkIconWrap}>
             <View style={{ width: 0, height: 0, borderLeftWidth: 6, borderRightWidth: 6, borderBottomWidth: 11, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: '#000' }} />
           </View>
