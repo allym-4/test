@@ -521,9 +521,11 @@ function formatTime(timeStr) {
   return `${hour}:${String(m).padStart(2, '0')}${ampm}`
 }
 
-function SeasonClassRow({ session, userLevel, selected, onToggle, demoNoLevel }) {
+function SeasonClassRow({ session, userLevel, selected, onToggle, onJoinWaitlist, demoNoLevel }) {
   const classLevel = getClassLevel(session.name)
   const effectiveUserLevel = demoNoLevel ? null : userLevel
+  const spotsLeft = (session.capacity || 14) - (session.enrolled_count || 0)
+  const isFull = spotsLeft <= 0
 
   // Determine lock/badge
   let locked = false
@@ -554,16 +556,16 @@ function SeasonClassRow({ session, userLevel, selected, onToggle, demoNoLevel })
 
   return (
     <div
-      onClick={() => !locked && onToggle(session)}
+      onClick={() => !locked && !isFull && onToggle(session)}
       style={{
         display: 'flex',
         alignItems: 'center',
         gap: 16,
         padding: '14px 16px',
         borderRadius: 10,
-        border: `1px solid ${isSelected ? '#ccff00' : '#222'}`,
-        background: isSelected ? 'rgba(204,255,0,0.04)' : locked ? 'rgba(255,255,255,0.01)' : 'transparent',
-        cursor: locked ? 'not-allowed' : 'pointer',
+        border: `1px solid ${isSelected ? '#ccff00' : isFull ? 'rgba(255,68,68,0.2)' : '#222'}`,
+        background: isSelected ? 'rgba(204,255,0,0.04)' : isFull ? 'rgba(255,68,68,0.03)' : locked ? 'rgba(255,255,255,0.01)' : 'transparent',
+        cursor: locked ? 'not-allowed' : isFull ? 'default' : 'pointer',
         opacity: locked ? 0.5 : 1,
         marginBottom: 4,
         transition: 'border-color 0.15s, background 0.15s',
@@ -585,8 +587,8 @@ function SeasonClassRow({ session, userLevel, selected, onToggle, demoNoLevel })
         </div>
       </div>
 
-      {/* Badge + radio */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+      {/* Badge + action */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
         {badge && (
           <span style={{
             fontSize: 10,
@@ -605,22 +607,35 @@ function SeasonClassRow({ session, userLevel, selected, onToggle, demoNoLevel })
             {badge.label}
           </span>
         )}
-        <div style={{
-          width: 20,
-          height: 20,
-          borderRadius: 10,
-          border: `2px solid ${isSelected ? '#ccff00' : '#444'}`,
-          background: isSelected ? '#ccff00' : 'transparent',
-          flexShrink: 0,
-          transition: 'background 0.15s, border-color 0.15s',
-        }} />
+        {isFull && !locked ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#ff4444', padding: '2px 7px', borderRadius: 5, background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.25)', whiteSpace: 'nowrap' }}>FULL</span>
+            <button
+              onClick={e => { e.stopPropagation(); onJoinWaitlist && onJoinWaitlist(session) }}
+              style={{ background: 'none', border: '1px solid #444', borderRadius: 5, color: '#888', fontSize: 10, padding: '3px 8px', cursor: 'pointer', whiteSpace: 'nowrap', fontWeight: 600 }}
+            >
+              JOIN WAITLIST
+            </button>
+          </div>
+        ) : !locked ? (
+          <div style={{
+            width: 20,
+            height: 20,
+            borderRadius: 10,
+            border: `2px solid ${isSelected ? '#ccff00' : '#444'}`,
+            background: isSelected ? '#ccff00' : 'transparent',
+            flexShrink: 0,
+            transition: 'background 0.15s, border-color 0.15s',
+          }} />
+        ) : null}
       </div>
     </div>
   )
 }
 
-function SeasonSidebar({ selectedSessions, seasonName, totalPrice, incrementalPrice, onProceed, onRemove }) {
+function SeasonSidebar({ selectedSessions, seasonName, totalPrice, incrementalPrice, activeSeasonCount, onProceed, onRemove }) {
   const count = selectedSessions.length
+  const existingCount = activeSeasonCount || 0
   const perSessionWeekly = count > 0 ? (incrementalPrice / (8 * count)).toFixed(2) : null
 
   return (
@@ -672,11 +687,22 @@ function SeasonSidebar({ selectedSessions, seasonName, totalPrice, incrementalPr
           <>
             <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color: '#ccff00', lineHeight: 1 }}>${incrementalPrice}</div>
             <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
-              {count} class{count !== 1 ? 'es' : ''} — ${perSessionWeekly}/class/week
+              {existingCount > 0
+                ? `Adding ${count} to your ${existingCount} — ${existingCount + count} classes total`
+                : `${count} class${count !== 1 ? 'es' : ''}`
+              }
+              {perSessionWeekly ? ` — $${perSessionWeekly}/class/week` : ''}
             </div>
+            {existingCount > 0 && (
+              <div style={{ fontSize: 11, color: '#555', marginTop: 6, lineHeight: 1.5 }}>
+                Incremental rate because you're already enrolled this season
+              </div>
+            )}
           </>
+        ) : existingCount > 0 ? (
+          <div style={{ fontSize: 13, color: '#666' }}>You have {existingCount} class{existingCount !== 1 ? 'es' : ''} this season. Select more below to add.</div>
         ) : (
-          <div style={{ fontSize: 13, color: '#444' }}>Select classes to see pricing</div>
+          <div style={{ fontSize: 13, color: '#444' }}>Select classes above to start building your season.</div>
         )}
       </div>
 
@@ -717,6 +743,7 @@ function SeasonTab({
   discountTiers,
   userLevel,
   onProceedToCheckout,
+  onJoinSeasonWaitlist,
 }) {
   // Bookable seasons: active OR upcoming with bookings_open
   const bookableSeasons = allSeasons
@@ -1037,6 +1064,7 @@ function SeasonTab({
                       userLevel={userLevel}
                       selected={!!selectedSessions.find(sel => sel.id === s.id)}
                       onToggle={toggleSession}
+                      onJoinWaitlist={onJoinSeasonWaitlist}
                       demoNoLevel={demoNoLevel}
                     />
                   ))}
@@ -1053,6 +1081,7 @@ function SeasonTab({
         seasonName={activeSeason?.name || 'Season'}
         totalPrice={totalPrice}
         incrementalPrice={incrementalPrice}
+        activeSeasonCount={activeSeasonCount}
         onProceed={handleProceed}
         onRemove={removeSession}
       />
@@ -1188,6 +1217,15 @@ export default function StudentBook() {
     }
 
     setCheckout({ session, type, amount: effectivePrice, description, sessionIds: [session.id] })
+  }
+
+  async function joinSeasonWaitlist(session) {
+    try {
+      await enrolments.create({ session: session.id, status: 'waitlisted', enrolment_type: 'course' })
+      setBooked(b => [...b, session.id + '-waitlist'])
+    } catch (e) {
+      alert(e.response?.data?.detail || 'Could not join waitlist — please try again.')
+    }
   }
 
   // Season multi-select checkout
@@ -1353,6 +1391,7 @@ export default function StudentBook() {
           discountTiers={discountTiers}
           userLevel={user?.level || null}
           onProceedToCheckout={handleSeasonProceed}
+          onJoinSeasonWaitlist={joinSeasonWaitlist}
         />
       )}
 

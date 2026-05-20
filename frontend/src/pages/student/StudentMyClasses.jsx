@@ -538,18 +538,25 @@ function WaitlistOfferBanner({ enrolment, onClaimed }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
+const DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+function fmtTime(t) {
+  if (!t) return ''
+  const [h, m] = t.split(':')
+  const hr = parseInt(h)
+  return `${hr > 12 ? hr - 12 : hr || 12}:${m}${hr >= 12 ? 'pm' : 'am'}`
+}
+
 export default function StudentMyClasses() {
   const { user } = useAuth()
   const { data: enrolData, loading, refetch: refetchEnrol } = useApi(() => enrolmentsApi.list({ student: user?.id }), [user?.id])
-  const { data: attData, refetch: refetchAtt } = useApi(() => attendance.list({ student: user?.id }), [user?.id])
-  const { data: upcomingData, refetch: refetchUpcoming } = useApi(() => classesApi.occurrences({ student: user?.id, upcoming: true }), [user?.id])
   const { data: casualBookingsData, refetch: refetchCasual } = useApi(() => classesApi.casual.myBookings(), [])
+  const { data: workshopsData } = useApi(() => classesApi.workshops.list(), [])
   const { data: creditsData } = useApi(() => user?.id ? attendanceApi.makeupCredits.list({ student: user.id, status: 'available' }) : null, [user?.id])
   const { data: studioSettings } = useApi(() => settingsApi.get(), [])
 
-  const [markAwayOcc, setMarkAwayOcc] = useState(null)
-  const [cancelAwayOcc, setCancelAwayOcc] = useState(null)
-  const [tab, setTab] = useState('current')
+  const [tab, setTab] = useState('active')
+  const [activeSubTab, setActiveSubTab] = useState('enrolled')
   const [cancelPolicyEnrol, setCancelPolicyEnrol] = useState(null)
   const [classWaitlistLeaveEnrol, setClassWaitlistLeaveEnrol] = useState(null)
   const [displacementPopup, setDisplacementPopup] = useState(null)
@@ -561,10 +568,9 @@ export default function StudentMyClasses() {
   }, [casualBookingsData])
 
   const enrolments_ = enrolData?.results || enrolData || []
-  const attHistory = attData?.results || attData || []
-  const upcomingOccurrences = upcomingData?.results || upcomingData || []
   const casualItems = casualBookingsData?.results || casualBookingsData || []
   const availableCredits = creditsData?.results || creditsData || []
+  const workshops = workshopsData?.results || workshopsData || []
 
   const today = new Date().toISOString().slice(0, 10)
   const active = enrolments_.filter(e => e.status === 'active')
@@ -572,9 +578,8 @@ export default function StudentMyClasses() {
   const waitlisted = enrolments_.filter(e => e.status === 'waitlisted')
   const seasonWaitlisted = waitlisted.filter(e => e.enrolment_type === 'course')
   const classWaitlisted = waitlisted.filter(e => e.enrolment_type !== 'course')
-  const past = enrolments_.filter(e => ['completed', 'cancelled', 'expired'].includes(e.status))
+  const pastEnrolments = enrolments_.filter(e => ['completed', 'cancelled', 'expired'].includes(e.status))
 
-  // Split active into current-season vs future-season
   const currentEnrolments = active.filter(e => {
     const start = e.class_session_detail?.season_start_date
     return !start || start <= today
@@ -584,79 +589,137 @@ export default function StudentMyClasses() {
     return start && start > today
   })
 
-  // Season info from first current enrolment
-  const seasonInfo = useMemo(() => {
-    const enr = currentEnrolments[0]
-    if (!enr) return null
-    const sess = enr.class_session_detail
-    const name = enr.season_detail?.name ?? sess?.season_name ?? null
-    const start = sess?.season_start_date ?? null
-    const end = sess?.season_end_date ?? null
-    if (!name && !start) return null
-    const fmt = d => d ? new Date(d + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : null
-    return { name, start: fmt(start), end: fmt(end) }
-  }, [currentEnrolments])
+  // Pricing helpers
+  const priceSeason = parseFloat(studioSettings?.price_season || 270)
+  const discountTiers = studioSettings?.season_discount_tiers || {2:100,3:130,4:150,5:170,6:170}
+  function getIncrementalPrice(position) {
+    const discount = parseFloat(discountTiers[position] ?? discountTiers[String(position)] ?? 0)
+    return Math.max(0, priceSeason - discount)
+  }
+  function getSeasonTotal(count) {
+    let total = 0
+    for (let i = 1; i <= count; i++) total += getIncrementalPrice(i)
+    return total
+  }
 
-  // Build unified chronological list for Current tab
-  const currentItems = useMemo(() => {
-    const list = []
-    // Add upcoming occurrences from enrolled classes
-    currentEnrolments.forEach(enr => {
-      const sess = enr.class_session_detail
-      const occurrences = enr.upcoming_occurrences || []
-      occurrences.forEach(occ => {
-        list.push({
-          key: `enr-${enr.id}-${occ.id}`,
-          type: 'enrolled',
-          date: occ.date,
-          time: occ.start_time || sess?.start_time || '',
-          sessionName: sess?.name || enr.class_name || 'Class',
-          studio: sess?.studio_detail?.name || null,
-          sessionId: enr.class_session,
-          enrolment: enr,
-          occurrence: { ...occ, session_detail: sess },
-          isAway: occ.marked_away || occ.my_status === 'absent',
-        })
-      })
-    })
-    // Add casual/catch-up bookings (non-displaced)
-    casualItems
-      .filter(b => b.status === 'confirmed' && !b.displacement_offered_at)
-      .forEach(b => {
-        const d = b.occurrence_detail
-        if (!d?.date) return
-        list.push({
-          key: `casual-${b.id}`,
-          type: b.enrolment_type === 'catchup' ? 'catchup' : 'casual',
-          date: d.date,
-          time: d.start_time || '',
-          sessionName: d.session_name || 'Class',
-          studio: d.studio_name || null,
-          sessionId: d.session_id || d.session || null,
-          booking: b,
-        })
-      })
-    list.sort((a, b) => {
-      const da = `${a.date}T${a.time || '00:00'}`
-      const db = `${b.date}T${b.time || '00:00'}`
-      return da < db ? -1 : da > db ? 1 : 0
-    })
-    return list
-  }, [currentEnrolments, casualItems])
+  // Season info
+  const currentSeasonEnr = currentEnrolments[0]
+  const currentSeasonStart = currentSeasonEnr?.class_session_detail?.season_start_date
+  const currentSeasonEnd = currentSeasonEnr?.class_session_detail?.season_end_date
+  const currentSeasonName = currentSeasonEnr?.season_detail?.name || currentSeasonEnr?.class_session_detail?.season_name || 'Current Season'
+  const currentWeek = currentSeasonStart
+    ? Math.min(8, Math.max(1, Math.floor((new Date() - new Date(currentSeasonStart + 'T00:00')) / (7 * 86400000)) + 1))
+    : null
 
-  // Group by date
-  const groupedItems = useMemo(() => {
-    const groups = []
-    let lastDate = null
-    currentItems.forEach(item => {
-      if (item.date !== lastDate) { groups.push({ date: item.date, items: [] }); lastDate = item.date }
-      groups[groups.length - 1].items.push(item)
-    })
-    return groups
-  }, [currentItems])
+  const futureSeasonEnr = futureEnrolments[0]
+  const futureSeasonStart = futureSeasonEnr?.class_session_detail?.season_start_date
+  const futureSeasonEnd = futureSeasonEnr?.class_session_detail?.season_end_date
+  const futureSeasonName = futureSeasonEnr?.season_detail?.name || futureSeasonEnr?.class_session_detail?.season_name || 'Future Season'
 
-  const displacedCasuals = casualItems.filter(b => b.status === 'confirmed' && b.displacement_offered_at)
+  const fmtShortDate = d => d ? new Date(d + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : ''
+
+  // Casual bookings for current vs future season
+  const confirmedCasuals = casualItems.filter(b => b.status === 'confirmed' && !b.displacement_offered_at)
   const waitlistedCasuals = casualItems.filter(b => b.status === 'waitlisted')
+  const displacedCasuals = casualItems.filter(b => b.status === 'confirmed' && b.displacement_offered_at)
+
+  // Workshops (booked by user)
+  const bookedWorkshops = workshops.filter(w => w.is_booked)
+
+  // Past seasons grouped by season
+  const pastBySeasonId = useMemo(() => {
+    const map = {}
+    for (const enr of pastEnrolments) {
+      const sid = enr.season_detail?.id || enr.class_session_detail?.season_id || 'unknown'
+      if (!map[sid]) map[sid] = {
+        id: sid,
+        name: enr.season_detail?.name || enr.class_session_detail?.season_name || 'Past Season',
+        start: enr.class_session_detail?.season_start_date || enr.season_detail?.start_date,
+        end: enr.class_session_detail?.season_end_date || enr.season_detail?.end_date,
+        enrolments: [],
+      }
+      map[sid].enrolments.push(enr)
+    }
+    return Object.values(map).sort((a, b) => (b.start || '').localeCompare(a.start || ''))
+  }, [pastEnrolments])
+
+  // Past casuals grouped by season date range
+  const pastCasuals = casualItems.filter(b => b.occurrence_detail?.date && b.occurrence_detail.date < today)
+  function getCasualSeason(casual) {
+    const d = casual.occurrence_detail?.date
+    if (!d) return null
+    for (const s of pastBySeasonId) {
+      if (s.start && s.end && d >= s.start && d <= s.end) return s.id
+    }
+    return null
+  }
+
+  // EnrolCard component
+  function EnrolCard({ enr, badge = 'ACTIVE', showCancel = true }) {
+    const s = enr.class_session_detail
+    const day = s?.day_of_week != null ? DAY_SHORT[s.day_of_week] : ''
+    const time = s?.start_time ? fmtTime(s.start_time) : ''
+    const instructor = s?.instructor_detail?.display_name || s?.instructor_detail?.first_name || ''
+    const studio = s?.studio_detail?.name || ''
+    const badgeColor = badge === 'ACTIVE' || badge === 'BOOKED' ? 'var(--lime)' : badge === 'WAITLISTED' ? 'var(--lav)' : 'var(--grey)'
+    return (
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 16 }}>
+        {(day || time) && (
+          <div style={{ textAlign: 'center', minWidth: 52, flexShrink: 0 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{day}</div>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: 'var(--lime)', lineHeight: 1 }}>{time}</div>
+          </div>
+        )}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 700, fontSize: 15 }}>{s?.name}</div>
+          <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>
+            {[studio, instructor, 'Weeks 1–8'].filter(Boolean).join(' · ')}
+          </div>
+        </div>
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: badgeColor, border: `1px solid ${badgeColor}`, borderRadius: 20, padding: '2px 10px', marginBottom: showCancel ? 4 : 0, display: 'inline-block' }}>{badge}</div>
+          {showCancel && (
+            <div>
+              <button onClick={() => setCancelPolicyEnrol(enr)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 10, color: 'var(--red)', display: 'block', marginTop: 2 }}>CANCEL</button>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // PricingSummary component
+  function PricingSummary({ count, seasonName, isFuture }) {
+    if (count === 0) return null
+    const total = getSeasonTotal(count)
+    const perClass = Math.round(total / count)
+    const nextPos = count + 1
+    const nextIncremental = nextPos <= 6 ? getIncrementalPrice(nextPos) : null
+    const nextPerSession = nextIncremental !== null ? (nextIncremental / 8).toFixed(2) : null
+    const freePerks = nextPos === 3 ? '+ 1 free practice session/week' : nextPos >= 4 ? '+ unlimited free practice' : ''
+    const ordinal = ['', '2nd', '3rd', '4th', '5th', '6th'][nextPos] || `${nextPos}th`
+    return (
+      <div style={{ background: '#0d0d0d', border: '1px solid var(--border)', borderRadius: 12, padding: '16px', marginTop: 4 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+          <div>
+            <div style={{ fontSize: 13, color: 'var(--grey)' }}>{count} class{count !== 1 ? 'es' : ''} · {seasonName}</div>
+            <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>${perClass}/class · 8 weeks{isFuture ? ' · payment plan available' : ''}</div>
+          </div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22 }}>${total}</div>
+        </div>
+        {nextPerSession && (
+          <div style={{ fontSize: 12, color: 'var(--grey)', margin: '10px 0 12px', lineHeight: 1.5 }}>
+            Add a {ordinal} class → just <span style={{ color: 'var(--lime)', fontWeight: 700 }}>${nextPerSession}/session</span>{freePerks ? ` ${freePerks}` : ''}
+          </div>
+        )}
+        <Link to="/portal/book">
+          <button className="btn btn-lime btn-sm" style={{ fontWeight: 700, fontSize: 11, letterSpacing: '0.06em' }}>
+            {isFuture ? `ADD A CLASS TO ${(seasonName || '').toUpperCase()}` : 'BROWSE CLASSES TO ADD'}
+          </button>
+        </Link>
+      </div>
+    )
+  }
 
   async function cancelCasual(booking) {
     if (!window.confirm(booking.status === 'waitlisted' ? 'Leave the waitlist for this class?' : 'Cancel this booking?')) return
@@ -670,6 +733,7 @@ export default function StudentMyClasses() {
 
   return (
     <div>
+      {/* Header */}
       <div className="page-header">
         <div>
           <div className="page-title">My Classes</div>
@@ -700,10 +764,12 @@ export default function StudentMyClasses() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="subtabs" style={{ marginBottom: 20 }}>
-        {[['current', 'Current'], ['future', 'Future'], ['past', 'Past']].map(([key, label]) => (
-          <button key={key} className={`subtab${tab === key ? ' active' : ''}`} onClick={() => setTab(key)}>{label}</button>
+      {/* Season tabs */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', background: 'var(--card)', borderRadius: 12, padding: 4, marginBottom: 24, border: '1px solid var(--border)' }}>
+        {[['active', 'Active Season'], ['future', 'Future Season'], ['past', 'Past Seasons']].map(([key, label]) => (
+          <button key={key} onClick={() => setTab(key)} style={{ background: tab === key ? '#fff' : 'transparent', color: tab === key ? '#000' : 'var(--grey)', border: 'none', borderRadius: 9, padding: '10px 8px', cursor: 'pointer', fontWeight: tab === key ? 700 : 400, fontSize: 13, transition: 'all 0.15s' }}>
+            {label}
+          </button>
         ))}
       </div>
 
@@ -711,15 +777,23 @@ export default function StudentMyClasses() {
         <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}><div className="spinner" /></div>
       ) : (
         <>
-          {/* ── Current tab ── */}
-          {tab === 'current' && (
+          {/* ── Active Season tab ── */}
+          {tab === 'active' && (
             <div>
               {/* Season header */}
-              {seasonInfo && (
-                <div style={{ background: 'rgba(204,255,0,0.05)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 12, padding: '14px 16px', marginBottom: 16 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600 }}>{seasonInfo.name ?? 'Current Season'}</div>
-                  {seasonInfo.start && seasonInfo.end && (
-                    <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{seasonInfo.start} — {seasonInfo.end}</div>
+              {currentSeasonName && (
+                <div style={{ background: 'rgba(204,255,0,0.05)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 12, padding: '14px 16px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700 }}>{currentSeasonName}</div>
+                    {currentSeasonStart && currentSeasonEnd && (
+                      <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{fmtShortDate(currentSeasonStart)} — {fmtShortDate(currentSeasonEnd)}</div>
+                    )}
+                  </div>
+                  {currentWeek && (
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: 'var(--lime)', lineHeight: 1 }}>Week {currentWeek}</div>
+                      <div style={{ fontSize: 11, color: 'var(--grey)' }}>of 8</div>
+                    </div>
                   )}
                 </div>
               )}
@@ -737,7 +811,7 @@ export default function StudentMyClasses() {
                 </div>
               )}
 
-              {/* Waitlist claim banners */}
+              {/* Waitlist offer banners */}
               {waitlisted.filter(e => e.waitlist_offered_at).map(e => (
                 <WaitlistOfferBanner key={e.id} enrolment={e} onClaimed={refetchEnrol} />
               ))}
@@ -747,7 +821,7 @@ export default function StudentMyClasses() {
                 <PendingDisplacementBanner key={e.id} enrolment={e} />
               ))}
 
-              {/* Displaced casual action cards */}
+              {/* Displacement action cards */}
               {displacedCasuals.length > 0 && (
                 <div style={{ marginBottom: 20 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>Action Required</div>
@@ -757,259 +831,314 @@ export default function StudentMyClasses() {
                     const expiresAt = b.displacement_expires_at ? new Date(b.displacement_expires_at) : null
                     const hoursLeft = expiresAt ? Math.max(0, Math.round((expiresAt - new Date()) / 3600000)) : null
                     return (
-                      <div key={b.id}
-                        onClick={() => setDisplacementPopup(b)}
-                        style={{ background: 'rgba(255,170,0,0.05)', border: '2px solid rgba(255,170,0,0.25)', borderRadius: 14, padding: '14px 16px', marginBottom: 10, cursor: 'pointer' }}>
+                      <div key={b.id} onClick={() => setDisplacementPopup(b)} style={{ background: 'rgba(255,170,0,0.05)', border: '2px solid rgba(255,170,0,0.25)', borderRadius: 14, padding: '14px 16px', marginBottom: 10, cursor: 'pointer' }}>
                         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>{d?.session_name}</div>
-                        <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 6 }}>
-                          {[dateLabel, d?.start_time?.slice(0, 5), d?.studio_name].filter(Boolean).join(' · ')}
-                        </div>
+                        <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 6 }}>{[dateLabel, d?.start_time?.slice(0, 5), d?.studio_name].filter(Boolean).join(' · ')}</div>
                         <div style={{ fontSize: 12, color: '#f59e0b' }}>Season enrolment offer — {hoursLeft !== null ? `respond within ${hoursLeft}h` : 'respond now'}</div>
-                        <div style={{ fontSize: 11, color: 'var(--lime)', marginTop: 2 }}>Click to upgrade or release →</div>
+                        <div style={{ fontSize: 11, color: 'var(--lime)', marginTop: 2 }}>Tap to upgrade or release →</div>
                       </div>
                     )
                   })}
                 </div>
               )}
 
-              {/* Empty state */}
-              {currentItems.length === 0 && displacedCasuals.length === 0 && (
-                <div className="empty-state">
-                  <div style={{ marginBottom: 8 }}>No upcoming classes this season</div>
-                  <Link to="/portal/book"><button className="btn btn-lime btn-sm" style={{ marginTop: 8 }}>Book a class →</button></Link>
+              {/* Sub-tabs: Enrolled / Casual & catch-ups */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: '#0d0d0d', borderRadius: 10, padding: 3, marginBottom: 16, border: '1px solid var(--border)' }}>
+                {[['enrolled', 'Enrolled classes'], ['casual', 'Casual & catch-ups']].map(([key, label]) => (
+                  <button key={key} onClick={() => setActiveSubTab(key)} style={{ background: activeSubTab === key ? 'var(--card)' : 'transparent', color: activeSubTab === key ? 'var(--white)' : 'var(--grey)', border: 'none', borderRadius: 8, padding: '8px 4px', cursor: 'pointer', fontWeight: activeSubTab === key ? 600 : 400, fontSize: 12, transition: 'all 0.15s' }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {activeSubTab === 'enrolled' && (
+                <div>
+                  {currentEnrolments.length === 0 ? (
+                    <div className="empty-state">
+                      <div style={{ marginBottom: 8 }}>No classes enrolled this season</div>
+                      <Link to="/portal/book"><button className="btn btn-lime btn-sm" style={{ marginTop: 8 }}>Browse Classes →</button></Link>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {currentEnrolments.map(enr => <EnrolCard key={enr.id} enr={enr} badge="ACTIVE" />)}
+                    </div>
+                  )}
+                  {currentEnrolments.length > 0 && (
+                    <div style={{ marginTop: 12 }}>
+                      <PricingSummary count={currentEnrolments.length} seasonName={currentSeasonName} isFuture={false} />
+                    </div>
+                  )}
+
+                  {/* Season waitlist (current) */}
+                  {seasonWaitlisted.filter(e => { const s = e.class_session_detail?.season_start_date; return !s || s <= today }).length > 0 && (
+                    <div style={{ marginTop: 20 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--lav)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 8 }}>Season Waitlist</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {seasonWaitlisted.filter(e => { const s = e.class_session_detail?.season_start_date; return !s || s <= today }).map(e => (
+                          <EnrolCard key={e.id} enr={e} badge="WAITLISTED" showCancel={false} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Class waitlist (current) */}
+                  {classWaitlisted.filter(e => { const s = e.class_session_detail?.season_start_date; return !s || s <= today }).length > 0 && (
+                    <div style={{ marginTop: 20 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 8 }}>Class Waitlist</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {classWaitlisted.filter(e => { const s = e.class_session_detail?.season_start_date; return !s || s <= today }).map(e => (
+                          <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 700, fontSize: 15 }}>{e.class_session_detail?.name}</div>
+                              <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{DAYS[e.class_session_detail?.day_of_week]} · {e.class_session_detail?.studio_detail?.name}</div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              {e.waitlist_position != null && <span className="tag tag-grey" style={{ fontSize: 10 }}>#{e.waitlist_position}</span>}
+                              <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)' }} onClick={() => setClassWaitlistLeaveEnrol(e)}>Leave</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Chronological list grouped by date */}
-              {groupedItems.map(group => (
-                <div key={group.date} style={{ marginBottom: 4 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', margin: '16px 0 8px' }}>
-                    {new Date(group.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {group.items.map(item => {
-                      const isEnrolled = item.type === 'enrolled'
-                      const isCatchup = item.type === 'catchup'
-                      const isCasual = item.type === 'casual'
-                      return (
-                        <div key={item.key} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
-                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+              {activeSubTab === 'casual' && (
+                <div>
+                  {confirmedCasuals.filter(b => { const d = b.occurrence_detail?.date; return d && d >= today }).length === 0 && waitlistedCasuals.length === 0 ? (
+                    <div className="empty-state">
+                      <div style={{ marginBottom: 8 }}>No upcoming casual or catch-up bookings</div>
+                      <Link to="/portal/book"><button className="btn btn-lime btn-sm" style={{ marginTop: 8 }}>Book a casual →</button></Link>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {confirmedCasuals.filter(b => { const d = b.occurrence_detail?.date; return d && d >= today }).map(b => {
+                        const d = b.occurrence_detail
+                        const isCatchup = b.enrolment_type === 'catchup'
+                        const dayStr = d?.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short' }) : ''
+                        const dayNum = d?.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric' }) : ''
+                        const monStr = d?.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { month: 'short' }) : ''
+                        return (
+                          <div key={b.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 16 }}>
+                            <div style={{ textAlign: 'center', minWidth: 52, flexShrink: 0 }}>
+                              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase' }}>{dayStr}</div>
+                              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, color: isCatchup ? 'var(--lav)' : 'var(--lime)', lineHeight: 1 }}>{dayNum}</div>
+                              <div style={{ fontSize: 10, color: 'var(--grey)' }}>{monStr}</div>
+                            </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                                <span style={{ fontWeight: 600, fontSize: 14 }}>{item.sessionName}</span>
-                                {(isCasual || isCatchup) && (
-                                  <span className={`tag ${isCatchup ? 'tag-lav' : 'tag-lime'}`} style={{ fontSize: 10 }}>
-                                    {isCatchup ? 'Catch-up' : 'Casual'}
-                                  </span>
-                                )}
-                                {item.isAway && (
-                                  <span style={{ fontSize: 10, fontWeight: 700, color: '#f59e0b', background: 'rgba(255,170,0,0.1)', borderRadius: 4, padding: '1px 6px' }}>AWAY</span>
-                                )}
+                              <div style={{ fontWeight: 700, fontSize: 15 }}>{d?.session_name}</div>
+                              <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{[d?.start_time?.slice(0, 5), d?.studio_name].filter(Boolean).join(' · ')}</div>
+                            </div>
+                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                              <div style={{ fontSize: 10, fontWeight: 700, color: isCatchup ? 'var(--lav)' : 'var(--lime)', border: `1px solid ${isCatchup ? 'var(--lav)' : 'var(--lime)'}`, borderRadius: 20, padding: '2px 10px', marginBottom: 4, display: 'inline-block' }}>{isCatchup ? 'CATCH-UP' : 'CASUAL'}</div>
+                              <div><button onClick={() => cancelCasual(b)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 10, color: 'var(--red)', display: 'block', marginTop: 2 }}>CANCEL</button></div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {waitlistedCasuals.length > 0 && (
+                    <div style={{ marginTop: 16 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 8 }}>On Waitlist</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {waitlistedCasuals.map(b => {
+                          const d = b.occurrence_detail
+                          const dateLabel = d?.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : '—'
+                          return (
+                            <div key={b.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                              <div>
+                                <div style={{ fontWeight: 600, fontSize: 13 }}>{d?.session_name}</div>
+                                <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{[dateLabel, d?.start_time?.slice(0, 5), d?.studio_name].filter(Boolean).join(' · ')}</div>
                               </div>
-                              {(item.time || item.studio) && (
-                                <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>
-                                  {[item.time ? item.time.slice(0, 5) : null, item.studio].filter(Boolean).join(' · ')}
-                                </div>
-                              )}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span className="tag tag-amber" style={{ fontSize: 10 }}>Waitlist</span>
+                                <button className="btn btn-ghost btn-xs" style={{ fontSize: 11, color: 'var(--red)' }} onClick={() => cancelCasual(b)}>Leave</button>
+                              </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                              {isEnrolled && !item.isAway && (
-                                <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }} onClick={() => setMarkAwayOcc(item.occurrence)}>
-                                  Mark away
-                                </button>
-                              )}
-                              {isEnrolled && item.isAway && (
-                                <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--lime)', borderColor: 'rgba(204,255,0,0.3)' }} onClick={() => setCancelAwayOcc(item.occurrence)}>
-                                  I can make it!
-                                </button>
-                              )}
-                              {(isCasual || isCatchup) && (
-                                <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)' }} onClick={() => cancelCasual(item.booking)}>
-                                  Cancel
-                                </button>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Who's coming */}
-                          <ClassRoster sessionId={item.sessionId} />
-
-                          {/* Cancel enrolment link */}
-                          {isEnrolled && (
-                            <button onClick={() => setCancelPolicyEnrol(item.enrolment)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 11, color: 'var(--red)', marginTop: 8, textDecoration: 'underline', textDecorationStyle: 'dotted' }}>
-                              Cancel enrolment
-                            </button>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
-
-              {/* Waitlisted casuals */}
-              {waitlistedCasuals.length > 0 && (
-                <div style={{ marginTop: 16 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 8 }}>On Waitlist</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {waitlistedCasuals.map(b => {
-                      const d = b.occurrence_detail
-                      const dateLabel = d?.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : '—'
-                      return (
-                        <div key={b.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                          <div>
-                            <div style={{ fontWeight: 600, fontSize: 13 }}>{d?.session_name}</div>
-                            <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>
-                              {[dateLabel, d?.start_time?.slice(0, 5), d?.studio_name].filter(Boolean).join(' · ')}
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span className="tag tag-amber" style={{ fontSize: 10 }}>Waitlist</span>
-                            <button className="btn btn-ghost btn-xs" style={{ fontSize: 11, color: 'var(--red)' }} onClick={() => cancelCasual(b)}>Leave</button>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {currentItems.length > 0 && (
-                <div style={{ marginTop: 20 }}>
-                  <Link to="/portal/book">
-                    <button className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>+ Book a casual or catch-up</button>
-                  </Link>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           )}
 
-          {/* ── Future tab ── */}
+          {/* ── Future Season tab ── */}
           {tab === 'future' && (
             <div>
-              {/* Waitlist claim banners for future season */}
-              {waitlisted.filter(e => e.waitlist_offered_at).map(e => (
+              {/* Season header */}
+              {futureSeasonName && futureEnrolments.length > 0 && (
+                <div style={{ background: 'rgba(204,255,0,0.05)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 12, padding: '14px 16px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700 }}>{futureSeasonName}</div>
+                    {futureSeasonStart && futureSeasonEnd && (
+                      <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>Starts {fmtShortDate(futureSeasonStart)} · Ends {fmtShortDate(futureSeasonEnd)}</div>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--lime)', border: '1px solid var(--lime)', borderRadius: 20, padding: '3px 10px' }}>UPCOMING</div>
+                </div>
+              )}
+
+              {/* Waitlist offer banners (future) */}
+              {waitlisted.filter(e => e.waitlist_offered_at && e.class_session_detail?.season_start_date > today).map(e => (
                 <WaitlistOfferBanner key={e.id} enrolment={e} onClaimed={refetchEnrol} />
               ))}
 
-              {futureEnrolments.length === 0 && seasonWaitlisted.length === 0 && classWaitlisted.length === 0 && (
+              {futureEnrolments.length === 0 && seasonWaitlisted.filter(e => e.class_session_detail?.season_start_date > today).length === 0 && classWaitlisted.filter(e => e.class_session_detail?.season_start_date > today).length === 0 ? (
                 <div className="empty-state">
-                  <div style={{ marginBottom: 8 }}>Your next season classes will appear here once booked</div>
+                  <div style={{ marginBottom: 8 }}>Nothing booked for next season yet</div>
                   <Link to="/portal/book"><button className="btn btn-lime btn-sm" style={{ marginTop: 8 }}>Browse Classes →</button></Link>
                 </div>
-              )}
+              ) : (
+                <>
+                  {futureEnrolments.length > 0 && (
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>Enrolled Classes</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {futureEnrolments.map(enr => <EnrolCard key={enr.id} enr={enr} badge="BOOKED" />)}
+                      </div>
+                      <div style={{ marginTop: 12 }}>
+                        <PricingSummary count={futureEnrolments.length} seasonName={futureSeasonName} isFuture={true} />
+                      </div>
+                    </div>
+                  )}
 
-              {futureEnrolments.length > 0 && (
-                <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>Enrolled — Upcoming Season</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {futureEnrolments.map(e => {
-                      const s = e.class_session_detail
-                      const seasonName = e.season_detail?.name ?? s?.season_name ?? null
-                      return (
-                        <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 600, fontSize: 14 }}>{s?.name}</div>
-                            <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{DAYS[s?.day_of_week]} · {s?.start_time?.slice(0, 5)} · {s?.studio_detail?.name}</div>
-                            {seasonName && <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 3 }}>{seasonName}</div>}
+                  {/* Booked workshops */}
+                  {bookedWorkshops.length > 0 && (
+                    <div style={{ marginTop: 20 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>Workshops Booked</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {bookedWorkshops.map(w => (
+                          <div key={w.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 16 }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 700, fontSize: 15 }}>{w.name}</div>
+                              <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>
+                                {[w.date ? new Date(w.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : null, w.instructor_detail?.display_name || w.instructor_detail?.first_name].filter(Boolean).join(' · ')}
+                              </div>
+                            </div>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--lime)', border: '1px solid var(--lime)', borderRadius: 20, padding: '2px 10px' }}>BOOKED</div>
                           </div>
-                          <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)', flexShrink: 0 }} onClick={() => setCancelPolicyEnrol(e)}>Cancel</button>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-              {seasonWaitlisted.length > 0 && (
-                <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--lav)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>Season Waitlist</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {seasonWaitlisted.map(e => {
-                      const s = e.class_session_detail
-                      return (
-                        <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 600, fontSize: 14 }}>{s?.name}</div>
-                            <div style={{ fontSize: 12, color: 'var(--grey)' }}>{DAYS[s?.day_of_week]} · {s?.studio_detail?.name}</div>
+                  {/* Season waitlist (future) */}
+                  {seasonWaitlisted.filter(e => e.class_session_detail?.season_start_date > today).length > 0 && (
+                    <div style={{ marginTop: 20 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--lav)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 8 }}>Season Waitlist</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {seasonWaitlisted.filter(e => e.class_session_detail?.season_start_date > today).map(e => (
+                          <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 700, fontSize: 15 }}>{e.class_session_detail?.name}</div>
+                              <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{DAYS[e.class_session_detail?.day_of_week]} · {e.class_session_detail?.studio_detail?.name}</div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              {e.waitlist_position != null && <span className="tag tag-lav" style={{ fontSize: 10 }}>#{e.waitlist_position}</span>}
+                              <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)' }} onClick={() => setCancelPolicyEnrol({ ...e, _isWaitlist: true })}>Leave</button>
+                            </div>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                            {e.waitlist_position != null && <span className="tag tag-lav" style={{ fontSize: 10 }}>#{e.waitlist_position}</span>}
-                            <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)' }} onClick={() => setCancelPolicyEnrol({ ...e, _isWaitlist: true })}>Leave</button>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-              {classWaitlisted.length > 0 && (
-                <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>Class Waitlist</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {classWaitlisted.map(e => {
-                      const s = e.class_session_detail
-                      return (
-                        <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 600, fontSize: 14 }}>{s?.name}</div>
-                            <div style={{ fontSize: 12, color: 'var(--grey)' }}>{DAYS[s?.day_of_week]} · {s?.studio_detail?.name}</div>
+                  {/* Class waitlist (future) */}
+                  {classWaitlisted.filter(e => e.class_session_detail?.season_start_date > today).length > 0 && (
+                    <div style={{ marginTop: 20 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 8 }}>Class Waitlist</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {classWaitlisted.filter(e => e.class_session_detail?.season_start_date > today).map(e => (
+                          <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 700, fontSize: 15 }}>{e.class_session_detail?.name}</div>
+                              <div style={{ fontSize: 12, color: 'var(--grey)' }}>{DAYS[e.class_session_detail?.day_of_week]} · {e.class_session_detail?.studio_detail?.name}</div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              {e.waitlist_position != null && <span className="tag tag-grey" style={{ fontSize: 10 }}>#{e.waitlist_position}</span>}
+                              <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)' }} onClick={() => setClassWaitlistLeaveEnrol(e)}>Leave</button>
+                            </div>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                            {e.waitlist_position != null && <span className="tag tag-grey" style={{ fontSize: 10 }}>#{e.waitlist_position}</span>}
-                            <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--red)' }} onClick={() => setClassWaitlistLeaveEnrol(e)}>Leave</button>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
 
-          {/* ── Past tab ── */}
+          {/* ── Past Seasons tab ── */}
           {tab === 'past' && (
             <div>
-              {attHistory.length === 0 && past.length === 0 && (
+              {pastBySeasonId.length === 0 && pastCasuals.length === 0 ? (
                 <div className="empty-state"><div>No history yet</div></div>
-              )}
-
-              {attHistory.length > 0 && (
-                <div style={{ marginBottom: 24 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>Attendance</div>
-                  <div className="list-card">
-                    {attHistory.map(rec => (
-                      <div key={rec.id} className="list-row">
-                        <div className="list-body">
-                          <div className="list-title">{rec.occurrence?.session?.name ?? 'Class'}</div>
-                          <div className="list-sub">
-                            {rec.occurrence?.date ? new Date(rec.occurrence.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
-                          </div>
+              ) : (
+                pastBySeasonId.map(season => {
+                  const seasonCasuals = pastCasuals.filter(b => getCasualSeason(b) === season.id)
+                  return (
+                    <div key={season.id} style={{ marginBottom: 32 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <div>
+                          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>{season.name}</div>
+                          {season.start && season.end && (
+                            <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{fmtShortDate(season.start)} — {fmtShortDate(season.end)}</div>
+                          )}
                         </div>
-                        <span className={`tag tag-${rec.status === 'present' ? 'lime' : rec.status === 'absent' ? 'amber' : 'grey'}`} style={{ fontSize: 10, textTransform: 'capitalize' }}>
-                          {rec.status?.replace('_', ' ')}
-                        </span>
                       </div>
-                    ))}
-                  </div>
-                </div>
+
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 8 }}>Enrolled</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: seasonCasuals.length > 0 ? 16 : 0 }}>
+                        {season.enrolments.map(enr => <EnrolCard key={enr.id} enr={enr} badge="COMPLETED" showCancel={false} />)}
+                      </div>
+
+                      {seasonCasuals.length > 0 && (
+                        <>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 8, marginTop: 4 }}>Casual & Catch-ups</div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {seasonCasuals.map(b => {
+                              const d = b.occurrence_detail
+                              const dateLabel = d?.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : '—'
+                              const isCatchup = b.enrolment_type === 'catchup'
+                              return (
+                                <div key={b.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 16 }}>
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: 700, fontSize: 15 }}>{d?.session_name}</div>
+                                    <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{[dateLabel, d?.start_time?.slice(0, 5), d?.studio_name].filter(Boolean).join(' · ')}</div>
+                                  </div>
+                                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--grey)', border: '1px solid var(--grey)', borderRadius: 20, padding: '2px 10px' }}>{isCatchup ? 'CATCH-UP' : 'ATTENDED'}</div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )
+                })
               )}
 
-              {past.length > 0 && (
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>Previous Seasons</div>
-                  <div className="list-card">
-                    {past.map(e => {
-                      const s = e.class_session_detail
+              {pastCasuals.filter(b => getCasualSeason(b) === null).length > 0 && (
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 8 }}>Past Casual & Catch-ups</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {pastCasuals.filter(b => getCasualSeason(b) === null).map(b => {
+                      const d = b.occurrence_detail
+                      const dateLabel = d?.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : '—'
+                      const isCatchup = b.enrolment_type === 'catchup'
                       return (
-                        <div key={e.id} className="list-row" style={{ opacity: 0.7 }}>
-                          <div className="list-body">
-                            <div className="list-title">{s?.name}</div>
-                            <div className="list-sub">{DAYS[s?.day_of_week]} · {s?.studio_detail?.name}{e.season_detail?.name ? ` · ${e.season_detail.name}` : ''}</div>
+                        <div key={b.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 16 }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 700, fontSize: 15 }}>{d?.session_name}</div>
+                            <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{[dateLabel, d?.start_time?.slice(0, 5), d?.studio_name].filter(Boolean).join(' · ')}</div>
                           </div>
-                          <span className="tag tag-grey" style={{ fontSize: 10 }}>Completed</span>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--grey)', border: '1px solid var(--grey)', borderRadius: 20, padding: '2px 10px' }}>{isCatchup ? 'CATCH-UP' : 'ATTENDED'}</div>
                         </div>
                       )
                     })}
@@ -1022,24 +1151,6 @@ export default function StudentMyClasses() {
       )}
 
       {/* Modals */}
-      {markAwayOcc && (
-        <MarkAwayModal
-          occurrence={markAwayOcc}
-          cancellationWindowHours={studioSettings?.cancellation_window_hours ?? 4}
-          noShowFee={studioSettings?.no_show_fee ?? 20}
-          onClose={() => setMarkAwayOcc(null)}
-          onDone={() => { setMarkAwayOcc(null); refetchAtt(); refetchEnrol() }}
-        />
-      )}
-
-      {cancelAwayOcc && (
-        <CancelAwayDialog
-          occurrence={cancelAwayOcc}
-          onClose={() => setCancelAwayOcc(null)}
-          onDone={() => { setCancelAwayOcc(null); refetchAtt(); refetchEnrol(); refetchUpcoming() }}
-        />
-      )}
-
       {cancelPolicyEnrol && (
         <CancelPolicyModal
           enrolment={cancelPolicyEnrol}
