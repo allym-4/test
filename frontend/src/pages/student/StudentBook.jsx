@@ -599,6 +599,19 @@ function WaitlistModal({ session, occ, onConfirm, onCancel, joining }) {
   const instructor = session?.instructor_detail?.display_name || session?.instructor_detail?.first_name
   const timeLabel = session?.start_time?.slice(0, 5)
 
+  // Dynamic window: min(12h, time until class)
+  let windowHours = 12
+  let windowLabel = '12 hours'
+  if (occ?.date && session?.start_time) {
+    const classAt = new Date(`${occ.date}T${session.start_time}`)
+    const hoursUntil = (classAt - new Date()) / (1000 * 60 * 60)
+    if (hoursUntil > 0 && hoursUntil < 12) {
+      windowHours = Math.max(1, Math.round(hoursUntil))
+      windowLabel = windowHours === 1 ? '1 hour' : `${windowHours} hours`
+    }
+  }
+  const isUrgent = windowHours <= 2
+
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1002, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)', padding: 16 }}
       onClick={e => e.target === e.currentTarget && onCancel()}>
@@ -611,8 +624,12 @@ function WaitlistModal({ session, occ, onConfirm, onCancel, joining }) {
         <div style={{ fontSize: 13, color: '#666', marginBottom: 20 }}>
           {[dateLabel, timeLabel, instructor].filter(Boolean).join(' · ')}
         </div>
-        <div style={{ background: 'rgba(176,160,255,0.1)', border: '1px solid rgba(176,160,255,0.3)', borderRadius: 12, padding: '18px 20px', marginBottom: 24, fontSize: 15, color: '#ccc', lineHeight: 1.7 }}>
-          We'll notify you by push notification and email the moment a spot opens in this class. You'll have <strong style={{ color: '#b0a0ff' }}>12 hours</strong> to confirm before the spot is offered to the next person.
+        <div style={{ background: isUrgent ? 'rgba(255,140,0,0.08)' : 'rgba(176,160,255,0.1)', border: `1px solid ${isUrgent ? 'rgba(255,140,0,0.3)' : 'rgba(176,160,255,0.3)'}`, borderRadius: 12, padding: '18px 20px', marginBottom: 24, fontSize: 15, color: '#ccc', lineHeight: 1.7 }}>
+          We'll notify you by push notification and email the moment a spot opens in this class.{' '}
+          {isUrgent
+            ? <>Because this class is soon, you'll need to <strong style={{ color: '#ffaa00' }}>confirm quickly</strong> — you'll have <strong style={{ color: '#ffaa00' }}>{windowLabel}</strong> before the spot is offered to the next person.</>
+            : <>You'll have <strong style={{ color: '#b0a0ff' }}>{windowLabel}</strong> to confirm before the spot is offered to the next person.</>
+          }
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <button
