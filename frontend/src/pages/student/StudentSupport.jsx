@@ -25,7 +25,7 @@ const FAQS = [
   },
   {
     q: 'Is there parking nearby?',
-    a: 'Rhapsody is on Crown St, Surry Hills — street parking on Crown St and nearby streets. Public transport: bus stops on Crown St, short walk from Central or Museum station.',
+    a: "We're at Level 1, 88 Kippax St, Surry Hills. Street parking on Kippax St and nearby streets. Public transport: multiple bus routes stop on nearby streets, and it's a short walk from Central or Museum station.",
   },
   {
     q: 'When do new season enrolments open?',
