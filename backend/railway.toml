@@ -2,5 +2,5 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "python manage.py clean_studio_features && python manage.py migrate && python manage.py seed_demo && python manage.py set_test_passwords && gunicorn config.wsgi --log-file -"
+startCommand = "python manage.py clean_studio_features && python manage.py migrate && gunicorn config.wsgi --log-file -"
 restartPolicyType = "on_failure"
