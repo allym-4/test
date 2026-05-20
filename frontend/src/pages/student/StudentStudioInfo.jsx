@@ -13,10 +13,10 @@ function avatarColor(name) {
 export default function StudentStudioInfo() {
   const [tab, setTab] = useState('about')
   const { data: settingsData } = useApi(() => settings.get())
-  const { data: staffData } = useApi(() => users.list({ role: 'instructor' }))
+  const { data: staffData } = useApi(() => users.publicInstructors())
 
   const s = settingsData || {}
-  const instructors = staffData?.results || []
+  const instructors = staffData || []
 
   const cancelWindow = s.cancellation_window_hours ?? 4
   const noShowFee = s.no_show_fee ? `$${parseFloat(s.no_show_fee).toFixed(0)}` : '$20'
