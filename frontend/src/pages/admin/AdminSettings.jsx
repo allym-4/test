@@ -565,19 +565,20 @@ export default function AdminSettings() {
         <div className="grid-2" style={{ gap: 24 }}>
           <div>
             <Section title="Booking & Cancellation">
-              <FieldRow label="No-show fee"><input value={form.no_show_fee} onChange={e => set('no_show_fee', e.target.value)} /></FieldRow>
+              <FieldRow label="No-show fee ($)"><input value={form.no_show_fee} onChange={e => set('no_show_fee', e.target.value)} /></FieldRow>
               <FieldRow label="Cancellation window (hrs)"><input type="number" value={form.cancellation_window_hours} onChange={e => set('cancellation_window_hours', parseInt(e.target.value) || 0)} /></FieldRow>
-              <FieldRow label="Late cancellation fee"><input value={form.late_cancel_fee} onChange={e => set('late_cancel_fee', e.target.value)} /></FieldRow>
             </Section>
 
-            <Section title="Make-up Credits">
+            <Section title="4-Class Pass Credits">
               <FieldRow label="Credit expiry (days)"><input type="number" value={form.credit_expiry_days} onChange={e => set('credit_expiry_days', parseInt(e.target.value) || 0)} /></FieldRow>
             </Section>
           </div>
 
           <div>
-            <Section title="Account Freeze Policy">
-              <FieldRow label="Max freeze duration (weeks)"><input type="number" value={form.max_freeze_weeks} onChange={e => set('max_freeze_weeks', parseInt(e.target.value) || 0)} /></FieldRow>
+            <Section title="Account Freeze">
+              <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 12, lineHeight: 1.6 }}>
+                Accounts can be frozen per-student from the student detail page. A frozen account cannot make new bookings and will trigger an alert when the student is checked in to class. Accounts are typically frozen when a balance is owing beyond the end of Week 2 without an active payment plan.
+              </div>
             </Section>
 
             <Section title="GST & Tax">
