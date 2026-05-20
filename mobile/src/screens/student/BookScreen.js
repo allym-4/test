@@ -1143,6 +1143,7 @@ export default function BookScreen({ navigation }) {
 
   // ── API calls ──────────────────────────────────────────────────────────────
   const { data: pendingRequiredData } = useApi(() => formsApi.pendingRequired(), [user?.id])
+  const formsLoading = pendingRequiredData === null
   const { data: studioSettings } = useApi(() => settingsApi.get(), [])
   const { data: sessionsData, loading: sessLoading, refetch: refetchSessions } = useApi(
     () => classes.list(), []
@@ -1954,9 +1955,10 @@ export default function BookScreen({ navigation }) {
                                 </TouchableOpacity>
                               ) : (
                                 <TouchableOpacity
-                                  style={s.casualBookBtn}
+                                  style={[s.casualBookBtn, formsLoading && { opacity: 0.4 }]}
                                   onPress={() => openCasualBooking(occ)}
                                   activeOpacity={0.8}
+                                  disabled={formsLoading}
                                 >
                                   <Text style={s.casualBookBtnText}>BOOK</Text>
                                   <Text style={{ fontSize: 10, color: '#000', fontWeight: '700', marginTop: 1 }}>${activeSeasonCount > 0 ? priceCasualEnrolled : priceCasual}</Text>
@@ -2126,9 +2128,9 @@ export default function BookScreen({ navigation }) {
                     </View>
                   ) : (
                     <TouchableOpacity
-                      style={[s.limeBtn, booking === w.id && s.limeBtnDisabled]}
+                      style={[s.limeBtn, (booking === w.id || formsLoading) && s.limeBtnDisabled]}
                       onPress={() => handleWorkshopBook(w)}
-                      disabled={booking === w.id}
+                      disabled={booking === w.id || formsLoading}
                     >
                       {booking === w.id
                         ? <ActivityIndicator size="small" color="#000" />
@@ -2156,7 +2158,7 @@ export default function BookScreen({ navigation }) {
             </Text>
             <Text style={s.proceedPrice}>${totalSeasonPrice}</Text>
           </View>
-          <TouchableOpacity style={s.proceedBtn} onPress={handleOpenSeasonCheckout}>
+          <TouchableOpacity style={[s.proceedBtn, formsLoading && { opacity: 0.4 }]} onPress={handleOpenSeasonCheckout} disabled={formsLoading}>
             <Text style={s.proceedBtnText}>Proceed →</Text>
           </TouchableOpacity>
         </View>
