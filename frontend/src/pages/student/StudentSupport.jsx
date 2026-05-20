@@ -29,7 +29,7 @@ const FAQS = [
   },
   {
     q: 'When do new season enrolments open?',
-    a: "In Week 5 of the current season, the next season becomes available to book. You'll get an email when it opens — current students get access from 8am Sydney time on opening day.",
+    a: "New season enrolments typically open around 4 weeks before the season starts. You'll get an email when bookings go live — enrolments open at 8am Sydney time on booking day. Current students get priority access before spots open to the public.",
   },
 ]
 
