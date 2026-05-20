@@ -820,6 +820,8 @@ function formatTime(timeStr) {
 }
 
 function SeasonClassRow({ session, userLevel, selected, onToggle, onJoinWaitlist, onLevelOverride, demoNoLevel }) {
+  const [infoOpen, setInfoOpen] = useState(false)
+
   const classLevel = getClassLevel(session.name)
   const effectiveUserLevel = demoNoLevel ? null : userLevel
   const spotsLeft = (session.capacity || 14) - (session.enrolled_count || 0)
@@ -830,11 +832,9 @@ function SeasonClassRow({ session, userLevel, selected, onToggle, onJoinWaitlist
   let badge = null
 
   if (classLevel === 0) {
-    // Conditioning / dance / open
     const isVirgin = /virgin/i.test(session.name)
     badge = { label: isVirgin ? 'BEGINNER' : 'ALL LEVELS', color: '#888', bg: 'rgba(255,255,255,0.07)', locked: false }
   } else if (effectiveUserLevel == null) {
-    // No level assigned — lock all level classes
     locked = true
     badge = { label: `LEVEL ${classLevel}+`, color: '#ff4444', bg: 'rgba(255,68,68,0.1)', locked: true }
   } else if (classLevel > effectiveUserLevel) {
@@ -847,46 +847,60 @@ function SeasonClassRow({ session, userLevel, selected, onToggle, onJoinWaitlist
   }
 
   const isSelected = selected
-  const instructor = session.instructor_detail?.display_name || session.instructor_detail?.first_name || ''
+  const instructorDetail = session.instructor_detail
+  const instructor = instructorDetail?.display_name || instructorDetail?.first_name || ''
   const studio = session.studio_detail?.name || ''
   const dayLabel = DAYS_SHORT[session.day_of_week]?.toUpperCase() || ''
   const timeLabel = formatTime(session.start_time)
 
+  const bodyText = session.first_timer_body || session.first_timer_headline || null
+
   return (
     <div
-      onClick={() => {
-        if (locked && !isFull && onLevelOverride) { onLevelOverride(session); return }
-        if (!locked && !isFull) onToggle(session)
-      }}
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 16,
-        padding: '14px 16px',
         borderRadius: 10,
-        border: `1px solid ${isSelected ? '#ccff00' : isFull ? 'rgba(255,68,68,0.2)' : '#222'}`,
+        border: `1px solid ${isSelected ? '#ccff00' : isFull ? 'rgba(255,68,68,0.2)' : infoOpen ? '#2a2a2a' : '#222'}`,
         background: isSelected ? 'rgba(204,255,0,0.04)' : isFull ? 'rgba(255,68,68,0.03)' : locked ? 'rgba(255,255,255,0.01)' : 'transparent',
-        cursor: locked ? 'not-allowed' : isFull ? 'default' : 'pointer',
         opacity: locked ? 0.5 : 1,
         marginBottom: 4,
         transition: 'border-color 0.15s, background 0.15s',
+        overflow: 'hidden',
       }}
     >
-      {/* Day/time */}
-      <div style={{ width: 52, flexShrink: 0, textAlign: 'center' }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: '#666', letterSpacing: '0.6px', textTransform: 'uppercase' }}>{dayLabel}</div>
-        <div style={{ fontSize: 13, fontWeight: 700, color: '#ccff00', marginTop: 2 }}>{timeLabel}</div>
-      </div>
-
-      {/* Class info */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 2 }}>{session.name}</div>
-        <div style={{ fontSize: 12, color: '#555' }}>
-          {[instructor, studio].filter(Boolean).join(' · ')}
-          {' '}
-          <span style={{ color: '#444', fontSize: 11 }}>More info</span>
+      {/* Main row */}
+      <div
+        onClick={() => {
+          if (locked && !isFull && onLevelOverride) { onLevelOverride(session); return }
+          if (!locked && !isFull) onToggle(session)
+        }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          padding: '14px 16px',
+          cursor: locked ? 'not-allowed' : isFull ? 'default' : 'pointer',
+        }}
+      >
+        {/* Day/time */}
+        <div style={{ width: 52, flexShrink: 0, textAlign: 'center' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#666', letterSpacing: '0.6px', textTransform: 'uppercase' }}>{dayLabel}</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#ccff00', marginTop: 2 }}>{timeLabel}</div>
         </div>
-      </div>
+
+        {/* Class info */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 2 }}>{session.name}</div>
+          <div style={{ fontSize: 12, color: '#555' }}>
+            {[instructor, studio].filter(Boolean).join(' · ')}
+            {' '}
+            <span
+              onClick={e => { e.stopPropagation(); setInfoOpen(v => !v) }}
+              style={{ color: infoOpen ? '#888' : '#555', fontSize: 11, cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', textUnderlineOffset: 2 }}
+            >
+              {infoOpen ? 'Less info' : 'More info'}
+            </span>
+          </div>
+        </div>
 
       {/* Badge + action */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
@@ -930,6 +944,55 @@ function SeasonClassRow({ session, userLevel, selected, onToggle, onJoinWaitlist
           }} />
         ) : null}
       </div>
+      </div>
+
+      {/* Accordion panel */}
+      {infoOpen && (
+        <div
+          onClick={e => e.stopPropagation()}
+          style={{ borderTop: '1px solid #1e1e1e', padding: '16px 18px 18px', background: '#0a0a0a' }}
+        >
+          {/* Class description */}
+          <div style={{ marginBottom: instructorDetail ? 16 : 0 }}>
+            {session.first_timer_headline && (
+              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>{session.first_timer_headline}</div>
+            )}
+            <div style={{ fontSize: 13, color: '#888', lineHeight: 1.7 }}>
+              {bodyText || 'No additional description available for this class yet.'}
+            </div>
+          </div>
+
+          {/* Instructor card */}
+          {instructorDetail && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#111', border: '1px solid #1e1e1e', borderRadius: 10, padding: '12px 14px' }}>
+              {/* Avatar */}
+              <div style={{ width: 36, height: 36, borderRadius: 18, background: '#222', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#ccff00' }}>
+                {(instructorDetail.first_name || instructorDetail.display_name || '?')[0].toUpperCase()}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 1 }}>{instructor}</div>
+                {instructorDetail.pronouns && (
+                  <div style={{ fontSize: 11, color: '#555' }}>{instructorDetail.pronouns}</div>
+                )}
+              </div>
+              <a
+                href="/portal/studio-info"
+                onClick={e => e.stopPropagation()}
+                style={{ fontSize: 11, color: '#555', textDecoration: 'underline', textDecorationStyle: 'dotted', whiteSpace: 'nowrap', flexShrink: 0 }}
+              >
+                View profile →
+              </a>
+            </div>
+          )}
+
+          <button
+            onClick={e => { e.stopPropagation(); setInfoOpen(false) }}
+            style={{ marginTop: 14, background: 'none', border: 'none', padding: 0, fontSize: 11, color: '#444', cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted' }}
+          >
+            Close
+          </button>
+        </div>
+      )}
     </div>
   )
 }
