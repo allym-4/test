@@ -32,7 +32,7 @@ export default function EnrolmentsScreen() {
   const sessionList = sessionsData?.results ?? sessionsData ?? []
 
   const { data: enrData, loading: enrLoading, refetch } = useApi(
-    () => selectedSession ? enrolments.list({ class_session: selectedSession.id, status: 'active' }) : null,
+    () => selectedSession ? enrolments.list({ session: selectedSession.id, status: 'active' }) : null,
     [selectedSession?.id]
   )
 
