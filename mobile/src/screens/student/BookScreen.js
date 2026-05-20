@@ -1089,7 +1089,7 @@ export default function BookScreen({ navigation }) {
   const [selectedSeasonId, setSelectedSeasonId] = useState(null)
 
   // Filter state
-  const [dayFilter, setDayFilter] = useState(null)
+  const [classLevelPillFilter, setClassLevelPillFilter] = useState(null)
   const [instructorFilter, setInstructorFilter] = useState(null)
   const [eligibleOnly, setEligibleOnly] = useState(false)
 
@@ -1275,8 +1275,20 @@ export default function BookScreen({ navigation }) {
     return result
   }, [allSessions])
 
+  const uniqueLevelPills = useMemo(() => {
+    const labels = new Set()
+    bookingSeasonSessions.forEach(s => {
+      const b = getLevelBadge(s.name)
+      if (b) labels.add(b.label)
+    })
+    return ['Level 1', 'Level 2', 'Level 3+'].filter(l => labels.has(l))
+  }, [bookingSeasonSessions])
+
   function matchesFilters(session) {
-    if (dayFilter !== null && session.day_of_week !== dayFilter) return false
+    if (classLevelPillFilter) {
+      const badge = getLevelBadge(session.name)
+      if (badge?.label !== classLevelPillFilter) return false
+    }
     if (instructorFilter) {
       const name = session.instructor_detail?.display_name ?? session.instructor_detail?.first_name
       if (name !== instructorFilter) return false
@@ -1652,23 +1664,25 @@ export default function BookScreen({ navigation }) {
               )}
             </View>
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
-              <TouchableOpacity
-                onPress={() => setDayFilter(null)}
-                style={[s.filterPill, dayFilter === null && s.filterPillActive]}
-              >
-                <Text style={[s.filterPillText, dayFilter === null && s.filterPillTextActive]}>All days</Text>
-              </TouchableOpacity>
-              {DAYS_SHORT.map((d, i) => (
+            {uniqueLevelPills.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
                 <TouchableOpacity
-                  key={d}
-                  onPress={() => setDayFilter(dayFilter === i ? null : i)}
-                  style={[s.filterPill, dayFilter === i && s.filterPillActive]}
+                  onPress={() => setClassLevelPillFilter(null)}
+                  style={[s.filterPill, classLevelPillFilter === null && s.filterPillActive]}
                 >
-                  <Text style={[s.filterPillText, dayFilter === i && s.filterPillTextActive]}>{d}</Text>
+                  <Text style={[s.filterPillText, classLevelPillFilter === null && s.filterPillTextActive]}>All levels</Text>
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
+                {uniqueLevelPills.map(label => (
+                  <TouchableOpacity
+                    key={label}
+                    onPress={() => setClassLevelPillFilter(classLevelPillFilter === label ? null : label)}
+                    style={[s.filterPill, classLevelPillFilter === label && s.filterPillActive]}
+                  >
+                    <Text style={[s.filterPillText, classLevelPillFilter === label && s.filterPillTextActive]}>{label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
 
             {uniqueInstructors.length > 1 && (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
@@ -1713,7 +1727,7 @@ export default function BookScreen({ navigation }) {
               return (
                 <TouchableOpacity
                   key={session.id}
-                  style={[s.card, isSelected && s.cardSelected, isBooked && s.cardBooked, isOutOfLevel && s.cardOutOfLevel]}
+                  style={[s.card, isBooked && s.cardBooked, isOutOfLevel && !isSelected && s.cardOutOfLevel, isSelected && s.cardSelected]}
                   onPress={() => !isBooked && !isFull && toggleSession(session)}
                   activeOpacity={isBooked || isFull ? 1 : 0.75}
                 >
@@ -1850,16 +1864,18 @@ export default function BookScreen({ navigation }) {
               )}
 
               {/* ── Filters ── */}
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
-                <TouchableOpacity onPress={() => setDayFilter(null)} style={[s.filterPill, dayFilter === null && s.filterPillActive]}>
-                  <Text style={[s.filterPillText, dayFilter === null && s.filterPillTextActive]}>All days</Text>
-                </TouchableOpacity>
-                {DAYS_SHORT.map((d, i) => (
-                  <TouchableOpacity key={d} onPress={() => setDayFilter(dayFilter === i ? null : i)} style={[s.filterPill, dayFilter === i && s.filterPillActive]}>
-                    <Text style={[s.filterPillText, dayFilter === i && s.filterPillTextActive]}>{d}</Text>
+              {uniqueLevelPills.length > 0 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
+                  <TouchableOpacity onPress={() => setClassLevelPillFilter(null)} style={[s.filterPill, classLevelPillFilter === null && s.filterPillActive]}>
+                    <Text style={[s.filterPillText, classLevelPillFilter === null && s.filterPillTextActive]}>All levels</Text>
                   </TouchableOpacity>
-                ))}
-              </ScrollView>
+                  {uniqueLevelPills.map(label => (
+                    <TouchableOpacity key={label} onPress={() => setClassLevelPillFilter(classLevelPillFilter === label ? null : label)} style={[s.filterPill, classLevelPillFilter === label && s.filterPillActive]}>
+                      <Text style={[s.filterPillText, classLevelPillFilter === label && s.filterPillTextActive]}>{label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
 
               {uniqueInstructors.length > 1 && (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>

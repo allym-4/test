@@ -10,7 +10,7 @@ import { helpdesk } from '../api'
 const LOCAL_FAQS = [
   {
     q: "I can't access the studio",
-    a: "Studio access is via the key code sent to you when you enrolled. If you've lost it or it's not working, tap 'Contact the team' below and we'll sort it out quickly.",
+    a: "If you're having trouble getting into the studio, tap 'Contact the team' below and we'll get it sorted for you right away.",
   },
   {
     q: "I need to cancel a class",
@@ -22,7 +22,7 @@ const LOCAL_FAQS = [
   },
   {
     q: "What classes can I catch up in?",
-    a: "For conditioning classes (Invert Tech, Tricks, Kiki, etc.) and dance style classes, you can catch up any week. For level and routine classes, catch-ups must be booked before Week 4 starts — after that, the class has a set routine.",
+    a: "For conditioning classes (Invert Tech, Tricks, Kiki, Unravel, etc.) and dance classes, you can catch up any week. For level classes (Level 1–6) and routine classes, catch-ups can only be booked up to and including Week 3 — after that, the class has a set routine.",
   },
   {
     q: "How does practice time work?",

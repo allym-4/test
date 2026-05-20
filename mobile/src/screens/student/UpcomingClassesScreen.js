@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react'
 import {
   ScrollView, View, Text, TouchableOpacity, StyleSheet,
-  RefreshControl, ActivityIndicator, Modal, TextInput,
+  RefreshControl, ActivityIndicator, Modal, TextInput, Alert,
 } from 'react-native'
 import { useApi } from '../../hooks/useApi'
-import { classes as classesApi, attendance as attendanceApi, enrolments as enrolmentsApi, settings as settingsApi } from '../../api'
+import { classes as classesApi, attendance as attendanceApi, enrolments as enrolmentsApi, settings as settingsApi, helpdesk as helpdeskApi, roster } from '../../api'
 
 const TYPE_LABELS = {
   enrolled: 'Enrolled',
@@ -350,6 +350,120 @@ function RequestChangeModal({ enrolment, onClose, onSuccess }) {
   )
 }
 
+function WhoComing({ sessionId }) {
+  const [open, setOpen] = useState(false)
+  const { data, loading } = useApi(() => open ? roster.get(sessionId) : null, [open, sessionId])
+  const names = data?.names ?? data ?? []
+  if (!sessionId) return null
+  if (!open) {
+    return (
+      <TouchableOpacity onPress={() => setOpen(true)} style={{ paddingTop: 4 }}>
+        <Text style={{ fontSize: 11, color: '#ccff00', fontWeight: '600' }}>Who's coming?</Text>
+      </TouchableOpacity>
+    )
+  }
+  return (
+    <View style={{ marginTop: 6, backgroundColor: '#0a0a0a', borderRadius: 8, padding: 8, borderWidth: 1, borderColor: '#222' }}>
+      <Text style={{ fontSize: 10, fontWeight: '700', color: '#ccff00', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Who's coming</Text>
+      {loading && <ActivityIndicator size="small" color="#ccff00" />}
+      {!loading && names.length === 0 && <Text style={{ fontSize: 12, color: '#555' }}>No one's opted in yet.</Text>}
+      {!loading && names.length > 0 && <Text style={{ fontSize: 12, color: '#ccc', lineHeight: 18 }}>{names.join('  ·  ')}</Text>}
+    </View>
+  )
+}
+
+function CancelEnrolmentModal({ enrolment, onClose, onDone }) {
+  const [subView, setSubView] = useState(null)
+  const [note, setNote] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+  const sessionName = enrolment?.class_session_detail?.name ?? enrolment?.class_name ?? 'this class'
+
+  async function submitTransferRequest() {
+    setSubmitting(true)
+    try {
+      await helpdeskApi.submitTicket({
+        subject: `Transfer request — ${sessionName}`,
+        body: `Student is requesting a transfer out of ${sessionName}.\n\n${note.trim()}`,
+      })
+      setSubmitted(true)
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.detail || 'Could not submit request. Please contact the studio directly.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.75)' }}>
+        <View style={{ backgroundColor: '#111', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 44 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+            <Text style={{ flex: 1, fontSize: 20, fontWeight: '800', color: '#fff' }}>Season Enrolment</Text>
+            <TouchableOpacity onPress={onClose}><Text style={{ color: '#555', fontSize: 12, fontWeight: '700', letterSpacing: 1 }}>CLOSE</Text></TouchableOpacity>
+          </View>
+          <Text style={{ fontSize: 15, color: '#aaa', marginBottom: 20 }}>{sessionName}</Text>
+
+          {submitted ? (
+            <>
+              <View style={{ backgroundColor: 'rgba(204,255,0,0.06)', borderWidth: 1, borderColor: 'rgba(204,255,0,0.2)', borderRadius: 12, padding: 16, marginBottom: 20 }}>
+                <Text style={{ fontSize: 15, fontWeight: '700', color: '#ccff00', marginBottom: 8 }}>✓  Transfer request submitted</Text>
+                <Text style={{ fontSize: 13, color: '#aaa', lineHeight: 20 }}>The studio team will review your request and be in touch. Your enrolment remains active in the meantime.</Text>
+              </View>
+              <TouchableOpacity style={{ backgroundColor: '#1a1a1a', borderRadius: 12, paddingVertical: 16, alignItems: 'center', borderWidth: 1, borderColor: '#333' }} onPress={onDone}>
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>DONE</Text>
+              </TouchableOpacity>
+            </>
+          ) : subView === 'transfer' ? (
+            <>
+              <View style={{ backgroundColor: 'rgba(239,68,68,0.07)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)', borderRadius: 12, padding: 14, marginBottom: 16 }}>
+                <Text style={{ fontSize: 13, color: '#ccc', lineHeight: 20 }}>Transfers are handled case-by-case. The studio will review your request and propose options for a different class.</Text>
+              </View>
+              <Text style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>Reason for transfer (optional)</Text>
+              <TextInput
+                style={{ backgroundColor: '#1a1a1a', borderRadius: 10, borderWidth: 1, borderColor: '#333', color: '#fff', fontSize: 14, padding: 12, minHeight: 80, textAlignVertical: 'top', marginBottom: 16 }}
+                placeholder="Add a note for the studio..."
+                placeholderTextColor="#555"
+                multiline
+                value={note}
+                onChangeText={setNote}
+              />
+              <TouchableOpacity
+                style={[{ backgroundColor: '#ccff00', borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginBottom: 12 }, submitting && { opacity: 0.6 }]}
+                onPress={submitTransferRequest}
+                disabled={submitting}
+              >
+                {submitting
+                  ? <ActivityIndicator color="#000" />
+                  : <Text style={{ color: '#000', fontWeight: '800', fontSize: 14, letterSpacing: 0.5 }}>SUBMIT TRANSFER REQUEST</Text>
+                }
+              </TouchableOpacity>
+              <TouchableOpacity style={{ alignItems: 'center', paddingTop: 8 }} onPress={() => setSubView(null)}>
+                <Text style={{ color: '#555', fontSize: 13 }}>← Back</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <View style={{ backgroundColor: 'rgba(239,68,68,0.07)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)', borderRadius: 12, padding: 14, marginBottom: 20 }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: '#ef4444', marginBottom: 6 }}>Non-refundable enrolment</Text>
+                <Text style={{ fontSize: 13, color: '#ccc', lineHeight: 20 }}>
+                  When you enrolled, we reserved a pole and planned the season around you. Season enrolments are non-refundable once you've committed to your class through enrolling, in line with our terms and conditions.{'\n\n'}If your circumstances have changed, we'd love to find a solution.
+                </Text>
+              </View>
+              <TouchableOpacity style={{ backgroundColor: '#ccff00', borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginBottom: 12 }} onPress={() => setSubView('transfer')}>
+                <Text style={{ color: '#000', fontWeight: '800', fontSize: 14, letterSpacing: 0.5 }}>CONTACT US</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={{ backgroundColor: '#1a1a1a', borderRadius: 12, paddingVertical: 16, alignItems: 'center', borderWidth: 1, borderColor: '#333' }} onPress={onClose}>
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>KEEP MY ENROLMENT</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      </View>
+    </Modal>
+  )
+}
+
 export default function UpcomingClassesScreen({ navigation }) {
   const { data, loading, refetch } = useApi(() => classesApi.myUpcoming(), [])
   const { data: enrolData, refetch: refetchEnrol } = useApi(
@@ -531,35 +645,38 @@ export default function UpcomingClassesScreen({ navigation }) {
                   const pendingCR = changeRequestMap[e.id]
                   const hasOpenCR = pendingCR && (pendingCR.status === 'pending' || pendingCR.status === 'in_progress')
                   return (
-                    <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderColor: '#1c1c1c' }}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 14, color: '#fff', fontWeight: '600' }}>
-                          {e.class_session_detail?.name || e.class_name}
-                        </Text>
-                        <Text style={{ fontSize: 12, color: '#555', marginTop: 2 }}>
-                          {e.class_session_detail?.day_of_week_display || ''}{e.class_session_detail?.start_time ? ` · ${e.class_session_detail.start_time.slice(0, 5)}` : ''}
-                        </Text>
-                        {pendingCR && (
-                          <View style={{ marginTop: 5 }}>
-                            <ChangeRequestBadge status={pendingCR.status} />
-                          </View>
-                        )}
-                      </View>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <View style={[s.badge, { backgroundColor: 'rgba(204,255,0,0.08)', borderColor: 'rgba(204,255,0,0.2)', alignSelf: 'flex-start' }]}>
-                          <Text style={[s.badgeText, { color: '#ccff00' }]}>Enrolled</Text>
+                    <View key={e.id} style={{ paddingVertical: 10, borderBottomWidth: 1, borderColor: '#1c1c1c' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: 14, color: '#fff', fontWeight: '600' }}>
+                            {e.class_session_detail?.name || e.class_name}
+                          </Text>
+                          <Text style={{ fontSize: 12, color: '#555', marginTop: 2 }}>
+                            {e.class_session_detail?.day_of_week_display || ''}{e.class_session_detail?.start_time ? ` · ${e.class_session_detail.start_time.slice(0, 5)}` : ''}
+                          </Text>
+                          {pendingCR && (
+                            <View style={{ marginTop: 5 }}>
+                              <ChangeRequestBadge status={pendingCR.status} />
+                            </View>
+                          )}
+                          <WhoComing sessionId={e.class_session ?? e.class_session_detail?.id} />
                         </View>
-                        {!hasOpenCR && (
-                          <TouchableOpacity
-                            style={{ paddingVertical: 3, paddingHorizontal: 8, borderRadius: 6, borderWidth: 1, borderColor: '#333' }}
-                            onPress={() => setChangeRequestEnrolment(e)}
-                          >
-                            <Text style={{ fontSize: 11, color: '#666' }}>✏️ Change</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                          <View style={[s.badge, { backgroundColor: 'rgba(204,255,0,0.08)', borderColor: 'rgba(204,255,0,0.2)', alignSelf: 'flex-start' }]}>
+                            <Text style={[s.badgeText, { color: '#ccff00' }]}>Enrolled</Text>
+                          </View>
+                          {!hasOpenCR && (
+                            <TouchableOpacity
+                              style={{ paddingVertical: 3, paddingHorizontal: 8, borderRadius: 6, borderWidth: 1, borderColor: '#333' }}
+                              onPress={() => setChangeRequestEnrolment(e)}
+                            >
+                              <Text style={{ fontSize: 11, color: '#666' }}>✏️ Change</Text>
+                            </TouchableOpacity>
+                          )}
+                          <TouchableOpacity onPress={() => setCancelEnrolPending(e)}>
+                            <Text style={{ fontSize: 11, color: '#ff4444' }}>Cancel</Text>
                           </TouchableOpacity>
-                        )}
-                        <TouchableOpacity onPress={() => setCancelEnrolPending(e)}>
-                          <Text style={{ fontSize: 11, color: '#ff4444' }}>Cancel</Text>
-                        </TouchableOpacity>
+                        </View>
                       </View>
                     </View>
                   )
@@ -631,43 +748,11 @@ export default function UpcomingClassesScreen({ navigation }) {
       )}
 
       {cancelEnrolPending && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setCancelEnrolPending(null)}>
-          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-            <View style={{ backgroundColor: '#111', borderRadius: 16, width: '100%', borderWidth: 1, borderColor: '#222', padding: 24 }}>
-              <Text style={{ fontSize: 17, fontWeight: '800', color: '#fff', marginBottom: 6 }}>Cancel enrolment?</Text>
-              <Text style={{ fontSize: 13, color: '#888', marginBottom: 8 }}>
-                {cancelEnrolPending.class_session_detail?.name || cancelEnrolPending.class_name}
-              </Text>
-              <View style={{ backgroundColor: 'rgba(255,170,0,0.07)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,170,0,0.2)', padding: 12, marginBottom: 20 }}>
-                <Text style={{ fontSize: 13, color: '#ffaa00', lineHeight: 20 }}>
-                  If you'd like to move to a different class, use "✏️ Change" instead — that way we can find you a spot in your preferred class.
-                </Text>
-              </View>
-              <TouchableOpacity
-                style={{ borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 10, borderWidth: 1, borderColor: 'rgba(255,68,68,0.4)' }}
-                onPress={async () => {
-                  try {
-                    await enrolmentsApi.delete(cancelEnrolPending.id)
-                    setCancelEnrolPending(null)
-                    refetchEnrol()
-                    refetch()
-                  } catch (e) {
-                    setActionError(e.response?.data?.detail || 'Failed to cancel enrolment.')
-                    setCancelEnrolPending(null)
-                  }
-                }}
-              >
-                <Text style={{ color: '#ff4444', fontWeight: '700', fontSize: 15 }}>Yes, cancel my enrolment</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{ borderRadius: 10, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#333' }}
-                onPress={() => setCancelEnrolPending(null)}
-              >
-                <Text style={{ color: '#888', fontSize: 15 }}>Keep it</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
+        <CancelEnrolmentModal
+          enrolment={cancelEnrolPending}
+          onClose={() => setCancelEnrolPending(null)}
+          onDone={() => { setCancelEnrolPending(null); refetchEnrol(); refetch() }}
+        />
       )}
     </ScrollView>
   )
