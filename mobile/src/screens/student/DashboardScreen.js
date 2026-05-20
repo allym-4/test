@@ -295,8 +295,15 @@ export default function DashboardScreen({ navigation }) {
     setMarkingAway(prev => ({ ...prev, [occ.id]: true }))
     setMarkAwayPending(null)
     try {
-      await attendanceApi.markAway(occ.id, enrolId)
+      const res = await attendanceApi.markAway(occ.id, enrolId)
+      const creditIssued = res.data?.credit_issued
       refetchEnrol()
+      Alert.alert(
+        'Marked away',
+        creditIssued
+          ? "You've been marked away and a catch-up credit has been added to your account."
+          : "You've been marked away. No makeup credit was issued as this is within the cancellation window.",
+      )
     } catch (err) {
       Alert.alert('Error', err.response?.data?.detail || 'Could not mark away')
     } finally {

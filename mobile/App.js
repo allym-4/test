@@ -150,8 +150,8 @@ function AppWithStripe() {
   return (
     <StripeProvider
       publishableKey={stripePk || 'pk_live_placeholder'}
-      merchantIdentifier="merchant.com.yourstudio.app"
-      urlScheme="yourstudio"
+      merchantIdentifier="merchant.com.dualitypole.app"
+      urlScheme="dualitypole"
     >
       <RootNavigator />
     </StripeProvider>
