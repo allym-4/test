@@ -215,8 +215,25 @@ class Command(BaseCommand):
                 'start_date': SEASON_START,
                 'end_date':   SEASON_END,
                 'status':     'active',
+                'bookings_open': True,
             },
         )
+        # Always ensure season is active and bookings are open
+        updated_fields = []
+        if season.status != 'active':
+            season.status = 'active'
+            updated_fields.append('status')
+        if not season.bookings_open:
+            season.bookings_open = True
+            updated_fields.append('bookings_open')
+        if season.start_date != SEASON_START:
+            season.start_date = SEASON_START
+            updated_fields.append('start_date')
+        if season.end_date != SEASON_END:
+            season.end_date = SEASON_END
+            updated_fields.append('end_date')
+        if updated_fields:
+            season.save(update_fields=updated_fields)
         if created:
             self.stdout.write(f'  Created season: {season.name}')
         else:
