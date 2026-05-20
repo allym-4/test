@@ -117,7 +117,7 @@ export default function HelpPanel({ open, onClose }) {
           {PROMPTS.map((p, i) => (
             <div key={i} style={{
               background: 'var(--card)', border: `1px solid ${expanded === i ? 'rgba(204,255,0,0.2)' : 'var(--border)'}`,
-              borderRadius: 10, overflow: 'hidden',
+              borderRadius: 10,
               transition: 'border-color 0.15s',
             }}>
               <button
