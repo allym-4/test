@@ -48,15 +48,15 @@ INSTRUCTORS = {
 FIRST_TIMER_INFO = {
     'Level 1': (
         'New to pole? Start here.',
-        'Here is spin, but we make it our beginner's pole fitness course. '
-        'It's here where you'll learn lady things. A 90-minute class of spins '
-        'on the pole, four-week-end-choreography course. All designed to build '
-        'strength and tap into your sensuality.',
+        "Here is spin, but we make it our beginner's pole fitness course. "
+        "It's here where you'll learn lady things. A 90-minute class of spins "
+        "on the pole, four-week-end-choreography course. All designed to build "
+        "strength and tap into your sensuality.",
     ),
     'Strip Virgin': (
         'From a cool new through Level 2.',
         'Flow around the pole and floor with sensual choreography, learning '
-        'threads and transitions at a slower pace. Perfect if you're brand new '
+        'threads and transitions at a slower pace. Perfect if you\'re brand new '
         'or want to ease in.',
     ),
     'Chair Virgin': (
@@ -66,23 +66,23 @@ FIRST_TIMER_INFO = {
     ),
     'Floor Virgin': (
         'First time on the floor?',
-        'We'll keep the pace slower and teach you some bad while you learn '
+        "We'll keep the pace slower and teach you some bad while you learn "
         'funky grips, transitions, and a fresh routine each week.',
     ),
     'Dance Virgin': (
         'First time dancing with us?',
-        'We'll keep the pace slower and teach you some bop while you learn '
+        "We'll keep the pace slower and teach you some bop while you learn "
         'funky grips, transitions, and a fresh routine each week.',
     ),
     'Kiki': (
         'Want to Kiki?',
-        'With a focus on both conditioning and flexibility, you'll work those '
+        "With a focus on both conditioning and flexibility, you'll work those "
         'gorgeous muscles of yours before stretching it out, working towards '
         'full body flexibility.',
     ),
     'Unravel': (
         'Need something a little softer?',
-        'Unravel is Kiki's more deliberate cousin — conditioning and guided '
+        "Unravel is Kiki's more deliberate cousin — conditioning and guided "
         'stretching at a slower pace with a focus on release and recovery. '
         'A class to avoid less and love more.',
     ),
