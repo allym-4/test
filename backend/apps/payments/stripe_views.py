@@ -291,6 +291,8 @@ class StripeWebhookView(APIView):
             title='Payment received',
             body=f'Your payment of ${amount_dollars:.2f} for "{description}" has been received. Thank you!',
             notification_type='success',
+            action_url='/portal/billing',
+            action_label='View billing',
         )
         if user.email:
             from apps.users.email_utils import send_branded_email
