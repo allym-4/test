@@ -270,7 +270,7 @@ function WaiverModal({ def, onClose, onSubmit, submitting }) {
   )
 }
 
-
+export default function FormsScreen({ route }) {
   const { data: formsData, loading, refetch } = useApi(() => forms.list(), [])
   const { data: pendingRequiredData } = useApi(() => forms.pendingRequired(), [])
   const { data: surveysData, refetch: refetchSurveys } = useApi(() => surveys.mine(), [])
