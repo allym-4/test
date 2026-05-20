@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useStripe } from '@stripe/stripe-react-native'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { classes, enrolments, seasons, attendance, settings as settingsApi, payments } from '../../api'
+import { classes, enrolments, seasons, attendance, settings as settingsApi, payments, forms as formsApi } from '../../api'
 import client from '../../api/client'
 
 // ─── theme ───────────────────────────────────────────────────────────────────
@@ -1105,7 +1105,27 @@ export default function BookScreen({ navigation }) {
   const [bookingOptionsOcc, setBookingOptionsOcc] = useState(null)
   const [casualWarning, setCasualWarning] = useState(null) // { occ, type: 'level'|'cutoff' }
 
+  function checkFormsGate() {
+    const pending = pendingRequiredData ?? []
+    if (pending.length === 0) return true
+    Alert.alert(
+      'Required forms incomplete',
+      'Please complete your required forms before booking a class.',
+      [
+        { text: 'Complete Forms', onPress: () => navigation.navigate('Account', { screen: 'Forms' }) },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    )
+    return false
+  }
+
+  function handleOpenSeasonCheckout() {
+    if (!checkFormsGate()) return
+    setShowSeasonCheckout(true)
+  }
+
   function openCasualBooking(occ) {
+    if (!checkFormsGate()) return
     const sess = occ.session_detail
     const sessLevel = sess?.level ?? sess?.level_name
     const isOutOfLevel = sessLevel && levelFilter && String(sessLevel) !== String(levelFilter)
@@ -1122,6 +1142,7 @@ export default function BookScreen({ navigation }) {
   }, [user?.level])
 
   // ── API calls ──────────────────────────────────────────────────────────────
+  const { data: pendingRequiredData } = useApi(() => formsApi.pendingRequired(), [user?.id])
   const { data: studioSettings } = useApi(() => settingsApi.get(), [])
   const { data: sessionsData, loading: sessLoading, refetch: refetchSessions } = useApi(
     () => classes.list(), []
@@ -1405,6 +1426,7 @@ export default function BookScreen({ navigation }) {
   }
 
   async function handleWorkshopBook(workshop) {
+    if (!checkFormsGate()) return
     setBooking(workshop.id)
     try {
       const res = await classes.workshops.book(workshop.id)
@@ -2134,7 +2156,7 @@ export default function BookScreen({ navigation }) {
             </Text>
             <Text style={s.proceedPrice}>${totalSeasonPrice}</Text>
           </View>
-          <TouchableOpacity style={s.proceedBtn} onPress={() => setShowSeasonCheckout(true)}>
+          <TouchableOpacity style={s.proceedBtn} onPress={handleOpenSeasonCheckout}>
             <Text style={s.proceedBtnText}>Proceed →</Text>
           </TouchableOpacity>
         </View>

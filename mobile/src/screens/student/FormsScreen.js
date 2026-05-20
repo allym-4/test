@@ -213,6 +213,7 @@ function SurveyModal({ survey, onClose, onDone }) {
 
 export default function FormsScreen() {
   const { data: formsData, loading, refetch } = useApi(() => forms.list(), [])
+  const { data: pendingRequiredData } = useApi(() => forms.pendingRequired(), [])
   const { data: surveysData, refetch: refetchSurveys } = useApi(() => surveys.mine(), [])
 
   const [showParq, setShowParq] = useState(false)
@@ -223,6 +224,8 @@ export default function FormsScreen() {
   const pendingSurveys = surveysData?.results ?? surveysData ?? []
 
   const submittedForms = formsData?.results ?? formsData ?? []
+  const pendingRequiredForms = pendingRequiredData ?? []
+  const requiredCount = pendingRequiredForms.filter(k => FORM_DEFS.some(d => d.key === k)).length
 
   function isCompleted(formType) {
     if (localCompleted[formType]) return { submitted_at: localCompleted[formType] }
@@ -287,7 +290,11 @@ export default function FormsScreen() {
         refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} />}
       >
         <Text style={s.pageTitle}>Forms</Text>
-        <Text style={s.pageSubtitle}>Complete all required forms to get started.</Text>
+        <Text style={s.pageSubtitle}>
+          {requiredCount > 0
+            ? `${requiredCount} required form${requiredCount !== 1 ? 's' : ''} still to complete.`
+            : 'Complete all required forms to get started.'}
+        </Text>
 
         {loading && submittedForms.length === 0 && (
           <ActivityIndicator color="#ccff00" style={{ marginTop: 32 }} />
@@ -295,11 +302,17 @@ export default function FormsScreen() {
 
         {FORM_DEFS.map((def) => {
           const completed = isCompleted(def.key)
+          const isRequired = pendingRequiredForms.includes(def.key)
           return (
-            <View key={def.key} style={[s.card, completed && s.cardDone]}>
+            <View key={def.key} style={[s.card, completed && s.cardDone, !completed && isRequired && s.cardRequired]}>
               <View style={s.cardHeader}>
                 <Text style={s.cardIcon}>{def.icon}</Text>
                 <View style={s.cardMeta}>
+                  {isRequired && !completed && (
+                    <View style={s.requiredBadge}>
+                      <Text style={s.requiredBadgeText}>Required</Text>
+                    </View>
+                  )}
                   <Text style={s.cardTitle}>{def.title}</Text>
                   <Text style={s.cardDesc}>{def.description}</Text>
                 </View>
@@ -371,6 +384,9 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: '#222',
   },
   cardDone: { borderLeftWidth: 4, borderLeftColor: '#ccff00', borderColor: '#ccff00' },
+  cardRequired: { borderLeftWidth: 4, borderLeftColor: '#ffaa00', borderColor: 'rgba(255,170,0,0.35)' },
+  requiredBadge: { backgroundColor: 'rgba(255,170,0,0.15)', borderRadius: 5, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start', marginBottom: 6 },
+  requiredBadgeText: { fontSize: 10, fontWeight: '700', color: '#ffaa00', textTransform: 'uppercase', letterSpacing: 0.5 },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 14 },
   cardIcon: { fontSize: 28, marginRight: 14, marginTop: 1 },
   cardMeta: { flex: 1 },
