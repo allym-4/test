@@ -95,6 +95,42 @@ function CheckboxForm({ text, buttonLabel, onSubmit, saving }) {
   )
 }
 
+function WaiverForm({ onSubmit, saving }) {
+  const [fullName, setFullName] = useState('')
+  const [checked, setChecked] = useState(false)
+  const canSubmit = fullName.trim().length > 2 && checked
+
+  return (
+    <div>
+      <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.8, marginBottom: 20 }}>
+        I understand that pole fitness involves physical activity and carries inherent risks, including the possibility of personal injury. I acknowledge that I am participating voluntarily and accept all risks associated with this activity.
+        {'\n\n'}
+        I release Duality Pole Studio, its instructors, and staff from any liability for injury, loss, or damage arising from my participation. I confirm that I am medically fit to participate and have disclosed any relevant health conditions.
+      </div>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--grey)', marginBottom: 6 }}>Full legal name</div>
+        <input
+          value={fullName}
+          onChange={e => setFullName(e.target.value)}
+          placeholder="Type your full name to sign…"
+          style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', padding: '10px 12px', fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box' }}
+        />
+      </div>
+      <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16 }}>
+        Date: {new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}
+      </div>
+      <label style={{ display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer', marginBottom: 20 }}>
+        <input type="checkbox" checked={checked} onChange={e => setChecked(e.target.checked)} style={{ marginTop: 2, accentColor: 'var(--lime)', width: 16, height: 16, flexShrink: 0 }} />
+        <span style={{ fontSize: 13, lineHeight: 1.6 }}>I agree to the above waiver and release of liability.</span>
+      </label>
+      <button className="btn btn-lime btn-sm" style={{ width: '100%' }} disabled={!canSubmit || saving}
+        onClick={() => onSubmit({ agreed: true, full_name: fullName.trim(), agreed_at: new Date().toISOString() })}>
+        {saving ? 'Submitting…' : 'Sign & Submit'}
+      </button>
+    </div>
+  )
+}
+
 const FORM_DEFS = [
   { type: 'parq',             title: 'PAR-Q Health Questionnaire', desc: 'A standard pre-exercise health screening form. Required before your first class.', icon: '🩺' },
   { type: 'waiver',           title: 'Liability Waiver',           desc: 'Acknowledgment of risks associated with pole fitness activities.',                   icon: '📝' },
@@ -308,14 +344,7 @@ export default function StudentForms() {
 
       {activeForm === 'waiver' && (
         <Modal title="📝 Liability Waiver" onClose={() => setActiveForm(null)}>
-          <CheckboxForm
-            text="I understand that pole fitness involves physical activity and carries inherent risks, including the possibility of personal injury. I acknowledge that I am participating voluntarily and accept all risks associated with this activity.
-
-I release Duality Pole Studio, its instructors, and staff from any liability for injury, loss, or damage arising from my participation. I confirm that I am medically fit to participate and have disclosed any relevant health conditions."
-            buttonLabel="Sign & Submit"
-            saving={saving}
-            onSubmit={() => submitSimple('waiver', { agreed: true, agreed_at: new Date().toISOString() })}
-          />
+          <WaiverForm saving={saving} onSubmit={responses => submitSimple('waiver', responses)} />
         </Modal>
       )}
 
@@ -335,11 +364,11 @@ I understand I can withdraw this consent at any time by notifying the studio in 
       {activeForm === 'season_agreement' && (
         <Modal title="📋 Season Agreement" onClose={() => setActiveForm(null)}>
           <CheckboxForm
-            text="I understand that my season enrolment is for a fixed 8-week term and that the season fee is non-refundable except in documented medical circumstances.
+            text="I understand that my season enrolment is for a fixed 8-week term and that the season fee is non-refundable.
 
-I agree to the studio's absence and makeup credit policy. If I miss a class with more than 24 hours notice, a makeup credit may be issued at the studio's discretion. Credits expire 60 days after issue.
+If I need to miss a class, I must mark away at least 4 hours before class to receive a catch-up credit. Marking away within 4 hours does not attract a fee, but no credit is issued. Not showing up without marking away incurs a $20 no-show fee.
 
-I understand that if I cancel my enrolment mid-season without a medical certificate, no refund will be issued. A late cancellation fee of $10 applies to cancellations within 24 hours of class."
+Catch-up credits are valid for the current season only and do not carry over. If I am unable to continue for medical reasons, I may request a transfer — please contact the studio."
             buttonLabel="Agree & Sign"
             saving={saving}
             onSubmit={() => submitSimple('season_agreement', { agreed: true, agreed_at: new Date().toISOString() })}
