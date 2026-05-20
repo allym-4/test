@@ -967,17 +967,16 @@ export default function StudentMyClasses() {
                               </div>
                               {/* Upcoming occurrences — mark away / can make it */}
                               {(() => {
-                                const cardOccs = upcomingOccurrences
-                                  .filter(occ => occ.session === e.class_session || occ.session_detail?.id === e.class_session)
-                                  .slice(0, 4)
+                                const cardOccs = e.upcoming_occurrences || []
                                 if (!cardOccs.length) return null
                                 return (
                                   <div style={{ marginTop: 12, borderTop: '1px solid var(--border)', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
                                     <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>Upcoming</div>
                                     {cardOccs.map(occ => {
-                                      const isAway = attHistory.some(a => a.occurrence === occ.id && a.status === 'absent')
+                                      const isAway = occ.marked_away
                                       const dateStr = new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
-                                      const timeStr = occ.session_detail?.start_time ? ` · ${occ.session_detail.start_time.slice(0, 5)}` : ''
+                                      const timeStr = occ.start_time ? ` · ${occ.start_time.slice(0, 5)}` : ''
+                                      const occWithSession = { ...occ, session_detail: e.class_session_detail }
                                       return (
                                         <div key={occ.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                                           <div style={{ fontSize: 12, color: isAway ? 'var(--amber)' : 'var(--grey)' }}>
@@ -985,11 +984,11 @@ export default function StudentMyClasses() {
                                             {isAway && <span style={{ marginLeft: 6, fontSize: 10, color: 'var(--amber)', fontWeight: 600 }}>AWAY</span>}
                                           </div>
                                           {isAway ? (
-                                            <button className="btn btn-ghost btn-sm" style={{ fontSize: 10, color: 'var(--lime)', borderColor: 'rgba(204,255,0,0.3)', flexShrink: 0 }} onClick={() => setCancelAwayOcc(occ)}>
+                                            <button className="btn btn-ghost btn-sm" style={{ fontSize: 10, color: 'var(--lime)', borderColor: 'rgba(204,255,0,0.3)', flexShrink: 0 }} onClick={() => setCancelAwayOcc(occWithSession)}>
                                               I can make it!
                                             </button>
                                           ) : (
-                                            <button className="btn btn-ghost btn-sm" style={{ fontSize: 10, flexShrink: 0 }} onClick={() => setMarkAwayOcc(occ)}>
+                                            <button className="btn btn-ghost btn-sm" style={{ fontSize: 10, flexShrink: 0 }} onClick={() => setMarkAwayOcc(occWithSession)}>
                                               Mark away
                                             </button>
                                           )}
@@ -1140,6 +1139,7 @@ export default function StudentMyClasses() {
           onDone={() => {
             setMarkAwayOcc(null)
             refetchAtt()
+            refetchEnrol()
           }}
         />
       )}
