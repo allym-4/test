@@ -24,10 +24,16 @@ SEASON_NAME  = 'Season 3'
 SEASON_START = date(2026, 5, 11)
 SEASON_END   = date(2026, 7,  5)
 
+# ── Upcoming season (Winter 2026) ─────────────────────────────────────────────
+UPCOMING_SEASON_NAME  = 'Season 2026 Winter'
+UPCOMING_SEASON_START = date(2026, 8, 1)
+UPCOMING_SEASON_END   = date(2026, 10, 29)
+
 # ── Pricing (from live pricing page) ─────────────────────────────────────────
-SEASON_PRICES = {1: 270, 2: 440, 3: 580, 4: 700, 5: 800, 6: 900}
-PRICE_CASUAL  = 40
-PRICE_TRIAL   = 35  # deducted from season fee if student enrols
+SEASON_PRICES    = {1: 270, 2: 440, 3: 580, 4: 700, 5: 800, 6: 900}
+PRICE_CASUAL     = 40
+PRICE_TRIAL      = 35  # deducted from season fee if student enrols
+PRICE_CLASS_PASS = 140
 
 # ── Instructors (first name → tagline/nickname) ───────────────────────────────
 INSTRUCTORS = {
@@ -239,6 +245,17 @@ class Command(BaseCommand):
         else:
             self.stdout.write(f'  Using season: {season.name} ({season.start_date} - {season.end_date})')
 
+        # ── Upcoming season (Winter 2026) ─────────────────────────────────────
+        upcoming_season, _ = Season.objects.get_or_create(
+            name=UPCOMING_SEASON_NAME,
+            defaults={
+                'start_date': UPCOMING_SEASON_START,
+                'end_date':   UPCOMING_SEASON_END,
+                'status':     'upcoming',
+                'bookings_open': True,
+            },
+        )
+
         instructors = self._resolve_instructors()
 
         self.stdout.write('Creating / verifying class sessions...')
@@ -267,6 +284,32 @@ class Command(BaseCommand):
                 },
             )
             session_index[(name, instr_first.lower(), dow)] = sess
+
+        # Mirror full timetable into the upcoming season
+        for (name, level_tag, instr_first, room_key, dow,
+             start, duration, stype, cap) in TIMETABLE:
+            if stype != 'course':
+                continue
+            instructor = instructors.get(instr_first.lower())
+            room = room_map.get(room_key, rhapsody)
+            ft = FIRST_TIMER_INFO.get(name, ('', ''))
+            ClassSession.objects.get_or_create(
+                name=name,
+                instructor=instructor,
+                studio=room,
+                day_of_week=dow,
+                start_time=start,
+                season=upcoming_season,
+                defaults={
+                    'level': level_tag,
+                    'duration_minutes': duration,
+                    'capacity': cap,
+                    'session_type': stype,
+                    'is_active': True,
+                    'first_timer_headline': ft[0],
+                    'first_timer_body': ft[1],
+                },
+            )
 
         self.stdout.write(f'  {len(session_index)} sessions ready')
 
@@ -378,6 +421,9 @@ class Command(BaseCommand):
             if float(settings.price_trial or 0) != PRICE_TRIAL:
                 settings.price_trial = PRICE_TRIAL
                 settings.save(update_fields=['price_trial'])
+            if float(settings.price_class_pass or 0) != PRICE_CLASS_PASS:
+                settings.price_class_pass = PRICE_CLASS_PASS
+                settings.save(update_fields=['price_class_pass'])
         except Exception:
             pass
 
