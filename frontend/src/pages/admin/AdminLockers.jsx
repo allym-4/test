@@ -104,7 +104,6 @@ function AssignModal({ locker, activeSeason, onClose, onSaved }) {
               <option value="waived">Waived</option>
             </select>],
             ['Expiry Date', <input type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} placeholder={activeSeason?.end_date || ''} />],
-            ['Expiry Date', <input type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} />],
             ['Notes', <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Optional…" />],
           ].map(([label, field]) => (
             <div key={label} style={{ marginBottom: 14 }}>

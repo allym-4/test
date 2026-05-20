@@ -111,7 +111,8 @@ export default function AdminPractice() {
       <div style={{ background: 'rgba(176,160,255,0.08)', border: '1px solid rgba(176,160,255,0.25)', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: 'var(--grey)', display: 'flex', gap: 20, flexWrap: 'wrap' }}>
         <span>💜 Enrolled students: <strong style={{ color: '#fff' }}>$20/hr</strong></span>
         <span>👤 Non-enrolled: <strong style={{ color: '#fff' }}>$30/hr</strong></span>
-        <span style={{ color: 'var(--lime)' }}>✓ 3+ classes this week: <strong>FREE</strong></span>
+        <span style={{ color: 'var(--lime)' }}>✓ 3 classes enrolled this season: <strong>1 free/week</strong></span>
+        <span style={{ color: 'var(--lime)' }}>✓ 4+ classes enrolled: <strong>unlimited free</strong></span>
       </div>
 
       {/* Tabs */}

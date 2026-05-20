@@ -496,11 +496,23 @@ export default function AdminStudentDetail() {
                   </div>
                 </div>
                 {activeEnrolments.length > 0 && (
-                  <div className="card" style={{ padding: '16px 18px' }}>
+                  <div className="card" style={{ padding: '16px 18px', borderColor: student.booking_blocked ? 'var(--amber)' : undefined }}>
+                    {student.booking_blocked && (
+                      <div style={{ background: 'rgba(255,170,0,0.1)', border: '1px solid rgba(255,170,0,0.3)', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: 12, color: 'var(--amber)', fontWeight: 600 }}>
+                        ⚠ Account frozen — new bookings blocked. Will show alert at check-in.
+                      </div>
+                    )}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                       <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px' }}>Membership Status</div>
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <button className="btn btn-ghost btn-xs" onClick={() => alert('Account frozen')}>Freeze</button>
+                        <button
+                          className="btn btn-ghost btn-xs"
+                          style={student.booking_blocked ? { borderColor: 'var(--amber)', color: 'var(--amber)' } : {}}
+                          onClick={async () => {
+                            await users.update(student.id, { booking_blocked: !student.booking_blocked })
+                            setStudent(s => ({ ...s, booking_blocked: !s.booking_blocked }))
+                          }}
+                        >{student.booking_blocked ? 'Unfreeze Account' : 'Freeze Account'}</button>
                         <button className="btn btn-ghost btn-xs" onClick={() => setShowTransferCancel(true)}>Cancel Enrolment</button>
                       </div>
                     </div>
@@ -1150,25 +1162,32 @@ export default function AdminStudentDetail() {
                 <select value={refundType} onChange={e => setRefundType(e.target.value)} style={{ background: '#111', color: '#fff', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 10px', fontSize: 13, width: '100%' }}>
                   <option value="refund">Refund (money back)</option>
                   <option value="credit">Account Credit</option>
+                  <option value="no_refund">No refund / credit (record only)</option>
                 </select>
               </div>
+              {refundType !== 'no_refund' && (
+                <div className="field">
+                  <label>Amount ($)</label>
+                  <input type="number" min="0" step="0.01" value={refundAmount} onChange={e => setRefundAmount(e.target.value)} placeholder="0.00" />
+                </div>
+              )}
               <div className="field">
-                <label>Amount ($)</label>
-                <input type="number" min="0" step="0.01" value={refundAmount} onChange={e => setRefundAmount(e.target.value)} placeholder="0.00" />
-              </div>
-              <div className="field">
-                <label>Description</label>
-                <input value={refundDesc} onChange={e => setRefundDesc(e.target.value)} placeholder="Reason for refund / credit" />
+                <label>Description / reason</label>
+                <input value={refundDesc} onChange={e => setRefundDesc(e.target.value)} placeholder="Reason for decision" />
               </div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
                 <button className="btn btn-ghost btn-sm" onClick={() => setShowRefundCredit(false)}>Cancel</button>
                 <button
                   className="btn btn-lime btn-sm"
-                  disabled={savingRefund || !refundAmount}
+                  disabled={savingRefund || (refundType !== 'no_refund' && !refundAmount)}
                   onClick={async () => {
                     setSavingRefund(true)
                     try {
-                      await payments.create({ student: student.id, payment_type: refundType, amount: parseFloat(refundAmount), description: refundDesc || `${refundType === 'refund' ? 'Refund' : 'Account credit'} issued` })
+                      if (refundType === 'no_refund') {
+                        await payments.create({ student: student.id, payment_type: 'no_refund', amount: 0, description: refundDesc || 'No refund or credit issued' })
+                      } else {
+                        await payments.create({ student: student.id, payment_type: refundType, amount: parseFloat(refundAmount), description: refundDesc || `${refundType === 'refund' ? 'Refund' : 'Account credit'} issued` })
+                      }
                       const [balRes, payRes] = await Promise.all([payments.balance(student.id), payments.list({ student: student.id })])
                       setBalanceData(balRes.data)
                       setPayData(payRes.data.results || [])
@@ -1178,7 +1197,7 @@ export default function AdminStudentDetail() {
                     } finally { setSavingRefund(false) }
                   }}
                 >
-                  {savingRefund ? 'Saving…' : 'Issue'}
+                  {savingRefund ? 'Saving…' : refundType === 'no_refund' ? 'Record Decision' : 'Issue'}
                 </button>
               </div>
             </div>

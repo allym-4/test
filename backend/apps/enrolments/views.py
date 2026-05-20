@@ -122,6 +122,24 @@ def _trigger_displacement_if_needed(enrolment):
 
 SEASON_PRICES = {1: 270, 2: 440, 3: 580, 4: 700, 5: 800, 6: 900}
 
+DEFAULT_DISCOUNT_TIERS = {"2": 100, "3": 130, "4": 150, "5": 170, "6": 170}
+
+
+def _get_class_incremental_price(session, position):
+    """Return price for adding a class at the given enrolment position (1-indexed)."""
+    from apps.users.models import StudioSettings
+    settings = StudioSettings.objects.first()
+    base_price = (
+        Decimal(str(session.category.standalone_price))
+        if session.category and session.category.standalone_price is not None
+        else Decimal(str(settings.price_season if settings else 270))
+    )
+    tiers = (settings.season_discount_tiers or {}) if settings else {}
+    if not tiers:
+        tiers = DEFAULT_DISCOUNT_TIERS
+    discount = Decimal(str(tiers.get(str(position), 0)))
+    return max(Decimal('0'), base_price - discount)
+
 
 @api_view(['GET'])
 @permission_classes([IsAdminOrInstructor])
@@ -144,16 +162,8 @@ def enrolment_pricing(request):
         return Response({'detail': 'Session not found.'}, status=status.HTTP_404_NOT_FOUND)
 
     count = Enrolment.objects.filter(student_id=student_id, status='active').count()
-
-    if count == 0:
-        # First class — use standalone price or $270 default
-        if session.category and session.category.standalone_price:
-            price = Decimal(str(session.category.standalone_price))
-        else:
-            price = Decimal(str(SEASON_PRICES[1]))
-    else:
-        n = min(count, 5)  # cap at 6 classes total
-        price = Decimal(str(SEASON_PRICES[n + 1] - SEASON_PRICES[n]))
+    position = count + 1
+    price = _get_class_incremental_price(session, position)
 
     return Response({
         'price': price,

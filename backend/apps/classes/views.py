@@ -669,6 +669,8 @@ class PracticeSlotBookView(APIView):
         return round(slot.duration_hours * rate, 2), False
 
     def post(self, request, pk):
+        import stripe as stripe_lib
+        from decimal import Decimal
         try:
             slot = PracticeSlot.objects.get(pk=pk, is_active=True)
         except PracticeSlot.DoesNotExist:
@@ -684,11 +686,45 @@ class PracticeSlotBookView(APIView):
             return Response({'detail': 'Already booked.'}, status=status.HTTP_400_BAD_REQUEST)
 
         price, is_free = self._calc_price(slot, request.user)
+        payment_method = request.data.get('payment_method', 'reception')
+        payment_type = ''
+
+        if not is_free and payment_method in ('card', 'cash'):
+            CASH_DISCOUNT = Decimal('5.00')
+            user = request.user
+
+            # Both card and cash require a card on file
+            if not user.stripe_customer_id or not user.default_payment_method_id:
+                return Response({'requires_card': True, 'detail': 'A saved card is required.'}, status=status.HTTP_402_PAYMENT_REQUIRED)
+
+            if payment_method == 'cash':
+                price = max(Decimal('0'), Decimal(str(price)) - CASH_DISCOUNT)
+                payment_type = 'cash'
+            else:
+                import stripe as _stripe
+                import os
+                _stripe.api_key = os.environ.get('STRIPE_SECRET_KEY', '')
+                try:
+                    _stripe.PaymentIntent.create(
+                        amount=int(Decimal(str(price)) * 100),
+                        currency='aud',
+                        customer=user.stripe_customer_id,
+                        payment_method=user.default_payment_method_id,
+                        confirm=True,
+                        off_session=True,
+                        description=f'Practice time — {slot.date} {slot.start_time}',
+                        metadata={'user_id': user.id, 'slot_id': slot.id},
+                    )
+                except Exception as e:
+                    return Response({'detail': f'Card declined: {getattr(e, "user_message", str(e))}'}, status=status.HTTP_402_PAYMENT_REQUIRED)
+                payment_type = 'card'
+
         booking = PracticeBooking.objects.create(
             slot=slot,
             student=request.user,
             price_charged=price,
             is_free=is_free,
+            payment_type=payment_type,
         )
         return Response(PracticeBookingSerializer(booking, context={'request': request}).data, status=status.HTTP_201_CREATED)
 

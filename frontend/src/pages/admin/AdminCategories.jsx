@@ -20,7 +20,7 @@ function CategoryModal({ existing, onClose, onSaved }) {
         colour,
         is_visible: visible,
         is_addon_type: isAddonType,
-        standalone_price: isAddonType && standalonePrice !== '' ? standalonePrice : null,
+        standalone_price: standalonePrice !== '' ? standalonePrice : null,
       }
       if (existing?.id) {
         await categoriesApi.update(existing.id, payload)
@@ -55,6 +55,17 @@ function CategoryModal({ existing, onClose, onSaved }) {
             </div>
             <span style={{ fontSize: 13, color: 'var(--grey)' }}>Visible to students</span>
           </div>
+          <div className="field">
+            <label>Season base price ($) <span style={{ fontSize: 11, color: 'var(--grey)', fontWeight: 400 }}>— leave blank to use studio default</span></label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="e.g. 240 for Kiki/Unravel"
+              value={standalonePrice}
+              onChange={e => setStandalonePrice(e.target.value)}
+            />
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
             <input
               type="checkbox"
@@ -65,19 +76,7 @@ function CategoryModal({ existing, onClose, onSaved }) {
             />
             <label htmlFor="is_addon_type" style={{ fontSize: 13, color: 'var(--grey)', cursor: 'pointer', margin: 0 }}>Add-on type class (e.g. Kiki, Unravel)</label>
           </div>
-          {isAddonType && (
-            <div className="field">
-              <label>Standalone price ($)</label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="e.g. 250"
-                value={standalonePrice}
-                onChange={e => setStandalonePrice(e.target.value)}
-              />
-            </div>
-          )}
+
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
             <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
