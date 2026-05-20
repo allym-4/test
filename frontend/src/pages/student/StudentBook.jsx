@@ -714,6 +714,7 @@ function SeasonTab({
   activeSeasonCount,
   seasonPricingConfig,
   priceSeason,
+  discountTiers,
   userLevel,
   onProceedToCheckout,
 }) {
@@ -750,7 +751,17 @@ function SeasonTab({
     ? sessions.filter(s => s.season === activeSeason.id)
     : []
 
-  // discountTiers / incrementalPrice calculated below after studioSettings is loaded
+  function getClassIncrementalPrice(session, position) {
+    const base = parseFloat(session.season_base_price ?? priceSeason)
+    const discount = parseFloat((discountTiers || {})[position] ?? (discountTiers || {})[String(position)] ?? 0)
+    return Math.max(0, base - discount)
+  }
+
+  const incrementalPrice = selectedSessions.reduce((sum, session, idx) => {
+    const position = activeSeasonCount + idx + 1
+    return sum + getClassIncrementalPrice(session, position)
+  }, 0)
+  const totalPrice = incrementalPrice
 
   function toggleSession(session) {
     setSelectedSessions(prev => {
@@ -1351,6 +1362,7 @@ export default function StudentBook() {
           activeSeasonCount={activeSeasonCount}
           seasonPricingConfig={seasonPricingConfig}
           priceSeason={priceSeason}
+          discountTiers={discountTiers}
           userLevel={user?.level || null}
           onProceedToCheckout={handleSeasonProceed}
         />
