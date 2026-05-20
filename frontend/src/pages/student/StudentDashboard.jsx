@@ -8,6 +8,7 @@ import PostTrialPopup from '../../components/PostTrialPopup'
 import { Link } from 'react-router-dom'
 
 const DAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+const DAYS_SHORT = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
 
 function greeting() {
   const h = new Date().getHours()
@@ -17,14 +18,13 @@ function greeting() {
 }
 
 function formatDayDate(dayOfWeek) {
-  // Find the next occurrence of this day of week
   const today = new Date()
-  const todayDow = today.getDay() === 0 ? 6 : today.getDay() - 1 // Mon=0..Sun=6
+  const todayDow = today.getDay() === 0 ? 6 : today.getDay() - 1
   let diff = dayOfWeek - todayDow
   if (diff < 0) diff += 7
   const d = new Date(today)
   d.setDate(today.getDate() + diff)
-  return d.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
+  return d.getDate()
 }
 
 function MarkAwayModal({ enrolment, onClose, onDone }) {
@@ -294,11 +294,14 @@ export default function StudentDashboard() {
                 ? `${s.instructor_detail.first_name || ''} ${s.instructor_detail.last_name || ''}`.trim()
                 : (s?.instructor_name || '—')
               return (
-                <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div style={{ textAlign: 'center', flexShrink: 0, width: 44 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', color: 'var(--grey)', textTransform: 'uppercase' }}>{DAYS_SHORT[s?.day_of_week]}</div>
+                    <div style={{ fontSize: 26, fontWeight: 800, fontFamily: "'Archivo Black', sans-serif", color: 'var(--lime)', lineHeight: 1.1 }}>{formatDayDate(s?.day_of_week)}</div>
+                  </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 2 }}>{formatDayDate(s?.day_of_week)}</div>
-                    <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{s?.name} · {s?.studio_detail?.name}</div>
-                    <div style={{ fontSize: 12, color: 'var(--grey)' }}>with {instructorName}</div>
+                    <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s?.name} · {s?.studio_detail?.name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--grey)' }}>{s?.start_time?.slice(0, 5)} · {instructorName}</div>
                   </div>
                   <button className="btn btn-ghost btn-sm" style={{ flexShrink: 0 }} onClick={() => setMarkAwayEnrol(e)}>
                     Mark Away
