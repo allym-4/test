@@ -18,28 +18,25 @@ export default function StudentStudioInfo() {
   const s = settingsData || {}
   const instructors = staffData?.results || []
 
-  const cancelWindow = s.cancellation_window_hours ?? 24
+  const cancelWindow = s.cancellation_window_hours ?? 4
   const noShowFee = s.no_show_fee ? `$${parseFloat(s.no_show_fee).toFixed(0)}` : '$20'
-  const lateCancelFee = s.late_cancel_fee ? `$${parseFloat(s.late_cancel_fee).toFixed(0)}` : '$10'
-  const creditExpiry = s.credit_expiry_days ?? 60
-  const maxFreeze = s.max_freeze_weeks ?? 8
 
   const policies = [
     {
       title: 'Cancellation Policy',
-      body: `Cancellations must be made at least ${cancelWindow} hours before class. Late cancellations (within ${cancelWindow} hours) incur a ${lateCancelFee} fee. No-shows (unannounced absences) incur a ${noShowFee} fee.`,
+      body: `Mark yourself away at least ${cancelWindow} hours before class to receive a catch-up credit. Within ${cancelWindow} hours, you can still mark away so your instructor knows — but no credit is issued. No-shows (unannounced absences) incur a ${noShowFee} fee.`,
     },
     {
       title: 'Waitlist Policy',
       body: "When a spot opens, the first student on the waitlist is notified by email and has 12 hours to accept. If they don't respond, the next student is offered the spot.",
     },
     {
-      title: 'Makeup Credits',
-      body: `Approved absences (illness, injury, or emergency) may receive a makeup credit. Credits expire ${creditExpiry} days after issue. Maximum 2 credits per season. Credits are non-transferable.`,
+      title: 'Catch-up Credits',
+      body: "When you mark away more than 4 hours before class, a catch-up credit is added to your account. You can use it to book into another class in the same season. Credits do not carry over between seasons. For conditioning and dance classes, you can catch up any week. For level and routine classes, catch-ups can only be booked up to and including Week 3.",
     },
     {
       title: 'Refund Policy',
-      body: "Season enrolments are non-refundable after the season commences. If you are unable to continue due to medical reasons, please contact us — we'll do our best to help.",
+      body: "Season enrolments are non-refundable. If you are unable to continue, please contact us to request a transfer — we'll do our best to help.",
     },
     {
       title: 'Photography & Filming',
@@ -95,7 +92,7 @@ export default function StudentStudioInfo() {
                 </div>
                 <div>
                   <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 4 }}>Urgent (same-day class issues)</div>
-                  <a href="mailto:staff@dualitypole.com" style={{ fontSize: 14, color: 'var(--lime)', textDecoration: 'none' }}>staff@dualitypole.com</a>
+                  <a href="mailto:intrigued@dualitypole.com" style={{ fontSize: 14, color: 'var(--lime)', textDecoration: 'none' }}>intrigued@dualitypole.com</a>
                 </div>
               </div>
               <div>
@@ -107,7 +104,7 @@ export default function StudentStudioInfo() {
                 <a href="https://instagram.com/dualitypole" target="_blank" rel="noreferrer" style={{ fontSize: 14, color: 'var(--lav)', textDecoration: 'none' }}>@dualitypole</a>
               </div>
               <div style={{ padding: '12px 14px', background: '#111', borderRadius: 8, fontSize: 12, color: 'var(--grey)', lineHeight: 1.6 }}>
-                For same-day issues (e.g. can't access Kisi, running late) please email <span style={{ color: 'var(--white)' }}>staff@dualitypole.com</span> — this inbox is monitored before and during class time. The general inbox may not be checked until the next business day.
+                For same-day issues (e.g. can't access Kisi, running late) please email <span style={{ color: 'var(--white)' }}>intrigued@dualitypole.com</span> — this inbox is monitored before and during class time. The general inbox may not be checked until the next business day.
               </div>
             </div>
           </div>
