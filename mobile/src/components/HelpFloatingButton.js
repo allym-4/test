@@ -10,7 +10,7 @@ import { helpdesk } from '../api'
 const LOCAL_FAQS = [
   {
     q: "I can't access the studio",
-    a: "If you're having trouble getting into the studio, tap 'Contact the team' below and we'll get it sorted for you right away.",
+    a: "The door auto-unlocks 15 minutes before each class and stays unlocked until 1 minute after it starts — just push the door, no app needed during that window.\n\nOutside that window, use the Kisi app (you'll have received an email with access before your first class). If you haven't set up Kisi yet, check your email for an invite from noreply@kisi.io — check junk/spam too.\n\nFor same-day access issues, email staff@dualitypole.com — this inbox is monitored before and during class time.",
   },
   {
     q: "I need to cancel a class",
