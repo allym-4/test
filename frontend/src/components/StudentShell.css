@@ -121,15 +121,18 @@
   }
 
   .student-sidebar {
-    display: none;
     position: fixed;
     left: 0;
     top: 0;
     height: 100dvh;
     z-index: 200;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    visibility: hidden;
   }
   .student-sidebar.open {
-    display: flex;
+    transform: translateX(0);
+    visibility: visible;
   }
   .student-sidebar-close { display: block; }
   .student-mob-overlay {
