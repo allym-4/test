@@ -116,6 +116,10 @@
 .student-bottom-nav { display: none; }
 
 @media (max-width: 768px) {
+  .student-shell {
+    flex-direction: column;
+  }
+
   .student-sidebar {
     position: fixed;
     left: -240px;
