@@ -39,7 +39,7 @@ function MarkAwayModal({ enrolment, cancellationWindowHours, onClose, onDone }) 
   )
   const nextOcc = occData?.results?.[0] || occData?.[0] || null
 
-  const windowHours = cancellationWindowHours ?? 12
+  const windowHours = cancellationWindowHours ?? 4
   const withinCutoff = useMemo(() => {
     if (!nextOcc?.date || !s?.start_time) return false
     const classDateTime = new Date(`${nextOcc.date}T${s.start_time}`)
@@ -387,7 +387,7 @@ export default function StudentDashboard() {
       {markAwayEnrol && (
         <MarkAwayModal
           enrolment={markAwayEnrol}
-          cancellationWindowHours={studioSettings?.cancellation_window_hours ?? 12}
+          cancellationWindowHours={studioSettings?.cancellation_window_hours ?? 4}
           onClose={() => setMarkAwayEnrol(null)}
           onDone={() => setMarkAwayEnrol(null)}
         />

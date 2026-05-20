@@ -632,8 +632,9 @@ class PracticeSlotBookView(APIView):
 
     def _calc_price(self, slot, user):
         from apps.enrolments.models import Enrolment
-        from apps.classes.models import Season
-        # Free if enrolled in 3+ course classes in the current/active season
+        from apps.classes.models import Season, PracticeBooking
+        from django.utils import timezone
+        import datetime
         active_season = Season.objects.filter(status__in=['active', 'upcoming']).order_by('-start_date').first()
         course_enrolments = Enrolment.objects.filter(
             student=user,
@@ -641,8 +642,23 @@ class PracticeSlotBookView(APIView):
             enrolment_type='course',
             class_session__season=active_season,
         ).count() if active_season else 0
-        if course_enrolments >= 3:
+        if course_enrolments >= 4:
+            # 4+ classes: unlimited free practice
             return 0, True
+        if course_enrolments == 3:
+            # 3 classes: 1 free practice per week (Mon–Sun)
+            today = timezone.localdate()
+            week_start = today - datetime.timedelta(days=today.weekday())
+            week_end = week_start + datetime.timedelta(days=6)
+            used_free_this_week = PracticeBooking.objects.filter(
+                student=user,
+                status='confirmed',
+                is_free=True,
+                slot__date__range=(week_start, week_end),
+            ).count()
+            if used_free_this_week == 0:
+                return 0, True
+            # Already used free slot this week — charge enrolled rate
         is_enrolled = course_enrolments > 0
         rate = slot.ENROLLED_RATE if is_enrolled else slot.NON_ENROLLED_RATE
         return round(slot.duration_hours * rate, 2), False

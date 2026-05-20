@@ -89,7 +89,7 @@ export default function PracticeScreen() {
       <Text style={s.heading}>Practice Time</Text>
       <Text style={s.sub}>
         Book open practice sessions in the studio.{'\n'}
-        Enrolled students $20/hr · Non-enrolled $30/hr · Free if enrolled in 3+ classes this season.
+        Enrolled students $20/hr · Non-enrolled $30/hr · 3 classes = 1 free/week · 4+ classes = unlimited free.
       </Text>
 
       {/* My upcoming bookings */}
@@ -104,7 +104,7 @@ export default function PracticeScreen() {
                   {fmtDate(b.slot?.date)} · {fmt(b.slot?.start_time)}–{fmt(b.slot?.end_time)}
                 </Text>
                 <Text style={[s.myBookingPrice, b.is_free ? s.priceGreen : s.priceLav]}>
-                  {b.is_free ? '✓ Free (3+ classes this season)' : `$${parseFloat(b.price_charged ?? 0).toFixed(0)}`}
+                  {b.is_free ? '✓ Free' : `$${parseFloat(b.price_charged ?? 0).toFixed(0)}`}
                 </Text>
               </View>
               <TouchableOpacity style={s.cancelBtn} onPress={() => setCancelling(b)}>
@@ -140,7 +140,7 @@ export default function PracticeScreen() {
               </Text>
               <View style={s.slotMeta}>
                 <Text style={[s.slotPrice, slot.price_for_me === 0 ? s.priceGreen : s.priceLav]}>
-                  {slot.price_for_me === 0 ? 'Free this week 🎉' : `$${slot.price_for_me}`}
+                  {slot.price_for_me === 0 ? 'Free' : `$${slot.price_for_me}`}
                 </Text>
                 <Text style={s.spotsLeft}>
                   {slot.spots_left} spot{slot.spots_left !== 1 ? 's' : ''} left
@@ -167,7 +167,7 @@ export default function PracticeScreen() {
             <Text style={s.modalStudio}>{booking?.studio_detail?.name}</Text>
             <Text style={s.modalTime}>{booking ? `${fmtDate(booking.date)} · ${fmt(booking.start_time)}–${fmt(booking.end_time)}` : ''}</Text>
             <Text style={[s.modalPrice, booking?.price_for_me === 0 ? s.priceGreen : s.priceLav]}>
-              {booking?.price_for_me === 0 ? 'Free — 3+ classes this season!' : `$${booking?.price_for_me} to pay at reception`}
+              {booking?.price_for_me === 0 ? 'Free' : `$${booking?.price_for_me} to pay at reception`}
             </Text>
             <View style={s.modalActions}>
               <TouchableOpacity style={s.modalGhostBtn} onPress={() => setBooking(null)}>

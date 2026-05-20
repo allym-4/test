@@ -119,7 +119,7 @@ function MarkAwayModal({ occurrence, session, cancellationWindowHours, noShowFee
     (occurrence.date || '') + 'T' + (occurrence.start_time || session?.start_time || '00:00')
   )
   const hoursUntil = (occDate - new Date()) / (1000 * 60 * 60)
-  const windowHours = cancellationWindowHours || 24
+  const windowHours = cancellationWindowHours || 4
   const isLate = hoursUntil > 0 && hoursUntil < windowHours
   const isPast = hoursUntil <= 0
 
@@ -910,7 +910,7 @@ export default function MyClassesScreen({ navigation }) {
   const pendingDisplacementEnrolments = pendingDispData?.results ?? pendingDispData ?? []
   const pastEnrolments = pastEnrolData?.results ?? pastEnrolData ?? []
   const history = historyData?.results ?? historyData ?? []
-  const cancellationWindowHours = settingsData?.cancellation_window_hours ?? 24
+  const cancellationWindowHours = settingsData?.cancellation_window_hours ?? 4
 
   // Auto-show modal when a displacement offer is pending
   useEffect(() => {

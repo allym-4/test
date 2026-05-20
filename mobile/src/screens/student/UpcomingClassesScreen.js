@@ -583,7 +583,7 @@ export default function UpcomingClassesScreen({ navigation }) {
         const [h, m] = (markAwayItem.start_time || '00:00').split(':').map(Number)
         const classDateTime = new Date(markAwayItem.date + 'T00:00')
         classDateTime.setHours(h, m, 0, 0)
-        const windowHours = studioSettings?.cancellation_window_hours ?? 12
+        const windowHours = studioSettings?.cancellation_window_hours ?? 4
         const withinCutoff = (classDateTime - Date.now()) < windowHours * 60 * 60 * 1000
         const dateLabel = new Date(markAwayItem.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
         return (

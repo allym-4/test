@@ -98,7 +98,7 @@ function MarkAwayModal({ occurrence, cancellationWindowHours, noShowFee, onClose
 
   const occDate = new Date(occurrence.date + 'T' + (occurrence.session_detail?.start_time || '00:00'))
   const hoursUntil = (occDate - new Date()) / (1000 * 60 * 60)
-  const windowHours = cancellationWindowHours || 24
+  const windowHours = cancellationWindowHours || 4
   const isLate = hoursUntil > 0 && hoursUntil < windowHours
   const feeAmount = noShowFee ? `$${parseFloat(noShowFee).toFixed(0)}` : '$20'
 
@@ -1133,7 +1133,7 @@ export default function StudentMyClasses() {
       {markAwayOcc && (
         <MarkAwayModal
           occurrence={markAwayOcc}
-          cancellationWindowHours={studioSettings?.cancellation_window_hours ?? 24}
+          cancellationWindowHours={studioSettings?.cancellation_window_hours ?? 4}
           noShowFee={studioSettings?.no_show_fee ?? 20}
           onClose={() => setMarkAwayOcc(null)}
           onDone={() => {

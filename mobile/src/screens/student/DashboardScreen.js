@@ -284,7 +284,7 @@ export default function DashboardScreen({ navigation }) {
       const [h, m] = occ.start_time.split(':').map(Number)
       const classDateTime = new Date(occ.date + 'T00:00')
       classDateTime.setHours(h, m, 0, 0)
-      const windowHours = studioSettings?.cancellation_window_hours ?? 12
+      const windowHours = studioSettings?.cancellation_window_hours ?? 4
       withinCutoff = (classDateTime - Date.now()) < windowHours * 60 * 60 * 1000
     }
     setMarkAwayPending({ occ, enrolId, withinCutoff, dateLabel })

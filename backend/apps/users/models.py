@@ -119,7 +119,7 @@ class StudioSettings(models.Model):
     primary_colour = models.CharField(max_length=20, default='#CCFF00')
     enquiries_email = models.EmailField(blank=True)
     urgent_email = models.EmailField(blank=True)
-    cancellation_window_hours = models.PositiveIntegerField(default=24)
+    cancellation_window_hours = models.PositiveIntegerField(default=4)
     no_show_fee = models.DecimalField(max_digits=6, decimal_places=2, default=20)
     late_cancel_fee = models.DecimalField(max_digits=6, decimal_places=2, default=10)
     credit_expiry_days = models.PositiveIntegerField(default=60)

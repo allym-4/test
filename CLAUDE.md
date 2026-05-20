@@ -33,13 +33,13 @@ This is a full-stack studio management app for **Duality Pole Studio** (dualityp
 - Pricing is **incremental** — a student with 2 enrolments adding a 3rd pays $580-$440=$140, NOT $580
 - **Trial class**: $35 (deducted from season fee if student enrols after trial)
 - **Casual class**: $40 non-enrolled, **$30 if enrolled in that season**
-- **Practice Time**: Free if enrolled in 3+ classes **this season** (not just this week)
+- **Practice Time**: 3 classes enrolled this season = 1 free practice per week (Mon–Sun); 4+ classes = unlimited free. Non-free rate: $20/hr enrolled, $30/hr non-enrolled.
 - No-show fee: **$20**
 
 ### Cancellation & Mark Away
-- Cancellation window: **12 hours** before class
-- **Before 12 hours**: Student gets a catch-up credit added to their account
-- **Within 12 hours**: No credit issued; student can still mark away; $20 no-show fee if they don't show AND don't mark away
+- Cancellation window: **4 hours** before class
+- **Before 4 hours**: Student gets a catch-up credit added to their account
+- **Within 4 hours**: No credit issued; student can still mark away; $20 no-show fee if they don't show AND don't mark away
 - Mark Away modal must show **two states**: credit vs no-credit, depending on time until class
 - **Cancel enrolment**: Do NOT allow cancellation. Show T&C popup explaining commitment. Offer "request a transfer" which elevates to admin.
 
@@ -114,7 +114,7 @@ This is a full-stack studio management app for **Duality Pole Studio** (dualityp
 1. **Mark Away modal**: Must show two states based on 12-hour cutoff. Old placeholder text "Marking away lets your instructor plan ahead. A makeup credit may be issued if eligible." is WRONG — do not use it.
 2. **Cancel enrolment**: Must NOT cancel. Must show T&C message + transfer request flow.
 3. **Incremental pricing**: Adding a class to an existing season shows the incremental cost, not the full tier price.
-4. **Practice Time free threshold**: 3+ classes enrolled THIS SEASON (not just this week).
+4. **Practice Time free threshold**: 3 classes enrolled = 1 free/week; 4+ classes = unlimited free. Server-side via `price_for_me` API field.
 5. **Season end date**: Auto-calculate as 8 weeks from start when creating seasons.
 6. **Casual booking eligibility**: Routine/level classes greyed out after week 3; conditioning/dance classes always bookable.
 7. **Trial tab**: Hidden for any student who has previously enrolled in anything.
