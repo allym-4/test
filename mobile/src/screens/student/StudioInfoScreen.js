@@ -158,20 +158,19 @@ export default function StudioInfoScreen() {
           {/* Contact */}
           <View style={s.card}>
             <Text style={s.cardTitle}>Get in Touch</Text>
-            {studio.enquiries_email ? <InfoRow icon="✉️" label="General enquiries" value={studio.enquiries_email} onPress={() => openEmail(studio.enquiries_email)} /> : null}
-            {studio.urgent_email ? <InfoRow icon="✉️" label="Urgent (same-day)" value={studio.urgent_email} onPress={() => openEmail(studio.urgent_email)} /> : null}
+            <InfoRow icon="✉️" label="General enquiries" value="intrigued@dualitypole.com" onPress={() => openEmail('intrigued@dualitypole.com')} />
             {studioPhone ? <InfoRow icon="📞" label="Phone" value={studioPhone} onPress={() => openPhone(studioPhone)} /> : null}
             {studioInstagram ? <InfoRow icon="📸" label="Instagram" value={`@${studioInstagram}`} onPress={openInstagram} /> : null}
             {studioAddress ? <InfoRow icon="📍" label="Address" value={studioAddress} onPress={openMaps} /> : null}
-            {(studio.urgent_email || studio.enquiries_email) ? (
-              <View style={s.urgentNote}>
-                <Text style={s.urgentNoteText}>
-                  For same-day issues (e.g. can't access the studio, running late) email{' '}
-                  <Text style={{ color: '#fff' }}>{studio.urgent_email || studio.enquiries_email}</Text>
-                  {' '}— this inbox is monitored before and during class time.
-                </Text>
-              </View>
-            ) : null}
+            <View style={s.urgentNote}>
+              <Text style={s.urgentNoteText}>
+                For the fastest response, use the{' '}
+                <Text style={{ color: '#ccff00', fontWeight: '700' }}>I Need Help</Text>
+                {' '}tab to lodge a support ticket — our team is notified immediately. For same-day urgent issues (e.g. can't access the studio, running late), email{' '}
+                <Text style={{ color: '#fff' }}>intrigued@dualitypole.com</Text>
+                {' '}— monitored before and during class time.
+              </Text>
+            </View>
           </View>
 
           {/* Acknowledgements */}
@@ -291,9 +290,9 @@ const s = StyleSheet.create({
 
   // Stats
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
-  statCard: { flex: 1, backgroundColor: '#111', borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#222' },
-  statVal: { fontSize: 24, fontWeight: '800', color: '#ccff00', marginBottom: 4 },
-  statLabel: { fontSize: 11, color: '#666', textTransform: 'uppercase', letterSpacing: 0.5 },
+  statCard: { flex: 1, backgroundColor: '#111', borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#222' },
+  statVal: { fontSize: 22, fontWeight: '800', color: '#ccff00', marginBottom: 4 },
+  statLabel: { fontSize: 10, color: '#666', textTransform: 'uppercase', letterSpacing: 0.4, textAlign: 'center' },
 
   // Acknowledgements
   ackText: { fontSize: 13, color: '#888', lineHeight: 22 },
