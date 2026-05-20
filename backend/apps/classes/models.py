@@ -8,7 +8,7 @@ class Studio(models.Model):
     kisi_place_id = models.CharField(max_length=100, blank=True)
     capacity = models.CharField(max_length=50, blank=True)
     poles = models.CharField(max_length=100, blank=True)
-    features = models.TextField(blank=True)
+    features = models.JSONField(default=list, blank=True)
     photo = models.ImageField(upload_to='studios/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
 

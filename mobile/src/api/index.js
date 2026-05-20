@@ -243,3 +243,7 @@ export const surveys = {
   mine: () => client.get('/api/surveys/mine/'),
   respond: (data) => client.post('/api/surveys/responses/', data),
 }
+
+export const studios = {
+  list: () => client.get('/api/classes/studios/'),
+}

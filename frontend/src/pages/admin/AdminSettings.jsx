@@ -62,20 +62,44 @@ function Toggle({ checked, onChange }) {
 function LocationModal({ location, onClose, onSave }) {
   const [name, setName] = useState(location?.name || '')
   const [address, setAddress] = useState(location?.address || '')
+  const [poles, setPoles] = useState(location?.poles || '')
+  const [features, setFeatures] = useState(
+    Array.isArray(location?.features) ? location.features : []
+  )
+
+  function updateFeature(i, val) {
+    setFeatures(f => f.map((x, j) => j === i ? val : x))
+  }
+  function removeFeature(i) {
+    setFeatures(f => f.filter((_, j) => j !== i))
+  }
 
   return (
     <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="sd-modal" style={{ maxWidth: 440 }}>
+      <div className="sd-modal" style={{ maxWidth: 480 }}>
         <div className="sd-header">
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>{location ? 'Edit Location' : 'Add Location'}</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>{location ? 'Edit Room' : 'Add Room'}</div>
           <button className="modal-close-btn" onClick={onClose}>✕</button>
         </div>
         <div className="sd-body">
-          <div className="field"><label>Location name</label><input value={name} onChange={e => setName(e.target.value)} autoFocus /></div>
-          <div className="field"><label>Address</label><input value={address} onChange={e => setAddress(e.target.value)} /></div>
+          <div className="field"><label>Room name</label><input value={name} onChange={e => setName(e.target.value)} autoFocus placeholder="e.g. THE BOX" /></div>
+          <div className="field"><label>Address / notes</label><input value={address} onChange={e => setAddress(e.target.value)} placeholder="Optional" /></div>
+          <div className="field"><label>Poles</label><input value={poles} onChange={e => setPoles(e.target.value)} placeholder="e.g. 11" /></div>
+          <div className="field">
+            <label>Features</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
+              {features.map((f, i) => (
+                <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <input value={f} onChange={e => updateFeature(i, e.target.value)} style={{ flex: 1 }} />
+                  <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)', flexShrink: 0 }} onClick={() => removeFeature(i)}>✕</button>
+                </div>
+              ))}
+            </div>
+            <button className="btn btn-ghost btn-xs" onClick={() => setFeatures(f => [...f, ''])}>+ Add feature</button>
+          </div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
             <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-            <button className="btn btn-lime btn-sm" onClick={() => onSave({ ...location, name, address })} disabled={!name.trim()}>Save</button>
+            <button className="btn btn-lime btn-sm" onClick={() => onSave({ ...location, name, address, poles, features })} disabled={!name.trim()}>Save</button>
           </div>
         </div>
       </div>
@@ -318,10 +342,11 @@ export default function AdminSettings() {
   }
 
   async function saveLocation(loc) {
+    const payload = { name: loc.name, address: loc.address, poles: loc.poles, features: loc.features ?? [] }
     if (loc.id) {
-      await studiosApi.update(loc.id, { name: loc.name, address: loc.address })
+      await studiosApi.update(loc.id, payload)
     } else {
-      await studiosApi.create({ name: loc.name, address: loc.address })
+      await studiosApi.create(payload)
     }
     refetchStudios()
     setEditingLocation(null)
@@ -492,17 +517,17 @@ export default function AdminSettings() {
               </FieldRow>
             </Section>
 
-            <Section title="Locations">
+            <Section title="Rooms">
               {locations.map(loc => (
                 <div key={loc.id} style={{ padding: '10px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{loc.name}</div>
-                    <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{loc.address}</div>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>{loc.name}{loc.poles ? <span style={{ fontWeight: 400, color: 'var(--grey)', marginLeft: 8, fontSize: 11 }}>{loc.poles} poles</span> : null}</div>
+                    <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{(loc.features || []).length} feature{(loc.features || []).length !== 1 ? 's' : ''}{loc.address ? ` · ${loc.address}` : ''}</div>
                   </div>
                   <button className="btn btn-ghost btn-xs" onClick={() => setEditingLocation(loc)}>Edit</button>
                 </div>
               ))}
-              <button className="btn btn-ghost btn-xs" style={{ marginTop: 12 }} onClick={() => setShowAddLocation(true)}>+ Add Location</button>
+              <button className="btn btn-ghost btn-xs" style={{ marginTop: 12 }} onClick={() => setShowAddLocation(true)}>+ Add Room</button>
             </Section>
           </div>
 
