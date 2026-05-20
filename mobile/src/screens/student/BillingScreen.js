@@ -15,7 +15,7 @@ import {
 import { useStripe } from '@stripe/stripe-react-native'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { payments, attendance, helpdesk } from '../../api'
+import { payments, attendance, helpdesk, settings as settingsApi } from '../../api'
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
@@ -169,6 +169,8 @@ export default function BillingScreen() {
     loading: stripeLoading,
     refetch: refetchStripe,
   } = useApi(() => payments.stripe.config(), [])
+  const { data: studioSettings } = useApi(() => settingsApi.get(), [])
+  const merchantDisplayName = studioSettings?.studio_name || 'Studio'
 
   // ── local state ──────────────────────────────────────────────────────────────
   const [autoCharge, setAutoCharge] = useState(null)
@@ -279,7 +281,7 @@ export default function BillingScreen() {
         description: 'Account balance payment',
       })
       const { error: initErr } = await initPaymentSheet({
-        merchantDisplayName: 'Duality Pole Studio',
+        merchantDisplayName,
         paymentIntentClientSecret: data.client_secret,
         allowsDelayedPaymentMethods: false,
         appearance: { colors: { primary: '#ccff00', background: '#111', componentBackground: '#1a1a1a', componentText: '#fff', primaryText: '#fff', secondaryText: '#888' } },
@@ -306,7 +308,7 @@ export default function BillingScreen() {
     try {
       const { data } = await payments.stripe.setupIntent()
       const { error: initErr } = await initSetupPaymentSheet({
-        merchantDisplayName: 'Duality Pole Studio',
+        merchantDisplayName,
         setupIntentClientSecret: data.client_secret,
         appearance: { colors: { primary: '#ccff00', background: '#111', componentBackground: '#1a1a1a', componentText: '#fff', primaryText: '#fff', secondaryText: '#888' } },
       })
@@ -333,7 +335,7 @@ export default function BillingScreen() {
       const amountCents = Math.round(amt * 100)
       const { data } = await payments.stripe.createPaymentIntent({ amount: amountCents, description: 'Partial payment' })
       const { error: initErr } = await initPaymentSheet({
-        merchantDisplayName: 'Duality Pole Studio',
+        merchantDisplayName,
         paymentIntentClientSecret: data.client_secret,
         allowsDelayedPaymentMethods: false,
         appearance: { colors: { primary: '#ccff00', background: '#111', componentBackground: '#1a1a1a', componentText: '#fff', primaryText: '#fff', secondaryText: '#888' } },

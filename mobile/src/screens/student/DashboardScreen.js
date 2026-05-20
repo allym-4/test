@@ -5,7 +5,7 @@ import {
 } from 'react-native'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, seasons, attendance as attendanceApi, skills as skillsApi, announcements as announcementsApi, payments, notifications as notificationsApi, forms as formsApi, surveys as surveysApi } from '../../api'
+import { enrolments, seasons, attendance as attendanceApi, skills as skillsApi, announcements as announcementsApi, payments, notifications as notificationsApi, forms as formsApi, surveys as surveysApi, settings as settingsApi } from '../../api'
 import { useStripePayment } from '../../hooks/useStripePayment'
 
 const DAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -257,6 +257,7 @@ export default function DashboardScreen({ navigation }) {
   const [trialSubmitting, setTrialSubmitting] = useState(false)
   const [trialPayOption, setTrialPayOption] = useState(null) // 'stripe' | 'plan' | 'cash'
   const { pay: stripePay } = useStripePayment()
+  const { data: studioSettings } = useApi(() => settingsApi.get(), [])
 
   const pendingOffers = offersData?.results ?? offersData ?? []
   const pendingTrialFeedback = trialPendingData ?? []
@@ -727,6 +728,7 @@ export default function DashboardScreen({ navigation }) {
                       const paid = await stripePay({
                         amountCents,
                         description: `Season enrolment — ${trialItem.session_name}`,
+                        merchantDisplayName: studioSettings?.studio_name,
                         // don't create enrolment inside hook — we handle it below
                         onSuccess: () => {},
                       })

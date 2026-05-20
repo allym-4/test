@@ -29,7 +29,7 @@ const LOCATIONS = [
       'Super spacious with at least 2.4m between each pole',
       'Ducted air conditioning',
       'State of the art speakers for crisp audio',
-      'Branded Duality mats and blocks for use',
+      'Studio mats and blocks for use',
     ],
   },
   {
@@ -45,7 +45,7 @@ const LOCATIONS = [
       'Super spacious with at least 2.1m between each pole',
       'Ducted air conditioning',
       'State of the art speakers for crisp audio',
-      'Branded Duality mats and blocks for use',
+      'Studio mats and blocks for use',
     ],
   },
   {
@@ -60,7 +60,7 @@ const LOCATIONS = [
       'Holographic windows',
       'Super spacious with at least 2.1m between each pole',
       'Ducted air conditioning',
-      'Branded Duality mats and blocks for use',
+      'Studio mats and blocks for use',
     ],
   },
 ]
@@ -143,7 +143,7 @@ export default function StudioInfoScreen() {
     },
     {
       title: 'Photography & Filming',
-      body: "You must obtain consent from all individuals before filming or photographing in the studio. Duality may photograph or film classes for marketing purposes — let us know if you opt out.",
+      body: `You must obtain consent from all individuals before filming or photographing in the studio. ${studio.studio_name || 'The studio'} may photograph or film classes for marketing purposes — let us know if you opt out.`,
     },
   ]
 
@@ -212,13 +212,15 @@ export default function StudioInfoScreen() {
             {studioPhone ? <InfoRow icon="📞" label="Phone" value={studioPhone} onPress={() => openPhone(studioPhone)} /> : null}
             {studioInstagram ? <InfoRow icon="📸" label="Instagram" value={`@${studioInstagram}`} onPress={openInstagram} /> : null}
             {studioAddress ? <InfoRow icon="📍" label="Address" value={studioAddress} onPress={openMaps} /> : null}
-            <View style={s.urgentNote}>
-              <Text style={s.urgentNoteText}>
-                For same-day issues (e.g. can't access Kisi, running late) email{' '}
-                <Text style={{ color: '#fff' }}>staff@dualitypole.com</Text>
-                {' '}— this inbox is monitored before and during class time.
-              </Text>
-            </View>
+            {(studio.urgent_email || studio.enquiries_email) ? (
+              <View style={s.urgentNote}>
+                <Text style={s.urgentNoteText}>
+                  For same-day issues (e.g. can't access the studio, running late) email{' '}
+                  <Text style={{ color: '#fff' }}>{studio.urgent_email || studio.enquiries_email}</Text>
+                  {' '}— this inbox is monitored before and during class time.
+                </Text>
+              </View>
+            ) : null}
           </View>
 
           {/* Acknowledgements */}
@@ -297,7 +299,7 @@ export default function StudioInfoScreen() {
       {/* The Code */}
       {!loading && activeTab === 'code' && (
         <ScrollView contentContainerStyle={s.content}>
-          <Text style={s.sectionHeading}>The Duality Code</Text>
+          <Text style={s.sectionHeading}>{studio.studio_name ? `The ${studio.studio_name} Code` : 'Studio Code'}</Text>
           <Text style={s.codeSubtitle}>A very important guide on being a good human within our space.</Text>
           {(studio.studio_code || []).map((item, i) => (
             <View key={i} style={s.codeCard}>

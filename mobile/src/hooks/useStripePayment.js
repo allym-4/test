@@ -5,7 +5,7 @@ import { payments, enrolments } from '../api'
 export function useStripePayment() {
   const { initPaymentSheet, presentPaymentSheet } = usePaymentSheet()
 
-  const pay = useCallback(async ({ amountCents, description, sessionId, enrolmentType, onSuccess }) => {
+  const pay = useCallback(async ({ amountCents, description, sessionId, enrolmentType, onSuccess, merchantDisplayName = 'Studio' }) => {
     // 1 — create payment intent on backend
     const intentRes = await payments.stripe.createPaymentIntent({
       amount: amountCents,
@@ -20,7 +20,7 @@ export function useStripePayment() {
       paymentIntentClientSecret: client_secret,
       customerEphemeralKeySecret: ephemeral_key,
       customerId: customer,
-      merchantDisplayName: 'Your Studio',
+      merchantDisplayName,
       applePay: { merchantCountryCode: 'AU' },
       googlePay: { merchantCountryCode: 'AU', testEnv: false },
       defaultBillingDetails: { address: { country: 'AU' } },

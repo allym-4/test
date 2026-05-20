@@ -43,13 +43,13 @@ class Command(BaseCommand):
 
             if credit.student.email:
                 send_mail(
-                    subject='Catch-up credit expired — Duality Pole Studio',
+                    subject=f'Catch-up credit expired — {studio.studio_name}',
                     message=(
                         f'Hi {credit.student.first_name},\n\n'
                         f'Your catch-up credit ({credit.reason}) has expired '
                         f'after {expiry_days} days.\n\n'
                         f'If you think this is an error, please get in touch.\n\n'
-                        f'Duality Pole Studio'
+                        f'{studio.studio_name}'
                     ),
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[credit.student.email],

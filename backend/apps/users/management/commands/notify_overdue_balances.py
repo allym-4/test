@@ -82,11 +82,11 @@ class Command(BaseCommand):
             if send_email_flag and student.email:
                 try:
                     send_mail(
-                        subject='Outstanding balance — Duality Pole Studio',
+                        subject=f'Outstanding balance — {studio.studio_name}',
                         message=(
                             f'Hi {student.first_name or student.display_name},\n\n'
                             f'{body_text}\n\n'
-                            f'Duality Pole Studio'
+                            f'{studio.studio_name}'
                         ),
                         from_email=django_settings.DEFAULT_FROM_EMAIL,
                         recipient_list=[student.email],

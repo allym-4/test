@@ -5,77 +5,7 @@ import {
   Modal, ActivityIndicator, Alert,
 } from 'react-native'
 import { useApi } from '../../hooks/useApi'
-import { helpdesk } from '../../api'
-
-// ─── Data ─────────────────────────────────────────────────────────────────────
-
-const FAQS = [
-  {
-    icon: '🔒',
-    q: "I can't access the studio",
-    a: "The door auto-unlocks 15 minutes before each class and stays unlocked until 1 minute after it starts — just push the door, no app needed during that window.\n\nOutside that window, use the Kisi app (you'll have received an email with access before your first class). You'll need Kisi if you're arriving more than 15 minutes early or are a couple of minutes late.\n\n5 minutes late or more? Unfortunately the door is locked and you'll be marked as a no-show. Warm-up is essential for safety and we can't disrupt the class — no exceptions. If you haven't set up Kisi yet or are having trouble with it, email us at intrigued@dualitypole.com.",
-  },
-  {
-    icon: '❌',
-    q: 'I need to cancel',
-    a: "Cancel at least 4 hours before your class and you'll receive a makeup credit to use within the same season.\n\nCancel less than 4 hours before? You'll forfeit the class — no credit issued. We still encourage you to cancel in the app even past the cut-off, so we know you're not coming.\n\nDon't cancel at all and don't show up? That's a $20 no-show fee.\n\nTo cancel, go to My Classes, tap the booking, and hit Cancel.",
-  },
-  {
-    icon: '🎫',
-    q: 'How do makeup credits work?',
-    a: "If you cancel at least 4 hours before your class, you'll automatically get a makeup credit.\n\nYou can use that credit to book a catch-up class within the same season — credits don't carry over to future seasons, so make sure you use them!\n\nNot sure which classes you can catch up in? See 'What classes can I catch up in?' below.",
-  },
-  {
-    icon: '🗓️',
-    q: 'What classes can I catch up in?',
-    a: "Depends on your level! Here's what you can book into:\n\nLevel 1 — Level 1, Kiki, Unravel, Dance Virgin, Spin Virgin\nLevel 2 — Level 2, Kiki, Unravel, Dance Virgin/Dance, Spin Virgin, Invert Tech\nLevel 3 — Level 3, Kiki, Unravel, Dance Virgin/Dance, Spin Virgin, Invert Tech, Dirty Dance\n\nFor specialty classes catch up in Kiki, Unravel, Dance Virgin, Spin Virgin, or Dirty Dance.\n\nStill not sure? Email us.",
-  },
-  {
-    icon: '🩰',
-    q: "Why can't I join a class mid-season?",
-    a: "Levelled classes build toward a full routine over the season — each week adds to what came before, so joining too late means you'd be missing too much of the foundation.\n\nIf you're already enrolled and just missed a week, no stress — you can pick back up. But if you're looking to join fresh mid-season, you'll need to wait for the next one.\n\nIn the meantime, plenty of classes are open any time.",
-  },
-  {
-    icon: '🤔',
-    q: "I don't know what class I should do",
-    a: "Never done pole before? Start with a Virgin class — low pressure, beginner-friendly, and a great way to try it before committing to a full season. Ready to go all in? Level 1 is your starting point, no experience needed.\n\nDone pole before elsewhere? Email us at intrigued@dualitypole.com with a bit about your background and we'll place you in the right level.",
-  },
-  {
-    icon: '👜',
-    q: 'What do I bring?',
-    a: "Every class: two towels (one for you, one to wipe down your equipment) and a water bottle.\n\nPole/tricks classes: bare legs to grip the pole, and grip aid — we have Griptinite at reception.\n\nSpecialty classes (Strip, Chair, Floor, Chole etc.): knee pads are recommended — we sell them at reception.\n\nKiki & Unravel: just comfortable activewear, no grip needed.",
-  },
-  {
-    icon: '📍',
-    q: 'Where are you / how do I find you?',
-    a: "We're on Level 1 at 88 Kippax St, Surry Hills.\n\nHead through the double doors on Kippax St — you'll hit a small staircase. Turn right down the corridor and you'll find our very recognisable steps.\n\nReception is at the top. You're welcome to arrive up to 15 minutes before your class.",
-  },
-  {
-    icon: '🏋️',
-    q: 'Can I book practice time?',
-    a: "Yes! Practice time is bookable through the app (look for it on the timetable).\n\nIf you're doing 3 or more classes a week, one practice session per week is on us. Otherwise it's $20 for enrolled students and $30 for non-enrolled.\n\nSame cancellation rules apply — cancel before the cut-off or your card will be charged.",
-  },
-  {
-    icon: '📅',
-    q: 'When do season enrolments open?',
-    a: "New season enrolments usually open around 4 weeks before the season starts. Current students get 48 hours of priority access before spots open to the public.\n\nKeep an eye on your notifications and email — we'll let you know as soon as enrolments are live.",
-  },
-  {
-    icon: '🎬',
-    q: 'Where are the routine videos?',
-    a: "Routine videos get uploaded around week 5 of the season.\n\nFind them in Progress → Resources, alongside your music playlist and warm-up guide.",
-  },
-  {
-    icon: '📱',
-    q: 'How do I set up Kisi (door access)?',
-    a: "1. Check your email for an invitation from Kisi — it'll come from noreply@kisi.io.\n\n2. Tap the link to create your Kisi account. Download the Kisi app.\n\n3. Once logged in, you'll see Duality Pole in your places. Tap it, then tap 'Unlock'.\n\n4. Make sure Bluetooth and location are enabled on your phone.\n\nStill having trouble? Email us at intrigued@dualitypole.com.",
-  },
-  {
-    icon: '💳',
-    q: 'I have a billing question',
-    a: "You can view all your charges, credits, and payment history under Account → Billing history.\n\nIf something looks wrong, email us at intrigued@dualitypole.com with the date and amount and we'll look into it.",
-  },
-]
+import { helpdesk, settings as settingsApi } from '../../api'
 
 const CATEGORIES = [
   'Attendance & Make-ups',
@@ -213,7 +143,7 @@ function TicketThreadModal({ ticket, onClose }) {
                 return (
                   <View style={[s.msgRow, isMe ? s.msgRowMine : s.msgRowTheirs]}>
                     <View style={[s.msgBubble, isMe ? s.msgBubbleMine : s.msgBubbleTheirs]}>
-                      {!isMe && <Text style={s.msgSender}>Duality Studio</Text>}
+                      {!isMe && <Text style={s.msgSender}>{studioSettings?.studio_name || 'Studio'}</Text>}
                       <Text style={[s.msgBody, isMe && s.msgBodyMine]}>{item.body}</Text>
                       <Text style={[s.msgTime, isMe && s.msgTimeMine]}>{fmtTime(item.created_at)}</Text>
                     </View>
@@ -270,6 +200,7 @@ export default function SupportScreen() {
 
   const { data: faqData, loading: faqLoading } = useApi(() => helpdesk.faqs(), [])
   const faqs = (faqData?.results ?? faqData ?? []).map(f => ({ icon: f.icon, q: f.question, a: f.answer }))
+  const { data: studioSettings } = useApi(() => settingsApi.get(), [])
 
   const [category, setCategory] = useState('')
   const [subject, setSubject] = useState('')

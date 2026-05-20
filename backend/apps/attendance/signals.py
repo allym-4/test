@@ -39,13 +39,13 @@ def handle_no_show(sender, instance, **kwargs):
 
     if instance.student.email:
         send_mail(
-            subject='No-show fee — Duality Pole Studio',
+            subject=f'No-show fee — {studio.studio_name}',
             message=(
                 f'Hi {instance.student.first_name},\n\n'
                 f'A ${fee} no-show fee has been added to your account for missing '
                 f'{instance.occurrence.session.name} on {instance.occurrence.date}.\n\n'
                 f'If you believe this is an error, please get in touch.\n\n'
-                f'Duality Pole Studio'
+                f'{studio.studio_name}'
             ),
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[instance.student.email],
