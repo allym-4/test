@@ -10,7 +10,7 @@ import { helpdesk } from '../api'
 const LOCAL_FAQS = [
   {
     q: "I can't access the studio",
-    a: "The door auto-unlocks 15 minutes before each class and stays unlocked until 1 minute after it starts — just push the door, no app needed during that window.\n\nOutside that window, use the Kisi app (you'll have received an email with access before your first class). If you haven't set up Kisi yet, check your email for an invite from noreply@kisi.io — check junk/spam too.\n\nFor same-day access issues, email staff@dualitypole.com — this inbox is monitored before and during class time.",
+    a: "Download the Kisi app — you'll receive a separate email with access before your first class. You only need it if you're more than 15 minutes early or a couple of minutes late.\n\nThe door auto-unlocks 15 minutes before each class and stays open until 1 minute after start — just push the door during that window, no app needed.\n\nIf you're 5 or more minutes late, you're too late and will forfeit the class. Missing warm-up is a safety issue and the class cannot be disrupted — no exceptions.\n\nExample for a 7:30pm class: door open 7:15–7:31pm · Kisi access 6:45–7:34:59pm · door locked from 7:35pm.\n\nIf you have questions, email us or speak to your instructor.",
   },
   {
     q: "I need to cancel a class",
