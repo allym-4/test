@@ -1103,18 +1103,6 @@ export default function StudentBook() {
   }
   const seasonPrice = getSeasonPrice(1)
 
-  function getClassIncrementalPrice(session, position) {
-    const base = parseFloat(session.season_base_price ?? priceSeason)
-    const discount = parseFloat(discountTiers[position] ?? discountTiers[String(position)] ?? 0)
-    return Math.max(0, base - discount)
-  }
-
-  const incrementalPrice = selectedSessions.reduce((sum, session, idx) => {
-    const position = activeSeasonCount + idx + 1
-    return sum + getClassIncrementalPrice(session, position)
-  }, 0)
-  const totalPrice = incrementalPrice
-
   const availableCredits = (creditsData?.results || creditsData || []).length
 
   const priceClassPass = parseFloat(studioSettings?.price_class_pass || 140)
