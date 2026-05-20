@@ -81,9 +81,9 @@ export default function StudentStudioInfo() {
             ))}
           </div>
 
-          {/* Get in Touch */}
+          {/* Chat to us */}
           <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '22px 24px', marginBottom: 16 }}>
-            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 16 }}>Get in Touch</div>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 16 }}>Chat to us</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
                 <div style={{ minWidth: 180 }}>
@@ -91,7 +91,7 @@ export default function StudentStudioInfo() {
                   <a href="mailto:intrigued@dualitypole.com" style={{ fontSize: 14, color: 'var(--lime)', textDecoration: 'none' }}>intrigued@dualitypole.com</a>
                 </div>
                 <div>
-                  <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 4 }}>Urgent (same-day class issues)</div>
+                  <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 4 }}>Same-day class issues</div>
                   <a href="mailto:intrigued@dualitypole.com" style={{ fontSize: 14, color: 'var(--lime)', textDecoration: 'none' }}>intrigued@dualitypole.com</a>
                 </div>
               </div>
@@ -103,8 +103,8 @@ export default function StudentStudioInfo() {
                 <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 4 }}>Instagram</div>
                 <a href="https://instagram.com/dualitypole" target="_blank" rel="noreferrer" style={{ fontSize: 14, color: 'var(--lav)', textDecoration: 'none' }}>@dualitypole</a>
               </div>
-              <div style={{ padding: '12px 14px', background: '#111', borderRadius: 8, fontSize: 12, color: 'var(--grey)', lineHeight: 1.6 }}>
-                For same-day issues (e.g. can't access Kisi, running late) please email <span style={{ color: 'var(--white)' }}>intrigued@dualitypole.com</span> — this inbox is monitored before and during class time. The general inbox may not be checked until the next business day.
+              <div style={{ padding: '12px 14px', background: '#111', borderRadius: 8, fontSize: 12, color: 'var(--grey)', lineHeight: 1.7 }}>
+                For same-day issues (e.g. can't access Kisi, running late) email <span style={{ color: 'var(--white)' }}>intrigued@dualitypole.com</span> — we monitor this before class. Please note we <span style={{ color: 'var(--white)' }}>can't respond during class time</span> as we're busy teaching everyone who arrived on time. The general inbox may not be checked until the next business day.
               </div>
             </div>
           </div>
