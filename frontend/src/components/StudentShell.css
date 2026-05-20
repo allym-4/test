@@ -121,14 +121,16 @@
   }
 
   .student-sidebar {
+    display: none;
     position: fixed;
-    left: -240px;
+    left: 0;
     top: 0;
     height: 100dvh;
-    transition: left 0.25s;
     z-index: 200;
   }
-  .student-sidebar.open { left: 0; }
+  .student-sidebar.open {
+    display: flex;
+  }
   .student-sidebar-close { display: block; }
   .student-mob-overlay {
     position: fixed;
