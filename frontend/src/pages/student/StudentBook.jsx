@@ -599,18 +599,17 @@ function WaitlistModal({ session, occ, onConfirm, onCancel, joining }) {
   const instructor = session?.instructor_detail?.display_name || session?.instructor_detail?.first_name
   const timeLabel = session?.start_time?.slice(0, 5)
 
-  // Dynamic window: min(12h, time until class)
+  // Dynamic window: 12h normally; shrinks to match time until class if < 12h; hard 1h if < 4h
   let windowHours = 12
-  let windowLabel = '12 hours'
   if (occ?.date && session?.start_time) {
     const classAt = new Date(`${occ.date}T${session.start_time}`)
     const hoursUntil = (classAt - new Date()) / (1000 * 60 * 60)
-    if (hoursUntil > 0 && hoursUntil < 12) {
-      windowHours = Math.max(1, Math.round(hoursUntil))
-      windowLabel = windowHours === 1 ? '1 hour' : `${windowHours} hours`
+    if (hoursUntil > 0) {
+      windowHours = hoursUntil <= 4 ? 1 : Math.min(12, Math.round(hoursUntil))
     }
   }
-  const isUrgent = windowHours <= 2
+  const windowLabel = windowHours === 1 ? '1 hour' : `${windowHours} hours`
+  const isUrgent = windowHours <= 1
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1002, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)', padding: 16 }}
