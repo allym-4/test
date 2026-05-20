@@ -32,7 +32,7 @@ export default function StudentStudioInfo() {
     },
     {
       title: 'Catch-up Credits',
-      body: "When you mark away more than 4 hours before class, a catch-up credit is added to your account. You can use it to book into another class in the same season. Credits do not carry over between seasons. For conditioning and dance classes, you can catch up any week. For level and routine classes, catch-ups can only be booked up to and including Week 3.",
+      body: "When you mark away more than 4 hours before class, a catch-up credit is added to your account. You can use it to book into another class in the same season. Credits do not carry over between seasons.\n\nFor conditioning and dance classes, you can catch up any week. For level and routine classes: if you're already enrolled in that class, you can catch up in it any week. If you're not enrolled in that class, catch-ups can only be booked up to and including Week 3.",
     },
     {
       title: 'Refund Policy',

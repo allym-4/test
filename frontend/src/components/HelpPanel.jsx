@@ -15,7 +15,7 @@ const PROMPTS = [
   {
     icon: '🎫',
     label: 'How do makeup credits work?',
-    answer: "If you cancel at least 4 hours before your class, you'll automatically get a makeup credit.\n\nYou can use that credit to book a catch-up class within the same season — credits don't carry over to future seasons, so make sure you use them!\n\nNot sure which classes you can catch up in? See 'What classes can I catch up in?' below.",
+    answer: "If you cancel at least 4 hours before your class, you'll automatically get a makeup credit.\n\nYou can use that credit to book a catch-up class within the same season — credits don't carry over to future seasons, so make sure you use them!\n\nFor conditioning and dance classes, you can catch up any week. For level and routine classes: if you're already enrolled in that class, you can catch up in it any week. If you're not enrolled in it, catch-ups are only available up to and including Week 3.\n\nNot sure which classes you're eligible for? See 'What classes can I catch up in?' below.",
   },
   {
     icon: '🗓️',

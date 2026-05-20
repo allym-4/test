@@ -13,7 +13,7 @@ const FAQS = [
   },
   {
     q: 'How do catch-up credits work?',
-    a: 'When you mark away more than 4 hours before class, a catch-up credit is added to your account. You can use it to book into any eligible class in the same season — conditioning classes and dance classes can be caught up any week, but level and routine classes can only be caught up up to and including Week 3.',
+    a: "When you mark away more than 4 hours before class, a catch-up credit is added to your account. You can use it to book into any eligible class in the same season — credits don't carry over between seasons.\n\nConditioning and dance classes can be caught up any week. For level and routine classes: if you're already enrolled in that class, you can catch up in it any week. If you're not enrolled in that class, catch-ups are only available up to and including Week 3.",
   },
   {
     q: 'How does practice time work?',
