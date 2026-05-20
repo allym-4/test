@@ -17,6 +17,15 @@ RAILWAY_HOST = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
 if RAILWAY_HOST:
     ALLOWED_HOSTS.append(RAILWAY_HOST)
 
+# Elastic Beanstalk — allow the EB-assigned hostname
+EB_HOST = os.environ.get('EB_HOST')
+if EB_HOST:
+    ALLOWED_HOSTS.append(EB_HOST)
+# Allow all .elasticbeanstalk.com subdomains
+ALLOWED_HOSTS += [h for h in [
+    os.environ.get('ELASTIC_BEANSTALK_HOSTNAME', '')
+] if h]
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -138,6 +147,7 @@ _cors_regex_env = os.environ.get('CORS_ORIGIN_REGEX', '')
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r'^https://.*\.up\.railway\.app$',
     r'^https://.*\.vercel\.app$',
+    r'^https://.*\.elasticbeanstalk\.com$',
     r'^capacitor://localhost$',   # Capacitor iOS
     r'^http://localhost$',        # Capacitor Android
     r'^ionic://localhost$',       # Ionic/Capacitor fallback
