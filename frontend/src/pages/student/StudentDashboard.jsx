@@ -361,8 +361,9 @@ export default function StudentDashboard() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
           {[
             { symbol: '○', label: 'Makeup or casual class', sub: 'Drop into any eligible class', to: '/portal/book' },
-            { symbol: '■', label: 'Book practice time', sub: 'Open studio - $20', to: '/portal/book' },
+            { symbol: '■', label: 'Book practice time', sub: 'Open studio - $20', to: '/portal/practice' },
             { symbol: '△', label: 'See my progress', sub: 'Tricks, levels and resources', to: '/portal/progress' },
+            { symbol: '→', label: 'View all upcoming', sub: 'Your full schedule', to: '/portal/upcoming-classes' },
           ].map(({ symbol, label, sub, to }) => (
             <Link key={label} to={to} style={{ textDecoration: 'none' }}>
               <div className="card" style={{ textAlign: 'center', cursor: 'pointer', padding: '22px 16px', borderColor: '#2a2a2a' }}>
