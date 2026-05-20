@@ -284,7 +284,8 @@ export default function DashboardScreen({ navigation }) {
       const [h, m] = occ.start_time.split(':').map(Number)
       const classDateTime = new Date(occ.date + 'T00:00')
       classDateTime.setHours(h, m, 0, 0)
-      withinCutoff = (classDateTime - Date.now()) < 4 * 60 * 60 * 1000
+      const windowHours = studioSettings?.cancellation_window_hours ?? 12
+      withinCutoff = (classDateTime - Date.now()) < windowHours * 60 * 60 * 1000
     }
     setMarkAwayPending({ occ, enrolId, withinCutoff, dateLabel })
   }
@@ -921,12 +922,12 @@ export default function DashboardScreen({ navigation }) {
                 {markAwayPending.withinCutoff ? (
                   <View style={[s.infoBox, { backgroundColor: 'rgba(255,170,0,0.06)', borderColor: 'rgba(255,170,0,0.2)' }]}>
                     <Text style={[s.infoBoxHeading, { color: '#ffaa00' }]}>No catch-up credit for this one</Text>
-                    <Text style={s.infoBoxText}>This is within 4 hours of your class — the cancellation window has passed. You can still mark away so we know you're not coming.</Text>
+                    <Text style={s.infoBoxText}>This is within the cancellation window — no credit will be issued. You can still mark away so we know you're not coming.</Text>
                   </View>
                 ) : (
                   <View style={s.infoBox}>
                     <Text style={[s.infoBoxHeading, { color: '#ccff00' }]}>You'll receive a catch-up credit</Text>
-                    <Text style={s.infoBoxText}>More than 4 hours away — a catch-up credit will be added to your account to use within this season.</Text>
+                    <Text style={s.infoBoxText}>You're outside the cancellation window — a catch-up credit will be added to your account to use within this season.</Text>
                   </View>
                 )}
                 <View style={s.modalActions}>

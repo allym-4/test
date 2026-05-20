@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, seasons, attendance as attendanceApi, classes as classesApi, skills as skillsApi, announcements as announcementsApi, payments } from '../../api'
+import { enrolments, seasons, attendance as attendanceApi, classes as classesApi, skills as skillsApi, announcements as announcementsApi, payments, settings as settingsApi } from '../../api'
 import CancellationOfferPopup from '../../components/CancellationOfferPopup'
 import PostTrialPopup from '../../components/PostTrialPopup'
 
@@ -27,7 +27,7 @@ function formatDayDate(dayOfWeek) {
   return d.getDate()
 }
 
-function MarkAwayModal({ enrolment, onClose, onDone }) {
+function MarkAwayModal({ enrolment, cancellationWindowHours, onClose, onDone }) {
   const s = enrolment.class_session_detail
   const [confirming, setConfirming] = useState(false)
   const [done, setDone] = useState(false)
@@ -39,11 +39,12 @@ function MarkAwayModal({ enrolment, onClose, onDone }) {
   )
   const nextOcc = occData?.results?.[0] || occData?.[0] || null
 
+  const windowHours = cancellationWindowHours ?? 12
   const withinCutoff = useMemo(() => {
     if (!nextOcc?.date || !s?.start_time) return false
     const classDateTime = new Date(`${nextOcc.date}T${s.start_time}`)
-    return (classDateTime - new Date()) < 4 * 60 * 60 * 1000
-  }, [nextOcc, s])
+    return (classDateTime - new Date()) < windowHours * 60 * 60 * 1000
+  }, [nextOcc, s, windowHours])
 
   async function handleConfirm() {
     if (!nextOcc) { setError('No upcoming class found'); return }
@@ -87,14 +88,14 @@ function MarkAwayModal({ enrolment, onClose, onDone }) {
             <div style={{ background: '#0f1600', border: '1px solid var(--lime)', borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
               <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: 'var(--lime)', marginBottom: 6 }}>You'll receive a catch-up credit</div>
               <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
-                This is more than 4 hours before your class — you're within the cancellation window. A catch-up credit will be added to your account to use within this season.
+                You're outside the cancellation window — a catch-up credit will be added to your account to use within this season.
               </div>
             </div>
           ) : (
             <div style={{ background: '#1a0900', border: '1px solid #ffaa44', borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
               <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: '#ffaa44', marginBottom: 6 }}>No catch-up credit for this one</div>
               <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
-                This is within 4 hours of your class — the cancellation window has passed. You can still mark away so we know you're not coming, but no credit will be issued.{' '}
+                You're within the cancellation window — no credit will be issued. You can still mark away so we know you're not coming, but no credit will be issued.{' '}
                 If you don't mark away and don't attend, a <strong style={{ color: '#ffaa44' }}>$20 no-show fee</strong> will be charged.
               </div>
             </div>
@@ -126,6 +127,7 @@ export default function StudentDashboard() {
   const { data: annData, refetch: refetchAnn } = useApi(() => announcementsApi.list({ note_type: 'announcement' }), [])
   const { data: offersData, refetch: refetchOffers } = useApi(() => payments.cancellationOffers.mine(), [])
   const { data: trialPendingData, refetch: refetchTrialFeedback } = useApi(() => enrolments.trialFeedback.pending(), [])
+  const { data: studioSettings } = useApi(() => settingsApi.get(), [])
 
   const [markAwayEnrol, setMarkAwayEnrol] = useState(null)
   const [acknowledging, setAcknowledging] = useState({})
@@ -385,6 +387,7 @@ export default function StudentDashboard() {
       {markAwayEnrol && (
         <MarkAwayModal
           enrolment={markAwayEnrol}
+          cancellationWindowHours={studioSettings?.cancellation_window_hours ?? 12}
           onClose={() => setMarkAwayEnrol(null)}
           onDone={() => setMarkAwayEnrol(null)}
         />

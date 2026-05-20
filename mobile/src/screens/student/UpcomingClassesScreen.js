@@ -4,7 +4,7 @@ import {
   RefreshControl, ActivityIndicator, Modal, TextInput,
 } from 'react-native'
 import { useApi } from '../../hooks/useApi'
-import { classes as classesApi, attendance as attendanceApi, enrolments as enrolmentsApi } from '../../api'
+import { classes as classesApi, attendance as attendanceApi, enrolments as enrolmentsApi, settings as settingsApi } from '../../api'
 
 const TYPE_LABELS = {
   enrolled: 'Enrolled',
@@ -359,6 +359,7 @@ export default function UpcomingClassesScreen({ navigation }) {
   const { data: changeRequestData, refetch: refetchChangeRequests } = useApi(
     () => enrolmentsApi.changeRequests.mine(), []
   )
+  const { data: studioSettings } = useApi(() => settingsApi.get(), [])
 
   const [view, setView] = useState('list')
   const [selectedDate, setSelectedDate] = useState(null)
@@ -582,7 +583,8 @@ export default function UpcomingClassesScreen({ navigation }) {
         const [h, m] = (markAwayItem.start_time || '00:00').split(':').map(Number)
         const classDateTime = new Date(markAwayItem.date + 'T00:00')
         classDateTime.setHours(h, m, 0, 0)
-        const withinCutoff = (classDateTime - Date.now()) < 4 * 60 * 60 * 1000
+        const windowHours = studioSettings?.cancellation_window_hours ?? 12
+        const withinCutoff = (classDateTime - Date.now()) < windowHours * 60 * 60 * 1000
         const dateLabel = new Date(markAwayItem.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
         return (
           <Modal visible transparent animationType="fade" onRequestClose={() => setMarkAwayItem(null)}>
@@ -593,12 +595,12 @@ export default function UpcomingClassesScreen({ navigation }) {
                 {withinCutoff ? (
                   <View style={{ backgroundColor: 'rgba(255,170,0,0.08)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,170,0,0.25)', padding: 14, marginBottom: 20 }}>
                     <Text style={{ fontWeight: '700', color: '#ffaa00', marginBottom: 4 }}>No catch-up credit for this one</Text>
-                    <Text style={{ fontSize: 13, color: '#888', lineHeight: 20 }}>This is within 4 hours of your class — the cancellation window has passed. No credit will be issued. You can still mark away so we know you're not coming.</Text>
+                    <Text style={{ fontSize: 13, color: '#888', lineHeight: 20 }}>This is within {windowHours} hours of your class — the cancellation window has passed. No credit will be issued. You can still mark away so we know you're not coming.</Text>
                   </View>
                 ) : (
                   <View style={{ backgroundColor: 'rgba(204,255,0,0.06)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(204,255,0,0.2)', padding: 14, marginBottom: 20 }}>
                     <Text style={{ fontWeight: '700', color: '#ccff00', marginBottom: 4 }}>You'll receive a catch-up credit</Text>
-                    <Text style={{ fontSize: 13, color: '#888', lineHeight: 20 }}>More than 4 hours away — you're within the cancellation window. A catch-up credit will be added to your account to use within this season.</Text>
+                    <Text style={{ fontSize: 13, color: '#888', lineHeight: 20 }}>More than {windowHours} hours away — a catch-up credit will be added to your account to use within this season.</Text>
                   </View>
                 )}
                 <TouchableOpacity
