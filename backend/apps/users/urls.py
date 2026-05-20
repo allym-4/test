@@ -69,6 +69,7 @@ urlpatterns = [
     path('xero/sync/', views.XeroSyncView.as_view()),
     path('assistant/', views.AssistantView.as_view()),
     path('change-password/', views.ChangePasswordView.as_view()),
+    path('instructors/public/', views.PublicInstructorListView.as_view(), name='instructor-public-list'),
     path('', views.UserListView.as_view(), name='user-list'),
     path('<int:pk>/', views.UserDetailView.as_view(), name='user-detail'),
     path('<int:user_pk>/notes/', views.StaffNoteListView.as_view(), name='staff-notes'),

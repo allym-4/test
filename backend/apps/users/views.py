@@ -41,6 +41,27 @@ class MeView(generics.RetrieveUpdateAPIView):
         return self.request.user
 
 
+class PublicInstructorListView(generics.ListAPIView):
+    """Student-accessible list of active instructors for the Team page."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def list(self, request, *args, **kwargs):
+        instructors = User.objects.filter(role='instructor', is_active=True).order_by('last_name', 'first_name')
+        data = [
+            {
+                'id': u.id,
+                'first_name': u.first_name,
+                'last_name': u.last_name,
+                'display_name': u.display_name or f'{u.first_name} {u.last_name}'.strip(),
+                'bio': getattr(u, 'bio', '') or '',
+                'pronouns': getattr(u, 'pronouns', '') or '',
+                'profile_photo_url': u.profile_photo_url if hasattr(u, 'profile_photo_url') else None,
+            }
+            for u in instructors
+        ]
+        return Response(data)
+
+
 class UserListView(generics.ListCreateAPIView):
     queryset = User.objects.all().order_by('last_name', 'first_name')
     permission_classes = [IsAdminOrInstructor]

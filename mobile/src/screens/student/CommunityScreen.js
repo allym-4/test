@@ -379,7 +379,7 @@ export default function CommunityScreen() {
           <View style={s.chatHeader}>
             <View style={s.avatarLime}><Text style={{ fontSize: 16, fontWeight: '700', color: '#000' }}>D</Text></View>
             <View>
-              <Text style={s.chatTitle}>Mimi & the Team</Text>
+              <Text style={s.chatTitle}>Mimi & Chloe</Text>
               <Text style={s.chatSub}>Studio team · replies within a few hours</Text>
             </View>
           </View>

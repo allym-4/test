@@ -152,6 +152,7 @@ export const homework = {
 export const users = {
   get: (id) => client.get(`/api/users/${id}/`),
   list: (params) => client.get('/api/users/', { params }),
+  instructorsPublic: () => client.get('/api/users/instructors/public/'),
 }
 
 export const forms = {

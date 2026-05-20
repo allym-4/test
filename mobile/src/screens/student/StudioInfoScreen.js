@@ -61,7 +61,7 @@ export default function StudioInfoScreen() {
   const [activeTab, setActiveTab] = useState('about')
 
   const { data: studioSettings, loading: settingsLoading } = useApi(() => settings.get(), [])
-  const { data: instructorData, loading: instructorsLoading } = useApi(() => users.list({ role: 'instructor' }), [])
+  const { data: instructorData, loading: instructorsLoading } = useApi(() => users.instructorsPublic(), [])
   const { data: studiosData } = useApi(() => studiosApi.list(), [])
 
   const studio = studioSettings ?? {}
@@ -82,15 +82,15 @@ export default function StudioInfoScreen() {
     },
     {
       title: 'Waitlist Policy',
-      body: "When a spot opens, the first student on the waitlist is notified by email and has 12 hours to accept. If they don't respond, the next student is offered the spot.",
+      body: "When a spot opens, waitlisted students are offered the place in order. The time you have to accept depends on how close the class is — you'll be notified by email with a deadline. If you don't respond in time, the next student is offered the spot.",
     },
     {
-      title: 'Makeup Credits',
-      body: `Approved absences (illness, injury, or emergency) may receive a makeup credit. Credits expire ${creditExpiry} days after issue. Maximum 2 credits per season. Credits are non-transferable.`,
+      title: 'Catch-up Credits',
+      body: `If you mark away before class, a catch-up credit is added to your account automatically. You can earn as many catch-up credits as you need — just mark away each time. Credits expire at the end of the season and do not carry over to the next season.`,
     },
     {
       title: 'Refund Policy',
-      body: "Season enrolments are non-refundable after the season commences. If you are unable to continue due to medical reasons, please contact us — we'll do our best to help.",
+      body: "Season enrolments are non-refundable once you've committed through enrolling. If you are unable to continue due to medical reasons, please contact us — we'll do our best to help.",
     },
     {
       title: 'Photography & Filming',

@@ -460,7 +460,10 @@ export default function DashboardScreen({ navigation }) {
       {pendingSurveys.length > 0 && (
         <TouchableOpacity
           style={s.surveyBanner}
-          onPress={() => navigation.navigate('Account', { screen: 'Forms' })}
+          onPress={() => navigation.navigate('Account', {
+            screen: 'Forms',
+            params: { openSurveyId: pendingSurveys[0].id },
+          })}
           activeOpacity={0.7}
         >
           <View style={{ flex: 1 }}>

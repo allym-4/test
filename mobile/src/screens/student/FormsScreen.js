@@ -124,7 +124,7 @@ function SurveyModal({ survey, onClose, onDone }) {
           question: parseInt(question), answer_text: String(answer_text),
         })),
       })
-      onDone()
+      Alert.alert('Thanks!', 'Your response has been submitted.', [{ text: 'Done', onPress: onDone }])
     } catch {
       Alert.alert('Error', 'Failed to submit — please try again.')
     } finally { setSubmitting(false) }
@@ -211,7 +211,7 @@ function SurveyModal({ survey, onClose, onDone }) {
   )
 }
 
-export default function FormsScreen() {
+export default function FormsScreen({ route }) {
   const { data: formsData, loading, refetch } = useApi(() => forms.list(), [])
   const { data: pendingRequiredData } = useApi(() => forms.pendingRequired(), [])
   const { data: surveysData, refetch: refetchSurveys } = useApi(() => surveys.mine(), [])
@@ -219,9 +219,17 @@ export default function FormsScreen() {
   const [showParq, setShowParq] = useState(false)
   const [activeSurvey, setActiveSurvey] = useState(null)
   const [submitting, setSubmitting] = useState(false)
-  // Optimistic local completions: { form_type: submitted_at }
   const [localCompleted, setLocalCompleted] = useState({})
   const pendingSurveys = surveysData?.results ?? surveysData ?? []
+
+  // Auto-open a survey if navigated here with openSurveyId
+  const openSurveyId = route?.params?.openSurveyId
+  useState(() => {
+    if (openSurveyId && pendingSurveys.length > 0 && !activeSurvey) {
+      const target = pendingSurveys.find(s => s.id === openSurveyId) ?? pendingSurveys[0]
+      if (target) setActiveSurvey(target)
+    }
+  }, [openSurveyId, pendingSurveys.length])
 
   const submittedForms = formsData?.results ?? formsData ?? []
   const pendingRequiredForms = pendingRequiredData ?? []
