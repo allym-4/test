@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   ScrollView, View, Text, TouchableOpacity, StyleSheet,
   RefreshControl, Alert, ActivityIndicator, Modal,
 } from 'react-native'
 import { useApi } from '../../hooks/useApi'
-import { classes as classesApi } from '../../api'
+import { classes as classesApi, payments as paymentsApi } from '../../api'
+
+const CASH_DISCOUNT = 5
 
 function fmt(t) {
   if (!t) return ''
@@ -34,11 +36,25 @@ export default function PracticeScreen() {
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [savedCard, setSavedCard] = useState(null)
+  const [cardLoading, setCardLoading] = useState(false)
 
   const slots = slotsData?.results ?? slotsData ?? []
   const myBookings = myData?.results ?? myData ?? []
   const upcomingBookings = myBookings.filter(b => b.status === 'confirmed' && (b.slot?.date ?? '') >= today)
   const availableSlots = slots.filter(s => (s.spots_left > 0 || s.is_booked))
+
+  useEffect(() => {
+    if (!booking || booking.price_for_me === 0) return
+    setCardLoading(true)
+    paymentsApi.stripe.paymentMethods()
+      .then(r => {
+        const cards = r.data?.payment_methods || []
+        setSavedCard(cards[0] || null)
+      })
+      .catch(() => setSavedCard(null))
+      .finally(() => setCardLoading(false))
+  }, [booking])
 
   async function onRefresh() {
     setRefreshing(true)
@@ -46,17 +62,22 @@ export default function PracticeScreen() {
     setRefreshing(false)
   }
 
-  async function handleBook() {
+  async function handleBook(paymentMethod) {
     if (!booking || busy) return
     setBusy(true)
     try {
-      await classesApi.practice.book(booking.id)
-      setResult({ type: 'booked', slot: booking, price: booking.price_for_me })
+      await classesApi.practice.book(booking.id, { payment_method: paymentMethod })
+      setResult({ type: 'booked', slot: booking, price: booking.price_for_me, paymentMethod })
       setBooking(null)
       refetch()
       refetchMy()
     } catch (e) {
-      setResult({ type: 'error', msg: e.response?.data?.detail || 'Something went wrong.' })
+      const data = e.response?.data
+      if (data?.requires_card) {
+        setResult({ type: 'error', msg: 'A saved card is required to book practice time. Add one in Account → Billing.' })
+      } else {
+        setResult({ type: 'error', msg: data?.detail || 'Something went wrong.' })
+      }
       setBooking(null)
     } finally {
       setBusy(false)
@@ -79,6 +100,8 @@ export default function PracticeScreen() {
   }
 
   const loading = slotsLoading || myLoading
+  const isPaid = booking && booking.price_for_me > 0
+  const cashPrice = isPaid ? Math.max(0, booking.price_for_me - CASH_DISCOUNT) : 0
 
   return (
     <ScrollView
@@ -89,7 +112,7 @@ export default function PracticeScreen() {
       <Text style={s.heading}>Practice Time</Text>
       <Text style={s.sub}>
         Book open practice sessions in the studio.{'\n'}
-        Enrolled students $20/hr · Non-enrolled $30/hr · 3 classes = 1 free/week · 4+ classes = unlimited free.
+        Enrolled students $20/hr · Non-enrolled $30/hr · 3 classes = 1 free/week · 4+ = unlimited free.
       </Text>
 
       {/* My upcoming bookings */}
@@ -103,8 +126,14 @@ export default function PracticeScreen() {
                 <Text style={s.myBookingTime}>
                   {fmtDate(b.slot?.date)} · {fmt(b.slot?.start_time)}–{fmt(b.slot?.end_time)}
                 </Text>
-                <Text style={[s.myBookingPrice, b.is_free ? s.priceGreen : s.priceLav]}>
-                  {b.is_free ? '✓ Free' : `$${parseFloat(b.price_charged ?? 0).toFixed(0)}`}
+                <Text style={[s.myBookingPrice, b.is_free ? s.priceGreen : b.payment_type === 'cash' ? s.priceAmber : s.priceLav]}>
+                  {b.is_free
+                    ? '✓ Free'
+                    : b.payment_type === 'cash'
+                    ? `$${parseFloat(b.price_charged ?? 0).toFixed(0)} — pay cash at reception`
+                    : b.payment_type === 'card'
+                    ? `$${parseFloat(b.price_charged ?? 0).toFixed(0)} — paid by card`
+                    : `$${parseFloat(b.price_charged ?? 0).toFixed(0)}`}
                 </Text>
               </View>
               <TouchableOpacity style={s.cancelBtn} onPress={() => setCancelling(b)}>
@@ -149,7 +178,7 @@ export default function PracticeScreen() {
               {!!slot.notes && <Text style={s.slotNotes}>{slot.notes}</Text>}
             </View>
             {!slot.is_booked && (
-              <TouchableOpacity style={s.bookBtn} onPress={() => setBooking(slot)}>
+              <TouchableOpacity style={s.bookBtn} onPress={() => { setBooking(slot); setResult(null) }}>
                 <Text style={s.bookBtnText}>Book</Text>
               </TouchableOpacity>
             )}
@@ -166,17 +195,62 @@ export default function PracticeScreen() {
             <Text style={s.modalTitle}>Confirm booking</Text>
             <Text style={s.modalStudio}>{booking?.studio_detail?.name}</Text>
             <Text style={s.modalTime}>{booking ? `${fmtDate(booking.date)} · ${fmt(booking.start_time)}–${fmt(booking.end_time)}` : ''}</Text>
-            <Text style={[s.modalPrice, booking?.price_for_me === 0 ? s.priceGreen : s.priceLav]}>
-              {booking?.price_for_me === 0 ? 'Free' : `$${booking?.price_for_me} to pay at reception`}
-            </Text>
-            <View style={s.modalActions}>
-              <TouchableOpacity style={s.modalGhostBtn} onPress={() => setBooking(null)}>
-                <Text style={s.modalGhostBtnText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[s.modalConfirmBtn, busy && { opacity: 0.6 }]} onPress={handleBook} disabled={busy}>
-                {busy ? <ActivityIndicator color="#000" size="small" /> : <Text style={s.modalConfirmBtnText}>Confirm</Text>}
-              </TouchableOpacity>
-            </View>
+
+            {!isPaid ? (
+              <>
+                <Text style={[s.modalPrice, s.priceGreen]}>Free — no charge</Text>
+                <View style={s.modalActions}>
+                  <TouchableOpacity style={s.modalGhostBtn} onPress={() => setBooking(null)}>
+                    <Text style={s.modalGhostBtnText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[s.modalConfirmBtn, busy && { opacity: 0.6 }]} onPress={() => handleBook('free')} disabled={busy}>
+                    {busy ? <ActivityIndicator color="#000" size="small" /> : <Text style={s.modalConfirmBtnText}>Confirm</Text>}
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : cardLoading ? (
+              <ActivityIndicator color="#ccff00" style={{ marginVertical: 20 }} />
+            ) : (
+              <>
+                <Text style={s.payLabel}>How would you like to pay?</Text>
+
+                {/* Card option */}
+                <TouchableOpacity
+                  style={[s.payOption, savedCard ? s.payOptionCard : s.payOptionDisabled]}
+                  onPress={() => savedCard && handleBook('card')}
+                  disabled={busy || !savedCard}
+                  activeOpacity={savedCard ? 0.8 : 1}
+                >
+                  <Text style={[s.payOptionTitle, { color: savedCard ? '#b0a0ff' : '#555' }]}>
+                    Pay by card — ${booking?.price_for_me}
+                  </Text>
+                  <Text style={s.payOptionSub}>
+                    {savedCard ? `Charge •••• ${savedCard.last4} now` : 'No saved card — add one in Account → Billing'}
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Cash option */}
+                <TouchableOpacity
+                  style={[s.payOption, savedCard ? s.payOptionCash : s.payOptionDisabled]}
+                  onPress={() => savedCard && handleBook('cash')}
+                  disabled={busy || !savedCard}
+                  activeOpacity={savedCard ? 0.8 : 1}
+                >
+                  <Text style={[s.payOptionTitle, { color: savedCard ? '#ffaa00' : '#555' }]}>
+                    Pay cash at reception — ${cashPrice}{'  '}
+                    <Text style={{ fontSize: 11, fontWeight: '400' }}>($5 off)</Text>
+                  </Text>
+                  <Text style={s.payOptionSub}>
+                    Your card is held as security but won't be charged unless you don't show up or don't pay.
+                  </Text>
+                </TouchableOpacity>
+
+                {busy && <ActivityIndicator color="#ccff00" style={{ marginBottom: 12 }} />}
+                <TouchableOpacity style={s.modalGhostBtn} onPress={() => setBooking(null)}>
+                  <Text style={s.modalGhostBtnText}>Cancel</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </TouchableOpacity>
       </Modal>
@@ -191,7 +265,11 @@ export default function PracticeScreen() {
                 <Text style={s.modalTitle}>You're in!</Text>
                 <Text style={s.resultBody}>
                   {result.slot ? `${fmtDate(result.slot.date)} · ${fmt(result.slot.start_time)}–${fmt(result.slot.end_time)}\n` : ''}
-                  {result.price === 0 ? 'No charge — enjoy your free session!' : `$${result.price} — pay at reception when you arrive.`}
+                  {result.price === 0
+                    ? 'No charge — enjoy your free session!'
+                    : result.paymentMethod === 'card'
+                    ? `$${result.price} charged to your saved card.`
+                    : `$${Math.max(0, result.price - CASH_DISCOUNT)} — pay cash at reception when you arrive. Your card is held but not charged.`}
                 </Text>
               </>
             ) : (
@@ -239,7 +317,6 @@ const s = StyleSheet.create({
   section: { marginBottom: 24 },
   sectionLabel: { fontSize: 11, fontWeight: '700', color: '#666', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 },
 
-  // My bookings
   myBookingCard: { backgroundColor: '#111', borderRadius: 12, padding: 16, marginBottom: 8, borderWidth: 1, borderColor: '#222', flexDirection: 'row', alignItems: 'center', gap: 12 },
   myBookingStudio: { fontSize: 14, fontWeight: '600', color: '#fff', marginBottom: 2 },
   myBookingTime: { fontSize: 13, color: '#888', marginBottom: 4 },
@@ -247,7 +324,6 @@ const s = StyleSheet.create({
   cancelBtn: { paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#333', borderRadius: 8 },
   cancelBtnText: { fontSize: 13, color: '#ef4444', fontWeight: '500' },
 
-  // Slots
   slotCard: { backgroundColor: '#111', borderRadius: 12, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: '#222', flexDirection: 'row', alignItems: 'center', gap: 12 },
   slotCardBooked: { borderColor: '#ccff00' },
   slotTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 3 },
@@ -264,11 +340,11 @@ const s = StyleSheet.create({
 
   priceGreen: { color: '#ccff00' },
   priceLav: { color: '#b0a0ff' },
+  priceAmber: { color: '#ffaa00' },
 
   emptyCard: { backgroundColor: '#111', borderRadius: 12, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: '#222' },
   emptyText: { fontSize: 13, color: '#666', textAlign: 'center', lineHeight: 20 },
 
-  // Modals
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', padding: 24 },
   modalSheet: { backgroundColor: '#111', borderRadius: 16, padding: 24, width: '100%', borderWidth: 1, borderColor: '#222' },
   resultEmoji: { fontSize: 36, textAlign: 'center', marginBottom: 10 },
@@ -277,6 +353,13 @@ const s = StyleSheet.create({
   modalTime: { fontSize: 14, color: '#ccc', marginBottom: 8 },
   modalPrice: { fontSize: 16, fontWeight: '700', marginBottom: 20 },
   resultBody: { fontSize: 13, color: '#888', lineHeight: 20, marginBottom: 20, textAlign: 'center' },
+  payLabel: { fontSize: 12, color: '#666', marginBottom: 10 },
+  payOption: { borderRadius: 12, padding: 14, marginBottom: 10 },
+  payOptionCard: { backgroundColor: 'rgba(176,160,255,0.08)', borderWidth: 1, borderColor: 'rgba(176,160,255,0.3)' },
+  payOptionCash: { backgroundColor: 'rgba(255,170,0,0.06)', borderWidth: 1, borderColor: 'rgba(255,170,0,0.3)' },
+  payOptionDisabled: { backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: '#222' },
+  payOptionTitle: { fontSize: 14, fontWeight: '700', marginBottom: 4 },
+  payOptionSub: { fontSize: 12, color: '#666', lineHeight: 18 },
   modalActions: { flexDirection: 'row', gap: 10 },
   modalGhostBtn: { flex: 1, borderWidth: 1, borderColor: '#333', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
   modalGhostBtnText: { fontSize: 14, fontWeight: '600', color: '#fff' },
