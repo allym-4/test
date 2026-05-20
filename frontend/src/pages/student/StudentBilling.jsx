@@ -270,7 +270,7 @@ export default function StudentBilling() {
               <div key={c.id || i} style={{ display: 'grid', gridTemplateColumns: '110px 1fr 130px 80px', gap: 10, fontSize: 13, padding: '8px 0', borderBottom: i < catchupCredits.length - 1 ? '1px solid rgba(42,26,68,0.5)' : 'none', alignItems: 'center' }}>
                 <span style={{ color: 'var(--grey)' }}>{c.issued_at ? new Date(c.issued_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span>
                 <span>{c.for_class || c.description || 'Catch-up credit'}</span>
-                <span style={{ color: 'var(--grey)' }}>{c.expires_at ? new Date(c.expires_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span>
+                <span style={{ color: 'var(--grey)' }}>{(c.expires_at || c.season_end_date) ? new Date((c.expires_at || c.season_end_date) + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span>
                 <span className={`tag ${c.status === 'used' || c.status === 'expired' ? 'tag-grey' : 'tag-lav'}`} style={{ fontSize: 10, padding: '2px 8px' }}>{c.status || 'active'}</span>
               </div>
             ))
