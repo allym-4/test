@@ -228,7 +228,7 @@ export default function CheckoutModal({
   useEffect(() => {
     async function init() {
       try {
-        const fetches = [
+        const [stripeInst, intentRes, cardsRes] = await Promise.all([
           getStripe(),
           payments.stripe.createPaymentIntent({
             amount_cents: amountCents,
@@ -236,13 +236,16 @@ export default function CheckoutModal({
             save_method: saveMethod ?? true,
           }),
           payments.stripe.paymentMethods(),
-        ]
-        if (sessionIds?.length) fetches.push(classesApi.upsells.suggest(sessionIds))
-        const [stripeInst, intentRes, cardsRes, upsellRes] = await Promise.all(fetches)
+        ])
         setStripe(stripeInst)
         setClientSecret(intentRes.data.client_secret)
         setSavedCards(cardsRes.data.payment_methods || [])
-        if (upsellRes) setUpsells(upsellRes.data || [])
+        // Upsells are non-critical — don't let a failure kill the modal
+        if (sessionIds?.length) {
+          classesApi.upsells.suggest(sessionIds)
+            .then(r => setUpsells(r.data || []))
+            .catch(() => {})
+        }
       } catch (err) {
         setError('Could not initialise payment. Please try again.')
       } finally {
