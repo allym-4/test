@@ -21,7 +21,7 @@ function ClassRoster({ sessionId }) {
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 11, color: 'var(--grey)', textDecoration: 'underline', textDecorationStyle: 'dotted', marginTop: 8 }}>
+      <button onClick={() => setOpen(true)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 11, color: 'var(--lav)', textDecoration: 'underline', textDecorationStyle: 'dotted', marginTop: 8 }}>
         Who's coming?
       </button>
     )
@@ -836,7 +836,7 @@ export default function StudentMyClasses() {
 
                           {/* Cancel enrolment link */}
                           {isEnrolled && (
-                            <button onClick={() => setCancelPolicyEnrol(item.enrolment)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 11, color: 'var(--grey)', marginTop: 8, textDecoration: 'underline', textDecorationStyle: 'dotted' }}>
+                            <button onClick={() => setCancelPolicyEnrol(item.enrolment)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 11, color: 'var(--red)', marginTop: 8, textDecoration: 'underline', textDecorationStyle: 'dotted' }}>
                               Cancel enrolment
                             </button>
                           )}
