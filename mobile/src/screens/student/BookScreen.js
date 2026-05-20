@@ -736,7 +736,7 @@ const pass = StyleSheet.create({
 })
 
 // ─── CasualBookingOptionsModal ────────────────────────────────────────────────
-function CasualBookingOptionsModal({ visible, occ, priceCasual, priceCasualEnrolled, priceClassPass, classPassSize, availableCredits, passClassesRemaining, activeSeason, bookingSeason, activeSeasonCount, currentSeasonWeek, onClose, onBook, onRequestExemption, onEnrolSeason }) {
+function CasualBookingOptionsModal({ visible, occ, priceCasual, priceCasualEnrolled, priceClassPass, classPassSize, availableCredits, passClassesRemaining, activeSeason, bookingSeason, activeSeasonCount, currentSeasonWeek, seasonUpsellPrice, onClose, onBook, onRequestExemption, onEnrolSeason }) {
   const sess = occ?.session_detail
   const occDate = occ?.date
   const sessName = sess?.name ?? 'Class'
@@ -873,7 +873,7 @@ function CasualBookingOptionsModal({ visible, occ, priceCasual, priceCasualEnrol
               <View style={{ flex: 1 }}>
                 <Text style={bo.seasonCardTitle}>Enrol in the full season instead</Text>
                 <Text style={bo.seasonCardSub}>
-                  {bookingSeason?.name ?? 'Season'} · ${bookingSeason ? Math.round(parseFloat(bookingSeason.price ?? 0)) : '—'} total · better value
+                  {bookingSeason?.name ?? 'Season'} · ${seasonUpsellPrice ?? '—'} total · better value
                 </Text>
               </View>
               <Text style={bo.seasonCardArrow}>→</Text>
@@ -2308,6 +2308,7 @@ export default function BookScreen({ navigation }) {
         bookingSeason={bookingSeason}
         activeSeasonCount={activeSeasonCount}
         currentSeasonWeek={currentSeasonWeek}
+        seasonUpsellPrice={getSeasonPriceForTotal(activeSeasonCount + 1) - (activeSeasonCount > 0 ? getSeasonPriceForTotal(activeSeasonCount) : 0)}
         onClose={() => setBookingOptionsOcc(null)}
         onBook={(type) => {
           if (type === 'buypass') { setBookingOptionsOcc(null); setBuyingPass(true); return }
