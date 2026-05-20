@@ -750,20 +750,7 @@ function SeasonTab({
     ? sessions.filter(s => s.season === activeSeason.id)
     : []
 
-  const discountTiers = studioSettings?.season_discount_tiers || {2:100,3:130,4:150,5:170,6:170}
-
-  function getClassIncrementalPrice(session, position) {
-    const base = parseFloat(session.season_base_price ?? priceSeason)
-    const discount = parseFloat(discountTiers[position] ?? discountTiers[String(position)] ?? 0)
-    return Math.max(0, base - discount)
-  }
-
-  const incrementalPrice = selectedSessions.reduce((sum, session, idx) => {
-    const position = activeSeasonCount + idx + 1
-    return sum + getClassIncrementalPrice(session, position)
-  }, 0)
-
-  const totalPrice = incrementalPrice
+  // discountTiers / incrementalPrice calculated below after studioSettings is loaded
 
   function toggleSession(session) {
     setSelectedSessions(prev => {
@@ -1089,6 +1076,8 @@ export default function StudentBook() {
   const priceSeason = parseFloat(studioSettings?.price_season || 270)
   const priceTrial = parseFloat(studioSettings?.price_trial || 25)
 
+  const discountTiers = studioSettings?.season_discount_tiers || {2:100,3:130,4:150,5:170,6:170}
+
   // Season multi-class pricing: look up price for (current active enrolments + 1)
   const activeSeasonCount = (activeEnrolData?.results || activeEnrolData || []).filter(e => e.enrolment_type === 'course').length
   const casualRate = activeSeasonCount > 0 ? priceCasualEnrolled : priceCasual
@@ -1102,6 +1091,18 @@ export default function StudentBook() {
     return tier ? parseFloat(tier.price) : priceSeason
   }
   const seasonPrice = getSeasonPrice(1)
+
+  function getClassIncrementalPrice(session, position) {
+    const base = parseFloat(session.season_base_price ?? priceSeason)
+    const discount = parseFloat(discountTiers[position] ?? discountTiers[String(position)] ?? 0)
+    return Math.max(0, base - discount)
+  }
+
+  const incrementalPrice = selectedSessions.reduce((sum, session, idx) => {
+    const position = activeSeasonCount + idx + 1
+    return sum + getClassIncrementalPrice(session, position)
+  }, 0)
+  const totalPrice = incrementalPrice
 
   const availableCredits = (creditsData?.results || creditsData || []).length
 

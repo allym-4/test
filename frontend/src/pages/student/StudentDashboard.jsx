@@ -222,10 +222,12 @@ export default function StudentDashboard() {
 
       {/* KPI Stats */}
       <div className="kpi-grid" style={{ marginBottom: 24 }}>
-        <div className="kpi card" style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color: 'var(--lime)' }}>{loadingEnrol ? '—' : enrolments_.length}</div>
-          <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>Classes This Season</div>
-        </div>
+        <Link to="/portal/my-classes" style={{ textDecoration: 'none' }}>
+          <div className="kpi card" style={{ textAlign: 'center', cursor: 'pointer' }}>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color: 'var(--lime)' }}>{loadingEnrol ? '—' : enrolments_.length}</div>
+            <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>Classes This Season</div>
+          </div>
+        </Link>
         <div className="kpi card" style={{ textAlign: 'center' }}>
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color: 'var(--lav)' }}>{creditsData ? (creditsData?.results || creditsData || []).length : '—'}</div>
           <Link to="/portal/billing" style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4, display: 'block', textDecoration: 'none' }}>Catch-up Credits</Link>
@@ -374,15 +376,39 @@ export default function StudentDashboard() {
       </div>
 
       {/* Upsell strip */}
-      {hasEnrolments && (
-        <div style={{ background: '#0d0d0d', border: '1px solid var(--border)', borderRadius: 12, padding: '22px 26px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, marginBottom: 8, flexWrap: 'wrap' }}>
-          <div>
-            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 6 }}>You're on {enrolments_.length} class{enrolments_.length !== 1 ? 'es' : ''} per week</div>
-            <div style={{ fontSize: 14, color: 'var(--grey)' }}>Add {3 - enrolments_.length} more class{3 - enrolments_.length !== 1 ? 'es' : ''} to unlock <span style={{ color: 'var(--lime)' }}>1 free practice session per week</span>.</div>
+      {hasEnrolments && (() => {
+        const n = enrolments_.length
+        const priceSeason = parseFloat(studioSettings?.price_season || 270)
+        const discountTiers = studioSettings?.season_discount_tiers || {2:100,3:130,4:150,5:170,6:170}
+        const nextDiscount = parseFloat(discountTiers[n + 1] ?? discountTiers[String(n + 1)] ?? 0)
+        const nextClassPrice = Math.max(0, priceSeason - nextDiscount)
+
+        let headline, sub, cta
+        if (n < 3) {
+          const need = 3 - n
+          headline = `You're on ${n} class${n !== 1 ? 'es' : ''} per week`
+          sub = <>Add <strong>{need}</strong> more class{need !== 1 ? 'es' : ''} to unlock <span style={{ color: 'var(--lime)' }}>1 free practice session per week</span>.</>
+          cta = 'Add a class'
+        } else if (n === 3) {
+          headline = `You're on 3 classes per week`
+          sub = <>Add <strong>1 more class</strong> to unlock <span style={{ color: 'var(--lime)' }}>unlimited free practice time</span> and a <span style={{ color: 'var(--lime)' }}>free locker</span>.</>
+          cta = 'Add a class'
+        } else {
+          headline = `You're on ${n} classes per week`
+          sub = <>Adding another class is only <span style={{ color: 'var(--lime)' }}>${nextClassPrice}/season</span>.</>
+          cta = 'Add a class'
+        }
+
+        return (
+          <div style={{ background: '#0d0d0d', border: '1px solid var(--border)', borderRadius: 12, padding: '22px 26px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, marginBottom: 8, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 6 }}>{headline}</div>
+              <div style={{ fontSize: 14, color: 'var(--grey)' }}>{sub}</div>
+            </div>
+            <Link to="/portal/book"><button className="btn btn-ghost btn-sm" style={{ whiteSpace: 'nowrap' }}>{cta}</button></Link>
           </div>
-          <Link to="/portal/book"><button className="btn btn-ghost btn-sm" style={{ whiteSpace: 'nowrap' }}>Add a class</button></Link>
-        </div>
-      )}
+        )
+      })()}
 
       {markAwayEnrol && (
         <MarkAwayModal
