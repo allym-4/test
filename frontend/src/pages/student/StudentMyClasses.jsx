@@ -675,30 +675,29 @@ export default function StudentMyClasses() {
           <div className="page-title">My Classes</div>
           <div className="page-sub">{active.length} active enrolment{active.length !== 1 ? 's' : ''}</div>
         </div>
-        <button
-          className="btn btn-ghost btn-sm"
-          style={{ fontSize: 12 }}
-          onClick={async () => {
-            try {
-              const token = localStorage.getItem('access_token')
-              const baseUrl = import.meta.env.VITE_API_URL || ''
-              const res = await fetch(`${baseUrl}/api/enrolments/calendar.ics`, { headers: { Authorization: `Bearer ${token}` } })
-              const blob = await res.blob()
-              const url = URL.createObjectURL(blob)
-              const a = document.createElement('a')
-              a.href = url; a.download = 'duality-pole-classes.ics'; a.click()
-              URL.revokeObjectURL(url)
-            } catch { alert('Failed to download calendar file.') }
-          }}
-        >
-          📅 Add to Calendar
-        </button>
-      </div>
-
-      <div style={{ marginBottom: 16 }}>
-        <Link to="/portal/upcoming-classes" style={{ fontSize: 13, color: 'var(--lav)', textDecoration: 'none', fontWeight: 600 }}>
-          View all upcoming →
-        </Link>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <Link to="/portal/upcoming-classes">
+            <button className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>View upcoming →</button>
+          </Link>
+          <button
+            className="btn btn-ghost btn-sm"
+            style={{ fontSize: 12 }}
+            onClick={async () => {
+              try {
+                const token = localStorage.getItem('access_token')
+                const baseUrl = import.meta.env.VITE_API_URL || ''
+                const res = await fetch(`${baseUrl}/api/enrolments/calendar.ics`, { headers: { Authorization: `Bearer ${token}` } })
+                const blob = await res.blob()
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url; a.download = 'duality-pole-classes.ics'; a.click()
+                URL.revokeObjectURL(url)
+              } catch { alert('Failed to download calendar file.') }
+            }}
+          >
+            📅 Add to Calendar
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}

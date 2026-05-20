@@ -222,7 +222,7 @@ export default function StudentDashboard() {
 
       {/* KPI Stats */}
       <div className="kpi-grid" style={{ marginBottom: 24 }}>
-        <Link to="/portal/my-classes" style={{ textDecoration: 'none' }}>
+        <Link to="/portal/classes" style={{ textDecoration: 'none' }}>
           <div className="kpi card" style={{ textAlign: 'center', cursor: 'pointer' }}>
             <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color: 'var(--lime)' }}>{loadingEnrol ? '—' : enrolments_.length}</div>
             <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>Classes This Season</div>
