@@ -99,6 +99,9 @@ class ClassOccurrenceListView(generics.ListCreateAPIView):
             qs = qs.filter(session_id__in=session_ids)
         if self.request.query_params.get('upcoming') == 'true':
             qs = qs.filter(date__gte=date.today()).order_by('date')
+        season_id = self.request.query_params.get('season')
+        if season_id:
+            qs = qs.filter(session__season_id=season_id)
         return qs
 
 
