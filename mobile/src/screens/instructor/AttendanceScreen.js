@@ -127,12 +127,12 @@ function WaitlistRow({ item, position }) {
 
 // ── Main screen ───────────────────────────────────────────────────────────────
 
-export default function AttendanceScreen({ navigation }) {
+export default function AttendanceScreen({ navigation, route }) {
   function goToStudent(studentId, studentName) {
     navigation.navigate('StudentDetail', { studentId, studentName })
   }
   const today = new Date().toISOString().slice(0, 10)
-  const [selectedOcc, setSelectedOcc] = useState(null)
+  const [selectedOcc, setSelectedOcc] = useState(route.params?.occurrence ?? null)
   const [tab, setTab] = useState('attending')
   const [register, setRegister] = useState({})
   const [notes, setNotes] = useState({})

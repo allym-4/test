@@ -2,24 +2,36 @@ import { createContext, useContext } from 'react'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Text } from 'react-native'
+import DashboardScreen from '../screens/instructor/DashboardScreen'
 import AttendanceScreen from '../screens/instructor/AttendanceScreen'
 import EnrolmentsScreen from '../screens/instructor/EnrolmentsScreen'
+import StudentsScreen from '../screens/instructor/StudentsScreen'
+import ProgressScreen from '../screens/instructor/ProgressScreen'
+import MessagesScreen from '../screens/instructor/MessagesScreen'
 import InstructorAccountScreen from '../screens/instructor/InstructorAccountScreen'
 import InstructorProfileScreen from '../screens/instructor/ProfileScreen'
 import AvailabilityScreen from '../screens/instructor/AvailabilityScreen'
-import MessagesScreen from '../screens/instructor/MessagesScreen'
 import SkillsApprovalScreen from '../screens/instructor/SkillsApprovalScreen'
 import PayScreen from '../screens/instructor/PayScreen'
+import NotificationsScreen from '../screens/instructor/NotificationsScreen'
 import StudentDetailScreen from '../screens/instructor/StudentDetailScreen'
 
 const Tab = createBottomTabNavigator()
-const AccountStack = createNativeStackNavigator()
-const AttendanceStackNav = createNativeStackNavigator()
-const EnrolmentsStackNav = createNativeStackNavigator()
+const HomeStackNav = createNativeStackNavigator()
+const MyClassesStackNav = createNativeStackNavigator()
+const StudentsStackNav = createNativeStackNavigator()
+const ProgressStackNav = createNativeStackNavigator()
+const MessagesStackNav = createNativeStackNavigator()
 
 const InstructorSwitchContext = createContext(null)
 
-const ICONS = { Attendance: '✅', Enrolments: '👥', Account: '👤' }
+const ICONS = {
+  HomeTab: '🏠',
+  MyClassesTab: '📅',
+  StudentsTab: '👥',
+  ProgressTab: '📝',
+  MessagesTab: '💬',
+}
 
 const stackScreenOptions = {
   headerStyle: { backgroundColor: '#000' },
@@ -41,35 +53,55 @@ function InstructorAccountHome(props) {
   )
 }
 
-function AccountStackNav() {
+function HomeStack() {
   return (
-    <AccountStack.Navigator screenOptions={stackScreenOptions}>
-      <AccountStack.Screen name="AccountHome" component={InstructorAccountHome} options={{ title: 'Account' }} />
-      <AccountStack.Screen name="InstructorProfile" component={InstructorProfileScreen} options={{ title: 'Edit Profile' }} />
-      <AccountStack.Screen name="Availability" component={AvailabilityScreen} options={{ title: 'My Availability' }} />
-      <AccountStack.Screen name="Messages" component={MessagesScreen} options={{ title: 'Messages' }} />
-      <AccountStack.Screen name="SkillsApproval" component={SkillsApprovalScreen} options={{ title: 'Skills Approval' }} />
-      <AccountStack.Screen name="Pay" component={PayScreen} options={{ title: 'Pay Records' }} />
-      <AccountStack.Screen name="StudentDetail" component={StudentDetailScreen} options={({ route }) => ({ title: route.params?.studentName ?? 'Student' })} />
-    </AccountStack.Navigator>
+    <HomeStackNav.Navigator screenOptions={stackScreenOptions}>
+      <HomeStackNav.Screen name="DashboardHome" component={DashboardScreen} options={{ title: 'Home' }} />
+      <HomeStackNav.Screen name="AccountHome" component={InstructorAccountHome} options={{ title: 'Account' }} />
+      <HomeStackNav.Screen name="InstructorProfile" component={InstructorProfileScreen} options={{ title: 'Edit Profile' }} />
+      <HomeStackNav.Screen name="Availability" component={AvailabilityScreen} options={{ title: 'My Availability' }} />
+      <HomeStackNav.Screen name="SkillsApproval" component={SkillsApprovalScreen} options={{ title: 'Skills Approval' }} />
+      <HomeStackNav.Screen name="Pay" component={PayScreen} options={{ title: 'Pay Records' }} />
+      <HomeStackNav.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Notifications' }} />
+      <HomeStackNav.Screen name="AttendanceHome" component={AttendanceScreen} options={{ title: 'Attendance' }} />
+      <HomeStackNav.Screen name="StudentDetail" component={StudentDetailScreen} options={({ route }) => ({ title: route.params?.studentName ?? 'Student' })} />
+    </HomeStackNav.Navigator>
   )
 }
 
-function AttendanceStack() {
+function MyClassesStack() {
   return (
-    <AttendanceStackNav.Navigator screenOptions={stackScreenOptions}>
-      <AttendanceStackNav.Screen name="AttendanceHome" component={AttendanceScreen} options={{ title: 'Attendance' }} />
-      <AttendanceStackNav.Screen name="StudentDetail" component={StudentDetailScreen} options={({ route }) => ({ title: route.params?.studentName ?? 'Student' })} />
-    </AttendanceStackNav.Navigator>
+    <MyClassesStackNav.Navigator screenOptions={stackScreenOptions}>
+      <MyClassesStackNav.Screen name="EnrolmentsHome" component={EnrolmentsScreen} options={{ title: 'My Classes' }} />
+      <MyClassesStackNav.Screen name="StudentDetail" component={StudentDetailScreen} options={({ route }) => ({ title: route.params?.studentName ?? 'Student' })} />
+    </MyClassesStackNav.Navigator>
   )
 }
 
-function EnrolmentsStack() {
+function StudentsStack() {
   return (
-    <EnrolmentsStackNav.Navigator screenOptions={stackScreenOptions}>
-      <EnrolmentsStackNav.Screen name="EnrolmentsHome" component={EnrolmentsScreen} options={{ title: 'My Classes' }} />
-      <EnrolmentsStackNav.Screen name="StudentDetail" component={StudentDetailScreen} options={({ route }) => ({ title: route.params?.studentName ?? 'Student' })} />
-    </EnrolmentsStackNav.Navigator>
+    <StudentsStackNav.Navigator screenOptions={stackScreenOptions}>
+      <StudentsStackNav.Screen name="StudentsHome" component={StudentsScreen} options={{ title: 'Students' }} />
+      <StudentsStackNav.Screen name="StudentDetail" component={StudentDetailScreen} options={({ route }) => ({ title: route.params?.studentName ?? 'Student' })} />
+    </StudentsStackNav.Navigator>
+  )
+}
+
+function ProgressStack() {
+  return (
+    <ProgressStackNav.Navigator screenOptions={stackScreenOptions}>
+      <ProgressStackNav.Screen name="ProgressHome" component={ProgressScreen} options={{ title: 'Progress' }} />
+      <ProgressStackNav.Screen name="StudentDetail" component={StudentDetailScreen} options={({ route }) => ({ title: route.params?.studentName ?? 'Student' })} />
+    </ProgressStackNav.Navigator>
+  )
+}
+
+function MessagesStack() {
+  return (
+    <MessagesStackNav.Navigator screenOptions={stackScreenOptions}>
+      <MessagesStackNav.Screen name="MessagesHome" component={MessagesScreen} options={{ title: 'Messages' }} />
+      <MessagesStackNav.Screen name="StudentDetail" component={StudentDetailScreen} options={({ route }) => ({ title: route.params?.studentName ?? 'Student' })} />
+    </MessagesStackNav.Navigator>
   )
 }
 
@@ -85,9 +117,11 @@ export default function InstructorTabs({ onSwitchToStudent }) {
           headerShown: false,
         })}
       >
-        <Tab.Screen name="Attendance" component={AttendanceStack} options={{ title: 'Attendance' }} />
-        <Tab.Screen name="Enrolments" component={EnrolmentsStack} options={{ title: 'My Classes' }} />
-        <Tab.Screen name="Account" component={AccountStackNav} options={{ title: 'Account' }} />
+        <Tab.Screen name="HomeTab" component={HomeStack} options={{ title: 'Home' }} />
+        <Tab.Screen name="MyClassesTab" component={MyClassesStack} options={{ title: 'My Classes' }} />
+        <Tab.Screen name="StudentsTab" component={StudentsStack} options={{ title: 'Students' }} />
+        <Tab.Screen name="ProgressTab" component={ProgressStack} options={{ title: 'Progress' }} />
+        <Tab.Screen name="MessagesTab" component={MessagesStack} options={{ title: 'Messages' }} />
       </Tab.Navigator>
     </InstructorSwitchContext.Provider>
   )
