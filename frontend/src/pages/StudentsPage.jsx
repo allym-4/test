@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApi } from '../hooks/useApi'
+import { useSearchParams } from 'react-router-dom'
 import { users, payments, enrolments, attendance } from '../api'
 
 const AVATAR_COLORS = ['#b0a0ff', '#ccff00', '#ffaa00', '#ff88aa', '#44ffcc', '#ffcc88', '#b0f0b0', '#9ac4ff', '#ffb3de', '#44ff99']
@@ -19,6 +20,7 @@ const ATT_STATUS_TAG = {
 
 export default function StudentsPage() {
   const { data, loading } = useApi(() => users.list({ role: 'student' }))
+  const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const [selected, setSelected]     = useState(null)
   const [activeTab, setActiveTab]   = useState('info')
@@ -36,6 +38,19 @@ export default function StudentsPage() {
   const [savingPay, setSavingPay]   = useState(false)
 
   const allStudents = data?.results || []
+
+  // Auto-open a student when navigated here with ?student=ID
+  useEffect(() => {
+    const studentId = searchParams.get('student')
+    if (studentId && allStudents.length > 0 && !selected) {
+      const s = allStudents.find(s => String(s.id) === String(studentId))
+      if (s) {
+        openStudent(s)
+        setSearchParams({}, { replace: true })
+      }
+    }
+  }, [searchParams, allStudents]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const filtered = allStudents.filter(s =>
     s.display_name.toLowerCase().includes(search.toLowerCase()) ||
     s.email?.toLowerCase().includes(search.toLowerCase())

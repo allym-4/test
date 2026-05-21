@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { classes, enrolments, attendance, payments, settings as settingsApi } from '../api'
 import { useApi } from '../hooks/useApi'
 import client from '../api/client'
@@ -103,6 +103,7 @@ function ConvertTrialModal({ enrolment: e, onClose, onSuccess }) {
 
 export default function AttendancePage() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [session, setSession]         = useState(null)
   const [occurrence, setOccurrence]   = useState(null)
   const [students, setStudents]       = useState([])
@@ -363,7 +364,10 @@ export default function AttendancePage() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   {/* Name row */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 3 }}>
-                    <span style={{ fontWeight: 700, fontSize: 15 }}>{st?.display_name}</span>
+                    <span
+                      style={{ fontWeight: 700, fontSize: 15, cursor: 'pointer', textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.2)' }}
+                      onClick={ev => { ev.stopPropagation(); navigate(`/students?student=${e.student}`) }}
+                    >{st?.display_name}</span>
                     {st?.pronouns && <span style={{ fontSize: 12, color: '#555' }}>{st.pronouns}</span>}
                   </div>
 

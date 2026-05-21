@@ -19,7 +19,6 @@ export default function InstructorProfile() {
     date_of_birth: user?.date_of_birth || '',
   })
 
-  const [qualifications, setQualifications] = useState(user?.qualifications || '')
   const [bio, setBio] = useState(user?.bio || '')
 
   const [notifClassReminders, setNotifClassReminders] = useState(true)
@@ -46,7 +45,6 @@ export default function InstructorProfile() {
     try {
       await auth.updateMe({
         ...form,
-        qualifications,
         bio,
         notifications: {
           class_reminders: notifClassReminders,
@@ -122,7 +120,7 @@ export default function InstructorProfile() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
         <div>
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>My Profile</div>
-          <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 4 }}>Personal details, qualifications and preferences</div>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 4 }}>Personal details and preferences</div>
         </div>
       </div>
 
@@ -173,19 +171,8 @@ export default function InstructorProfile() {
         </div>
       </div>
 
-      {/* Qualifications */}
+      {/* Bio */}
       <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 24px', marginBottom: 16 }}>
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 12 }}>Qualifications</div>
-          <textarea
-            value={qualifications}
-            onChange={e => setQualifications(e.target.value)}
-            placeholder="List your certifications and qualifications..."
-            style={{ width: '100%', minHeight: 100, background: '#111', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 13, resize: 'vertical' }}
-          />
-        </div>
-
-        {/* Bio */}
         <div style={{ marginBottom: 8 }}>
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 12 }}>Instructor Bio</div>
           <textarea

@@ -120,6 +120,10 @@ function RequireAuth({ children, role }) {
   if (loading) return <Spinner />
   if (!user) return <Navigate to="/login" replace />
   if (role && user.role !== role) {
+    // Instructors and admins may preview the student portal
+    if (role === 'student' && (user.role === 'instructor' || user.role === 'admin')) {
+      return children
+    }
     if (user.role === 'admin') return <Navigate to="/admin" replace />
     if (user.role === 'student') return <Navigate to="/portal" replace />
     return <Navigate to="/" replace />
