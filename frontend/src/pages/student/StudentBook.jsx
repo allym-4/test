@@ -202,15 +202,17 @@ function StickyCart({ cart, priceCasual, onProceed, onClear, promoCode, promoDis
   )
 }
 
-function CasualBookingModal({ occ, session, priceCasual, isEnrolledRate, priceClassPass, classPassSize, availableCredits, passCredits, seasonName, seasonPrice, alreadyEnrolled, onClose, onBook, onEnrolInSeason, onBuyPass }) {
+function CasualBookingModal({ occ, session, priceCasual, priceCasualStandard, isEnrolledRate, priceClassPass, classPassSize, availableCredits, passCredits, seasonName, seasonPrice, seasonWeek, alreadyEnrolled, onClose, onBook, onEnrolInSeason, onBuyPass }) {
   const sessName = session?.name ?? 'Class'
   const time = session?.start_time?.slice(0, 5)
   const instructor = session?.instructor_detail?.display_name ?? session?.instructor_detail?.first_name
   const dateLabel = occ?.date ? new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : null
   const hasCredits = availableCredits > 0
   const hasPass = (passCredits ?? 0) > 0
-  const passSaving = priceClassPass && classPassSize ? Math.round((priceCasual - priceClassPass / classPassSize) * classPassSize) : 0
+  const standardRate = priceCasualStandard || priceCasual
+  const passSaving = priceClassPass && classPassSize ? Math.round((standardRate - priceClassPass / classPassSize) * classPassSize) : 0
   const perSession = priceClassPass && classPassSize ? (priceClassPass / classPassSize).toFixed(0) : null
+  const missedWeeks = seasonWeek > 1 ? seasonWeek - 1 : 0
 
   const defaultSelected = hasCredits ? 'credit' : hasPass ? 'pass' : 'casual'
   const [selected, setSelected] = useState(defaultSelected)
@@ -278,7 +280,7 @@ function CasualBookingModal({ occ, session, priceCasual, isEnrolledRate, priceCl
         {!alreadyEnrolled && seasonName && (
           <OptionRow id="season" checkbox
             title={`Enrol in the full ${seasonName} course instead`}
-            sub={`Add this class to your season${seasonPrice ? ` · $${seasonPrice} total` : ''}`}
+            sub={`Add this class to your season${seasonPrice ? ` · ${seasonPrice}` : ''}${missedWeeks > 0 ? ` · ${missedWeeks} catch-up credit${missedWeeks !== 1 ? 's' : ''} for missed classes` : ''}`}
           />
         )}
 
@@ -306,9 +308,9 @@ function CasualBookingModal({ occ, session, priceCasual, isEnrolledRate, priceCl
           />
         )}
 
-        {!hasPass && priceClassPass && passSaving > 0 && (
+        {!hasPass && priceClassPass && (
           <OptionRow id="buypass"
-            title={<>Buy a {classPassSize}-class pass · <span style={{ color: '#ccff00' }}>save ${passSaving}</span></>}
+            title={passSaving > 0 ? <>{classPassSize}-class pass · <span style={{ color: '#ccff00' }}>save ${passSaving}</span></> : `${classPassSize}-class pass`}
             sub={`$${perSession}/class · use across any eligible casual or catch-up`}
             price={`$${priceClassPass}`}
             accent="#b0a0ff"
@@ -1551,6 +1553,8 @@ export default function StudentBook() {
   const [selectedCasualOcc, setSelectedCasualOcc] = useState(null)
   const [casualBooking, setCasualBooking] = useState(false)
   const [casualBookError, setCasualBookError] = useState('')
+  const [casualExemptionOcc, setCasualExemptionOcc] = useState(null)
+  const [casualExemptionSending, setCasualExemptionSending] = useState(false)
 
   function addToCart(session, type, price) {
     if (type === 'waitlist' || type === 'casual-waitlist') {
@@ -1580,6 +1584,17 @@ export default function StudentBook() {
       setCasualBookError(e.response?.data?.detail || 'Booking failed. Please try again.')
     } finally {
       setCasualBooking(false)
+    }
+  }
+
+  async function sendCasualExemption(occ, reason) {
+    setCasualExemptionSending(true)
+    try {
+      await classes.casual.exemptionRequest({ session: occ.session, occ_id: occ.id, reason }).catch(() => {})
+      setCasualExemptionOcc(null)
+      alert('Exemption request sent! Your instructor will review and get back to you.')
+    } finally {
+      setCasualExemptionSending(false)
     }
   }
 
@@ -2071,10 +2086,16 @@ export default function StudentBook() {
                           rightBadge = <span style={{ fontSize: 10, fontWeight: 700, color: '#b0a0ff', background: 'rgba(176,160,255,0.1)', border: '1px solid rgba(176,160,255,0.3)', borderRadius: 4, padding: '2px 8px' }}>CATCH-UP</span>
                         }
 
+                        const requiresExemption = isRoutineClass(nm) && seasonWeek > 3 && !alreadyEnrolled
+                        function handleOccClick() {
+                          if (isBooked || isWaitlisted) return
+                          if (requiresExemption) { setCasualExemptionOcc(occ); return }
+                          setSelectedCasualOcc(occ)
+                        }
                         return (
                           <div
                             key={occ.id}
-                            onClick={() => !isBooked && !isWaitlisted && setSelectedCasualOcc(occ)}
+                            onClick={handleOccClick}
                             style={{
                               display: 'flex', alignItems: 'center', gap: 12,
                               padding: '10px 14px',
@@ -2111,7 +2132,10 @@ export default function StudentBook() {
                   const addingSeasonPrice = (() => {
                     const pos = seasonEnrolCount + 1
                     const tier = seasonPricingConfig.find(r => parseInt((r.label || '').match(/(\d+)/)?.[1] || '0') === pos)
-                    return tier ? parseFloat(tier.price) : priceSeason
+                    const prevTier = seasonPricingConfig.find(r => parseInt((r.label || '').match(/(\d+)/)?.[1] || '0') === pos - 1)
+                    const full = tier ? parseFloat(tier.price) : priceSeason
+                    const prev = prevTier ? parseFloat(prevTier.price) : 0
+                    return full - prev
                   })()
                   const perSession = (addingSeasonPrice / 8).toFixed(2)
                   return (
@@ -2119,18 +2143,37 @@ export default function StudentBook() {
                       occ={occ}
                       session={{ ...sDetail, instructor_detail: occ.instructor_detail }}
                       priceCasual={casualRate}
+                      priceCasualStandard={priceCasual}
                       isEnrolledRate={activeSeasonCount > 0}
                       priceClassPass={priceClassPass}
                       classPassSize={classPassSize}
                       availableCredits={availableCredits}
                       passCredits={availablePassCredits}
                       seasonName={activeSeason?.name}
-                      seasonPrice={`${addingSeasonPrice} total · $${perSession}/session`}
+                      seasonPrice={`$${addingSeasonPrice} total · $${perSession}/session`}
+                      seasonWeek={getCurrentSeasonWeek(activeSeason?.start_date)}
                       alreadyEnrolled={alreadyEnrolled}
                       onClose={() => { setSelectedCasualOcc(null); setCasualBookError('') }}
                       onBook={(type) => bookCasualOcc(occ, type)}
-                      onEnrolInSeason={() => { setSelectedCasualOcc(null); setTab('season') }}
+                      onEnrolInSeason={() => {
+                        setSelectedCasualOcc(null)
+                        addToCart({ ...sDetail, id: sDetail.id || occ.session }, 'course', addingSeasonPrice)
+                      }}
                       onBuyPass={() => { setSelectedCasualOcc(null); setBuyingPass(true) }}
+                    />
+                  )
+                })()}
+                {casualExemptionOcc && (() => {
+                  const occ = casualExemptionOcc
+                  const sDetail = occ.session_detail || {}
+                  return (
+                    <ExemptionModal
+                      session={{ ...sDetail, instructor_detail: occ.instructor_detail }}
+                      occ={occ}
+                      seasonWeek={getCurrentSeasonWeek(activeSeason?.start_date)}
+                      sending={casualExemptionSending}
+                      onSend={(reason) => sendCasualExemption(occ, reason)}
+                      onCancel={() => setCasualExemptionOcc(null)}
                     />
                   )
                 })()}
