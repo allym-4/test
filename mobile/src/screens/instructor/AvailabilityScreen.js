@@ -328,15 +328,15 @@ const s = StyleSheet.create({
   slotLabel: { fontSize: 11, fontWeight: '700', color: '#ccc' },
   slotSub: { fontSize: 9, color: '#555', marginTop: 1 },
   cell: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderLeftWidth: 1, borderLeftColor: '#1a1a1a' },
-  cellActive: { backgroundColor: '#eef2ff' },
+  cellActive: { backgroundColor: 'rgba(204,255,0,0.12)' },
   cellText: { fontSize: 14, color: '#444' },
   cellTextActive: { color: '#ccff00', fontWeight: '700' },
   hint: { fontSize: 12, color: '#555', marginTop: 10, textAlign: 'center' },
 
   // Save button
   saveBtn: { position: 'absolute', bottom: 24, left: 16, right: 16, backgroundColor: '#ccff00', borderRadius: 14, padding: 16, alignItems: 'center' },
-  saveBtnDisabled: { backgroundColor: '#a5b4fc' },
-  saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  saveBtnDisabled: { backgroundColor: 'rgba(204,255,0,0.3)', color: '#000' },
+  saveBtnText: { color: '#000', fontWeight: '700', fontSize: 16 },
 
   // Time Off tab
   addBtn: { backgroundColor: '#111', borderRadius: 12, padding: 14, alignItems: 'center', marginBottom: 12, borderWidth: 1.5, borderColor: '#ccff00', borderStyle: 'dashed' },
@@ -353,7 +353,7 @@ const s = StyleSheet.create({
   dateCard: { backgroundColor: '#111', borderRadius: 12, padding: 14, marginBottom: 8, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 },
   dateRange: { fontSize: 14, fontWeight: '600', color: '#fff' },
   dateReason: { fontSize: 12, color: '#888', marginTop: 3 },
-  deleteBtn: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: '#fee2e2', marginLeft: 10 },
+  deleteBtn: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: 'rgba(239,68,68,0.15)', marginLeft: 10 },
   deleteBtnText: { fontSize: 12, fontWeight: '600', color: '#ef4444' },
   empty: { textAlign: 'center', color: '#555', marginTop: 40 },
 })

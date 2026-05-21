@@ -62,7 +62,7 @@ function SkillRow({ studentId, skill, onConfirmed }) {
         accessibilityLabel={`Confirm ${skill.skill_name}`}
       >
         {confirming
-          ? <ActivityIndicator color="#fff" size="small" />
+          ? <ActivityIndicator color="#000" size="small" />
           : <Text style={s.confirmBtnText}>✓</Text>
         }
       </TouchableOpacity>
@@ -197,7 +197,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: '#1e1e1e',
   },
   groupStudentName: { fontSize: 15, fontWeight: '700', color: '#fff' },
   groupCount: { fontSize: 12, color: '#888', marginTop: 2 },
@@ -221,7 +221,7 @@ const s = StyleSheet.create({
 
   // Confirm button
   confirmBtn: {
-    backgroundColor: '#10b981',
+    backgroundColor: '#ccff00',
     borderRadius: 20,
     width: 36,
     height: 36,
@@ -230,8 +230,8 @@ const s = StyleSheet.create({
     marginLeft: 12,
     flexShrink: 0,
   },
-  confirmBtnDisabled: { backgroundColor: '#6ee7b7' },
-  confirmBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  confirmBtnDisabled: { backgroundColor: 'rgba(204,255,0,0.3)' },
+  confirmBtnText: { color: '#000', fontWeight: '700', fontSize: 16 },
 
   // Empty state
   emptyState: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 32 },
