@@ -102,6 +102,21 @@ function NewCardInner({ amountDollars, clientSecret, onSuccess, paying, setPayin
   )
 }
 
+function WalletPayButton({ stripe, payRequest }) {
+  return (
+    <Elements stripe={stripe}>
+      <WalletPayButtonInner payRequest={payRequest} />
+    </Elements>
+  )
+}
+function WalletPayButtonInner({ payRequest }) {
+  return (
+    <PaymentRequestButtonElement
+      options={{ paymentRequest, style: { paymentRequestButton: { type: 'default', theme: 'dark', height: '52px' } } }}
+    />
+  )
+}
+
 export default function CheckoutModal({
   amount,          // dollars
   description,
@@ -428,14 +443,9 @@ export default function CheckoutModal({
             )}
 
             {/* Express payment (Apple/Google Pay) */}
-            {payRequest && (
+            {payRequest && stripeInst && (
               <div style={{ marginBottom: 16 }}>
-                <PaymentRequestButtonElement
-                  options={{
-                    paymentRequest: payRequest,
-                    style: { paymentRequestButton: { type: 'default', theme: 'dark', height: '52px' } },
-                  }}
-                />
+                <WalletPayButton stripe={stripeInst} payRequest={payRequest} />
               </div>
             )}
 

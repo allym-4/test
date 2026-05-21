@@ -261,8 +261,8 @@ function CasualBookingModal({ occ, session, priceCasual, priceCasualStandard, is
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: 'rgba(0,0,0,0.75)' }} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: '#111', borderRadius: '20px 20px 0 0', padding: 28, width: '100%', maxWidth: 560, maxHeight: '92vh', overflowY: 'auto' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.75)', padding: '16px' }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background: '#111', borderRadius: 20, padding: 28, width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
           <div>
             <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, lineHeight: 1.1, marginBottom: 6 }}>{sessName}</div>
@@ -1572,6 +1572,19 @@ export default function StudentBook() {
   }
 
   async function bookCasualOcc(occ, type) {
+    if (type === 'casual') {
+      setSelectedCasualOcc(null)
+      const sDetail = occ.session_detail || {}
+      setCheckout({
+        type: 'casual_occ',
+        occId: occ.id,
+        sessionIds: [sDetail.id || occ.session],
+        amount: casualRate,
+        description: `${sDetail.name || 'Class'} — Casual`,
+        session: { ...sDetail, id: sDetail.id || occ.session },
+      })
+      return
+    }
     setCasualBooking(true)
     setCasualBookError('')
     try {
@@ -1619,10 +1632,11 @@ export default function StudentBook() {
     }
   }
 
-  async function proceedToCheckout(finalPrice) {
-    if (!cart) return
-    const { session, type } = cart
-    const effectivePrice = finalPrice ?? cart.price
+  async function proceedToCheckout(finalPrice, overrideData) {
+    const cartData = overrideData || cart
+    if (!cartData) return
+    const { session, type } = cartData
+    const effectivePrice = finalPrice ?? cartData.price
     const isCasual = type === 'casual'
     const isTrial = type === 'trial'
     const description = isTrial
@@ -1677,6 +1691,14 @@ export default function StudentBook() {
 
   async function handleCashPayment() {
     if (!checkout) return
+    if (checkout.type === 'casual_occ') {
+      try {
+        await classes.casual.book(checkout.occId, { enrolment_type: 'casual', payment_method: 'cash' })
+        refetchCasualOccs()
+      } catch {}
+      setCheckout(null)
+      return
+    }
     const ids = checkout.sessionIds || (checkout.session ? [checkout.session.id] : [])
     for (const sessionId of ids) {
       try {
@@ -1731,7 +1753,7 @@ export default function StudentBook() {
   }
 
   async function handlePaymentSuccess() {
-    const { type, sessionIds } = checkout
+    const { type, sessionIds, occId } = checkout
     const ids = sessionIds || (checkout.session ? [checkout.session.id] : [])
     setCheckout(null)
     setCart(null)
@@ -1739,6 +1761,13 @@ export default function StudentBook() {
     if (appliedPromoCode) {
       paymentsApi.promoCodes.use({ code: appliedPromoCode }).catch(() => {})
       setAppliedPromoCode('')
+    }
+    if (type === 'casual_occ') {
+      try {
+        await classes.casual.book(occId, { enrolment_type: 'casual' })
+        refetchCasualOccs()
+      } catch {}
+      return
     }
     // Create enrolments for all session IDs
     for (const sessionId of ids) {
@@ -1796,7 +1825,7 @@ export default function StudentBook() {
           seasonStartDate={checkout.seasonStartDate}
           onSuccess={handlePaymentSuccess}
           onClose={() => setCheckout(null)}
-          onCash={checkout.type === 'season' ? handleCashPayment : null}
+          onCash={checkout.type === 'season' || checkout.type === 'casual_occ' ? handleCashPayment : null}
           onPaymentPlan={checkout.type === 'season' ? handlePaymentPlan : null}
         />
       )}
@@ -2157,7 +2186,8 @@ export default function StudentBook() {
                       onBook={(type) => bookCasualOcc(occ, type)}
                       onEnrolInSeason={() => {
                         setSelectedCasualOcc(null)
-                        addToCart({ ...sDetail, id: sDetail.id || occ.session }, 'course', addingSeasonPrice)
+                        const sess = { ...sDetail, id: sDetail.id || occ.session }
+                        proceedToCheckout(addingSeasonPrice, { session: sess, type: 'course', price: addingSeasonPrice })
                       }}
                       onBuyPass={() => { setSelectedCasualOcc(null); setBuyingPass(true) }}
                     />
