@@ -774,34 +774,37 @@ export default function AdminStudentDetail() {
                   <button className="btn btn-ghost btn-sm" onClick={() => setShowRefundCredit(true)}>Issue Refund / Credit</button>
                   <button className="btn btn-ghost btn-sm" onClick={() => setShowAccountCredit(true)}>Add Account Credit</button>
                   <button className="btn btn-ghost btn-sm" onClick={() => setShowTransferCancel(true)}>Transfer / Cancel Enrolment</button>
-                  {savedCardsData?.payment_methods?.length > 0 && savedCardsData?.default_payment_method_id && bal < 0 && (
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      style={{ color: 'var(--lime)', borderColor: 'rgba(204,255,0,0.3)' }}
-                      disabled={chargingSaved}
-                      onClick={async () => {
-                        setChargeError(null)
-                        setChargingSaved(true)
-                        try {
-                          await payments.stripe.chargeSaved({
-                            student_id: student.id,
-                            amount_cents: Math.round(Math.abs(bal) * 100),
-                            description: 'Outstanding balance — Duality Pole Studio',
-                          })
-                          const res = await payments.balance(student.id)
-                          setBalanceData(res.data)
-                          const payRes = await payments.list({ student: student.id })
-                          setPayData(payRes.data.results || [])
-                        } catch (err) {
-                          setChargeError(err.response?.data?.detail || 'Charge failed.')
-                        } finally {
-                          setChargingSaved(false)
-                        }
-                      }}
-                    >
-                      {chargingSaved ? 'Charging…' : `Charge Saved Card $${Math.abs(bal).toFixed(2)}`}
-                    </button>
-                  )}
+                  {savedCardsData?.payment_methods?.length > 0 && savedCardsData?.default_payment_method_id && bal < 0 && (() => {
+                    const hasCashPending = (payData || []).some(p => p.payment_type === 'charge' && (p.description || '').toLowerCase().includes('pay at studio'))
+                    return (
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        style={{ color: 'var(--lime)', borderColor: 'rgba(204,255,0,0.3)' }}
+                        disabled={chargingSaved}
+                        onClick={async () => {
+                          setChargeError(null)
+                          setChargingSaved(true)
+                          try {
+                            await payments.stripe.chargeSaved({
+                              student_id: student.id,
+                              amount_cents: Math.round(Math.abs(bal) * 100),
+                              description: hasCashPending ? 'Cash payment collected — Duality Pole Studio' : 'Outstanding balance — Duality Pole Studio',
+                            })
+                            const res = await payments.balance(student.id)
+                            setBalanceData(res.data)
+                            const payRes = await payments.list({ student: student.id })
+                            setPayData(payRes.data.results || [])
+                          } catch (err) {
+                            setChargeError(err.response?.data?.detail || 'Charge failed.')
+                          } finally {
+                            setChargingSaved(false)
+                          }
+                        }}
+                      >
+                        {chargingSaved ? 'Charging…' : hasCashPending ? `Charge Saved Card — Cash Not Received $${Math.abs(bal).toFixed(2)}` : `Charge Saved Card $${Math.abs(bal).toFixed(2)}`}
+                      </button>
+                    )
+                  })()}
                 </div>
                 <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 10 }}>Transaction History</div>
                 <div className="tbl-section">
@@ -829,6 +832,7 @@ export default function AdminStudentDetail() {
                             no_show_fee: { label: 'FEE',      cls: 'tag-red' },
                           }
                           const ts = TYPE_STYLE[p.payment_type] || { label: p.payment_type, cls: 'tag-grey' }
+                          const isCashPending = p.payment_type === 'charge' && (p.description || '').toLowerCase().includes('pay at studio')
                           const amt = parseFloat(p.amount || 0)
                           const runBal = p._running
                           return (
@@ -836,7 +840,10 @@ export default function AdminStudentDetail() {
                               <td style={{ color: 'var(--grey)', whiteSpace: 'nowrap', fontSize: 12 }}>{new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
                               <td style={{ fontSize: 13 }}>{p.description || p.payment_type.replace(/_/g, ' ')}</td>
                               <td style={{ fontSize: 12, color: 'var(--grey)' }}>{seasonLabel}</td>
-                              <td><span className={`tag ${ts.cls}`} style={{ fontSize: 10 }}>{ts.label}</span></td>
+                              <td style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+                                <span className={`tag ${ts.cls}`} style={{ fontSize: 10 }}>{ts.label}</span>
+                                {isCashPending && <span className="tag tag-amber" style={{ fontSize: 10 }}>CASH PENDING</span>}
+                              </td>
                               <td style={{ textAlign: 'right', color: 'var(--red)', fontWeight: 600, fontSize: 13 }}>{p._isCredit ? '—' : `$${amt.toFixed(2)}`}</td>
                               <td style={{ textAlign: 'right', color: 'var(--lime)', fontWeight: 600, fontSize: 13 }}>{p._isCredit ? `$${amt.toFixed(2)}` : '—'}</td>
                               <td style={{ textAlign: 'right', fontWeight: 600, fontSize: 13, color: runBal < 0 ? 'var(--red)' : runBal > 0 ? 'var(--lime)' : 'var(--grey)' }}>
