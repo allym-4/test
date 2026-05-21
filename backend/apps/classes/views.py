@@ -81,10 +81,13 @@ class ClassOccurrenceListView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        qs = ClassOccurrence.objects.select_related('session__instructor', 'session__studio')
+        qs = ClassOccurrence.objects.select_related('session__instructor', 'session__studio', 'session__season')
         session_id = self.request.query_params.get('session')
         if session_id:
             qs = qs.filter(session_id=session_id)
+        date_param = self.request.query_params.get('date')
+        if date_param:
+            qs = qs.filter(date=date_param)
         if self.request.query_params.get('cover_needed') == 'true':
             qs = qs.filter(cover_needed=True)
         elif self.request.user.role == 'instructor' and not self.request.query_params.get('substitute_instructor'):

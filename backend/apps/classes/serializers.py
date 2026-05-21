@@ -62,6 +62,10 @@ class ClassOccurrenceSerializer(serializers.ModelSerializer):
     spots_left = serializers.SerializerMethodField()
     casual_booked_count = serializers.SerializerMethodField()
     my_booking = serializers.SerializerMethodField()
+    session_name = serializers.CharField(source='session.name', read_only=True, default='')
+    start_time = serializers.TimeField(source='session.start_time', read_only=True, allow_null=True)
+    studio_name = serializers.CharField(source='session.studio.name', read_only=True, default='')
+    enrolled_count = serializers.IntegerField(source='session.enrolled_count', read_only=True, default=0)
 
     class Meta:
         model = ClassOccurrence
@@ -71,6 +75,7 @@ class ClassOccurrenceSerializer(serializers.ModelSerializer):
             'instructor_detail', 'studio_detail',
             'notes', 'register_saved', 'cover_needed',
             'spots_left', 'casual_booked_count', 'my_booking',
+            'session_name', 'start_time', 'studio_name', 'enrolled_count',
         )
 
     def get_casual_booked_count(self, obj):

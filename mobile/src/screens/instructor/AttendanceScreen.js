@@ -233,10 +233,11 @@ export default function AttendanceScreen({ navigation }) {
             <TouchableOpacity style={s.occCard} onPress={() => setSelectedOcc(item)}>
               <View style={[s.occAccent, { backgroundColor: '#ccff00' }]} />
               <View style={s.occBody}>
-                <Text style={s.occName}>{item.session?.name ?? item.session_detail?.name ?? 'Class'}</Text>
+                <Text style={s.occName}>{item.session_name || item.session_detail?.name || 'Class'}</Text>
                 <Text style={s.occMeta}>
-                  {item.start_time ? item.start_time.slice(0, 5) : ''}
-                  {item.session?.studio?.name ? `  ·  ${item.session.studio.name}` : ''}
+                  {item.start_time ? String(item.start_time).slice(0, 5) : ''}
+                  {item.studio_name ? `  ·  ${item.studio_name}` : item.session_detail?.studio_detail?.name ? `  ·  ${item.session_detail.studio_detail.name}` : ''}
+                  {item.enrolled_count != null ? `  ·  ${item.enrolled_count} enrolled` : ''}
                 </Text>
                 <Text style={s.occCta}>Take register →</Text>
               </View>
@@ -257,7 +258,7 @@ export default function AttendanceScreen({ navigation }) {
     return AWAY_STATUSES.includes(register[sid] || 'present')
   })
 
-  const sessionName = selectedOcc.session?.name ?? selectedOcc.session_detail?.name ?? 'Class'
+  const sessionName = selectedOcc.session_name || selectedOcc.session_detail?.name || 'Class'
   const dateLabel = new Date(selectedOcc.date).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
 
   return (

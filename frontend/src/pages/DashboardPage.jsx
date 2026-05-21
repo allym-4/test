@@ -116,7 +116,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 28 }}>
+      <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 28 }}>
         <Link to="/classes" style={{ textDecoration: 'none', background: '#111', border: '1px solid #222', borderRadius: 12, padding: '16px 18px' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Students Today</div>
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 32, color: 'var(--lime)', marginBottom: 4 }}>
