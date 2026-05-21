@@ -109,6 +109,7 @@ function CoverModal({ session, onClose }) {
 }
 
 export default function ClassesPage() {
+  const [view, setView] = useState('today') // 'past' | 'today' | 'upcoming'
   const [weekOffset, setWeekOffset] = useState(0)
   const [coverModal, setCoverModal] = useState(null)
   const { data, loading } = useApi(() => classes.list())
@@ -123,35 +124,73 @@ export default function ClassesPage() {
     return (a.start_time || '').localeCompare(b.start_time || '')
   })
 
-  const isCurrentWeek = weekOffset === 0
+  // For past/today/upcoming we always use the current week
+  const currentWeekStart = getWeekStart(0)
+
+  const filtered = sorted.filter(s => {
+    const classDate = sessionDate(view === 'past' ? getWeekStart(weekOffset) : currentWeekStart, s.day_of_week)
+    const isPast = classDate < today
+    const isToday = classDate.getTime() === today.getTime()
+    if (view === 'today') return isToday
+    if (view === 'past') return isPast && !isToday
+    if (view === 'upcoming') return !isPast && !isToday
+    return true
+  })
+
+  // For past view, sort newest-first
+  const displayed = view === 'past' ? [...filtered].reverse() : filtered
+
+  const todayCount = sorted.filter(s => sessionDate(currentWeekStart, s.day_of_week).getTime() === today.getTime()).length
 
   return (
     <div>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>My Classes</div>
-          <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 4 }}>Week of {weekLabel(weekStart)}</div>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 4 }}>
+            {view === 'past' ? `Week of ${weekLabel(getWeekStart(weekOffset))}` : new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w - 1)}>← Prev</button>
-          {weekOffset !== 0 && (
-            <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(0)}>This Week</button>
-          )}
-          <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w + 1)}>Next →</button>
-        </div>
+        {view === 'past' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w - 1)}>← Prev</button>
+            {weekOffset !== 0 && <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(0)}>This Week</button>}
+            <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w + 1)}>Next →</button>
+          </div>
+        )}
+      </div>
+
+      {/* Toggle */}
+      <div style={{ display: 'flex', background: '#0a0a0a', border: '1px solid #1e1e1e', borderRadius: 10, padding: 3, gap: 2, marginBottom: 24, width: 'fit-content' }}>
+        {[['past', 'Past'], ['today', `Today${todayCount > 0 ? ` (${todayCount})` : ''}`], ['upcoming', 'Upcoming']].map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => { setView(key); setWeekOffset(0) }}
+            style={{
+              padding: '7px 18px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 600,
+              cursor: 'pointer', transition: 'all 0.15s',
+              background: view === key ? (key === 'today' ? 'var(--lime)' : '#222') : 'transparent',
+              color: view === key ? (key === 'today' ? '#000' : '#fff') : 'var(--grey)',
+            }}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>
-      ) : sorted.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--grey)' }}>
-          <div style={{ fontSize: 13 }}>No classes assigned to you yet.</div>
+      ) : displayed.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--grey)' }}>
+          <div style={{ fontSize: 13 }}>
+            {view === 'today' ? 'No classes today' : view === 'upcoming' ? 'No upcoming classes this week' : 'No past classes this week'}
+          </div>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {sorted.map(s => {
-            const classDate = sessionDate(weekStart, s.day_of_week)
+          {displayed.map(s => {
+            const classDate = sessionDate(view === 'past' ? getWeekStart(weekOffset) : currentWeekStart, s.day_of_week)
             const isPast = classDate < today
             const isToday = classDate.getTime() === today.getTime()
             const isFull = s.enrolled_count >= s.capacity
@@ -221,9 +260,11 @@ export default function ClassesPage() {
                         {isToday ? 'Take Register →' : isPast ? 'View Register' : 'View Roster'}
                       </button>
                     </Link>
-                    <button className="btn btn-ghost btn-xs" onClick={() => setCoverModal(s)} style={{ fontSize: 11 }}>
-                      Request Cover
-                    </button>
+                    {!isPast && (
+                      <button className="btn btn-ghost btn-xs" onClick={() => setCoverModal(s)} style={{ fontSize: 11 }}>
+                        Request Cover
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
