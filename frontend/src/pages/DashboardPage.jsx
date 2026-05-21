@@ -74,12 +74,14 @@ export default function DashboardPage() {
       </div>
 
       {/* Action Items */}
-      {items.length > 0 && (
-        <div style={{ background: '#111', border: '1px solid #222', borderRadius: 14, padding: '18px 20px', marginBottom: 24 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15 }}>Today's Action Items</div>
-            <span style={{ fontSize: 12, color: 'var(--grey)' }}>{items.length} pending</span>
-          </div>
+      <div style={{ background: '#111', border: '1px solid #222', borderRadius: 14, padding: '18px 20px', marginBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15 }}>Action Items</div>
+          {items.length > 0 && <span style={{ fontSize: 12, color: 'var(--grey)' }}>{items.length} pending</span>}
+        </div>
+        {items.length === 0 ? (
+          <div style={{ fontSize: 13, color: 'var(--grey)', padding: '4px 0' }}>All clear — nothing pending.</div>
+        ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {items.map(item => (
               <div
@@ -110,8 +112,8 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 28 }}>
