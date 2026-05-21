@@ -354,7 +354,7 @@ function CasualBookingModal({ occ, session, priceCasual, isEnrolledRate, priceCl
   )
 }
 
-function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, isEnrolledRate, priceClassPass, classPassSize, availableCredits, onCreditUsed, seasonName, seasonPrice, alreadyEnrolled, onEnrolInSeason, passCredits, onPassUsed, onBuyPass, isNewStudent = false, seasonStartDate = null }) {
+function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, isEnrolledRate, priceClassPass, classPassSize, availableCredits, onCreditUsed, seasonName, seasonPrice, alreadyEnrolled, onEnrolInSeason, passCredits, onPassUsed, onBuyPass, isNewStudent = false, seasonStartDate = null, userLevel = null }) {
   const [open, setOpen] = useState(false)
   const [occurrences, setOccurrences] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -372,13 +372,16 @@ function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, isEnrolle
   const isRoutine = isRoutineClass(session.name)
   const isBeginnerFriendly = isBeginnerFriendlyClass(session.name)
   const requiresExemption = isRoutine && currentSeasonWeek > 3 && !alreadyEnrolled
+  const sessionLevel = getClassLevel(session.name)
+  const userLevelNum = parseLevel(userLevel)
+  const isLevelLocked = sessionLevel > 0 && userLevelNum > 0 && sessionLevel > userLevelNum
 
   function handleOpenBooking(occ) {
     if (isNewStudent && !isBeginnerFriendly) {
       setHeadsUpOcc(occ)
       return
     }
-    if (requiresExemption) {
+    if (requiresExemption || isLevelLocked) {
       setExemptionOcc(occ)
       return
     }
@@ -619,48 +622,150 @@ function getCurrentSeasonWeek(startDate) {
 
 function CashPaymentModal({ checkout, onClose, onConfirm }) {
   const todayStr = new Date().toISOString().slice(0, 10)
+  const [phase, setPhase] = useState(1)
   const [cashDate, setCashDate] = useState(todayStr)
   const [notes, setNotes] = useState('')
+  const [error, setError] = useState('')
+  const [loadingStripe, setLoadingStripe] = useState(false)
+  const [clientSecret, setClientSecret] = useState(null)
+  const [stripeInst, setStripeInst] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
+
+  async function goToCardStep() {
+    setError('')
+    setLoadingStripe(true)
+    try {
+      const [si, res] = await Promise.all([getStripe(), paymentsApi.stripe.createSetupIntent()])
+      setStripeInst(si)
+      setClientSecret(res.data.client_secret)
+      setPhase(2)
+    } catch {
+      setError('Could not initialise payment. Please try again.')
+    } finally {
+      setLoadingStripe(false)
+    }
+  }
+
+  const OrderSummary = () => (
+    <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#555', textTransform: 'uppercase', marginBottom: 8 }}>Order Summary</div>
+      {checkout.sessions?.length > 0
+        ? checkout.sessions.map((s, i) => <div key={i} style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{s.name}</div>)
+        : <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{checkout.description}</div>
+      }
+      <div style={{ borderTop: '1px solid #222', paddingTop: 8, marginTop: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontWeight: 700, fontSize: 13 }}>Total</span>
+        <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, color: '#ccff00' }}>${(checkout.amount || 0).toFixed(2)}</span>
+      </div>
+    </div>
+  )
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', padding: 16 }}
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: '#111', borderRadius: 20, width: '100%', maxWidth: 480, padding: '22px 20px' }}>
+      <div style={{ background: '#111', borderRadius: 20, width: '100%', maxWidth: 480, padding: '22px 20px', maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(17px, 4.5vw, 22px)' }}>Pay by Cash</div>
           <button onClick={onClose} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 10, color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, padding: '7px 12px', cursor: 'pointer' }}>CLOSE</button>
         </div>
-        <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#555', textTransform: 'uppercase', marginBottom: 8 }}>Order Summary</div>
-          {checkout.sessions?.length > 0
-            ? checkout.sessions.map((s, i) => <div key={i} style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{s.name}</div>)
-            : <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{checkout.description}</div>
-          }
-          <div style={{ borderTop: '1px solid #222', paddingTop: 8, marginTop: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontWeight: 700, fontSize: 13 }}>Total</span>
-            <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, color: '#ccff00' }}>${checkout.amount?.toFixed(2)}</span>
-          </div>
-        </div>
-        <div style={{ background: 'rgba(255,170,0,0.07)', border: '1px solid rgba(255,170,0,0.2)', borderRadius: 10, padding: '12px 14px', marginBottom: 16, fontSize: 13, color: '#ccc', lineHeight: 1.6 }}>
-          Your booking will be confirmed now. Please bring <strong style={{ color: '#ffaa00' }}>${checkout.amount?.toFixed(0)} cash</strong> to the studio on or before the date below.
-        </div>
-        <div className="field">
-          <label>When are you bringing payment?</label>
-          <input type="date" value={cashDate} min={todayStr} onChange={e => setCashDate(e.target.value)} />
-        </div>
-        <div className="field">
-          <label>Notes for the team (optional)</label>
-          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="e.g. I'll bring it Tuesday morning" style={{ resize: 'none' }} />
-        </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
-          <button
-            className="btn btn-sm"
-            style={{ flex: 1, background: '#ccff00', color: '#000', fontWeight: 700, border: 'none' }}
-            onClick={() => { onConfirm(cashDate, notes); onClose() }}
-          >Confirm Cash Booking</button>
-        </div>
+
+        <OrderSummary />
+
+        {phase === 1 && (
+          <>
+            <div style={{ background: 'rgba(255,170,0,0.07)', border: '1px solid rgba(255,170,0,0.2)', borderRadius: 10, padding: '12px 14px', marginBottom: 16, fontSize: 13, color: '#ccc', lineHeight: 1.6 }}>
+              Your booking is confirmed now. Please bring <strong style={{ color: '#ffaa00' }}>${(checkout.amount || 0).toFixed(0)} cash</strong> to the studio by the date below. A card is required as a backup — if payment isn't received, your card will be charged.
+            </div>
+            <div className="field">
+              <label>When are you bringing payment?</label>
+              <input type="date" value={cashDate} min={todayStr} onChange={e => setCashDate(e.target.value)} />
+            </div>
+            <div className="field">
+              <label>Notes (optional)</label>
+              <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="e.g. I'll bring it Tuesday morning" style={{ resize: 'none' }} />
+            </div>
+            {error && <div style={{ color: '#ff4444', fontSize: 13, marginBottom: 10 }}>{error}</div>}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
+              <button
+                className="btn btn-sm"
+                style={{ flex: 2, background: '#ccff00', color: '#000', fontWeight: 700, border: 'none', opacity: loadingStripe ? 0.6 : 1 }}
+                onClick={goToCardStep}
+                disabled={loadingStripe}
+              >{loadingStripe ? 'Loading…' : 'Continue — add card'}</button>
+            </div>
+          </>
+        )}
+
+        {phase === 2 && clientSecret && stripeInst && (
+          <>
+            <div style={{ background: 'rgba(255,170,0,0.06)', border: '1px solid rgba(255,170,0,0.15)', borderRadius: 10, padding: '12px 14px', marginBottom: 16, fontSize: 13, color: '#ccc', lineHeight: 1.6 }}>
+              Card saved as backup only — <strong style={{ color: '#ffaa00' }}>not charged today</strong>. If cash isn't received by {new Date(cashDate + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}, the studio may charge your card.
+            </div>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#666', marginBottom: 12 }}>Add a backup card</div>
+            <Elements stripe={stripeInst} options={{ clientSecret, appearance: STRIPE_DARK }}>
+              <CashCardForm
+                cashDate={cashDate}
+                notes={notes}
+                onConfirm={onConfirm}
+                onClose={onClose}
+                setError={setError}
+                submitting={submitting}
+                setSubmitting={setSubmitting}
+              />
+            </Elements>
+            {error && <div style={{ color: '#ff4444', fontSize: 13, marginTop: 10 }}>{error}</div>}
+            <button onClick={() => setPhase(1)} style={{ background: 'none', border: 'none', color: '#555', fontSize: 12, cursor: 'pointer', marginTop: 8, padding: 0 }}>← Back</button>
+          </>
+        )}
       </div>
+    </div>
+  )
+}
+
+function CashCardForm({ cashDate, notes, onConfirm, onClose, setError, submitting, setSubmitting }) {
+  const stripe = useStripe()
+  const elements = useElements()
+
+  async function handleSubmit() {
+    if (!stripe || !elements) return
+    setSubmitting(true)
+    setError('')
+    try {
+      const result = await stripe.confirmSetup({
+        elements,
+        confirmParams: { return_url: window.location.href },
+        redirect: 'if_required',
+      })
+      if (result.error) {
+        setError(result.error.message)
+        setSubmitting(false)
+        return
+      }
+      await onConfirm(cashDate, notes)
+      onClose()
+    } catch (e) {
+      setError(e.response?.data?.detail || 'Failed — please try again')
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div>
+      <div style={{ marginBottom: 16 }}>
+        <PaymentElement options={{ layout: 'accordion' }} />
+      </div>
+      <div style={{ display: 'flex', gap: 10 }}>
+        <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose} type="button">Cancel</button>
+        <button
+          className="btn btn-sm"
+          style={{ flex: 2, background: '#ccff00', color: '#000', fontWeight: 700, border: 'none', opacity: submitting || !stripe ? 0.6 : 1 }}
+          onClick={handleSubmit}
+          disabled={submitting || !stripe}
+          type="button"
+        >{submitting ? 'Confirming…' : 'Confirm cash booking'}</button>
+      </div>
+      <div style={{ textAlign: 'center', fontSize: 11, color: '#444', marginTop: 10 }}>🔒 Card saved as backup — not charged unless cash isn't received</div>
     </div>
   )
 }
@@ -2495,6 +2600,7 @@ export default function StudentBook() {
                       onBuyPass={() => setBuyingPass(true)}
                       isNewStudent={!hasEverEnrolled}
                       seasonStartDate={activeSeason?.start_date}
+                      userLevel={user?.level || null}
                     />
                   )
                 })}
