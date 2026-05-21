@@ -1200,6 +1200,19 @@ class MyUpcomingClassesView(APIView):
                     occurrence=occ
                 ).exclude(status__in=['absent', 'no_show']).count()
 
+                # Who's coming: other enrolled students with roster visibility on
+                from apps.enrolments.models import Enrolment as EnrolModel
+                classmates_qs = EnrolModel.objects.filter(
+                    class_session=sess, status='active', enrolment_type='course'
+                ).exclude(student=student).select_related('student')
+                classmates = []
+                for e in classmates_qs:
+                    u = e.student
+                    if u.show_in_roster:
+                        name = u.nickname if u.roster_name == 'nickname' and u.nickname else u.first_name
+                        if name:
+                            classmates.append(name)
+
                 items.append({
                     'id': f'enrol-{occ.id}',
                     'type': 'enrolled',
@@ -1217,6 +1230,7 @@ class MyUpcomingClassesView(APIView):
                     'makeup_credit_issued': absence is not None,
                     'spots_left': max(0, sess.capacity - enrolled_count),
                     'is_past': occ.date < today,
+                    'classmates': classmates,
                 })
 
         # 2. Casual / catch-up / class-pass bookings

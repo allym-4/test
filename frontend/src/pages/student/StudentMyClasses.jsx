@@ -483,7 +483,6 @@ export default function StudentMyClasses() {
   const { data: studioSettings } = useApi(() => settingsApi.get(), [])
 
   const [tab, setTab] = useState('active')
-  const [activeSubTab, setActiveSubTab] = useState('enrolled')
   const [cancelPolicyEnrol, setCancelPolicyEnrol] = useState(null)
   const [classWaitlistLeaveEnrol, setClassWaitlistLeaveEnrol] = useState(null)
   const [displacementPopup, setDisplacementPopup] = useState(null)
@@ -798,17 +797,7 @@ export default function StudentMyClasses() {
                 </div>
               )}
 
-              {/* Sub-tabs: Enrolled / Casual & catch-ups */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: '#0d0d0d', borderRadius: 10, padding: 3, marginBottom: 16, border: '1px solid var(--border)' }}>
-                {[['enrolled', 'Enrolled classes'], ['casual', 'Casual & catch-ups']].map(([key, label]) => (
-                  <button key={key} onClick={() => setActiveSubTab(key)} style={{ background: activeSubTab === key ? 'var(--card)' : 'transparent', color: activeSubTab === key ? 'var(--white)' : 'var(--grey)', border: 'none', borderRadius: 8, padding: '8px 4px', cursor: 'pointer', fontWeight: activeSubTab === key ? 600 : 400, fontSize: 12, transition: 'all 0.15s' }}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              {activeSubTab === 'enrolled' && (
-                <div>
+              <div>
                   {currentEnrolments.length === 0 ? (
                     <div className="empty-state">
                       <div style={{ marginBottom: 8 }}>No classes enrolled this season</div>
@@ -858,9 +847,11 @@ export default function StudentMyClasses() {
                     </div>
                   )}
                 </div>
-              )}
 
-              {activeSubTab === 'casual' && (
+              {/* Casual & catch-ups — inline below enrolled */}
+              {(confirmedCasuals.filter(b => { const d = b.occurrence_detail?.date; return d && d >= today }).length > 0 || waitlistedCasuals.length > 0) && (
+                <div style={{ marginTop: 20 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>Casual & catch-ups</div>
                 <div>
                   {confirmedCasuals.filter(b => { const d = b.occurrence_detail?.date; return d && d >= today }).length === 0 && waitlistedCasuals.length === 0 ? (
                     <div className="empty-state">
@@ -919,6 +910,7 @@ export default function StudentMyClasses() {
                       </div>
                     </div>
                   )}
+                </div>
                 </div>
               )}
             </div>

@@ -50,8 +50,9 @@ function StatusBadge({ item }) {
   if (item.status === 'waitlisted') {
     return <span className="tag tag-lav" style={{ fontSize: 10 }}>Waitlisted</span>
   }
-  if (item.type === 'practice' || item.status === 'confirmed') {
-    return <span style={{ fontSize: 10, background: 'rgba(0,180,255,0.12)', color: '#4fc3f7', borderRadius: 4, padding: '2px 7px', fontWeight: 700, letterSpacing: '0.04em' }}>Confirmed</span>
+  if (item.status === 'confirmed') {
+    const label = item.type === 'practice' ? 'Confirmed' : 'Booked'
+    return <span style={{ fontSize: 10, background: 'rgba(0,180,255,0.12)', color: '#4fc3f7', borderRadius: 4, padding: '2px 7px', fontWeight: 700, letterSpacing: '0.04em' }}>{label}</span>
   }
   return <span className="tag tag-lime" style={{ fontSize: 10 }}>Attending</span>
 }
@@ -229,6 +230,11 @@ function ItemRow({ item, onMarkAway, onUndoAway, onCancel }) {
         <div style={{ marginTop: 6 }}>
           <StatusBadge item={item} />
         </div>
+        {item.classmates?.length > 0 && (
+          <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 5 }}>
+            Also coming: {item.classmates.join(', ')}
+          </div>
+        )}
       </div>
       <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
         {item.type === 'enrolled' && item.status === 'attending' && (
