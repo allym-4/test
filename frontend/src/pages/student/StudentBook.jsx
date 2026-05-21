@@ -1879,6 +1879,13 @@ export default function StudentBook() {
             }
           }}
           onClose={() => setBuyingPass(false)}
+          onCash={async () => {
+            try {
+              await attendanceApi.classPasses.purchase({ payment_method: 'cash' })
+              refetchPasses()
+            } catch {}
+            setBuyingPass(false)
+          }}
         />
       )}
 

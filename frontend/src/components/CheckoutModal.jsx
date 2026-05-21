@@ -130,6 +130,7 @@ export default function CheckoutModal({
   onCash,
   onPaymentPlan,
 }) {
+  const [payMethod, setPayMethod] = useState('card') // 'card' | 'cash' | 'plan'
   const [payType, setPayType] = useState('full')
   const [clientSecret, setClientSecret] = useState(null)
   const [fullClientSecret, setFullClientSecret] = useState(null)
@@ -140,6 +141,8 @@ export default function CheckoutModal({
   const [useSavedCard, setUseSavedCard] = useState(false)
   const [payRequest, setPayRequest] = useState(null)
   const [upsells, setUpsells] = useState([])
+  const [existingPlans, setExistingPlans] = useState([])
+  const [addingToPlan, setAddingToPlan] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [paying, setPaying] = useState(false)
@@ -192,6 +195,11 @@ export default function CheckoutModal({
             .then(r => setUpsells(r.data || []))
             .catch(() => {})
         }
+
+        // Existing active payment plans
+        payments.plans.list({ status: 'active', page_size: 5 })
+          .then(r => setExistingPlans(r.data?.results || r.data || []))
+          .catch(() => {})
       } catch (e) {
         setError('Could not initialise payment. Please try again.')
       } finally {
@@ -371,8 +379,38 @@ export default function CheckoutModal({
               </div>
             )}
 
+            {/* Payment method selector */}
+            {(onCash || onPaymentPlan) && (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: '#555', textTransform: 'uppercase', marginBottom: 10 }}>Payment method</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {[
+                    { id: 'card', icon: '💳', label: 'Card' },
+                    ...(onCash ? [{ id: 'cash', icon: '💵', label: 'Cash' }] : []),
+                    ...(onPaymentPlan ? [{ id: 'plan', icon: '📋', label: 'Payment Plan' }] : []),
+                  ].map(m => (
+                    <button
+                      key={m.id}
+                      onClick={() => setPayMethod(m.id)}
+                      style={{
+                        flex: 1, padding: '12px 8px', borderRadius: 10, cursor: 'pointer',
+                        border: `2px solid ${payMethod === m.id ? '#ccff00' : '#222'}`,
+                        background: payMethod === m.id ? 'rgba(204,255,0,0.06)' : '#0d0d0d',
+                        color: payMethod === m.id ? '#ccff00' : '#666',
+                        fontWeight: 700, fontSize: 12, display: 'flex', flexDirection: 'column',
+                        alignItems: 'center', gap: 4, transition: 'border-color 0.15s',
+                      }}
+                    >
+                      <span style={{ fontSize: 20 }}>{m.icon}</span>
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Pay in full / deposit */}
-            {allowDeposit && (
+            {allowDeposit && payMethod === 'card' && (
               <div style={{ marginBottom: 20 }}>
                 <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 12 }}>How would you like to pay?</div>
 
@@ -406,8 +444,8 @@ export default function CheckoutModal({
               </div>
             )}
 
-            {/* Saved card */}
-            {savedCards.length > 0 && (
+            {/* ── Card method ── */}
+            {payMethod === 'card' && savedCards.length > 0 && (
               <div style={{ marginBottom: 16 }}>
                 {savedCards.map(card => {
                   const brandBg = CARD_BRAND_BG[card.brand?.toLowerCase()] || '#333'
@@ -443,14 +481,14 @@ export default function CheckoutModal({
             )}
 
             {/* Express payment (Apple/Google Pay) */}
-            {payRequest && stripeInst && (
+            {payMethod === 'card' && payRequest && stripeInst && (
               <div style={{ marginBottom: 16 }}>
                 <WalletPayButton stripe={stripeInst} payRequest={payRequest} />
               </div>
             )}
 
             {/* New card form */}
-            {!useSavedCard && clientSecret && stripeInst && (
+            {payMethod === 'card' && !useSavedCard && clientSecret && stripeInst && (
               <div style={{ marginBottom: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '4px 0 16px', color: '#555', fontSize: 12 }}>
                   <div style={{ flex: 1, height: 1, background: '#222' }} />
@@ -528,7 +566,7 @@ export default function CheckoutModal({
             )}
 
             {/* Main CTA — confirm with saved card */}
-            {useSavedCard && (
+            {payMethod === 'card' && useSavedCard && (
               <button
                 onClick={confirmWithSavedCard}
                 disabled={paying}
@@ -538,24 +576,89 @@ export default function CheckoutModal({
               </button>
             )}
 
-            {/* Payment Plan */}
-            {onPaymentPlan && (
-              <button
-                onClick={() => { onClose(); onPaymentPlan() }}
-                style={{ width: '100%', background: 'none', border: '1px solid #333', borderRadius: 14, padding: '16px 0', fontSize: 13, fontWeight: 700, letterSpacing: 0.5, cursor: 'pointer', color: '#fff', marginBottom: 10 }}
-              >
-                REQUEST A PAYMENT PLAN
-              </button>
+            {/* ── Cash method ── */}
+            {payMethod === 'cash' && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid #2a2a2a', borderRadius: 12, padding: '16px 18px', marginBottom: 16 }}>
+                  <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>Pay cash at reception</div>
+                  <div style={{ fontSize: 13, color: '#888', lineHeight: 1.6 }}>
+                    We'll mark your booking as pending cash payment. Please bring <strong style={{ color: '#fff' }}>${amount.toFixed(0)}</strong> to your next class or arrange with admin. Your spot is held.
+                  </div>
+                </div>
+                <button
+                  onClick={() => { onClose(); onCash() }}
+                  style={{ width: '100%', background: '#fff', color: '#000', border: 'none', borderRadius: 14, padding: '18px 0', fontSize: 15, fontWeight: 900, letterSpacing: 0.5, cursor: 'pointer' }}
+                >
+                  CONFIRM — PAY CASH
+                </button>
+              </div>
             )}
 
-            {/* Cash */}
-            {onCash && (
-              <button
-                onClick={() => { onClose(); onCash() }}
-                style={{ width: '100%', background: 'none', border: '1px solid #333', borderRadius: 14, padding: '16px 0', fontSize: 13, fontWeight: 700, letterSpacing: 0.5, cursor: 'pointer', color: '#fff', marginBottom: 16 }}
-              >
-                I WANT TO PAY CASH
-              </button>
+            {/* ── Payment Plan method ── */}
+            {payMethod === 'plan' && (
+              <div style={{ marginBottom: 16 }}>
+                {existingPlans.length > 0 ? (
+                  <>
+                    <div style={{ background: 'rgba(176,160,255,0.07)', border: '1px solid rgba(176,160,255,0.25)', borderRadius: 12, padding: '16px 18px', marginBottom: 16 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: '#b0a0ff', textTransform: 'uppercase', marginBottom: 8 }}>Your existing plan</div>
+                      {existingPlans.slice(0, 1).map(plan => (
+                        <div key={plan.id}>
+                          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{plan.description}</div>
+                          <div style={{ fontSize: 13, color: '#888' }}>
+                            Total: ${parseFloat(plan.total_amount).toFixed(0)}
+                            {plan.instalments?.length > 0 && ` · ${plan.instalments.filter(i => i.status === 'pending').length} instalment${plan.instalments.filter(i => i.status === 'pending').length !== 1 ? 's' : ''} remaining`}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: 13, color: '#888', marginBottom: 14, lineHeight: 1.5 }}>
+                      Adding <strong style={{ color: '#fff' }}>${amount.toFixed(0)}</strong> to your existing plan. Admin will update your instalment schedule.
+                    </div>
+                    <button
+                      disabled={addingToPlan}
+                      onClick={async () => {
+                        setAddingToPlan(true)
+                        try {
+                          const plan = existingPlans[0]
+                          await payments.plans.update(plan.id, {
+                            total_amount: parseFloat(plan.total_amount) + amount,
+                            description: plan.description + '; + ' + description,
+                          })
+                          onSuccess()
+                        } catch {
+                          setPayError('Could not update payment plan — please contact admin.')
+                        } finally {
+                          setAddingToPlan(false)
+                        }
+                      }}
+                      style={{ width: '100%', background: '#b0a0ff', color: '#000', border: 'none', borderRadius: 14, padding: '18px 0', fontSize: 15, fontWeight: 900, letterSpacing: 0.5, cursor: addingToPlan ? 'default' : 'pointer', marginBottom: 10 }}
+                    >
+                      {addingToPlan ? 'Updating…' : 'ADD TO MY EXISTING PLAN'}
+                    </button>
+                    <button
+                      onClick={() => { onClose(); onPaymentPlan() }}
+                      style={{ width: '100%', background: 'none', border: '1px solid #333', borderRadius: 14, padding: '14px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: '#666' }}
+                    >
+                      Request a new plan instead
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid #2a2a2a', borderRadius: 12, padding: '16px 18px', marginBottom: 16 }}>
+                      <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>Split your payments</div>
+                      <div style={{ fontSize: 13, color: '#888', lineHeight: 1.6 }}>
+                        A payment plan lets you spread the cost over the season. A deposit may be required upfront. Admin will be in touch to confirm the schedule.
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => { onClose(); onPaymentPlan() }}
+                      style={{ width: '100%', background: '#b0a0ff', color: '#000', border: 'none', borderRadius: 14, padding: '18px 0', fontSize: 15, fontWeight: 900, letterSpacing: 0.5, cursor: 'pointer' }}
+                    >
+                      REQUEST A PAYMENT PLAN
+                    </button>
+                  </>
+                )}
+              </div>
             )}
 
             {/* Footer */}
