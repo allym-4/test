@@ -1,72 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { classes, enrolments, attendance, payments, users, settings as settingsApi } from '../api'
+import { classes, enrolments, attendance, users, settings as settingsApi } from '../api'
 import { useApi } from '../hooks/useApi'
 import './AttendancePage.css'
 
-function CancelClassModal({ occurrence, session, onClose, onDone }) {
-  const [sending, setSending] = useState(false)
-  const [result, setResult] = useState(null)
-  const [error, setError] = useState('')
-
-  async function handleConfirm() {
-    if (!occurrence) return
-    setSending(true)
-    setError('')
-    try {
-      const res = await payments.cancellationOffers.sendForOccurrence(occurrence.id)
-      setResult(res.data)
-      setTimeout(onDone, 2000)
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Something went wrong.')
-    } finally {
-      setSending(false)
-    }
-  }
-
-  const dateLabel = occurrence ? new Date(occurrence.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' }) : ''
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
-      onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, maxWidth: 460, width: '100%' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', borderBottom: '1px solid var(--border)' }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>Cancel Class</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 18 }}>✕</button>
-        </div>
-        <div style={{ padding: '18px 20px' }}>
-          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{session?.name}</div>
-          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 16 }}>{dateLabel}</div>
-          <div style={{ background: 'rgba(255,68,68,0.08)', border: '1px solid rgba(255,68,68,0.25)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, lineHeight: 1.6 }}>
-            This will mark the class as <strong>cancelled</strong> and email every enrolled student offering:
-            <ul style={{ margin: '8px 0 0 16px', paddingLeft: 0 }}>
-              <li>An <strong>account credit</strong> (value of one class at their pricing tier)</li>
-              <li>A <strong>makeup class credit</strong></li>
-            </ul>
-            Students will also see a popup when they log in to choose.
-          </div>
-          {error && <div style={{ color: 'var(--red)', fontSize: 12, marginBottom: 12 }}>{error}</div>}
-          {result ? (
-            <div style={{ textAlign: 'center', color: 'var(--lime)', fontWeight: 600, padding: '8px 0' }}>
-              ✓ Done — {result.offers_created} offer{result.offers_created !== 1 ? 's' : ''} sent
-            </div>
-          ) : (
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Keep Class</button>
-              <button
-                style={{ flex: 1, background: 'rgba(255,68,68,0.85)', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 0', fontSize: 13, fontWeight: 600, cursor: sending ? 'not-allowed' : 'pointer', opacity: sending ? 0.6 : 1 }}
-                onClick={handleConfirm}
-                disabled={sending}
-              >
-                {sending ? 'Sending…' : 'Cancel Class + Notify Students'}
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
 
 const AVATAR_COLORS = ['#b0a0ff', '#ccff00', '#ffaa00', '#ff88aa', '#44ffcc', '#ffcc88', '#b0f0b0', '#9ac4ff', '#ffb3de', '#44ff99']
 function avatarColor(name) {
@@ -166,7 +103,6 @@ export default function AttendancePage() {
   const [noteText, setNoteText]     = useState('')
   const [saveBanner, setSaveBanner] = useState(false)
   const [convertEnrol, setConvertEnrol] = useState(null)
-  const [showCancelModal, setShowCancelModal] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -275,26 +211,18 @@ export default function AttendancePage() {
   return (
     <div className="att-page">
       {/* Header */}
-      <div className="page-header" style={{ flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <Link to="/classes" style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 6 }}>← Classes</Link>
-          <div className="page-title">Attendance</div>
-          <div style={{ marginTop: 10 }}>
-            <select className="att-class-select">
-              <option>{session?.name} — {session?.studio_detail?.name} — {occurrence ? new Date(occurrence.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : 'No date'}</option>
-            </select>
+          <Link to="/classes" style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 8, textDecoration: 'none' }}>← My Classes</Link>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>{session?.name}</div>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 4 }}>
+            {occurrence ? new Date(occurrence.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'No occurrence today'}
+            {session?.start_time && <span style={{ marginLeft: 8 }}>· {session.start_time.slice(0, 5)}</span>}
+            {session?.studio_detail?.name && <span style={{ marginLeft: 8 }}>· {session.studio_detail.name}</span>}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
           <button className="btn btn-ghost btn-sm" onClick={markAllPresent}>✓ All Present</button>
-          <button
-            className="btn btn-ghost btn-sm"
-            style={{ color: 'var(--red)', borderColor: 'var(--red)' }}
-            onClick={() => setShowCancelModal(true)}
-            disabled={!occurrence || occurrence?.status === 'cancelled'}
-          >
-            {occurrence?.status === 'cancelled' ? '✕ Cancelled' : 'Cancel Class'}
-          </button>
           <button className={`btn btn-sm ${saved ? 'btn-ghost' : 'btn-lime'}`} onClick={handleSave} disabled={saving || !occurrence}>
             {saving ? <span className="spinner" style={{ width: 14, height: 14 }} /> : saved ? '✓ Saved' : 'Save Register'}
           </button>
@@ -428,19 +356,6 @@ export default function AttendancePage() {
           onSuccess={() => {
             setConvertEnrol(null)
             setStudents(prev => prev.map(s => s.id === convertEnrol.id ? { ...s, enrolment_type: 'course' } : s))
-          }}
-        />
-      )}
-
-      {/* Cancel class modal */}
-      {showCancelModal && (
-        <CancelClassModal
-          occurrence={occurrence}
-          session={session}
-          onClose={() => setShowCancelModal(false)}
-          onDone={() => {
-            setShowCancelModal(false)
-            setOccurrence(o => o ? { ...o, status: 'cancelled' } : o)
           }}
         />
       )}

@@ -93,10 +93,10 @@ export default function InstructorPay() {
 
   return (
     <div>
-      <div className="page-header">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
         <div>
-          <div className="page-title">Pay &amp; Earnings</div>
-          <div className="page-sub">Your classes taught and income</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>Pay &amp; Earnings</div>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 4 }}>Your classes taught and income</div>
         </div>
       </div>
 

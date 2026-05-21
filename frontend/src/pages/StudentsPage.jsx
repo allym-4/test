@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useApi } from '../hooks/useApi'
 import { users, payments, enrolments, attendance } from '../api'
-import './StudentsPage.css'
 
 const AVATAR_COLORS = ['#b0a0ff', '#ccff00', '#ffaa00', '#ff88aa', '#44ffcc', '#ffcc88', '#b0f0b0', '#9ac4ff', '#ffb3de', '#44ff99']
 function avatarColor(name) {
@@ -107,20 +106,20 @@ export default function StudentsPage() {
 
   return (
     <div>
-      <div className="page-header">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
         <div>
-          <div className="page-title">All Students</div>
-          <div className="page-sub">{allStudents.length} active students</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>All Students</div>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 4 }}>{allStudents.length} students</div>
         </div>
       </div>
 
-      <div className="stu-filter-bar">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
         <input
-          className="stu-search"
           type="text"
           placeholder="Search name, email…"
           value={search}
           onChange={e => setSearch(e.target.value)}
+          style={{ background: '#0a0a0a', border: '1px solid #1e1e1e', borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 13, width: '100%', outline: 'none' }}
         />
       </div>
 
@@ -131,14 +130,20 @@ export default function StudentsPage() {
           {filtered.map(s => {
             const color = avatarColor(s.display_name)
             return (
-              <div key={s.id} className="stu-row clickable" onClick={() => openStudent(s)}>
+              <div
+                key={s.id}
+                onClick={() => openStudent(s)}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderBottom: '1px solid #111', cursor: 'pointer' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
                 <div className="avatar" style={{ background: color }}>{s.first_name?.[0]}</div>
-                <div className="stu-body">
-                  <div className="stu-name">
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 7, marginBottom: 2 }}>
                     {s.display_name}
-                    {s.pronouns && <span className="stu-pronouns">{s.pronouns}</span>}
+                    {s.pronouns && <span style={{ fontSize: 11, color: 'var(--grey)', fontWeight: 400 }}>{s.pronouns}</span>}
                   </div>
-                  <div className="stu-meta">{s.email}</div>
+                  <div style={{ fontSize: 12, color: 'var(--grey)' }}>{s.email}</div>
                 </div>
                 <span style={{ fontSize: 14, color: 'var(--grey)' }}>›</span>
               </div>

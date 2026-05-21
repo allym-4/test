@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useApi } from '../hooks/useApi'
 import { homework, classes } from '../api'
 import client from '../api/client'
-import './StudentsPage.css'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -278,11 +277,14 @@ function HwCard({ a, onToggle, onDetail }) {
   const tagLabel = pendingCount > 0 ? `${pendingCount} pending review` : a.status === 'active' ? 'Active' : 'Closed'
 
   return (
-    <div className="hw-card" style={{ opacity: a.status !== 'active' ? 0.6 : 1, cursor: 'pointer' }} onClick={() => onDetail(a)}>
-      <div className="hw-card-header">
+    <div
+      style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: 12, padding: '16px 18px', marginBottom: 10, cursor: 'pointer', opacity: a.status !== 'active' ? 0.6 : 1 }}
+      onClick={() => onDetail(a)}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
         <div>
-          <div className="hw-card-title">{a.title}</div>
-          <div className="hw-card-meta">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15 }}>{a.title}</div>
+          <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 3 }}>
             {s?.name} — {DAYS[s?.day_of_week]} {s?.start_time?.slice(0, 5)} · {s?.studio_detail?.name}
             {a.assigned_date && ' · Assigned ' + new Date(a.assigned_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
             {a.due_date && ' · Due ' + new Date(a.due_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
@@ -295,9 +297,11 @@ function HwCard({ a, onToggle, onDetail }) {
           </button>
         </div>
       </div>
-      <div className="hw-card-progress">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: 'var(--grey)' }}>
         <span>{a.submission_count}/{a.enrolled_count} submitted</span>
-        <div className="progress-bar"><div className="progress-fill" style={{ width: `${pct}%`, background: pctColor }} /></div>
+        <div style={{ flex: 1, height: 4, background: '#1e1e1e', borderRadius: 2, overflow: 'hidden' }}>
+          <div style={{ height: '100%', borderRadius: 2, transition: 'width 0.3s', width: `${pct}%`, background: pctColor }} />
+        </div>
         <span style={{ color: pctColor, minWidth: 28, textAlign: 'right' }}>{pct}%</span>
       </div>
       {a.checklist_items?.length > 0 && (
@@ -340,24 +344,37 @@ export default function HomeworkPage() {
 
   return (
     <div>
-      <div className="page-header">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
         <div>
-          <div className="page-title">Homework</div>
-          <div className="page-sub">Assignments for your classes</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>Homework</div>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 4 }}>Assignments for your classes</div>
         </div>
         <button className="btn btn-lime btn-sm" onClick={() => setShowNew(true)}>+ Assign Homework</button>
       </div>
 
-      <div className="tab-strip">
-        <div className={`tab-btn ${tab === 'active' ? 'active' : ''}`} onClick={() => setTab('active')}>
-          Active {active.length > 0 && `(${active.length})`}
-        </div>
-        <div className={`tab-btn ${tab === 'submitted' ? 'active' : ''}`} onClick={() => setTab('submitted')}>
-          Submitted {pendingReview.length > 0 && `(${pendingReview.length})`}
-        </div>
-        <div className={`tab-btn ${tab === 'all' ? 'active' : ''}`} onClick={() => setTab('all')}>
-          All {all.length > 0 && `(${all.length})`}
-        </div>
+      <div style={{ borderBottom: '1px solid #1e1e1e', display: 'flex', gap: 4, marginBottom: 24 }}>
+        {[
+          { id: 'active', label: `Active${active.length > 0 ? ` (${active.length})` : ''}` },
+          { id: 'submitted', label: `Submitted${pendingReview.length > 0 ? ` (${pendingReview.length})` : ''}` },
+          { id: 'all', label: `All${all.length > 0 ? ` (${all.length})` : ''}` },
+        ].map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '8px 8px 0 0',
+              fontSize: 13,
+              fontWeight: 500,
+              border: 'none',
+              background: tab === t.id ? 'rgba(204,255,0,0.1)' : 'transparent',
+              color: tab === t.id ? 'var(--lime)' : 'var(--grey)',
+              cursor: 'pointer',
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
       {loading ? (
