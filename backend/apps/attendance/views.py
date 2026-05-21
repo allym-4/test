@@ -109,14 +109,14 @@ class StudentMarkAwayView(APIView):
                 enrolment = Enrolment.objects.get(pk=enrolment_id, student=request.user)
             except Enrolment.DoesNotExist:
                 return Response({'detail': 'Enrolment not found'}, status=404)
-            occurrence = ClassOccurrence.objects.filter(
+            occurrence = ClassOccurrence.objects.select_related('session__season').filter(
                 session=enrolment.class_session, date__gte=date.today()
             ).order_by('date').first()
             if not occurrence:
                 return Response({'detail': 'No upcoming class found for this enrolment'}, status=400)
         else:
             try:
-                occurrence = ClassOccurrence.objects.get(pk=occurrence_id)
+                occurrence = ClassOccurrence.objects.select_related('session__season').get(pk=occurrence_id)
             except ClassOccurrence.DoesNotExist:
                 return Response({'detail': 'Occurrence not found'}, status=404)
             if occurrence.date < date.today():
@@ -132,20 +132,18 @@ class StudentMarkAwayView(APIView):
         credit_issued = False
         try:
             studio = StudioSettings.objects.first()
-            window_hours = getattr(studio, 'cancellation_window_hours', 24)
-            start_time = occurrence.start_time or dt_time(0, 0)
+            window_hours = getattr(studio, 'cancellation_window_hours', 4)
+            session = occurrence.session
+            start_time = session.start_time
             class_dt = datetime.combine(occurrence.date, start_time)
-            # Make timezone-aware if needed
             if timezone.is_naive(class_dt):
                 class_dt = timezone.make_aware(class_dt)
             hours_notice = (class_dt - timezone.now()).total_seconds() / 3600
             if hours_notice >= window_hours:
-                session = getattr(occurrence, 'session', None)
-                season = getattr(session, 'season', None) if session else None
-                session_name = session.name if session else 'class'
+                season = session.season
                 _, created = MakeupCredit.objects.get_or_create(
                     student=request.user,
-                    reason=f'Marked away: {session_name} on {occurrence.date}',
+                    reason=f'Marked away: {session.name} on {occurrence.date}',
                     defaults={'issued_by': request.user, 'status': 'available', 'season': season},
                 )
                 credit_issued = created
