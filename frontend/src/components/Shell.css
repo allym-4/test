@@ -171,4 +171,10 @@
     padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
     padding-top: 16px;
   }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .view-toggle-btn { display: none; }
 }
