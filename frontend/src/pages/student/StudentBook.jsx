@@ -2018,6 +2018,7 @@ export default function StudentBook() {
   const [pendingPlanCheckout, setPendingPlanCheckout] = useState(null)
   const [calOccBooking, setCalOccBooking] = useState(null)
   const [calExemptionOcc, setCalExemptionOcc] = useState(null)
+  const [pendingPassCash, setPendingPassCash] = useState(false)
   const [selectedCasualOcc, setSelectedCasualOcc] = useState(null)
   const [casualBooking, setCasualBooking] = useState(false)
   const [casualBookError, setCasualBookError] = useState('')
@@ -2399,12 +2400,20 @@ export default function StudentBook() {
             }
           }}
           onClose={() => setBuyingPass(false)}
-          onCash={async () => {
+          onCash={() => { setBuyingPass(false); setPendingPassCash(true) }}
+        />
+      )}
+
+      {pendingPassCash && (
+        <CashPaymentModal
+          checkout={{ type: 'pass', amount: priceClassPass, description: `${classPassSize}-Class Pass` }}
+          onClose={() => setPendingPassCash(false)}
+          onConfirm={async (cashDate, notes) => {
             try {
-              await attendanceApi.classPasses.purchase({ payment_method: 'cash' })
+              await attendanceApi.classPasses.purchase({ payment_method: 'cash', notes })
               refetchPasses()
             } catch {}
-            setBuyingPass(false)
+            setPendingPassCash(false)
           }}
         />
       )}
