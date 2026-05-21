@@ -22,10 +22,18 @@ class AttendanceRecordSerializer(serializers.ModelSerializer):
 class MakeupCreditSerializer(serializers.ModelSerializer):
     student_name = serializers.StringRelatedField(source='student')
     issued_by_name = serializers.StringRelatedField(source='issued_by')
+    season_end_date = serializers.SerializerMethodField()
+
+    def get_season_end_date(self, obj):
+        if obj.expires_at:
+            return str(obj.expires_at)
+        if obj.season and obj.season.end_date:
+            return str(obj.season.end_date)
+        return None
 
     class Meta:
         model = MakeupCredit
-        fields = ('id', 'student', 'student_name', 'season', 'reason', 'status', 'issued_by', 'issued_by_name', 'created_at', 'used_at')
+        fields = ('id', 'student', 'student_name', 'season', 'reason', 'status', 'issued_by', 'issued_by_name', 'created_at', 'used_at', 'expires_at', 'season_end_date')
         read_only_fields = ('id', 'issued_by', 'created_at')
 
 

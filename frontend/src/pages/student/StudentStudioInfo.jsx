@@ -13,10 +13,10 @@ function avatarColor(name) {
 export default function StudentStudioInfo() {
   const [tab, setTab] = useState('about')
   const { data: settingsData } = useApi(() => settings.get())
-  const { data: staffData } = useApi(() => users.list({ role: 'instructor' }))
+  const { data: staffData } = useApi(() => users.publicInstructors())
 
   const s = settingsData || {}
-  const instructors = staffData?.results || []
+  const instructors = staffData || []
 
   const cancelWindow = s.cancellation_window_hours ?? 4
   const noShowFee = s.no_show_fee ? `$${parseFloat(s.no_show_fee).toFixed(0)}` : '$20'
@@ -32,7 +32,7 @@ export default function StudentStudioInfo() {
     },
     {
       title: 'Catch-up Credits',
-      body: "When you mark away more than 4 hours before class, a catch-up credit is added to your account. You can use it to book into another class in the same season. Credits do not carry over between seasons. For conditioning and dance classes, you can catch up any week. For level and routine classes, catch-ups can only be booked up to and including Week 3.",
+      body: "When you mark away more than 4 hours before class, a catch-up credit is added to your account. You can use it to book into another class in the same season. Credits do not carry over between seasons.\n\nFor conditioning and dance classes, you can catch up any week. For level and routine classes: if you're already enrolled in that class, you can catch up in it any week. If you're not enrolled in that class, catch-ups can only be booked up to and including Week 3.",
     },
     {
       title: 'Refund Policy',
@@ -81,9 +81,9 @@ export default function StudentStudioInfo() {
             ))}
           </div>
 
-          {/* Get in Touch */}
+          {/* Chat to us */}
           <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '22px 24px', marginBottom: 16 }}>
-            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 16 }}>Get in Touch</div>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 16 }}>Chat to us</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
                 <div style={{ minWidth: 180 }}>
@@ -91,7 +91,7 @@ export default function StudentStudioInfo() {
                   <a href="mailto:intrigued@dualitypole.com" style={{ fontSize: 14, color: 'var(--lime)', textDecoration: 'none' }}>intrigued@dualitypole.com</a>
                 </div>
                 <div>
-                  <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 4 }}>Urgent (same-day class issues)</div>
+                  <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 4 }}>Same-day class issues</div>
                   <a href="mailto:intrigued@dualitypole.com" style={{ fontSize: 14, color: 'var(--lime)', textDecoration: 'none' }}>intrigued@dualitypole.com</a>
                 </div>
               </div>
@@ -103,8 +103,22 @@ export default function StudentStudioInfo() {
                 <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 4 }}>Instagram</div>
                 <a href="https://instagram.com/dualitypole" target="_blank" rel="noreferrer" style={{ fontSize: 14, color: 'var(--lav)', textDecoration: 'none' }}>@dualitypole</a>
               </div>
-              <div style={{ padding: '12px 14px', background: '#111', borderRadius: 8, fontSize: 12, color: 'var(--grey)', lineHeight: 1.6 }}>
-                For same-day issues (e.g. can't access Kisi, running late) please email <span style={{ color: 'var(--white)' }}>intrigued@dualitypole.com</span> — this inbox is monitored before and during class time. The general inbox may not be checked until the next business day.
+              {/* Submit a ticket */}
+              <div style={{ background: 'rgba(204,255,0,0.05)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 10, padding: '14px 16px' }}>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 6 }}>Submit a ticket</div>
+                <div style={{ fontSize: 13, color: 'var(--white)', lineHeight: 1.6, marginBottom: 10 }}>
+                  Got a question that isn't urgent? Submit a support ticket and we'll get back to you — usually within one business day.
+                </div>
+                <a
+                  href="/portal/forms"
+                  style={{ display: 'inline-block', background: '#ccff00', color: '#000', fontWeight: 700, fontSize: 12, borderRadius: 8, padding: '9px 18px', textDecoration: 'none', letterSpacing: '0.4px' }}
+                >
+                  SUBMIT A TICKET →
+                </a>
+              </div>
+
+              <div style={{ padding: '12px 14px', background: '#111', borderRadius: 8, fontSize: 12, color: 'var(--grey)', lineHeight: 1.7 }}>
+                For same-day issues (e.g. can't access Kisi, running late) email <span style={{ color: 'var(--white)' }}>intrigued@dualitypole.com</span> — we monitor this before class. Please note we <span style={{ color: 'var(--white)' }}>can't respond during class time</span> as we're busy teaching everyone who arrived on time. The general inbox may not be checked until the next business day.
               </div>
             </div>
           </div>

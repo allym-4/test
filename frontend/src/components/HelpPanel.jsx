@@ -15,7 +15,7 @@ const PROMPTS = [
   {
     icon: '🎫',
     label: 'How do makeup credits work?',
-    answer: "If you cancel at least 4 hours before your class, you'll automatically get a makeup credit.\n\nYou can use that credit to book a catch-up class within the same season — credits don't carry over to future seasons, so make sure you use them!\n\nNot sure which classes you can catch up in? See 'What classes can I catch up in?' below.",
+    answer: "If you cancel at least 4 hours before your class, you'll automatically get a makeup credit.\n\nYou can use that credit to book a catch-up class within the same season — credits don't carry over to future seasons, so make sure you use them!\n\nFor conditioning and dance classes, you can catch up any week. For level and routine classes: if you're already enrolled in that class, you can catch up in it any week. If you're not enrolled in it, catch-ups are only available up to and including Week 3.\n\nNot sure which classes you're eligible for? See 'What classes can I catch up in?' below.",
   },
   {
     icon: '🗓️',
@@ -50,7 +50,7 @@ const PROMPTS = [
   {
     icon: '📅',
     label: 'When do season enrolments open?',
-    answer: "New season enrolments usually open around 4 weeks before the season starts. Current students get 48 hours of priority access before spots open to the public.\n\nKeep an eye on your notifications and email — we'll let you know as soon as enrolments are live.",
+    answer: "New season enrolments typically open around 4 weeks before the season starts, at 8am Sydney time on booking day.\n\nKeep an eye on your notifications and email — we'll let you know as soon as enrolments are live.",
   },
   {
     icon: '🎬',
@@ -117,7 +117,7 @@ export default function HelpPanel({ open, onClose }) {
           {PROMPTS.map((p, i) => (
             <div key={i} style={{
               background: 'var(--card)', border: `1px solid ${expanded === i ? 'rgba(204,255,0,0.2)' : 'var(--border)'}`,
-              borderRadius: 10, overflow: 'hidden',
+              borderRadius: 10,
               transition: 'border-color 0.15s',
             }}>
               <button

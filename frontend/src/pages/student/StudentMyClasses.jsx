@@ -560,6 +560,7 @@ export default function StudentMyClasses() {
   const [cancelPolicyEnrol, setCancelPolicyEnrol] = useState(null)
   const [classWaitlistLeaveEnrol, setClassWaitlistLeaveEnrol] = useState(null)
   const [displacementPopup, setDisplacementPopup] = useState(null)
+  const [markAwayOcc, setMarkAwayOcc] = useState(null)
 
   useEffect(() => {
     const items = casualBookingsData?.results || casualBookingsData || []
@@ -662,28 +663,56 @@ export default function StudentMyClasses() {
     const instructor = s?.instructor_detail?.display_name || s?.instructor_detail?.first_name || ''
     const studio = s?.studio_detail?.name || ''
     const badgeColor = badge === 'ACTIVE' || badge === 'BOOKED' ? 'var(--lime)' : badge === 'WAITLISTED' ? 'var(--lav)' : 'var(--grey)'
+
     return (
-      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 16 }}>
-        {(day || time) && (
-          <div style={{ textAlign: 'center', minWidth: 52, flexShrink: 0 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{day}</div>
-            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: 'var(--lime)', lineHeight: 1 }}>{time}</div>
-          </div>
-        )}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 15 }}>{s?.name}</div>
-          <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>
-            {[studio, instructor, 'Weeks 1–8'].filter(Boolean).join(' · ')}
-          </div>
-        </div>
-        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: badgeColor, border: `1px solid ${badgeColor}`, borderRadius: 20, padding: '2px 10px', marginBottom: showCancel ? 4 : 0, display: 'inline-block' }}>{badge}</div>
-          {showCancel && (
-            <div>
-              <button onClick={() => setCancelPolicyEnrol(enr)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 10, color: 'var(--red)', display: 'block', marginTop: 2 }}>CANCEL</button>
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          {(day || time) && (
+            <div style={{ textAlign: 'center', minWidth: 52, flexShrink: 0 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{day}</div>
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: 'var(--lime)', lineHeight: 1 }}>{time}</div>
             </div>
           )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>{s?.name}</div>
+            <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>
+              {[studio, instructor, 'Weeks 1–8'].filter(Boolean).join(' · ')}
+            </div>
+          </div>
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: badgeColor, border: `1px solid ${badgeColor}`, borderRadius: 20, padding: '2px 10px', marginBottom: showCancel ? 4 : 0, display: 'inline-block' }}>{badge}</div>
+            {showCancel && (
+              <button onClick={() => setCancelPolicyEnrol(enr)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 10, color: 'var(--red)', display: 'block', marginTop: 2 }}>CANCEL</button>
+            )}
+          </div>
         </div>
+        {badge === 'ACTIVE' && s?.id && (
+          <ClassRoster sessionId={s.id} />
+        )}
+        {badge === 'ACTIVE' && enr.upcoming_occurrences?.length > 0 && (
+          <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
+            {enr.upcoming_occurrences.map((occ, idx) => {
+              const occDateLabel = new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+              const occTimeLabel = occ.start_time ? fmtTime(occ.start_time) : ''
+              const isLast = idx === enr.upcoming_occurrences.length - 1
+              return (
+                <div key={occ.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.04)' }}>
+                  <span style={{ fontSize: 12, color: 'var(--grey)' }}>{occDateLabel}{occTimeLabel ? ` · ${occTimeLabel}` : ''}</span>
+                  {occ.marked_away ? (
+                    <span style={{ fontSize: 11, color: 'var(--amber)', fontWeight: 600 }}>Away</span>
+                  ) : (
+                    <button
+                      onClick={() => setMarkAwayOcc({ id: occ.id, date: occ.date, session_detail: { name: s?.name, start_time: occ.start_time } })}
+                      style={{ background: 'none', border: '1px solid rgba(255,170,0,0.35)', borderRadius: 6, padding: '3px 9px', cursor: 'pointer', fontSize: 10, fontWeight: 700, color: 'var(--amber)', letterSpacing: '0.3px' }}
+                    >
+                      MARK AWAY
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     )
   }
@@ -1173,6 +1202,16 @@ export default function StudentMyClasses() {
           booking={displacementPopup}
           onClose={() => setDisplacementPopup(null)}
           onAction={() => { setDisplacementPopup(null); refetchCasual(); refetchEnrol() }}
+        />
+      )}
+
+      {markAwayOcc && (
+        <MarkAwayModal
+          occurrence={markAwayOcc}
+          cancellationWindowHours={studioSettings?.cancellation_window_hours}
+          noShowFee={studioSettings?.no_show_fee}
+          onClose={() => setMarkAwayOcc(null)}
+          onDone={() => { setMarkAwayOcc(null); refetchEnrol() }}
         />
       )}
     </div>

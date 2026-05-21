@@ -13,7 +13,7 @@ const FAQS = [
   },
   {
     q: 'How do catch-up credits work?',
-    a: 'When you mark away more than 4 hours before class, a catch-up credit is added to your account. You can use it to book into any eligible class in the same season — conditioning classes and dance classes can be caught up any week, but level and routine classes can only be caught up up to and including Week 3.',
+    a: "When you mark away more than 4 hours before class, a catch-up credit is added to your account. You can use it to book into any eligible class in the same season — credits don't carry over between seasons.\n\nConditioning and dance classes can be caught up any week. For level and routine classes: if you're already enrolled in that class, you can catch up in it any week. If you're not enrolled in that class, catch-ups are only available up to and including Week 3.",
   },
   {
     q: 'How does practice time work?',
@@ -25,11 +25,11 @@ const FAQS = [
   },
   {
     q: 'Is there parking nearby?',
-    a: 'Rhapsody is on Crown St, Surry Hills — street parking on Crown St and nearby streets. Public transport: bus stops on Crown St, short walk from Central or Museum station.',
+    a: "We're at Level 1, 88 Kippax St, Surry Hills. Street parking on Kippax St and nearby streets. Public transport: multiple bus routes stop on nearby streets, and it's a short walk from Central or Museum station.",
   },
   {
     q: 'When do new season enrolments open?',
-    a: "In Week 5 of the current season, the next season becomes available to book. You'll get an email when it opens — current students get access from 8am Sydney time on opening day.",
+    a: "New season enrolments typically open around 4 weeks before the season starts. You'll get an email when bookings go live — enrolments open at 8am Sydney time on booking day.",
   },
 ]
 

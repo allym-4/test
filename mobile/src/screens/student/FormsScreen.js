@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   ScrollView, View, Text, TouchableOpacity, TextInput,
   StyleSheet, Alert, ActivityIndicator, RefreshControl, Modal,
@@ -284,7 +284,7 @@ export default function FormsScreen({ route }) {
 
   // Auto-open a survey if navigated here with openSurveyId
   const openSurveyId = route?.params?.openSurveyId
-  useState(() => {
+  useEffect(() => {
     if (openSurveyId && pendingSurveys.length > 0 && !activeSurvey) {
       const target = pendingSurveys.find(s => s.id === openSurveyId) ?? pendingSurveys[0]
       if (target) setActiveSurvey(target)
@@ -306,7 +306,7 @@ export default function FormsScreen({ route }) {
       await forms.submit(formType, responses)
       setLocalCompleted((prev) => ({ ...prev, [formType]: new Date().toISOString() }))
       return true
-    } catch {
+    } catch (e) {
       Alert.alert('Error', 'Something went wrong. Please try again.')
       return false
     } finally {
