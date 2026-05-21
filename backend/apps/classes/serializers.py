@@ -62,10 +62,10 @@ class ClassOccurrenceSerializer(serializers.ModelSerializer):
     spots_left = serializers.SerializerMethodField()
     casual_booked_count = serializers.SerializerMethodField()
     my_booking = serializers.SerializerMethodField()
-    session_name = serializers.CharField(source='session.name', read_only=True, default='')
-    start_time = serializers.TimeField(source='session.start_time', read_only=True, allow_null=True)
-    studio_name = serializers.CharField(source='session.studio.name', read_only=True, default='')
-    enrolled_count = serializers.IntegerField(source='session.enrolled_count', read_only=True, default=0)
+    session_name = serializers.SerializerMethodField()
+    start_time = serializers.SerializerMethodField()
+    studio_name = serializers.SerializerMethodField()
+    enrolled_count = serializers.SerializerMethodField(method_name='get_enrolled_count_flat')
 
     class Meta:
         model = ClassOccurrence
@@ -77,6 +77,23 @@ class ClassOccurrenceSerializer(serializers.ModelSerializer):
             'spots_left', 'casual_booked_count', 'my_booking',
             'session_name', 'start_time', 'studio_name', 'enrolled_count',
         )
+
+    def get_session_name(self, obj):
+        return obj.session.name if obj.session else ''
+
+    def get_start_time(self, obj):
+        if obj.session and obj.session.start_time:
+            return str(obj.session.start_time)[:5]
+        return ''
+
+    def get_studio_name(self, obj):
+        if obj.session and obj.session.studio:
+            return obj.session.studio.name
+        return ''
+
+    def get_enrolled_count_flat(self, obj):
+        from apps.enrolments.models import Enrolment
+        return Enrolment.objects.filter(class_session=obj.session, status='active').count() if obj.session else 0
 
     def get_casual_booked_count(self, obj):
         return obj.casual_bookings.filter(status='confirmed').count()
