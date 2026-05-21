@@ -5,6 +5,9 @@ import { Link } from 'react-router-dom'
 import client from '../api/client'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
+const COVER_REASONS = ['Personal', 'Medical', 'Emergency', 'Other']
 
 function getWeekStart(offsetWeeks = 0) {
   const d = new Date()
@@ -15,7 +18,7 @@ function getWeekStart(offsetWeeks = 0) {
 }
 
 function weekLabel(weekStart) {
-  return 'Week of ' + weekStart.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })
+  return weekStart.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 function sessionDate(weekStart, dayOfWeek) {
@@ -24,7 +27,13 @@ function sessionDate(weekStart, dayOfWeek) {
   return d
 }
 
-const COVER_REASONS = ['Personal', 'Medical', 'Emergency', 'Other']
+function fmt12(time) {
+  if (!time) return ''
+  const [h, m] = time.split(':').map(Number)
+  const ampm = h >= 12 ? 'pm' : 'am'
+  const h12 = h % 12 || 12
+  return `${h12}:${String(m).padStart(2, '0')}${ampm}`
+}
 
 function CoverModal({ session, onClose }) {
   const [reason, setReason] = useState('Personal')
@@ -52,39 +61,44 @@ function CoverModal({ session, onClose }) {
   }
 
   return (
-    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="sd-modal" style={{ maxWidth: 440 }}>
-        <div className="sd-header">
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>Request Cover — {session.name}</div>
-          <button className="modal-close-btn" onClick={onClose}>✕</button>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, maxWidth: 440, width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>Request Cover — {session.name}</div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 18 }}>✕</button>
         </div>
-        <div className="sd-body">
+        <div style={{ padding: '18px 20px' }}>
           {toast && (
-            <div style={{ background: 'var(--lime)', color: '#000', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, marginBottom: 12 }}>
+            <div style={{ background: 'var(--lime)', color: '#000', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, marginBottom: 14 }}>
               {toast}
             </div>
           )}
-          <form onSubmit={submit}>
-            <div className="field">
-              <label>Reason</label>
-              <select value={reason} onChange={e => setReason(e.target.value)}>
+          <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div>
+              <label style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.6px', color: 'var(--grey)', display: 'block', marginBottom: 6 }}>Reason</label>
+              <select
+                value={reason}
+                onChange={e => setReason(e.target.value)}
+                style={{ width: '100%', background: '#111', border: '1px solid var(--border)', borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 13 }}
+              >
                 {COVER_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
-            <div className="field">
-              <label>Notes</label>
+            <div>
+              <label style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.6px', color: 'var(--grey)', display: 'block', marginBottom: 6 }}>Notes</label>
               <textarea
-                rows={4}
+                rows={3}
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
                 placeholder="Additional notes for the studio…"
-                style={{ width: '100%', boxSizing: 'border-box' }}
+                style={{ width: '100%', background: '#111', border: '1px solid var(--border)', borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 13, resize: 'vertical', boxSizing: 'border-box' }}
               />
             </div>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
               <button type="submit" className="btn btn-lime btn-sm" disabled={submitting}>
-                {submitting ? 'Submitting…' : 'Submit'}
+                {submitting ? 'Submitting…' : 'Submit Request'}
               </button>
             </div>
           </form>
@@ -109,64 +123,108 @@ export default function ClassesPage() {
     return (a.start_time || '').localeCompare(b.start_time || '')
   })
 
+  const isCurrentWeek = weekOffset === 0
+
   return (
     <div>
-      <div className="page-header" style={{ flexWrap: 'wrap', gap: 12 }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <div className="page-title">My Classes</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
-            <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w - 1)}>← Prev Week</button>
-            <span style={{ fontSize: 13, fontWeight: 500 }}>{weekLabel(weekStart)}</span>
-            <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w + 1)}>Next Week →</button>
-          </div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>My Classes</div>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 4 }}>Week of {weekLabel(weekStart)}</div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w - 1)}>← Prev</button>
+          {weekOffset !== 0 && (
+            <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(0)}>This Week</button>
+          )}
+          <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w + 1)}>Next →</button>
         </div>
       </div>
 
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}><div className="spinner" /></div>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>
       ) : sorted.length === 0 ? (
-        <div className="empty-state">No classes found</div>
+        <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--grey)' }}>
+          <div style={{ fontSize: 13 }}>No classes assigned to you yet.</div>
+        </div>
       ) : (
-        <div className="list-card">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {sorted.map(s => {
             const classDate = sessionDate(weekStart, s.day_of_week)
             const isPast = classDate < today
             const isToday = classDate.getTime() === today.getTime()
             const isFull = s.enrolled_count >= s.capacity
-            const needsAction = isToday || isPast
-            const dayLabel = DAYS[s.day_of_week] + ' ' + classDate.getDate()
+            const enrollPct = s.capacity > 0 ? Math.min(100, (s.enrolled_count / s.capacity) * 100) : 0
+            const barColor = isFull ? 'var(--lime)' : enrollPct > 75 ? 'var(--amber)' : 'var(--lav)'
+            const dayLabel = DAYS[s.day_of_week]
+            const dateNum = classDate.getDate()
+            const monthLabel = MONTHS[classDate.getMonth()]
 
             return (
-              <div key={s.id} className="list-row" style={{ flexWrap: 'wrap', gap: 10 }}>
-                <div className="list-time">
-                  <div className="list-time-val" style={{ color: needsAction ? 'var(--lime)' : 'var(--grey)' }}>
-                    {s.start_time?.slice(0, 5)}
+              <div
+                key={s.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'stretch',
+                  background: '#111',
+                  border: `1px solid ${isToday ? 'rgba(204,255,0,0.25)' : '#1e1e1e'}`,
+                  borderRadius: 14,
+                  overflow: 'hidden',
+                  opacity: isPast && !isToday ? 0.6 : 1,
+                }}
+              >
+                {/* Left accent */}
+                <div style={{ width: 4, flexShrink: 0, background: isToday ? 'var(--lime)' : isPast ? '#333' : 'var(--lav)' }} />
+
+                {/* Date block */}
+                <div style={{ width: 64, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 8px', borderRight: '1px solid #1e1e1e', gap: 1 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#555', letterSpacing: '0.5px', textTransform: 'uppercase' }}>{dayLabel}</div>
+                  <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 24, color: isToday ? 'var(--lime)' : '#fff', lineHeight: 1.1 }}>{dateNum}</div>
+                  <div style={{ fontSize: 10, color: '#555' }}>{monthLabel}</div>
+                </div>
+
+                {/* Main content */}
+                <div style={{ flex: 1, minWidth: 0, padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15 }}>{s.name}</div>
+                    {isToday && (
+                      <span style={{ background: 'rgba(204,255,0,0.12)', color: 'var(--lime)', borderRadius: 6, fontSize: 10, fontWeight: 700, padding: '2px 7px', letterSpacing: '0.4px' }}>TODAY</span>
+                    )}
+                    {isFull && (
+                      <span style={{ background: 'rgba(204,255,0,0.08)', color: 'var(--lime)', borderRadius: 6, fontSize: 10, fontWeight: 700, padding: '2px 7px' }}>FULL</span>
+                    )}
                   </div>
-                  <div className="list-time-day">{dayLabel}</div>
-                </div>
-                <div className="list-body">
-                  <div className="list-title">{s.name} · {s.studio_detail?.name}</div>
-                  <div className="list-sub">
-                    {s.enrolled_count}/{s.capacity} enrolled
-                    {needsAction && <span style={{ color: 'var(--amber)', marginLeft: 6 }}>· Register not saved</span>}
+
+                  <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 10 }}>
+                    {fmt12(s.start_time)}{s.end_time ? ` – ${fmt12(s.end_time)}` : ''}
+                    {s.studio_detail?.name && <span style={{ marginLeft: 8, color: '#444' }}>· {s.studio_detail.name}</span>}
                   </div>
-                </div>
-                <div className="list-end">
-                  <span className={`tag ${needsAction ? 'tag-amber' : 'tag-grey'}`} style={{ fontSize: 10 }}>
-                    {needsAction ? 'Action needed' : 'Upcoming'}
-                  </span>
-                </div>
-                <div style={{ width: '100%', paddingLeft: 64, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {needsAction ? (
+
+                  {/* Enrolment bar */}
+                  <div style={{ marginBottom: 10 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontSize: 11, color: 'var(--grey)' }}>Enrolled</span>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: isFull ? 'var(--lime)' : 'var(--grey)' }}>
+                        {s.enrolled_count ?? 0}/{s.capacity ?? '?'}
+                      </span>
+                    </div>
+                    <div style={{ height: 3, background: '#1e1e1e', borderRadius: 2, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${enrollPct}%`, background: barColor, borderRadius: 2, transition: 'width 0.3s' }} />
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     <Link to={`/classes/${s.id}/attendance`}>
-                      <button className="btn btn-lime btn-xs">Take Register</button>
+                      <button className={`btn btn-sm ${isToday ? 'btn-lime' : 'btn-ghost'}`}>
+                        {isToday ? 'Take Register →' : isPast ? 'View Register' : 'View Roster'}
+                      </button>
                     </Link>
-                  ) : (
-                    <Link to={`/classes/${s.id}/attendance`}>
-                      <button className="btn btn-ghost btn-xs">View Roster</button>
-                    </Link>
-                  )}
-                  <button className="btn btn-ghost btn-xs" onClick={() => setCoverModal(s)}>Request Cover</button>
+                    <button className="btn btn-ghost btn-xs" onClick={() => setCoverModal(s)} style={{ fontSize: 11 }}>
+                      Request Cover
+                    </button>
+                  </div>
                 </div>
               </div>
             )

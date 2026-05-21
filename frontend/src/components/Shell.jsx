@@ -4,18 +4,21 @@ import { useApi } from '../hooks/useApi'
 import { notifications as notificationsApi } from '../api'
 import './Shell.css'
 
-const NAV = [
-  { to: '/',               label: 'Dashboard',           icon: '⬡', end: true },
-  { to: '/classes',        label: 'My Classes',          icon: '📅' },
-  { to: '/attendance',     label: 'Attendance',          icon: '✅' },
-  { to: '/students',       label: 'Students',            icon: '👤' },
-  { to: '/homework',       label: 'Homework',            icon: '📝' },
-  { to: '/messages',       label: 'Messages',            icon: '💬' },
-  { to: '/notifications',  label: 'Notifications',       icon: '🔔', badge: true },
-  { to: '/pay',            label: 'Pay & Earnings',      icon: '💰' },
-  { to: '/availability',   label: 'Availability & Cover', icon: '📆' },
-  { to: '/skills',         label: 'Skill Approvals',     icon: '⭐' },
-  { to: '/profile',        label: 'My Profile',          icon: '👤' },
+const NAV_PRIMARY = [
+  { to: '/',              label: 'Dashboard',     icon: '⬡', end: true },
+  { to: '/classes',       label: 'My Classes',    icon: '📅' },
+  { to: '/attendance',    label: 'Attendance',    icon: '✅' },
+  { to: '/students',      label: 'Students',      icon: '👥' },
+  { to: '/homework',      label: 'Homework',      icon: '📝' },
+]
+
+const NAV_SECONDARY = [
+  { to: '/messages',      label: 'Messages',      icon: '💬', mobileShow: true },
+  { to: '/notifications', label: 'Notifications', icon: '🔔', badge: true, mobileShow: true },
+  { to: '/pay',           label: 'Pay & Earnings', icon: '💰' },
+  { to: '/availability',  label: 'Availability & Cover', icon: '📆' },
+  { to: '/skills',        label: 'Skill Approvals', icon: '⭐' },
+  { to: '/profile',       label: 'My Profile',    icon: '👤', mobileShow: true },
 ]
 
 export default function Shell() {
@@ -33,14 +36,31 @@ export default function Shell() {
   return (
     <div className="shell">
       <nav className="sidebar">
-        <div className="sidebar-logo">DUALITY</div>
+        <div className="sidebar-logo">
+          <div className="sidebar-logo-line1">DUALITY</div>
+          <div className="sidebar-logo-line2">POLE</div>
+        </div>
+
         <div className="sidebar-nav">
-          {NAV.map(({ to, label, icon, end, badge }) => (
+          {NAV_PRIMARY.map(({ to, label, icon, end }) => (
             <NavLink
               key={to}
               to={to}
               end={end}
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            >
+              <span className="nav-icon">{icon}</span>
+              <span className="nav-label">{label}</span>
+            </NavLink>
+          ))}
+
+          <div className="nav-divider" />
+
+          {NAV_SECONDARY.map(({ to, label, icon, badge, mobileShow }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}${!mobileShow ? ' nav-desktop-only' : ''}`}
             >
               <span className="nav-icon">{icon}</span>
               <span className="nav-label">{label}</span>
@@ -52,26 +72,27 @@ export default function Shell() {
             </NavLink>
           ))}
         </div>
+
         <div className="sidebar-footer">
           <div className="sidebar-user">
-            <div className="avatar" style={{ background: 'var(--lime)', fontSize: '12px' }}>
+            <div className="avatar" style={{ background: 'var(--lime)', fontSize: '12px', flexShrink: 0 }}>
               {user?.first_name?.[0] || '?'}
             </div>
             <div className="sidebar-user-info">
-              <div style={{ fontSize: '12px', fontWeight: 600 }}>{user?.display_name}</div>
+              <div style={{ fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.display_name}</div>
               <div style={{ fontSize: '10px', color: 'var(--grey)', textTransform: 'capitalize' }}>{user?.role}</div>
             </div>
           </div>
-          <button className="btn btn-ghost btn-xs" onClick={handleLogout}>Log out</button>
-          <button
-            className="btn btn-ghost btn-xs"
-            style={{ marginTop: 6, width: '100%', color: 'var(--lav)', borderColor: 'rgba(176,160,255,0.3)' }}
-            onClick={() => navigate('/portal')}
-          >
-            Student View →
-          </button>
+
+          <div className="view-toggle">
+            <button className="view-toggle-btn active">Staff</button>
+            <button className="view-toggle-btn" onClick={() => navigate('/portal')}>Student</button>
+          </div>
+
+          <button className="btn btn-ghost btn-xs" onClick={handleLogout} style={{ width: '100%' }}>Log out</button>
         </div>
       </nav>
+
       <main className="main-content">
         <Outlet />
       </main>
