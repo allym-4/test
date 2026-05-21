@@ -1132,8 +1132,11 @@ export default function BookScreen({ navigation }) {
     const inActiveSeason = activeSeason && sess?.season === activeSeason?.id
     const cutoffWeeks = sess?.catchup_cutoff_weeks ?? 3
     const pastCutoff = inActiveSeason && currentSeasonWeek > cutoffWeeks
-    if (isOutOfLevel) { setCasualWarning({ occ, type: 'level' }); return }
+    // Exemption required only when outside level AND past the catch-up cutoff
+    if (isOutOfLevel && pastCutoff) { setCasualWarning({ occ, type: 'level' }); return }
     if (pastCutoff) { setCasualWarning({ occ, type: 'cutoff' }); return }
+    // Outside level but within booking window — show soft heads-up then proceed
+    if (isOutOfLevel) { setHeadsUpSession({ ...sess, _casualOcc: occ }); return }
     setBookingOptionsOcc(occ)
   }
 
@@ -1749,12 +1752,7 @@ export default function BookScreen({ navigation }) {
                           session.instructor_detail?.display_name ?? session.instructor_detail?.first_name,
                         ].filter(Boolean).join('  ·  ')}
                       </Text>
-                      {isOutOfLevel && (
-                        <Text style={{ fontSize: 11, color: '#f59e0b', marginTop: 4, fontWeight: '600' }}>
-                          🔒 Outside your current level — tap to request
-                        </Text>
-                      )}
-                      {!isOutOfLevel && spotsLeft > 0 && spotsLeft <= 2 && (
+                      {spotsLeft > 0 && spotsLeft <= 2 && !isOutOfLevel && (
                         <Text style={s.spotsWarning}>{spotsLeft} spot{spotsLeft !== 1 ? 's' : ''} left</Text>
                       )}
                       {isFull && <Text style={s.spotsFull}>Full</Text>}
@@ -1764,7 +1762,12 @@ export default function BookScreen({ navigation }) {
                     ) : booked[session.id + '-waitlist'] ? (
                       <Text style={s.bookedBadge}>⏳ Waitlisted</Text>
                     ) : isOutOfLevel ? (
-                      <Text style={{ fontSize: 18 }}>🔒</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text style={{ fontSize: 14 }}>🔒</Text>
+                        <View style={[s.checkCircle, isSelected && s.checkCircleSelected]}>
+                          {isSelected && <Text style={s.checkMark}>✓</Text>}
+                        </View>
+                      </View>
                     ) : isFull ? (
                       <TouchableOpacity
                         style={s.waitlistBtn}
@@ -2217,8 +2220,13 @@ export default function BookScreen({ navigation }) {
       <HeadsUpModal
         session={headsUpSession}
         onConfirm={() => {
-          setSelectedSessions(prev => [...prev, headsUpSession])
+          const sess = headsUpSession
           setHeadsUpSession(null)
+          if (sess?._casualOcc) {
+            setBookingOptionsOcc(sess._casualOcc)
+          } else {
+            setSelectedSessions(prev => [...prev, sess])
+          }
         }}
         onCancel={() => setHeadsUpSession(null)}
       />
@@ -2313,8 +2321,17 @@ export default function BookScreen({ navigation }) {
           setExemptionSession(sess)
         }}
         onEnrolSeason={() => {
+          const occ = bookingOptionsOcc
           setBookingOptionsOcc(null)
-          setTab('season')
+          // Build a session object from the occurrence's session_detail and go straight to checkout
+          const sess = occ?.session_detail
+          if (sess) {
+            const sessionObj = { ...sess, id: sess.id ?? occ.session }
+            setSelectedSessions([sessionObj])
+            setShowSeasonCheckout(true)
+          } else {
+            setTab('season')
+          }
         }}
       />
 

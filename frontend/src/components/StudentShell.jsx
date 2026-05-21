@@ -132,37 +132,35 @@ export default function StudentShell() {
       <div className="student-topbar">
         <button className="student-hamburger" onClick={() => setMobileOpen(true)}>☰</button>
         <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, letterSpacing: 2, color: 'var(--lime)' }}>DUALITY</div>
-        <NavLink to="/portal/notifications" style={{ marginLeft: 'auto', position: 'relative', display: 'flex', alignItems: 'center', color: 'inherit', textDecoration: 'none' }}>
-          <span style={{ fontSize: 20 }}>🔔</span>
-          {notifBadge > 0 && (
-            <span style={{
-              position: 'absolute', top: -4, right: -6,
-              background: 'var(--lime)', color: '#000',
-              borderRadius: 9, minWidth: 18, height: 18,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 10, fontWeight: 800, padding: '0 3px',
-            }}>{notifBadge > 99 ? '99+' : notifBadge}</span>
-          )}
-        </NavLink>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button
+            onClick={() => setHelpOpen(true)}
+            style={{
+              background: 'rgba(204,255,0,0.1)', border: '1px solid rgba(204,255,0,0.25)',
+              borderRadius: 8, color: 'var(--lime)', fontSize: 12, fontWeight: 700,
+              padding: '5px 12px', cursor: 'pointer', letterSpacing: 0.5,
+            }}
+          >
+            ? Help
+          </button>
+          <NavLink to="/portal/notifications" style={{ position: 'relative', display: 'flex', alignItems: 'center', color: 'inherit', textDecoration: 'none' }}>
+            <span style={{ fontSize: 20 }}>🔔</span>
+            {notifBadge > 0 && (
+              <span style={{
+                position: 'absolute', top: -4, right: -6,
+                background: 'var(--lime)', color: '#000',
+                borderRadius: 9, minWidth: 18, height: 18,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 10, fontWeight: 800, padding: '0 3px',
+              }}>{notifBadge > 99 ? '99+' : notifBadge}</span>
+            )}
+          </NavLink>
+        </div>
       </div>
 
       <main className="student-main">
         <Outlet />
       </main>
-
-      {/* Floating help button */}
-      <button
-        onClick={() => setHelpOpen(true)}
-        style={{
-          position: 'fixed', bottom: 80, right: 20, zIndex: 200,
-          background: 'var(--lime)', color: '#000', border: 'none', borderRadius: 24,
-          padding: '10px 18px', fontWeight: 700, fontSize: 13, cursor: 'pointer',
-          boxShadow: '0 4px 20px rgba(204,255,0,0.35)',
-          display: 'flex', alignItems: 'center', gap: 7,
-        }}
-      >
-        <span style={{ fontSize: 16 }}>?</span> I need help
-      </button>
 
       <HelpPanel open={helpOpen} onClose={() => setHelpOpen(false)} />
 

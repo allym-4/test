@@ -286,7 +286,7 @@ export default function StudentBilling() {
                 {/* Total */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4, marginBottom: 24 }}>
                   <span style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#666' }}>Total</span>
-                  <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>${amount.toFixed(2)}</span>
+                  <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(17px, 5vw, 22px)' }}>${amount.toFixed(2)}</span>
                 </div>
 
                 {/* Actions */}
@@ -362,7 +362,7 @@ export default function StudentBilling() {
             <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--lav)', marginBottom: 8 }}>
               Make-up Credits
             </div>
-            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 32, color: 'var(--lav)' }}>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(20px, 6vw, 28px)', color: 'var(--lav)' }}>
               {Array.isArray(catchupCredits) ? catchupCredits.filter(c => c.status === 'available' || !c.status).length : 0}{' '}
               <span style={{ fontSize: 16, fontWeight: 'normal', fontFamily: "'Archivo', sans-serif", color: 'var(--grey)' }}>credits available</span>
             </div>
@@ -408,7 +408,7 @@ export default function StudentBilling() {
           <div className="spinner" />
         ) : (
           <>
-            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 36, color: isOwing ? '#ff6b6b' : 'var(--lime)', marginBottom: 6 }}>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(22px, 7vw, 32px)', color: isOwing ? '#ff6b6b' : 'var(--lime)', marginBottom: 6 }}>
               {isOwing ? `$${Math.abs(bal).toFixed(2)} owing` : bal > 0 ? `$${bal.toFixed(2)} credit` : '$0.00'}
             </div>
             {isOwing && balData?.total_charged && (

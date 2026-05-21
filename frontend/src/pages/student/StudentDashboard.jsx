@@ -224,12 +224,12 @@ export default function StudentDashboard() {
       <div className="kpi-grid" style={{ marginBottom: 24 }}>
         <Link to="/portal/classes" style={{ textDecoration: 'none' }}>
           <div className="kpi card" style={{ textAlign: 'center', cursor: 'pointer' }}>
-            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color: 'var(--lime)' }}>{loadingEnrol ? '—' : enrolments_.length}</div>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(18px, 5.5vw, 26px)', color: 'var(--lime)' }}>{loadingEnrol ? '—' : enrolments_.length}</div>
             <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>Classes This Season</div>
           </div>
         </Link>
         <div className="kpi card" style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color: 'var(--lav)' }}>{creditsData ? (creditsData?.results || creditsData || []).length : '—'}</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(18px, 5.5vw, 26px)', color: 'var(--lav)' }}>{creditsData ? (creditsData?.results || creditsData || []).length : '—'}</div>
           <Link to="/portal/billing" style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4, display: 'block', textDecoration: 'none' }}>Catch-up Credits</Link>
         </div>
         <div className="kpi card" style={{ textAlign: 'center' }}>
@@ -237,7 +237,7 @@ export default function StudentDashboard() {
           <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>Tricks Unlocked in your level</div>
         </div>
         <div className="kpi card" style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color: 'var(--lav)' }}>{weeksRemaining}</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(18px, 5.5vw, 26px)', color: 'var(--lav)' }}>{weeksRemaining}</div>
           <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>Weeks Remaining</div>
         </div>
       </div>
@@ -301,7 +301,7 @@ export default function StudentDashboard() {
                 <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
                   <div style={{ textAlign: 'center', flexShrink: 0, width: 44 }}>
                     <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', color: 'var(--grey)', textTransform: 'uppercase' }}>{DAYS_SHORT[s?.day_of_week]}</div>
-                    <div style={{ fontSize: 26, fontWeight: 800, fontFamily: "'Archivo Black', sans-serif", color: 'var(--lime)', lineHeight: 1.1 }}>{formatDayDate(s?.day_of_week)}</div>
+                    <div style={{ fontSize: 'clamp(17px, 5vw, 24px)', fontWeight: 800, fontFamily: "'Archivo Black', sans-serif", color: 'var(--lime)', lineHeight: 1.1 }}>{formatDayDate(s?.day_of_week)}</div>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s?.name} · {s?.studio_detail?.name}</div>

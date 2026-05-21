@@ -99,6 +99,9 @@ class ClassOccurrenceListView(generics.ListCreateAPIView):
             qs = qs.filter(session_id__in=session_ids)
         if self.request.query_params.get('upcoming') == 'true':
             qs = qs.filter(date__gte=date.today()).order_by('date')
+        season_id = self.request.query_params.get('season')
+        if season_id:
+            qs = qs.filter(session__season_id=season_id)
         return qs
 
 
@@ -1197,6 +1200,19 @@ class MyUpcomingClassesView(APIView):
                     occurrence=occ
                 ).exclude(status__in=['absent', 'no_show']).count()
 
+                # Who's coming: other enrolled students with roster visibility on
+                from apps.enrolments.models import Enrolment as EnrolModel
+                classmates_qs = EnrolModel.objects.filter(
+                    class_session=sess, status='active', enrolment_type='course'
+                ).exclude(student=student).select_related('student')
+                classmates = []
+                for e in classmates_qs:
+                    u = e.student
+                    if u.show_in_roster:
+                        name = u.nickname if u.roster_name == 'nickname' and u.nickname else u.first_name
+                        if name:
+                            classmates.append(name)
+
                 items.append({
                     'id': f'enrol-{occ.id}',
                     'type': 'enrolled',
@@ -1206,7 +1222,7 @@ class MyUpcomingClassesView(APIView):
                     'studio_name': sess.studio.name if sess.studio else None,
                     'instructor_name': (
                         f"{sess.instructor.first_name} {sess.instructor.last_name}".strip()
-                        if sess.instructor else sess.instructor_name or None
+                        if sess.instructor else None
                     ),
                     'status': 'away' if absence else 'attending',
                     'occurrence_id': occ.id,
@@ -1214,6 +1230,8 @@ class MyUpcomingClassesView(APIView):
                     'makeup_credit_issued': absence is not None,
                     'spots_left': max(0, sess.capacity - enrolled_count),
                     'is_past': occ.date < today,
+                    'classmates': classmates,
+                    'session_id': sess.id,
                 })
 
         # 2. Casual / catch-up / class-pass bookings
@@ -1235,11 +1253,12 @@ class MyUpcomingClassesView(APIView):
                 'studio_name': sess.studio.name if sess.studio else None,
                 'instructor_name': (
                     f"{sess.instructor.first_name} {sess.instructor.last_name}".strip()
-                    if sess.instructor else sess.instructor_name or None
+                    if sess.instructor else None
                 ),
                 'status': cb.status,  # 'confirmed' or 'waitlisted'
                 'booking_id': cb.id,
                 'occurrence_id': occ.id,
+                'session_id': sess.id,
                 'spots_left': None,
                 'is_past': False,
             })

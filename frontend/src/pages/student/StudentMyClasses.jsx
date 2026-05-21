@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { enrolments as enrolmentsApi, attendance, classes as classesApi, helpdesk as helpdeskApi, attendance as attendanceApi, settings as settingsApi } from '../../api'
+import MarkAwayModal from '../../components/MarkAwayModal'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -43,80 +44,6 @@ function ClassRoster({ sessionId }) {
   )
 }
 
-// ─── MarkAwayModal ────────────────────────────────────────────────────────────
-
-function MarkAwayModal({ occurrence, cancellationWindowHours, noShowFee, onClose, onDone }) {
-  const [confirming, setConfirming] = useState(false)
-
-  const occDate = new Date(occurrence.date + 'T' + (occurrence.session_detail?.start_time || '00:00'))
-  const hoursUntil = (occDate - new Date()) / (1000 * 60 * 60)
-  const windowHours = cancellationWindowHours || 4
-  const isLate = hoursUntil > 0 && hoursUntil < windowHours
-  const feeAmount = noShowFee ? `$${parseFloat(noShowFee).toFixed(0)}` : '$20'
-
-  const sessionName = occurrence.session_detail?.name || occurrence.session_name
-  const dateLabel = new Date(occurrence.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
-  const timeLabel = occurrence.session_detail?.start_time ? occurrence.session_detail.start_time.slice(0, 5) : ''
-
-  async function confirm() {
-    setConfirming(true)
-    try {
-      await attendance.markAway(occurrence.id)
-      onDone()
-    } finally {
-      setConfirming(false)
-    }
-  }
-
-  return (
-    <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
-      onClick={e => e.target === e.currentTarget && onClose()}
-    >
-      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, maxWidth: 440, width: '100%' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px 12px' }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20 }}>Mark Away — {sessionName}</div>
-          <button onClick={onClose} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', cursor: 'pointer', fontSize: 12, fontWeight: 700, padding: '6px 12px', letterSpacing: 0.5 }}>CLOSE</button>
-        </div>
-
-        <div style={{ fontSize: 14, color: 'var(--grey)', padding: '0 24px 16px' }}>
-          {dateLabel}{timeLabel ? `, ${timeLabel}` : ''}
-        </div>
-
-        <div style={{ padding: '0 24px 20px' }}>
-          {isLate ? (
-            <div style={{ background: 'rgba(180,80,0,0.25)', border: '1px solid var(--amber)', borderRadius: 12, padding: '16px', marginBottom: 20 }}>
-              <div style={{ fontWeight: 800, color: 'var(--amber)', marginBottom: 8, fontSize: 15 }}>No catch-up credit for this one</div>
-              <div style={{ fontSize: 14, color: 'var(--white)', lineHeight: 1.6 }}>
-                This is within <strong>{windowHours} hours</strong> of your class — the cancellation window has passed. You can still mark away so we know you're not coming, but no credit will be issued. If you don't mark away and don't attend, a <strong style={{ color: 'var(--amber)' }}>{feeAmount} no-show fee</strong> will be charged.
-              </div>
-            </div>
-          ) : (
-            <div style={{ background: 'rgba(204,255,0,0.07)', border: '1.5px solid var(--lime)', borderRadius: 12, padding: '16px', marginBottom: 20 }}>
-              <div style={{ fontWeight: 800, color: 'var(--lime)', marginBottom: 8, fontSize: 15 }}>You'll receive a catch-up credit</div>
-              <div style={{ fontSize: 14, color: 'var(--white)', lineHeight: 1.6 }}>
-                This is more than <strong>{windowHours} hours</strong> before your class — you're within the cancellation window. A catch-up credit will be added to your account to use within this season.
-              </div>
-            </div>
-          )}
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {isLate ? (
-              <button className="btn btn-ghost btn-sm" onClick={confirm} disabled={confirming} style={{ fontWeight: 900, letterSpacing: 0.5 }}>
-                {confirming ? 'Saving…' : 'MARK AWAY ANYWAY'}
-              </button>
-            ) : (
-              <button className="btn btn-lime btn-sm" onClick={confirm} disabled={confirming} style={{ fontWeight: 900, letterSpacing: 0.5 }}>
-                {confirming ? 'Saving…' : 'CONFIRM — MARK ME AWAY'}
-              </button>
-            )}
-            <button className="btn btn-ghost btn-sm" onClick={onClose} style={{ color: 'var(--grey)' }}>CANCEL</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 // ─── CancelAwayDialog ─────────────────────────────────────────────────────────
 
@@ -536,6 +463,66 @@ function WaitlistOfferBanner({ enrolment, onClaimed }) {
   )
 }
 
+// ─── CancelCasualModal ───────────────────────────────────────────────────────
+
+function CancelCasualModal({ booking, onClose, onConfirm }) {
+  const d = booking.occurrence_detail
+  const isWaitlisted = booking.status === 'waitlisted'
+
+  // Calculate hours until class
+  let hoursUntil = null
+  if (d?.date && d?.start_time) {
+    const classDateTime = new Date(`${d.date}T${d.start_time}`)
+    hoursUntil = (classDateTime - new Date()) / (1000 * 60 * 60)
+  }
+  const withinWindow = hoursUntil !== null && hoursUntil < 4
+
+  const dateLabel = d?.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' }) : '—'
+  const timeLabel = d?.start_time ? d.start_time.slice(0, 5) : ''
+
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, maxWidth: 420, width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>
+            {isWaitlisted ? 'Leave Waitlist?' : 'Cancel Booking?'}
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 18 }}>✕</button>
+        </div>
+        <div style={{ padding: '18px 20px' }}>
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>{d?.session_name}</div>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 16 }}>
+            {dateLabel}{timeLabel ? ` · ${timeLabel}` : ''}
+          </div>
+          {isWaitlisted ? (
+            <div style={{ background: 'rgba(204,255,0,0.05)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 10, padding: '12px 14px', marginBottom: 16, fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
+              You'll be removed from the waitlist. If a spot opens up later, you'd need to re-join.
+            </div>
+          ) : withinWindow ? (
+            <div style={{ background: 'rgba(255,170,0,0.08)', border: '1px solid rgba(255,170,0,0.25)', borderRadius: 10, padding: '12px 14px', marginBottom: 16, fontSize: 13, lineHeight: 1.6 }}>
+              <div style={{ color: '#f59e0b', fontWeight: 600, marginBottom: 4 }}>Less than 4 hours to class</div>
+              <div style={{ color: 'var(--grey)' }}>Your spot will be released but no credit will be issued — it's too close to class time.</div>
+            </div>
+          ) : (
+            <div style={{ background: 'rgba(204,255,0,0.05)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 10, padding: '12px 14px', marginBottom: 16, fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
+              Your spot will be released and you'll receive a <span style={{ color: 'var(--lime)', fontWeight: 600 }}>catch-up credit</span> to use within this season.
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Keep it</button>
+            <button className="btn btn-sm" style={{ flex: 1, background: 'rgba(255,68,68,0.12)', border: '1px solid rgba(255,68,68,0.3)', color: 'var(--red)', fontWeight: 600 }} onClick={onConfirm}>
+              {isWaitlisted ? 'Leave waitlist' : 'Cancel booking'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -556,11 +543,11 @@ export default function StudentMyClasses() {
   const { data: studioSettings } = useApi(() => settingsApi.get(), [])
 
   const [tab, setTab] = useState('active')
-  const [activeSubTab, setActiveSubTab] = useState('enrolled')
   const [cancelPolicyEnrol, setCancelPolicyEnrol] = useState(null)
   const [classWaitlistLeaveEnrol, setClassWaitlistLeaveEnrol] = useState(null)
   const [displacementPopup, setDisplacementPopup] = useState(null)
   const [markAwayOcc, setMarkAwayOcc] = useState(null)
+  const [cancelCasualBooking, setCancelCasualBooking] = useState(null)
 
   useEffect(() => {
     const items = casualBookingsData?.results || casualBookingsData || []
@@ -670,7 +657,7 @@ export default function StudentMyClasses() {
           {(day || time) && (
             <div style={{ textAlign: 'center', minWidth: 52, flexShrink: 0 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{day}</div>
-              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: 'var(--lime)', lineHeight: 1 }}>{time}</div>
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(16px, 4.5vw, 20px)', color: 'var(--lime)', lineHeight: 1 }}>{time}</div>
             </div>
           )}
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -734,7 +721,7 @@ export default function StudentMyClasses() {
             <div style={{ fontSize: 13, color: 'var(--grey)' }}>{count} class{count !== 1 ? 'es' : ''} · {seasonName}</div>
             <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>${perClass}/class · 8 weeks{isFuture ? ' · payment plan available' : ''}</div>
           </div>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22 }}>${total}</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(16px, 4.5vw, 20px)' }}>${total}</div>
         </div>
         {nextPerSession && (
           <div style={{ fontSize: 12, color: 'var(--grey)', margin: '10px 0 12px', lineHeight: 1.5 }}>
@@ -750,8 +737,13 @@ export default function StudentMyClasses() {
     )
   }
 
-  async function cancelCasual(booking) {
-    if (!window.confirm(booking.status === 'waitlisted' ? 'Leave the waitlist for this class?' : 'Cancel this booking?')) return
+  function cancelCasual(booking) {
+    setCancelCasualBooking(booking)
+  }
+
+  async function confirmCancelCasual() {
+    const booking = cancelCasualBooking
+    setCancelCasualBooking(null)
     try {
       await classesApi.casual.cancel(booking.occurrence)
       refetchCasual()
@@ -763,33 +755,35 @@ export default function StudentMyClasses() {
   return (
     <div>
       {/* Header */}
-      <div className="page-header">
-        <div>
-          <div className="page-title">My Classes</div>
-          <div className="page-sub">{active.length} active enrolment{active.length !== 1 ? 's' : ''}</div>
-        </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <Link to="/portal/upcoming-classes">
-            <button className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>View upcoming →</button>
-          </Link>
-          <button
-            className="btn btn-ghost btn-sm"
-            style={{ fontSize: 12 }}
-            onClick={async () => {
-              try {
-                const token = localStorage.getItem('access_token')
-                const baseUrl = import.meta.env.VITE_API_URL || ''
-                const res = await fetch(`${baseUrl}/api/enrolments/calendar.ics`, { headers: { Authorization: `Bearer ${token}` } })
-                const blob = await res.blob()
-                const url = URL.createObjectURL(blob)
-                const a = document.createElement('a')
-                a.href = url; a.download = 'duality-pole-classes.ics'; a.click()
-                URL.revokeObjectURL(url)
-              } catch { alert('Failed to download calendar file.') }
-            }}
-          >
-            📅 Add to Calendar
-          </button>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+          <div>
+            <div className="page-title">My Classes</div>
+            <div className="page-sub">{active.length} active enrolment{active.length !== 1 ? 's' : ''}</div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+            <Link to="/portal/upcoming-classes">
+              <button className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>View upcoming →</button>
+            </Link>
+            <button
+              className="btn btn-ghost btn-sm"
+              style={{ fontSize: 12 }}
+              onClick={async () => {
+                try {
+                  const token = localStorage.getItem('access_token')
+                  const baseUrl = import.meta.env.VITE_API_URL || ''
+                  const res = await fetch(`${baseUrl}/api/enrolments/calendar.ics`, { headers: { Authorization: `Bearer ${token}` } })
+                  const blob = await res.blob()
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url; a.download = 'duality-pole-classes.ics'; a.click()
+                  URL.revokeObjectURL(url)
+                } catch { alert('Failed to download calendar file.') }
+              }}
+            >
+              📅 Calendar
+            </button>
+          </div>
         </div>
       </div>
 
@@ -820,7 +814,7 @@ export default function StudentMyClasses() {
                   </div>
                   {currentWeek && (
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: 'var(--lime)', lineHeight: 1 }}>Week {currentWeek}</div>
+                      <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(16px, 4.5vw, 20px)', color: 'var(--lime)', lineHeight: 1 }}>Week {currentWeek}</div>
                       <div style={{ fontSize: 11, color: 'var(--grey)' }}>of 8</div>
                     </div>
                   )}
@@ -830,7 +824,7 @@ export default function StudentMyClasses() {
               {/* Catch-up credits */}
               {availableCredits.length > 0 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'rgba(176,160,255,0.06)', border: '1px solid rgba(176,160,255,0.25)', borderRadius: 12, padding: '12px 16px', marginBottom: 16 }}>
-                  <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26, color: 'var(--lav)', lineHeight: 1 }}>{availableCredits.length}</div>
+                  <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(18px, 5vw, 22px)', color: 'var(--lav)', lineHeight: 1 }}>{availableCredits.length}</div>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>Catch-up credit{availableCredits.length !== 1 ? 's' : ''} available</div>
                     <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 1 }}>
@@ -871,17 +865,7 @@ export default function StudentMyClasses() {
                 </div>
               )}
 
-              {/* Sub-tabs: Enrolled / Casual & catch-ups */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: '#0d0d0d', borderRadius: 10, padding: 3, marginBottom: 16, border: '1px solid var(--border)' }}>
-                {[['enrolled', 'Enrolled classes'], ['casual', 'Casual & catch-ups']].map(([key, label]) => (
-                  <button key={key} onClick={() => setActiveSubTab(key)} style={{ background: activeSubTab === key ? 'var(--card)' : 'transparent', color: activeSubTab === key ? 'var(--white)' : 'var(--grey)', border: 'none', borderRadius: 8, padding: '8px 4px', cursor: 'pointer', fontWeight: activeSubTab === key ? 600 : 400, fontSize: 12, transition: 'all 0.15s' }}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              {activeSubTab === 'enrolled' && (
-                <div>
+              <div>
                   {currentEnrolments.length === 0 ? (
                     <div className="empty-state">
                       <div style={{ marginBottom: 8 }}>No classes enrolled this season</div>
@@ -931,9 +915,11 @@ export default function StudentMyClasses() {
                     </div>
                   )}
                 </div>
-              )}
 
-              {activeSubTab === 'casual' && (
+              {/* Casual & catch-ups — inline below enrolled */}
+              {(confirmedCasuals.filter(b => { const d = b.occurrence_detail?.date; return d && d >= today }).length > 0 || waitlistedCasuals.length > 0) && (
+                <div style={{ marginTop: 20 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>Casual & catch-ups</div>
                 <div>
                   {confirmedCasuals.filter(b => { const d = b.occurrence_detail?.date; return d && d >= today }).length === 0 && waitlistedCasuals.length === 0 ? (
                     <div className="empty-state">
@@ -949,20 +935,23 @@ export default function StudentMyClasses() {
                         const dayNum = d?.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric' }) : ''
                         const monStr = d?.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { month: 'short' }) : ''
                         return (
-                          <div key={b.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 16 }}>
-                            <div style={{ textAlign: 'center', minWidth: 52, flexShrink: 0 }}>
-                              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase' }}>{dayStr}</div>
-                              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, color: isCatchup ? 'var(--lav)' : 'var(--lime)', lineHeight: 1 }}>{dayNum}</div>
-                              <div style={{ fontSize: 10, color: 'var(--grey)' }}>{monStr}</div>
+                          <div key={b.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                              <div style={{ textAlign: 'center', minWidth: 52, flexShrink: 0 }}>
+                                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase' }}>{dayStr}</div>
+                                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, color: isCatchup ? 'var(--lav)' : 'var(--lime)', lineHeight: 1 }}>{dayNum}</div>
+                                <div style={{ fontSize: 10, color: 'var(--grey)' }}>{monStr}</div>
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontWeight: 700, fontSize: 15 }}>{d?.session_name}</div>
+                                <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{[d?.start_time?.slice(0, 5), d?.studio_name].filter(Boolean).join(' · ')}</div>
+                              </div>
+                              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                <div style={{ fontSize: 10, fontWeight: 700, color: isCatchup ? 'var(--lav)' : 'var(--lime)', border: `1px solid ${isCatchup ? 'var(--lav)' : 'var(--lime)'}`, borderRadius: 20, padding: '2px 10px', marginBottom: 4, display: 'inline-block' }}>{isCatchup ? 'CATCH-UP' : 'CASUAL'}</div>
+                                <div><button onClick={() => cancelCasual(b)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 10, color: 'var(--red)', display: 'block', marginTop: 2 }}>CANCEL</button></div>
+                              </div>
                             </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontWeight: 700, fontSize: 15 }}>{d?.session_name}</div>
-                              <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{[d?.start_time?.slice(0, 5), d?.studio_name].filter(Boolean).join(' · ')}</div>
-                            </div>
-                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                              <div style={{ fontSize: 10, fontWeight: 700, color: isCatchup ? 'var(--lav)' : 'var(--lime)', border: `1px solid ${isCatchup ? 'var(--lav)' : 'var(--lime)'}`, borderRadius: 20, padding: '2px 10px', marginBottom: 4, display: 'inline-block' }}>{isCatchup ? 'CATCH-UP' : 'CASUAL'}</div>
-                              <div><button onClick={() => cancelCasual(b)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 10, color: 'var(--red)', display: 'block', marginTop: 2 }}>CANCEL</button></div>
-                            </div>
+                            {d?.session_id && <ClassRoster sessionId={d.session_id} />}
                           </div>
                         )
                       })}
@@ -992,6 +981,7 @@ export default function StudentMyClasses() {
                       </div>
                     </div>
                   )}
+                </div>
                 </div>
               )}
             </div>
@@ -1212,6 +1202,14 @@ export default function StudentMyClasses() {
           noShowFee={studioSettings?.no_show_fee}
           onClose={() => setMarkAwayOcc(null)}
           onDone={() => { setMarkAwayOcc(null); refetchEnrol() }}
+        />
+      )}
+
+      {cancelCasualBooking && (
+        <CancelCasualModal
+          booking={cancelCasualBooking}
+          onClose={() => setCancelCasualBooking(null)}
+          onConfirm={confirmCancelCasual}
         />
       )}
     </div>

@@ -22,7 +22,7 @@ class EnrolmentSerializer(serializers.ModelSerializer):
             ClassOccurrence.objects
             .filter(session_id=obj.class_session_id, date__gte=today)
             .select_related('session')
-            .order_by('date')[:4]
+            .order_by('date')
         )
         absent_ids = set(
             AttendanceRecord.objects

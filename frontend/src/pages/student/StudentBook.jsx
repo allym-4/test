@@ -227,15 +227,17 @@ function StickyCart({ cart, priceCasual, onProceed, onClear, promoCode, promoDis
   )
 }
 
-function CasualBookingModal({ occ, session, priceCasual, isEnrolledRate, priceClassPass, classPassSize, availableCredits, passCredits, seasonName, seasonPrice, alreadyEnrolled, onClose, onBook, onEnrolInSeason, onBuyPass }) {
+function CasualBookingModal({ occ, session, priceCasual, priceCasualStandard, isEnrolledRate, priceClassPass, classPassSize, availableCredits, passCredits, seasonName, seasonPrice, seasonWeek, alreadyEnrolled, onClose, onBook, onEnrolInSeason, onBuyPass }) {
   const sessName = session?.name ?? 'Class'
   const time = session?.start_time?.slice(0, 5)
   const instructor = session?.instructor_detail?.display_name ?? session?.instructor_detail?.first_name
   const dateLabel = occ?.date ? new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : null
   const hasCredits = availableCredits > 0
   const hasPass = (passCredits ?? 0) > 0
-  const passSaving = priceClassPass && classPassSize ? Math.round((priceCasual - priceClassPass / classPassSize) * classPassSize) : 0
+  const standardRate = priceCasualStandard || priceCasual
+  const passSaving = priceClassPass && classPassSize ? Math.round((standardRate - priceClassPass / classPassSize) * classPassSize) : 0
   const perSession = priceClassPass && classPassSize ? (priceClassPass / classPassSize).toFixed(0) : null
+  const missedWeeks = seasonWeek > 1 ? seasonWeek - 1 : 0
 
   const defaultSelected = hasCredits ? 'credit' : hasPass ? 'pass' : 'casual'
   const [selected, setSelected] = useState(defaultSelected)
@@ -284,11 +286,11 @@ function CasualBookingModal({ occ, session, priceCasual, isEnrolledRate, priceCl
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: 'rgba(0,0,0,0.75)' }} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: '#111', borderRadius: '20px 20px 0 0', padding: 28, width: '100%', maxWidth: 560, maxHeight: '92vh', overflowY: 'auto' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.75)', padding: '16px' }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background: '#111', borderRadius: 20, padding: 28, width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
           <div>
-            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, lineHeight: 1.1, marginBottom: 6 }}>{sessName}</div>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(18px, 5vw, 26px)', lineHeight: 1.1, marginBottom: 6 }}>{sessName}</div>
             <div style={{ fontSize: 13, color: '#666' }}>{[dateLabel, time, instructor].filter(Boolean).join(' · ')}</div>
           </div>
           <button onClick={onClose} style={{ background: '#222', border: '1px solid #333', borderRadius: 10, padding: '8px 14px', color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, cursor: 'pointer', flexShrink: 0, marginLeft: 16 }}>CLOSE</button>
@@ -303,7 +305,7 @@ function CasualBookingModal({ occ, session, priceCasual, isEnrolledRate, priceCl
         {!alreadyEnrolled && seasonName && (
           <OptionRow id="season" checkbox
             title={`Enrol in the full ${seasonName} course instead`}
-            sub={`Add this class to your season${seasonPrice ? ` · $${seasonPrice} total` : ''}`}
+            sub={`Add this class to your season${seasonPrice ? ` · ${seasonPrice}` : ''}${missedWeeks > 0 ? ` · ${missedWeeks} catch-up credit${missedWeeks !== 1 ? 's' : ''} for missed classes` : ''}`}
           />
         )}
 
@@ -331,9 +333,9 @@ function CasualBookingModal({ occ, session, priceCasual, isEnrolledRate, priceCl
           />
         )}
 
-        {!hasPass && priceClassPass && passSaving > 0 && (
+        {!hasPass && priceClassPass && (
           <OptionRow id="buypass"
-            title={<>Buy a {classPassSize}-class pass · <span style={{ color: '#ccff00' }}>save ${passSaving}</span></>}
+            title={passSaving > 0 ? <>{classPassSize}-class pass · <span style={{ color: '#ccff00' }}>save ${passSaving}</span></> : `${classPassSize}-class pass`}
             sub={`$${perSession}/class · use across any eligible casual or catch-up`}
             price={`$${priceClassPass}`}
             accent="#b0a0ff"
@@ -1046,7 +1048,7 @@ function WaitlistModal({ session, occ, onConfirm, onCancel, joining }) {
       onClick={e => e.target === e.currentTarget && onCancel()}>
       <div style={{ background: '#111', borderRadius: 20, padding: '28px 24px', width: '100%', maxWidth: 480 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>Join waitlist</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(17px, 5vw, 22px)' }}>Join waitlist</div>
           <button onClick={onCancel} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 10, color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, padding: '8px 14px', cursor: 'pointer' }}>CLOSE</button>
         </div>
         <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>{session?.name}</div>
@@ -1093,7 +1095,7 @@ function ExemptionModal({ session, occ, seasonWeek, onSend, onCancel, sending })
       onClick={e => e.target === e.currentTarget && onCancel()}>
       <div style={{ background: '#111', borderRadius: 20, padding: '28px 24px', width: '100%', maxWidth: 520 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26, lineHeight: 1.2 }}>Apply for an<br />exemption</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(17px, 5vw, 22px)', lineHeight: 1.2 }}>Apply for an<br />exemption</div>
           <button onClick={onCancel} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 10, color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, padding: '8px 14px', cursor: 'pointer', flexShrink: 0, marginLeft: 16 }}>CLOSE</button>
         </div>
         <div style={{ fontSize: 13, color: '#666', marginBottom: 18 }}>
@@ -1143,8 +1145,8 @@ function HeadsUpModal({ session, occ, onConfirm, onCancel }) {
     <div style={{ position: 'fixed', inset: 0, zIndex: 1002, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)', padding: 16 }}
       onClick={e => e.target === e.currentTarget && onCancel()}>
       <div style={{ background: '#111', borderRadius: 20, padding: '32px 28px', width: '100%', maxWidth: 520 }}>
-        <div style={{ textAlign: 'center', fontSize: 40, marginBottom: 14 }}>⚠️</div>
-        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, textAlign: 'center', marginBottom: 10 }}>Heads up</div>
+        <div style={{ textAlign: 'center', fontSize: 'clamp(28px, 7vw, 36px)', marginBottom: 14 }}>⚠️</div>
+        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(18px, 5vw, 24px)', textAlign: 'center', marginBottom: 10 }}>Heads up</div>
         <div style={{ fontSize: 13, color: '#666', textAlign: 'center', marginBottom: 20 }}>
           {[session?.name, dateLabel, session?.start_time?.slice(0, 5), instructor].filter(Boolean).join(' · ')}
         </div>
@@ -1190,11 +1192,11 @@ function SeasonLevelHeadsUpModal({ session, onConfirm, onCancel }) {
       onClick={e => e.target === e.currentTarget && onCancel()}>
       <div style={{ background: '#111', borderRadius: 20, padding: '32px 28px', width: '100%', maxWidth: 520 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28 }}>Heads up</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(18px, 5vw, 24px)' }}>Heads up</div>
           <button onClick={onCancel} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 10, color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, padding: '8px 14px', cursor: 'pointer' }}>CLOSE</button>
         </div>
-        <div style={{ textAlign: 'center', fontSize: 36, marginBottom: 20, color: '#888' }}>△</div>
-        <div style={{ fontSize: 18, fontWeight: 700, textAlign: 'center', marginBottom: 12 }}>
+        <div style={{ textAlign: 'center', fontSize: 'clamp(24px, 6vw, 32px)', marginBottom: 20, color: '#888' }}>△</div>
+        <div style={{ fontSize: 'clamp(14px, 4vw, 17px)', fontWeight: 700, textAlign: 'center', marginBottom: 12 }}>
           {session?.name} · {dayLabel} {timeLabel}
         </div>
         <div style={{ fontSize: 15, color: '#ccc', lineHeight: 1.7, textAlign: 'center', marginBottom: 32 }}>
@@ -1245,11 +1247,17 @@ function formatTime(timeStr) {
   return `${hour}:${String(m).padStart(2, '0')}${ampm}`
 }
 
+function parseLevel(v) {
+  if (v == null) return null
+  const n = typeof v === 'number' ? v : parseInt((String(v).match(/\d+/) || [])[0])
+  return isNaN(n) ? null : n
+}
+
 function SeasonClassRow({ session, userLevel, selected, onToggle, onJoinWaitlist, onLevelOverride, demoNoLevel }) {
   const [infoOpen, setInfoOpen] = useState(false)
 
   const classLevel = getClassLevel(session.name)
-  const effectiveUserLevel = demoNoLevel ? null : userLevel
+  const effectiveUserLevel = demoNoLevel ? null : parseLevel(userLevel)
   const spotsLeft = (session.capacity || 14) - (session.enrolled_count || 0)
   const isFull = spotsLeft <= 0
 
@@ -1287,7 +1295,7 @@ function SeasonClassRow({ session, userLevel, selected, onToggle, onJoinWaitlist
         borderRadius: 10,
         border: `1px solid ${isSelected ? '#ccff00' : isFull ? 'rgba(255,68,68,0.2)' : infoOpen ? '#2a2a2a' : '#222'}`,
         background: isSelected ? 'rgba(204,255,0,0.04)' : isFull ? 'rgba(255,68,68,0.03)' : locked ? 'rgba(255,255,255,0.01)' : 'transparent',
-        opacity: locked ? 0.5 : 1,
+        opacity: locked ? 0.65 : 1,
         marginBottom: 4,
         transition: 'border-color 0.15s, background 0.15s',
         overflow: 'hidden',
@@ -1304,7 +1312,7 @@ function SeasonClassRow({ session, userLevel, selected, onToggle, onJoinWaitlist
           alignItems: 'center',
           gap: 16,
           padding: '14px 16px',
-          cursor: locked ? 'not-allowed' : isFull ? 'default' : 'pointer',
+          cursor: isFull ? 'default' : 'pointer',
         }}
       >
         {/* Day/time */}
@@ -1358,17 +1366,20 @@ function SeasonClassRow({ session, userLevel, selected, onToggle, onJoinWaitlist
               JOIN WAITLIST
             </button>
           </div>
-        ) : !locked ? (
-          <div style={{
-            width: 20,
-            height: 20,
-            borderRadius: 10,
-            border: `2px solid ${isSelected ? '#ccff00' : '#444'}`,
-            background: isSelected ? '#ccff00' : 'transparent',
-            flexShrink: 0,
-            transition: 'background 0.15s, border-color 0.15s',
-          }} />
-        ) : null}
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {locked && <span style={{ fontSize: 12, opacity: 0.7 }}>🔒</span>}
+            <div style={{
+              width: 20,
+              height: 20,
+              borderRadius: 10,
+              border: `2px solid ${isSelected ? '#ccff00' : locked ? '#555' : '#444'}`,
+              background: isSelected ? '#ccff00' : 'transparent',
+              flexShrink: 0,
+              transition: 'background 0.15s, border-color 0.15s',
+            }} />
+          </div>
+        )}
       </div>
       </div>
 
@@ -1475,7 +1486,7 @@ function SeasonSidebar({ selectedSessions, seasonName, totalPrice, incrementalPr
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '1px', color: '#666', textTransform: 'uppercase', marginBottom: 6 }}>Season Pricing</div>
         {count > 0 ? (
           <>
-            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color: '#ccff00', lineHeight: 1 }}>${incrementalPrice}</div>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(20px, 5.5vw, 28px)', color: '#ccff00', lineHeight: 1 }}>${incrementalPrice}</div>
             <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
               {existingCount > 0
                 ? `Adding ${count} to your ${existingCount} — ${existingCount + count} classes total`
@@ -1523,11 +1534,21 @@ function SeasonSidebar({ selectedSessions, seasonName, totalPrice, incrementalPr
   )
 }
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false)
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+  return isMobile
+}
+
 function SeasonTab({
   allSeasons,
   sessions,
   loading,
-  activeSeasonCount,
+  activeEnrolments,
   seasonPricingConfig,
   priceSeason,
   discountTiers,
@@ -1535,6 +1556,7 @@ function SeasonTab({
   onProceedToCheckout,
   onJoinSeasonWaitlist,
 }) {
+  const isMobile = useIsMobile()
   // Bookable seasons: active OR upcoming with bookings_open
   const bookableSeasons = allSeasons
     .filter(s => s.status === 'active' || (s.status === 'upcoming' && s.bookings_open))
@@ -1568,6 +1590,11 @@ function SeasonTab({
   const seasonSessions = activeSeason
     ? sessions.filter(s => s.season === activeSeason.id)
     : []
+
+  // Count existing enrolments only for THIS season (not other seasons)
+  const activeSeasonCount = activeSeason
+    ? (activeEnrolments || []).filter(e => e.enrolment_type === 'course' && e.class_session_detail?.season === activeSeason.id).length
+    : 0
 
   function getClassIncrementalPrice(session, position) {
     const base = parseFloat(session.season_base_price ?? priceSeason)
@@ -1611,10 +1638,10 @@ function SeasonTab({
     return 'Conditioning'
   })))
 
-  const levelOptions = ['All levels', 'Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5', 'Level 6']
+  const levelOptions = ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5', 'Level 6']
 
   // Apply filters
-  const effectiveUserLevel = demoNoLevel ? null : userLevel
+  const effectiveUserLevel = demoNoLevel ? null : parseLevel(userLevel)
   let filtered = seasonSessions
 
   if (filterDay !== 'all') {
@@ -1686,9 +1713,28 @@ function SeasonTab({
   }
 
   return (
+    <>
+    {/* Mobile sticky checkout bar */}
+    {isMobile && selectedSessions.length > 0 && (
+      <div style={{ position: 'fixed', bottom: 72, left: 0, right: 0, zIndex: 200, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+        <div style={{ background: '#111', border: '1px solid #ccff00', borderRadius: 16, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 14, pointerEvents: 'all', maxWidth: 440, width: 'calc(100% - 32px)', boxShadow: '0 4px 24px rgba(0,0,0,0.6)' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 2 }}>
+              {selectedSessions.length} class{selectedSessions.length !== 1 ? 'es' : ''} selected
+            </div>
+            <div style={{ fontSize: 12, color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {selectedSessions.map(s => s.name).join(', ')}
+            </div>
+          </div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, color: '#ccff00', flexShrink: 0 }}>${incrementalPrice}</div>
+          <button onClick={handleProceed} style={{ background: '#ccff00', color: '#000', border: 'none', borderRadius: 10, padding: '10px 16px', fontWeight: 900, fontSize: 12, letterSpacing: 0.5, cursor: 'pointer', flexShrink: 0 }}>CHECKOUT</button>
+        </div>
+      </div>
+    )}
+
     <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
       {/* Main content */}
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ flex: 1, minWidth: 0, paddingBottom: isMobile && selectedSessions.length > 0 ? 90 : 0 }}>
         {/* Season sub-tabs */}
         {bookableSeasons.length > 1 && (
           <div className="tab-strip" style={{ marginBottom: 20 }}>
@@ -1741,7 +1787,7 @@ function SeasonTab({
                   fontWeight: 600,
                 }}
               >
-                Level assigned {userLevel ? `(Level ${userLevel})` : '(none)'}
+                Level assigned {userLevel ? `(${userLevel})` : '(none)'}
               </button>
               <button
                 onClick={() => setDemoNoLevel(true)}
@@ -1867,25 +1913,28 @@ function SeasonTab({
         )}
       </div>
 
-      {/* Sidebar */}
-      <SeasonSidebar
-        selectedSessions={selectedSessions}
-        seasonName={activeSeason?.name || 'Season'}
-        totalPrice={totalPrice}
-        incrementalPrice={incrementalPrice}
-        activeSeasonCount={activeSeasonCount}
-        onProceed={handleProceed}
-        onRemove={removeSession}
-      />
-
-      {levelOverrideSession && (
-        <SeasonLevelHeadsUpModal
-          session={levelOverrideSession}
-          onConfirm={() => { toggleSession(levelOverrideSession); setLevelOverrideSession(null) }}
-          onCancel={() => setLevelOverrideSession(null)}
+      {/* Sidebar — desktop only */}
+      {!isMobile && (
+        <SeasonSidebar
+          selectedSessions={selectedSessions}
+          seasonName={activeSeason?.name || 'Season'}
+          totalPrice={totalPrice}
+          incrementalPrice={incrementalPrice}
+          activeSeasonCount={activeSeasonCount}
+          onProceed={handleProceed}
+          onRemove={removeSession}
         />
       )}
     </div>
+
+    {levelOverrideSession && (
+      <SeasonLevelHeadsUpModal
+        session={levelOverrideSession}
+        onConfirm={() => { toggleSession(levelOverrideSession); setLevelOverrideSession(null) }}
+        onCancel={() => setLevelOverrideSession(null)}
+      />
+    )}
+    </>
   )
 }
 
@@ -1916,6 +1965,12 @@ export default function StudentBook() {
     [activeCasualSeasonId]
   )
 
+  const activeCasualSeason = (seasonsData?.results || seasonsData || []).find(s => s.status === 'active')
+  const { data: casualOccsData, loading: loadingCasualOccs, refetch: refetchCasualOccs } = useApi(
+    () => activeCasualSeason?.id ? classes.casual.occurrences({ upcoming: true, season: activeCasualSeason.id, page_size: 200 }) : null,
+    [activeCasualSeason?.id]
+  )
+
   const priceCasual = parseFloat(studioSettings?.price_casual || 40)
   const priceCasualEnrolled = parseFloat(studioSettings?.price_casual_enrolled || 30)
   const priceSeason = parseFloat(studioSettings?.price_season || 270)
@@ -1923,8 +1978,8 @@ export default function StudentBook() {
 
   const discountTiers = studioSettings?.season_discount_tiers || {2:100,3:130,4:150,5:170,6:170}
 
-  // Season multi-class pricing: look up price for (current active enrolments + 1)
-  const activeSeasonCount = (activeEnrolData?.results || activeEnrolData || []).filter(e => e.enrolment_type === 'course').length
+  const activeEnrolList = activeEnrolData?.results || activeEnrolData || []
+  const activeSeasonCount = activeEnrolList.filter(e => e.enrolment_type === 'course').length
   const casualRate = activeSeasonCount > 0 ? priceCasualEnrolled : priceCasual
   const seasonPricingConfig = (studioSettings?.season_pricing_config || []).filter(r => r.label)
   function getSeasonPrice(addingCount = 1) {
@@ -1966,8 +2021,14 @@ export default function StudentBook() {
   const [calMonthOffset, setCalMonthOffset] = useState(0)
   const [pendingCashCheckout, setPendingCashCheckout] = useState(null)
   const [pendingPlanCheckout, setPendingPlanCheckout] = useState(null)
-  const [calOccBooking, setCalOccBooking] = useState(null) // occ selected from calendar view
+  const [calOccBooking, setCalOccBooking] = useState(null)
   const [calExemptionOcc, setCalExemptionOcc] = useState(null)
+  const [selectedCasualOcc, setSelectedCasualOcc] = useState(null)
+  const [casualBooking, setCasualBooking] = useState(false)
+  const [casualBookError, setCasualBookError] = useState('')
+  const [casualExemptionOcc, setCasualExemptionOcc] = useState(null)
+  const [casualExemptionSending, setCasualExemptionSending] = useState(false)
+  const [casualLevelLockedOcc, setCasualLevelLockedOcc] = useState(null)
 
   function addToCart(session, type, price) {
     if (type === 'waitlist' || type === 'casual-waitlist') {
@@ -1982,6 +2043,46 @@ export default function StudentBook() {
     setPromoDiscount(null)
     setPromoError('')
     setAppliedPromoCode('')
+  }
+
+  async function bookCasualOcc(occ, type) {
+    if (type === 'casual') {
+      setSelectedCasualOcc(null)
+      const sDetail = occ.session_detail || {}
+      setCheckout({
+        type: 'casual_occ',
+        occId: occ.id,
+        sessionIds: [sDetail.id || occ.session],
+        amount: casualRate,
+        description: `${sDetail.name || 'Class'} — Casual`,
+        session: { ...sDetail, id: sDetail.id || occ.session },
+      })
+      return
+    }
+    setCasualBooking(true)
+    setCasualBookError('')
+    try {
+      await classes.casual.book(occ.id, { enrolment_type: type })
+      setSelectedCasualOcc(null)
+      refetchCasualOccs()
+      if (type === 'catchup') refetchCredits()
+      if (type === 'classpass') refetchPasses()
+    } catch (e) {
+      setCasualBookError(e.response?.data?.detail || 'Booking failed. Please try again.')
+    } finally {
+      setCasualBooking(false)
+    }
+  }
+
+  async function sendCasualExemption(occ, reason) {
+    setCasualExemptionSending(true)
+    try {
+      await classes.casual.exemptionRequest({ session: occ.session, occ_id: occ.id, reason }).catch(() => {})
+      setCasualExemptionOcc(null)
+      alert('Exemption request sent! Your instructor will review and get back to you.')
+    } finally {
+      setCasualExemptionSending(false)
+    }
   }
 
   async function applyPromoCode() {
@@ -2005,10 +2106,11 @@ export default function StudentBook() {
     }
   }
 
-  async function proceedToCheckout(finalPrice) {
-    if (!cart) return
-    const { session, type } = cart
-    const effectivePrice = finalPrice ?? cart.price
+  async function proceedToCheckout(finalPrice, overrideData) {
+    const cartData = overrideData || cart
+    if (!cartData) return
+    const { session, type } = cartData
+    const effectivePrice = finalPrice ?? cartData.price
     const isCasual = type === 'casual'
     const isTrial = type === 'trial'
     const description = isTrial
@@ -2138,7 +2240,7 @@ export default function StudentBook() {
   }
 
   async function handlePaymentSuccess() {
-    const { type, sessionIds } = checkout
+    const { type, sessionIds, occId } = checkout
     const ids = sessionIds || (checkout.session ? [checkout.session.id] : [])
     setCheckout(null)
     setCart(null)
@@ -2146,6 +2248,13 @@ export default function StudentBook() {
     if (appliedPromoCode) {
       paymentsApi.promoCodes.use({ code: appliedPromoCode }).catch(() => {})
       setAppliedPromoCode('')
+    }
+    if (type === 'casual_occ') {
+      try {
+        await classes.casual.book(occId, { enrolment_type: 'casual' })
+        refetchCasualOccs()
+      } catch {}
+      return
     }
     // Create enrolments for all session IDs
     for (const sessionId of ids) {
@@ -2295,6 +2404,13 @@ export default function StudentBook() {
             }
           }}
           onClose={() => setBuyingPass(false)}
+          onCash={async () => {
+            try {
+              await attendanceApi.classPasses.purchase({ payment_method: 'cash' })
+              refetchPasses()
+            } catch {}
+            setBuyingPass(false)
+          }}
         />
       )}
 
@@ -2327,7 +2443,7 @@ export default function StudentBook() {
           allSeasons={allSeasons}
           sessions={sessions}
           loading={loading}
-          activeSeasonCount={activeSeasonCount}
+          activeEnrolments={activeEnrolList}
           seasonPricingConfig={seasonPricingConfig}
           priceSeason={priceSeason}
           discountTiers={discountTiers}
@@ -2557,53 +2673,192 @@ export default function StudentBook() {
 
           {/* List view */}
           {casualViewMode === 'list' && (() => {
-            const activeSeason = allSeasons.find(s => s.status === 'active')
+            const occs = (casualOccsData?.results || casualOccsData || [])
             const activeEnrols = activeEnrolData?.results || activeEnrolData || []
+            const userLevelNum = parseLevel(user?.level)
+            const activeSeason = activeCasualSeason
             const seasonWeek = getCurrentSeasonWeek(activeSeason?.start_date)
 
-            let filteredSessions = sessions
-            if (casualEligibleOnly && user?.level) {
-              filteredSessions = filteredSessions.filter(s => {
-                const cl = getClassLevel(s.name)
-                return cl === 0 || cl <= user.level
+            let filtered = occs
+            if (casualEligibleOnly && userLevelNum) {
+              filtered = filtered.filter(o => {
+                const cl = getClassLevel(o.session_detail?.name || '')
+                return cl === 0 || cl <= userLevelNum
               })
             }
             if (casualHideUnavailable && activeSeason && seasonWeek > 3) {
-              filteredSessions = filteredSessions.filter(s => !isRoutineClass(s.name) || activeEnrols.some(e => e.class_session === s.id))
+              filtered = filtered.filter(o => {
+                const nm = o.session_detail?.name || ''
+                const alreadyEnrolled = activeEnrols.some(e => e.class_session === o.session)
+                return !isRoutineClass(nm) || alreadyEnrolled
+              })
             }
 
-            return loading ? (
+            // Group by date
+            const byDate = {}
+            for (const o of filtered) {
+              if (!byDate[o.date]) byDate[o.date] = []
+              byDate[o.date].push(o)
+            }
+            const dates = Object.keys(byDate).sort()
+
+            if (loadingCasualOccs) return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
               </div>
-            ) : filteredSessions.length === 0 ? <EmptyState /> : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {filteredSessions.map(s => {
-                  const alreadyEnrolled = activeEnrols.some(e => e.class_session === s.id && e.enrolment_type === 'course')
+            )
+            if (dates.length === 0) return <EmptyState />
+
+            return (
+              <div>
+                {dates.map(date => {
+                  const dayOccs = byDate[date]
+                  const d = new Date(date + 'T00:00')
+                  const dayNum = d.getDate()
+                  const monthLabel = d.toLocaleDateString('en-AU', { month: 'short' }).toUpperCase()
+                  const weekday = d.toLocaleDateString('en-AU', { weekday: 'short' }).toUpperCase()
                   return (
-                    <OccurrenceBookingPanel
-                      key={s.id}
-                      session={s}
-                      enrolmentType="casual"
+                    <div key={date} style={{ marginBottom: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '10px 0 6px', borderBottom: '1px solid #1a1a1a', marginBottom: 6 }}>
+                        <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: '#fff', lineHeight: 1 }}>{dayNum}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#555', letterSpacing: '0.6px' }}>{monthLabel} · {weekday}</span>
+                      </div>
+                      {dayOccs.map(occ => {
+                        const sDetail = occ.session_detail || {}
+                        const nm = sDetail.name || ''
+                        const instructor = occ.instructor_detail?.display_name || occ.instructor_detail?.first_name || ''
+                        const time = sDetail.start_time?.slice(0, 5) || ''
+                        const myBooking = occ.my_booking
+                        const isBooked = myBooking?.status === 'confirmed'
+                        const isWaitlisted = myBooking?.status === 'waitlisted'
+                        const isFull = (occ.spots_left ?? 0) <= 0
+                        const cl = getClassLevel(nm)
+                        const alreadyEnrolled = activeEnrols.some(e => e.class_session === occ.session && e.enrolment_type === 'course')
+                        const levelLocked = cl > 0 && userLevelNum && cl > userLevelNum
+
+                        let rightBadge = null
+                        if (isBooked) {
+                          rightBadge = <span style={{ fontSize: 10, fontWeight: 700, color: '#ccff00', background: 'rgba(204,255,0,0.1)', border: '1px solid rgba(204,255,0,0.25)', borderRadius: 4, padding: '2px 8px' }}>BOOKED</span>
+                        } else if (isWaitlisted) {
+                          rightBadge = <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--amber)', background: 'rgba(255,170,0,0.1)', border: '1px solid rgba(255,170,0,0.25)', borderRadius: 4, padding: '2px 8px' }}>WAITLISTED</span>
+                        } else if (isFull) {
+                          rightBadge = <span style={{ fontSize: 10, fontWeight: 700, color: '#ff4444', background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.25)', borderRadius: 4, padding: '2px 8px' }}>FULL</span>
+                        } else if (levelLocked) {
+                          rightBadge = <span style={{ fontSize: 10, fontWeight: 700, color: '#ff6b35', background: 'rgba(255,107,53,0.1)', border: '1px solid rgba(255,107,53,0.25)', borderRadius: 4, padding: '2px 8px' }}>LEVEL {cl}+</span>
+                        } else if (availableCredits > 0 && !alreadyEnrolled) {
+                          rightBadge = <span style={{ fontSize: 10, fontWeight: 700, color: '#b0a0ff', background: 'rgba(176,160,255,0.1)', border: '1px solid rgba(176,160,255,0.3)', borderRadius: 4, padding: '2px 8px' }}>CATCH-UP</span>
+                        }
+
+                        const requiresExemption = isRoutineClass(nm) && seasonWeek > 3 && !alreadyEnrolled
+                        function handleOccClick() {
+                          if (isBooked || isWaitlisted) return
+                          // Past catch-up cutoff → exemption request (includes case where also level-locked)
+                          if (requiresExemption) { setCasualExemptionOcc(occ); return }
+                          // Outside level but within booking window → soft heads-up then proceed
+                          if (levelLocked) { setCasualLevelLockedOcc(occ); return }
+                          setSelectedCasualOcc(occ)
+                        }
+                        return (
+                          <div
+                            key={occ.id}
+                            onClick={handleOccClick}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 12,
+                              padding: '10px 14px',
+                              borderRadius: 10,
+                              background: isBooked ? 'rgba(204,255,0,0.04)' : isWaitlisted ? 'rgba(255,170,0,0.04)' : 'rgba(255,255,255,0.02)',
+                              border: `1px solid ${isBooked ? 'rgba(204,255,0,0.15)' : isWaitlisted ? 'rgba(255,170,0,0.15)' : '#1a1a1a'}`,
+                              cursor: isBooked || isWaitlisted ? 'default' : 'pointer',
+                              marginBottom: 4,
+                              opacity: levelLocked ? 0.55 : 1,
+                            }}
+                          >
+                            {time && (
+                              <div style={{ minWidth: 42, flexShrink: 0, textAlign: 'center' }}>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: '#ccff00' }}>{time}</div>
+                              </div>
+                            )}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 1 }}>{nm}</div>
+                              <div style={{ fontSize: 11, color: '#555' }}>{instructor}</div>
+                            </div>
+                            {rightBadge}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })}
+
+                {selectedCasualOcc && (() => {
+                  const occ = selectedCasualOcc
+                  const sDetail = occ.session_detail || {}
+                  const alreadyEnrolled = activeEnrols.some(e => e.class_session === occ.session && e.enrolment_type === 'course')
+                  const seasonEnrolCount = activeEnrols.filter(e => e.enrolment_type === 'course' && e.class_session_detail?.season === activeSeason?.id).length
+                  const addingSeasonPrice = (() => {
+                    const pos = seasonEnrolCount + 1
+                    const tier = seasonPricingConfig.find(r => parseInt((r.label || '').match(/(\d+)/)?.[1] || '0') === pos)
+                    const prevTier = seasonPricingConfig.find(r => parseInt((r.label || '').match(/(\d+)/)?.[1] || '0') === pos - 1)
+                    const full = tier ? parseFloat(tier.price) : priceSeason
+                    const prev = prevTier ? parseFloat(prevTier.price) : 0
+                    return full - prev
+                  })()
+                  const perSession = (addingSeasonPrice / 8).toFixed(2)
+                  return (
+                    <CasualBookingModal
+                      occ={occ}
+                      session={{ ...sDetail, instructor_detail: occ.instructor_detail }}
                       priceCasual={casualRate}
+                      priceCasualStandard={priceCasual}
                       isEnrolledRate={activeSeasonCount > 0}
                       priceClassPass={priceClassPass}
                       classPassSize={classPassSize}
                       availableCredits={availableCredits}
-                      onCreditUsed={refetchCredits}
-                      seasonName={upcomingSeason?.name}
-                      seasonPrice={seasonPrice}
-                      alreadyEnrolled={alreadyEnrolled}
-                      onEnrolInSeason={() => setTab('season')}
                       passCredits={availablePassCredits}
                       onPassUsed={refetchPasses}
-                      onBuyPass={() => setBuyingPass(true)}
                       isNewStudent={!hasEverEnrolled}
                       seasonStartDate={activeSeason?.start_date}
                       userLevel={user?.level || null}
+                      seasonName={activeSeason?.name}
+                      seasonPrice={`$${addingSeasonPrice} total · $${perSession}/session`}
+                      seasonWeek={getCurrentSeasonWeek(activeSeason?.start_date)}
+                      alreadyEnrolled={alreadyEnrolled}
+                      onClose={() => { setSelectedCasualOcc(null); setCasualBookError('') }}
+                      onBook={(type) => bookCasualOcc(occ, type)}
+                      onEnrolInSeason={() => {
+                        setSelectedCasualOcc(null)
+                        const sess = { ...sDetail, id: sDetail.id || occ.session }
+                        proceedToCheckout(addingSeasonPrice, { session: sess, type: 'course', price: addingSeasonPrice })
+                      }}
+                      onBuyPass={() => { setSelectedCasualOcc(null); setBuyingPass(true) }}
                     />
                   )
-                })}
+                })()}
+                {casualExemptionOcc && (() => {
+                  const occ = casualExemptionOcc
+                  const sDetail = occ.session_detail || {}
+                  return (
+                    <ExemptionModal
+                      session={{ ...sDetail, instructor_detail: occ.instructor_detail }}
+                      occ={occ}
+                      seasonWeek={getCurrentSeasonWeek(activeSeason?.start_date)}
+                      sending={casualExemptionSending}
+                      onSend={(reason) => sendCasualExemption(occ, reason)}
+                      onCancel={() => setCasualExemptionOcc(null)}
+                    />
+                  )
+                })()}
+                {casualLevelLockedOcc && (() => {
+                  const occ = casualLevelLockedOcc
+                  const sDetail = occ.session_detail || {}
+                  return (
+                    <SeasonLevelHeadsUpModal
+                      session={{ ...sDetail, instructor_detail: occ.instructor_detail }}
+                      onConfirm={() => { const o = casualLevelLockedOcc; setCasualLevelLockedOcc(null); setSelectedCasualOcc(o) }}
+                      onCancel={() => setCasualLevelLockedOcc(null)}
+                    />
+                  )
+                })()}
               </div>
             )
           })()}

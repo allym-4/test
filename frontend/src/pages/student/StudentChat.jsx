@@ -173,24 +173,15 @@ export default function StudentChat() {
           {activeThread === 'assistant' && (
             <>
               {/* Header */}
-              <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <button className="mobile-back-btn" onClick={() => setMobilePanelOpen(false)}>← Back</button>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--lav)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
-                    🤖
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>Duality Assistant</div>
-                    <div style={{ fontSize: 11, color: 'var(--grey)' }}>AI studio helper · usually instant</div>
-                  </div>
+              <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <button className="mobile-back-btn" onClick={() => setMobilePanelOpen(false)}>← Back</button>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--lav)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
+                  🤖
                 </div>
-                <button
-                  className="btn btn-ghost btn-sm"
-                  style={{ fontSize: 12, flexShrink: 0 }}
-                  onClick={() => setActiveThread('human')}
-                >
-                  Speak to Mimi &amp; Chloe
-                </button>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>Duality Assistant</div>
+                  <div style={{ fontSize: 11, color: 'var(--grey)' }}>AI helper · usually instant</div>
+                </div>
               </div>
 
               {/* Thread */}

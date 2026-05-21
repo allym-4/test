@@ -1,7 +1,101 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
-import { classes as classesApi, attendance as attendanceApi } from '../../api'
+import { classes as classesApi, attendance as attendanceApi, settings as settingsApi } from '../../api'
+import MarkAwayModal from '../../components/MarkAwayModal'
+
+function CancelCasualModal({ item, onClose, onConfirm }) {
+  const isWaitlisted = item.status === 'waitlisted'
+
+  let hoursUntil = null
+  if (item.date && item.start_time) {
+    const classDateTime = new Date(`${item.date}T${item.start_time}`)
+    hoursUntil = (classDateTime - new Date()) / (1000 * 60 * 60)
+  }
+  const withinWindow = hoursUntil !== null && hoursUntil < 4
+
+  const dateLabel = item.date
+    ? new Date(item.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
+    : '—'
+  const timeLabel = item.start_time ? item.start_time.slice(0, 5) : ''
+
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, maxWidth: 420, width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>
+            {isWaitlisted ? 'Leave Waitlist?' : 'Cancel Booking?'}
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 18 }}>✕</button>
+        </div>
+        <div style={{ padding: '18px 20px' }}>
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>{item.session_name}</div>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 16 }}>
+            {dateLabel}{timeLabel ? ` · ${timeLabel}` : ''}
+          </div>
+          {isWaitlisted ? (
+            <div style={{ background: 'rgba(204,255,0,0.05)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 10, padding: '12px 14px', marginBottom: 16, fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
+              You'll be removed from the waitlist. If a spot opens up later, you'd need to re-join.
+            </div>
+          ) : withinWindow ? (
+            <div style={{ background: 'rgba(255,170,0,0.08)', border: '1px solid rgba(255,170,0,0.25)', borderRadius: 10, padding: '12px 14px', marginBottom: 16, fontSize: 13, lineHeight: 1.6 }}>
+              <div style={{ color: '#f59e0b', fontWeight: 600, marginBottom: 4 }}>Less than 4 hours to class</div>
+              <div style={{ color: 'var(--grey)' }}>Your spot will be released but no credit will be issued — it's too close to class time.</div>
+            </div>
+          ) : (
+            <div style={{ background: 'rgba(204,255,0,0.05)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 10, padding: '12px 14px', marginBottom: 16, fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
+              Your spot will be released and you'll receive a <span style={{ color: 'var(--lime)', fontWeight: 600 }}>catch-up credit</span> to use within this season.
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Keep it</button>
+            <button className="btn btn-sm" style={{ flex: 1, background: 'rgba(255,68,68,0.12)', border: '1px solid rgba(255,68,68,0.3)', color: 'var(--red)', fontWeight: 600 }} onClick={onConfirm}>
+              {isWaitlisted ? 'Leave waitlist' : 'Cancel booking'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ClassRoster({ sessionId }) {
+  const [names, setNames] = useState(null)
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (!open || names !== null || !sessionId) return
+    classesApi.roster(sessionId).then(r => setNames(r.data.names || [])).catch(() => setNames([]))
+  }, [open, sessionId, names])
+
+  if (!sessionId) return null
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 11, color: 'var(--lav)', textDecoration: 'underline', textDecorationStyle: 'dotted', marginTop: 8 }}>
+        Who's coming?
+      </button>
+    )
+  }
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Who's coming</div>
+      {names === null ? (
+        <div style={{ fontSize: 11, color: 'var(--grey)' }}>…</div>
+      ) : names.length === 0 ? (
+        <div style={{ fontSize: 11, color: 'var(--grey)' }}>No one's opted in yet</div>
+      ) : (
+        <div style={{ fontSize: 12, color: 'var(--white)', display: 'flex', flexWrap: 'wrap', gap: '4px 8px' }}>
+          {names.map((n, i) => <span key={i}>{n}</span>)}
+        </div>
+      )}
+    </div>
+  )
+}
 
 const TYPE_LABELS = {
   enrolled: 'Enrolled',
@@ -49,8 +143,9 @@ function StatusBadge({ item }) {
   if (item.status === 'waitlisted') {
     return <span className="tag tag-lav" style={{ fontSize: 10 }}>Waitlisted</span>
   }
-  if (item.type === 'practice' || item.status === 'confirmed') {
-    return <span style={{ fontSize: 10, background: 'rgba(0,180,255,0.12)', color: '#4fc3f7', borderRadius: 4, padding: '2px 7px', fontWeight: 700, letterSpacing: '0.04em' }}>Confirmed</span>
+  if (item.status === 'confirmed') {
+    const label = item.type === 'practice' ? 'Confirmed' : 'Booked'
+    return <span style={{ fontSize: 10, background: 'rgba(0,180,255,0.12)', color: '#4fc3f7', borderRadius: 4, padding: '2px 7px', fontWeight: 700, letterSpacing: '0.04em' }}>{label}</span>
   }
   return <span className="tag tag-lime" style={{ fontSize: 10 }}>Attending</span>
 }
@@ -228,6 +323,9 @@ function ItemRow({ item, onMarkAway, onUndoAway, onCancel }) {
         <div style={{ marginTop: 6 }}>
           <StatusBadge item={item} />
         </div>
+        {item.session_id && item.type !== 'practice' && (
+          <ClassRoster sessionId={item.session_id} />
+        )}
       </div>
       <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
         {item.type === 'enrolled' && item.status === 'attending' && (
@@ -258,10 +356,13 @@ function ItemRow({ item, onMarkAway, onUndoAway, onCancel }) {
 export default function StudentUpcomingClasses() {
   const navigate = useNavigate()
   const { data, loading, refetch } = useApi(() => classesApi.myUpcoming(), [])
+  const { data: studioSettings } = useApi(() => settingsApi.get(), [])
 
   const [view, setView] = useState('list') // 'list' | 'calendar'
   const [selectedDate, setSelectedDate] = useState(null)
   const [madeMistakeItem, setMadeMistakeItem] = useState(null)
+  const [markAwayOcc, setMarkAwayOcc] = useState(null)
+  const [cancelItem, setCancelItem] = useState(null)
   const [actionError, setActionError] = useState('')
 
   const items = data || []
@@ -278,25 +379,32 @@ export default function StudentUpcomingClasses() {
     ? (grouped[selectedDate] ? [selectedDate] : [])
     : sortedDates
 
-  async function handleMarkAway(item) {
-    setActionError('')
-    try {
-      await attendanceApi.markAway(item.occurrence_id, item.enrolment_id)
-      refetch()
-    } catch (e) {
-      setActionError(e.response?.data?.detail || 'Failed to mark away. Please try again.')
+  function handleMarkAway(item) {
+    setMarkAwayOcc({
+      id: item.occurrence_id,
+      date: item.date,
+      session_detail: { name: item.session_name, start_time: item.start_time },
+    })
+  }
+
+  function handleCancel(item) {
+    if (item.type === 'practice') {
+      // practice has no credit logic — confirm directly
+      setCancelItem(item)
+    } else {
+      setCancelItem(item)
     }
   }
 
-  async function handleCancel(item) {
+  async function confirmCancel() {
+    const item = cancelItem
+    setCancelItem(null)
     setActionError('')
     try {
       if (item.type === 'practice') {
-        const { classes: classesApiInner } = await import('../../api')
-        await classesApiInner.practice.cancel(item.booking_id)
+        await classesApi.practice.cancel(item.booking_id)
       } else {
-        const { classes: classesApiInner } = await import('../../api')
-        await classesApiInner.casual.cancel(item.occurrence_id)
+        await classesApi.casual.cancel(item.occurrence_id)
       }
       refetch()
     } catch (e) {
@@ -377,6 +485,24 @@ export default function StudentUpcomingClasses() {
           item={madeMistakeItem}
           onClose={() => setMadeMistakeItem(null)}
           onDone={() => { setMadeMistakeItem(null); refetch() }}
+        />
+      )}
+
+      {markAwayOcc && (
+        <MarkAwayModal
+          occurrence={markAwayOcc}
+          cancellationWindowHours={studioSettings?.cancellation_window_hours}
+          noShowFee={studioSettings?.no_show_fee}
+          onClose={() => setMarkAwayOcc(null)}
+          onDone={() => { setMarkAwayOcc(null); refetch() }}
+        />
+      )}
+
+      {cancelItem && (
+        <CancelCasualModal
+          item={cancelItem}
+          onClose={() => setCancelItem(null)}
+          onConfirm={confirmCancel}
         />
       )}
     </div>

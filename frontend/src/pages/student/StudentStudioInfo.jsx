@@ -9,6 +9,88 @@ function avatarColor(name) {
   return AVATAR_COLORS[h]
 }
 
+function InstructorCard({ person }) {
+  const [open, setOpen] = useState(false)
+  const color = avatarColor(person.display_name)
+  const hasBio = person.bio && person.bio.trim()
+  const hasTagline = person.tagline && person.tagline.trim()
+  const hasInstagram = person.instagram && person.instagram.trim()
+  const hasExtra = hasBio || hasInstagram
+
+  return (
+    <div style={{ background: 'var(--card)', border: `1px solid ${open ? 'rgba(176,160,255,0.3)' : 'var(--border)'}`, borderRadius: 14, overflow: 'hidden', transition: 'border-color 0.2s' }}>
+      {/* Always-visible header */}
+      <div
+        onClick={() => hasExtra && setOpen(o => !o)}
+        style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 18px', cursor: hasExtra ? 'pointer' : 'default' }}
+      >
+        {/* Avatar or photo */}
+        {person.profile_photo_url ? (
+          <img src={person.profile_photo_url} alt={person.display_name} style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+        ) : (
+          <div style={{ width: 52, height: 52, borderRadius: '50%', background: color, color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontFamily: "'Archivo Black', sans-serif", flexShrink: 0 }}>
+            {person.first_name?.[0] || '?'}
+          </div>
+        )}
+
+        {/* Name + tagline */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15 }}>{person.display_name}</div>
+          {hasTagline && (
+            <div style={{ fontSize: 11, color: 'var(--lav)', marginTop: 2 }}>{person.tagline}</div>
+          )}
+          {person.pronouns && (
+            <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{person.pronouns}</div>
+          )}
+        </div>
+
+        {/* Expand chevron */}
+        {hasExtra && (
+          <span style={{ fontSize: 14, color: 'var(--grey)', transition: 'transform 0.2s', display: 'inline-block', transform: open ? 'rotate(180deg)' : 'none', flexShrink: 0 }}>
+            ▾
+          </span>
+        )}
+      </div>
+
+      {/* Expandable bio section */}
+      {open && hasExtra && (
+        <div style={{ borderTop: '1px solid var(--border)', padding: '14px 18px', background: '#0a0a0a' }}>
+          {hasBio && (
+            <div style={{ fontSize: 13, color: '#aaa', lineHeight: 1.75, marginBottom: hasInstagram ? 12 : 0 }}>
+              {person.bio.split('\n').map((line, i) => (
+                <p key={i} style={{ margin: 0, marginBottom: i < person.bio.split('\n').length - 1 ? 8 : 0 }}>{line}</p>
+              ))}
+            </div>
+          )}
+          {hasInstagram && (
+            <a
+              href={`https://instagram.com/${person.instagram.replace('@', '')}`}
+              target="_blank"
+              rel="noreferrer"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--lav)', textDecoration: 'none', marginTop: hasBio ? 4 : 0 }}
+            >
+              <span style={{ fontSize: 14 }}>📷</span>
+              @{person.instagram.replace('@', '')}
+            </a>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function InstructorTeam({ instructors }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12, maxWidth: 800 }}>
+      {instructors.length === 0 ? (
+        <div style={{ color: 'var(--grey)', fontSize: 13, gridColumn: '1/-1' }}>No team members found.</div>
+      ) : instructors.map(person => (
+        <InstructorCard key={person.id} person={person} />
+      ))}
+    </div>
+  )
+}
+
 
 export default function StudentStudioInfo() {
   const [tab, setTab] = useState('about')
@@ -212,20 +294,7 @@ export default function StudentStudioInfo() {
       )}
 
       {tab === 'team' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
-          {instructors.length === 0 ? (
-            <div style={{ color: 'var(--grey)', fontSize: 13, gridColumn: '1/-1' }}>No team members found.</div>
-          ) : instructors.map(person => (
-            <div key={person.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 18px', textAlign: 'center' }}>
-              <div style={{ width: 64, height: 64, borderRadius: '50%', background: avatarColor(person.display_name), color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontFamily: "'Archivo Black', sans-serif", margin: '0 auto 12px' }}>
-                {person.first_name?.[0] || '?'}
-              </div>
-              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17, marginBottom: 4 }}>{person.display_name}</div>
-              <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: person.pronouns ? 6 : 0, textTransform: 'capitalize' }}>Instructor</div>
-              {person.pronouns && <div style={{ fontSize: 11, color: 'var(--lav)' }}>{person.pronouns}</div>}
-            </div>
-          ))}
-        </div>
+        <InstructorTeam instructors={instructors} />
       )}
 
       {tab === 'policies' && (

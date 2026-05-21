@@ -262,6 +262,24 @@ class EnrolmentListView(generics.ListCreateAPIView):
                 credit.used_at = timezone.now()
                 credit.save(update_fields=['status', 'used_at'])
 
+        # Auto-issue catch-up credits for weeks missed when enrolling mid-season
+        if enrolment.enrolment_type == 'course' and enrolment.status == 'active':
+            session = enrolment.class_session
+            season = getattr(session, 'season', None)
+            if season and season.start_date:
+                today = timezone.localdate()
+                week_number = (today - season.start_date).days // 7 + 1
+                missed_weeks = week_number - 1
+                if missed_weeks > 0:
+                    from apps.attendance.models import MakeupCredit
+                    for _ in range(missed_weeks):
+                        MakeupCredit.objects.create(
+                            student=enrolment.student,
+                            status='available',
+                            season=season,
+                            reason=f'Auto-issued: joined {session.name} in week {week_number}',
+                        )
+
         _trigger_displacement_if_needed(enrolment)
 
 

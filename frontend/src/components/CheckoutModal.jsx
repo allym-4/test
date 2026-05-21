@@ -87,18 +87,33 @@ function NewCardInner({ amountDollars, clientSecret, onSuccess, paying, setPayin
 
   return (
     <div>
-      <PaymentElement options={{ layout: 'tabs' }} />
+      <PaymentElement options={{ layout: 'accordion' }} />
       {error && (
         <div style={{ background: 'rgba(255,68,68,0.08)', border: '1px solid rgba(255,68,68,0.2)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', margin: '12px 0' }}>{error}</div>
       )}
       <button
         onClick={handlePay}
         disabled={!stripe || paying}
-        style={{ width: '100%', background: '#ccff00', color: '#000', border: 'none', borderRadius: 12, padding: '18px 0', fontSize: 15, fontWeight: 900, letterSpacing: 0.5, cursor: paying ? 'default' : 'pointer', marginTop: 16 }}
+        style={{ width: '100%', background: '#ccff00', color: '#000', border: 'none', borderRadius: 12, padding: '13px 0', fontSize: 13, fontWeight: 900, letterSpacing: 0.5, cursor: paying ? 'default' : 'pointer', marginTop: 14 }}
       >
         {paying ? 'Processing…' : `CONFIRM AND PAY — $${amountDollars.toFixed(2)}`}
       </button>
     </div>
+  )
+}
+
+function WalletPayButton({ stripe, payRequest }) {
+  return (
+    <Elements stripe={stripe}>
+      <WalletPayButtonInner payRequest={payRequest} />
+    </Elements>
+  )
+}
+function WalletPayButtonInner({ payRequest }) {
+  return (
+    <PaymentRequestButtonElement
+      options={{ paymentRequest: payRequest, style: { paymentRequestButton: { type: 'default', theme: 'dark', height: '52px' } } }}
+    />
   )
 }
 
@@ -115,6 +130,7 @@ export default function CheckoutModal({
   onCash,
   onPaymentPlan,
 }) {
+  const [payMethod, setPayMethod] = useState('card') // reserved, not used as tab selector
   const [payType, setPayType] = useState('full')
   const [clientSecret, setClientSecret] = useState(null)
   const [fullClientSecret, setFullClientSecret] = useState(null)
@@ -125,6 +141,8 @@ export default function CheckoutModal({
   const [useSavedCard, setUseSavedCard] = useState(false)
   const [payRequest, setPayRequest] = useState(null)
   const [upsells, setUpsells] = useState([])
+  const [existingPlans, setExistingPlans] = useState([])
+  const [addingToPlan, setAddingToPlan] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [paying, setPaying] = useState(false)
@@ -177,6 +195,11 @@ export default function CheckoutModal({
             .then(r => setUpsells(r.data || []))
             .catch(() => {})
         }
+
+        // Existing active payment plans
+        payments.plans.list({ status: 'active', page_size: 5 })
+          .then(r => setExistingPlans(r.data?.results || r.data || []))
+          .catch(() => {})
       } catch (e) {
         setError('Could not initialise payment. Please try again.')
       } finally {
@@ -304,12 +327,12 @@ export default function CheckoutModal({
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
       onClick={e => e.target === e.currentTarget && onClose()}
     >
-      <div style={{ background: '#111', borderRadius: 20, width: '100%', maxWidth: 520, maxHeight: '92vh', overflowY: 'auto', padding: 28 }}>
+      <div style={{ background: '#111', borderRadius: 20, width: '100%', maxWidth: 520, maxHeight: '92vh', overflowY: 'auto', padding: '20px 20px' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>Payment options</div>
-          <button onClick={onClose} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 10, color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, padding: '8px 14px', cursor: 'pointer' }}>CLOSE</button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(17px, 4.5vw, 22px)' }}>Payment options</div>
+          <button onClick={onClose} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 10, color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, padding: '7px 12px', cursor: 'pointer' }}>CLOSE</button>
         </div>
 
         {loading ? (
@@ -319,21 +342,21 @@ export default function CheckoutModal({
         ) : (
           <>
             {/* Order summary */}
-            <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: 12, padding: '16px 18px', marginBottom: 20 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#555', textTransform: 'uppercase', marginBottom: 12 }}>Order Summary</div>
+            <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: 12, padding: '12px 14px', marginBottom: 14 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#555', textTransform: 'uppercase', marginBottom: 8 }}>Order Summary</div>
               {sessions?.length > 0 ? (
                 sessions.map((s, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, fontSize: 14 }}>
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, fontSize: 13 }}>
                     <span style={{ fontWeight: 600 }}>{s.name}</span>
-                    <span style={{ color: '#666', fontSize: 12 }}>{DAYS_SHORT[s.day_of_week]} {fmtTime(s.start_time)}</span>
+                    <span style={{ color: '#666', fontSize: 11 }}>{DAYS_SHORT[s.day_of_week]} {fmtTime(s.start_time)}</span>
                   </div>
                 ))
               ) : (
-                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>{description}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{description}</div>
               )}
-              <div style={{ borderTop: '1px solid #222', paddingTop: 10, marginTop: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontWeight: 700, fontSize: 15 }}>Total</span>
-                <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: '#ccff00' }}>${amount.toFixed(2)}</span>
+              <div style={{ borderTop: '1px solid #222', paddingTop: 8, marginTop: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontWeight: 700, fontSize: 13 }}>Total</span>
+                <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(16px, 4.5vw, 20px)', color: '#ccff00' }}>${amount.toFixed(2)}</span>
               </div>
             </div>
 
@@ -358,35 +381,35 @@ export default function CheckoutModal({
 
             {/* Pay in full / deposit */}
             {allowDeposit && (
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 12 }}>How would you like to pay?</div>
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>How would you like to pay?</div>
 
                 {/* Full */}
                 <div
                   onClick={switchToFull}
-                  style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 18px', borderRadius: 12, border: `2px solid ${payType === 'full' ? '#ccff00' : '#222'}`, background: payType === 'full' ? 'rgba(204,255,0,0.04)' : 'transparent', cursor: 'pointer', marginBottom: 10 }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10, border: `2px solid ${payType === 'full' ? '#ccff00' : '#222'}`, background: payType === 'full' ? 'rgba(204,255,0,0.04)' : 'transparent', cursor: 'pointer', marginBottom: 8 }}
                 >
-                  <div style={{ width: 22, height: 22, borderRadius: 11, border: `3px solid ${payType === 'full' ? '#ccff00' : '#444'}`, background: payType === 'full' ? '#ccff00' : 'transparent', flexShrink: 0 }} />
+                  <div style={{ width: 18, height: 18, borderRadius: 9, border: `2px solid ${payType === 'full' ? '#ccff00' : '#444'}`, background: payType === 'full' ? '#ccff00' : 'transparent', flexShrink: 0 }} />
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: 15, color: payType === 'full' ? '#ccff00' : '#fff' }}>Pay in full today</div>
-                    <div style={{ fontSize: 13, color: '#666', marginTop: 2 }}>One payment, nothing more to think about.</div>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: payType === 'full' ? '#ccff00' : '#fff' }}>Pay in full today</div>
+                    <div style={{ fontSize: 11, color: '#666', marginTop: 1 }}>One payment, nothing more to think about.</div>
                   </div>
-                  <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, color: payType === 'full' ? '#ccff00' : '#fff' }}>${amount.toFixed(0)}</div>
+                  <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, color: payType === 'full' ? '#ccff00' : '#fff' }}>${amount.toFixed(0)}</div>
                 </div>
 
                 {/* Deposit */}
                 <div
                   onClick={switchToDeposit}
-                  style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 18px', borderRadius: 12, border: `2px solid ${payType === 'deposit' ? '#ccff00' : '#222'}`, background: payType === 'deposit' ? 'rgba(204,255,0,0.04)' : 'transparent', cursor: 'pointer', marginBottom: 10 }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10, border: `2px solid ${payType === 'deposit' ? '#ccff00' : '#222'}`, background: payType === 'deposit' ? 'rgba(204,255,0,0.04)' : 'transparent', cursor: 'pointer' }}
                 >
-                  <div style={{ width: 22, height: 22, borderRadius: 11, border: `3px solid ${payType === 'deposit' ? '#ccff00' : '#444'}`, background: payType === 'deposit' ? '#ccff00' : 'transparent', flexShrink: 0 }} />
+                  <div style={{ width: 18, height: 18, borderRadius: 9, border: `2px solid ${payType === 'deposit' ? '#ccff00' : '#444'}`, background: payType === 'deposit' ? '#ccff00' : 'transparent', flexShrink: 0 }} />
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: 15, color: payType === 'deposit' ? '#ccff00' : '#fff' }}>Pay 50% deposit today</div>
-                    <div style={{ fontSize: 13, color: '#666', marginTop: 2, lineHeight: 1.5 }}>
-                      Balance of ${depositAmount.toFixed(0)} charged automatically 4 hours prior to your first class{seasonDateLabel ? `, Week 1 (${seasonDateLabel})` : ''}.
+                    <div style={{ fontWeight: 700, fontSize: 13, color: payType === 'deposit' ? '#ccff00' : '#fff' }}>Pay 50% deposit today</div>
+                    <div style={{ fontSize: 11, color: '#666', marginTop: 1 }}>
+                      ${depositAmount.toFixed(0)} now · balance auto-charged 4hrs before Week 1{seasonDateLabel ? ` (${seasonDateLabel})` : ''}
                     </div>
                   </div>
-                  <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, color: payType === 'deposit' ? '#ccff00' : '#fff' }}>${depositAmount.toFixed(0)}</div>
+                  <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, color: payType === 'deposit' ? '#ccff00' : '#fff' }}>${depositAmount.toFixed(0)}</div>
                 </div>
               </div>
             )}
@@ -428,21 +451,16 @@ export default function CheckoutModal({
             )}
 
             {/* Express payment (Apple/Google Pay) */}
-            {payRequest && (
-              <div style={{ marginBottom: 16 }}>
-                <PaymentRequestButtonElement
-                  options={{
-                    paymentRequest: payRequest,
-                    style: { paymentRequestButton: { type: 'default', theme: 'dark', height: '52px' } },
-                  }}
-                />
+            {payRequest && stripeInst && (
+              <div style={{ marginBottom: 10 }}>
+                <WalletPayButton stripe={stripeInst} payRequest={payRequest} />
               </div>
             )}
 
             {/* New card form */}
             {!useSavedCard && clientSecret && stripeInst && (
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '4px 0 16px', color: '#555', fontSize: 12 }}>
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '2px 0 12px', color: '#555', fontSize: 12 }}>
                   <div style={{ flex: 1, height: 1, background: '#222' }} />
                   or pay by card
                   <div style={{ flex: 1, height: 1, background: '#222' }} />
@@ -459,7 +477,7 @@ export default function CheckoutModal({
             )}
 
             {/* Discount & gift card */}
-            <div style={{ marginBottom: 20 }}>
+            <div style={{ marginBottom: 14 }}>
               <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                 <input
                   className="input"
@@ -522,7 +540,7 @@ export default function CheckoutModal({
               <button
                 onClick={confirmWithSavedCard}
                 disabled={paying}
-                style={{ width: '100%', background: '#ccff00', color: '#000', border: 'none', borderRadius: 14, padding: '18px 0', fontSize: 15, fontWeight: 900, letterSpacing: 0.5, cursor: paying ? 'default' : 'pointer', marginBottom: 10 }}
+                style={{ width: '100%', background: '#ccff00', color: '#000', border: 'none', borderRadius: 12, padding: '13px 0', fontSize: 13, fontWeight: 900, letterSpacing: 0.5, cursor: paying ? 'default' : 'pointer', marginBottom: 8 }}
               >
                 {paying ? 'Processing…' : `CONFIRM AND PAY — $${afterDiscount.toFixed(2)}`}
               </button>
@@ -531,10 +549,29 @@ export default function CheckoutModal({
             {/* Payment Plan */}
             {onPaymentPlan && (
               <button
-                onClick={() => { onClose(); onPaymentPlan() }}
-                style={{ width: '100%', background: 'none', border: '1px solid #333', borderRadius: 14, padding: '16px 0', fontSize: 13, fontWeight: 700, letterSpacing: 0.5, cursor: 'pointer', color: '#fff', marginBottom: 10 }}
+                disabled={addingToPlan}
+                onClick={async () => {
+                  if (existingPlans.length > 0) {
+                    setAddingToPlan(true)
+                    try {
+                      const plan = existingPlans[0]
+                      await payments.plans.update(plan.id, {
+                        total_amount: parseFloat(plan.total_amount) + amount,
+                        description: plan.description + '; + ' + description,
+                      })
+                      onSuccess()
+                    } catch {
+                      setPayError('Could not update payment plan — please contact admin.')
+                    } finally {
+                      setAddingToPlan(false)
+                    }
+                  } else {
+                    onClose(); onPaymentPlan()
+                  }
+                }}
+                style={{ width: '100%', background: 'none', border: '1px solid #444', borderRadius: 12, padding: '11px 0', fontSize: 12, fontWeight: 700, letterSpacing: 0.5, cursor: addingToPlan ? 'default' : 'pointer', color: '#fff', marginBottom: 8 }}
               >
-                REQUEST A PAYMENT PLAN
+                {addingToPlan ? 'Updating plan…' : existingPlans.length > 0 ? 'ADD TO MY PAYMENT PLAN' : 'REQUEST A PAYMENT PLAN'}
               </button>
             )}
 
@@ -542,7 +579,7 @@ export default function CheckoutModal({
             {onCash && (
               <button
                 onClick={() => { onClose(); onCash() }}
-                style={{ width: '100%', background: 'none', border: '1px solid #333', borderRadius: 14, padding: '16px 0', fontSize: 13, fontWeight: 700, letterSpacing: 0.5, cursor: 'pointer', color: '#fff', marginBottom: 16 }}
+                style={{ width: '100%', background: 'none', border: '1px solid #333', borderRadius: 12, padding: '11px 0', fontSize: 12, fontWeight: 700, letterSpacing: 0.5, cursor: 'pointer', color: '#888', marginBottom: 12 }}
               >
                 I WANT TO PAY CASH
               </button>

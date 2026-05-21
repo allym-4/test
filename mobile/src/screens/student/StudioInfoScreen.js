@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   ScrollView, View, Text, TouchableOpacity, Image,
-  StyleSheet, Linking, ActivityIndicator,
+  StyleSheet, Linking, ActivityIndicator, LayoutAnimation,
 } from 'react-native'
 import { useApi } from '../../hooks/useApi'
 import { settings, users, studios as studiosApi } from '../../api'
@@ -31,14 +31,25 @@ function InfoRow({ icon, label, value, onPress }) {
 }
 
 function InstructorCard({ instructor }) {
+  const [open, setOpen] = useState(false)
   const initials = [instructor.first_name?.[0], instructor.last_name?.[0]]
     .filter(Boolean).join('').toUpperCase()
   const displayName = instructor.display_name
     || `${instructor.first_name ?? ''} ${instructor.last_name ?? ''}`.trim()
+  const hasExtra = !!(instructor.bio?.trim() || instructor.instagram?.trim())
+
+  function toggle() {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+    setOpen(o => !o)
+  }
 
   return (
     <View style={s.instructorCard}>
-      <View style={s.instructorHeader}>
+      <TouchableOpacity
+        onPress={hasExtra ? toggle : undefined}
+        activeOpacity={hasExtra ? 0.7 : 1}
+        style={s.instructorHeader}
+      >
         {instructor.profile_photo_url ? (
           <Image source={{ uri: instructor.profile_photo_url }} style={s.avatar} />
         ) : (
@@ -48,11 +59,29 @@ function InstructorCard({ instructor }) {
         )}
         <View style={s.instructorMeta}>
           <Text style={s.instructorName}>{displayName}</Text>
-          <Text style={s.instructorRole}>Instructor</Text>
+          {!!instructor.tagline && <Text style={s.instructorTagline}>{instructor.tagline}</Text>}
           {!!instructor.pronouns && <Text style={s.instructorPronouns}>{instructor.pronouns}</Text>}
         </View>
-      </View>
-      {!!instructor.bio && <Text style={s.instructorBio}>{instructor.bio}</Text>}
+        {hasExtra && (
+          <Text style={[s.chevron, open && s.chevronOpen]}>›</Text>
+        )}
+      </TouchableOpacity>
+
+      {open && (
+        <View style={s.instructorBody}>
+          {!!instructor.bio && (
+            <Text style={s.instructorBio}>{instructor.bio}</Text>
+          )}
+          {!!instructor.instagram && (
+            <TouchableOpacity
+              onPress={() => Linking.openURL(`https://instagram.com/${instructor.instagram}`)}
+              style={s.instagramRow}
+            >
+              <Text style={s.instagramHandle}>@{instructor.instagram}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
     </View>
   )
 }
@@ -325,15 +354,20 @@ const s = StyleSheet.create({
 
   // Instructor card
   instructorCard: { backgroundColor: '#111', borderRadius: 14, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: '#222' },
-  instructorHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  instructorHeader: { flexDirection: 'row', alignItems: 'center' },
   avatar: { width: 52, height: 52, borderRadius: 26, marginRight: 14 },
   avatarFallback: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#1a0f2e', alignItems: 'center', justifyContent: 'center', marginRight: 14, borderWidth: 1, borderColor: '#7c3aed' },
   avatarInitials: { color: '#ccff00', fontSize: 18, fontWeight: '700' },
   instructorMeta: { flex: 1 },
   instructorName: { fontSize: 16, fontWeight: '700', color: '#fff' },
-  instructorRole: { fontSize: 12, color: '#555', marginTop: 2, textTransform: 'capitalize' },
-  instructorPronouns: { fontSize: 12, color: '#7c3aed', marginTop: 2 },
-  instructorBio: { fontSize: 14, color: '#aaa', lineHeight: 20 },
+  instructorTagline: { fontSize: 12, color: '#b0a0ff', marginTop: 2, fontWeight: '500' },
+  instructorPronouns: { fontSize: 11, color: '#555', marginTop: 2 },
+  chevron: { fontSize: 22, color: '#444', fontWeight: '300', marginLeft: 8, transform: [{ rotate: '0deg' }] },
+  chevronOpen: { transform: [{ rotate: '90deg' }] },
+  instructorBody: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: '#1a1a1a' },
+  instructorBio: { fontSize: 14, color: '#aaa', lineHeight: 22 },
+  instagramRow: { marginTop: 10 },
+  instagramHandle: { fontSize: 13, color: '#ccff00', fontWeight: '600' },
 
   // Policy cards
   policyCard: { backgroundColor: '#111', borderRadius: 12, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: '#222' },
