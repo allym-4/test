@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
-import { classes as classesApi, attendance as attendanceApi } from '../../api'
+import { classes as classesApi, attendance as attendanceApi, settings as settingsApi } from '../../api'
+import MarkAwayModal from '../../components/MarkAwayModal'
 
 const TYPE_LABELS = {
   enrolled: 'Enrolled',
@@ -258,10 +259,12 @@ function ItemRow({ item, onMarkAway, onUndoAway, onCancel }) {
 export default function StudentUpcomingClasses() {
   const navigate = useNavigate()
   const { data, loading, refetch } = useApi(() => classesApi.myUpcoming(), [])
+  const { data: studioSettings } = useApi(() => settingsApi.get(), [])
 
   const [view, setView] = useState('list') // 'list' | 'calendar'
   const [selectedDate, setSelectedDate] = useState(null)
   const [madeMistakeItem, setMadeMistakeItem] = useState(null)
+  const [markAwayOcc, setMarkAwayOcc] = useState(null)
   const [actionError, setActionError] = useState('')
 
   const items = data || []
@@ -278,14 +281,12 @@ export default function StudentUpcomingClasses() {
     ? (grouped[selectedDate] ? [selectedDate] : [])
     : sortedDates
 
-  async function handleMarkAway(item) {
-    setActionError('')
-    try {
-      await attendanceApi.markAway(item.occurrence_id, item.enrolment_id)
-      refetch()
-    } catch (e) {
-      setActionError(e.response?.data?.detail || 'Failed to mark away. Please try again.')
-    }
+  function handleMarkAway(item) {
+    setMarkAwayOcc({
+      id: item.occurrence_id,
+      date: item.date,
+      session_detail: { name: item.session_name, start_time: item.start_time },
+    })
   }
 
   async function handleCancel(item) {
@@ -377,6 +378,16 @@ export default function StudentUpcomingClasses() {
           item={madeMistakeItem}
           onClose={() => setMadeMistakeItem(null)}
           onDone={() => { setMadeMistakeItem(null); refetch() }}
+        />
+      )}
+
+      {markAwayOcc && (
+        <MarkAwayModal
+          occurrence={markAwayOcc}
+          cancellationWindowHours={studioSettings?.cancellation_window_hours}
+          noShowFee={studioSettings?.no_show_fee}
+          onClose={() => setMarkAwayOcc(null)}
+          onDone={() => { setMarkAwayOcc(null); refetch() }}
         />
       )}
     </div>
