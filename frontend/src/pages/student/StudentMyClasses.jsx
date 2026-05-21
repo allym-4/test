@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { enrolments as enrolmentsApi, attendance, classes as classesApi, helpdesk as helpdeskApi, attendance as attendanceApi, settings as settingsApi } from '../../api'
@@ -536,6 +536,7 @@ function fmtTime(t) {
 
 export default function StudentMyClasses() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const { data: enrolData, loading, refetch: refetchEnrol } = useApi(() => enrolmentsApi.list({ student: user?.id }), [user?.id])
   const { data: casualBookingsData, refetch: refetchCasual } = useApi(() => classesApi.casual.myBookings(), [])
   const { data: workshopsData } = useApi(() => classesApi.workshops.list(), [])
@@ -647,7 +648,8 @@ export default function StudentMyClasses() {
     const s = enr.class_session_detail
     const day = s?.day_of_week != null ? DAY_SHORT[s.day_of_week] : ''
     const time = s?.start_time ? fmtTime(s.start_time) : ''
-    const instructor = s?.instructor_detail?.display_name || s?.instructor_detail?.first_name || ''
+    const instructorName = s?.instructor_detail?.display_name || s?.instructor_detail?.first_name || ''
+    const instructorId = s?.instructor_detail?.id
     const studio = s?.studio_detail?.name || ''
     const badgeColor = badge === 'ACTIVE' || badge === 'BOOKED' ? 'var(--lime)' : badge === 'WAITLISTED' ? 'var(--lav)' : 'var(--grey)'
 
@@ -663,7 +665,7 @@ export default function StudentMyClasses() {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 700, fontSize: 15 }}>{s?.name}</div>
             <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>
-              {[studio, instructor, 'Weeks 1–8'].filter(Boolean).join(' · ')}
+              {[studio, instructorName, 'Weeks 1–8'].filter(Boolean).join(' · ')}
             </div>
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -673,6 +675,16 @@ export default function StudentMyClasses() {
             )}
           </div>
         </div>
+        {badge === 'ACTIVE' && instructorId && (
+          <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+            <button
+              onClick={() => navigate(`/portal/chat?instructor=${instructorId}&name=${encodeURIComponent(instructorName || 'your teacher')}`)}
+              style={{ background: 'none', border: '1px solid rgba(204,255,0,0.25)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: 'var(--lime)', letterSpacing: '0.3px' }}
+            >
+              💬 Message {instructorName || 'my teacher'}
+            </button>
+          </div>
+        )}
         {badge === 'ACTIVE' && s?.id && (
           <ClassRoster sessionId={s.id} />
         )}

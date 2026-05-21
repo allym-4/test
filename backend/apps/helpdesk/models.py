@@ -57,9 +57,11 @@ class Conversation(models.Model):
         INSTAGRAM = 'instagram', 'Instagram'
 
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='conversations', null=True, blank=True)
+    instructor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='instructor_conversations')
     source = models.CharField(max_length=20, choices=Source.choices, default=Source.DIRECT)
     instagram_sender_id = models.CharField(max_length=100, blank=True, db_index=True)
     admin_unread = models.BooleanField(default=False)
+    instructor_unread = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
