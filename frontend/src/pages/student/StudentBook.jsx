@@ -819,11 +819,17 @@ function formatTime(timeStr) {
   return `${hour}:${String(m).padStart(2, '0')}${ampm}`
 }
 
+function parseLevel(v) {
+  if (v == null) return null
+  const n = typeof v === 'number' ? v : parseInt((String(v).match(/\d+/) || [])[0])
+  return isNaN(n) ? null : n
+}
+
 function SeasonClassRow({ session, userLevel, selected, onToggle, onJoinWaitlist, onLevelOverride, demoNoLevel }) {
   const [infoOpen, setInfoOpen] = useState(false)
 
   const classLevel = getClassLevel(session.name)
-  const effectiveUserLevel = demoNoLevel ? null : userLevel
+  const effectiveUserLevel = demoNoLevel ? null : parseLevel(userLevel)
   const spotsLeft = (session.capacity || 14) - (session.enrolled_count || 0)
   const isFull = spotsLeft <= 0
 
@@ -1101,7 +1107,7 @@ function SeasonTab({
   allSeasons,
   sessions,
   loading,
-  activeSeasonCount,
+  activeEnrolments,
   seasonPricingConfig,
   priceSeason,
   discountTiers,
@@ -1142,6 +1148,11 @@ function SeasonTab({
   const seasonSessions = activeSeason
     ? sessions.filter(s => s.season === activeSeason.id)
     : []
+
+  // Count existing enrolments only for THIS season (not other seasons)
+  const activeSeasonCount = activeSeason
+    ? (activeEnrolments || []).filter(e => e.enrolment_type === 'course' && e.class_session_detail?.season === activeSeason.id).length
+    : 0
 
   function getClassIncrementalPrice(session, position) {
     const base = parseFloat(session.season_base_price ?? priceSeason)
@@ -1188,7 +1199,7 @@ function SeasonTab({
   const levelOptions = ['All levels', 'Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5', 'Level 6']
 
   // Apply filters
-  const effectiveUserLevel = demoNoLevel ? null : userLevel
+  const effectiveUserLevel = demoNoLevel ? null : parseLevel(userLevel)
   let filtered = seasonSessions
 
   if (filterDay !== 'all') {
@@ -1492,8 +1503,8 @@ export default function StudentBook() {
 
   const discountTiers = studioSettings?.season_discount_tiers || {2:100,3:130,4:150,5:170,6:170}
 
-  // Season multi-class pricing: look up price for (current active enrolments + 1)
-  const activeSeasonCount = (activeEnrolData?.results || activeEnrolData || []).filter(e => e.enrolment_type === 'course').length
+  const activeEnrolList = activeEnrolData?.results || activeEnrolData || []
+  const activeSeasonCount = activeEnrolList.filter(e => e.enrolment_type === 'course').length
   const casualRate = activeSeasonCount > 0 ? priceCasualEnrolled : priceCasual
   const seasonPricingConfig = (studioSettings?.season_pricing_config || []).filter(r => r.label)
   function getSeasonPrice(addingCount = 1) {
@@ -1797,7 +1808,7 @@ export default function StudentBook() {
           allSeasons={allSeasons}
           sessions={sessions}
           loading={loading}
-          activeSeasonCount={activeSeasonCount}
+          activeEnrolments={activeEnrolList}
           seasonPricingConfig={seasonPricingConfig}
           priceSeason={priceSeason}
           discountTiers={discountTiers}
