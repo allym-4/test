@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useApi } from '../hooks/useApi'
 import { homework, classes } from '../api'
 import client from '../api/client'
-import './StudentsPage.css'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -340,24 +339,37 @@ export default function HomeworkPage() {
 
   return (
     <div>
-      <div className="page-header">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
         <div>
-          <div className="page-title">Homework</div>
-          <div className="page-sub">Assignments for your classes</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>Homework</div>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 4 }}>Assignments for your classes</div>
         </div>
         <button className="btn btn-lime btn-sm" onClick={() => setShowNew(true)}>+ Assign Homework</button>
       </div>
 
-      <div className="tab-strip">
-        <div className={`tab-btn ${tab === 'active' ? 'active' : ''}`} onClick={() => setTab('active')}>
-          Active {active.length > 0 && `(${active.length})`}
-        </div>
-        <div className={`tab-btn ${tab === 'submitted' ? 'active' : ''}`} onClick={() => setTab('submitted')}>
-          Submitted {pendingReview.length > 0 && `(${pendingReview.length})`}
-        </div>
-        <div className={`tab-btn ${tab === 'all' ? 'active' : ''}`} onClick={() => setTab('all')}>
-          All {all.length > 0 && `(${all.length})`}
-        </div>
+      <div style={{ borderBottom: '1px solid #1e1e1e', display: 'flex', gap: 4, marginBottom: 24 }}>
+        {[
+          { id: 'active', label: `Active${active.length > 0 ? ` (${active.length})` : ''}` },
+          { id: 'submitted', label: `Submitted${pendingReview.length > 0 ? ` (${pendingReview.length})` : ''}` },
+          { id: 'all', label: `All${all.length > 0 ? ` (${all.length})` : ''}` },
+        ].map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '8px 8px 0 0',
+              fontSize: 13,
+              fontWeight: 500,
+              border: 'none',
+              background: tab === t.id ? 'rgba(204,255,0,0.1)' : 'transparent',
+              color: tab === t.id ? 'var(--lime)' : 'var(--grey)',
+              cursor: 'pointer',
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
       {loading ? (
