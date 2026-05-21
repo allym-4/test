@@ -667,110 +667,194 @@ function CashPaymentModal({ checkout, onClose, onConfirm }) {
 
 // ─── Payment plan modal ───────────────────────────────────────────────────────
 
+const FREQ_OPTIONS = [
+  { value: 'weekly', label: 'Weekly', desc: 'Spread payments each week over the season' },
+  { value: 'fortnightly', label: 'Fortnightly', desc: 'Every two weeks — the most popular option' },
+  { value: 'monthly', label: 'Monthly', desc: 'One payment per month' },
+]
+
 function PaymentPlanModal({ checkout, onClose, onConfirm }) {
+  const suggestedDeposit = Math.round((checkout.amount || 0) * 0.5 * 100) / 100
+
+  // Phase 1: configure options; Phase 2: Stripe card form
+  const [phase, setPhase] = useState(1)
   const [frequency, setFrequency] = useState('fortnightly')
+  const [timing, setTiming] = useState('today') // 'today' | 'commences'
+  const [depositAmount, setDepositAmount] = useState(suggestedDeposit)
   const [notes, setNotes] = useState('')
-  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+
+  // Stripe state — only initialised when entering phase 2
   const [clientSecret, setClientSecret] = useState(null)
   const [stripeInst, setStripeInst] = useState(null)
-  const [loadingStripe, setLoadingStripe] = useState(true)
+  const [loadingStripe, setLoadingStripe] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
-  useEffect(() => {
-    async function init() {
-      try {
+  const needsDeposit = timing === 'commences' && depositAmount > 0
+
+  async function goToCardStep() {
+    setError('')
+    setLoadingStripe(true)
+    try {
+      if (needsDeposit) {
+        // Charge deposit now and save card for remaining
+        const [si, res] = await Promise.all([
+          getStripe(),
+          paymentsApi.stripe.createPaymentIntent({
+            amount_cents: Math.round(depositAmount * 100),
+            description: `${checkout.description} — deposit`,
+            save_method: true,
+          }),
+        ])
+        setStripeInst(si)
+        setClientSecret(res.data.client_secret)
+      } else {
+        // Just save the card, no charge today
         const [si, res] = await Promise.all([getStripe(), paymentsApi.stripe.createSetupIntent()])
         setStripeInst(si)
         setClientSecret(res.data.client_secret)
-      } catch {
-        setError('Could not initialise payment. Please try again.')
-      } finally {
-        setLoadingStripe(false)
       }
+      setPhase(2)
+    } catch {
+      setError('Could not initialise payment. Please try again.')
+    } finally {
+      setLoadingStripe(false)
     }
-    init()
-  }, [])
+  }
 
-  const FREQ_OPTIONS = [
-    { value: 'weekly', label: 'Weekly', desc: 'Spread payments each week over the season' },
-    { value: 'fortnightly', label: 'Fortnightly', desc: 'Every two weeks — the most popular option' },
-    { value: 'monthly', label: 'Monthly', desc: 'One payment per month' },
-  ]
+  const OrderSummary = () => (
+    <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#555', textTransform: 'uppercase', marginBottom: 8 }}>Order Summary</div>
+      {checkout.sessions?.length > 0
+        ? checkout.sessions.map((s, i) => <div key={i} style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{s.name}</div>)
+        : <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{checkout.description}</div>
+      }
+      <div style={{ borderTop: '1px solid #222', paddingTop: 8, marginTop: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontWeight: 700, fontSize: 13 }}>Total</span>
+        <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, color: '#ccff00' }}>${(checkout.amount || 0).toFixed(2)}</span>
+      </div>
+    </div>
+  )
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', padding: 16 }}
       onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={{ background: '#111', borderRadius: 20, width: '100%', maxWidth: 480, padding: '22px 20px', maxHeight: '90vh', overflowY: 'auto' }}>
+
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(17px, 4.5vw, 22px)' }}>Payment Plan</div>
           <button onClick={onClose} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 10, color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, padding: '7px 12px', cursor: 'pointer' }}>CLOSE</button>
         </div>
 
-        {/* Order summary */}
-        <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#555', textTransform: 'uppercase', marginBottom: 8 }}>Order Summary</div>
-          {checkout.sessions?.length > 0
-            ? checkout.sessions.map((s, i) => <div key={i} style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{s.name}</div>)
-            : <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{checkout.description}</div>
-          }
-          <div style={{ borderTop: '1px solid #222', paddingTop: 8, marginTop: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontWeight: 700, fontSize: 13 }}>Total</span>
-            <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, color: '#ccff00' }}>${checkout.amount?.toFixed(2)}</span>
-          </div>
-        </div>
+        <OrderSummary />
 
-        <div style={{ background: 'rgba(176,160,255,0.07)', border: '1px solid rgba(176,160,255,0.2)', borderRadius: 10, padding: '12px 14px', marginBottom: 16, fontSize: 13, color: '#ccc', lineHeight: 1.6 }}>
-          A team member will confirm your plan schedule. Your card is saved now but <strong style={{ color: '#b0a0ff' }}>not charged</strong> until the plan is set up.
-        </div>
+        {phase === 1 && (
+          <>
+            {/* Frequency */}
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#666', marginBottom: 10 }}>How often would you like to pay?</div>
+            {FREQ_OPTIONS.map(opt => (
+              <div key={opt.value} onClick={() => setFrequency(opt.value)}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10, border: `2px solid ${frequency === opt.value ? '#b0a0ff' : '#222'}`, background: frequency === opt.value ? 'rgba(176,160,255,0.06)' : 'transparent', cursor: 'pointer', marginBottom: 8 }}>
+                <div style={{ width: 18, height: 18, borderRadius: 9, border: `2px solid ${frequency === opt.value ? '#b0a0ff' : '#444'}`, background: frequency === opt.value ? '#b0a0ff' : 'transparent', flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: frequency === opt.value ? '#b0a0ff' : '#ccc' }}>{opt.label}</div>
+                  <div style={{ fontSize: 11, color: '#555' }}>{opt.desc}</div>
+                </div>
+              </div>
+            ))}
 
-        {/* Frequency */}
-        <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#666', marginBottom: 10 }}>How often would you like to pay?</div>
-        {FREQ_OPTIONS.map(opt => (
-          <div
-            key={opt.value}
-            onClick={() => setFrequency(opt.value)}
-            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10, border: `2px solid ${frequency === opt.value ? '#b0a0ff' : '#222'}`, background: frequency === opt.value ? 'rgba(176,160,255,0.06)' : 'transparent', cursor: 'pointer', marginBottom: 8 }}
-          >
-            <div style={{ width: 18, height: 18, borderRadius: 9, border: `2px solid ${frequency === opt.value ? '#b0a0ff' : '#444'}`, background: frequency === opt.value ? '#b0a0ff' : 'transparent', flexShrink: 0 }} />
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: frequency === opt.value ? '#b0a0ff' : '#ccc' }}>{opt.label}</div>
-              <div style={{ fontSize: 11, color: '#555' }}>{opt.desc}</div>
+            {/* Timing */}
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#666', marginBottom: 10, marginTop: 16 }}>When does payment start?</div>
+            {[
+              { value: 'today', label: 'Start today', desc: 'First payment is set up immediately after this request is confirmed' },
+              { value: 'commences', label: 'When season commences', desc: 'Payments begin when the season starts — a deposit is required today' },
+            ].map(opt => (
+              <div key={opt.value} onClick={() => setTiming(opt.value)}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10, border: `2px solid ${timing === opt.value ? '#b0a0ff' : '#222'}`, background: timing === opt.value ? 'rgba(176,160,255,0.06)' : 'transparent', cursor: 'pointer', marginBottom: 8 }}>
+                <div style={{ width: 18, height: 18, borderRadius: 9, border: `2px solid ${timing === opt.value ? '#b0a0ff' : '#444'}`, background: timing === opt.value ? '#b0a0ff' : 'transparent', flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: timing === opt.value ? '#b0a0ff' : '#ccc' }}>{opt.label}</div>
+                  <div style={{ fontSize: 11, color: '#555' }}>{opt.desc}</div>
+                </div>
+              </div>
+            ))}
+
+            {/* Deposit field (only when season commences) */}
+            {timing === 'commences' && (
+              <div style={{ background: 'rgba(204,255,0,0.04)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 10, padding: '12px 14px', marginTop: 4, marginBottom: 8 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#ccff00', marginBottom: 8 }}>Deposit due today</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 14, color: '#888' }}>$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max={checkout.amount}
+                    step="10"
+                    value={depositAmount}
+                    onChange={e => setDepositAmount(parseFloat(e.target.value) || 0)}
+                    style={{ background: '#0d0d0d', border: '1px solid #333', borderRadius: 8, color: '#fff', fontSize: 16, fontWeight: 700, padding: '8px 12px', width: 100 }}
+                  />
+                  <span style={{ fontSize: 12, color: '#555' }}>of ${(checkout.amount || 0).toFixed(0)} total</span>
+                </div>
+                <div style={{ fontSize: 11, color: '#555', marginTop: 6 }}>50% suggested · your card will be charged this amount now</div>
+              </div>
+            )}
+
+            {/* Notes */}
+            <div className="field" style={{ marginTop: 14 }}>
+              <label>Notes (optional)</label>
+              <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Any questions or preferences for the team" style={{ resize: 'none' }} />
             </div>
-          </div>
-        ))}
 
-        {/* Notes */}
-        <div className="field" style={{ marginTop: 12, marginBottom: 16 }}>
-          <label>Notes (optional)</label>
-          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Any questions or preferences for the team" style={{ resize: 'none' }} />
-        </div>
+            {error && <div style={{ color: '#ff4444', fontSize: 13, marginBottom: 10 }}>{error}</div>}
 
-        {/* Card setup */}
-        <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#666', marginBottom: 10 }}>Save a card to hold on file</div>
-        {loadingStripe ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}><div className="spinner" /></div>
-        ) : clientSecret && stripeInst ? (
-          <Elements stripe={stripeInst} options={{ clientSecret, appearance: STRIPE_DARK }}>
-            <PlanCardForm
-              frequency={frequency}
-              notes={notes}
-              checkout={checkout}
-              onConfirm={onConfirm}
-              onClose={onClose}
-              setError={setError}
-              setSubmitting={setSubmitting}
-              submitting={submitting}
-            />
-          </Elements>
-        ) : null}
+            <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+              <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
+              <button
+                className="btn btn-sm"
+                style={{ flex: 2, background: '#b0a0ff', color: '#000', fontWeight: 700, border: 'none', opacity: loadingStripe ? 0.6 : 1 }}
+                onClick={goToCardStep}
+                disabled={loadingStripe}
+              >{loadingStripe ? 'Loading…' : needsDeposit ? `Continue — pay $${depositAmount.toFixed(0)} deposit` : 'Continue — add card'}</button>
+            </div>
+          </>
+        )}
 
-        {error && <div style={{ color: '#ff4444', fontSize: 13, marginTop: 10 }}>{error}</div>}
+        {phase === 2 && clientSecret && stripeInst && (
+          <>
+            <div style={{ background: needsDeposit ? 'rgba(204,255,0,0.06)' : 'rgba(176,160,255,0.06)', border: `1px solid ${needsDeposit ? 'rgba(204,255,0,0.2)' : 'rgba(176,160,255,0.2)'}`, borderRadius: 10, padding: '12px 14px', marginBottom: 16, fontSize: 13, color: '#ccc', lineHeight: 1.6 }}>
+              {needsDeposit
+                ? <>Charging <strong style={{ color: '#ccff00' }}>${depositAmount.toFixed(2)}</strong> deposit now. Card saved for remaining ${((checkout.amount || 0) - depositAmount).toFixed(2)} once your plan is confirmed.</>
+                : <>Your card is saved but <strong style={{ color: '#b0a0ff' }}>not charged</strong> today. A team member will confirm your plan schedule.</>
+              }
+            </div>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#666', marginBottom: 12 }}>
+              {needsDeposit ? 'Enter card — deposit charged now' : 'Save a card to hold on file'}
+            </div>
+            <Elements stripe={stripeInst} options={{ clientSecret, appearance: STRIPE_DARK }}>
+              <PlanCardForm
+                needsDeposit={needsDeposit}
+                frequency={frequency}
+                timing={timing}
+                depositAmount={depositAmount}
+                notes={notes}
+                onConfirm={onConfirm}
+                onClose={onClose}
+                setError={setError}
+                submitting={submitting}
+                setSubmitting={setSubmitting}
+              />
+            </Elements>
+            {error && <div style={{ color: '#ff4444', fontSize: 13, marginTop: 10 }}>{error}</div>}
+            <button onClick={() => { setPhase(1); setClientSecret(null) }} style={{ background: 'none', border: 'none', color: '#555', fontSize: 12, cursor: 'pointer', marginTop: 8, padding: 0 }}>← Back</button>
+          </>
+        )}
       </div>
     </div>
   )
 }
 
-function PlanCardForm({ frequency, notes, checkout, onConfirm, onClose, setError, setSubmitting, submitting }) {
+function PlanCardForm({ needsDeposit, frequency, timing, depositAmount, notes, onConfirm, onClose, setError, submitting, setSubmitting }) {
   const stripe = useStripe()
   const elements = useElements()
 
@@ -779,19 +863,27 @@ function PlanCardForm({ frequency, notes, checkout, onConfirm, onClose, setError
     setSubmitting(true)
     setError('')
     try {
-      // Save the card via SetupIntent
-      const result = await stripe.confirmSetup({
-        elements,
-        confirmParams: { return_url: window.location.href },
-        redirect: 'if_required',
-      })
+      let result
+      if (needsDeposit) {
+        result = await stripe.confirmPayment({
+          elements,
+          confirmParams: { return_url: window.location.href },
+          redirect: 'if_required',
+        })
+      } else {
+        result = await stripe.confirmSetup({
+          elements,
+          confirmParams: { return_url: window.location.href },
+          redirect: 'if_required',
+        })
+      }
       if (result.error) {
         setError(result.error.message)
         setSubmitting(false)
         return
       }
-      // Create the payment plan record
-      await onConfirm(frequency, notes)
+      const planNotes = `Frequency: ${frequency} | Timing: ${timing === 'commences' ? 'When season commences' : 'Start today'}${depositAmount > 0 && timing === 'commences' ? ` | Deposit paid: $${depositAmount.toFixed(2)}` : ''}${notes ? ` | ${notes}` : ''}`
+      await onConfirm(frequency, planNotes)
       onClose()
     } catch (e) {
       setError(e.response?.data?.detail || 'Failed to submit — please try again')
@@ -808,13 +900,13 @@ function PlanCardForm({ frequency, notes, checkout, onConfirm, onClose, setError
         <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose} type="button">Cancel</button>
         <button
           className="btn btn-sm"
-          style={{ flex: 2, background: '#b0a0ff', color: '#000', fontWeight: 700, border: 'none', opacity: submitting || !stripe ? 0.6 : 1 }}
+          style={{ flex: 2, background: needsDeposit ? '#ccff00' : '#b0a0ff', color: '#000', fontWeight: 700, border: 'none', opacity: submitting || !stripe ? 0.6 : 1 }}
           onClick={handleSubmit}
           disabled={submitting || !stripe}
           type="button"
-        >{submitting ? 'Submitting…' : 'Save card & submit'}</button>
+        >{submitting ? 'Submitting…' : needsDeposit ? 'Pay deposit & submit' : 'Save card & submit'}</button>
       </div>
-      <div style={{ textAlign: 'center', fontSize: 11, color: '#444', marginTop: 10 }}>🔒 Secured by Stripe — card not charged until plan is confirmed</div>
+      <div style={{ textAlign: 'center', fontSize: 11, color: '#444', marginTop: 10 }}>🔒 Secured by Stripe</div>
     </div>
   )
 }
