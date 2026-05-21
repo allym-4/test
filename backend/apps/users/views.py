@@ -47,18 +47,23 @@ class PublicInstructorListView(generics.ListAPIView):
 
     def list(self, request, *args, **kwargs):
         instructors = User.objects.filter(role='instructor', is_active=True).order_by('last_name', 'first_name')
-        data = [
-            {
+        data = []
+        for u in instructors:
+            try:
+                photo_url = u.profile_photo.url if u.profile_photo else None
+            except Exception:
+                photo_url = None
+            data.append({
                 'id': u.id,
                 'first_name': u.first_name,
                 'last_name': u.last_name,
                 'display_name': u.display_name or f'{u.first_name} {u.last_name}'.strip(),
-                'bio': getattr(u, 'bio', '') or '',
-                'pronouns': getattr(u, 'pronouns', '') or '',
-                'profile_photo_url': u.profile_photo_url if hasattr(u, 'profile_photo_url') else None,
-            }
-            for u in instructors
-        ]
+                'bio': u.bio or '',
+                'tagline': u.instructor_tagline or '',
+                'pronouns': u.pronouns or '',
+                'instagram': u.instructor_instagram or '',
+                'profile_photo_url': photo_url,
+            })
         return Response(data)
 
 

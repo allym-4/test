@@ -531,12 +531,16 @@ class Command(BaseCommand):
                         last_name='',
                         nickname=info[1],
                         role='instructor',
+                        instructor_tagline=info[2] if len(info) > 2 else '',
                     ),
                 )
                 if created:
                     user.set_password(DEMO_PASSWORD)
                     user.save()
                     self.stdout.write(f'  Created demo instructor: {info[0]}')
+                elif info[2] and not user.instructor_tagline:
+                    user.instructor_tagline = info[2]
+                    user.save(update_fields=['instructor_tagline'])
             result[fn] = user
         admin = User.objects.filter(role='admin').first()
         result['reception'] = admin
