@@ -1496,6 +1496,12 @@ export default function StudentBook() {
   const { data: creditsData, refetch: refetchCredits } = useApi(() => user?.id ? attendanceApi.makeupCredits.list({ student: user.id, status: 'available' }) : null, [user?.id])
   const { data: passData, refetch: refetchPasses } = useApi(() => user?.id ? attendanceApi.classPasses.list({ student: user.id }) : null, [user?.id])
 
+  const activeCasualSeason = (seasonsData?.results || seasonsData || []).find(s => s.status === 'active')
+  const { data: casualOccsData, loading: loadingCasualOccs, refetch: refetchCasualOccs } = useApi(
+    () => activeCasualSeason?.id ? classes.casual.occurrences({ upcoming: true, season: activeCasualSeason.id, page_size: 200 }) : null,
+    [activeCasualSeason?.id]
+  )
+
   const priceCasual = parseFloat(studioSettings?.price_casual || 40)
   const priceCasualEnrolled = parseFloat(studioSettings?.price_casual_enrolled || 30)
   const priceSeason = parseFloat(studioSettings?.price_season || 270)
@@ -1542,6 +1548,9 @@ export default function StudentBook() {
   const [casualEligibleOnly, setCasualEligibleOnly] = useState(false)
   const [casualHideUnavailable, setCasualHideUnavailable] = useState(false)
   const [casualWeekOffset, setCasualWeekOffset] = useState(0)
+  const [selectedCasualOcc, setSelectedCasualOcc] = useState(null)
+  const [casualBooking, setCasualBooking] = useState(false)
+  const [casualBookError, setCasualBookError] = useState('')
 
   function addToCart(session, type, price) {
     if (type === 'waitlist' || type === 'casual-waitlist') {
@@ -1556,6 +1565,22 @@ export default function StudentBook() {
     setPromoDiscount(null)
     setPromoError('')
     setAppliedPromoCode('')
+  }
+
+  async function bookCasualOcc(occ, type) {
+    setCasualBooking(true)
+    setCasualBookError('')
+    try {
+      await classes.casual.book(occ.id, { enrolment_type: type })
+      setSelectedCasualOcc(null)
+      refetchCasualOccs()
+      if (type === 'catchup') refetchCredits()
+      if (type === 'classpass') refetchPasses()
+    } catch (e) {
+      setCasualBookError(e.response?.data?.detail || 'Booking failed. Please try again.')
+    } finally {
+      setCasualBooking(false)
+    }
   }
 
   async function applyPromoCode() {
@@ -1970,52 +1995,145 @@ export default function StudentBook() {
 
           {/* List view */}
           {casualViewMode === 'list' && (() => {
-            const activeSeason = allSeasons.find(s => s.status === 'active')
+            const occs = (casualOccsData?.results || casualOccsData || [])
             const activeEnrols = activeEnrolData?.results || activeEnrolData || []
+            const userLevelNum = parseLevel(user?.level)
+            const activeSeason = activeCasualSeason
             const seasonWeek = getCurrentSeasonWeek(activeSeason?.start_date)
 
-            let filteredSessions = sessions
-            if (casualEligibleOnly && user?.level) {
-              filteredSessions = filteredSessions.filter(s => {
-                const cl = getClassLevel(s.name)
-                return cl === 0 || cl <= user.level
+            let filtered = occs
+            if (casualEligibleOnly && userLevelNum) {
+              filtered = filtered.filter(o => {
+                const cl = getClassLevel(o.session_detail?.name || '')
+                return cl === 0 || cl <= userLevelNum
               })
             }
             if (casualHideUnavailable && activeSeason && seasonWeek > 3) {
-              filteredSessions = filteredSessions.filter(s => !isRoutineClass(s.name) || activeEnrols.some(e => e.class_session === s.id))
+              filtered = filtered.filter(o => {
+                const nm = o.session_detail?.name || ''
+                const alreadyEnrolled = activeEnrols.some(e => e.class_session === o.session)
+                return !isRoutineClass(nm) || alreadyEnrolled
+              })
             }
 
-            return loading ? (
+            // Group by date
+            const byDate = {}
+            for (const o of filtered) {
+              if (!byDate[o.date]) byDate[o.date] = []
+              byDate[o.date].push(o)
+            }
+            const dates = Object.keys(byDate).sort()
+
+            if (loadingCasualOccs) return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
               </div>
-            ) : filteredSessions.length === 0 ? <EmptyState /> : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {filteredSessions.map(s => {
-                  const alreadyEnrolled = activeEnrols.some(e => e.class_session === s.id && e.enrolment_type === 'course')
+            )
+            if (dates.length === 0) return <EmptyState />
+
+            return (
+              <div>
+                {dates.map(date => {
+                  const dayOccs = byDate[date]
+                  const d = new Date(date + 'T00:00')
+                  const dayNum = d.getDate()
+                  const monthLabel = d.toLocaleDateString('en-AU', { month: 'short' }).toUpperCase()
+                  const weekday = d.toLocaleDateString('en-AU', { weekday: 'short' }).toUpperCase()
                   return (
-                    <OccurrenceBookingPanel
-                      key={s.id}
-                      session={s}
-                      enrolmentType="casual"
+                    <div key={date} style={{ marginBottom: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '10px 0 6px', borderBottom: '1px solid #1a1a1a', marginBottom: 6 }}>
+                        <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: '#fff', lineHeight: 1 }}>{dayNum}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#555', letterSpacing: '0.6px' }}>{monthLabel} · {weekday}</span>
+                      </div>
+                      {dayOccs.map(occ => {
+                        const sDetail = occ.session_detail || {}
+                        const nm = sDetail.name || ''
+                        const instructor = occ.instructor_detail?.display_name || occ.instructor_detail?.first_name || ''
+                        const time = sDetail.start_time?.slice(0, 5) || ''
+                        const myBooking = occ.my_booking
+                        const isBooked = myBooking?.status === 'confirmed'
+                        const isWaitlisted = myBooking?.status === 'waitlisted'
+                        const isFull = (occ.spots_left ?? 0) <= 0
+                        const cl = getClassLevel(nm)
+                        const alreadyEnrolled = activeEnrols.some(e => e.class_session === occ.session && e.enrolment_type === 'course')
+                        const levelLocked = cl > 0 && userLevelNum && cl > userLevelNum
+
+                        let rightBadge = null
+                        if (isBooked) {
+                          rightBadge = <span style={{ fontSize: 10, fontWeight: 700, color: '#ccff00', background: 'rgba(204,255,0,0.1)', border: '1px solid rgba(204,255,0,0.25)', borderRadius: 4, padding: '2px 8px' }}>BOOKED</span>
+                        } else if (isWaitlisted) {
+                          rightBadge = <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--amber)', background: 'rgba(255,170,0,0.1)', border: '1px solid rgba(255,170,0,0.25)', borderRadius: 4, padding: '2px 8px' }}>WAITLISTED</span>
+                        } else if (isFull) {
+                          rightBadge = <span style={{ fontSize: 10, fontWeight: 700, color: '#ff4444', background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.25)', borderRadius: 4, padding: '2px 8px' }}>FULL</span>
+                        } else if (levelLocked) {
+                          rightBadge = <span style={{ fontSize: 10, fontWeight: 700, color: '#ff6b35', background: 'rgba(255,107,53,0.1)', border: '1px solid rgba(255,107,53,0.25)', borderRadius: 4, padding: '2px 8px' }}>LEVEL {cl}+</span>
+                        } else if (availableCredits > 0 && !alreadyEnrolled) {
+                          rightBadge = <span style={{ fontSize: 10, fontWeight: 700, color: '#b0a0ff', background: 'rgba(176,160,255,0.1)', border: '1px solid rgba(176,160,255,0.3)', borderRadius: 4, padding: '2px 8px' }}>CATCH-UP</span>
+                        }
+
+                        return (
+                          <div
+                            key={occ.id}
+                            onClick={() => !isBooked && !isWaitlisted && setSelectedCasualOcc(occ)}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 12,
+                              padding: '10px 14px',
+                              borderRadius: 10,
+                              background: isBooked ? 'rgba(204,255,0,0.04)' : isWaitlisted ? 'rgba(255,170,0,0.04)' : 'rgba(255,255,255,0.02)',
+                              border: `1px solid ${isBooked ? 'rgba(204,255,0,0.15)' : isWaitlisted ? 'rgba(255,170,0,0.15)' : '#1a1a1a'}`,
+                              cursor: isBooked || isWaitlisted ? 'default' : 'pointer',
+                              marginBottom: 4,
+                              opacity: levelLocked ? 0.55 : 1,
+                            }}
+                          >
+                            {time && (
+                              <div style={{ minWidth: 42, flexShrink: 0, textAlign: 'center' }}>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: '#ccff00' }}>{time}</div>
+                              </div>
+                            )}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 1 }}>{nm}</div>
+                              <div style={{ fontSize: 11, color: '#555' }}>{instructor}</div>
+                            </div>
+                            {rightBadge}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })}
+
+                {selectedCasualOcc && (() => {
+                  const occ = selectedCasualOcc
+                  const sDetail = occ.session_detail || {}
+                  const alreadyEnrolled = activeEnrols.some(e => e.class_session === occ.session && e.enrolment_type === 'course')
+                  const seasonEnrolCount = activeEnrols.filter(e => e.enrolment_type === 'course' && e.class_session_detail?.season === activeSeason?.id).length
+                  const addingSeasonPrice = (() => {
+                    const pos = seasonEnrolCount + 1
+                    const tier = seasonPricingConfig.find(r => parseInt((r.label || '').match(/(\d+)/)?.[1] || '0') === pos)
+                    return tier ? parseFloat(tier.price) : priceSeason
+                  })()
+                  const perSession = (addingSeasonPrice / 8).toFixed(2)
+                  return (
+                    <CasualBookingModal
+                      occ={occ}
+                      session={{ ...sDetail, instructor_detail: occ.instructor_detail }}
                       priceCasual={casualRate}
                       isEnrolledRate={activeSeasonCount > 0}
                       priceClassPass={priceClassPass}
                       classPassSize={classPassSize}
                       availableCredits={availableCredits}
-                      onCreditUsed={refetchCredits}
-                      seasonName={upcomingSeason?.name}
-                      seasonPrice={seasonPrice}
-                      alreadyEnrolled={alreadyEnrolled}
-                      onEnrolInSeason={() => setTab('season')}
                       passCredits={availablePassCredits}
-                      onPassUsed={refetchPasses}
-                      onBuyPass={() => setBuyingPass(true)}
-                      isNewStudent={!hasEverEnrolled}
-                      seasonStartDate={activeSeason?.start_date}
+                      seasonName={activeSeason?.name}
+                      seasonPrice={`${addingSeasonPrice} total · $${perSession}/session`}
+                      alreadyEnrolled={alreadyEnrolled}
+                      onClose={() => { setSelectedCasualOcc(null); setCasualBookError('') }}
+                      onBook={(type) => bookCasualOcc(occ, type)}
+                      onEnrolInSeason={() => { setSelectedCasualOcc(null); setTab('season') }}
+                      onBuyPass={() => { setSelectedCasualOcc(null); setBuyingPass(true) }}
                     />
                   )
-                })}
+                })()}
               </div>
             )
           })()}
