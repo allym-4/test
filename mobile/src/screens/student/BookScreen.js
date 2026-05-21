@@ -2277,14 +2277,6 @@ export default function BookScreen({ navigation }) {
                 >
                   <Text style={hu.confirmText}>REQUEST EXEMPTION</Text>
                 </TouchableOpacity>
-                {casualWarning.type === 'cutoff' && (
-                  <TouchableOpacity
-                    style={[hu.cancelBtn, { borderWidth: 1, borderColor: T.border, borderRadius: 12, padding: 14, alignItems: 'center', marginTop: 8 }]}
-                    onPress={() => { const occ = casualWarning.occ; setCasualWarning(null); setBookingOptionsOcc(occ) }}
-                  >
-                    <Text style={[hu.cancelText, { color: T.text }]}>PAY CASUAL RATE INSTEAD</Text>
-                  </TouchableOpacity>
-                )}
                 <TouchableOpacity style={hu.cancelBtn} onPress={() => setCasualWarning(null)}>
                   <Text style={hu.cancelText}>CANCEL</Text>
                 </TouchableOpacity>

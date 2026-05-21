@@ -590,6 +590,137 @@ function getCurrentSeasonWeek(startDate) {
   return Math.max(0, Math.floor(diffDays / 7) + 1)
 }
 
+// ─── Cash payment modal ───────────────────────────────────────────────────────
+
+function CashPaymentModal({ checkout, onClose, onConfirm }) {
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const [cashDate, setCashDate] = useState(todayStr)
+  const [notes, setNotes] = useState('')
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', padding: 16 }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background: '#111', borderRadius: 20, width: '100%', maxWidth: 480, padding: '22px 20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(17px, 4.5vw, 22px)' }}>Pay by Cash</div>
+          <button onClick={onClose} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 10, color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, padding: '7px 12px', cursor: 'pointer' }}>CLOSE</button>
+        </div>
+        <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#555', textTransform: 'uppercase', marginBottom: 8 }}>Order Summary</div>
+          {checkout.sessions?.length > 0
+            ? checkout.sessions.map((s, i) => <div key={i} style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{s.name}</div>)
+            : <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{checkout.description}</div>
+          }
+          <div style={{ borderTop: '1px solid #222', paddingTop: 8, marginTop: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: 700, fontSize: 13 }}>Total</span>
+            <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, color: '#ccff00' }}>${checkout.amount?.toFixed(2)}</span>
+          </div>
+        </div>
+        <div style={{ background: 'rgba(255,170,0,0.07)', border: '1px solid rgba(255,170,0,0.2)', borderRadius: 10, padding: '12px 14px', marginBottom: 16, fontSize: 13, color: '#ccc', lineHeight: 1.6 }}>
+          Your booking will be confirmed now. Please bring <strong style={{ color: '#ffaa00' }}>${checkout.amount?.toFixed(0)} cash</strong> to the studio on or before the date below.
+        </div>
+        <div className="field">
+          <label>When are you bringing payment?</label>
+          <input type="date" value={cashDate} min={todayStr} onChange={e => setCashDate(e.target.value)} />
+        </div>
+        <div className="field">
+          <label>Notes for the team (optional)</label>
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="e.g. I'll bring it Tuesday morning" style={{ resize: 'none' }} />
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
+          <button
+            className="btn btn-sm"
+            style={{ flex: 1, background: '#ccff00', color: '#000', fontWeight: 700, border: 'none' }}
+            onClick={() => { onConfirm(cashDate, notes); onClose() }}
+          >Confirm Cash Booking</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Payment plan modal ───────────────────────────────────────────────────────
+
+function PaymentPlanModal({ checkout, onClose, onConfirm }) {
+  const [frequency, setFrequency] = useState('fortnightly')
+  const [notes, setNotes] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+
+  const FREQ_OPTIONS = [
+    { value: 'weekly', label: 'Weekly', desc: 'Spread payments each week over the season' },
+    { value: 'fortnightly', label: 'Fortnightly', desc: 'Every two weeks — the most popular option' },
+    { value: 'monthly', label: 'Monthly', desc: 'One payment per month' },
+  ]
+
+  async function handleSubmit() {
+    setSubmitting(true)
+    setError('')
+    try {
+      await onConfirm(frequency, notes)
+      onClose()
+    } catch (e) {
+      setError(e.response?.data?.detail || 'Failed to submit — please try again')
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', padding: 16 }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background: '#111', borderRadius: 20, width: '100%', maxWidth: 480, padding: '22px 20px', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(17px, 4.5vw, 22px)' }}>Payment Plan</div>
+          <button onClick={onClose} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 10, color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, padding: '7px 12px', cursor: 'pointer' }}>CLOSE</button>
+        </div>
+        <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#555', textTransform: 'uppercase', marginBottom: 8 }}>Order Summary</div>
+          {checkout.sessions?.length > 0
+            ? checkout.sessions.map((s, i) => <div key={i} style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{s.name}</div>)
+            : <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{checkout.description}</div>
+          }
+          <div style={{ borderTop: '1px solid #222', paddingTop: 8, marginTop: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: 700, fontSize: 13 }}>Total</span>
+            <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, color: '#ccff00' }}>${checkout.amount?.toFixed(2)}</span>
+          </div>
+        </div>
+        <div style={{ background: 'rgba(176,160,255,0.07)', border: '1px solid rgba(176,160,255,0.2)', borderRadius: 10, padding: '12px 14px', marginBottom: 16, fontSize: 13, color: '#ccc', lineHeight: 1.6 }}>
+          Submit your preferred payment frequency and a team member will set up your plan. No payment is taken until the plan is confirmed.
+        </div>
+        <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#666', marginBottom: 10 }}>How often would you like to pay?</div>
+        {FREQ_OPTIONS.map(opt => (
+          <div
+            key={opt.value}
+            onClick={() => setFrequency(opt.value)}
+            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10, border: `2px solid ${frequency === opt.value ? '#b0a0ff' : '#222'}`, background: frequency === opt.value ? 'rgba(176,160,255,0.06)' : 'transparent', cursor: 'pointer', marginBottom: 8 }}
+          >
+            <div style={{ width: 18, height: 18, borderRadius: 9, border: `2px solid ${frequency === opt.value ? '#b0a0ff' : '#444'}`, background: frequency === opt.value ? '#b0a0ff' : 'transparent', flexShrink: 0 }} />
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: frequency === opt.value ? '#b0a0ff' : '#ccc' }}>{opt.label}</div>
+              <div style={{ fontSize: 11, color: '#555' }}>{opt.desc}</div>
+            </div>
+          </div>
+        ))}
+        <div className="field" style={{ marginTop: 12 }}>
+          <label>Notes (optional)</label>
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Any preferences or questions for the team" style={{ resize: 'none' }} />
+        </div>
+        {error && <div style={{ color: '#ff4444', fontSize: 13, marginBottom: 10 }}>{error}</div>}
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
+          <button
+            className="btn btn-sm"
+            style={{ flex: 1, background: '#b0a0ff', color: '#000', fontWeight: 700, border: 'none', opacity: submitting ? 0.6 : 1 }}
+            onClick={handleSubmit}
+            disabled={submitting}
+          >{submitting ? 'Submitting…' : 'Submit Request'}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Booking modals ───────────────────────────────────────────────────────────
 
 function WaitlistModal({ session, occ, onConfirm, onCancel, joining }) {
@@ -1484,6 +1615,11 @@ export default function StudentBook() {
   const { data: enrolHistoryData } = useApi(() => user?.id ? enrolments.list({ student: user.id, page_size: 1 }) : null, [user?.id])
   const { data: creditsData, refetch: refetchCredits } = useApi(() => user?.id ? attendanceApi.makeupCredits.list({ student: user.id, status: 'available' }) : null, [user?.id])
   const { data: passData, refetch: refetchPasses } = useApi(() => user?.id ? attendanceApi.classPasses.list({ student: user.id }) : null, [user?.id])
+  const activeCasualSeasonId = (seasonsData?.results || seasonsData || []).find(s => s.status === 'active')?.id
+  const { data: casualOccsData, refetch: refetchCasualOccs } = useApi(
+    () => activeCasualSeasonId ? classes.casual.occurrences({ upcoming: true, season: activeCasualSeasonId, page_size: 300 }) : null,
+    [activeCasualSeasonId]
+  )
 
   const priceCasual = parseFloat(studioSettings?.price_casual || 40)
   const priceCasualEnrolled = parseFloat(studioSettings?.price_casual_enrolled || 30)
@@ -1531,6 +1667,12 @@ export default function StudentBook() {
   const [casualEligibleOnly, setCasualEligibleOnly] = useState(false)
   const [casualHideUnavailable, setCasualHideUnavailable] = useState(false)
   const [casualWeekOffset, setCasualWeekOffset] = useState(0)
+  const [calSelectedDate, setCalSelectedDate] = useState(null)
+  const [calMonthOffset, setCalMonthOffset] = useState(0)
+  const [pendingCashCheckout, setPendingCashCheckout] = useState(null)
+  const [pendingPlanCheckout, setPendingPlanCheckout] = useState(null)
+  const [calOccBooking, setCalOccBooking] = useState(null) // occ selected from calendar view
+  const [calExemptionOcc, setCalExemptionOcc] = useState(null)
 
   function addToCart(session, type, price) {
     if (type === 'waitlist' || type === 'casual-waitlist') {
@@ -1624,30 +1766,51 @@ export default function StudentBook() {
     })
   }
 
-  async function handleCashPayment() {
+  function handleCashPayment() {
     if (!checkout) return
-    const ids = checkout.sessionIds || (checkout.session ? [checkout.session.id] : [])
-    for (const sessionId of ids) {
-      try {
-        await enrolments.create({ session: sessionId, status: 'active', enrolment_type: checkout.type || 'casual', payment_method: 'cash' })
-      } catch {}
-    }
-    setBooked(b => [...b, ...ids])
+    setPendingCashCheckout(checkout)
     setCheckout(null)
   }
 
-  async function handlePaymentPlan() {
+  async function confirmCashPayment(cashDate, notes) {
+    const co = pendingCashCheckout
+    if (!co) return
+    if (co.type === 'casual_occ') {
+      try {
+        await classes.casual.book(co.occId, { enrolment_type: 'casual', payment_method: 'cash', notes })
+        refetchCasualOccs()
+      } catch {}
+    } else {
+      const ids = co.sessionIds || (co.session ? [co.session.id] : [])
+      for (const sessionId of ids) {
+        try {
+          await enrolments.create({ session: sessionId, status: 'active', enrolment_type: co.type || 'course', payment_method: 'cash', notes })
+        } catch {}
+      }
+      setBooked(b => [...b, ...(co.sessionIds || (co.session ? [co.session.id] : []))])
+    }
+    setPendingCashCheckout(null)
+  }
+
+  function handlePaymentPlan() {
     if (!checkout) return
-    const ids = checkout.sessionIds || (checkout.session ? [checkout.session.id] : [])
+    setPendingPlanCheckout(checkout)
+    setCheckout(null)
+  }
+
+  async function confirmPaymentPlan(frequency, notes) {
+    const co = pendingPlanCheckout
+    if (!co) return
+    const ids = co.sessionIds || (co.session ? [co.session.id] : [])
     try {
       await paymentsApi.plans.create({
-        description: checkout.description,
-        total_amount: checkout.amount,
+        description: co.description,
+        total_amount: co.amount,
         session_ids: ids,
+        notes: `Frequency: ${frequency}${notes ? ` | ${notes}` : ''}`,
       })
     } catch {}
-    setCheckout(null)
-    alert('Payment plan request submitted. Admin will be in touch shortly.')
+    setPendingPlanCheckout(null)
   }
 
   async function cancelWorkshop(workshop) {
@@ -1741,14 +1904,86 @@ export default function StudentBook() {
           sessions={checkout.sessions}
           sessionIds={checkout.sessionIds}
           saveMethod={true}
-          allowDeposit={checkout.type === 'season'}
+          allowDeposit={checkout.type === 'season' || checkout.type === 'course'}
           seasonStartDate={checkout.seasonStartDate}
           onSuccess={handlePaymentSuccess}
           onClose={() => setCheckout(null)}
-          onCash={checkout.type === 'season' ? handleCashPayment : null}
-          onPaymentPlan={checkout.type === 'season' ? handlePaymentPlan : null}
+          onCash={handleCashPayment}
+          onPaymentPlan={checkout.type !== 'casual_occ' ? handlePaymentPlan : null}
         />
       )}
+
+      {pendingCashCheckout && (
+        <CashPaymentModal
+          checkout={pendingCashCheckout}
+          onClose={() => setPendingCashCheckout(null)}
+          onConfirm={confirmCashPayment}
+        />
+      )}
+
+      {pendingPlanCheckout && (
+        <PaymentPlanModal
+          checkout={pendingPlanCheckout}
+          onClose={() => setPendingPlanCheckout(null)}
+          onConfirm={confirmPaymentPlan}
+        />
+      )}
+
+      {calOccBooking && (() => {
+        const occ = calOccBooking
+        const sDetail = occ.session_detail || {}
+        const activeEnrols = activeEnrolData?.results || activeEnrolData || []
+        const alreadyEnrolled = activeEnrols.some(e => e.class_session === occ.session && e.enrolment_type === 'course')
+        return (
+          <CasualBookingModal
+            occ={occ}
+            session={{ ...sDetail, instructor_detail: occ.instructor_detail }}
+            priceCasual={casualRate}
+            isEnrolledRate={activeSeasonCount > 0}
+            priceClassPass={priceClassPass}
+            classPassSize={classPassSize}
+            availableCredits={availableCredits}
+            passCredits={availablePassCredits}
+            seasonName={upcomingSeason?.name}
+            seasonPrice={seasonPrice}
+            alreadyEnrolled={alreadyEnrolled}
+            onClose={() => setCalOccBooking(null)}
+            onEnrolInSeason={() => { setCalOccBooking(null); setTab('season') }}
+            onBuyPass={() => { setCalOccBooking(null); setBuyingPass(true) }}
+            onBook={async (type) => {
+              try {
+                await classes.casual.book(occ.id, { enrolment_type: type })
+                if (type === 'catchup') refetchCredits()
+                if (type === 'classpass') refetchPasses()
+              } catch {}
+              setCalOccBooking(null)
+            }}
+          />
+        )
+      })()}
+
+      {calExemptionOcc && (() => {
+        const occ = calExemptionOcc
+        const sDetail = occ.session_detail || {}
+        const activeSeason = (seasonsData?.results || seasonsData || []).find(s => s.status === 'active')
+        const seasonWeek = getCurrentSeasonWeek(activeSeason?.start_date)
+        return (
+          <ExemptionModal
+            session={{ ...sDetail, instructor_detail: occ.instructor_detail }}
+            occ={occ}
+            seasonWeek={seasonWeek}
+            sending={false}
+            onSend={async (reason) => {
+              try {
+                await classes.casual.exemptionRequest({ session: occ.session, occ_id: occ.id, reason }).catch(() => {})
+              } catch {}
+              setCalExemptionOcc(null)
+              alert('Exemption request sent! Your instructor will review and get back to you.')
+            }}
+            onCancel={() => setCalExemptionOcc(null)}
+          />
+        )
+      })()}
 
       {buyingPass && (
         <CheckoutModal
@@ -1881,78 +2116,146 @@ export default function StudentBook() {
           {/* Calendar view */}
           {casualViewMode === 'calendar' && (() => {
             const today = new Date()
-            const dayOfWeek = today.getDay()
-            const monday = new Date(today)
-            monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) + casualWeekOffset * 7)
-            const weekDays = Array.from({ length: 6 }, (_, i) => { const d = new Date(monday); d.setDate(monday.getDate() + i); return d })
-            const weekLabel = `Week of ${monday.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} – ${weekDays[5].toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`
-
-            function sessionChipColor(name) {
-              const n = (name || '').toLowerCase()
-              if (/practice/.test(n)) return { bg: 'rgba(13,115,119,0.5)', border: '#0d7377', text: '#4dd0d4' }
-              if (/level\s*1/.test(n)) return { bg: 'rgba(204,255,0,0.2)', border: 'rgba(204,255,0,0.4)', text: '#ccff00' }
-              if (/level\s*2/.test(n)) return { bg: 'rgba(176,160,255,0.25)', border: 'rgba(176,160,255,0.5)', text: '#b0a0ff' }
-              if (/level\s*[3-6]/.test(n)) return { bg: 'rgba(255,140,0,0.2)', border: 'rgba(255,140,0,0.4)', text: '#ff9500' }
-              if (/virgin/.test(n)) return { bg: 'rgba(120,80,220,0.3)', border: 'rgba(120,80,220,0.5)', text: '#9575d9' }
-              if (/dance/.test(n)) return { bg: 'rgba(255,80,160,0.2)', border: 'rgba(255,80,160,0.35)', text: '#ff70b8' }
-              return { bg: 'rgba(80,80,80,0.25)', border: '#333', text: '#888' }
-            }
-
-            const activeSeason = allSeasons.find(s => s.status === 'active')
+            const occs = casualOccsData?.results || casualOccsData || []
             const activeEnrols = activeEnrolData?.results || activeEnrolData || []
+            const userLevelNum = parseLevel(user?.level)
+            const activeSeason = allSeasons.find(s => s.status === 'active')
+            const seasonWeek = getCurrentSeasonWeek(activeSeason?.start_date)
 
-            let calendarSessions = sessions
-            if (casualEligibleOnly && user?.level) {
-              calendarSessions = calendarSessions.filter(s => {
-                const cl = getClassLevel(s.name)
-                return cl === 0 || cl <= user.level
+            let filteredOccs = occs
+            if (casualEligibleOnly && userLevelNum) {
+              filteredOccs = filteredOccs.filter(o => {
+                const cl = getClassLevel(o.session_detail?.name || '')
+                return cl === 0 || cl <= userLevelNum
               })
             }
-            if (casualHideUnavailable && activeSeason) {
-              const week = getCurrentSeasonWeek(activeSeason.start_date)
-              if (week > 3) {
-                calendarSessions = calendarSessions.filter(s => !isRoutineClass(s.name) || activeEnrols.some(e => e.class_session === s.id))
-              }
+            if (casualHideUnavailable && activeSeason && seasonWeek > 3) {
+              filteredOccs = filteredOccs.filter(o => {
+                const nm = o.session_detail?.name || ''
+                const alreadyEnrolled = activeEnrols.some(e => e.class_session === o.session)
+                return !isRoutineClass(nm) || alreadyEnrolled
+              })
             }
+
+            const datesWithClasses = new Set(filteredOccs.map(o => o.date))
+            const baseDate = new Date(today.getFullYear(), today.getMonth() + calMonthOffset, 1)
+            const monthLabel = baseDate.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })
+            const firstDow = (baseDate.getDay() + 6) % 7
+            const daysInMonth = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0).getDate()
+            const totalCells = Math.ceil((firstDow + daysInMonth) / 7) * 7
+            const cells = Array.from({ length: totalCells }, (_, i) => {
+              const dayNum = i - firstDow + 1
+              if (dayNum < 1 || dayNum > daysInMonth) return null
+              const d = new Date(baseDate.getFullYear(), baseDate.getMonth(), dayNum)
+              const iso = d.toISOString().slice(0, 10)
+              return { dayNum, iso, date: d }
+            })
+
+            const selDate = calSelectedDate
+            const selDayOccs = selDate
+              ? filteredOccs.filter(o => o.date === selDate).sort((a, b) => (a.session_detail?.start_time || '').localeCompare(b.session_detail?.start_time || ''))
+              : []
 
             return (
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                  <button onClick={() => setCasualWeekOffset(w => w - 1)} style={{ background: 'none', border: '1px solid #333', borderRadius: 8, color: '#888', padding: '6px 14px', fontSize: 13, cursor: 'pointer' }}>← Prev</button>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: '#ccc' }}>{weekLabel}</span>
-                  <button onClick={() => setCasualWeekOffset(w => w + 1)} style={{ background: 'none', border: '1px solid #333', borderRadius: 8, color: '#888', padding: '6px 14px', fontSize: 13, cursor: 'pointer' }}>Next →</button>
+                {/* Month nav */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <button onClick={() => setCalMonthOffset(m => m - 1)} style={{ background: 'none', border: '1px solid #333', borderRadius: 8, color: '#888', padding: '6px 14px', fontSize: 13, cursor: 'pointer' }}>←</button>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: '#ccc' }}>{monthLabel}</span>
+                  <button onClick={() => setCalMonthOffset(m => m + 1)} style={{ background: 'none', border: '1px solid #333', borderRadius: 8, color: '#888', padding: '6px 14px', fontSize: 13, cursor: 'pointer' }}>→</button>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6 }}>
-                  {weekDays.map((date, idx) => {
-                    const daySessions = calendarSessions.filter(s => s.day_of_week === idx)
-                    const dayNames = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+                {/* Day headers */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 4 }}>
+                  {['M','T','W','T','F','S','S'].map((d, i) => (
+                    <div key={i} style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: '#555', padding: '4px 0' }}>{d}</div>
+                  ))}
+                </div>
+                {/* Date grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 20 }}>
+                  {cells.map((cell, i) => {
+                    if (!cell) return <div key={i} />
+                    const { dayNum, iso, date } = cell
+                    const isPast = date < new Date(today.toDateString())
                     const isToday = date.toDateString() === today.toDateString()
+                    const hasCls = datesWithClasses.has(iso)
+                    const isSel = selDate === iso
                     return (
-                      <div key={idx}>
-                        <div style={{ textAlign: 'center', marginBottom: 6 }}>
-                          <div style={{ fontSize: 10, fontWeight: 700, color: '#555', letterSpacing: '0.5px' }}>{dayNames[idx]}</div>
-                          <div style={{ fontSize: 15, fontWeight: 700, color: isToday ? '#ccff00' : '#fff' }}>{date.getDate()}</div>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                          {daySessions.map(s => {
-                            const c = sessionChipColor(s.name)
-                            const isFull = (s.capacity || 14) - (s.enrolled_count || 0) <= 0
-                            return (
-                              <button
-                                key={s.id}
-                                onClick={() => setCasualViewMode('list')}
-                                style={{ background: isFull ? 'rgba(40,40,40,0.5)' : c.bg, border: `1px solid ${isFull ? '#222' : c.border}`, borderRadius: 6, padding: '4px 6px', fontSize: 10, color: isFull ? '#444' : c.text, cursor: 'pointer', textAlign: 'left', width: '100%', lineHeight: 1.3, fontWeight: 600, wordBreak: 'break-word' }}
-                              >
-                                {s.name}
-                                {isFull && <span style={{ fontSize: 9, display: 'block', color: '#555', marginTop: 1 }}>full</span>}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
+                      <button
+                        key={i}
+                        onClick={() => hasCls && !isPast ? setCalSelectedDate(iso === selDate ? null : iso) : null}
+                        style={{
+                          background: isSel ? '#ccff00' : 'transparent',
+                          border: isToday && !isSel ? '1px solid #444' : '1px solid transparent',
+                          borderRadius: 8, padding: '7px 2px',
+                          cursor: hasCls && !isPast ? 'pointer' : 'default',
+                          textAlign: 'center', position: 'relative',
+                        }}
+                      >
+                        <span style={{ fontSize: 13, fontWeight: isSel ? 700 : 400, color: isSel ? '#000' : isPast ? '#333' : hasCls ? '#fff' : '#444' }}>{dayNum}</span>
+                        {hasCls && !isPast && (
+                          <span style={{ display: 'block', width: 4, height: 4, borderRadius: 2, background: isSel ? '#000' : '#ccff00', margin: '2px auto 0' }} />
+                        )}
+                      </button>
                     )
                   })}
                 </div>
+
+                {selDate ? (
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#555', letterSpacing: '0.6px', textTransform: 'uppercase', marginBottom: 10 }}>
+                      {new Date(selDate + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
+                    </div>
+                    {selDayOccs.length === 0 ? (
+                      <div style={{ color: '#555', fontSize: 13, padding: '12px 0' }}>No classes available this day.</div>
+                    ) : selDayOccs.map(occ => {
+                      const sDetail = occ.session_detail || {}
+                      const nm = sDetail.name || ''
+                      const instructor = occ.instructor_detail?.display_name || occ.instructor_detail?.first_name || ''
+                      const time = sDetail.start_time?.slice(0, 5) || ''
+                      const myBooking = occ.my_booking
+                      const isBooked = myBooking?.status === 'confirmed'
+                      const isWaitlisted = myBooking?.status === 'waitlisted'
+                      const isFull = (occ.spots_left ?? 0) <= 0
+                      const cl = getClassLevel(nm)
+                      const alreadyEnrolled = activeEnrols.some(e => e.class_session === occ.session && e.enrolment_type === 'course')
+                      const levelLocked = cl > 0 && userLevelNum && cl > userLevelNum
+                      const requiresExemption = isRoutineClass(nm) && seasonWeek > 3 && !alreadyEnrolled
+
+                      let rightBadge = null
+                      if (isBooked) rightBadge = <span style={{ fontSize: 10, fontWeight: 700, color: '#ccff00', background: 'rgba(204,255,0,0.1)', border: '1px solid rgba(204,255,0,0.25)', borderRadius: 4, padding: '2px 8px' }}>BOOKED</span>
+                      else if (isWaitlisted) rightBadge = <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--amber)', background: 'rgba(255,170,0,0.1)', border: '1px solid rgba(255,170,0,0.25)', borderRadius: 4, padding: '2px 8px' }}>WAITLISTED</span>
+                      else if (isFull) rightBadge = <span style={{ fontSize: 10, fontWeight: 700, color: '#ff4444', background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.25)', borderRadius: 4, padding: '2px 8px' }}>FULL</span>
+                      else if (levelLocked) rightBadge = <span style={{ fontSize: 10, fontWeight: 700, color: '#ff6b35', background: 'rgba(255,107,53,0.1)', border: '1px solid rgba(255,107,53,0.25)', borderRadius: 4, padding: '2px 8px' }}>LEVEL {cl}+</span>
+
+                      return (
+                        <div
+                          key={occ.id}
+                          onClick={() => {
+                            if (isBooked || isWaitlisted) return
+                            if (requiresExemption || levelLocked) { setCalExemptionOcc(occ); return }
+                            setCalOccBooking(occ)
+                          }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 12,
+                            padding: '10px 14px', borderRadius: 10,
+                            background: isBooked ? 'rgba(204,255,0,0.04)' : isWaitlisted ? 'rgba(255,170,0,0.04)' : 'rgba(255,255,255,0.02)',
+                            border: `1px solid ${isBooked ? 'rgba(204,255,0,0.15)' : isWaitlisted ? 'rgba(255,170,0,0.15)' : '#1a1a1a'}`,
+                            cursor: isBooked || isWaitlisted ? 'default' : 'pointer',
+                            marginBottom: 4, opacity: levelLocked ? 0.55 : 1,
+                          }}
+                        >
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 700, fontSize: 13, color: '#fff', marginBottom: 2 }}>{nm}</div>
+                            <div style={{ fontSize: 11, color: '#555' }}>{time}{instructor ? ` · ${instructor}` : ''}</div>
+                          </div>
+                          {rightBadge}
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div style={{ color: '#555', fontSize: 13, textAlign: 'center', padding: '8px 0' }}>Tap a highlighted date to see classes</div>
+                )}
               </div>
             )
           })()}
