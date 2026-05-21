@@ -1222,7 +1222,7 @@ class MyUpcomingClassesView(APIView):
                     'studio_name': sess.studio.name if sess.studio else None,
                     'instructor_name': (
                         f"{sess.instructor.first_name} {sess.instructor.last_name}".strip()
-                        if sess.instructor else sess.instructor_name or None
+                        if sess.instructor else None
                     ),
                     'status': 'away' if absence else 'attending',
                     'occurrence_id': occ.id,
@@ -1252,7 +1252,7 @@ class MyUpcomingClassesView(APIView):
                 'studio_name': sess.studio.name if sess.studio else None,
                 'instructor_name': (
                     f"{sess.instructor.first_name} {sess.instructor.last_name}".strip()
-                    if sess.instructor else sess.instructor_name or None
+                    if sess.instructor else None
                 ),
                 'status': cb.status,  # 'confirmed' or 'waitlisted'
                 'booking_id': cb.id,

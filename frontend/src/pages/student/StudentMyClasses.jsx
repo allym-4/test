@@ -463,6 +463,66 @@ function WaitlistOfferBanner({ enrolment, onClaimed }) {
   )
 }
 
+// ─── CancelCasualModal ───────────────────────────────────────────────────────
+
+function CancelCasualModal({ booking, onClose, onConfirm }) {
+  const d = booking.occurrence_detail
+  const isWaitlisted = booking.status === 'waitlisted'
+
+  // Calculate hours until class
+  let hoursUntil = null
+  if (d?.date && d?.start_time) {
+    const classDateTime = new Date(`${d.date}T${d.start_time}`)
+    hoursUntil = (classDateTime - new Date()) / (1000 * 60 * 60)
+  }
+  const withinWindow = hoursUntil !== null && hoursUntil < 4
+
+  const dateLabel = d?.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' }) : '—'
+  const timeLabel = d?.start_time ? d.start_time.slice(0, 5) : ''
+
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, maxWidth: 420, width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>
+            {isWaitlisted ? 'Leave Waitlist?' : 'Cancel Booking?'}
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 18 }}>✕</button>
+        </div>
+        <div style={{ padding: '18px 20px' }}>
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>{d?.session_name}</div>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 16 }}>
+            {dateLabel}{timeLabel ? ` · ${timeLabel}` : ''}
+          </div>
+          {isWaitlisted ? (
+            <div style={{ background: 'rgba(204,255,0,0.05)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 10, padding: '12px 14px', marginBottom: 16, fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
+              You'll be removed from the waitlist. If a spot opens up later, you'd need to re-join.
+            </div>
+          ) : withinWindow ? (
+            <div style={{ background: 'rgba(255,170,0,0.08)', border: '1px solid rgba(255,170,0,0.25)', borderRadius: 10, padding: '12px 14px', marginBottom: 16, fontSize: 13, lineHeight: 1.6 }}>
+              <div style={{ color: '#f59e0b', fontWeight: 600, marginBottom: 4 }}>Less than 4 hours to class</div>
+              <div style={{ color: 'var(--grey)' }}>Your spot will be released but no credit will be issued — it's too close to class time.</div>
+            </div>
+          ) : (
+            <div style={{ background: 'rgba(204,255,0,0.05)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 10, padding: '12px 14px', marginBottom: 16, fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
+              Your spot will be released and you'll receive a <span style={{ color: 'var(--lime)', fontWeight: 600 }}>catch-up credit</span> to use within this season.
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Keep it</button>
+            <button className="btn btn-sm" style={{ flex: 1, background: 'rgba(255,68,68,0.12)', border: '1px solid rgba(255,68,68,0.3)', color: 'var(--red)', fontWeight: 600 }} onClick={onConfirm}>
+              {isWaitlisted ? 'Leave waitlist' : 'Cancel booking'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -487,6 +547,7 @@ export default function StudentMyClasses() {
   const [classWaitlistLeaveEnrol, setClassWaitlistLeaveEnrol] = useState(null)
   const [displacementPopup, setDisplacementPopup] = useState(null)
   const [markAwayOcc, setMarkAwayOcc] = useState(null)
+  const [cancelCasualBooking, setCancelCasualBooking] = useState(null)
 
   useEffect(() => {
     const items = casualBookingsData?.results || casualBookingsData || []
@@ -676,8 +737,13 @@ export default function StudentMyClasses() {
     )
   }
 
-  async function cancelCasual(booking) {
-    if (!window.confirm(booking.status === 'waitlisted' ? 'Leave the waitlist for this class?' : 'Cancel this booking?')) return
+  function cancelCasual(booking) {
+    setCancelCasualBooking(booking)
+  }
+
+  async function confirmCancelCasual() {
+    const booking = cancelCasualBooking
+    setCancelCasualBooking(null)
     try {
       await classesApi.casual.cancel(booking.occurrence)
       refetchCasual()
@@ -689,33 +755,35 @@ export default function StudentMyClasses() {
   return (
     <div>
       {/* Header */}
-      <div className="page-header">
-        <div>
-          <div className="page-title">My Classes</div>
-          <div className="page-sub">{active.length} active enrolment{active.length !== 1 ? 's' : ''}</div>
-        </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <Link to="/portal/upcoming-classes">
-            <button className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>View upcoming →</button>
-          </Link>
-          <button
-            className="btn btn-ghost btn-sm"
-            style={{ fontSize: 12 }}
-            onClick={async () => {
-              try {
-                const token = localStorage.getItem('access_token')
-                const baseUrl = import.meta.env.VITE_API_URL || ''
-                const res = await fetch(`${baseUrl}/api/enrolments/calendar.ics`, { headers: { Authorization: `Bearer ${token}` } })
-                const blob = await res.blob()
-                const url = URL.createObjectURL(blob)
-                const a = document.createElement('a')
-                a.href = url; a.download = 'duality-pole-classes.ics'; a.click()
-                URL.revokeObjectURL(url)
-              } catch { alert('Failed to download calendar file.') }
-            }}
-          >
-            📅 Add to Calendar
-          </button>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+          <div>
+            <div className="page-title">My Classes</div>
+            <div className="page-sub">{active.length} active enrolment{active.length !== 1 ? 's' : ''}</div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+            <Link to="/portal/upcoming-classes">
+              <button className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>View upcoming →</button>
+            </Link>
+            <button
+              className="btn btn-ghost btn-sm"
+              style={{ fontSize: 12 }}
+              onClick={async () => {
+                try {
+                  const token = localStorage.getItem('access_token')
+                  const baseUrl = import.meta.env.VITE_API_URL || ''
+                  const res = await fetch(`${baseUrl}/api/enrolments/calendar.ics`, { headers: { Authorization: `Bearer ${token}` } })
+                  const blob = await res.blob()
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url; a.download = 'duality-pole-classes.ics'; a.click()
+                  URL.revokeObjectURL(url)
+                } catch { alert('Failed to download calendar file.') }
+              }}
+            >
+              📅 Calendar
+            </button>
+          </div>
         </div>
       </div>
 
@@ -867,20 +935,23 @@ export default function StudentMyClasses() {
                         const dayNum = d?.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric' }) : ''
                         const monStr = d?.date ? new Date(d.date + 'T00:00').toLocaleDateString('en-AU', { month: 'short' }) : ''
                         return (
-                          <div key={b.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 16 }}>
-                            <div style={{ textAlign: 'center', minWidth: 52, flexShrink: 0 }}>
-                              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase' }}>{dayStr}</div>
-                              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, color: isCatchup ? 'var(--lav)' : 'var(--lime)', lineHeight: 1 }}>{dayNum}</div>
-                              <div style={{ fontSize: 10, color: 'var(--grey)' }}>{monStr}</div>
+                          <div key={b.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                              <div style={{ textAlign: 'center', minWidth: 52, flexShrink: 0 }}>
+                                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase' }}>{dayStr}</div>
+                                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, color: isCatchup ? 'var(--lav)' : 'var(--lime)', lineHeight: 1 }}>{dayNum}</div>
+                                <div style={{ fontSize: 10, color: 'var(--grey)' }}>{monStr}</div>
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontWeight: 700, fontSize: 15 }}>{d?.session_name}</div>
+                                <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{[d?.start_time?.slice(0, 5), d?.studio_name].filter(Boolean).join(' · ')}</div>
+                              </div>
+                              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                <div style={{ fontSize: 10, fontWeight: 700, color: isCatchup ? 'var(--lav)' : 'var(--lime)', border: `1px solid ${isCatchup ? 'var(--lav)' : 'var(--lime)'}`, borderRadius: 20, padding: '2px 10px', marginBottom: 4, display: 'inline-block' }}>{isCatchup ? 'CATCH-UP' : 'CASUAL'}</div>
+                                <div><button onClick={() => cancelCasual(b)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 10, color: 'var(--red)', display: 'block', marginTop: 2 }}>CANCEL</button></div>
+                              </div>
                             </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontWeight: 700, fontSize: 15 }}>{d?.session_name}</div>
-                              <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{[d?.start_time?.slice(0, 5), d?.studio_name].filter(Boolean).join(' · ')}</div>
-                            </div>
-                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                              <div style={{ fontSize: 10, fontWeight: 700, color: isCatchup ? 'var(--lav)' : 'var(--lime)', border: `1px solid ${isCatchup ? 'var(--lav)' : 'var(--lime)'}`, borderRadius: 20, padding: '2px 10px', marginBottom: 4, display: 'inline-block' }}>{isCatchup ? 'CATCH-UP' : 'CASUAL'}</div>
-                              <div><button onClick={() => cancelCasual(b)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 10, color: 'var(--red)', display: 'block', marginTop: 2 }}>CANCEL</button></div>
-                            </div>
+                            {d?.session_id && <ClassRoster sessionId={d.session_id} />}
                           </div>
                         )
                       })}
@@ -1131,6 +1202,14 @@ export default function StudentMyClasses() {
           noShowFee={studioSettings?.no_show_fee}
           onClose={() => setMarkAwayOcc(null)}
           onDone={() => { setMarkAwayOcc(null); refetchEnrol() }}
+        />
+      )}
+
+      {cancelCasualBooking && (
+        <CancelCasualModal
+          booking={cancelCasualBooking}
+          onClose={() => setCancelCasualBooking(null)}
+          onConfirm={confirmCancelCasual}
         />
       )}
     </div>
