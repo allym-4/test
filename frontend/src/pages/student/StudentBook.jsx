@@ -869,7 +869,7 @@ function SeasonClassRow({ session, userLevel, selected, onToggle, onJoinWaitlist
         borderRadius: 10,
         border: `1px solid ${isSelected ? '#ccff00' : isFull ? 'rgba(255,68,68,0.2)' : infoOpen ? '#2a2a2a' : '#222'}`,
         background: isSelected ? 'rgba(204,255,0,0.04)' : isFull ? 'rgba(255,68,68,0.03)' : locked ? 'rgba(255,255,255,0.01)' : 'transparent',
-        opacity: locked ? 0.5 : 1,
+        opacity: locked ? 0.65 : 1,
         marginBottom: 4,
         transition: 'border-color 0.15s, background 0.15s',
         overflow: 'hidden',
@@ -886,7 +886,7 @@ function SeasonClassRow({ session, userLevel, selected, onToggle, onJoinWaitlist
           alignItems: 'center',
           gap: 16,
           padding: '14px 16px',
-          cursor: locked ? 'not-allowed' : isFull ? 'default' : 'pointer',
+          cursor: isFull ? 'default' : 'pointer',
         }}
       >
         {/* Day/time */}
@@ -940,17 +940,20 @@ function SeasonClassRow({ session, userLevel, selected, onToggle, onJoinWaitlist
               JOIN WAITLIST
             </button>
           </div>
-        ) : !locked ? (
-          <div style={{
-            width: 20,
-            height: 20,
-            borderRadius: 10,
-            border: `2px solid ${isSelected ? '#ccff00' : '#444'}`,
-            background: isSelected ? '#ccff00' : 'transparent',
-            flexShrink: 0,
-            transition: 'background 0.15s, border-color 0.15s',
-          }} />
-        ) : null}
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {locked && <span style={{ fontSize: 12, opacity: 0.7 }}>🔒</span>}
+            <div style={{
+              width: 20,
+              height: 20,
+              borderRadius: 10,
+              border: `2px solid ${isSelected ? '#ccff00' : locked ? '#555' : '#444'}`,
+              background: isSelected ? '#ccff00' : 'transparent',
+              flexShrink: 0,
+              transition: 'background 0.15s, border-color 0.15s',
+            }} />
+          </div>
+        )}
       </div>
       </div>
 
@@ -2159,8 +2162,10 @@ export default function StudentBook() {
                         const requiresExemption = isRoutineClass(nm) && seasonWeek > 3 && !alreadyEnrolled
                         function handleOccClick() {
                           if (isBooked || isWaitlisted) return
-                          if (levelLocked) { setCasualLevelLockedOcc(occ); return }
+                          // Past catch-up cutoff → exemption request (includes case where also level-locked)
                           if (requiresExemption) { setCasualExemptionOcc(occ); return }
+                          // Outside level but within booking window → soft heads-up then proceed
+                          if (levelLocked) { setCasualLevelLockedOcc(occ); return }
                           setSelectedCasualOcc(occ)
                         }
                         return (
