@@ -75,6 +75,16 @@ class ConversationListView(generics.ListCreateAPIView):
             qs = qs.filter(instructor=self.request.user)
         return qs
 
+    def create(self, request, *args, **kwargs):
+        student_id = request.data.get('student')
+        if student_id and request.user.role == 'instructor':
+            conv, _ = Conversation.objects.get_or_create(
+                student_id=student_id,
+                instructor=request.user,
+            )
+            return Response(ConversationSerializer(conv, context={'request': request}).data, status=201)
+        return super().create(request, *args, **kwargs)
+
     def get_serializer_context(self):
         ctx = super().get_serializer_context()
         ctx['request'] = self.request

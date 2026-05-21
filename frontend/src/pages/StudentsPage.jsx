@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useApi } from '../hooks/useApi'
-import { useSearchParams } from 'react-router-dom'
-import { users, payments, enrolments, attendance } from '../api'
+import { useSearchParams, useNavigate } from 'react-router-dom'
+import { users, payments, enrolments, attendance, helpdesk } from '../api'
 
 const AVATAR_COLORS = ['#b0a0ff', '#ccff00', '#ffaa00', '#ff88aa', '#44ffcc', '#ffcc88', '#b0f0b0', '#9ac4ff', '#ffb3de', '#44ff99']
 function avatarColor(name) {
@@ -21,6 +21,7 @@ const ATT_STATUS_TAG = {
 export default function StudentsPage() {
   const { data, loading } = useApi(() => users.list({ role: 'student' }))
   const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [selected, setSelected]     = useState(null)
   const [activeTab, setActiveTab]   = useState('info')
@@ -182,7 +183,22 @@ export default function StudentsPage() {
                   <div style={{ marginTop: 4 }}><span className="tag tag-lime" style={{ fontSize: 10 }}>Active</span></div>
                 </div>
               </div>
-              <button className="modal-close-btn" onClick={() => setSelected(null)}>✕</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  style={{ fontSize: 12 }}
+                  onClick={async () => {
+                    try {
+                      await helpdesk.createConversation({ student: selected.id })
+                    } catch { /* conversation may already exist */ }
+                    setSelected(null)
+                    navigate(`/messages?open=${selected.id}`)
+                  }}
+                >
+                  💬 Message
+                </button>
+                <button className="modal-close-btn" onClick={() => setSelected(null)}>✕</button>
+              </div>
             </div>
 
             {loadingDetail ? (

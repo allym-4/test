@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useApi } from '../hooks/useApi'
 import { useAuth } from '../contexts/AuthContext'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { helpdesk, community, users } from '../api'
 import client from '../api/client'
 
@@ -409,10 +409,12 @@ function ComposeModal({ onClose }) {
 
 export default function InstructorMessages() {
   const { user } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [selected, setSelected] = useState(null)
   const [tab, setTab] = useState('direct')
   const [composing, setComposing] = useState(false)
   const [studentMap, setStudentMap] = useState({})
+  const [conversations, setConversations] = useState(null)
 
   useEffect(() => {
     users.list({ role: 'student', page_size: 500 }).then(res => {
@@ -422,6 +424,25 @@ export default function InstructorMessages() {
       setStudentMap(map)
     }).catch(() => {})
   }, [])
+
+  // Auto-open a conversation when arriving with ?open=studentId
+  useEffect(() => {
+    const openStudentId = searchParams.get('open')
+    if (!openStudentId || !studentMap) return
+    helpdesk.conversations().then(res => {
+      const convs = res.data?.results || res.data || []
+      setConversations(convs)
+      const match = convs.find(c => {
+        const sid = typeof c.student === 'object' ? c.student?.id : c.student
+        return String(sid) === String(openStudentId)
+      })
+      if (match) {
+        setSelected(match)
+        setTab('direct')
+        setSearchParams({}, { replace: true })
+      }
+    }).catch(() => {})
+  }, [searchParams, studentMap]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div>
