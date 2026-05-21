@@ -1105,6 +1105,16 @@ function SeasonSidebar({ selectedSessions, seasonName, totalPrice, incrementalPr
   )
 }
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false)
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+  return isMobile
+}
+
 function SeasonTab({
   allSeasons,
   sessions,
@@ -1117,6 +1127,7 @@ function SeasonTab({
   onProceedToCheckout,
   onJoinSeasonWaitlist,
 }) {
+  const isMobile = useIsMobile()
   // Bookable seasons: active OR upcoming with bookings_open
   const bookableSeasons = allSeasons
     .filter(s => s.status === 'active' || (s.status === 'upcoming' && s.bookings_open))
@@ -1273,9 +1284,28 @@ function SeasonTab({
   }
 
   return (
+    <>
+    {/* Mobile sticky checkout bar */}
+    {isMobile && selectedSessions.length > 0 && (
+      <div style={{ position: 'fixed', bottom: 72, left: 0, right: 0, zIndex: 200, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+        <div style={{ background: '#111', border: '1px solid #ccff00', borderRadius: 16, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 14, pointerEvents: 'all', maxWidth: 440, width: 'calc(100% - 32px)', boxShadow: '0 4px 24px rgba(0,0,0,0.6)' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 2 }}>
+              {selectedSessions.length} class{selectedSessions.length !== 1 ? 'es' : ''} selected
+            </div>
+            <div style={{ fontSize: 12, color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {selectedSessions.map(s => s.name).join(', ')}
+            </div>
+          </div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, color: '#ccff00', flexShrink: 0 }}>${incrementalPrice}</div>
+          <button onClick={handleProceed} style={{ background: '#ccff00', color: '#000', border: 'none', borderRadius: 10, padding: '10px 16px', fontWeight: 900, fontSize: 12, letterSpacing: 0.5, cursor: 'pointer', flexShrink: 0 }}>CHECKOUT</button>
+        </div>
+      </div>
+    )}
+
     <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
       {/* Main content */}
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ flex: 1, minWidth: 0, paddingBottom: isMobile && selectedSessions.length > 0 ? 90 : 0 }}>
         {/* Season sub-tabs */}
         {bookableSeasons.length > 1 && (
           <div className="tab-strip" style={{ marginBottom: 20 }}>
@@ -1454,25 +1484,28 @@ function SeasonTab({
         )}
       </div>
 
-      {/* Sidebar */}
-      <SeasonSidebar
-        selectedSessions={selectedSessions}
-        seasonName={activeSeason?.name || 'Season'}
-        totalPrice={totalPrice}
-        incrementalPrice={incrementalPrice}
-        activeSeasonCount={activeSeasonCount}
-        onProceed={handleProceed}
-        onRemove={removeSession}
-      />
-
-      {levelOverrideSession && (
-        <SeasonLevelHeadsUpModal
-          session={levelOverrideSession}
-          onConfirm={() => { toggleSession(levelOverrideSession); setLevelOverrideSession(null) }}
-          onCancel={() => setLevelOverrideSession(null)}
+      {/* Sidebar — desktop only */}
+      {!isMobile && (
+        <SeasonSidebar
+          selectedSessions={selectedSessions}
+          seasonName={activeSeason?.name || 'Season'}
+          totalPrice={totalPrice}
+          incrementalPrice={incrementalPrice}
+          activeSeasonCount={activeSeasonCount}
+          onProceed={handleProceed}
+          onRemove={removeSession}
         />
       )}
     </div>
+
+    {levelOverrideSession && (
+      <SeasonLevelHeadsUpModal
+        session={levelOverrideSession}
+        onConfirm={() => { toggleSession(levelOverrideSession); setLevelOverrideSession(null) }}
+        onCancel={() => setLevelOverrideSession(null)}
+      />
+    )}
+    </>
   )
 }
 
@@ -1555,6 +1588,7 @@ export default function StudentBook() {
   const [casualBookError, setCasualBookError] = useState('')
   const [casualExemptionOcc, setCasualExemptionOcc] = useState(null)
   const [casualExemptionSending, setCasualExemptionSending] = useState(false)
+  const [casualLevelLockedOcc, setCasualLevelLockedOcc] = useState(null)
 
   function addToCart(session, type, price) {
     if (type === 'waitlist' || type === 'casual-waitlist') {
@@ -2118,6 +2152,7 @@ export default function StudentBook() {
                         const requiresExemption = isRoutineClass(nm) && seasonWeek > 3 && !alreadyEnrolled
                         function handleOccClick() {
                           if (isBooked || isWaitlisted) return
+                          if (levelLocked) { setCasualLevelLockedOcc(occ); return }
                           if (requiresExemption) { setCasualExemptionOcc(occ); return }
                           setSelectedCasualOcc(occ)
                         }
@@ -2204,6 +2239,17 @@ export default function StudentBook() {
                       sending={casualExemptionSending}
                       onSend={(reason) => sendCasualExemption(occ, reason)}
                       onCancel={() => setCasualExemptionOcc(null)}
+                    />
+                  )
+                })()}
+                {casualLevelLockedOcc && (() => {
+                  const occ = casualLevelLockedOcc
+                  const sDetail = occ.session_detail || {}
+                  return (
+                    <SeasonLevelHeadsUpModal
+                      session={{ ...sDetail, instructor_detail: occ.instructor_detail }}
+                      onConfirm={() => { const o = casualLevelLockedOcc; setCasualLevelLockedOcc(null); setSelectedCasualOcc(o) }}
+                      onCancel={() => setCasualLevelLockedOcc(null)}
                     />
                   )
                 })()}

@@ -158,7 +158,8 @@ select option { background: #1a1a1a; }
 .hw-card-progress { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--grey); }
 
 /* Tab strip */
-.tab-strip { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+.tab-strip { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 16px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.tab-strip::-webkit-scrollbar { display: none; }
 .tab-btn {
   padding: 10px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
   color: var(--grey); border-bottom: 2px solid transparent; margin-bottom: -1px;
