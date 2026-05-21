@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi, classes as classesApi, tags as tagsApi, settings as settingsApi } from '../../api'
 import client from '../../api/client'
@@ -958,6 +959,8 @@ function BulkTagModal({ studentIds, onClose }) {
 
 export default function AdminStudents() {
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const studentPath = (id) => user?.role === 'admin' ? `/admin/students/${id}` : `/students/${id}`
   const { data, loading } = useApi(() => users.list({ role: 'student' }))
   const { data: sessionsData } = useApi(() => classesApi.list({ active: 'true' }))
   const [search, setSearch] = useState('')
@@ -1105,7 +1108,7 @@ export default function AdminStudents() {
                   ? new Date(s.last_login).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
                   : '—'
                 return (
-                  <tr key={s.id} className="clickable" onClick={() => navigate(`/admin/students/${s.id}`)}>
+                  <tr key={s.id} className="clickable" onClick={() => navigate(studentPath(s.id))}>
                     <td>
                       {s.profile_photo ? (
                         <img src={s.profile_photo} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
@@ -1133,7 +1136,7 @@ export default function AdminStudents() {
                     <td><span className="tag tag-lime" style={{ fontSize: 10 }}>Active</span></td>
                     <td style={{ color: 'var(--grey)', fontSize: 12 }}>{lastSeen}</td>
                     <td onClick={e => e.stopPropagation()}>
-                      <button className="btn btn-ghost btn-xs" onClick={() => navigate(`/admin/students/${s.id}`)}>View</button>
+                      <button className="btn btn-ghost btn-xs" onClick={() => navigate(studentPath(s.id))}>View</button>
                     </td>
                   </tr>
                 )
