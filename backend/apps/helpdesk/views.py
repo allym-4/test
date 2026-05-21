@@ -69,11 +69,30 @@ class ConversationListView(generics.ListCreateAPIView):
         return ConversationListSerializer if self.request.method == 'GET' else ConversationSerializer
 
     def get_queryset(self):
-        return Conversation.objects.select_related('student').prefetch_related('messages__sender')
+        qs = Conversation.objects.select_related('student', 'instructor').prefetch_related('messages__sender')
+        # Instructors only see conversations assigned to them
+        if self.request.user.role == 'instructor':
+            qs = qs.filter(instructor=self.request.user)
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        student_id = request.data.get('student')
+        if student_id and request.user.role == 'instructor':
+            conv, _ = Conversation.objects.get_or_create(
+                student_id=student_id,
+                instructor=request.user,
+            )
+            return Response(ConversationSerializer(conv, context={'request': request}).data, status=201)
+        return super().create(request, *args, **kwargs)
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx['request'] = self.request
+        return ctx
 
 
 class ConversationDetailView(generics.RetrieveUpdateAPIView):
-    queryset = Conversation.objects.select_related('student').prefetch_related('messages__sender')
+    queryset = Conversation.objects.select_related('student', 'instructor').prefetch_related('messages__sender')
     serializer_class = ConversationSerializer
     permission_classes = [IsAdminOrInstructor]
 
@@ -88,28 +107,52 @@ class DirectMessageListView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         conv = Conversation.objects.get(pk=self.kwargs['conv_pk'])
         serializer.save(sender=self.request.user, conversation=conv)
-        conv.admin_unread = False
-        conv.save(update_fields=['updated_at', 'admin_unread'])
+        # Mark as unread for the other party
+        if self.request.user == conv.instructor:
+            conv.admin_unread = True
+        else:
+            conv.instructor_unread = True
+            conv.admin_unread = False
+        conv.save(update_fields=['updated_at', 'admin_unread', 'instructor_unread'])
 
 
 class MyConversationView(APIView):
-    """Student gets (or creates) their own conversation with the studio."""
+    """Student gets (or creates) their conversation — optionally with a specific instructor."""
     permission_classes = [permissions.IsAuthenticated]
 
+    def _get_conv(self, request):
+        instructor_id = request.query_params.get('instructor_id') or request.data.get('instructor_id')
+        if instructor_id:
+            from apps.users.models import User as UserModel
+            try:
+                instructor = UserModel.objects.get(pk=instructor_id, role='instructor')
+            except UserModel.DoesNotExist:
+                return None, None
+            conv, _ = Conversation.objects.get_or_create(student=request.user, instructor=instructor)
+        else:
+            conv, _ = Conversation.objects.get_or_create(student=request.user, instructor=None)
+        return conv, instructor_id
+
     def get(self, request):
-        conv, _ = Conversation.objects.prefetch_related('messages__sender').get_or_create(
-            student=request.user
-        )
+        conv, _ = self._get_conv(request)
+        if conv is None:
+            return Response({'detail': 'Instructor not found'}, status=404)
+        conv = Conversation.objects.prefetch_related('messages__sender').get(pk=conv.pk)
         return Response(ConversationSerializer(conv).data)
 
     def post(self, request):
-        conv, _ = Conversation.objects.get_or_create(student=request.user)
+        conv, instructor_id = self._get_conv(request)
+        if conv is None:
+            return Response({'detail': 'Instructor not found'}, status=404)
         body = request.data.get('body', '').strip()
         if not body:
             return Response({'detail': 'body required'}, status=400)
         msg = DirectMessage.objects.create(conversation=conv, sender=request.user, body=body)
-        conv.admin_unread = True
-        conv.save(update_fields=['updated_at', 'admin_unread'])
+        if instructor_id:
+            conv.instructor_unread = True
+        else:
+            conv.admin_unread = True
+        conv.save(update_fields=['updated_at', 'admin_unread', 'instructor_unread'])
         return Response(DirectMessageSerializer(msg).data, status=201)
 
 

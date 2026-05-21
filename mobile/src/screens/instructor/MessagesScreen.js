@@ -264,11 +264,11 @@ const s = StyleSheet.create({
     maxWidth: '75%', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10,
   },
   bubbleLeft: { backgroundColor: '#111', borderWidth: 1, borderColor: '#333' },
-  bubbleRight: { backgroundColor: '#eef2ff', borderWidth: 1, borderColor: '#c7d2fe' },
+  bubbleRight: { backgroundColor: 'rgba(204,255,0,0.08)', borderWidth: 1, borderColor: 'rgba(204,255,0,0.2)' },
   bubbleSender: { fontSize: 10, color: '#555', marginBottom: 3 },
   bubbleBody: { fontSize: 14, lineHeight: 20 },
   bubbleBodyLeft: { color: '#fff' },
-  bubbleBodyRight: { color: '#3730a3' },
+  bubbleBodyRight: { color: '#ccff00' },
   bubbleTime: { fontSize: 10, color: '#555', marginTop: 4, textAlign: 'right' },
 
   // Input
@@ -302,6 +302,6 @@ const s = StyleSheet.create({
     alignItems: 'center',
     minWidth: 64,
   },
-  sendBtnDisabled: { backgroundColor: '#a5b4fc' },
+  sendBtnDisabled: { backgroundColor: 'rgba(204,255,0,0.3)' },
   sendBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
 })

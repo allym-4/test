@@ -496,6 +496,22 @@ class Command(BaseCommand):
                 ),
             )
 
+        # Action Items
+        try:
+            from apps.users.models import ActionItem
+            demo_actions = [
+                dict(title='Follow up with Jess re outstanding balance', body='Balance of $60 — collect before end of week.', is_urgent=True),
+                dict(title='Review homework submissions', body='3 students submitted videos for Level 3 homework.', is_urgent=False),
+                dict(title='Send cover request for Saturday class', body="Check availability for 10am Saturday if you're away.", is_urgent=False),
+            ]
+            for action in demo_actions:
+                ActionItem.objects.get_or_create(
+                    title=action['title'],
+                    defaults=dict(body=action['body'], is_urgent=action['is_urgent'], is_done=False),
+                )
+        except Exception:
+            pass
+
         self.stdout.write(self.style.SUCCESS(
             f'\nDemo data seeded for Season 3!\n'
             f'  Password for all demo accounts: {DEMO_PASSWORD}\n'

@@ -1,14 +1,16 @@
 import { useState, useEffect, useRef } from 'react'
 import { useApi } from '../hooks/useApi'
 import { useAuth } from '../contexts/AuthContext'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { helpdesk, community, users } from '../api'
 import client from '../api/client'
 
 // ── Conversation list (Direct Messages tab) ─────────────────────────────────
 
-function ConversationList({ selected, onSelect }) {
+function ConversationList({ selected, onSelect, studentMap }) {
   const { data, loading } = useApi(() => helpdesk.conversations())
   const convs = data?.results || data || []
+  const navigate = useNavigate()
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><div className="spinner" /></div>
 
@@ -16,11 +18,25 @@ function ConversationList({ selected, onSelect }) {
     return <div style={{ padding: 24, color: 'var(--grey)', fontSize: 13 }}>No conversations yet.</div>
   }
 
+  function getStudentName(c) {
+    if (c.student_name) return c.student_name
+    if (c.student?.display_name) return c.student?.display_name
+    const studentId = typeof c.student === 'object' ? c.student?.id : c.student
+    if (studentId && studentMap[studentId]) return studentMap[studentId]
+    return studentId ? `Student #${studentId}` : 'Unknown student'
+  }
+
+  function getStudentId(c) {
+    return typeof c.student === 'object' ? c.student?.id : c.student
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
       {convs.map(c => {
         const isActive = selected?.id === c.id
         const lastMsg = c.last_message
+        const studentName = getStudentName(c)
+        const studentId = getStudentId(c)
         return (
           <button
             key={c.id}
@@ -44,8 +60,11 @@ function ConversationList({ selected, onSelect }) {
             )}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: isActive ? 'var(--lime)' : 'var(--white)' }}>
-                  {c.student_name || c.student?.display_name || `Student #${c.student}`}
+                <span
+                  style={{ fontSize: 13, fontWeight: 600, color: isActive ? 'var(--lime)' : 'var(--white)', textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.2)', cursor: 'pointer' }}
+                  onClick={ev => { ev.stopPropagation(); if (studentId) navigate(`/students?student=${studentId}`) }}
+                >
+                  {studentName}
                 </span>
                 {c.unread_count > 0 && (
                   <span style={{ background: 'var(--lime)', color: '#000', borderRadius: 10, fontSize: 10, fontWeight: 700, padding: '1px 7px' }}>
@@ -240,18 +259,21 @@ function RequestsTab() {
 
 // ── Sent tab ─────────────────────────────────────────────────────────────────
 
-function SentTab({ currentUserId }) {
+function SentTab({ currentUserId, studentMap }) {
   const { data, loading } = useApi(() => helpdesk.conversations())
   const convs = data?.results || data || []
+  const navigate = useNavigate()
 
-  // Gather sent messages from conversations - show conversations where instructor sent the last message
-  // or just list all conversations with the last message preview
-  const sentItems = convs.map(c => ({
-    id: c.id,
-    recipient: c.student_name || c.student?.display_name || `Student #${c.student}`,
-    preview: c.last_message?.body || '',
-    date: c.last_message?.created_at || c.updated_at || c.created_at,
-  })).filter(item => item.preview)
+  const sentItems = convs.map(c => {
+    const studentId = typeof c.student === 'object' ? c.student?.id : c.student
+    return {
+      id: c.id,
+      studentId,
+      recipient: c.student_name || c.student?.display_name || (studentId && studentMap[studentId]) || `Student #${studentId}`,
+      preview: c.last_message?.body || '',
+      date: c.last_message?.created_at || c.updated_at || c.created_at,
+    }
+  }).filter(item => item.preview)
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>
 
@@ -264,7 +286,10 @@ function SentTab({ currentUserId }) {
       {sentItems.map(item => (
         <div key={item.id} style={{ borderBottom: '1px solid var(--border)', padding: '14px 16px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--white)' }}>{item.recipient}</span>
+            <span
+              style={{ fontSize: 13, fontWeight: 600, color: 'var(--white)', textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.2)', cursor: 'pointer' }}
+              onClick={() => item.studentId && navigate(`/students?student=${item.studentId}`)}
+            >{item.recipient}</span>
             <span style={{ fontSize: 11, color: 'var(--grey)' }}>
               {item.date ? new Date(item.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : ''}
             </span>
@@ -384,9 +409,40 @@ function ComposeModal({ onClose }) {
 
 export default function InstructorMessages() {
   const { user } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [selected, setSelected] = useState(null)
   const [tab, setTab] = useState('direct')
   const [composing, setComposing] = useState(false)
+  const [studentMap, setStudentMap] = useState({})
+  const [conversations, setConversations] = useState(null)
+
+  useEffect(() => {
+    users.list({ role: 'student', page_size: 500 }).then(res => {
+      const list = res.data?.results || res.data || []
+      const map = {}
+      list.forEach(s => { map[s.id] = s.display_name || `${s.first_name} ${s.last_name}`.trim() })
+      setStudentMap(map)
+    }).catch(() => {})
+  }, [])
+
+  // Auto-open a conversation when arriving with ?open=studentId
+  useEffect(() => {
+    const openStudentId = searchParams.get('open')
+    if (!openStudentId || !studentMap) return
+    helpdesk.conversations().then(res => {
+      const convs = res.data?.results || res.data || []
+      setConversations(convs)
+      const match = convs.find(c => {
+        const sid = typeof c.student === 'object' ? c.student?.id : c.student
+        return String(sid) === String(openStudentId)
+      })
+      if (match) {
+        setSelected(match)
+        setTab('direct')
+        setSearchParams({}, { replace: true })
+      }
+    }).catch(() => {})
+  }, [searchParams, studentMap]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div>
@@ -438,7 +494,7 @@ export default function InstructorMessages() {
             <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.7px', color: 'var(--grey)', fontWeight: 600 }}>
               Conversations
             </div>
-            <ConversationList selected={selected} onSelect={setSelected} />
+            <ConversationList selected={selected} onSelect={setSelected} studentMap={studentMap} />
           </div>
 
           <div className={`split-main${!selected ? ' mobile-list-showing' : ''}`}>
@@ -446,7 +502,9 @@ export default function InstructorMessages() {
               <>
                 <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
                   <button className="mobile-back-btn" onClick={() => setSelected(null)}>← Back</button>
-                  <span style={{ fontWeight: 600, fontSize: 14, flex: 1 }}>{selected.student_name || `Student #${selected.student}`}</span>
+                  <span style={{ fontWeight: 600, fontSize: 14, flex: 1 }}>
+                    {selected.student_name || selected.student?.display_name || studentMap[selected.student] || studentMap[selected.student?.id] || `Student #${typeof selected.student === 'object' ? selected.student?.id : selected.student}`}
+                  </span>
                   <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 16 }}>✕</button>
                 </div>
                 <Thread conv={selected} />
@@ -463,7 +521,7 @@ export default function InstructorMessages() {
       {/* Sent tab */}
       {tab === 'sent' && (
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', minHeight: 200 }}>
-          <SentTab currentUserId={user?.id} />
+          <SentTab currentUserId={user?.id} studentMap={studentMap} />
         </div>
       )}
 
