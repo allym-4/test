@@ -1231,6 +1231,7 @@ class MyUpcomingClassesView(APIView):
                     'spots_left': max(0, sess.capacity - enrolled_count),
                     'is_past': occ.date < today,
                     'classmates': classmates,
+                    'session_id': sess.id,
                 })
 
         # 2. Casual / catch-up / class-pass bookings
@@ -1257,6 +1258,7 @@ class MyUpcomingClassesView(APIView):
                 'status': cb.status,  # 'confirmed' or 'waitlisted'
                 'booking_id': cb.id,
                 'occurrence_id': occ.id,
+                'session_id': sess.id,
                 'spots_left': None,
                 'is_past': False,
             })

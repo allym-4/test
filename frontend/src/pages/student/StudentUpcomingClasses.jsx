@@ -1,8 +1,43 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
 import { classes as classesApi, attendance as attendanceApi, settings as settingsApi } from '../../api'
 import MarkAwayModal from '../../components/MarkAwayModal'
+
+function ClassRoster({ sessionId }) {
+  const [names, setNames] = useState(null)
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (!open || names !== null || !sessionId) return
+    classesApi.roster(sessionId).then(r => setNames(r.data.names || [])).catch(() => setNames([]))
+  }, [open, sessionId, names])
+
+  if (!sessionId) return null
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 11, color: 'var(--lav)', textDecoration: 'underline', textDecorationStyle: 'dotted', marginTop: 8 }}>
+        Who's coming?
+      </button>
+    )
+  }
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Who's coming</div>
+      {names === null ? (
+        <div style={{ fontSize: 11, color: 'var(--grey)' }}>…</div>
+      ) : names.length === 0 ? (
+        <div style={{ fontSize: 11, color: 'var(--grey)' }}>No one's opted in yet</div>
+      ) : (
+        <div style={{ fontSize: 12, color: 'var(--white)', display: 'flex', flexWrap: 'wrap', gap: '4px 8px' }}>
+          {names.map((n, i) => <span key={i}>{n}</span>)}
+        </div>
+      )}
+    </div>
+  )
+}
 
 const TYPE_LABELS = {
   enrolled: 'Enrolled',
@@ -230,10 +265,8 @@ function ItemRow({ item, onMarkAway, onUndoAway, onCancel }) {
         <div style={{ marginTop: 6 }}>
           <StatusBadge item={item} />
         </div>
-        {item.classmates?.length > 0 && (
-          <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 5 }}>
-            Also coming: {item.classmates.join(', ')}
-          </div>
+        {item.session_id && item.type !== 'practice' && (
+          <ClassRoster sessionId={item.session_id} />
         )}
       </div>
       <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
