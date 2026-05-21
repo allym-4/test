@@ -17,30 +17,12 @@ function todayLabel() {
   return new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 }
 
-function getWeekRange() {
-  const today = new Date()
-  const start = new Date(today)
-  start.setHours(0, 0, 0, 0)
-  const end = new Date(today)
-  end.setDate(today.getDate() + 7)
-  end.setHours(23, 59, 59, 999)
-  return {
-    start: start.toISOString().slice(0, 10),
-    end: end.toISOString().slice(0, 10),
-  }
-}
 
 export default function DashboardPage() {
   const { user } = useAuth()
   const todayDow = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1
-  const { start: weekStart, end: weekEnd } = getWeekRange()
-
   // My sessions (instructor-filtered by API)
   const { data: sessionsData, loading: loadingSessions } = useApi(() => classes.list({ active: 'true' }))
-  // This week's occurrences for my classes
-  const { data: upcomingOccsData, loading: loadingUpcoming } = useApi(() =>
-    classes.occurrences({ upcoming: true, date_after: weekStart, date_before: weekEnd, page_size: 50 })
-  )
   // All sessions today (all instructors)
   const { data: allSessionsData, loading: loadingAllSessions } = useApi(() =>
     client.get('/api/classes/sessions/', { params: { active: true } })
@@ -68,10 +50,6 @@ export default function DashboardPage() {
   const allSessionsToday = allSessions
     .filter(s => s.day_of_week === todayDow)
     .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''))
-
-  const upcomingOccs = (upcomingOccsData?.results || [])
-    .filter(o => o.date > new Date().toISOString().slice(0, 10))
-    .sort((a, b) => a.date.localeCompare(b.date) || (a.session_detail?.start_time || '').localeCompare(b.session_detail?.start_time || ''))
 
   const pendingHw = assignments.filter(a => a.submission_count > 0).length
 
@@ -192,49 +170,6 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-
-      {/* Your Upcoming This Week */}
-      <div style={{ marginBottom: 28 }}>
-        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, marginBottom: 14 }}>Your Upcoming This Week</div>
-        {loadingUpcoming ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}><div className="spinner" /></div>
-        ) : upcomingOccs.length === 0 ? (
-          <div style={{ color: 'var(--grey)', fontSize: 13, padding: '20px 0' }}>No more classes this week</div>
-        ) : (
-          <div style={{ background: '#111', border: '1px solid #222', borderRadius: 14, overflow: 'hidden' }}>
-            {upcomingOccs.map((occ, i) => {
-              const s = occ.session_detail || {}
-              const enrolled = occ.enrolled_count ?? s.enrolled_count ?? 0
-              const capacity = occ.capacity ?? s.capacity ?? 0
-              const isFull = capacity > 0 && enrolled >= capacity
-              const d = new Date(occ.date + 'T00:00')
-              const day = d.toLocaleDateString('en-AU', { weekday: 'short' }).toUpperCase()
-              return (
-                <Link
-                  key={occ.id}
-                  to={`/classes/${occ.session}/attendance`}
-                  style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 16, padding: '14px 20px', borderBottom: i < upcomingOccs.length - 1 ? '1px solid #1a1a1a' : 'none' }}
-                >
-                  <div style={{ minWidth: 56, flexShrink: 0 }}>
-                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, color: 'var(--lime)', lineHeight: 1 }}>{s.start_time?.slice(0, 5)}</div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase' }}>{day}</div>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>{s.name}</div>
-                    <div style={{ fontSize: 12, color: 'var(--grey)' }}>{s.studio_detail?.name || occ.studio_name} · {enrolled}/{capacity} enrolled</div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.5px', padding: '3px 10px', borderRadius: 20, background: isFull ? 'rgba(255,170,0,0.15)' : 'rgba(204,255,0,0.1)', color: isFull ? 'var(--amber)' : 'var(--lime)', border: `1px solid ${isFull ? 'rgba(255,170,0,0.3)' : 'rgba(204,255,0,0.3)'}` }}>
-                      {isFull ? 'FULL' : 'ACTIVE'}
-                    </span>
-                    <span style={{ color: 'var(--grey)', fontSize: 14 }}>›</span>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        )}
-      </div>
 
       {/* All Classes Today */}
       <div style={{ marginBottom: 28 }}>
