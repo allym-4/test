@@ -177,7 +177,7 @@ export default function CheckoutModal({
             .then(r => setUpsells(r.data || []))
             .catch(() => {})
         }
-      } catch {
+      } catch (e) {
         setError('Could not initialise payment. Please try again.')
       } finally {
         setLoading(false)
@@ -220,7 +220,7 @@ export default function CheckoutModal({
         })
         setDepositClientSecret(res.data.client_secret)
         setClientSecret(res.data.client_secret)
-      } catch { }
+      } catch (e) { }
     } else if (depositClientSecret) {
       setClientSecret(depositClientSecret)
     }
