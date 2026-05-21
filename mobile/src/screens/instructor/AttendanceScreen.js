@@ -128,6 +128,9 @@ function WaitlistRow({ item, position }) {
 // ── Main screen ───────────────────────────────────────────────────────────────
 
 export default function AttendanceScreen({ navigation }) {
+  function goToStudent(studentId, studentName) {
+    navigation.navigate('StudentDetail', { studentId, studentName })
+  }
   const today = new Date().toISOString().slice(0, 10)
   const [selectedOcc, setSelectedOcc] = useState(null)
   const [tab, setTab] = useState('attending')
@@ -312,6 +315,7 @@ export default function AttendanceScreen({ navigation }) {
               return <WaitlistRow item={item} position={index + 1} />
             }
             const sid = item.student_id ?? item.student?.id ?? item.student
+            const studentName = item.student_detail?.display_name || `${item.student_detail?.first_name ?? ''} ${item.student_detail?.last_name ?? ''}`.trim() || 'Student'
             return (
               <StudentRow
                 entry={item}
@@ -320,6 +324,7 @@ export default function AttendanceScreen({ navigation }) {
                 note={notes[sid] || ''}
                 onStatusChange={status => setStatus(sid, status)}
                 onNote={() => { setNoteModal(sid); setNoteText(notes[sid] || '') }}
+                onViewStudent={() => goToStudent(sid, studentName)}
               />
             )
           }}
@@ -409,6 +414,7 @@ const s = StyleSheet.create({
   rowMeta: { flex: 1, minWidth: 0 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
   name: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  nameTappable: { textDecorationLine: 'underline', color: '#ccff00' },
   pronouns: { fontSize: 11, color: '#555' },
   enrolType: { fontSize: 12, color: '#888', marginBottom: 4 },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },

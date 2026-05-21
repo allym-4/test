@@ -65,7 +65,7 @@ function ConversationList({ onSelect }) {
 
 // ── Thread view ───────────────────────────────────────────────────────────────
 
-function Thread({ conv, onBack }) {
+function Thread({ conv, onBack, navigation }) {
   const [messages, setMessages] = useState([])
   const [loadingMsgs, setLoadingMsgs] = useState(true)
   const [text, setText] = useState('')
@@ -112,7 +112,18 @@ function Thread({ conv, onBack }) {
         <TouchableOpacity onPress={onBack} style={s.back}>
           <Text style={s.backText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={s.threadTitle} numberOfLines={1}>{studentName}</Text>
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          onPress={() => {
+            const studentId = conv.student?.id ?? conv.student
+            if (studentId && navigation) {
+              navigation.navigate('StudentDetail', { studentId, studentName })
+            }
+          }}
+          activeOpacity={0.7}
+        >
+          <Text style={[s.threadTitle, s.threadTitleTappable]} numberOfLines={1}>{studentName} ›</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Messages */}
@@ -192,11 +203,11 @@ function Thread({ conv, onBack }) {
 
 // ── Main screen ───────────────────────────────────────────────────────────────
 
-export default function MessagesScreen() {
+export default function MessagesScreen({ navigation }) {
   const [selected, setSelected] = useState(null)
 
   if (selected) {
-    return <Thread conv={selected} onBack={() => setSelected(null)} />
+    return <Thread conv={selected} onBack={() => setSelected(null)} navigation={navigation} />
   }
 
   return (
@@ -253,7 +264,8 @@ const s = StyleSheet.create({
   },
   back: { paddingHorizontal: 12, paddingVertical: 4 },
   backText: { color: '#ccff00', fontWeight: '600', fontSize: 15 },
-  threadTitle: { flex: 1, fontSize: 16, fontWeight: '700', color: '#fff', marginRight: 16 },
+  threadTitle: { fontSize: 16, fontWeight: '700', color: '#fff', marginRight: 16 },
+  threadTitleTappable: { color: '#ccff00' },
 
   // Messages
   messageList: { padding: 16, paddingBottom: 8 },

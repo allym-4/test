@@ -29,11 +29,14 @@ function formatTime(timeStr) {
 
 // ── Enrolment card (Roster tab) ───────────────────────────────────────────────
 
-function EnrolmentCard({ enr }) {
+function EnrolmentCard({ enr, onViewStudent }) {
+  const studentName = enr.student?.display_name ?? enr.student?.email ?? 'Student'
   return (
     <View style={s.card}>
       <View style={s.cardTop}>
-        <Text style={s.studentName}>{enr.student?.display_name ?? enr.student?.email ?? 'Student'}</Text>
+        <TouchableOpacity onPress={onViewStudent} hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}>
+          <Text style={[s.studentName, s.studentNameTappable]}>{studentName}</Text>
+        </TouchableOpacity>
         <View style={[s.typeBadge, enr.enrolment_type === 'trial' && s.trialBadge]}>
           <Text style={[s.typeBadgeText, enr.enrolment_type === 'trial' && s.trialBadgeText]}>
             {enr.enrolment_type}
@@ -146,7 +149,7 @@ function ScheduleTab() {
 
 // ── Roster tab ────────────────────────────────────────────────────────────────
 
-function RosterTab() {
+function RosterTab({ navigation }) {
   const [search, setSearch] = useState('')
   const [selectedSession, setSelectedSession] = useState(null)
 
@@ -213,7 +216,16 @@ function RosterTab() {
         ListEmptyComponent={
           <Text style={s.empty}>{enrLoading ? '' : 'No enrolments found.'}</Text>
         }
-        renderItem={({ item }) => <EnrolmentCard enr={item} />}
+        renderItem={({ item }) => (
+          <EnrolmentCard
+            enr={item}
+            onViewStudent={() => {
+              const sid = item.student?.id ?? item.student
+              const sName = item.student?.display_name ?? item.student?.email ?? 'Student'
+              navigation.navigate('StudentDetail', { studentId: sid, studentName: sName })
+            }}
+          />
+        )}
       />
     </View>
   )
@@ -226,7 +238,7 @@ const MAIN_TABS = [
   { id: 'roster',   label: 'Roster' },
 ]
 
-export default function EnrolmentsScreen() {
+export default function EnrolmentsScreen({ navigation }) {
   const [activeTab, setActiveTab] = useState('schedule')
 
   return (
@@ -248,7 +260,7 @@ export default function EnrolmentsScreen() {
         ))}
       </View>
 
-      {activeTab === 'schedule' ? <ScheduleTab /> : <RosterTab />}
+      {activeTab === 'schedule' ? <ScheduleTab /> : <RosterTab navigation={navigation} />}
     </View>
   )
 }
@@ -298,6 +310,7 @@ const s = StyleSheet.create({
   card: { backgroundColor: '#111', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#222' },
   cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 },
   studentName: { fontSize: 15, fontWeight: '600', color: '#fff', flex: 1 },
+  studentNameTappable: { color: '#ccff00', textDecorationLine: 'underline' },
   typeBadge: { backgroundColor: 'rgba(176,160,255,0.15)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   typeBadgeText: { fontSize: 11, fontWeight: '600', color: '#b0a0ff', textTransform: 'capitalize' },
   trialBadge: { backgroundColor: 'rgba(245,158,11,0.15)' },
