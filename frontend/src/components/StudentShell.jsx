@@ -49,6 +49,21 @@ export default function StudentShell() {
 
   return (
     <div className="student-shell">
+      {(user?.role === 'instructor' || user?.role === 'admin') && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+          background: '#ccff00', color: '#000', fontSize: 12, fontWeight: 700,
+          padding: '6px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <span>Previewing student portal</span>
+          <button
+            onClick={() => navigate('/')}
+            style={{ background: '#000', color: '#ccff00', border: 'none', borderRadius: 6, padding: '3px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+          >
+            ← Back to Instructor
+          </button>
+        </div>
+      )}
       {mobileOpen && <div className="student-mob-overlay" onClick={() => setMobileOpen(false)} />}
 
       <nav className={`student-sidebar ${mobileOpen ? 'open' : ''}`}>
