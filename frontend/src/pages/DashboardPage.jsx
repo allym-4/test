@@ -116,7 +116,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPIs */}
-      <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 28 }}>
+      <div className="kpi-grid" style={{ display: 'grid', gap: 12, marginBottom: 28 }}>
         <Link to="/classes" style={{ textDecoration: 'none', background: '#111', border: '1px solid #222', borderRadius: 12, padding: '16px 18px' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Students Today</div>
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 32, color: 'var(--lime)', marginBottom: 4 }}>
@@ -149,16 +149,16 @@ export default function DashboardPage() {
             {todaySessions.map(s => {
               const isFull = s.enrolled_count >= s.capacity
               return (
-                <Link key={s.id} to={`/classes/${s.id}/attendance`} style={{ textDecoration: 'none', background: '#111', border: '1px solid #222', borderRadius: 14, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 20 }}>
+                <Link key={s.id} to={`/classes/${s.id}/attendance`} className="dashboard-class-row" style={{ textDecoration: 'none', background: '#111', border: '1px solid #222', borderRadius: 14, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
                   <div style={{ textAlign: 'center', minWidth: 52, flexShrink: 0 }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{DAYS[s.day_of_week]}</div>
                     <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26, color: 'var(--lime)', lineHeight: 1 }}>{s.start_time?.slice(0, 5)}</div>
                     <div style={{ fontSize: 10, color: 'var(--grey)' }}>pm</div>
                   </div>
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, marginBottom: 4 }}>{s.name}</div>
                     <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 8 }}>{s.studio_detail?.name} · {s.enrolled_count}/{s.capacity} enrolled</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                       <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.5px', padding: '3px 10px', borderRadius: 20, background: isFull ? 'rgba(255,170,0,0.15)' : 'rgba(204,255,0,0.1)', color: isFull ? 'var(--amber)' : 'var(--lime)', border: `1px solid ${isFull ? 'rgba(255,170,0,0.3)' : 'rgba(204,255,0,0.3)'}` }}>
                         {isFull ? 'FULL' : 'ACTIVE'}
                       </span>
@@ -194,12 +194,12 @@ export default function DashboardPage() {
                     <div style={{ fontSize: 15, fontWeight: 700, color: isOwn ? 'var(--lime)' : '#fff' }}>{s.start_time?.slice(0, 5)}</div>
                     <div style={{ fontSize: 10, color: 'var(--grey)', textTransform: 'uppercase' }}>PM</div>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       {s.name}
                       {isOwn && <span style={{ fontSize: 9, fontWeight: 800, background: 'var(--lime)', color: '#000', borderRadius: 4, padding: '1px 6px', letterSpacing: '0.5px' }}>YOURS</span>}
                     </div>
-                    <div style={{ fontSize: 12, color: 'var(--grey)' }}>{s.studio_detail?.name} · {s.instructor_detail?.display_name || s.instructor_detail?.first_name} · {s.enrolled_count}/{s.capacity}</div>
+                    <div style={{ fontSize: 12, color: 'var(--grey)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.studio_detail?.name} · {s.instructor_detail?.display_name || s.instructor_detail?.first_name} · {s.enrolled_count}/{s.capacity}</div>
                   </div>
                   <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.5px', padding: '3px 10px', borderRadius: 20, background: isFull ? 'rgba(255,170,0,0.15)' : 'rgba(204,255,0,0.1)', color: isFull ? 'var(--amber)' : 'var(--lime)', border: `1px solid ${isFull ? 'rgba(255,170,0,0.3)' : 'rgba(204,255,0,0.3)'}`, flexShrink: 0 }}>
                     {isFull ? 'FULL' : 'ACTIVE'}
@@ -222,14 +222,14 @@ export default function DashboardPage() {
               const pctColor = pct === 100 ? 'var(--lime)' : pct > 50 ? 'var(--amber)' : 'var(--grey)'
               return (
                 <Link key={a.id} to="/homework" style={{ textDecoration: 'none', background: '#111', border: '1px solid #222', borderRadius: 12, padding: '14px 18px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-                    <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, gap: 8, flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 3 }}>{a.title}</div>
                       <div style={{ fontSize: 12, color: 'var(--grey)' }}>
                         {s?.name} — {DAYS[s?.day_of_week]} {s?.start_time?.slice(0, 5)} · {s?.studio_detail?.name}
                       </div>
                     </div>
-                    <span style={{ fontSize: 10, fontWeight: 700, background: 'rgba(204,255,0,0.1)', color: 'var(--lime)', border: '1px solid rgba(204,255,0,0.3)', borderRadius: 20, padding: '3px 10px', flexShrink: 0, marginLeft: 12 }}>ACTIVE</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, background: 'rgba(204,255,0,0.1)', color: 'var(--lime)', border: '1px solid rgba(204,255,0,0.3)', borderRadius: 20, padding: '3px 10px', flexShrink: 0 }}>ACTIVE</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12, color: 'var(--grey)' }}>
                     <span>{a.submission_count}/{a.enrolled_count} submitted</span>

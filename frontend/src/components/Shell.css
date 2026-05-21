@@ -178,3 +178,9 @@
 
   .view-toggle-btn { display: none; }
 }
+
+@media (max-width: 640px) {
+  .split-layout {
+    min-height: 60vh;
+  }
+}

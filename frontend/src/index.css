@@ -78,8 +78,8 @@ select option { background: #1a1a1a; }
 .list-row.clickable { cursor: pointer; transition: background 0.12s; }
 .list-row.clickable:hover { background: rgba(255,255,255,0.03); }
 .list-body { flex: 1; min-width: 0; }
-.list-title { font-size: 13px; font-weight: 600; }
-.list-sub { font-size: 11px; color: var(--grey); margin-top: 2px; }
+.list-title { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.list-sub { font-size: 11px; color: var(--grey); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .list-end { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
 .avatar {

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { auth } from '../api'
+import './InstructorProfile.css'
 
 export default function InstructorProfile() {
   const { user, setUser } = useAuth()
@@ -147,7 +148,7 @@ export default function InstructorProfile() {
 
       <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 24px', marginBottom: 16 }}>
         <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 18 }}>Personal Details</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
+        <div className="profile-fields-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
           <Field label="First Name" field="first_name" />
           <Field label="Last Name" field="last_name" />
           <Field label="Email" field="email" type="email" />

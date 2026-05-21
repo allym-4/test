@@ -281,8 +281,8 @@ function HwCard({ a, onToggle, onDetail }) {
       style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: 12, padding: '16px 18px', marginBottom: 10, cursor: 'pointer', opacity: a.status !== 'active' ? 0.6 : 1 }}
       onClick={() => onDetail(a)}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-        <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15 }}>{a.title}</div>
           <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 3 }}>
             {s?.name} — {DAYS[s?.day_of_week]} {s?.start_time?.slice(0, 5)} · {s?.studio_detail?.name}
@@ -290,7 +290,7 @@ function HwCard({ a, onToggle, onDetail }) {
             {a.due_date && ' · Due ' + new Date(a.due_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <span className={`tag ${tagCls}`} style={{ fontSize: 10 }}>{tagLabel}</span>
           <button className="btn btn-ghost btn-xs" onClick={e => { e.stopPropagation(); onToggle(a) }}>
             {a.status === 'active' ? 'Close' : 'Reopen'}
@@ -352,7 +352,7 @@ export default function HomeworkPage() {
         <button className="btn btn-lime btn-sm" onClick={() => setShowNew(true)}>+ Assign Homework</button>
       </div>
 
-      <div style={{ borderBottom: '1px solid #1e1e1e', display: 'flex', gap: 4, marginBottom: 24 }}>
+      <div style={{ borderBottom: '1px solid #1e1e1e', display: 'flex', gap: 4, marginBottom: 24, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         {[
           { id: 'active', label: `Active${active.length > 0 ? ` (${active.length})` : ''}` },
           { id: 'submitted', label: `Submitted${pendingReview.length > 0 ? ` (${pendingReview.length})` : ''}` },

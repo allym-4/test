@@ -147,3 +147,31 @@
   .att-info-bar { gap: 10px; }
   .att-info-divider { display: none; }
 }
+
+@media (max-width: 768px) {
+  .att-page { max-width: 100%; }
+
+  .att-student-row {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  .att-student-row .att-right {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .att-student-row .att-right select,
+  .att-student-row .att-right .att-status-select {
+    flex: 1;
+    min-width: 0 !important;
+    width: 100%;
+  }
+
+  .att-header-actions {
+    flex-wrap: wrap;
+  }
+}
