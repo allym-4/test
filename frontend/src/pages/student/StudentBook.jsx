@@ -1,8 +1,33 @@
 import { useState, useEffect } from 'react'
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { useApi } from '../../hooks/useApi'
 import { useAuth } from '../../contexts/AuthContext'
 import { classes, enrolments, settings as settingsApi, seasons as seasonsApi, payments as paymentsApi, attendance as attendanceApi } from '../../api'
 import CheckoutModal from '../../components/CheckoutModal'
+
+let _stripePromise = null
+async function getStripe() {
+  if (!_stripePromise) {
+    const { data } = await paymentsApi.stripe.config()
+    _stripePromise = loadStripe(data.publishable_key)
+  }
+  return _stripePromise
+}
+
+const STRIPE_DARK = {
+  theme: 'night',
+  variables: {
+    colorPrimary: '#b0a0ff',
+    colorBackground: '#0a0a0a',
+    colorText: '#ffffff',
+    colorDanger: '#ff4444',
+    fontFamily: 'Archivo, sans-serif',
+    borderRadius: '8px',
+    colorInputBackground: '#0a0a0a',
+    colorInputBorder: '#2a2a2a',
+  },
+}
 
 const DAYS_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -647,24 +672,30 @@ function PaymentPlanModal({ checkout, onClose, onConfirm }) {
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [clientSecret, setClientSecret] = useState(null)
+  const [stripeInst, setStripeInst] = useState(null)
+  const [loadingStripe, setLoadingStripe] = useState(true)
+
+  useEffect(() => {
+    async function init() {
+      try {
+        const [si, res] = await Promise.all([getStripe(), paymentsApi.stripe.createSetupIntent()])
+        setStripeInst(si)
+        setClientSecret(res.data.client_secret)
+      } catch {
+        setError('Could not initialise payment. Please try again.')
+      } finally {
+        setLoadingStripe(false)
+      }
+    }
+    init()
+  }, [])
 
   const FREQ_OPTIONS = [
     { value: 'weekly', label: 'Weekly', desc: 'Spread payments each week over the season' },
     { value: 'fortnightly', label: 'Fortnightly', desc: 'Every two weeks — the most popular option' },
     { value: 'monthly', label: 'Monthly', desc: 'One payment per month' },
   ]
-
-  async function handleSubmit() {
-    setSubmitting(true)
-    setError('')
-    try {
-      await onConfirm(frequency, notes)
-      onClose()
-    } catch (e) {
-      setError(e.response?.data?.detail || 'Failed to submit — please try again')
-      setSubmitting(false)
-    }
-  }
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', padding: 16 }}
@@ -674,6 +705,8 @@ function PaymentPlanModal({ checkout, onClose, onConfirm }) {
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(17px, 4.5vw, 22px)' }}>Payment Plan</div>
           <button onClick={onClose} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 10, color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, padding: '7px 12px', cursor: 'pointer' }}>CLOSE</button>
         </div>
+
+        {/* Order summary */}
         <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#555', textTransform: 'uppercase', marginBottom: 8 }}>Order Summary</div>
           {checkout.sessions?.length > 0
@@ -685,9 +718,12 @@ function PaymentPlanModal({ checkout, onClose, onConfirm }) {
             <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, color: '#ccff00' }}>${checkout.amount?.toFixed(2)}</span>
           </div>
         </div>
+
         <div style={{ background: 'rgba(176,160,255,0.07)', border: '1px solid rgba(176,160,255,0.2)', borderRadius: 10, padding: '12px 14px', marginBottom: 16, fontSize: 13, color: '#ccc', lineHeight: 1.6 }}>
-          Submit your preferred payment frequency and a team member will set up your plan. No payment is taken until the plan is confirmed.
+          A team member will confirm your plan schedule. Your card is saved now but <strong style={{ color: '#b0a0ff' }}>not charged</strong> until the plan is set up.
         </div>
+
+        {/* Frequency */}
         <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#666', marginBottom: 10 }}>How often would you like to pay?</div>
         {FREQ_OPTIONS.map(opt => (
           <div
@@ -702,21 +738,83 @@ function PaymentPlanModal({ checkout, onClose, onConfirm }) {
             </div>
           </div>
         ))}
-        <div className="field" style={{ marginTop: 12 }}>
+
+        {/* Notes */}
+        <div className="field" style={{ marginTop: 12, marginBottom: 16 }}>
           <label>Notes (optional)</label>
-          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Any preferences or questions for the team" style={{ resize: 'none' }} />
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Any questions or preferences for the team" style={{ resize: 'none' }} />
         </div>
-        {error && <div style={{ color: '#ff4444', fontSize: 13, marginBottom: 10 }}>{error}</div>}
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
-          <button
-            className="btn btn-sm"
-            style={{ flex: 1, background: '#b0a0ff', color: '#000', fontWeight: 700, border: 'none', opacity: submitting ? 0.6 : 1 }}
-            onClick={handleSubmit}
-            disabled={submitting}
-          >{submitting ? 'Submitting…' : 'Submit Request'}</button>
-        </div>
+
+        {/* Card setup */}
+        <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#666', marginBottom: 10 }}>Save a card to hold on file</div>
+        {loadingStripe ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}><div className="spinner" /></div>
+        ) : clientSecret && stripeInst ? (
+          <Elements stripe={stripeInst} options={{ clientSecret, appearance: STRIPE_DARK }}>
+            <PlanCardForm
+              frequency={frequency}
+              notes={notes}
+              checkout={checkout}
+              onConfirm={onConfirm}
+              onClose={onClose}
+              setError={setError}
+              setSubmitting={setSubmitting}
+              submitting={submitting}
+            />
+          </Elements>
+        ) : null}
+
+        {error && <div style={{ color: '#ff4444', fontSize: 13, marginTop: 10 }}>{error}</div>}
       </div>
+    </div>
+  )
+}
+
+function PlanCardForm({ frequency, notes, checkout, onConfirm, onClose, setError, setSubmitting, submitting }) {
+  const stripe = useStripe()
+  const elements = useElements()
+
+  async function handleSubmit() {
+    if (!stripe || !elements) return
+    setSubmitting(true)
+    setError('')
+    try {
+      // Save the card via SetupIntent
+      const result = await stripe.confirmSetup({
+        elements,
+        confirmParams: { return_url: window.location.href },
+        redirect: 'if_required',
+      })
+      if (result.error) {
+        setError(result.error.message)
+        setSubmitting(false)
+        return
+      }
+      // Create the payment plan record
+      await onConfirm(frequency, notes)
+      onClose()
+    } catch (e) {
+      setError(e.response?.data?.detail || 'Failed to submit — please try again')
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div>
+      <div style={{ marginBottom: 16 }}>
+        <PaymentElement options={{ layout: 'accordion' }} />
+      </div>
+      <div style={{ display: 'flex', gap: 10 }}>
+        <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose} type="button">Cancel</button>
+        <button
+          className="btn btn-sm"
+          style={{ flex: 2, background: '#b0a0ff', color: '#000', fontWeight: 700, border: 'none', opacity: submitting || !stripe ? 0.6 : 1 }}
+          onClick={handleSubmit}
+          disabled={submitting || !stripe}
+          type="button"
+        >{submitting ? 'Submitting…' : 'Save card & submit'}</button>
+      </div>
+      <div style={{ textAlign: 'center', fontSize: 11, color: '#444', marginTop: 10 }}>🔒 Secured by Stripe — card not charged until plan is confirmed</div>
     </div>
   )
 }
