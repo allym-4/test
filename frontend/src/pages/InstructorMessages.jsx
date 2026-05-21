@@ -455,7 +455,7 @@ export default function InstructorMessages() {
       </div>
 
       {/* Tabs */}
-      <div style={{ borderBottom: '1px solid #1e1e1e', display: 'flex', gap: 4, marginBottom: 16 }}>
+      <div style={{ borderBottom: '1px solid #1e1e1e', display: 'flex', gap: 4, marginBottom: 16, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         {[
           { id: 'requests', label: 'Requests' },
           { id: 'direct', label: 'Direct Messages' },
@@ -473,6 +473,8 @@ export default function InstructorMessages() {
               background: tab === t.id ? 'rgba(204,255,0,0.1)' : 'transparent',
               color: tab === t.id ? 'var(--lime)' : 'var(--grey)',
               cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
             }}
           >
             {t.label}
@@ -489,8 +491,8 @@ export default function InstructorMessages() {
 
       {/* Direct Messages tab */}
       {tab === 'direct' && (
-        <div className="split-layout" style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, minHeight: 480 }}>
-          <div className={`split-sidebar${selected ? ' mobile-panel-open' : ''}`} style={{ width: 280, borderRight: '1px solid var(--border)' }}>
+        <div className="split-layout" style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, minHeight: 480, maxHeight: 'calc(100dvh - 200px)' }}>
+          <div className={`split-sidebar${selected ? ' mobile-panel-open' : ''}`} style={{ width: 280, borderRight: '1px solid var(--border)', overflowY: 'auto' }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.7px', color: 'var(--grey)', fontWeight: 600 }}>
               Conversations
             </div>

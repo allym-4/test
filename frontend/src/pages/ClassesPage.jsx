@@ -162,7 +162,7 @@ export default function ClassesPage() {
       </div>
 
       {/* Toggle */}
-      <div style={{ display: 'flex', background: '#0a0a0a', border: '1px solid #1e1e1e', borderRadius: 10, padding: 3, gap: 2, marginBottom: 24, width: 'fit-content' }}>
+      <div style={{ display: 'flex', background: '#0a0a0a', border: '1px solid #1e1e1e', borderRadius: 10, padding: 3, gap: 2, marginBottom: 24, width: 'fit-content', maxWidth: '100%' }}>
         {[['past', 'Past'], ['today', `Today${todayCount > 0 ? ` (${todayCount})` : ''}`], ['upcoming', 'Upcoming']].map(([key, label]) => (
           <button
             key={key}

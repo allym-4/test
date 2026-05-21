@@ -120,7 +120,7 @@ export default function InstructorAvailability() {
       </div>
 
       {/* Sub-tabs */}
-      <div style={{ borderBottom: '1px solid #1e1e1e', display: 'flex', gap: 4, marginBottom: 20 }}>
+      <div style={{ borderBottom: '1px solid #1e1e1e', display: 'flex', gap: 4, marginBottom: 20, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         {TABS.map(t => (
           <button
             key={t.id}
@@ -134,6 +134,8 @@ export default function InstructorAvailability() {
               background: activeTab === t.id ? 'rgba(204,255,0,0.1)' : 'transparent',
               color: activeTab === t.id ? 'var(--lime)' : 'var(--grey)',
               cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
             }}
           >
             {t.label}
@@ -148,7 +150,7 @@ export default function InstructorAvailability() {
             <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>
           ) : (
             <>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
                 <button className="btn btn-ghost btn-sm" onClick={() => setUnavailModal(true)}>Mark Unavailable</button>
                 <button className="btn btn-lime btn-sm" onClick={save} disabled={saving}>
                   {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save Changes'}
@@ -222,7 +224,8 @@ export default function InstructorAvailability() {
             <div className="empty-state">No open cover requests</div>
           ) : (
             <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 560 }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border)' }}>
                     {['Instructor', 'Class', 'Date', 'Time', 'Studio', 'Actions'].map(h => (
@@ -260,6 +263,7 @@ export default function InstructorAvailability() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
         </div>
@@ -274,7 +278,8 @@ export default function InstructorAvailability() {
             <div className="empty-state">No cover history yet</div>
           ) : (
             <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border)' }}>
                     {['Date', 'Class', 'Original Instructor', 'Studio', 'Status'].map(h => (
@@ -301,6 +306,7 @@ export default function InstructorAvailability() {
                   })}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
         </div>

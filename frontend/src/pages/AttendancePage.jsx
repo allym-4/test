@@ -349,6 +349,7 @@ export default function AttendancePage() {
             return (
               <div
                 key={e.student}
+                className="att-student-row"
                 style={{
                   display: 'flex', alignItems: 'flex-start', gap: 12,
                   background: '#111', border: '1px solid #1e1e1e',
@@ -406,7 +407,7 @@ export default function AttendancePage() {
                 </div>
 
                 {/* Right: note + status */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+                <div className="att-right" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
                   {/* Note row */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     {hasNote && (
@@ -433,6 +434,7 @@ export default function AttendancePage() {
                   <select
                     value={status}
                     onChange={ev => setStatus(e.student, ev.target.value)}
+                    className="att-status-select"
                     style={{
                       background: '#0a0a0a',
                       border: `1px solid ${STATUS_COLOR[status] || '#333'}44`,
