@@ -104,6 +104,13 @@ select option { background: #1a1a1a; }
 
 .empty-state { text-align: center; padding: 48px 24px; color: var(--grey); font-size: 13px; }
 
+/* Mobile responsive overrides */
+@media (max-width: 480px) {
+  .page-title { font-size: 17px; }
+  .page-header { margin-bottom: 14px; }
+  .kpi-grid .kpi { padding: 10px 8px; }
+}
+
 .error-msg { background: rgba(255,68,68,0.1); border: 1px solid rgba(255,68,68,0.3); color: var(--red); border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; }
 
 /* KPI grid */

@@ -657,7 +657,7 @@ export default function StudentMyClasses() {
           {(day || time) && (
             <div style={{ textAlign: 'center', minWidth: 52, flexShrink: 0 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{day}</div>
-              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: 'var(--lime)', lineHeight: 1 }}>{time}</div>
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(16px, 4.5vw, 20px)', color: 'var(--lime)', lineHeight: 1 }}>{time}</div>
             </div>
           )}
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -721,7 +721,7 @@ export default function StudentMyClasses() {
             <div style={{ fontSize: 13, color: 'var(--grey)' }}>{count} class{count !== 1 ? 'es' : ''} · {seasonName}</div>
             <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>${perClass}/class · 8 weeks{isFuture ? ' · payment plan available' : ''}</div>
           </div>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22 }}>${total}</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(16px, 4.5vw, 20px)' }}>${total}</div>
         </div>
         {nextPerSession && (
           <div style={{ fontSize: 12, color: 'var(--grey)', margin: '10px 0 12px', lineHeight: 1.5 }}>
@@ -814,7 +814,7 @@ export default function StudentMyClasses() {
                   </div>
                   {currentWeek && (
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: 'var(--lime)', lineHeight: 1 }}>Week {currentWeek}</div>
+                      <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(16px, 4.5vw, 20px)', color: 'var(--lime)', lineHeight: 1 }}>Week {currentWeek}</div>
                       <div style={{ fontSize: 11, color: 'var(--grey)' }}>of 8</div>
                     </div>
                   )}
@@ -824,7 +824,7 @@ export default function StudentMyClasses() {
               {/* Catch-up credits */}
               {availableCredits.length > 0 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'rgba(176,160,255,0.06)', border: '1px solid rgba(176,160,255,0.25)', borderRadius: 12, padding: '12px 16px', marginBottom: 16 }}>
-                  <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26, color: 'var(--lav)', lineHeight: 1 }}>{availableCredits.length}</div>
+                  <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(18px, 5vw, 22px)', color: 'var(--lav)', lineHeight: 1 }}>{availableCredits.length}</div>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>Catch-up credit{availableCredits.length !== 1 ? 's' : ''} available</div>
                     <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 1 }}>

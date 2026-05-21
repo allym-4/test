@@ -12,6 +12,9 @@ export default function AddEditStaffModal({ staff, onClose, onSaved }) {
     pronouns: staff?.pronouns || '',
     role: staff?.role || 'instructor',
     pay_rate: staff?.pay_rate || '',
+    instructor_tagline: staff?.instructor_tagline || '',
+    bio: staff?.bio || '',
+    instructor_instagram: staff?.instructor_instagram || '',
     perm_billing: staff?.perm_billing || false,
     perm_edit_profiles: staff?.perm_edit_profiles || false,
     perm_approve_plans: staff?.perm_approve_plans || false,
@@ -74,6 +77,24 @@ export default function AddEditStaffModal({ staff, onClose, onSaved }) {
             <label>Pay Rate ($/class)</label>
             <input type="number" step="0.01" min="0" value={form.pay_rate} onChange={e => set('pay_rate', e.target.value)} placeholder="e.g. 45.00" />
           </div>
+
+          {form.role === 'instructor' && (
+            <div style={{ background: 'rgba(204,255,0,0.04)', border: '1px solid rgba(204,255,0,0.12)', borderRadius: 8, padding: '12px 14px', marginBottom: 12 }}>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--lime)', fontWeight: 600, marginBottom: 10 }}>Public Profile</div>
+              <div className="field">
+                <label>Tagline</label>
+                <input value={form.instructor_tagline} onChange={e => set('instructor_tagline', e.target.value)} placeholder="e.g. Co-Founder & Head of Mischief" maxLength={200} />
+              </div>
+              <div className="field">
+                <label>Bio</label>
+                <textarea value={form.bio} onChange={e => set('bio', e.target.value)} placeholder="Public bio shown on the Team page…" rows={4} style={{ resize: 'vertical' }} />
+              </div>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label>Instagram Handle</label>
+                <input value={form.instructor_instagram} onChange={e => set('instructor_instagram', e.target.value)} placeholder="dualitypole (without @)" maxLength={100} />
+              </div>
+            </div>
+          )}
 
           {form.role === 'instructor' && (
             <div style={{ background: 'rgba(176,160,255,0.06)', border: '1px solid rgba(176,160,255,0.15)', borderRadius: 8, padding: '12px 14px', marginBottom: 12 }}>

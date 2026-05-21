@@ -265,7 +265,7 @@ function CasualBookingModal({ occ, session, priceCasual, priceCasualStandard, is
       <div style={{ background: '#111', borderRadius: 20, padding: 28, width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
           <div>
-            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, lineHeight: 1.1, marginBottom: 6 }}>{sessName}</div>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(18px, 5vw, 26px)', lineHeight: 1.1, marginBottom: 6 }}>{sessName}</div>
             <div style={{ fontSize: 13, color: '#666' }}>{[dateLabel, time, instructor].filter(Boolean).join(' · ')}</div>
           </div>
           <button onClick={onClose} style={{ background: '#222', border: '1px solid #333', borderRadius: 10, padding: '8px 14px', color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, cursor: 'pointer', flexShrink: 0, marginLeft: 16 }}>CLOSE</button>
@@ -622,7 +622,7 @@ function WaitlistModal({ session, occ, onConfirm, onCancel, joining }) {
       onClick={e => e.target === e.currentTarget && onCancel()}>
       <div style={{ background: '#111', borderRadius: 20, padding: '28px 24px', width: '100%', maxWidth: 480 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>Join waitlist</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(17px, 5vw, 22px)' }}>Join waitlist</div>
           <button onClick={onCancel} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 10, color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, padding: '8px 14px', cursor: 'pointer' }}>CLOSE</button>
         </div>
         <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>{session?.name}</div>
@@ -669,7 +669,7 @@ function ExemptionModal({ session, occ, seasonWeek, onSend, onCancel, sending })
       onClick={e => e.target === e.currentTarget && onCancel()}>
       <div style={{ background: '#111', borderRadius: 20, padding: '28px 24px', width: '100%', maxWidth: 520 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26, lineHeight: 1.2 }}>Apply for an<br />exemption</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(17px, 5vw, 22px)', lineHeight: 1.2 }}>Apply for an<br />exemption</div>
           <button onClick={onCancel} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 10, color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, padding: '8px 14px', cursor: 'pointer', flexShrink: 0, marginLeft: 16 }}>CLOSE</button>
         </div>
         <div style={{ fontSize: 13, color: '#666', marginBottom: 18 }}>
@@ -719,8 +719,8 @@ function HeadsUpModal({ session, occ, onConfirm, onCancel }) {
     <div style={{ position: 'fixed', inset: 0, zIndex: 1002, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)', padding: 16 }}
       onClick={e => e.target === e.currentTarget && onCancel()}>
       <div style={{ background: '#111', borderRadius: 20, padding: '32px 28px', width: '100%', maxWidth: 520 }}>
-        <div style={{ textAlign: 'center', fontSize: 40, marginBottom: 14 }}>⚠️</div>
-        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, textAlign: 'center', marginBottom: 10 }}>Heads up</div>
+        <div style={{ textAlign: 'center', fontSize: 'clamp(28px, 7vw, 36px)', marginBottom: 14 }}>⚠️</div>
+        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(18px, 5vw, 24px)', textAlign: 'center', marginBottom: 10 }}>Heads up</div>
         <div style={{ fontSize: 13, color: '#666', textAlign: 'center', marginBottom: 20 }}>
           {[session?.name, dateLabel, session?.start_time?.slice(0, 5), instructor].filter(Boolean).join(' · ')}
         </div>
@@ -766,11 +766,11 @@ function SeasonLevelHeadsUpModal({ session, onConfirm, onCancel }) {
       onClick={e => e.target === e.currentTarget && onCancel()}>
       <div style={{ background: '#111', borderRadius: 20, padding: '32px 28px', width: '100%', maxWidth: 520 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28 }}>Heads up</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(18px, 5vw, 24px)' }}>Heads up</div>
           <button onClick={onCancel} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 10, color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, padding: '8px 14px', cursor: 'pointer' }}>CLOSE</button>
         </div>
-        <div style={{ textAlign: 'center', fontSize: 36, marginBottom: 20, color: '#888' }}>△</div>
-        <div style={{ fontSize: 18, fontWeight: 700, textAlign: 'center', marginBottom: 12 }}>
+        <div style={{ textAlign: 'center', fontSize: 'clamp(24px, 6vw, 32px)', marginBottom: 20, color: '#888' }}>△</div>
+        <div style={{ fontSize: 'clamp(14px, 4vw, 17px)', fontWeight: 700, textAlign: 'center', marginBottom: 12 }}>
           {session?.name} · {dayLabel} {timeLabel}
         </div>
         <div style={{ fontSize: 15, color: '#ccc', lineHeight: 1.7, textAlign: 'center', marginBottom: 32 }}>
@@ -1060,7 +1060,7 @@ function SeasonSidebar({ selectedSessions, seasonName, totalPrice, incrementalPr
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '1px', color: '#666', textTransform: 'uppercase', marginBottom: 6 }}>Season Pricing</div>
         {count > 0 ? (
           <>
-            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, color: '#ccff00', lineHeight: 1 }}>${incrementalPrice}</div>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(20px, 5.5vw, 28px)', color: '#ccff00', lineHeight: 1 }}>${incrementalPrice}</div>
             <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
               {existingCount > 0
                 ? `Adding ${count} to your ${existingCount} — ${existingCount + count} classes total`

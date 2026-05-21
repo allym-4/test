@@ -32,6 +32,7 @@ class UserSerializer(serializers.ModelSerializer):
             'notification_preferences',
             'show_in_roster', 'roster_name', 'nickname', 'level',
             'booking_blocked',
+            'bio', 'instructor_tagline', 'instructor_instagram',
         )
         read_only_fields = ('id',)
 
