@@ -2756,10 +2756,7 @@ export default function StudentBook() {
                         const requiresExemption = isRoutineClass(nm) && seasonWeek > 3 && !alreadyEnrolled
                         function handleOccClick() {
                           if (isBooked || isWaitlisted) return
-                          // Past catch-up cutoff → exemption request (includes case where also level-locked)
-                          if (requiresExemption) { setCasualExemptionOcc(occ); return }
-                          // Outside level but within booking window → soft heads-up then proceed
-                          if (levelLocked) { setCasualLevelLockedOcc(occ); return }
+                          if (requiresExemption || levelLocked) { setCasualExemptionOcc(occ); return }
                           setSelectedCasualOcc(occ)
                         }
                         return (
