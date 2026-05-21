@@ -154,7 +154,7 @@ export default function StudentShell() {
       <button
         onClick={() => setHelpOpen(true)}
         style={{
-          position: 'fixed', bottom: 80, right: 20, zIndex: 200,
+          position: 'fixed', bottom: 80, left: 16, zIndex: 200,
           background: 'var(--lime)', color: '#000', border: 'none', borderRadius: 24,
           padding: '10px 18px', fontWeight: 700, fontSize: 13, cursor: 'pointer',
           boxShadow: '0 4px 20px rgba(204,255,0,0.35)',
