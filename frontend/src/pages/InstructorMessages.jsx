@@ -390,19 +390,38 @@ export default function InstructorMessages() {
 
   return (
     <div>
-      <div className="page-header">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
         <div>
-          <div className="page-title">Messages</div>
-          <div className="page-sub">Student conversations</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>Messages</div>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 4 }}>Student conversations</div>
         </div>
         <button className="btn btn-lime btn-sm" onClick={() => setComposing(true)}>+ New Message</button>
       </div>
 
       {/* Tabs */}
-      <div className="subtabs" style={{ marginBottom: 16 }}>
-        <button className={`subtab${tab === 'requests' ? ' active' : ''}`} onClick={() => setTab('requests')}>Requests</button>
-        <button className={`subtab${tab === 'direct' ? ' active' : ''}`} onClick={() => setTab('direct')}>Direct Messages</button>
-        <button className={`subtab${tab === 'sent' ? ' active' : ''}`} onClick={() => setTab('sent')}>Sent</button>
+      <div style={{ borderBottom: '1px solid #1e1e1e', display: 'flex', gap: 4, marginBottom: 16 }}>
+        {[
+          { id: 'requests', label: 'Requests' },
+          { id: 'direct', label: 'Direct Messages' },
+          { id: 'sent', label: 'Sent' },
+        ].map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '8px 8px 0 0',
+              fontSize: 13,
+              fontWeight: 500,
+              border: 'none',
+              background: tab === t.id ? 'rgba(204,255,0,0.1)' : 'transparent',
+              color: tab === t.id ? 'var(--lime)' : 'var(--grey)',
+              cursor: 'pointer',
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
       {/* Requests tab */}

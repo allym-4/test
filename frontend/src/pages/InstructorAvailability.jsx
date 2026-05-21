@@ -112,20 +112,29 @@ export default function InstructorAvailability() {
 
   return (
     <div>
-      <div className="page-header">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
         <div>
-          <div className="page-title">Availability &amp; Cover</div>
-          <div className="page-sub">Manage your schedule and cover requests</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>Availability &amp; Cover</div>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 4 }}>Manage your schedule and cover requests</div>
         </div>
       </div>
 
       {/* Sub-tabs */}
-      <div className="subtabs" style={{ marginBottom: 20 }}>
+      <div style={{ borderBottom: '1px solid #1e1e1e', display: 'flex', gap: 4, marginBottom: 20 }}>
         {TABS.map(t => (
           <button
             key={t.id}
-            className={`subtab${activeTab === t.id ? ' active' : ''}`}
             onClick={() => setActiveTab(t.id)}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '8px 8px 0 0',
+              fontSize: 13,
+              fontWeight: 500,
+              border: 'none',
+              background: activeTab === t.id ? 'rgba(204,255,0,0.1)' : 'transparent',
+              color: activeTab === t.id ? 'var(--lime)' : 'var(--grey)',
+              cursor: 'pointer',
+            }}
           >
             {t.label}
           </button>

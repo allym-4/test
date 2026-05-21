@@ -277,11 +277,14 @@ function HwCard({ a, onToggle, onDetail }) {
   const tagLabel = pendingCount > 0 ? `${pendingCount} pending review` : a.status === 'active' ? 'Active' : 'Closed'
 
   return (
-    <div className="hw-card" style={{ opacity: a.status !== 'active' ? 0.6 : 1, cursor: 'pointer' }} onClick={() => onDetail(a)}>
-      <div className="hw-card-header">
+    <div
+      style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: 12, padding: '16px 18px', marginBottom: 10, cursor: 'pointer', opacity: a.status !== 'active' ? 0.6 : 1 }}
+      onClick={() => onDetail(a)}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
         <div>
-          <div className="hw-card-title">{a.title}</div>
-          <div className="hw-card-meta">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15 }}>{a.title}</div>
+          <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 3 }}>
             {s?.name} — {DAYS[s?.day_of_week]} {s?.start_time?.slice(0, 5)} · {s?.studio_detail?.name}
             {a.assigned_date && ' · Assigned ' + new Date(a.assigned_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
             {a.due_date && ' · Due ' + new Date(a.due_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
@@ -294,9 +297,11 @@ function HwCard({ a, onToggle, onDetail }) {
           </button>
         </div>
       </div>
-      <div className="hw-card-progress">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: 'var(--grey)' }}>
         <span>{a.submission_count}/{a.enrolled_count} submitted</span>
-        <div className="progress-bar"><div className="progress-fill" style={{ width: `${pct}%`, background: pctColor }} /></div>
+        <div style={{ flex: 1, height: 4, background: '#1e1e1e', borderRadius: 2, overflow: 'hidden' }}>
+          <div style={{ height: '100%', borderRadius: 2, transition: 'width 0.3s', width: `${pct}%`, background: pctColor }} />
+        </div>
         <span style={{ color: pctColor, minWidth: 28, textAlign: 'right' }}>{pct}%</span>
       </div>
       {a.checklist_items?.length > 0 && (
