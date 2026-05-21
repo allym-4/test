@@ -131,3 +131,11 @@
   box-sizing: border-box; transition: border-color 0.12s;
 }
 .note-input:focus { border-color: var(--lime); }
+
+@media (max-width: 600px) {
+  .sd-stats { grid-template-columns: repeat(2, 1fr); }
+  .sd-overview-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+  .sd-body { padding: 14px 16px; }
+  .sd-header { padding: 14px 16px 12px; }
+  .sd-tab { padding: 10px 12px; font-size: 11px; }
+}
