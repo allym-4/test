@@ -501,6 +501,9 @@ function OccurrenceBookingPanel({ session, enrolmentType, priceCasual, isEnrolle
           session={session}
           occ={exemptionOcc}
           seasonWeek={currentSeasonWeek}
+          type={isLevelLocked && !requiresExemption ? 'level' : 'cutoff'}
+          requiredLevel={sessionLevel || null}
+          userLevel={userLevelNum || null}
           sending={exemptionSending}
           onSend={(reason) => sendExemptionRequest(exemptionOcc, reason)}
           onCancel={() => setExemptionOcc(null)}
@@ -1082,7 +1085,7 @@ function WaitlistModal({ session, occ, onConfirm, onCancel, joining }) {
   )
 }
 
-function ExemptionModal({ session, occ, seasonWeek, onSend, onCancel, sending }) {
+function ExemptionModal({ session, occ, seasonWeek, onSend, onCancel, sending, type = 'cutoff', requiredLevel = null, userLevel = null }) {
   const [reason, setReason] = useState('')
   const dateLabel = occ?.date
     ? new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
@@ -1090,29 +1093,39 @@ function ExemptionModal({ session, occ, seasonWeek, onSend, onCancel, sending })
   const instructor = session?.instructor_detail?.display_name || session?.instructor_detail?.first_name
   const timeLabel = session?.start_time?.slice(0, 5)
 
+  const isLevel = type === 'level'
+  const title = isLevel ? <>Level<br />exemption</> : <>Apply for an<br />exemption</>
+  const warningText = isLevel
+    ? <>This class is for <strong style={{ color: '#ffaa00' }}>Level {requiredLevel}+</strong> students. Your current level is <strong style={{ color: '#ffaa00' }}>Level {userLevel || '—'}</strong>. If you believe you're ready to step up, submit a request and your instructor will review.</>
+    : <>This class runs a routine and you'd be joining in <strong style={{ color: '#ffaa00' }}>week {seasonWeek} of 8</strong>. You'll be behind the group from day one — instructors may not be able to catch you up mid-season.</>
+  const question = isLevel ? 'Why do you think you\'re ready for this level?' : 'Why do you want to join this class?'
+  const hint = isLevel
+    ? 'Tell us about your experience and what makes you feel ready for this class. Your instructor will review and respond.'
+    : 'Tell us a bit about your background and why you\'d like to join mid-season. Your instructor will review and get back to you.'
+  const placeholder = isLevel
+    ? 'e.g. I\'ve been training for 2 years and my instructor at another studio said I\'m ready for this level...'
+    : 'e.g. I\'ve done this routine before at another studio, or I have a strong background in this style and feel confident catching up...'
+
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1002, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)', padding: 16 }}
       onClick={e => e.target === e.currentTarget && onCancel()}>
       <div style={{ background: '#111', borderRadius: 20, padding: '28px 24px', width: '100%', maxWidth: 520 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(17px, 5vw, 22px)', lineHeight: 1.2 }}>Apply for an<br />exemption</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(17px, 5vw, 22px)', lineHeight: 1.2 }}>{title}</div>
           <button onClick={onCancel} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 10, color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, padding: '8px 14px', cursor: 'pointer', flexShrink: 0, marginLeft: 16 }}>CLOSE</button>
         </div>
         <div style={{ fontSize: 13, color: '#666', marginBottom: 18 }}>
           {[session?.name, dateLabel, timeLabel, instructor].filter(Boolean).join(' · ')}
         </div>
-        <div style={{ background: 'rgba(255,140,0,0.1)', border: '1px solid rgba(255,140,0,0.3)', borderRadius: 10, padding: '14px 16px', marginBottom: 22 }}>
-          <span style={{ color: '#ffaa00', fontWeight: 700 }}>Heads up: </span>
-          <span style={{ fontSize: 14, color: '#ccc', lineHeight: 1.6 }}>
-            This class runs a routine and you'd be joining in week {seasonWeek} of 8. You'll be behind the group from day one — instructors may not be able to catch you up mid-season.
-          </span>
+        <div style={{ background: 'rgba(255,140,0,0.1)', border: '1px solid rgba(255,140,0,0.3)', borderRadius: 10, padding: '14px 16px', marginBottom: 22, fontSize: 14, color: '#ccc', lineHeight: 1.6 }}>
+          {warningText}
         </div>
-        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>Why do you want to join this class?</div>
-        <div style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>Tell us a bit about your background and why you'd like to join mid-season. Your instructor will review and get back to you.</div>
+        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{question}</div>
+        <div style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>{hint}</div>
         <textarea
           value={reason}
           onChange={e => setReason(e.target.value)}
-          placeholder="e.g. I've done this routine before at another studio, or I have a strong background in this style and feel confident catching up..."
+          placeholder={placeholder}
           rows={4}
           style={{ width: '100%', background: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: 10, color: '#fff', fontSize: 13, padding: '12px 14px', resize: 'vertical', boxSizing: 'border-box', outline: 'none', marginBottom: 20, lineHeight: 1.6 }}
         />
@@ -2363,7 +2376,7 @@ export default function StudentBook() {
       })()}
 
       {calExemptionOcc && (() => {
-        const occ = calExemptionOcc
+        const { occ, type: exemptType, requiredLevel } = calExemptionOcc
         const sDetail = occ.session_detail || {}
         const activeSeason = (seasonsData?.results || seasonsData || []).find(s => s.status === 'active')
         const seasonWeek = getCurrentSeasonWeek(activeSeason?.start_date)
@@ -2372,6 +2385,9 @@ export default function StudentBook() {
             session={{ ...sDetail, instructor_detail: occ.instructor_detail }}
             occ={occ}
             seasonWeek={seasonWeek}
+            type={exemptType}
+            requiredLevel={requiredLevel}
+            userLevel={parseLevel(user?.level)}
             sending={false}
             onSend={async (reason) => {
               try {
@@ -2647,7 +2663,8 @@ export default function StudentBook() {
                           key={occ.id}
                           onClick={() => {
                             if (isBooked || isWaitlisted) return
-                            if (requiresExemption || levelLocked) { setCalExemptionOcc(occ); return }
+                            if (requiresExemption) { setCalExemptionOcc({ occ, type: 'cutoff' }); return }
+                            if (levelLocked) { setCalExemptionOcc({ occ, type: 'level', requiredLevel: cl }); return }
                             setCalOccBooking(occ)
                           }}
                           style={{
@@ -2722,11 +2739,11 @@ export default function StudentBook() {
                   const monthLabel = d.toLocaleDateString('en-AU', { month: 'short' }).toUpperCase()
                   const weekday = d.toLocaleDateString('en-AU', { weekday: 'short' }).toUpperCase()
                   return (
-                    <div key={date} style={{ marginBottom: 8 }}>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '10px 0 6px', borderBottom: '1px solid #1a1a1a', marginBottom: 6 }}>
-                        <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: '#fff', lineHeight: 1 }}>{dayNum}</span>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: '#555', letterSpacing: '0.6px' }}>{monthLabel} · {weekday}</span>
+                    <div key={date} style={{ marginBottom: 20 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#555', letterSpacing: '0.8px', textTransform: 'uppercase', marginBottom: 8 }}>
+                        {weekday} {dayNum} {monthLabel}
                       </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {dayOccs.map(occ => {
                         const sDetail = occ.session_detail || {}
                         const nm = sDetail.name || ''
@@ -2735,58 +2752,83 @@ export default function StudentBook() {
                         const myBooking = occ.my_booking
                         const isBooked = myBooking?.status === 'confirmed'
                         const isWaitlisted = myBooking?.status === 'waitlisted'
-                        const isFull = (occ.spots_left ?? 0) <= 0
+                        const spotsLeft = occ.spots_left ?? 0
+                        const isFull = spotsLeft <= 0
                         const cl = getClassLevel(nm)
                         const alreadyEnrolled = activeEnrols.some(e => e.class_session === occ.session && e.enrolment_type === 'course')
                         const levelLocked = cl > 0 && userLevelNum && cl > userLevelNum
-
-                        let rightBadge = null
-                        if (isBooked) {
-                          rightBadge = <span style={{ fontSize: 10, fontWeight: 700, color: '#ccff00', background: 'rgba(204,255,0,0.1)', border: '1px solid rgba(204,255,0,0.25)', borderRadius: 4, padding: '2px 8px' }}>BOOKED</span>
-                        } else if (isWaitlisted) {
-                          rightBadge = <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--amber)', background: 'rgba(255,170,0,0.1)', border: '1px solid rgba(255,170,0,0.25)', borderRadius: 4, padding: '2px 8px' }}>WAITLISTED</span>
-                        } else if (isFull) {
-                          rightBadge = <span style={{ fontSize: 10, fontWeight: 700, color: '#ff4444', background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.25)', borderRadius: 4, padding: '2px 8px' }}>FULL</span>
-                        } else if (levelLocked) {
-                          rightBadge = <span style={{ fontSize: 10, fontWeight: 700, color: '#ff6b35', background: 'rgba(255,107,53,0.1)', border: '1px solid rgba(255,107,53,0.25)', borderRadius: 4, padding: '2px 8px' }}>LEVEL {cl}+</span>
-                        } else if (availableCredits > 0 && !alreadyEnrolled) {
-                          rightBadge = <span style={{ fontSize: 10, fontWeight: 700, color: '#b0a0ff', background: 'rgba(176,160,255,0.1)', border: '1px solid rgba(176,160,255,0.3)', borderRadius: 4, padding: '2px 8px' }}>CATCH-UP</span>
-                        }
-
+                        const hasCatchUpCredit = availableCredits > 0 && !alreadyEnrolled && !levelLocked
+                        const isCatchUpEligible = !(isRoutineClass(nm) && seasonWeek > 3) && !levelLocked && !alreadyEnrolled
                         const requiresExemption = isRoutineClass(nm) && seasonWeek > 3 && !alreadyEnrolled
+
+                        const accentColor = isBooked ? '#ccff00' : isWaitlisted ? '#ffaa00' : levelLocked ? '#ff6b35' : requiresExemption ? '#ff6b35' : '#7c5cbf'
+
                         function handleOccClick() {
                           if (isBooked || isWaitlisted) return
-                          if (requiresExemption || levelLocked) { setCasualExemptionOcc(occ); return }
+                          if (requiresExemption) { setCasualExemptionOcc({ occ, type: 'cutoff' }); return }
+                          if (levelLocked) { setCasualExemptionOcc({ occ, type: 'level', requiredLevel: cl }); return }
                           setSelectedCasualOcc(occ)
                         }
+
                         return (
                           <div
                             key={occ.id}
                             onClick={handleOccClick}
                             style={{
-                              display: 'flex', alignItems: 'center', gap: 12,
-                              padding: '10px 14px',
-                              borderRadius: 10,
-                              background: isBooked ? 'rgba(204,255,0,0.04)' : isWaitlisted ? 'rgba(255,170,0,0.04)' : 'rgba(255,255,255,0.02)',
-                              border: `1px solid ${isBooked ? 'rgba(204,255,0,0.15)' : isWaitlisted ? 'rgba(255,170,0,0.15)' : '#1a1a1a'}`,
+                              display: 'flex', alignItems: 'stretch',
+                              borderRadius: 12,
+                              background: '#111',
+                              border: '1px solid #1e1e1e',
+                              overflow: 'hidden',
                               cursor: isBooked || isWaitlisted ? 'default' : 'pointer',
-                              marginBottom: 4,
-                              opacity: levelLocked ? 0.55 : 1,
+                              opacity: (levelLocked || requiresExemption) ? 0.75 : 1,
                             }}
                           >
-                            {time && (
-                              <div style={{ minWidth: 42, flexShrink: 0, textAlign: 'center' }}>
-                                <div style={{ fontSize: 12, fontWeight: 700, color: '#ccff00' }}>{time}</div>
-                              </div>
-                            )}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 1 }}>{nm}</div>
-                              <div style={{ fontSize: 11, color: '#555' }}>{instructor}</div>
+                            {/* Left accent bar */}
+                            <div style={{ width: 4, flexShrink: 0, background: accentColor }} />
+
+                            {/* Date block */}
+                            <div style={{ width: 52, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '14px 8px', borderRight: '1px solid #1e1e1e' }}>
+                              <div style={{ fontSize: 10, fontWeight: 700, color: '#555', letterSpacing: '0.5px', textTransform: 'uppercase' }}>{weekday}</div>
+                              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: '#fff', lineHeight: 1.1 }}>{dayNum}</div>
                             </div>
-                            {rightBadge}
+
+                            {/* Main content */}
+                            <div style={{ flex: 1, minWidth: 0, padding: '12px 14px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 4 }}>
+                              <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>{nm}</div>
+                              <div style={{ fontSize: 12, color: '#555' }}>{time}{instructor ? ` · ${instructor}` : ''}</div>
+                              {isBooked ? (
+                                <span style={{ alignSelf: 'flex-start', fontSize: 10, fontWeight: 700, letterSpacing: '0.5px', color: '#ccff00', background: 'rgba(204,255,0,0.1)', border: '1px solid rgba(204,255,0,0.3)', borderRadius: 20, padding: '3px 10px' }}>BOOKED</span>
+                              ) : isWaitlisted ? (
+                                <span style={{ alignSelf: 'flex-start', fontSize: 10, fontWeight: 700, letterSpacing: '0.5px', color: '#ffaa00', background: 'rgba(255,170,0,0.1)', border: '1px solid rgba(255,170,0,0.3)', borderRadius: 20, padding: '3px 10px' }}>WAITLISTED</span>
+                              ) : levelLocked ? (
+                                <span style={{ alignSelf: 'flex-start', fontSize: 10, fontWeight: 700, letterSpacing: '0.5px', color: '#ff6b35', background: 'rgba(255,107,53,0.1)', border: '1px solid rgba(255,107,53,0.3)', borderRadius: 20, padding: '3px 10px' }}>LEVEL {cl}+ REQUIRED</span>
+                              ) : requiresExemption ? (
+                                <span style={{ alignSelf: 'flex-start', fontSize: 10, fontWeight: 700, letterSpacing: '0.5px', color: '#ff6b35', background: 'rgba(255,107,53,0.1)', border: '1px solid rgba(255,107,53,0.3)', borderRadius: 20, padding: '3px 10px' }}>REQUEST EXEMPTION</span>
+                              ) : isCatchUpEligible ? (
+                                <span style={{ alignSelf: 'flex-start', fontSize: 10, fontWeight: 700, letterSpacing: '0.5px', color: '#b0a0ff', background: 'rgba(176,160,255,0.1)', border: '1px solid rgba(176,160,255,0.3)', borderRadius: 20, padding: '3px 10px' }}>CATCH-UP ELIGIBLE</span>
+                              ) : null}
+                            </div>
+
+                            {/* Right: spots + price/credit */}
+                            <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', padding: '12px 14px', gap: 4, minWidth: 80 }}>
+                              {!isBooked && !isWaitlisted && spotsLeft > 0 && spotsLeft <= 3 && (
+                                <span style={{ fontSize: 10, fontWeight: 700, color: '#ff4444', background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 20, padding: '2px 8px', whiteSpace: 'nowrap' }}>{spotsLeft} spot{spotsLeft !== 1 ? 's' : ''} left!</span>
+                              )}
+                              {!isBooked && !isWaitlisted && isFull && (
+                                <span style={{ fontSize: 10, fontWeight: 700, color: '#ff4444' }}>FULL</span>
+                              )}
+                              {!isBooked && !isWaitlisted && !isFull && !levelLocked && !requiresExemption && (
+                                <>
+                                  {hasCatchUpCredit && <div style={{ fontSize: 11, fontWeight: 700, color: '#b0a0ff', textAlign: 'right' }}>Use credit</div>}
+                                  <div style={{ fontSize: 12, color: hasCatchUpCredit ? '#444' : '#888', textAlign: 'right' }}>${casualRate}</div>
+                                </>
+                              )}
+                            </div>
                           </div>
                         )
                       })}
+                      </div>
                     </div>
                   )
                 })}
@@ -2836,13 +2878,16 @@ export default function StudentBook() {
                   )
                 })()}
                 {casualExemptionOcc && (() => {
-                  const occ = casualExemptionOcc
+                  const { occ, type: exemptType, requiredLevel } = casualExemptionOcc
                   const sDetail = occ.session_detail || {}
                   return (
                     <ExemptionModal
                       session={{ ...sDetail, instructor_detail: occ.instructor_detail }}
                       occ={occ}
                       seasonWeek={getCurrentSeasonWeek(activeSeason?.start_date)}
+                      type={exemptType}
+                      requiredLevel={requiredLevel}
+                      userLevel={parseLevel(user?.level)}
                       sending={casualExemptionSending}
                       onSend={(reason) => sendCasualExemption(occ, reason)}
                       onCancel={() => setCasualExemptionOcc(null)}
