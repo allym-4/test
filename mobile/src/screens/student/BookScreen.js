@@ -2329,8 +2329,17 @@ export default function BookScreen({ navigation }) {
           setExemptionSession(sess)
         }}
         onEnrolSeason={() => {
+          const occ = bookingOptionsOcc
           setBookingOptionsOcc(null)
-          setTab('season')
+          // Build a session object from the occurrence's session_detail and go straight to checkout
+          const sess = occ?.session_detail
+          if (sess) {
+            const sessionObj = { ...sess, id: sess.id ?? occ.session }
+            setSelectedSessions([sessionObj])
+            setShowSeasonCheckout(true)
+          } else {
+            setTab('season')
+          }
         }}
       />
 
