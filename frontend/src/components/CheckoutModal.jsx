@@ -112,7 +112,7 @@ function WalletPayButton({ stripe, payRequest }) {
 function WalletPayButtonInner({ payRequest }) {
   return (
     <PaymentRequestButtonElement
-      options={{ paymentRequest, style: { paymentRequestButton: { type: 'default', theme: 'dark', height: '52px' } } }}
+      options={{ paymentRequest: payRequest, style: { paymentRequestButton: { type: 'default', theme: 'dark', height: '52px' } } }}
     />
   )
 }
