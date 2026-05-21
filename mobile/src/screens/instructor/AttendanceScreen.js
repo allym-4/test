@@ -38,7 +38,7 @@ function avatarLetter(e) {
 
 // ── Student row ───────────────────────────────────────────────────────────────
 
-function StudentRow({ entry, status, balance, onStatusChange, onNote, note }) {
+function StudentRow({ entry, status, balance, onStatusChange, onNote, note, onViewStudent }) {
   const st = entry.student_detail
   const name = st?.display_name || `${st?.first_name ?? ''} ${st?.last_name ?? ''}`.trim() || 'Student'
   const owing = balance < 0 ? Math.abs(balance) : 0
@@ -57,7 +57,12 @@ function StudentRow({ entry, status, balance, onStatusChange, onNote, note }) {
         </View>
         <View style={s.rowMeta}>
           <View style={s.nameRow}>
-            <Text style={s.name}>{name}</Text>
+            <TouchableOpacity
+              onPress={e => { e.stopPropagation?.(); onViewStudent?.() }}
+              hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+            >
+              <Text style={[s.name, s.nameTappable]}>{name}</Text>
+            </TouchableOpacity>
             {st?.pronouns ? <Text style={s.pronouns}>{st.pronouns}</Text> : null}
           </View>
           <Text style={s.enrolType}>{enrollLabel(entry)}</Text>
@@ -122,7 +127,7 @@ function WaitlistRow({ item, position }) {
 
 // ── Main screen ───────────────────────────────────────────────────────────────
 
-export default function AttendanceScreen() {
+export default function AttendanceScreen({ navigation }) {
   const today = new Date().toISOString().slice(0, 10)
   const [selectedOcc, setSelectedOcc] = useState(null)
   const [tab, setTab] = useState('attending')
