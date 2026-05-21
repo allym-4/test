@@ -374,6 +374,38 @@ export default function StudentAccount() {
             <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>Contact your studio to change your email address</div>
           </div>
 
+          {lockerData ? (
+            <>
+              <div style={{ height: 1, background: 'var(--border)', margin: '20px 0' }} />
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 16, fontWeight: 500 }}>Your Locker</div>
+              <div className="card">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <div>
+                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: 'var(--lime)', letterSpacing: 1 }}>#{lockerData.number}</div>
+                    {lockerData.expires_at && (
+                      <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 3 }}>
+                        Season ends {new Date(lockerData.expires_at + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </div>
+                    )}
+                    {lockerData.key_lost && (
+                      <div style={{ fontSize: 11, color: 'var(--amber)', marginTop: 6 }}>Key reported lost — we'll be in touch.</div>
+                    )}
+                  </div>
+                  {lockerData.key_issued && !lockerData.key_lost && (
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ color: 'var(--red)', borderColor: 'rgba(255,80,80,0.3)', fontSize: 12, whiteSpace: 'nowrap', flexShrink: 0 }}
+                      onClick={handleLostKey}
+                    >
+                      I lost my key
+                    </button>
+                  )}
+                </div>
+                {keyLostMsg && <div style={{ fontSize: 12, color: 'var(--amber)', marginTop: 10 }}>{keyLostMsg}</div>}
+              </div>
+            </>
+          ) : null}
+
           <div style={{ height: 1, background: 'var(--border)', margin: '20px 0' }} />
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -534,43 +566,6 @@ export default function StudentAccount() {
           <button className="btn btn-ghost btn-sm" onClick={() => setShowPasswordModal(true)}>Change password</button>
           {showPasswordModal && <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />}
 
-          {lockerData && (
-            <>
-              <div style={{ height: 1, background: 'var(--border)', margin: '20px 0' }} />
-              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 16, fontWeight: 500 }}>Locker</div>
-              <div className="card">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ fontSize: 28 }}>🔐</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20 }}>Locker #{lockerData.number}</div>
-                    <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>
-                      {lockerData.locker_type ? lockerData.locker_type.replace(/_/g, ' ') : 'Standard'}
-                      {lockerData.expires_at ? ` · Expires ${new Date(lockerData.expires_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}
-                    </div>
-                    <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                      <span className={`tag ${lockerData.key_issued ? 'tag-lime' : 'tag-grey'}`} style={{ fontSize: 10 }}>
-                        {lockerData.key_issued ? 'Key issued' : 'No key issued'}
-                      </span>
-                      <span className={`tag ${lockerData.payment_status === 'paid' ? 'tag-lime' : 'tag-amber'}`} style={{ fontSize: 10 }}>
-                        {lockerData.payment_status || 'Unpaid'}
-                      </span>
-                      {lockerData.key_lost && <span className="tag tag-red" style={{ fontSize: 10 }}>Key reported lost</span>}
-                    </div>
-                    {keyLostMsg && <div style={{ fontSize: 12, color: 'var(--amber)', marginTop: 8 }}>{keyLostMsg}</div>}
-                    {lockerData.key_issued && !lockerData.key_lost && (
-                      <button
-                        className="btn btn-ghost btn-xs"
-                        style={{ marginTop: 10, color: 'var(--red)', borderColor: 'rgba(255,80,80,0.3)', fontSize: 11 }}
-                        onClick={handleLostKey}
-                      >
-                        I've lost my key
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
         </div>
       </div>
     </div>
