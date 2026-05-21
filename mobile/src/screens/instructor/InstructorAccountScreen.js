@@ -42,9 +42,9 @@ export default function InstructorAccountScreen({ navigation, route }) {
       <View style={s.section}>
         <NavRow icon="👤" label="Edit profile" onPress={() => navigation.navigate('InstructorProfile')} />
         <NavRow icon="📅" label="My availability" onPress={() => navigation.navigate('Availability')} />
-        <NavRow icon="💬" label="Messages" onPress={() => navigation.navigate('Messages')} />
         <NavRow icon="⭐" label="Skills approval" onPress={() => navigation.navigate('SkillsApproval')} />
         <NavRow icon="💰" label="Pay records" onPress={() => navigation.navigate('Pay')} />
+        <NavRow icon="🔔" label="Notifications" onPress={() => navigation.navigate('Notifications')} />
       </View>
 
       {onSwitchToStudent && (
