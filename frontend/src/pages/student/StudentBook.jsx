@@ -1959,16 +1959,11 @@ export default function StudentBook() {
   const { data: enrolHistoryData } = useApi(() => user?.id ? enrolments.list({ student: user.id, page_size: 1 }) : null, [user?.id])
   const { data: creditsData, refetch: refetchCredits } = useApi(() => user?.id ? attendanceApi.makeupCredits.list({ student: user.id, status: 'available' }) : null, [user?.id])
   const { data: passData, refetch: refetchPasses } = useApi(() => user?.id ? attendanceApi.classPasses.list({ student: user.id }) : null, [user?.id])
-  const activeCasualSeasonId = (seasonsData?.results || seasonsData || []).find(s => s.status === 'active')?.id
-  const { data: casualOccsData, refetch: refetchCasualOccs } = useApi(
+  const activeCasualSeason = (seasonsData?.results || seasonsData || []).find(s => s.status === 'active')
+  const activeCasualSeasonId = activeCasualSeason?.id
+  const { data: casualOccsData, loading: loadingCasualOccs, refetch: refetchCasualOccs } = useApi(
     () => activeCasualSeasonId ? classes.casual.occurrences({ upcoming: true, season: activeCasualSeasonId, page_size: 300 }) : null,
     [activeCasualSeasonId]
-  )
-
-  const activeCasualSeason = (seasonsData?.results || seasonsData || []).find(s => s.status === 'active')
-  const { data: casualOccsData, loading: loadingCasualOccs, refetch: refetchCasualOccs } = useApi(
-    () => activeCasualSeason?.id ? classes.casual.occurrences({ upcoming: true, season: activeCasualSeason.id, page_size: 200 }) : null,
-    [activeCasualSeason?.id]
   )
 
   const priceCasual = parseFloat(studioSettings?.price_casual || 40)
