@@ -62,7 +62,7 @@ function ConversationList({ selected, onSelect, studentMap }) {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                 <span
                   style={{ fontSize: 13, fontWeight: 600, color: isActive ? 'var(--lime)' : 'var(--white)', textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.2)', cursor: 'pointer' }}
-                  onClick={ev => { ev.stopPropagation(); if (studentId) navigate(`/students?student=${studentId}`) }}
+                  onClick={ev => { ev.stopPropagation(); if (studentId) navigate(`/students/${studentId}`) }}
                 >
                   {studentName}
                 </span>
@@ -288,7 +288,7 @@ function SentTab({ currentUserId, studentMap }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
             <span
               style={{ fontSize: 13, fontWeight: 600, color: 'var(--white)', textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.2)', cursor: 'pointer' }}
-              onClick={() => item.studentId && navigate(`/students?student=${item.studentId}`)}
+              onClick={() => item.studentId && navigate(`/students/${item.studentId}`)}
             >{item.recipient}</span>
             <span style={{ fontSize: 11, color: 'var(--grey)' }}>
               {item.date ? new Date(item.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : ''}

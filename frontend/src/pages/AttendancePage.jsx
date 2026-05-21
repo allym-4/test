@@ -366,7 +366,7 @@ export default function AttendancePage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 3 }}>
                     <span
                       style={{ fontWeight: 700, fontSize: 15, cursor: 'pointer', textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.2)' }}
-                      onClick={ev => { ev.stopPropagation(); navigate(`/students?student=${e.student}`) }}
+                      onClick={ev => { ev.stopPropagation(); navigate(`/students/${e.student}`) }}
                     >{st?.display_name}</span>
                     {st?.pronouns && <span style={{ fontSize: 12, color: '#555' }}>{st.pronouns}</span>}
                   </div>
