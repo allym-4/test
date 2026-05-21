@@ -38,7 +38,7 @@ function avatarLetter(e) {
 
 // ── Student row ───────────────────────────────────────────────────────────────
 
-function StudentRow({ entry, status, balance, onStatusChange, onNote, note }) {
+function StudentRow({ entry, status, balance, onStatusChange, onNote, note, onViewStudent }) {
   const st = entry.student_detail
   const name = st?.display_name || `${st?.first_name ?? ''} ${st?.last_name ?? ''}`.trim() || 'Student'
   const owing = balance < 0 ? Math.abs(balance) : 0
@@ -57,7 +57,12 @@ function StudentRow({ entry, status, balance, onStatusChange, onNote, note }) {
         </View>
         <View style={s.rowMeta}>
           <View style={s.nameRow}>
-            <Text style={s.name}>{name}</Text>
+            <TouchableOpacity
+              onPress={e => { e.stopPropagation?.(); onViewStudent?.() }}
+              hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+            >
+              <Text style={[s.name, s.nameTappable]}>{name}</Text>
+            </TouchableOpacity>
             {st?.pronouns ? <Text style={s.pronouns}>{st.pronouns}</Text> : null}
           </View>
           <Text style={s.enrolType}>{enrollLabel(entry)}</Text>
@@ -122,7 +127,10 @@ function WaitlistRow({ item, position }) {
 
 // ── Main screen ───────────────────────────────────────────────────────────────
 
-export default function AttendanceScreen() {
+export default function AttendanceScreen({ navigation }) {
+  function goToStudent(studentId, studentName) {
+    navigation.navigate('StudentDetail', { studentId, studentName })
+  }
   const today = new Date().toISOString().slice(0, 10)
   const [selectedOcc, setSelectedOcc] = useState(null)
   const [tab, setTab] = useState('attending')
@@ -307,6 +315,7 @@ export default function AttendanceScreen() {
               return <WaitlistRow item={item} position={index + 1} />
             }
             const sid = item.student_id ?? item.student?.id ?? item.student
+            const studentName = item.student_detail?.display_name || `${item.student_detail?.first_name ?? ''} ${item.student_detail?.last_name ?? ''}`.trim() || 'Student'
             return (
               <StudentRow
                 entry={item}
@@ -315,6 +324,7 @@ export default function AttendanceScreen() {
                 note={notes[sid] || ''}
                 onStatusChange={status => setStatus(sid, status)}
                 onNote={() => { setNoteModal(sid); setNoteText(notes[sid] || '') }}
+                onViewStudent={() => goToStudent(sid, studentName)}
               />
             )
           }}
@@ -404,6 +414,7 @@ const s = StyleSheet.create({
   rowMeta: { flex: 1, minWidth: 0 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
   name: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  nameTappable: { textDecorationLine: 'underline', color: '#ccff00' },
   pronouns: { fontSize: 11, color: '#555' },
   enrolType: { fontSize: 12, color: '#888', marginBottom: 4 },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },

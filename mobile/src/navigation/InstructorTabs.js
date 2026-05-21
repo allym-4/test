@@ -10,13 +10,22 @@ import AvailabilityScreen from '../screens/instructor/AvailabilityScreen'
 import MessagesScreen from '../screens/instructor/MessagesScreen'
 import SkillsApprovalScreen from '../screens/instructor/SkillsApprovalScreen'
 import PayScreen from '../screens/instructor/PayScreen'
+import StudentDetailScreen from '../screens/instructor/StudentDetailScreen'
 
 const Tab = createBottomTabNavigator()
 const AccountStack = createNativeStackNavigator()
+const AttendanceStackNav = createNativeStackNavigator()
+const EnrolmentsStackNav = createNativeStackNavigator()
 
 const InstructorSwitchContext = createContext(null)
 
 const ICONS = { Attendance: '✅', Enrolments: '👥', Account: '👤' }
+
+const stackScreenOptions = {
+  headerStyle: { backgroundColor: '#000' },
+  headerTitleStyle: { fontWeight: '700', color: '#fff' },
+  headerTintColor: '#ccff00',
+}
 
 function Icon({ name, focused }) {
   return <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>{ICONS[name]}</Text>
@@ -34,20 +43,33 @@ function InstructorAccountHome(props) {
 
 function AccountStackNav() {
   return (
-    <AccountStack.Navigator
-      screenOptions={{
-        headerStyle: { backgroundColor: '#000' },
-        headerTitleStyle: { fontWeight: '700', color: '#fff' },
-        headerTintColor: '#ccff00',
-      }}
-    >
+    <AccountStack.Navigator screenOptions={stackScreenOptions}>
       <AccountStack.Screen name="AccountHome" component={InstructorAccountHome} options={{ title: 'Account' }} />
       <AccountStack.Screen name="InstructorProfile" component={InstructorProfileScreen} options={{ title: 'Edit Profile' }} />
       <AccountStack.Screen name="Availability" component={AvailabilityScreen} options={{ title: 'My Availability' }} />
       <AccountStack.Screen name="Messages" component={MessagesScreen} options={{ title: 'Messages' }} />
       <AccountStack.Screen name="SkillsApproval" component={SkillsApprovalScreen} options={{ title: 'Skills Approval' }} />
       <AccountStack.Screen name="Pay" component={PayScreen} options={{ title: 'Pay Records' }} />
+      <AccountStack.Screen name="StudentDetail" component={StudentDetailScreen} options={({ route }) => ({ title: route.params?.studentName ?? 'Student' })} />
     </AccountStack.Navigator>
+  )
+}
+
+function AttendanceStack() {
+  return (
+    <AttendanceStackNav.Navigator screenOptions={stackScreenOptions}>
+      <AttendanceStackNav.Screen name="AttendanceHome" component={AttendanceScreen} options={{ title: 'Attendance' }} />
+      <AttendanceStackNav.Screen name="StudentDetail" component={StudentDetailScreen} options={({ route }) => ({ title: route.params?.studentName ?? 'Student' })} />
+    </AttendanceStackNav.Navigator>
+  )
+}
+
+function EnrolmentsStack() {
+  return (
+    <EnrolmentsStackNav.Navigator screenOptions={stackScreenOptions}>
+      <EnrolmentsStackNav.Screen name="EnrolmentsHome" component={EnrolmentsScreen} options={{ title: 'My Classes' }} />
+      <EnrolmentsStackNav.Screen name="StudentDetail" component={StudentDetailScreen} options={({ route }) => ({ title: route.params?.studentName ?? 'Student' })} />
+    </EnrolmentsStackNav.Navigator>
   )
 }
 
@@ -60,14 +82,12 @@ export default function InstructorTabs({ onSwitchToStudent }) {
           tabBarActiveTintColor: '#ccff00',
           tabBarInactiveTintColor: '#555',
           tabBarStyle: { backgroundColor: '#000', borderTopColor: '#222' },
-          headerStyle: { backgroundColor: '#000' },
-          headerTitleStyle: { fontWeight: '700', color: '#fff' },
-          headerTintColor: '#ccff00',
+          headerShown: false,
         })}
       >
-        <Tab.Screen name="Attendance" component={AttendanceScreen} options={{ title: 'Attendance' }} />
-        <Tab.Screen name="Enrolments" component={EnrolmentsScreen} options={{ title: 'My Classes' }} />
-        <Tab.Screen name="Account" component={AccountStackNav} options={{ headerShown: false, title: 'Account' }} />
+        <Tab.Screen name="Attendance" component={AttendanceStack} options={{ title: 'Attendance' }} />
+        <Tab.Screen name="Enrolments" component={EnrolmentsStack} options={{ title: 'My Classes' }} />
+        <Tab.Screen name="Account" component={AccountStackNav} options={{ title: 'Account' }} />
       </Tab.Navigator>
     </InstructorSwitchContext.Provider>
   )
