@@ -1198,7 +1198,7 @@ function SeasonTab({
     return 'Conditioning'
   })))
 
-  const levelOptions = ['All levels', 'Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5', 'Level 6']
+  const levelOptions = ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5', 'Level 6']
 
   // Apply filters
   const effectiveUserLevel = demoNoLevel ? null : parseLevel(userLevel)
@@ -1328,7 +1328,7 @@ function SeasonTab({
                   fontWeight: 600,
                 }}
               >
-                Level assigned {userLevel ? `(Level ${userLevel})` : '(none)'}
+                Level assigned {userLevel ? `(${userLevel})` : '(none)'}
               </button>
               <button
                 onClick={() => setDemoNoLevel(true)}
