@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useApi } from '../hooks/useApi'
 import client from '../api/client'
@@ -78,19 +78,19 @@ const NAV_GROUPS = [
 ]
 
 const BADGE_STYLE = {
-  position: 'absolute',
-  top: -4,
-  right: -4,
+  marginLeft: 'auto',
   background: 'var(--red)',
   color: '#fff',
   fontSize: 9,
   fontWeight: 700,
-  borderRadius: '50%',
-  width: 16,
+  borderRadius: 10,
+  minWidth: 16,
   height: 16,
+  padding: '0 4px',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+  flexShrink: 0,
 }
 
 export default function AdminShell() {
@@ -191,7 +191,9 @@ export default function AdminShell() {
   }
 
   // ── Feature 3: Unread badges ─────────────────────────────────────────────
-  const { data: convData } = useApi(() => helpdesk.conversations(), [])
+  const location = useLocation()
+  const { data: convData, refetch: refetchConvs } = useApi(() => helpdesk.conversations(), [])
+  useEffect(() => { refetchConvs() }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
   const { data: ticketData } = useApi(() => client.get('/api/helpdesk/tickets/?status=open'), [])
   const { data: changeReqData } = useApi(() => client.get('/api/enrolments/change-requests/?status=pending'), [])
 
@@ -246,12 +248,10 @@ export default function AdminShell() {
                     onClick={() => setMobileOpen(false)}
                   >
                     <span className="admin-nav-icon">{icon}</span>
-                    <span style={{ position: 'relative' }}>
-                      {label}
-                      {count > 0 && (
-                        <span style={BADGE_STYLE}>{count > 99 ? '99+' : count}</span>
-                      )}
-                    </span>
+                    <span style={{ flex: 1 }}>{label}</span>
+                    {count > 0 && (
+                      <span style={BADGE_STYLE}>{count > 99 ? '99+' : count}</span>
+                    )}
                   </NavLink>
                 )
               })}
