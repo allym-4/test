@@ -153,6 +153,10 @@ export const payments = {
     resolve: (id, choice) => client.post(`/api/payments/cancellation-offers/${id}/resolve/`, { choice }),
     sendForOccurrence: (occurrenceId) => client.post(`/api/payments/occurrences/${occurrenceId}/send-cancellation-offers/`),
   },
+  chase: {
+    list: (params) => client.get('/api/payments/chase/', { params }),
+    create: (data) => client.post('/api/payments/chase/', data),
+  },
 }
 
 export const leads = {

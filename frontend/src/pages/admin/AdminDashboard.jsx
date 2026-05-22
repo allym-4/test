@@ -115,6 +115,7 @@ export default function AdminDashboard() {
   const [checkedItems, setCheckedItems] = useState({})
   const [confirmCancelId, setConfirmCancelId] = useState(null)
   const [convertTrialEnrol, setConvertTrialEnrol] = useState(null)
+  const [chaseStudent, setChaseStudent] = useState(null)
 
   const { data: sessionsData } = useApi(() => classes.list({ active: 'true' }))
   const { data: dashData, refetch: refetchDash } = useApi(() => payments.dashboard())
@@ -555,7 +556,7 @@ export default function AdminDashboard() {
                     <td style={{ color: 'var(--red)', fontWeight: 600 }}>${b.owing.toFixed(2)}</td>
                     <td style={{ color: 'var(--grey)' }}>{fmtDate(b.lastDate)}</td>
                     <td>
-                      <button className="btn btn-ghost btn-xs" onClick={() => b.student_id && chasePayment(b.student_id)}>Chase</button>
+                      <button className="btn btn-ghost btn-xs" onClick={() => setChaseStudent({ student_id: b.student_id || b.key, name: b.name, owing: b.owing })}>Chase</button>
                     </td>
                   </tr>
                 ))}
