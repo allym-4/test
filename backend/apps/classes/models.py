@@ -75,6 +75,8 @@ class ClassSession(models.Model):
         blank=True,
         help_text='Detailed info shown to first-time students after they book this class.'
     )
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)  # null=True for existing rows
 
     class Meta:
         ordering = ['day_of_week', 'start_time']
@@ -144,6 +146,11 @@ class Season(models.Model):
     end_date = models.DateField()
     status = models.CharField(max_length=15, choices=Status.choices, default=Status.UPCOMING)
     bookings_open = models.BooleanField(default=False)
+    # go_live_at: if set, bookings auto-open at this UTC datetime; overrides bookings_open=False
+    go_live_at = models.DateTimeField(null=True, blank=True)
+    # bookings_enabled: admin kill-switch for season enrolments (does not affect casuals)
+    bookings_enabled = models.BooleanField(default=True)
+    archived = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
     published_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

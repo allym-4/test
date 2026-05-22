@@ -198,6 +198,33 @@ class SeasonToggleBookingsView(APIView):
         return Response({'bookings_open': season.bookings_open})
 
 
+class SeasonToggleBookingsEnabledView(APIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        try:
+            season = Season.objects.get(pk=pk)
+        except Season.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        season.bookings_enabled = not season.bookings_enabled
+        season.save(update_fields=['bookings_enabled'])
+        return Response({'bookings_enabled': season.bookings_enabled})
+
+
+class SeasonArchiveView(APIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        try:
+            season = Season.objects.get(pk=pk)
+        except Season.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        season.archived = not season.archived
+        season.save(update_fields=['archived'])
+        from apps.classes.serializers import SeasonSerializer as SS
+        return Response(SS(season).data)
+
+
 class LockerListView(generics.ListCreateAPIView):
     serializer_class = LockerSerializer
     permission_classes = [IsAdminOrInstructor]

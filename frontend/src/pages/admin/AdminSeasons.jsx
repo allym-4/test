@@ -14,12 +14,10 @@ function SeasonCalendarPicker({ value, onChange, existingSeasons = [], label }) 
 
   const selectedDate = value ? new Date(value + 'T00:00') : null
 
-  // Build days for the current month view
   const days = useMemo(() => {
     const first = new Date(viewYear, viewMonth, 1)
     const last = new Date(viewYear, viewMonth + 1, 0)
     const result = []
-    // Leading blanks
     for (let i = 0; i < first.getDay(); i++) result.push(null)
     for (let d = 1; d <= last.getDate(); d++) result.push(new Date(viewYear, viewMonth, d))
     return result
@@ -76,19 +74,16 @@ function SeasonCalendarPicker({ value, onChange, existingSeasons = [], label }) 
           background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 10,
           padding: 12, width: 240, boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
         }}>
-          {/* Month nav */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <button type="button" onClick={prevMonth} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 16, padding: '0 6px' }}>‹</button>
             <div style={{ fontSize: 13, fontWeight: 700 }}>{MONTH_NAMES[viewMonth]} {viewYear}</div>
             <button type="button" onClick={nextMonth} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 16, padding: '0 6px' }}>›</button>
           </div>
-          {/* Day headers */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 4 }}>
             {DAY_NAMES.map(d => (
               <div key={d} style={{ textAlign: 'center', fontSize: 10, color: 'var(--grey)', padding: '2px 0' }}>{d}</div>
             ))}
           </div>
-          {/* Days */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
             {days.map((date, i) => {
               if (!date) return <div key={`blank-${i}`} />
@@ -114,7 +109,6 @@ function SeasonCalendarPicker({ value, onChange, existingSeasons = [], label }) 
               )
             })}
           </div>
-          {/* Legend */}
           <div style={{ display: 'flex', gap: 12, marginTop: 8, fontSize: 10, color: 'var(--grey)' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <span style={{ width: 8, height: 8, borderRadius: 2, background: 'rgba(176,160,255,0.25)', display: 'inline-block' }} />
@@ -138,11 +132,48 @@ function formatDate(d) {
   return new Date(d + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+function formatDateTime(dt) {
+  if (!dt) return null
+  return new Date(dt).toLocaleString('en-AU', {
+    day: 'numeric', month: 'short', year: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true, timeZoneName: 'short',
+  })
+}
+
+function goLiveLabel(goLiveAt) {
+  if (!goLiveAt) return null
+  const d = new Date(goLiveAt)
+  const now = new Date()
+  if (d <= now) return { text: 'Live now', live: true }
+  const ms = d - now
+  const hrs = Math.floor(ms / 3600000)
+  if (hrs < 48) return { text: `Opens in ${hrs}h`, live: false }
+  const days = Math.floor(ms / 86400000)
+  return { text: `Opens in ${days}d`, live: false }
+}
+
 function weeksRemaining(endDate) {
   if (!endDate) return null
   const ms = new Date(endDate + 'T00:00') - new Date()
   if (ms <= 0) return 0
   return Math.ceil(ms / (1000 * 60 * 60 * 24 * 7))
+}
+
+// Convert a local datetime-local input value to ISO string (treating it as Sydney time → UTC)
+function localInputToISO(val) {
+  if (!val) return null
+  // val is like "2025-10-01T08:00" — treat as Sydney time (UTC+10 or +11 DST)
+  // We approximate by creating a Date with the local timezone offset
+  return new Date(val).toISOString()
+}
+
+// Convert ISO datetime to datetime-local input value in Sydney time
+function isoToLocalInput(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  // Format as YYYY-MM-DDTHH:mm in local timezone
+  const pad = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 function SeasonModal({ season, onClose, onSaved, allSeasons = [] }) {
@@ -155,6 +186,7 @@ function SeasonModal({ season, onClose, onSaved, allSeasons = [] }) {
     end_date: season?.end_date || '',
     status: season?.status || 'upcoming',
     notes: season?.notes || '',
+    go_live_at: season?.go_live_at ? isoToLocalInput(season.go_live_at) : '',
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -162,7 +194,6 @@ function SeasonModal({ season, onClose, onSaved, allSeasons = [] }) {
 
   function handleStartDate(val) {
     set('start_date', val)
-    // Auto-set end date to 8 weeks later if not already manually set
     if (val) {
       const end = new Date(val + 'T00:00')
       end.setDate(end.getDate() + 56)
@@ -175,9 +206,17 @@ function SeasonModal({ season, onClose, onSaved, allSeasons = [] }) {
     setSaving(true)
     setError(null)
     try {
+      const payload = {
+        name: form.name,
+        start_date: form.start_date,
+        end_date: form.end_date,
+        status: form.status,
+        notes: form.notes,
+        go_live_at: form.go_live_at ? localInputToISO(form.go_live_at) : null,
+      }
       const res = isEdit
-        ? await seasons.update(season.id, form)
-        : await seasons.create(form)
+        ? await seasons.update(season.id, payload)
+        : await seasons.create(payload)
       onSaved(res.data)
       onClose()
     } catch (err) {
@@ -224,6 +263,20 @@ function SeasonModal({ season, onClose, onSaved, allSeasons = [] }) {
               <option value="completed">Completed</option>
             </select>
           </div>
+
+          <div className="field">
+            <label>Go-live date & time</label>
+            <input
+              type="datetime-local"
+              value={form.go_live_at}
+              onChange={e => set('go_live_at', e.target.value)}
+              style={{ colorScheme: 'dark' }}
+            />
+            <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>
+              Schedule when enrolment bookings open automatically. Leave blank to open manually.
+            </div>
+          </div>
+
           <div className="field"><label>Notes</label><textarea rows={3} value={form.notes} onChange={e => set('notes', e.target.value)} /></div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
@@ -235,23 +288,33 @@ function SeasonModal({ season, onClose, onSaved, allSeasons = [] }) {
   )
 }
 
-function SeasonDrawer({ season, onClose, onEdit, onStatusChange, onBookingsToggle, onCloseSeason }) {
+function SeasonDrawer({ season, onClose, onEdit, onStatusChange, onBookingsToggle, onToggleBookingsEnabled, onCloseSeason, onArchive, onDelete }) {
   const { data: sessionsData, loading: loadingSessions } = useApi(
     () => classesApi.list({ season: season.id }),
     [season.id]
   )
   const sessions = sessionsData?.results || sessionsData || []
   const [toggling, setToggling] = useState(false)
+  const [togglingEnabled, setTogglingEnabled] = useState(false)
   const [confirmClose, setConfirmClose] = useState(false)
   const [closing, setClosing] = useState(false)
   const [closeResult, setCloseResult] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [archiving, setArchiving] = useState(false)
 
   const statusCls = { active: 'tag-lime', upcoming: 'tag-lav', completed: 'tag-grey' }
   const wr = weeksRemaining(season.end_date)
+  const glLabel = goLiveLabel(season.go_live_at)
 
   async function handleToggleBookings() {
     setToggling(true)
     try { await onBookingsToggle() } finally { setToggling(false) }
+  }
+
+  async function handleToggleBookingsEnabled() {
+    setTogglingEnabled(true)
+    try { await onToggleBookingsEnabled() } finally { setTogglingEnabled(false) }
   }
 
   async function handleCloseSeason() {
@@ -265,14 +328,22 @@ function SeasonDrawer({ season, onClose, onEdit, onStatusChange, onBookingsToggl
     }
   }
 
+  async function handleArchive() {
+    setArchiving(true)
+    try { await onArchive() } finally { setArchiving(false) }
+  }
+
+  async function handleDelete() {
+    setDeleting(true)
+    try { await onDelete() } finally { setDeleting(false) }
+  }
+
   return (
     <>
-      {/* backdrop */}
       <div
         onClick={onClose}
         style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200 }}
       />
-      {/* drawer */}
       <div style={{
         position: 'fixed', top: 0, right: 0, bottom: 0, width: 420,
         background: 'var(--card)', borderLeft: '1px solid var(--border)',
@@ -281,7 +352,12 @@ function SeasonDrawer({ season, onClose, onEdit, onStatusChange, onBookingsToggl
         {/* header */}
         <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, marginBottom: 6 }}>{season.name}</div>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, marginBottom: 6 }}>
+              {season.name}
+              {season.archived && (
+                <span style={{ fontSize: 11, fontWeight: 600, marginLeft: 8, padding: '2px 7px', borderRadius: 20, background: 'rgba(255,255,255,0.06)', color: 'var(--grey)', border: '1px solid var(--border)', verticalAlign: 'middle' }}>Archived</span>
+              )}
+            </div>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
               <span className={`tag ${statusCls[season.status] || 'tag-grey'}`} style={{ fontSize: 10 }}>
                 {season.status.charAt(0).toUpperCase() + season.status.slice(1)}
@@ -295,6 +371,27 @@ function SeasonDrawer({ season, onClose, onEdit, onStatusChange, onBookingsToggl
               }}>
                 {season.bookings_open ? 'Bookings open' : 'Bookings closed'}
               </span>
+              {!season.bookings_enabled && (
+                <span style={{
+                  fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+                  padding: '2px 8px', borderRadius: 20,
+                  background: 'rgba(255,160,0,0.12)', color: 'var(--amber)',
+                  border: '1px solid rgba(255,160,0,0.3)',
+                }}>
+                  Enrolments off
+                </span>
+              )}
+              {glLabel && (
+                <span style={{
+                  fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+                  padding: '2px 8px', borderRadius: 20,
+                  background: glLabel.live ? 'rgba(204,255,0,0.15)' : 'rgba(176,160,255,0.12)',
+                  color: glLabel.live ? 'var(--lime)' : 'var(--lav)',
+                  border: `1px solid ${glLabel.live ? 'rgba(204,255,0,0.3)' : 'rgba(176,160,255,0.25)'}`,
+                }}>
+                  {glLabel.text}
+                </span>
+              )}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -316,6 +413,16 @@ function SeasonDrawer({ season, onClose, onEdit, onStatusChange, onBookingsToggl
               </div>
             ))}
           </div>
+
+          {/* Go-live info */}
+          {season.go_live_at && (
+            <div style={{ background: '#111', borderRadius: 8, padding: '12px 14px', marginBottom: 24 }}>
+              <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 4 }}>Scheduled go-live</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: glLabel?.live ? 'var(--lime)' : 'var(--lav)' }}>
+                {formatDateTime(season.go_live_at)}
+              </div>
+            </div>
+          )}
 
           {/* KPIs */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 24 }}>
@@ -370,10 +477,12 @@ function SeasonDrawer({ season, onClose, onEdit, onStatusChange, onBookingsToggl
             </div>
           )}
 
-          {/* Bookings toggle */}
+          {/* Booking Access */}
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', fontWeight: 600, marginBottom: 10 }}>Booking Access</div>
-            <div style={{ background: '#111', borderRadius: 10, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+
+            {/* bookings_open toggle (existing) */}
+            <div style={{ background: '#111', borderRadius: 10, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 10 }}>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>
                   {season.bookings_open ? 'Bookings are open' : 'Bookings are closed'}
@@ -398,6 +507,35 @@ function SeasonDrawer({ season, onClose, onEdit, onStatusChange, onBookingsToggl
                 }}
               >
                 {toggling ? '…' : season.bookings_open ? 'Close bookings' : 'Open bookings'}
+              </button>
+            </div>
+
+            {/* bookings_enabled toggle (season enrolments kill-switch) */}
+            <div style={{ background: '#111', borderRadius: 10, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>
+                  {season.bookings_enabled ? 'Season enrolments enabled' : 'Season enrolments disabled'}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--grey)' }}>
+                  {season.bookings_enabled
+                    ? 'Students can enrol in this season. Casuals are unaffected.'
+                    : 'Season enrolments are off. Casual drop-ins are still available.'}
+                </div>
+              </div>
+              <button
+                onClick={handleToggleBookingsEnabled}
+                disabled={togglingEnabled}
+                style={{
+                  flexShrink: 0,
+                  background: season.bookings_enabled ? 'rgba(255,68,68,0.12)' : 'rgba(204,255,0,0.12)',
+                  color: season.bookings_enabled ? 'var(--red)' : 'var(--lime)',
+                  border: `1px solid ${season.bookings_enabled ? 'rgba(255,68,68,0.3)' : 'rgba(204,255,0,0.3)'}`,
+                  borderRadius: 8, padding: '8px 16px', fontWeight: 700, fontSize: 12,
+                  cursor: togglingEnabled ? 'default' : 'pointer', opacity: togglingEnabled ? 0.6 : 1,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {togglingEnabled ? '…' : season.bookings_enabled ? 'Turn off' : 'Turn on'}
               </button>
             </div>
           </div>
@@ -449,6 +587,48 @@ function SeasonDrawer({ season, onClose, onEdit, onStatusChange, onBookingsToggl
               </div>
             )}
           </div>
+
+          {/* Archive / Delete */}
+          <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', fontWeight: 600, marginBottom: 12 }}>Danger Zone</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ color: 'var(--grey)', borderColor: 'var(--border)' }}
+                onClick={handleArchive}
+                disabled={archiving}
+              >
+                {archiving ? '…' : season.archived ? 'Unarchive' : 'Archive'}
+              </button>
+              {!confirmDelete ? (
+                <button
+                  className="btn btn-ghost btn-sm"
+                  style={{ color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)' }}
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  Delete Season
+                </button>
+              ) : (
+                <div style={{ background: 'rgba(255,68,68,0.08)', border: '1px solid rgba(255,68,68,0.25)', borderRadius: 8, padding: '12px 14px', flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--red)' }}>Permanently delete?</div>
+                  <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 10 }}>
+                    This cannot be undone. All classes and enrolments linked to this season will also be removed.
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      className="btn btn-sm"
+                      style={{ background: 'rgba(255,68,68,0.15)', color: 'var(--red)', border: '1px solid rgba(255,68,68,0.3)' }}
+                      onClick={handleDelete}
+                      disabled={deleting}
+                    >
+                      {deleting ? 'Deleting…' : 'Yes, delete'}
+                    </button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setConfirmDelete(false)}>Cancel</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </>
@@ -461,6 +641,7 @@ export default function AdminSeasons() {
   const [editSeason, setEditSeason] = useState(null)
   const [drawerSeason, setDrawerSeason] = useState(null)
   const [seasonList, setSeasonList] = useState(null)
+  const [showArchived, setShowArchived] = useState(false)
 
   const allSeasons = seasonList ?? (data?.results || data || [])
 
@@ -480,7 +661,94 @@ export default function AdminSeasons() {
   }
 
   const sorted = [...allSeasons].sort((a, b) => new Date(b.start_date) - new Date(a.start_date))
+  const activeSeasons = sorted.filter(s => !s.archived)
+  const archivedSeasons = sorted.filter(s => s.archived)
   const statusCls = { active: 'tag-lime', upcoming: 'tag-lav', completed: 'tag-grey' }
+
+  function SeasonCard({ season }) {
+    const isActive = season.status === 'active'
+    const wr = weeksRemaining(season.end_date)
+    const glLabel = goLiveLabel(season.go_live_at)
+    return (
+      <div
+        key={season.id}
+        onClick={() => setDrawerSeason(season)}
+        style={{
+          background: 'var(--card)',
+          border: `1px solid ${isActive ? 'rgba(204,255,0,0.4)' : 'var(--border)'}`,
+          borderRadius: 14,
+          padding: '18px 20px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 14,
+          cursor: 'pointer',
+          transition: 'border-color 0.15s',
+          opacity: season.archived ? 0.55 : 1,
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18 }}>{season.name}</div>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <span className={`tag ${statusCls[season.status] || 'tag-grey'}`} style={{ fontSize: 10 }}>
+              {season.status.charAt(0).toUpperCase() + season.status.slice(1)}
+            </span>
+            <span style={{
+              fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 20,
+              background: season.bookings_open ? 'rgba(204,255,0,0.12)' : 'rgba(255,68,68,0.1)',
+              color: season.bookings_open ? 'var(--lime)' : 'var(--red)',
+              border: `1px solid ${season.bookings_open ? 'rgba(204,255,0,0.25)' : 'rgba(255,68,68,0.2)'}`,
+            }}>
+              {season.bookings_open ? 'Open' : 'Closed'}
+            </span>
+            {!season.bookings_enabled && (
+              <span style={{
+                fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 20,
+                background: 'rgba(255,160,0,0.1)', color: 'var(--amber)',
+                border: '1px solid rgba(255,160,0,0.25)',
+              }}>Enrolments off</span>
+            )}
+          </div>
+        </div>
+
+        <div style={{ fontSize: 12, color: 'var(--grey)' }}>
+          {formatDate(season.start_date)} → {formatDate(season.end_date)}
+        </div>
+
+        {glLabel && (
+          <div style={{ fontSize: 12, color: glLabel.live ? 'var(--lime)' : 'var(--lav)', fontWeight: 600 }}>
+            {glLabel.live ? '⏱ Live now' : `⏱ ${glLabel.text}`}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: 16 }}>
+          {season.session_count != null && (
+            <div style={{ fontSize: 12 }}>
+              <span style={{ color: 'var(--lime)', fontWeight: 700 }}>{season.session_count}</span>
+              <span style={{ color: 'var(--grey)' }}> classes</span>
+            </div>
+          )}
+          {season.enrolled_count != null && (
+            <div style={{ fontSize: 12 }}>
+              <span style={{ color: 'var(--lav)', fontWeight: 700 }}>{season.enrolled_count}</span>
+              <span style={{ color: 'var(--grey)' }}> enrolled</span>
+            </div>
+          )}
+          {isActive && wr != null && (
+            <div style={{ fontSize: 12 }}>
+              <span style={{ color: 'var(--amber)', fontWeight: 700 }}>{wr}</span>
+              <span style={{ color: 'var(--grey)' }}> weeks left</span>
+            </div>
+          )}
+        </div>
+
+        {season.notes && (
+          <div style={{ fontSize: 12, color: 'var(--grey)', fontStyle: 'italic' }}>{season.notes}</div>
+        )}
+
+        <div style={{ fontSize: 11, color: 'var(--grey)' }}>Click to view details →</div>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -500,77 +768,28 @@ export default function AdminSeasons() {
           <div style={{ fontSize: 12 }}>Create your first season above</div>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-          {sorted.map(season => {
-            const isActive = season.status === 'active'
-            const wr = weeksRemaining(season.end_date)
-            return (
-              <div
-                key={season.id}
-                onClick={() => setDrawerSeason(season)}
-                style={{
-                  background: 'var(--card)',
-                  border: `1px solid ${isActive ? 'rgba(204,255,0,0.4)' : 'var(--border)'}`,
-                  borderRadius: 14,
-                  padding: '18px 20px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 14,
-                  cursor: 'pointer',
-                  transition: 'border-color 0.15s',
-                }}
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+            {activeSeasons.map(season => <SeasonCard key={season.id} season={season} />)}
+          </div>
+
+          {archivedSeasons.length > 0 && (
+            <div style={{ marginTop: 32 }}>
+              <button
+                onClick={() => setShowArchived(v => !v)}
+                style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18 }}>{season.name}</div>
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                    <span className={`tag ${statusCls[season.status] || 'tag-grey'}`} style={{ fontSize: 10 }}>
-                      {season.status.charAt(0).toUpperCase() + season.status.slice(1)}
-                    </span>
-                    <span style={{
-                      fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 20,
-                      background: season.bookings_open ? 'rgba(204,255,0,0.12)' : 'rgba(255,68,68,0.1)',
-                      color: season.bookings_open ? 'var(--lime)' : 'var(--red)',
-                      border: `1px solid ${season.bookings_open ? 'rgba(204,255,0,0.25)' : 'rgba(255,68,68,0.2)'}`,
-                    }}>
-                      {season.bookings_open ? 'Open' : 'Closed'}
-                    </span>
-                  </div>
+                <span style={{ fontSize: 11, transform: showArchived ? 'rotate(90deg)' : 'none', display: 'inline-block', transition: 'transform 0.15s' }}>▶</span>
+                Archived seasons ({archivedSeasons.length})
+              </button>
+              {showArchived && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+                  {archivedSeasons.map(season => <SeasonCard key={season.id} season={season} />)}
                 </div>
-
-                <div style={{ fontSize: 12, color: 'var(--grey)' }}>
-                  {formatDate(season.start_date)} → {formatDate(season.end_date)}
-                </div>
-
-                <div style={{ display: 'flex', gap: 16 }}>
-                  {season.session_count != null && (
-                    <div style={{ fontSize: 12 }}>
-                      <span style={{ color: 'var(--lime)', fontWeight: 700 }}>{season.session_count}</span>
-                      <span style={{ color: 'var(--grey)' }}> classes</span>
-                    </div>
-                  )}
-                  {season.enrolled_count != null && (
-                    <div style={{ fontSize: 12 }}>
-                      <span style={{ color: 'var(--lav)', fontWeight: 700 }}>{season.enrolled_count}</span>
-                      <span style={{ color: 'var(--grey)' }}> enrolled</span>
-                    </div>
-                  )}
-                  {isActive && wr != null && (
-                    <div style={{ fontSize: 12 }}>
-                      <span style={{ color: 'var(--amber)', fontWeight: 700 }}>{wr}</span>
-                      <span style={{ color: 'var(--grey)' }}> weeks left</span>
-                    </div>
-                  )}
-                </div>
-
-                {season.notes && (
-                  <div style={{ fontSize: 12, color: 'var(--grey)', fontStyle: 'italic' }}>{season.notes}</div>
-                )}
-
-                <div style={{ fontSize: 11, color: 'var(--grey)' }}>Click to view details →</div>
-              </div>
-            )
-          })}
-        </div>
+              )}
+            </div>
+          )}
+        </>
       )}
 
       {drawerSeason && (
@@ -583,7 +802,13 @@ export default function AdminSeasons() {
             const res = await seasons.toggleBookings(drawerSeason.id)
             const updated = { ...drawerSeason, bookings_open: res.data.bookings_open }
             setDrawerSeason(updated)
-            refetch()
+            setSeasonList(prev => (prev ?? allSeasons).map(s => s.id === updated.id ? updated : s))
+          }}
+          onToggleBookingsEnabled={async () => {
+            const res = await seasons.toggleBookingsEnabled(drawerSeason.id)
+            const updated = { ...drawerSeason, bookings_enabled: res.data.bookings_enabled }
+            setDrawerSeason(updated)
+            setSeasonList(prev => (prev ?? allSeasons).map(s => s.id === updated.id ? updated : s))
           }}
           onCloseSeason={async () => {
             const res = await seasons.close(drawerSeason.id)
@@ -591,6 +816,17 @@ export default function AdminSeasons() {
             setDrawerSeason(updated)
             setSeasonList(prev => (prev ?? allSeasons).map(s => s.id === updated.id ? updated : s))
             return res.data
+          }}
+          onArchive={async () => {
+            const res = await seasons.archive(drawerSeason.id)
+            const updated = res.data
+            setDrawerSeason(updated)
+            setSeasonList(prev => (prev ?? allSeasons).map(s => s.id === updated.id ? updated : s))
+          }}
+          onDelete={async () => {
+            await seasons.delete(drawerSeason.id)
+            setDrawerSeason(null)
+            setSeasonList(prev => (prev ?? allSeasons).filter(s => s.id !== drawerSeason.id))
           }}
         />
       )}

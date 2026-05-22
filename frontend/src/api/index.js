@@ -29,6 +29,7 @@ export const classes = {
   },
   workshops: {
     list: () => client.get('/api/classes/workshops/'),
+    get: (id) => client.get(`/api/classes/workshops/${id}/`),
     create: (data) => client.post('/api/classes/workshops/', data),
     update: (id, data) => client.patch(`/api/classes/workshops/${id}/`, data),
     delete: (id) => client.delete(`/api/classes/workshops/${id}/`),
@@ -157,6 +158,8 @@ export const seasons = {
   update: (id, data) => client.patch(`/api/classes/seasons/${id}/`, data),
   delete: (id) => client.delete(`/api/classes/seasons/${id}/`),
   toggleBookings: (id) => client.post(`/api/classes/seasons/${id}/toggle-bookings/`),
+  toggleBookingsEnabled: (id) => client.post(`/api/classes/seasons/${id}/toggle-bookings-enabled/`),
+  archive: (id) => client.post(`/api/classes/seasons/${id}/archive/`),
   close: (id) => client.post(`/api/classes/seasons/${id}/close/`),
 }
 
