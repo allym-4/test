@@ -196,7 +196,14 @@ export default function AdminStudentDetail() {
   const [showBlockConfirm, setShowBlockConfirm] = useState(false)
   const [showRefundCredit, setShowRefundCredit] = useState(false)
   const [showAccountCredit, setShowAccountCredit] = useState(false)
-  const [showTransferCancel, setShowTransferCancel] = useState(false)
+  const [showTransferCancel, setShowTransferCancel] = useState(false) // false | 'list' | enrolment-object
+  const [tcStep, setTcStep] = useState(null) // null | 'transfer' | 'cancel' | 'cancel_all'
+  const [tcEnrolment, setTcEnrolment] = useState(null)
+  const [tcNewSession, setTcNewSession] = useState('')
+  const [tcResolution, setTcResolution] = useState('credit')
+  const [tcNotes, setTcNotes] = useState('')
+  const [tcSaving, setTcSaving] = useState(false)
+  const [tcError, setTcError] = useState(null)
   const [refundAmount, setRefundAmount] = useState('')
   const [refundDesc, setRefundDesc] = useState('')
   const [refundType, setRefundType] = useState('refund')
@@ -560,7 +567,7 @@ export default function AdminStudentDetail() {
                             }}
                           >{student.booking_blocked ? 'Unfreeze Account' : 'Freeze Account'}</button>
                           {activeEnrolments.length > 0 && (
-                            <button className="btn btn-ghost btn-xs" onClick={() => setShowTransferCancel(true)}>Cancel Enrolment</button>
+                            <button className="btn btn-ghost btn-xs" onClick={() => { setTcStep(null); setTcEnrolment(null); setTcNewSession(''); setTcResolution('credit'); setTcNotes(''); setTcError(null); setShowTransferCancel('list') }}>Transfer / Cancel</button>
                           )}
                         </div>
                       </div>
@@ -585,7 +592,7 @@ export default function AdminStudentDetail() {
                                       {e.class_session_detail?.instructor_detail?.display_name && ` · ${e.class_session_detail.instructor_detail.display_name}`}
                                     </div>
                                   </div>
-                                  <button className="btn btn-ghost btn-xs" style={{ flexShrink: 0 }} onClick={ev => { ev.stopPropagation(); setShowTransferCancel(e) }}>Transfer / Cancel</button>
+                                  <button className="btn btn-ghost btn-xs" style={{ flexShrink: 0 }} onClick={ev => { ev.stopPropagation(); setTcEnrolment(e); setTcStep(null); setTcNewSession(''); setTcResolution('credit'); setTcNotes(''); setTcError(null); setShowTransferCancel('list') }}>Transfer / Cancel</button>
                                 </div>
                               ))}
                             </div>
@@ -607,7 +614,7 @@ export default function AdminStudentDetail() {
                                       {e.class_session_detail?.instructor_detail?.display_name && ` · ${e.class_session_detail.instructor_detail.display_name}`}
                                     </div>
                                   </div>
-                                  <button className="btn btn-ghost btn-xs" style={{ flexShrink: 0 }} onClick={ev => { ev.stopPropagation(); setShowTransferCancel(e) }}>Transfer / Cancel</button>
+                                  <button className="btn btn-ghost btn-xs" style={{ flexShrink: 0 }} onClick={ev => { ev.stopPropagation(); setTcEnrolment(e); setTcStep(null); setTcNewSession(''); setTcResolution('credit'); setTcNotes(''); setTcError(null); setShowTransferCancel('list') }}>Transfer / Cancel</button>
                                 </div>
                               ))}
                             </div>
@@ -866,7 +873,7 @@ export default function AdminStudentDetail() {
                   <button className="btn btn-lime btn-sm" onClick={() => setShowPayment(true)}>+ Record Payment</button>
                   <button className="btn btn-ghost btn-sm" onClick={() => setShowRefundCredit(true)}>Issue Refund / Credit</button>
                   <button className="btn btn-ghost btn-sm" onClick={() => setShowAccountCredit(true)}>Add Account Credit</button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => setShowTransferCancel(true)}>Transfer / Cancel Enrolment</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => { setTcStep(null); setTcEnrolment(null); setTcNewSession(''); setTcResolution('credit'); setTcNotes(''); setTcError(null); setShowTransferCancel('list') }}>Transfer / Cancel Enrolment</button>
                   {savedCardsData?.payment_methods?.length > 0 && savedCardsData?.default_payment_method_id && bal < 0 && (() => {
                     const hasCashPending = (payData || []).some(p => p.payment_type === 'charge' && (p.description || '').toLowerCase().includes('pay at studio'))
                     return (
@@ -1419,46 +1426,237 @@ export default function AdminStudentDetail() {
       )}
 
       {/* Transfer / Cancel Enrolment */}
-      {showTransferCancel && (
-        <div className="sd-overlay" onClick={e => e.target === e.currentTarget && setShowTransferCancel(false)}>
-          <div className="sd-modal" style={{ maxWidth: 480 }}>
-            <div className="sd-header">
-              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>Transfer / Cancel Enrolment</div>
-              <button className="modal-close-btn" onClick={() => setShowTransferCancel(false)}>✕</button>
-            </div>
-            <div className="sd-body">
-              {(enrolData || []).filter(e => e.status === 'active').length === 0 ? (
-                <div style={{ color: 'var(--grey)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>No active enrolments to cancel.</div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {(enrolData || []).filter(e => e.status === 'active').map(e => (
-                    <div key={e.id} style={{ background: '#111', borderRadius: 8, padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: 13 }}>{e.class_session_name || 'Class'}</div>
-                        <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{e.enrolment_type}</div>
-                      </div>
-                      <button
-                        className="btn btn-ghost btn-xs"
-                        style={{ color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)', flexShrink: 0 }}
-                        onClick={async () => {
-                          await enrolments.update(e.id, { status: 'cancelled' })
-                          const r = await enrolments.list({ student: student.id })
-                          setEnrolData(r.data.results || [])
-                        }}
-                      >
-                        Cancel
+      {showTransferCancel && (() => {
+        const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+        const activeList = (enrolData || []).filter(e => e.status === 'active')
+
+        const closeModal = () => { setShowTransferCancel(false); setTcStep(null); setTcEnrolment(null); setTcError(null) }
+
+        const submitTransfer = async () => {
+          if (!tcNewSession) { setTcError('Please select a class to transfer to.'); return }
+          setTcSaving(true); setTcError(null)
+          try {
+            await enrolments.changeRequests.create({
+              current_enrolment: tcEnrolment.id,
+              requested_session: tcNewSession,
+              request_type: 'transfer',
+              notes: tcNotes,
+            })
+            const r = await enrolments.changeRequests.list({ student: student.id })
+            setChangeRequestsData(r.data.results || r.data || [])
+            closeModal()
+          } catch (err) {
+            setTcError(err.response?.data?.detail || err.response?.data?.non_field_errors?.[0] || 'Could not submit request.')
+          } finally { setTcSaving(false) }
+        }
+
+        const submitCancel = async (enrolmentObj) => {
+          setTcSaving(true); setTcError(null)
+          try {
+            await enrolments.changeRequests.create({
+              current_enrolment: enrolmentObj.id,
+              request_type: 'cancel',
+              cancellation_resolution: tcResolution,
+              notes: tcNotes,
+            })
+          } catch (err) {
+            throw err
+          }
+        }
+
+        const submitCancelSingle = async () => {
+          setTcSaving(true); setTcError(null)
+          try {
+            await submitCancel(tcEnrolment)
+            const r = await enrolments.changeRequests.list({ student: student.id })
+            setChangeRequestsData(r.data.results || r.data || [])
+            closeModal()
+          } catch (err) {
+            setTcError(err.response?.data?.detail || 'Could not submit request.')
+          } finally { setTcSaving(false) }
+        }
+
+        const submitCancelAll = async () => {
+          setTcSaving(true); setTcError(null)
+          try {
+            for (const e of activeList) {
+              await submitCancel(e)
+            }
+            const r = await enrolments.changeRequests.list({ student: student.id })
+            setChangeRequestsData(r.data.results || r.data || [])
+            closeModal()
+          } catch (err) {
+            setTcError(err.response?.data?.detail || 'One or more requests could not be submitted.')
+          } finally { setTcSaving(false) }
+        }
+
+        const modalTitle = tcStep === 'transfer' ? 'Transfer Enrolment'
+          : tcStep === 'cancel' ? 'Cancel Enrolment'
+          : tcStep === 'cancel_all' ? 'Cancel All Enrolments'
+          : 'Transfer / Cancel'
+
+        const seasonId = tcEnrolment?.class_session_detail?.season
+        const transferSessions = tcStep === 'transfer'
+          ? (allSessions || []).filter(s => s.season === seasonId && s.id !== tcEnrolment?.class_session)
+          : []
+
+        return (
+          <div className="sd-overlay" onClick={e => e.target === e.currentTarget && closeModal()}>
+            <div className="sd-modal" style={{ maxWidth: 500 }}>
+              <div className="sd-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {tcStep && (
+                    <button className="btn btn-ghost btn-xs" onClick={() => { setTcStep(null); setTcError(null) }}>← Back</button>
+                  )}
+                  <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>{modalTitle}</div>
+                </div>
+                <button className="modal-close-btn" onClick={closeModal}>✕</button>
+              </div>
+              <div className="sd-body">
+                {tcError && (
+                  <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>
+                    {tcError}
+                  </div>
+                )}
+
+                {/* Step 1: class list */}
+                {!tcStep && (
+                  <>
+                    {activeList.length === 0 ? (
+                      <div style={{ color: 'var(--grey)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>No active enrolments.</div>
+                    ) : (
+                      <>
+                        {activeList.map(e => (
+                          <div key={e.id} style={{ background: '#111', borderRadius: 8, padding: '12px 14px', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{e.class_session_detail?.name || 'Class'}</div>
+                              <div style={{ fontSize: 12, color: 'var(--grey)' }}>
+                                {DAYS[e.class_session_detail?.day_of_week]} {e.class_session_detail?.start_time?.slice(0,5)}
+                                {e.class_session_detail?.season_name ? ` · ${e.class_session_detail.season_name}` : ''}
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                              <button className="btn btn-ghost btn-xs" onClick={() => { setTcEnrolment(e); setTcNewSession(''); setTcStep('transfer') }}>Transfer</button>
+                              <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)' }} onClick={() => { setTcEnrolment(e); setTcStep('cancel') }}>Cancel</button>
+                            </div>
+                          </div>
+                        ))}
+                        <div style={{ borderTop: '1px solid var(--border)', marginTop: 12, paddingTop: 12 }}>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            style={{ color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)', width: '100%' }}
+                            onClick={() => setTcStep('cancel_all')}
+                          >
+                            Cancel All Enrolments
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
+
+                {/* Step 2a: Transfer */}
+                {tcStep === 'transfer' && (
+                  <>
+                    <div style={{ background: '#111', borderRadius: 8, padding: '10px 12px', marginBottom: 14, fontSize: 13, color: 'var(--grey)' }}>
+                      Transferring from: <strong style={{ color: 'var(--white)' }}>{tcEnrolment?.class_session_detail?.name}</strong>
+                    </div>
+                    <div className="field">
+                      <label>Transfer to</label>
+                      <select value={tcNewSession} onChange={e => setTcNewSession(e.target.value)}>
+                        <option value="">— Select class —</option>
+                        {transferSessions.length === 0
+                          ? <option disabled>No other classes available in this season</option>
+                          : transferSessions.map(s => (
+                            <option key={s.id} value={s.id}>
+                              {s.name} · {DAYS[s.day_of_week]} {s.start_time?.slice(0,5)}
+                            </option>
+                          ))
+                        }
+                      </select>
+                    </div>
+                    <div className="field">
+                      <label>Notes (optional)</label>
+                      <textarea value={tcNotes} onChange={e => setTcNotes(e.target.value)} rows={3} placeholder="Reason for transfer request…" />
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => setTcStep(null)}>Back</button>
+                      <button className="btn btn-lime btn-sm" onClick={submitTransfer} disabled={tcSaving}>
+                        {tcSaving ? 'Submitting…' : 'Submit Transfer Request'}
                       </button>
                     </div>
-                  ))}
-                </div>
-              )}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-                <button className="btn btn-ghost btn-sm" onClick={() => setShowTransferCancel(false)}>Close</button>
+                  </>
+                )}
+
+                {/* Step 2b: Cancel single */}
+                {tcStep === 'cancel' && (
+                  <>
+                    <div style={{ background: '#111', borderRadius: 8, padding: '10px 12px', marginBottom: 14, fontSize: 13, color: 'var(--grey)' }}>
+                      Cancelling: <strong style={{ color: 'var(--white)' }}>{tcEnrolment?.class_session_detail?.name}</strong>
+                    </div>
+                    <div className="field">
+                      <label>Resolution</label>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        {[['credit','Account Credit'],['refund','Refund to Card'],['no_refund','No Refund']].map(([val,lbl]) => (
+                          <button key={val} className={`btn btn-sm ${tcResolution === val ? 'btn-lime' : 'btn-ghost'}`} onClick={() => setTcResolution(val)}>{lbl}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="field">
+                      <label>Notes / reason</label>
+                      <textarea value={tcNotes} onChange={e => setTcNotes(e.target.value)} rows={3} placeholder="Reason for cancellation…" />
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 14 }}>
+                      This will submit a cancellation request to Mimi &amp; Chloe for review.
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => setTcStep(null)}>Back</button>
+                      <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)' }} onClick={submitCancelSingle} disabled={tcSaving}>
+                        {tcSaving ? 'Submitting…' : 'Submit Cancellation Request'}
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {/* Step 2c: Cancel all */}
+                {tcStep === 'cancel_all' && (
+                  <>
+                    <div style={{ background: 'rgba(255,68,68,0.08)', border: '1px solid rgba(255,68,68,0.2)', borderRadius: 8, padding: '10px 12px', marginBottom: 14, fontSize: 13, color: 'var(--red)' }}>
+                      This will submit a cancellation request for all {activeList.length} active enrolment{activeList.length !== 1 ? 's' : ''}.
+                    </div>
+                    <div style={{ marginBottom: 14 }}>
+                      {activeList.map(e => (
+                        <div key={e.id} style={{ fontSize: 13, color: 'var(--grey)', paddingBottom: 4 }}>· {e.class_session_detail?.name}</div>
+                      ))}
+                    </div>
+                    <div className="field">
+                      <label>Resolution</label>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        {[['credit','Account Credit'],['refund','Refund to Card'],['no_refund','No Refund']].map(([val,lbl]) => (
+                          <button key={val} className={`btn btn-sm ${tcResolution === val ? 'btn-lime' : 'btn-ghost'}`} onClick={() => setTcResolution(val)}>{lbl}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="field">
+                      <label>Notes / reason</label>
+                      <textarea value={tcNotes} onChange={e => setTcNotes(e.target.value)} rows={3} placeholder="Reason for cancellation…" />
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 14 }}>
+                      This will submit cancellation requests for all classes to Mimi &amp; Chloe for review.
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => setTcStep(null)}>Back</button>
+                      <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)' }} onClick={submitCancelAll} disabled={tcSaving}>
+                        {tcSaving ? 'Submitting…' : 'Submit All Cancellation Requests'}
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* Process Change Request Modal */}
       {showChangeRequestModal && (

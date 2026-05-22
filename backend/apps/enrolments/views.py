@@ -782,63 +782,82 @@ class ClassChangeRequestListCreateView(generics.ListCreateAPIView):
         return qs
 
     def perform_create(self, serializer):
-        from rest_framework.exceptions import PermissionDenied, ValidationError
+        from rest_framework.exceptions import ValidationError
         user = self.request.user
+        is_staff = user.role in ('admin', 'instructor', 'staff')
         enrolment_id = self.request.data.get('current_enrolment')
         if not enrolment_id:
             raise ValidationError('current_enrolment is required.')
 
         try:
-            enrolment = Enrolment.objects.select_related('student', 'class_session__season').get(
-                pk=enrolment_id, student=user, status='active', enrolment_type='course'
-            )
+            if is_staff:
+                enrolment = Enrolment.objects.select_related('student', 'class_session__season').get(
+                    pk=enrolment_id, status='active'
+                )
+            else:
+                enrolment = Enrolment.objects.select_related('student', 'class_session__season').get(
+                    pk=enrolment_id, student=user, status='active', enrolment_type='course'
+                )
         except Enrolment.DoesNotExist:
-            raise ValidationError('Active course enrolment not found for this student.')
+            raise ValidationError('Active enrolment not found.')
 
         # Prevent duplicate pending requests for same enrolment
         if ClassChangeRequest.objects.filter(
             current_enrolment=enrolment, status='pending'
         ).exists():
-            raise ValidationError('A change request for this enrolment is already pending.')
+            raise ValidationError('A pending request for this enrolment already exists.')
 
-        change_request = serializer.save(student=user)
+        student = enrolment.student
+        request_type = self.request.data.get('request_type', 'transfer')
+        change_request = serializer.save(
+            student=student,
+            admin_initiated=is_staff,
+        )
 
-        # Create a helpdesk ticket for the request
         from apps.helpdesk.models import Ticket, TicketMessage
         session_name = enrolment.class_session.name
-        requested = change_request.requested_session
-        requested_name = requested.name if requested else 'a different class'
-        subject = f'Class change request — {session_name} → {requested_name}'
-        body = (
-            f'Hi,\n\n'
-            f'I\'d like to request a change to my season enrolment.\n\n'
-            f'Currently enrolled in: {session_name}\n'
-            f'Requesting to change to: {requested_name}\n'
-        )
+        initiated_by = f'{user.display_name} (staff)' if is_staff else student.display_name
+
+        if request_type == 'cancel':
+            resolution = change_request.cancellation_resolution or 'no_refund'
+            resolution_label = {'credit': 'account credit', 'refund': 'refund to card', 'no_refund': 'no refund'}.get(resolution, resolution)
+            subject = f'Cancellation request — {session_name} ({student.display_name})'
+            body = (
+                f'Cancellation request submitted by {initiated_by}.\n\n'
+                f'Student: {student.display_name}\n'
+                f'Class: {session_name}\n'
+                f'Requested resolution: {resolution_label}\n'
+            )
+        else:
+            requested = change_request.requested_session
+            requested_name = requested.name if requested else 'a different class'
+            subject = f'Transfer request — {session_name} → {requested_name} ({student.display_name})'
+            body = (
+                f'Transfer request submitted by {initiated_by}.\n\n'
+                f'Student: {student.display_name}\n'
+                f'Currently enrolled in: {session_name}\n'
+                f'Requesting to transfer to: {requested_name}\n'
+            )
+
         if change_request.notes:
-            body += f'\nAdditional notes: {change_request.notes}\n'
-        body += f'\nPlease let me know if this is possible. Thank you!'
+            body += f'\nNotes: {change_request.notes}\n'
 
         ticket = Ticket.objects.create(
             subject=subject,
-            student=user,
+            student=student,
             status=Ticket.Status.OPEN,
             priority=Ticket.Priority.MEDIUM,
             category=Ticket.Category.BOOKING,
         )
-        TicketMessage.objects.create(
-            ticket=ticket,
-            sender=user,
-            body=body,
-        )
+        TicketMessage.objects.create(ticket=ticket, sender=user, body=body)
         change_request.ticket = ticket
         change_request.save(update_fields=['ticket'])
 
         from apps.users.models import Notification
         Notification.objects.create(
-            recipient=user,
-            title='Change request received',
-            body=f'Your request to change from {session_name} to {requested_name} has been received. We\'ll be in touch shortly.',
+            recipient=student,
+            title='Request received',
+            body=f'Your {"cancellation" if request_type == "cancel" else "transfer"} request for {session_name} has been submitted and is pending review.',
             notification_type='info',
         )
 
