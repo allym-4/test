@@ -54,6 +54,7 @@ class Enrolment(models.Model):
 class ClassChangeRequest(models.Model):
     class Status(models.TextChoices):
         PENDING = 'pending', 'Pending'
+        AWAITING_RESPONSE = 'awaiting_response', 'Awaiting Response'
         APPROVED = 'approved', 'Approved'
         REJECTED = 'rejected', 'Rejected'
 
@@ -77,7 +78,7 @@ class ClassChangeRequest(models.Model):
     request_type = models.CharField(max_length=10, choices=RequestType.choices, default=RequestType.TRANSFER)
     cancellation_resolution = models.CharField(max_length=10, choices=CancellationResolution.choices, blank=True)
     notes = models.TextField(blank=True)
-    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     admin_notes = models.TextField(blank=True)
     admin_initiated = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

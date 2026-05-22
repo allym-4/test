@@ -105,6 +105,7 @@ export const enrolments = {
     create: (data) => client.post('/api/enrolments/change-requests/', data),
     approve: (id, data) => client.post(`/api/enrolments/change-requests/${id}/approve/`, data),
     reject: (id, data) => client.post(`/api/enrolments/change-requests/${id}/reject/`, data),
+    requestInfo: (id, data) => client.post(`/api/enrolments/change-requests/${id}/request-info/`, data),
   },
 }
 
