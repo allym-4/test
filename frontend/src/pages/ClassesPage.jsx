@@ -35,6 +35,18 @@ function fmt12(time) {
   return `${h12}:${String(m).padStart(2, '0')}${ampm}`
 }
 
+function todayStr() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function sevenDaysStr() {
+  const d = new Date()
+  d.setDate(d.getDate() + 7)
+  return d.toISOString().slice(0, 10)
+}
+
+// ── Cover Modal ────────────────────────────────────────────────────────────────
+
 function CoverModal({ session, onClose }) {
   const [reason, setReason] = useState('Personal')
   const [notes, setNotes] = useState('')
@@ -108,24 +120,25 @@ function CoverModal({ session, onClose }) {
   )
 }
 
-export default function ClassesPage() {
-  const [view, setView] = useState('today') // 'past' | 'today' | 'upcoming'
+// ── My Classes tab ─────────────────────────────────────────────────────────────
+
+function MyClassesTab() {
+  const [view, setView] = useState('today')
   const [weekOffset, setWeekOffset] = useState(0)
   const [coverModal, setCoverModal] = useState(null)
-  const { data, loading } = useApi(() => classes.list())
-  const sessions = data?.results || []
+
+  const { data, loading } = useApi(() => classes.list({ instructor: 'me' }))
+  const sessions = data?.results ?? data ?? []
 
   const weekStart = getWeekStart(weekOffset)
   const today = new Date()
   today.setHours(0, 0, 0, 0)
+  const currentWeekStart = getWeekStart(0)
 
   const sorted = [...sessions].sort((a, b) => {
     if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week
     return (a.start_time || '').localeCompare(b.start_time || '')
   })
-
-  // For past/today/upcoming we always use the current week
-  const currentWeekStart = getWeekStart(0)
 
   const filtered = sorted.filter(s => {
     const classDate = sessionDate(view === 'past' ? getWeekStart(weekOffset) : currentWeekStart, s.day_of_week)
@@ -137,20 +150,17 @@ export default function ClassesPage() {
     return true
   })
 
-  // For past view, sort newest-first
   const displayed = view === 'past' ? [...filtered].reverse() : filtered
-
   const todayCount = sorted.filter(s => sessionDate(currentWeekStart, s.day_of_week).getTime() === today.getTime()).length
 
   return (
     <div>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
-        <div>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>My Classes</div>
-          <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 4 }}>
-            {view === 'past' ? `Week of ${weekLabel(getWeekStart(weekOffset))}` : new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-          </div>
+      {/* Sub-header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ fontSize: 13, color: 'var(--grey)' }}>
+          {view === 'past'
+            ? `Week of ${weekLabel(getWeekStart(weekOffset))}`
+            : new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
         </div>
         {view === 'past' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -161,8 +171,8 @@ export default function ClassesPage() {
         )}
       </div>
 
-      {/* Toggle */}
-      <div style={{ display: 'flex', background: '#0a0a0a', border: '1px solid #1e1e1e', borderRadius: 10, padding: 3, gap: 2, marginBottom: 24, width: 'fit-content', maxWidth: '100%' }}>
+      {/* Past / Today / Upcoming toggle */}
+      <div style={{ display: 'flex', background: '#0a0a0a', border: '1px solid #1e1e1e', borderRadius: 10, padding: 3, gap: 2, marginBottom: 20, width: 'fit-content', maxWidth: '100%' }}>
         {[['past', 'Past'], ['today', `Today${todayCount > 0 ? ` (${todayCount})` : ''}`], ['upcoming', 'Upcoming']].map(([key, label]) => (
           <button
             key={key}
@@ -196,6 +206,7 @@ export default function ClassesPage() {
             const isFull = s.enrolled_count >= s.capacity
             const enrollPct = s.capacity > 0 ? Math.min(100, (s.enrolled_count / s.capacity) * 100) : 0
             const barColor = isFull ? 'var(--lime)' : enrollPct > 75 ? 'var(--amber)' : 'var(--lav)'
+            const isCover = s.is_cover || s.substitute_instructor != null
             const dayLabel = DAYS[s.day_of_week]
             const dateNum = classDate.getDate()
             const monthLabel = MONTHS[classDate.getMonth()]
@@ -204,12 +215,10 @@ export default function ClassesPage() {
               <div
                 key={s.id}
                 style={{
-                  display: 'flex',
-                  alignItems: 'stretch',
+                  display: 'flex', alignItems: 'stretch',
                   background: '#111',
                   border: `1px solid ${isToday ? 'rgba(204,255,0,0.25)' : '#1e1e1e'}`,
-                  borderRadius: 14,
-                  overflow: 'hidden',
+                  borderRadius: 14, overflow: 'hidden',
                   opacity: isPast && !isToday ? 0.6 : 1,
                 }}
               >
@@ -229,6 +238,9 @@ export default function ClassesPage() {
                     <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15 }}>{s.name}</div>
                     {isToday && (
                       <span style={{ background: 'rgba(204,255,0,0.12)', color: 'var(--lime)', borderRadius: 6, fontSize: 10, fontWeight: 700, padding: '2px 7px', letterSpacing: '0.4px' }}>TODAY</span>
+                    )}
+                    {isCover && (
+                      <span style={{ background: 'rgba(255,170,0,0.1)', color: '#ffaa00', borderRadius: 6, fontSize: 10, fontWeight: 700, padding: '2px 7px' }}>COVER</span>
                     )}
                     {isFull && (
                       <span style={{ background: 'rgba(204,255,0,0.08)', color: 'var(--lime)', borderRadius: 6, fontSize: 10, fontWeight: 700, padding: '2px 7px' }}>FULL</span>
@@ -274,6 +286,154 @@ export default function ClassesPage() {
       )}
 
       {coverModal && <CoverModal session={coverModal} onClose={() => setCoverModal(null)} />}
+    </div>
+  )
+}
+
+// ── All Classes tab ────────────────────────────────────────────────────────────
+
+function AllClassesTab() {
+  const [showUpcoming, setShowUpcoming] = useState(false)
+  const today = todayStr()
+  const upcoming7 = sevenDaysStr()
+
+  // We always fetch today; upcoming is gated on toggle
+  const { data: todayData, loading: todayLoading } = useApi(
+    () => classes.occurrences({ date: today }),
+    [today]
+  )
+  const { data: upcomingData, loading: upcomingLoading } = useApi(
+    () => showUpcoming ? classes.occurrences({ date_after: today, date_before: upcoming7 }) : null,
+    [showUpcoming, today]
+  )
+
+  const loading = showUpcoming ? upcomingLoading : todayLoading
+  const rawOccs = showUpcoming
+    ? (upcomingData?.results ?? upcomingData ?? [])
+    : (todayData?.results ?? todayData ?? [])
+
+  const occs = [...rawOccs].sort((a, b) => {
+    if (a.date !== b.date) return (a.date || '').localeCompare(b.date || '')
+    return (a.start_time || '').localeCompare(b.start_time || '')
+  })
+
+  return (
+    <div>
+      {/* Today / Next 7 days toggle */}
+      <div style={{ display: 'flex', background: '#0a0a0a', border: '1px solid #1e1e1e', borderRadius: 10, padding: 3, gap: 2, marginBottom: 20, width: 'fit-content', maxWidth: '100%' }}>
+        {[['today', 'Today'], ['upcoming', 'Next 7 Days']].map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setShowUpcoming(key === 'upcoming')}
+            style={{
+              padding: '7px 18px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 600,
+              cursor: 'pointer', transition: 'all 0.15s',
+              background: (key === 'upcoming') === showUpcoming ? '#222' : 'transparent',
+              color: (key === 'upcoming') === showUpcoming ? '#fff' : 'var(--grey)',
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>
+      ) : occs.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--grey)', fontSize: 13 }}>
+          {showUpcoming ? 'No classes in the next 7 days.' : 'No classes today.'}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {occs.map(occ => {
+            const isOwn = occ.is_mine || occ.instructor_is_me
+            const name = occ.session_name || occ.session_detail?.name || occ.name || 'Class'
+            const instructorName = occ.instructor_detail?.display_name
+              || occ.instructor_name
+              || occ.session_detail?.instructor_detail?.display_name
+              || null
+            const studioName = occ.studio_name || occ.session_detail?.studio_detail?.name || null
+            const enrolled = occ.enrolled_count ?? null
+            const capacity = occ.capacity ?? occ.session_detail?.capacity ?? null
+
+            return (
+              <div
+                key={occ.id}
+                style={{
+                  display: 'flex', alignItems: 'stretch',
+                  background: '#111',
+                  border: `1px solid ${isOwn ? 'rgba(204,255,0,0.2)' : '#1e1e1e'}`,
+                  borderRadius: 14, overflow: 'hidden',
+                }}
+              >
+                {/* Left accent — lime for own classes */}
+                <div style={{ width: 4, flexShrink: 0, background: isOwn ? 'var(--lime)' : '#1e1e1e' }} />
+
+                <div style={{ flex: 1, minWidth: 0, padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15 }}>{name}</div>
+                    {isOwn && (
+                      <span style={{ background: 'rgba(204,255,0,0.12)', color: 'var(--lime)', borderRadius: 6, fontSize: 10, fontWeight: 700, padding: '2px 7px', letterSpacing: '0.4px' }}>YOURS</span>
+                    )}
+                    {enrolled != null && capacity != null && enrolled >= capacity && (
+                      <span style={{ background: 'rgba(204,255,0,0.08)', color: 'var(--lime)', borderRadius: 6, fontSize: 10, fontWeight: 700, padding: '2px 7px' }}>FULL</span>
+                    )}
+                  </div>
+
+                  <div style={{ fontSize: 12, color: 'var(--grey)' }}>
+                    {occ.start_time ? fmt12(occ.start_time) : ''}
+                    {occ.end_time ? ` – ${fmt12(occ.end_time)}` : ''}
+                    {studioName && <span style={{ marginLeft: 8, color: '#444' }}>· {studioName}</span>}
+                    {instructorName && <span style={{ marginLeft: 8, color: '#555' }}>· {instructorName}</span>}
+                    {enrolled != null && <span style={{ marginLeft: 8, color: '#555' }}>· {enrolled}{capacity != null ? `/${capacity}` : ''} enrolled</span>}
+                  </div>
+
+                  {showUpcoming && occ.date && (
+                    <div style={{ fontSize: 11, color: '#444', marginTop: 4 }}>
+                      {new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Main page ──────────────────────────────────────────────────────────────────
+
+export default function ClassesPage() {
+  const [activeTab, setActiveTab] = useState('mine')
+
+  return (
+    <div>
+      {/* Page heading */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>My Classes</div>
+      </div>
+
+      {/* Tab strip */}
+      <div style={{ display: 'flex', background: '#0a0a0a', border: '1px solid #1e1e1e', borderRadius: 10, padding: 3, gap: 2, marginBottom: 24, width: 'fit-content', maxWidth: '100%' }}>
+        {[['mine', 'My Classes'], ['all', 'All Classes']].map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setActiveTab(key)}
+            style={{
+              padding: '7px 22px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 600,
+              cursor: 'pointer', transition: 'all 0.15s',
+              background: activeTab === key ? '#222' : 'transparent',
+              color: activeTab === key ? '#fff' : 'var(--grey)',
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'mine' ? <MyClassesTab /> : <AllClassesTab />}
     </div>
   )
 }
