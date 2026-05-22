@@ -672,12 +672,14 @@ class StudentTrialEnrolView(APIView):
                 created_by=None,
             )
         elif payment_method == 'cash':
+            cash_promised_date = request.data.get('cash_promised_date') or None
             Payment.objects.create(
                 student=request.user,
                 payment_type=Payment.PaymentType.CHARGE,
                 amount=Decimal(str(remaining)),
                 description=f'Season enrolment — {session_name} (pay at studio)',
                 created_by=None,
+                cash_promised_date=cash_promised_date,
             )
 
         Notification.objects.create(

@@ -18,8 +18,9 @@ class PaymentSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'student', 'student_name', 'payment_type', 'amount', 'description',
             'reference', 'created_by', 'created_by_name', 'created_at',
+            'cash_promised_date', 'cash_received', 'cash_reminder_sent_at', 'cash_auto_charge_at',
         )
-        read_only_fields = ('id', 'created_by', 'created_at')
+        read_only_fields = ('id', 'created_by', 'created_at', 'cash_reminder_sent_at', 'cash_auto_charge_at')
 
 
 class PaymentPlanInstalmentSerializer(serializers.ModelSerializer):

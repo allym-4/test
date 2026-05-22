@@ -35,6 +35,8 @@ urlpatterns = [
     path('promo-codes/<int:pk>/', views.PromoCodeDetailView.as_view(), name='promo-code-detail'),
 
     path('chase/', views.PaymentChaseListCreateView.as_view(), name='payment-chase'),
+    path('cash-promises/', views.OverdueCashPromisesView.as_view(), name='cash-promises'),
+    path('cash-promises/<int:pk>/action/', views.CashPromiseView.as_view(), name='cash-promise-action'),
 
     path('cancellation-offers/', views.CancellationOfferListView.as_view(), name='cancellation-offer-list'),
     path('cancellation-offers/mine/', views.MyCancellationOffersView.as_view(), name='cancellation-offer-mine'),

@@ -21,6 +21,12 @@ class Payment(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # Cash promise tracking
+    cash_promised_date = models.DateField(null=True, blank=True)
+    cash_received = models.BooleanField(default=False)
+    cash_reminder_sent_at = models.DateTimeField(null=True, blank=True)
+    cash_auto_charge_at = models.DateTimeField(null=True, blank=True)
+
     class Meta:
         ordering = ['-created_at']
 

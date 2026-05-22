@@ -608,6 +608,28 @@ class DashboardStatsView(APIView):
         # Active student count
         active_student_count = User.objects.filter(role='student', is_active=True).count()
 
+        # Overdue cash promises
+        from datetime import date as _date
+        overdue_cash = Payment.objects.filter(
+            payment_type='charge',
+            cash_promised_date__lte=_date.today(),
+            cash_promised_date__isnull=False,
+            cash_received=False,
+        ).select_related('student').order_by('cash_promised_date')
+        overdue_cash_list = [
+            {
+                'id': p.id,
+                'student_id': p.student_id,
+                'student_name': p.student.display_name,
+                'amount': float(p.amount),
+                'description': p.description,
+                'cash_promised_date': str(p.cash_promised_date),
+                'reminder_sent': bool(p.cash_reminder_sent_at),
+                'auto_charge_at': p.cash_auto_charge_at.isoformat() if p.cash_auto_charge_at else None,
+            }
+            for p in overdue_cash
+        ]
+
         return Response({
             'today_revenue': float(today_revenue),
             'week_bookings': week_bookings,
@@ -616,6 +638,7 @@ class DashboardStatsView(APIView):
             'outstanding_balance': sum(b['owing'] for b in overdue_balances),
             'pending_plans_count': pending_plans_count,
             'active_student_count': active_student_count,
+            'overdue_cash_promises': overdue_cash_list,
         })
 
 
@@ -694,3 +717,99 @@ class PaymentChaseListCreateView(generics.ListCreateAPIView):
             'step_label': chase.get_step_display(),
             'locked_account': chase.locked_account,
         }, status=201)
+
+
+class CashPromiseView(APIView):
+    """Admin: mark cash received or send the 24h reminder email."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        from .models import Payment
+        from django.utils import timezone
+        import datetime
+
+        try:
+            charge = Payment.objects.get(pk=pk, payment_type='charge', cash_promised_date__isnull=False)
+        except Payment.DoesNotExist:
+            return Response({'detail': 'Cash charge not found.'}, status=404)
+
+        action = request.data.get('action')  # 'received' or 'remind'
+
+        if action == 'received':
+            # Record cash received — create matching payment and mark resolved
+            Payment.objects.create(
+                student=charge.student,
+                payment_type=Payment.PaymentType.PAYMENT,
+                amount=charge.amount,
+                description=f'Cash received — {charge.description}',
+                reference='cash',
+                created_by=request.user,
+            )
+            charge.cash_received = True
+            charge.save(update_fields=['cash_received'])
+            return Response({'status': 'received'})
+
+        elif action == 'remind':
+            # Send reminder email, set 24h auto-charge timer
+            from apps.emails.utils import send_branded_email
+            first = charge.student.first_name or 'there'
+            amt = f'${charge.amount:.2f}'
+            auto_charge_at = timezone.now() + datetime.timedelta(hours=24)
+            charge.cash_reminder_sent_at = timezone.now()
+            charge.cash_auto_charge_at = auto_charge_at
+            charge.save(update_fields=['cash_reminder_sent_at', 'cash_auto_charge_at'])
+
+            if charge.student.email:
+                try:
+                    send_branded_email(
+                        to_email=charge.student.email,
+                        subject='Payment reminder — cash not received',
+                        template_name='payment_received',
+                        context={
+                            'first_name': first,
+                            'amount': str(charge.amount),
+                            'description': charge.description,
+                            'plain_text': (
+                                f"Hi {first}, we haven't received your cash payment of {amt} for {charge.description}. "
+                                f"If this isn't resolved, your card on file will be automatically charged in 24 hours. "
+                                f"Please contact us if you have any questions. — Duality Pole"
+                            ),
+                        },
+                    )
+                except Exception:
+                    pass
+
+            return Response({'status': 'reminded', 'auto_charge_at': auto_charge_at.isoformat()})
+
+        return Response({'detail': 'action must be received or remind.'}, status=400)
+
+
+class OverdueCashPromisesView(APIView):
+    """Admin: list all overdue cash promises (promised date passed, not received, reminder not yet sent)."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def get(self, request):
+        from .models import Payment
+        from datetime import date
+        overdue = Payment.objects.filter(
+            payment_type='charge',
+            cash_promised_date__lte=date.today(),
+            cash_promised_date__isnull=False,
+            cash_received=False,
+        ).select_related('student').order_by('cash_promised_date')
+
+        data = [
+            {
+                'id': p.id,
+                'student_id': p.student_id,
+                'student_name': p.student.display_name,
+                'amount': float(p.amount),
+                'description': p.description,
+                'cash_promised_date': str(p.cash_promised_date),
+                'reminder_sent': bool(p.cash_reminder_sent_at),
+                'reminder_sent_at': p.cash_reminder_sent_at.isoformat() if p.cash_reminder_sent_at else None,
+                'auto_charge_at': p.cash_auto_charge_at.isoformat() if p.cash_auto_charge_at else None,
+            }
+            for p in overdue
+        ]
+        return Response(data)
