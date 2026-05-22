@@ -39,12 +39,14 @@ class ClassSessionListView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         qs = ClassSession.objects.select_related('instructor', 'studio')
-        if self.request.user.role == 'instructor':
+        season_id = self.request.query_params.get('season')
+        # Only restrict to own sessions when no season filter — instructors
+        # need to see the full timetable when picking a transfer target
+        if self.request.user.role == 'instructor' and not season_id:
             qs = qs.filter(instructor=self.request.user)
         active_only = self.request.query_params.get('active')
         if active_only == 'true':
             qs = qs.filter(is_active=True)
-        season_id = self.request.query_params.get('season')
         if season_id:
             qs = qs.filter(season_id=season_id)
         return qs
