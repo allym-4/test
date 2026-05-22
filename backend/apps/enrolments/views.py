@@ -1063,3 +1063,54 @@ class ClassChangeRequestRejectView(APIView):
             )
 
         return Response(ClassChangeRequestSerializer(change_request).data)
+
+
+class WaitlistReorderView(APIView):
+    """Admin: reorder season waitlist for a class session."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request):
+        ordered_ids = request.data.get('ordered_ids', [])
+        if not ordered_ids:
+            return Response({'detail': 'ordered_ids is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        for position, enrolment_id in enumerate(ordered_ids, start=1):
+            Enrolment.objects.filter(pk=enrolment_id, status='waitlisted').update(waitlist_position=position)
+        return Response({'status': 'ok'})
+
+
+class AdminPromoteSeasonWaitlistView(APIView):
+    """Admin: promote a waitlisted season enrolment to active, with optional capacity override."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        enrolment = get_object_or_404(Enrolment, pk=pk, status='waitlisted')
+        override = request.data.get('override_capacity', False)
+
+        session = enrolment.class_session
+        active_count = Enrolment.objects.filter(class_session=session, status='active').count()
+        capacity = getattr(session, 'capacity', None)
+
+        if not override and capacity and active_count >= capacity:
+            return Response({
+                'detail': 'Class is at capacity.',
+                'current': active_count,
+                'capacity': capacity,
+                'requires_override': True,
+            }, status=status.HTTP_409_CONFLICT)
+
+        enrolment.status = 'active'
+        enrolment.waitlist_offered_at = None
+        enrolment.waitlist_expires_at = None
+        enrolment.waitlist_urgent = False
+        enrolment.waitlist_position = None
+        enrolment.save(update_fields=['status', 'waitlist_offered_at', 'waitlist_expires_at', 'waitlist_urgent', 'waitlist_position'])
+
+        from apps.users.models import Notification
+        Notification.objects.create(
+            recipient=enrolment.student,
+            title=f"You're in! — {session.name}",
+            body=f"A spot opened up in {session.name} and you've been promoted from the waitlist. You're now enrolled!",
+            notification_type='success',
+        )
+
+        return Response(EnrolmentSerializer(enrolment).data)

@@ -1383,3 +1383,80 @@ class MyUpcomingClassesView(APIView):
         # Sort all items by date then time
         items.sort(key=lambda x: (x['date'], x['start_time'] or ''))
         return Response(items)
+
+
+class AdminCasualWaitlistView(generics.ListAPIView):
+    """Admin: all waitlisted casual/catchup/trial CasualBooking records."""
+    permission_classes = [IsAdminOrInstructor]
+    serializer_class = CasualBookingSerializer
+
+    def get_queryset(self):
+        return CasualBooking.objects.filter(
+            status='waitlisted',
+        ).select_related(
+            'student', 'occurrence__session__studio', 'occurrence__session__instructor',
+        ).order_by('occurrence__date', 'created_at')
+
+    def list(self, request, *args, **kwargs):
+        qs = self.get_queryset()
+        result = []
+        for booking in qs:
+            occ = booking.occurrence
+            s = occ.session
+            result.append({
+                'id': booking.id,
+                'occurrence_id': occ.id,
+                'occurrence_date': str(occ.date),
+                'session_id': s.id,
+                'session_name': s.name,
+                'start_time': str(s.start_time)[:5] if s.start_time else None,
+                'studio_name': s.studio.name if s.studio else None,
+                'instructor_name': s.instructor.display_name if s.instructor else None,
+                'session_capacity': s.capacity,
+                'confirmed_count': occ.casual_bookings.filter(status='confirmed').count(),
+                'student_id': booking.student_id,
+                'student_name': booking.student.display_name,
+                'student_email': booking.student.email,
+                'enrolment_type': booking.enrolment_type,
+                'status': booking.status,
+                'created_at': booking.created_at.isoformat() if booking.created_at else None,
+                'waitlist_offered_at': booking.waitlist_offered_at.isoformat() if booking.waitlist_offered_at else None,
+                'waitlist_expires_at': booking.waitlist_expires_at.isoformat() if booking.waitlist_expires_at else None,
+            })
+        return Response(result)
+
+
+class AdminPromoteCasualWaitlistView(APIView):
+    """Admin: promote a waitlisted casual booking to confirmed, with optional capacity override."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        booking = get_object_or_404(CasualBooking, pk=pk, status='waitlisted')
+        override = request.data.get('override_capacity', False)
+
+        occ = booking.occurrence
+        confirmed_count = occ.casual_bookings.filter(status='confirmed').count()
+        capacity = occ.session.capacity
+
+        if not override and confirmed_count >= capacity:
+            return Response({
+                'detail': 'Class is at capacity.',
+                'current': confirmed_count,
+                'capacity': capacity,
+                'requires_override': True,
+            }, status=status.HTTP_409_CONFLICT)
+
+        booking.status = 'confirmed'
+        booking.waitlist_offered_at = None
+        booking.waitlist_expires_at = None
+        booking.save(update_fields=['status', 'waitlist_offered_at', 'waitlist_expires_at'])
+
+        from apps.users.models import Notification
+        Notification.objects.create(
+            recipient=booking.student,
+            title=f"Spot confirmed — {occ.session.name}",
+            body=f"Great news! You've been moved from the waitlist to confirmed for {occ.session.name} on {occ.date.strftime('%d %b')}.",
+            notification_type='success',
+        )
+
+        return Response({'status': 'ok', 'id': booking.id})

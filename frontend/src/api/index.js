@@ -106,6 +106,12 @@ export const enrolments = {
     approve: (id, data) => client.post(`/api/enrolments/change-requests/${id}/approve/`, data),
     reject: (id, data) => client.post(`/api/enrolments/change-requests/${id}/reject/`, data),
   },
+  waitlist: {
+    reorder: (data) => client.post('/api/enrolments/waitlist-reorder/', data),
+    promote: (id, data) => client.post(`/api/enrolments/${id}/promote-waitlist/`, data),
+    casualList: () => client.get('/api/classes/casual-bookings/admin-waitlist/'),
+    casualPromote: (id, data) => client.post(`/api/classes/casual-bookings/${id}/admin-promote/`, data),
+  },
 }
 
 export const payments = {
