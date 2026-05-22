@@ -80,5 +80,6 @@ urlpatterns = [
 
 leads_urlpatterns = [
     path('', views.LeadListView.as_view(), name='lead-list'),
+    path('public/', views.PublicLeadCreateView.as_view(), name='lead-public-create'),
     path('<int:pk>/', views.LeadDetailView.as_view(), name='lead-detail'),
 ]

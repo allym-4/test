@@ -85,6 +85,7 @@ import InstructorNotifications from './pages/InstructorNotifications'
 
 // Login
 import LoginPage from './pages/LoginPage'
+import EnquirePage from './pages/EnquirePage'
 
 function Spinner() {
   return (
@@ -140,6 +141,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/enquire" element={<EnquirePage />} />
 
           {/* Instructor routes */}
           <Route path="/" element={<RequireAuth role="instructor"><Shell /></RequireAuth>}>

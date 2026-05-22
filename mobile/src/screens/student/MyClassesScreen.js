@@ -871,11 +871,19 @@ function CurrentTab({
   )
 }
 
-function ClassItem({ item, cancellationWindowHours, cancellingAway, markingAway, onMarkAway, onCancelAway, onCancelEnrolment, onCancelCasual }) {
+function ClassItem({ item, cancellationWindowHours, noShowFee, cancellingAway, markingAway, onMarkAway, onCancelAway, onCancelEnrolment, onCancelCasual }) {
   const timeStr = item.time ? item.time.slice(0, 5) : null
   const isEnrolled = item.type === 'enrolled'
   const isCatchup = item.type === 'catchup'
   const isCasual = item.type === 'casual'
+
+  const windowHours = cancellationWindowHours || 4
+  const feeLabel = noShowFee ? `$${parseFloat(noShowFee).toFixed(0)}` : '$20'
+  let withinWindow = false
+  if (item.date && item.time) {
+    const classAt = new Date(`${item.date}T${item.time}`)
+    withinWindow = (classAt - new Date()) / 3600000 < windowHours && (classAt - new Date()) > 0
+  }
 
   return (
     <View style={ct.classCard}>
@@ -940,6 +948,15 @@ function ClassItem({ item, cancellationWindowHours, cancellingAway, markingAway,
           <Text style={ct.cancelEnrolText}>Cancel enrolment</Text>
         </TouchableOpacity>
       )}
+
+      {/* No-show fee warning when within cancellation window */}
+      {isEnrolled && !item.isAway && withinWindow && (
+        <View style={ct.noShowWarning}>
+          <Text style={ct.noShowWarningText}>
+            Cancellation window has passed — if you don't attend or mark away, a {feeLabel} no-show fee applies.
+          </Text>
+        </View>
+      )}
     </View>
   )
 }
@@ -966,6 +983,8 @@ const ct = StyleSheet.create({
   cancelCasualText: { fontSize: 12, color: '#ef4444', fontWeight: '600', paddingTop: 4 },
   cancelEnrolLink: { marginTop: 6, alignSelf: 'flex-start' },
   cancelEnrolText: { fontSize: 12, color: '#444' },
+  noShowWarning: { marginTop: 10, backgroundColor: 'rgba(239,68,68,0.07)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)', borderRadius: 8, padding: 10 },
+  noShowWarningText: { fontSize: 12, color: '#ef4444', lineHeight: 18 },
   displacedCard: { backgroundColor: 'rgba(255,170,0,0.05)', borderWidth: 2, borderColor: 'rgba(255,170,0,0.3)', borderRadius: 14, padding: 14, marginBottom: 8 },
   displacedTitle: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 2 },
   displacedMeta: { fontSize: 12, color: '#888', marginBottom: 8 },

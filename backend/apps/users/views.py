@@ -250,6 +250,14 @@ class LeadDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAdminOrInstructor]
 
 
+class PublicLeadCreateView(generics.CreateAPIView):
+    serializer_class = LeadSerializer
+    permission_classes = [AllowAny]
+
+    def perform_create(self, serializer):
+        serializer.save(status='new')
+
+
 class StudioSettingsView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':

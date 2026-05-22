@@ -11,6 +11,7 @@ import { payments } from './src/api'
 import LoginScreen from './src/screens/auth/LoginScreen'
 import RegisterScreen from './src/screens/auth/RegisterScreen'
 import OnboardingScreen from './src/screens/auth/OnboardingScreen'
+import EnquireScreen from './src/screens/EnquireScreen'
 import StudentTabs from './src/navigation/StudentTabs'
 import InstructorTabs from './src/navigation/InstructorTabs'
 
@@ -123,6 +124,7 @@ function RootNavigator() {
             <>
               <Stack.Screen name="Login" component={LoginScreen} />
               <Stack.Screen name="Register" component={RegisterScreen} />
+              <Stack.Screen name="Enquire" component={EnquireScreen} />
             </>
           ) : showInstructorView ? (
             <Stack.Screen name="InstructorApp" component={InstructorApp} />

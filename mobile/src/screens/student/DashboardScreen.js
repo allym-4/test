@@ -685,7 +685,7 @@ export default function DashboardScreen({ navigation }) {
       )}
 
       {/* Post-trial feedback modal */}
-      {!waiverRequired && trialItem && (
+      {trialItem && (
         <Modal transparent animationType="fade" visible>
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
             <View style={{ backgroundColor: '#111', borderRadius: 16, width: '100%', maxWidth: 440, padding: 24 }}>
@@ -697,6 +697,14 @@ export default function DashboardScreen({ navigation }) {
                   <Text style={{ fontSize: 14, color: '#888', textAlign: 'center', lineHeight: 22, marginBottom: 22 }}>
                     Did you love it as much as we did? Would you like to enrol in the rest of the course?
                   </Text>
+                  {waiverRequired && (
+                    <View style={{ backgroundColor: 'rgba(255,170,0,0.1)', borderWidth: 1, borderColor: 'rgba(255,170,0,0.3)', borderRadius: 10, padding: 14, marginBottom: 16 }}>
+                      <Text style={{ color: '#f59e0b', fontWeight: '700', fontSize: 14, marginBottom: 4 }}>Waiver required before enrolling</Text>
+                      <Text style={{ color: '#aaa', fontSize: 13, lineHeight: 20 }}>
+                        Please sign your studio waiver before completing enrolment. Close this and tap the waiver prompt to get that sorted.
+                      </Text>
+                    </View>
+                  )}
                   <View style={{ backgroundColor: 'rgba(219,255,0,0.06)', borderWidth: 1, borderColor: 'rgba(219,255,0,0.2)', borderRadius: 10, padding: 14, marginBottom: 20 }}>
                     <Text style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>
                       {trialItem.season_name ? `${trialItem.season_name} · ` : ''}{trialItem.session_name}
@@ -709,10 +717,11 @@ export default function DashboardScreen({ navigation }) {
                     <Text style={{ fontSize: 12, color: '#666', marginTop: 4 }}>Your trial class is credited toward the season price</Text>
                   </View>
                   <TouchableOpacity
-                    style={{ backgroundColor: '#DBFF00', borderRadius: 10, padding: 16, alignItems: 'center', marginBottom: 10 }}
-                    onPress={() => setTrialScreen('payment')}
+                    style={{ backgroundColor: waiverRequired ? '#444' : '#DBFF00', borderRadius: 10, padding: 16, alignItems: 'center', marginBottom: 10, opacity: waiverRequired ? 0.6 : 1 }}
+                    onPress={() => !waiverRequired && setTrialScreen('payment')}
+                    disabled={waiverRequired}
                   >
-                    <Text style={{ color: '#000', fontWeight: '700', fontSize: 15 }}>Yes — enrol now · ${trialItem.enrol_price}</Text>
+                    <Text style={{ color: waiverRequired ? '#aaa' : '#000', fontWeight: '700', fontSize: 15 }}>Yes — enrol now · ${trialItem.enrol_price}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={{ borderWidth: 1, borderColor: '#333', borderRadius: 10, padding: 14, alignItems: 'center' }}
