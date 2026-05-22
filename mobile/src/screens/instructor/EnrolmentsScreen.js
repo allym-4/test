@@ -5,7 +5,7 @@ import {
 } from 'react-native'
 import { useApi } from '../../hooks/useApi'
 import { useAuth } from '../../contexts/AuthContext'
-import { classes } from '../../api'
+import { classes, seasons as seasonsApi } from '../../api'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -25,6 +25,12 @@ function formatOccurrenceDate(dateStr) {
   return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
+function formatFullDate(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr + 'T00:00')
+  return d.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
+}
+
 function formatTime(timeStr) {
   if (!timeStr) return ''
   const [h, m] = timeStr.split(':').map(Number)
@@ -41,6 +47,58 @@ function dedupe(arr) {
     return true
   })
 }
+
+function getSeasonWeek(dateStr, seasons) {
+  if (!dateStr || !seasons?.length) return null
+  const date = new Date(dateStr + 'T00:00')
+  // Sort seasons newest first so most recent match wins
+  const sorted = [...seasons].sort((a, b) => (b.start_date ?? '').localeCompare(a.start_date ?? ''))
+  for (const season of sorted) {
+    if (!season.start_date) continue
+    const start = new Date(season.start_date + 'T00:00')
+    const end = season.end_date ? new Date(season.end_date + 'T00:00') : null
+    if (date >= start && (!end || date <= end)) {
+      const weekNum = Math.floor((date - start) / (7 * 24 * 60 * 60 * 1000)) + 1
+      return { seasonName: season.name ?? 'Season', weekNum }
+    }
+  }
+  return null
+}
+
+function weekGroupKey(dateStr, seasons) {
+  const sw = getSeasonWeek(dateStr, seasons)
+  if (!sw) return `date:${dateStr}`
+  return `${sw.seasonName}||${sw.weekNum}`
+}
+
+function weekGroupLabel(dateStr, seasons) {
+  const sw = getSeasonWeek(dateStr, seasons)
+  if (!sw) return formatOccurrenceDate(dateStr)
+  return `${sw.seasonName} — Week ${sw.weekNum}`
+}
+
+function dayGroupLabel(dateStr, seasons) {
+  const sw = getSeasonWeek(dateStr, seasons)
+  const dayStr = formatFullDate(dateStr)
+  if (!sw) return dayStr
+  return `${dayStr} — Week ${sw.weekNum}, ${sw.seasonName}`
+}
+
+// Build a mixed header+item array for FlatList
+function groupOccurrences(occs, keyFn, labelFn) {
+  const groups = []
+  const seen = new Map()
+  for (const occ of occs) {
+    const key = keyFn(occ.date)
+    if (!seen.has(key)) {
+      seen.set(key, true)
+      groups.push({ _type: 'header', key, label: labelFn(occ.date) })
+    }
+    groups.push({ _type: 'item', occ })
+  }
+  return groups
+}
+
 
 // ── My Classes occurrence card ─────────────────────────────────────────────────
 
@@ -82,9 +140,9 @@ function MyOccurrenceCard({ occ, isCover, onPress }) {
   )
 }
 
-// ── All Classes occurrence card (read-only) ───────────────────────────────────
+// ── All Classes occurrence card ───────────────────────────────────────────────
 
-function AllOccurrenceCard({ occ, isOwn }) {
+function AllOccurrenceCard({ occ, isOwn, onPress }) {
   const name = occ.class_session?.name ?? occ.session_name ?? occ.session_detail?.name ?? occ.name ?? 'Class'
   const studio = occ.studio?.name ?? occ.studio_name ?? occ.session_detail?.studio_detail?.name ?? null
   const enrolled = occ.enrolled_count ?? occ.enrolment_count ?? null
@@ -99,7 +157,7 @@ function AllOccurrenceCard({ occ, isOwn }) {
     : null
 
   return (
-    <View style={[s.allCard, isOwn && s.allCardOwn]}>
+    <TouchableOpacity style={[s.allCard, isOwn && s.allCardOwn]} onPress={onPress} activeOpacity={0.75}>
       {isOwn && <View style={s.ownAccent} />}
       <View style={s.allCardBody}>
         <View style={s.allCardTop}>
@@ -121,7 +179,7 @@ function AllOccurrenceCard({ occ, isOwn }) {
           {instructorName ? <Text style={s.occMetaText}>{instructorName}</Text> : null}
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   )
 }
 
@@ -140,36 +198,43 @@ function MyClassesTab({ navigation, currentUserId }) {
     () => classes.occurrences({ instructor: 'me' }),
     []
   )
-
   const { data: subOccData, loading: subLoading, refetch: refetchSub } = useApi(
-    () => currentUserId
-      ? classes.occurrences({ substitute_instructor: currentUserId })
-      : null,
+    () => currentUserId ? classes.occurrences({ substitute_instructor: currentUserId }) : null,
     [currentUserId]
   )
+  const { data: seasonsData } = useApi(() => seasonsApi.list(), [])
+  const seasonsList = seasonsData?.results ?? seasonsData ?? []
 
   const loading = myLoading || subLoading
 
-  function refetch() {
-    refetchMy()
-    refetchSub()
-  }
+  function refetch() { refetchMy(); refetchSub() }
 
   const myOccs = myOccData?.results ?? myOccData ?? []
   const subOccs = subOccData?.results ?? subOccData ?? []
   const subIds = new Set(subOccs.map(o => o.id))
-
   const allOccs = useMemo(() => dedupe([...myOccs, ...subOccs]), [myOccs, subOccs])
 
   const today = todayStr()
-  const filtered = allOccs.filter(occ => {
-    const d = occ.date
-    if (!d) return false
-    if (filter === 'past')     return d < today
-    if (filter === 'today')    return d === today
-    if (filter === 'upcoming') return d > today
-    return false
-  })
+  const filtered = allOccs
+    .filter(occ => {
+      const d = occ.date
+      if (!d) return false
+      if (filter === 'past')     return d < today
+      if (filter === 'today')    return d === today
+      if (filter === 'upcoming') return d > today
+      return false
+    })
+    .sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.start_time || '').localeCompare(b.start_time || ''))
+
+  // For upcoming, group by season+week; otherwise flat
+  const listData = useMemo(() => {
+    if (filter !== 'upcoming' || !filtered.length) return filtered
+    return groupOccurrences(
+      filtered,
+      date => weekGroupKey(date, seasonsList),
+      date => weekGroupLabel(date, seasonsList),
+    )
+  }, [filtered, filter, seasonsList])
 
   return (
     <View style={{ flex: 1 }}>
@@ -191,8 +256,8 @@ function MyClassesTab({ navigation, currentUserId }) {
         <ActivityIndicator style={{ marginTop: 40 }} color="#ccff00" />
       ) : (
         <FlatList
-          data={filtered}
-          keyExtractor={item => String(item.id)}
+          data={listData}
+          keyExtractor={(item, i) => item._type === 'header' ? `hdr-${item.key}` : String(item.id ?? item.occ?.id ?? i)}
           contentContainerStyle={s.list}
           refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} tintColor="#ccff00" />}
           ListEmptyComponent={
@@ -200,13 +265,19 @@ function MyClassesTab({ navigation, currentUserId }) {
               {filter === 'today' ? 'No classes today.' : filter === 'past' ? 'No past classes.' : 'No upcoming classes.'}
             </Text>
           }
-          renderItem={({ item }) => (
-            <MyOccurrenceCard
-              occ={item}
-              isCover={subIds.has(item.id)}
-              onPress={() => navigation.navigate('ClassDetail', { occurrence: item })}
-            />
-          )}
+          renderItem={({ item }) => {
+            if (item._type === 'header') {
+              return <View style={s.groupHeader}><Text style={s.groupHeaderText}>{item.label}</Text></View>
+            }
+            const occ = item.occ ?? item
+            return (
+              <MyOccurrenceCard
+                occ={occ}
+                isCover={subIds.has(occ.id)}
+                onPress={() => navigation.navigate('ClassDetail', { occurrence: occ })}
+              />
+            )
+          }}
         />
       )}
     </View>
@@ -215,39 +286,44 @@ function MyClassesTab({ navigation, currentUserId }) {
 
 // ── All Classes tab ────────────────────────────────────────────────────────────
 
-function AllClassesTab({ currentUserId }) {
+function AllClassesTab({ currentUserId, navigation }) {
   const [showUpcoming, setShowUpcoming] = useState(false)
   const today = todayStr()
   const upcoming7 = sevenDaysFromNow()
 
   const { data: todayData, loading: todayLoading, refetch: refetchToday } = useApi(
-    () => classes.occurrences({ date: today }),
-    [today]
+    () => classes.occurrences({ date: today }), [today]
   )
-
   const { data: upcomingData, loading: upcomingLoading, refetch: refetchUpcoming } = useApi(
     () => showUpcoming ? classes.occurrences({ date_after: today, date_before: upcoming7 }) : null,
     [showUpcoming, today]
   )
+  const { data: seasonsData } = useApi(() => seasonsApi.list(), [])
+  const seasonsList = seasonsData?.results ?? seasonsData ?? []
 
   const loading = showUpcoming ? upcomingLoading : todayLoading
   const rawOccs = showUpcoming
     ? (upcomingData?.results ?? upcomingData ?? [])
     : (todayData?.results ?? todayData ?? [])
 
-  // Sort by date then time
-  const occs = [...rawOccs].sort((a, b) => {
-    if (a.date !== b.date) return (a.date || '').localeCompare(b.date || '')
-    return (a.start_time || '').localeCompare(b.start_time || '')
-  })
+  const occs = [...rawOccs].sort((a, b) =>
+    (a.date || '').localeCompare(b.date || '') || (a.start_time || '').localeCompare(b.start_time || '')
+  )
 
-  function refetch() {
-    if (showUpcoming) refetchUpcoming(); else refetchToday()
-  }
+  // For next 7 days, group by date with week/season header
+  const listData = useMemo(() => {
+    if (!showUpcoming || !occs.length) return occs
+    return groupOccurrences(
+      occs,
+      date => date,
+      date => dayGroupLabel(date, seasonsList),
+    )
+  }, [occs, showUpcoming, seasonsList])
+
+  function refetch() { if (showUpcoming) refetchUpcoming(); else refetchToday() }
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Toggle: Today / Upcoming */}
       <View style={s.subToggleRow}>
         <TouchableOpacity
           style={[s.subToggleBtn, !showUpcoming && s.subToggleBtnActive]}
@@ -267,8 +343,8 @@ function AllClassesTab({ currentUserId }) {
         <ActivityIndicator style={{ marginTop: 40 }} color="#ccff00" />
       ) : (
         <FlatList
-          data={occs}
-          keyExtractor={item => String(item.id)}
+          data={listData}
+          keyExtractor={(item, i) => item._type === 'header' ? `hdr-${item.key}` : String(item.id ?? item.occ?.id ?? i)}
           contentContainerStyle={s.list}
           refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} tintColor="#ccff00" />}
           ListEmptyComponent={
@@ -277,12 +353,22 @@ function AllClassesTab({ currentUserId }) {
             </Text>
           }
           renderItem={({ item }) => {
+            if (item._type === 'header') {
+              return <View style={s.groupHeader}><Text style={s.groupHeaderText}>{item.label}</Text></View>
+            }
+            const occ = item.occ ?? item
             const isOwn = (
-              item.instructor === currentUserId ||
-              item.instructor_detail?.id === currentUserId ||
-              item.substitute_instructor === currentUserId
+              occ.instructor === currentUserId ||
+              occ.instructor_detail?.id === currentUserId ||
+              occ.substitute_instructor === currentUserId
             )
-            return <AllOccurrenceCard occ={item} isOwn={isOwn} />
+            return (
+              <AllOccurrenceCard
+                occ={occ}
+                isOwn={isOwn}
+                onPress={() => navigation?.navigate('ClassDetail', { occurrence: occ })}
+              />
+            )
           }}
         />
       )}
@@ -323,7 +409,7 @@ export default function EnrolmentsScreen({ navigation }) {
 
       {activeTab === 'mine'
         ? <MyClassesTab navigation={navigation} currentUserId={currentUserId} />
-        : <AllClassesTab currentUserId={currentUserId} />
+        : <AllClassesTab navigation={navigation} currentUserId={currentUserId} />
       }
     </View>
   )
@@ -371,4 +457,8 @@ const s = StyleSheet.create({
   allCardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
   ownBadge: { backgroundColor: 'rgba(204,255,0,0.12)', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 },
   ownBadgeText: { fontSize: 10, fontWeight: '700', color: '#ccff00' },
+
+  // Group headers
+  groupHeader: { paddingTop: 20, paddingBottom: 8, paddingHorizontal: 2 },
+  groupHeaderText: { fontSize: 12, fontWeight: '700', color: '#555', textTransform: 'uppercase', letterSpacing: 0.7 },
 })
