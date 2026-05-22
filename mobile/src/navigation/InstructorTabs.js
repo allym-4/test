@@ -16,6 +16,7 @@ import PayScreen from '../screens/instructor/PayScreen'
 import NotificationsScreen from '../screens/instructor/NotificationsScreen'
 import StudentDetailScreen from '../screens/instructor/StudentDetailScreen'
 import ClassDetailScreen from '../screens/instructor/ClassDetailScreen'
+import AssistantScreen from '../screens/instructor/AssistantScreen'
 
 const Tab = createBottomTabNavigator()
 const HomeStackNav = createNativeStackNavigator()
@@ -30,7 +31,7 @@ const ICONS = {
   HomeTab: '🏠',
   MyClassesTab: '📅',
   StudentsTab: '👥',
-  ProgressTab: '📝',
+  AssistantTab: '🤖',
   MessagesTab: '💬',
 }
 
@@ -122,7 +123,7 @@ export default function InstructorTabs({ onSwitchToStudent }) {
         <Tab.Screen name="HomeTab" component={HomeStack} options={{ title: 'Home' }} />
         <Tab.Screen name="MyClassesTab" component={MyClassesStack} options={{ title: 'My Classes' }} />
         <Tab.Screen name="StudentsTab" component={StudentsStack} options={{ title: 'Students' }} />
-        <Tab.Screen name="ProgressTab" component={ProgressStack} options={{ title: 'Progress' }} />
+        <Tab.Screen name="AssistantTab" component={AssistantScreen} options={{ title: 'Assistant', headerShown: false }} />
         <Tab.Screen name="MessagesTab" component={MessagesStack} options={{ title: 'Messages' }} />
       </Tab.Navigator>
     </InstructorSwitchContext.Provider>
