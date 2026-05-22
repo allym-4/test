@@ -53,14 +53,46 @@ function SubmissionCard({ item }) {
   )
 }
 
-function SkillPendingCard({ item }) {
+function SkillPendingCard({ item, onRefresh }) {
+  const studentId = item.student_id
   const studentName = item.student_name || item.user?.display_name || 'Student'
-  const skillName = item.skill_name || item.skill?.name || 'Skill'
+  const skills = item.skills ?? []
+
+  async function handleApprove(skillName) {
+    try {
+      await client.patch(`/api/users/${studentId}/skills/`, { skill_name: skillName, teacher_confirmed: true })
+      onRefresh?.()
+    } catch {
+      Alert.alert('Error', 'Could not approve skill.')
+    }
+  }
+
+  async function handleDecline(skillName) {
+    try {
+      await client.patch(`/api/users/${studentId}/skills/`, { skill_name: skillName, self_assessed: false })
+      onRefresh?.()
+    } catch {
+      Alert.alert('Error', 'Could not decline skill.')
+    }
+  }
+
   return (
     <View style={[s.card, s.cardLav]}>
       <Text style={s.cardLavLabel}>SKILL REVIEW PENDING</Text>
       <Text style={s.cardTitle}>{studentName}</Text>
-      <Text style={s.cardMeta}>{skillName}</Text>
+      {skills.map((sk, i) => (
+        <View key={i} style={s.skillRow}>
+          <Text style={s.skillName} numberOfLines={1}>{sk.skill_name || sk.name || 'Skill'}</Text>
+          <View style={s.skillActions}>
+            <TouchableOpacity style={s.approveBtn} onPress={() => handleApprove(sk.skill_name)}>
+              <Text style={s.approveBtnText}>✓ Approve</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.declineBtn} onPress={() => handleDecline(sk.skill_name)}>
+              <Text style={s.declineBtnText}>✗</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ))}
     </View>
   )
 }
@@ -192,7 +224,7 @@ function SubmittedTab() {
           ListEmptyComponent={<Text style={s.emptyText}>No submissions pending review.</Text>}
           renderItem={({ item }) =>
             item._type === 'skill'
-              ? <SkillPendingCard item={item} />
+              ? <SkillPendingCard item={item} onRefresh={() => { refetchSub(); refetchSkills() }} />
               : <SubmissionCard item={item} />
           }
         />
@@ -290,6 +322,13 @@ const s = StyleSheet.create({
   card: { backgroundColor: '#111', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#222' },
   cardLav: { borderColor: '#b0a0ff33', backgroundColor: 'rgba(176,160,255,0.06)' },
   cardLavLabel: { fontSize: 9, fontWeight: '700', color: '#b0a0ff', letterSpacing: 0.5, marginBottom: 4, textTransform: 'uppercase' },
+  skillRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, gap: 8 },
+  skillName: { fontSize: 13, color: '#ccc', flex: 1 },
+  skillActions: { flexDirection: 'row', gap: 6 },
+  approveBtn: { backgroundColor: 'rgba(204,255,0,0.12)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: 'rgba(204,255,0,0.3)' },
+  approveBtnText: { fontSize: 12, fontWeight: '700', color: '#ccff00' },
+  declineBtn: { backgroundColor: 'rgba(255,80,80,0.1)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: 'rgba(255,80,80,0.25)' },
+  declineBtnText: { fontSize: 12, fontWeight: '700', color: '#ff5050' },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
   cardTitle: { fontSize: 14, fontWeight: '600', color: '#fff', flex: 1 },
   cardMeta: { fontSize: 12, color: '#888', marginTop: 4 },

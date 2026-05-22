@@ -151,6 +151,7 @@ export const homework = {
 
 export const users = {
   get: (id) => client.get(`/api/users/${id}/`),
+  update: (id, data) => client.patch(`/api/users/${id}/`, data),
   list: (params) => client.get('/api/users/', { params }),
   instructorsPublic: () => client.get('/api/users/instructors/public/'),
 }
