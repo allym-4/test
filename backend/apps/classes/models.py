@@ -75,6 +75,8 @@ class ClassSession(models.Model):
         blank=True,
         help_text='Detailed info shown to first-time students after they book this class.'
     )
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)  # null=True for existing rows
 
     class Meta:
         ordering = ['day_of_week', 'start_time']

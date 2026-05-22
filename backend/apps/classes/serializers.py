@@ -36,8 +36,10 @@ class ClassSessionSerializer(serializers.ModelSerializer):
             'season', 'season_name', 'season_start_date', 'season_bookings_open',
             'catchup_cutoff_weeks',
             'first_timer_headline', 'first_timer_body',
+            'description', 'created_at',
             'season_base_price',
         )
+        read_only_fields = ('id', 'enrolled_count', 'instructor_detail', 'studio_detail', 'day_of_week_display', 'category_name', 'season_name', 'season_start_date', 'season_bookings_open', 'season_base_price', 'created_at')
 
     def get_season_base_price(self, obj):
         if obj.category and obj.category.standalone_price is not None:
