@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useApi } from '../hooks/useApi'
 import client from '../api/client'
@@ -79,19 +79,19 @@ const NAV_GROUPS = [
 ]
 
 const BADGE_STYLE = {
-  position: 'absolute',
-  top: -4,
-  right: -4,
+  marginLeft: 'auto',
   background: 'var(--red)',
   color: '#fff',
   fontSize: 9,
   fontWeight: 700,
-  borderRadius: '50%',
-  width: 16,
+  borderRadius: 10,
+  minWidth: 16,
   height: 16,
+  padding: '0 4px',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+  flexShrink: 0,
 }
 
 export default function AdminShell() {
@@ -116,17 +116,34 @@ export default function AdminShell() {
     if (!searchOpen) {
       setSearchQuery('')
       setSearchResults([])
+    } else if (searchQuery.trim()) {
+      // If opened by keypress, trigger search immediately
+      clearTimeout(searchDebounceRef.current)
+      searchDebounceRef.current = setTimeout(async () => {
+        try {
+          const res = await users.list({ search: searchQuery, include_staff_students: 'true' })
+          setSearchResults(res.data?.results || res.data || [])
+        } catch { setSearchResults([]) }
+      }, 150)
     }
   }, [searchOpen])
 
   useEffect(() => {
     function onKeyDown(e) {
-      if (e.key === 'Escape') setSearchOpen(false)
+      if (e.key === 'Escape') { setSearchOpen(false); return }
+      // Open search when typing printable chars outside an input/textarea/select
+      if (!searchOpen) {
+        const tag = document.activeElement?.tagName?.toLowerCase()
+        const isEditable = tag === 'input' || tag === 'textarea' || tag === 'select' || document.activeElement?.isContentEditable
+        if (!isEditable && e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) {
+          setSearchOpen(true)
+          setSearchQuery(e.key)
+          e.preventDefault()
+        }
+      }
     }
-    if (searchOpen) {
-      document.addEventListener('keydown', onKeyDown)
-      return () => document.removeEventListener('keydown', onKeyDown)
-    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
   }, [searchOpen])
 
   const handleSearchChange = useCallback((e) => {
@@ -136,18 +153,18 @@ export default function AdminShell() {
     if (!q.trim()) { setSearchResults([]); return }
     searchDebounceRef.current = setTimeout(async () => {
       try {
-        const res = await users.list({ search: q, role: 'student' })
+        const res = await users.list({ search: q, include_staff_students: 'true' })
         const items = res.data?.results || res.data || []
         setSearchResults(items)
       } catch {
         setSearchResults([])
       }
-    }, 300)
+    }, 250)
   }, [])
 
-  function handleSearchResultClick() {
+  function handleSearchResultClick(s) {
     setSearchOpen(false)
-    navigate('/admin/students')
+    navigate(`/admin/students/${s.id}`)
   }
 
   // ── Feature 2: Check-in Kiosk ────────────────────────────────────────────
@@ -192,7 +209,9 @@ export default function AdminShell() {
   }
 
   // ── Feature 3: Unread badges ─────────────────────────────────────────────
-  const { data: convData } = useApi(() => helpdesk.conversations(), [])
+  const location = useLocation()
+  const { data: convData, refetch: refetchConvs } = useApi(() => helpdesk.conversations(), [])
+  useEffect(() => { refetchConvs() }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
   const { data: ticketData } = useApi(() => client.get('/api/helpdesk/tickets/?status=open'), [])
   const { data: changeReqData } = useApi(() => client.get('/api/enrolments/change-requests/?status=pending'), [])
 
@@ -247,12 +266,10 @@ export default function AdminShell() {
                     onClick={() => setMobileOpen(false)}
                   >
                     <span className="admin-nav-icon">{icon}</span>
-                    <span style={{ position: 'relative' }}>
-                      {label}
-                      {count > 0 && (
-                        <span style={BADGE_STYLE}>{count > 99 ? '99+' : count}</span>
-                      )}
-                    </span>
+                    <span style={{ flex: 1 }}>{label}</span>
+                    {count > 0 && (
+                      <span style={BADGE_STYLE}>{count > 99 ? '99+' : count}</span>
+                    )}
                   </NavLink>
                 )
               })}
@@ -294,15 +311,16 @@ export default function AdminShell() {
               ref={searchInputRef}
               value={searchQuery}
               onChange={handleSearchChange}
-              placeholder="Search students…"
-              style={{ fontSize: 20, width: '100%', maxWidth: 600, padding: '12px 16px', borderRadius: 8, border: '2px solid var(--lav)', background: '#1a1a2e', color: '#fff', outline: 'none', boxSizing: 'border-box' }}
+              autoFocus
+              placeholder="Search students, instructors… (type anywhere)"
+              style={{ fontSize: 20, width: '100%', maxWidth: 600, padding: '12px 16px', borderRadius: 8, border: '2px solid var(--lime)', background: '#0a1a00', color: '#fff', outline: 'none', boxSizing: 'border-box' }}
             />
             {searchResults.length > 0 && (
-              <div style={{ marginTop: 8, background: '#1a1a2e', borderRadius: 8, border: '1px solid var(--lav)', overflow: 'hidden' }}>
+              <div style={{ marginTop: 8, background: '#0d1a00', borderRadius: 8, border: '1px solid var(--lime)', overflow: 'hidden' }}>
                 {searchResults.map((s) => (
                   <div
                     key={s.id}
-                    onClick={handleSearchResultClick}
+                    onClick={() => handleSearchResultClick(s)}
                     style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.07)' }}
                     onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}

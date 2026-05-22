@@ -319,6 +319,8 @@ export default function AdminBookings() {
   const [search, setSearch] = useState('')
   const [filterType, setFilterType] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const [showAdd, setShowAdd] = useState(false)
   const [viewing, setViewing] = useState(null)
   const [confirmCancel, setConfirmCancel] = useState(null)
@@ -331,7 +333,10 @@ export default function AdminBookings() {
     const matchSearch = !search || name.includes(search.toLowerCase()) || session.includes(search.toLowerCase())
     const matchType = !filterType || e.enrolment_type === filterType
     const matchStatus = !filterStatus || e.status === filterStatus
-    return matchSearch && matchType && matchStatus
+    const eDate = e.enrolled_date ? e.enrolled_date.slice(0, 10) : null
+    const matchFrom = !dateFrom || (eDate && eDate >= dateFrom)
+    const matchTo = !dateTo || (eDate && eDate <= dateTo)
+    return matchSearch && matchType && matchStatus && matchFrom && matchTo
   })
 
   return (
@@ -397,6 +402,24 @@ export default function AdminBookings() {
           <option value="cancelled">Cancelled</option>
           <option value="completed">Completed</option>
         </select>
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={e => setDateFrom(e.target.value)}
+          title="From date"
+          style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: dateFrom ? 'var(--white)' : 'var(--grey)', padding: '7px 12px', fontSize: 13, outline: 'none', colorScheme: 'dark' }}
+        />
+        <span style={{ color: 'var(--grey)', fontSize: 13, alignSelf: 'center' }}>→</span>
+        <input
+          type="date"
+          value={dateTo}
+          onChange={e => setDateTo(e.target.value)}
+          title="To date"
+          style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: dateTo ? 'var(--white)' : 'var(--grey)', padding: '7px 12px', fontSize: 13, outline: 'none', colorScheme: 'dark' }}
+        />
+        {(dateFrom || dateTo) && (
+          <button className="btn btn-ghost btn-xs" onClick={() => { setDateFrom(''); setDateTo('') }}>✕ Clear dates</button>
+        )}
       </div>
 
       {loading ? (

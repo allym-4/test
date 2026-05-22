@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi, classes as classesApi, tags as tagsApi, settings as settingsApi } from '../../api'
+import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi, classes as classesApi, tags as tagsApi, settings as settingsApi, membershipTypes as membershipTypesApi, studentMemberships as studentMembershipsApi } from '../../api'
 import client from '../../api/client'
 import '../StudentsPage.css'
 import AddStudentModal from '../../components/AddStudentModal'
@@ -957,11 +957,73 @@ function BulkTagModal({ studentIds, onClose }) {
   )
 }
 
+function BulkMembershipModal({ studentIds, onClose }) {
+  const { data: typesData } = useApi(() => membershipTypesApi.list())
+  const [selectedTypeId, setSelectedTypeId] = useState('')
+  const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10))
+  const [applying, setApplying] = useState(false)
+  const [done, setDone] = useState(false)
+  const typeList = (typesData?.results || typesData || []).filter(t => t.is_active)
+
+  async function apply() {
+    if (!selectedTypeId || !startDate || studentIds.length === 0) return
+    setApplying(true)
+    try {
+      await studentMembershipsApi.bulkAssign({ student_ids: studentIds, membership_type_id: selectedTypeId, start_date: startDate })
+      setDone(true)
+      setTimeout(onClose, 1200)
+    } catch {
+      alert('Something went wrong. Please try again.')
+    } finally {
+      setApplying(false)
+    }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 400 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18 }}>Bulk Assign Membership</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="sd-body">
+          {done ? (
+            <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--lime)', fontSize: 13 }}>
+              Membership assigned to {studentIds.length} student{studentIds.length !== 1 ? 's' : ''}.
+            </div>
+          ) : (
+            <>
+              <div className="field">
+                <label>Membership type</label>
+                <select value={selectedTypeId} onChange={e => setSelectedTypeId(e.target.value)}
+                  style={{ background: '#111', color: '#fff', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 10px', fontSize: 13, width: '100%' }}>
+                  <option value="">— Choose membership —</option>
+                  {typeList.map(t => <option key={t.id} value={t.id}>{t.name} (${t.price} / {t.duration})</option>)}
+                </select>
+              </div>
+              <div className="field">
+                <label>Start date</label>
+                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+                  style={{ background: '#111', color: '#fff', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 10px', fontSize: 13, width: '100%', colorScheme: 'dark' }} />
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16 }}>Apply to {studentIds.length} filtered student{studentIds.length !== 1 ? 's' : ''}</div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+                <button className="btn btn-lime btn-sm" onClick={apply} disabled={!selectedTypeId || !startDate || applying}>{applying ? 'Assigning…' : 'Assign'}</button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminStudents() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const studentPath = (id) => user?.role === 'admin' ? `/admin/students/${id}` : `/students/${id}`
-  const { data, loading } = useApi(() => users.list({ role: 'student' }))
+  const { data, loading } = useApi(() => users.list({ include_staff_students: 'true' }))
   const { data: sessionsData } = useApi(() => classesApi.list({ active: 'true' }))
   const [search, setSearch] = useState('')
   const [classFilter, setClassFilter] = useState('')
@@ -974,6 +1036,7 @@ export default function AdminStudents() {
   const [showAdd, setShowAdd] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [showBulkTag, setShowBulkTag] = useState(false)
+  const [showBulkMembership, setShowBulkMembership] = useState(false)
 
   const allStudents = studentList ?? (data?.results || data || [])
 
@@ -1033,6 +1096,7 @@ export default function AdminStudents() {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-ghost btn-sm" onClick={() => setShowBulkTag(true)}>Bulk Tag</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowBulkMembership(true)}>Bulk Membership</button>
           <button className="btn btn-lime btn-sm" onClick={() => setShowAdd(true)}>+ Add Student</button>
         </div>
       </div>
@@ -1157,7 +1221,7 @@ export default function AdminStudents() {
         <BulkImportModal
           onClose={() => setShowImport(false)}
           onImported={async () => {
-            const res = await users.list({ role: 'student' })
+            const res = await users.list({ include_staff_students: 'true' })
             setStudentList(res.data.results || [])
             setShowImport(false)
           }}
@@ -1165,6 +1229,7 @@ export default function AdminStudents() {
       )}
 
       {showBulkTag && <BulkTagModal studentIds={filtered.map(s => s.id)} onClose={() => setShowBulkTag(false)} />}
+      {showBulkMembership && <BulkMembershipModal studentIds={filtered.map(s => s.id)} onClose={() => setShowBulkMembership(false)} />}
     </div>
   )
 }

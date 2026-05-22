@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
 import { lockers, users, seasons } from '../../api'
 
@@ -6,17 +7,16 @@ const TOTAL_LOCKERS = 36
 
 // ─── Assign / Edit Modal ────────────────────────────────────────────────────
 
-function AssignModal({ locker, activeSeason, onClose, onSaved }) {
-  const defaultExpiry = locker?.expires_at || activeSeason?.end_date || ''
+function AssignModal({ locker, activeSeason, nextSeason, onClose, onSaved }) {
+  const seasonEnd = activeSeason?.end_date || ''
   const [studentSearch, setStudentSearch] = useState(locker?.assigned_to_detail?.display_name || '')
   const [studentList, setStudentList] = useState([])
   const [picked, setPicked] = useState(locker?.assigned_to_detail || null)
-  const [expiresAt, setExpiresAt] = useState(defaultExpiry)
   const [notes, setNotes] = useState(locker?.notes || '')
   const [lockerType, setLockerType] = useState(locker?.locker_type || 'complimentary')
   const [paymentType, setPaymentType] = useState(locker?.payment_type || '')
   const [paymentStatus, setPaymentStatus] = useState(locker?.payment_status || 'unpaid')
-  const [keyIssued, setKeyIssued] = useState(locker?.key_issued || false)
+  const [keyIssued, setKeyIssued] = useState(locker?.key_issued ?? false)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -32,7 +32,7 @@ function AssignModal({ locker, activeSeason, onClose, onSaved }) {
       const payload = {
         number: locker?.number,
         assigned_to: picked.id,
-        expires_at: expiresAt || null,
+        expires_at: seasonEnd || null,
         assigned_at: locker?.assigned_at || new Date().toISOString().slice(0, 10),
         notes,
         locker_type: lockerType,
@@ -87,12 +87,21 @@ function AssignModal({ locker, activeSeason, onClose, onSaved }) {
               </>
             )}
           </div>
+
+          {/* Season end date — read only */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Expires At</div>
+            <div style={{ fontSize: 13, color: seasonEnd ? 'var(--white)' : 'var(--grey)', background: '#1a1a1a', borderRadius: 7, padding: '8px 12px', border: '1px solid var(--border)' }}>
+              {seasonEnd ? `End of ${activeSeason?.name || 'current season'} — ${seasonEnd}` : 'No active season end date'}
+            </div>
+          </div>
+
           {[
             ['Locker Type', <select value={lockerType} onChange={e => setLockerType(e.target.value)}>
               <option value="complimentary">Complimentary (4-class perk)</option>
               <option value="paid">Paid ($50/season)</option>
             </select>],
-            ...(lockerType === 'paid' ? [['Payment method', <select value={paymentType} onChange={e => setPaymentType(e.target.value)}>
+            ...(lockerType === 'paid' ? [['Payment Method', <select value={paymentType} onChange={e => setPaymentType(e.target.value)}>
               <option value="">Select…</option>
               <option value="cash">Cash</option>
               <option value="card">Card</option>
@@ -102,8 +111,8 @@ function AssignModal({ locker, activeSeason, onClose, onSaved }) {
               <option value="unpaid">Unpaid</option>
               <option value="paid">Paid</option>
               <option value="waived">Waived</option>
+              <option value="invoiced">Invoiced (charged to account)</option>
             </select>],
-            ['Expiry Date', <input type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} placeholder={activeSeason?.end_date || ''} />],
             ['Notes', <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Optional…" />],
           ].map(([label, field]) => (
             <div key={label} style={{ marginBottom: 14 }}>
@@ -111,11 +120,6 @@ function AssignModal({ locker, activeSeason, onClose, onSaved }) {
               {field}
             </div>
           ))}
-          {activeSeason?.end_date && !locker?.expires_at && (
-            <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 14, marginTop: -8 }}>
-              Auto-set to season end: {activeSeason.end_date}
-            </div>
-          )}
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, cursor: 'pointer', fontSize: 13 }}>
             <input type="checkbox" checked={keyIssued} onChange={e => setKeyIssued(e.target.checked)} style={{ width: 15, height: 15 }} />
             Key issued to student
@@ -135,12 +139,22 @@ function AssignModal({ locker, activeSeason, onClose, onSaved }) {
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function AdminLockers() {
+  const navigate = useNavigate()
   const { data: lockerData, loading, refetch } = useApi(() => lockers.list(), [])
   const { data: eligibleData, refetch: refetchEligible } = useApi(() => lockers.eligible(), [])
   const { data: seasonsData } = useApi(() => seasons.list(), [])
   const lockerList = lockerData?.results || lockerData || []
-  const activeSeason = (seasonsData?.results || seasonsData || []).find(s => s.status === 'active') || null
+  const allSeasons = seasonsData?.results || seasonsData || []
+  const activeSeason = allSeasons.find(s => s.status === 'active') || null
+  const nextSeason = allSeasons.find(s => s.status === 'upcoming') || null
 
+  // Show "Next Season" tab if next season starts within 14 days
+  const daysUntilNextSeason = nextSeason?.start_date
+    ? Math.ceil((new Date(nextSeason.start_date) - new Date()) / (1000 * 60 * 60 * 24))
+    : null
+  const showNextSeasonTab = daysUntilNextSeason !== null && daysUntilNextSeason <= 14
+
+  const [activeTab, setActiveTab] = useState('current')
   const [modal, setModal] = useState(null)
   const [busy, setBusy] = useState(null)
   const [toast, setToast] = useState(null)
@@ -195,11 +209,51 @@ export default function AdminLockers() {
     setBusy(null)
   }
 
+  async function resetLostKey(l) {
+    if (!confirm(`Reset lost key flag for Locker #${l.number}? This marks the key as no longer lost (e.g. replacement issued).`)) return
+    setBusy(l.id + '-reset')
+    try {
+      await lockers.update(l.id, { key_lost: false, key_issued: true })
+      refetch()
+      showToast(`Locker #${l.number} key reset. Don't forget to issue the new key.`)
+    } catch (e) {
+      showToast(e.response?.data?.detail || 'Failed to reset key.', 'err')
+    }
+    setBusy(null)
+  }
+
   async function chasePayment(l) {
     if (!confirm(`Send a payment reminder to ${l.assigned_to_detail?.display_name} for Locker #${l.number}?`)) return
     setBusy(l.id + '-chase')
     try { await lockers.chase(l.id); showToast(`Reminder sent to ${l.assigned_to_detail?.display_name}.`) }
     catch (e) { showToast(e.response?.data?.detail || 'Failed to send reminder.', 'err') }
+    setBusy(null)
+  }
+
+  async function carryOver(l) {
+    if (!nextSeason) { showToast('No upcoming season found.', 'err'); return }
+    if (!confirm(`Carry over Locker #${l.number} for ${l.assigned_to_detail?.display_name} to ${nextSeason.name}?`)) return
+    setBusy(l.id + '-co')
+    try {
+      await lockers.carryOver(l.id)
+      refetch()
+      showToast(`Locker #${l.number} carried over to ${nextSeason.name}.`)
+    } catch (e) {
+      showToast(e.response?.data?.detail || 'Failed to carry over.', 'err')
+    }
+    setBusy(null)
+  }
+
+  async function invoiceLocker(l) {
+    if (!confirm(`Invoice ${l.assigned_to_detail?.display_name} for Locker #${l.number}? This will add a $50 charge to their account balance.`)) return
+    setBusy(l.id + '-inv')
+    try {
+      await lockers.invoice(l.id)
+      refetch()
+      showToast(`$50 locker fee invoiced to ${l.assigned_to_detail?.display_name}.`)
+    } catch (e) {
+      showToast(e.response?.data?.detail || 'Failed to invoice.', 'err')
+    }
     setBusy(null)
   }
 
@@ -243,6 +297,86 @@ export default function AdminLockers() {
         }}>+ Assign Locker</button>
       </div>
 
+      {/* Tab switcher */}
+      {showNextSeasonTab && (
+        <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: '#111', borderRadius: 10, padding: 4, alignSelf: 'flex-start' }}>
+          <button onClick={() => setActiveTab('current')} style={{ padding: '6px 16px', borderRadius: 7, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13, background: activeTab === 'current' ? 'var(--lime)' : 'transparent', color: activeTab === 'current' ? '#000' : 'var(--grey)' }}>
+            Current Season
+          </button>
+          <button onClick={() => setActiveTab('next')} style={{ padding: '6px 16px', borderRadius: 7, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13, background: activeTab === 'next' ? 'var(--lime)' : 'transparent', color: activeTab === 'next' ? '#000' : 'var(--grey)' }}>
+            Next Season <span style={{ marginLeft: 4, fontSize: 10, background: activeTab === 'next' ? 'rgba(0,0,0,0.2)' : '#222', color: activeTab === 'next' ? '#000' : 'var(--amber)', borderRadius: 10, padding: '1px 6px' }}>{daysUntilNextSeason}d</span>
+          </button>
+        </div>
+      )}
+
+      {activeTab === 'next' ? (
+        <div>
+          <div style={{ background: 'rgba(100,220,100,0.08)', border: '1px solid rgba(100,220,100,0.2)', borderRadius: 10, padding: '14px 18px', marginBottom: 20 }}>
+            <div style={{ fontWeight: 700, color: 'var(--lime)', marginBottom: 4 }}>{nextSeason?.name} starts in {daysUntilNextSeason} day{daysUntilNextSeason !== 1 ? 's' : ''}</div>
+            <div style={{ fontSize: 12, color: 'var(--grey)' }}>
+              Review current locker holders and carry over to the next season. Unpaid locker fees will be reset.
+            </div>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  {['LOCKER', 'STUDENT', 'TYPE', 'CURRENT EXPIRY', 'RENEWAL STATUS', 'ACTIONS'].map(h => (
+                    <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, color: 'var(--grey)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {lockerList.map(l => {
+                  const isCarriedOver = nextSeason?.end_date && l.expires_at === nextSeason.end_date
+                  return (
+                    <tr key={l.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      <td style={{ padding: '12px 12px', fontFamily: "'Archivo Black', sans-serif", color: 'var(--lav)' }}>
+                        #{String(l.number).padStart(2, '0')}
+                      </td>
+                      <td style={{ padding: '12px 12px' }}>
+                        <button onClick={() => navigate(`/admin/students/${l.assigned_to_detail?.id || l.assigned_to}`)}
+                          style={{ fontWeight: 600, background: 'none', border: 'none', color: 'var(--white)', cursor: 'pointer', padding: 0, textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.2)', fontSize: 13 }}>
+                          {l.assigned_to_detail?.display_name}
+                        </button>
+                        <div style={{ fontSize: 11, color: 'var(--grey)' }}>{l.assigned_to_detail?.email}</div>
+                      </td>
+                      <td style={{ padding: '12px 12px' }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 4, padding: '3px 8px', border: '1px solid',
+                          ...(l.locker_type === 'paid'
+                            ? { color: '#7cf07c', borderColor: 'rgba(100,220,100,0.5)', background: 'rgba(100,220,100,0.1)' }
+                            : { color: 'var(--amber)', borderColor: 'rgba(255,165,0,0.5)', background: 'rgba(255,165,0,0.1)' }) }}>
+                          {l.locker_type === 'paid' ? 'PAID' : 'FREE'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 12px', color: 'var(--grey)', fontSize: 12 }}>{l.expires_at || '—'}</td>
+                      <td style={{ padding: '12px 12px' }}>
+                        {isCarriedOver
+                          ? <span style={{ color: 'var(--lime)', fontWeight: 600, fontSize: 12 }}>✓ Carried Over</span>
+                          : <span style={{ color: 'var(--amber)', fontSize: 12 }}>Pending renewal</span>}
+                      </td>
+                      <td style={{ padding: '12px 12px' }}>
+                        {!isCarriedOver && (
+                          <button className="btn btn-lime btn-xs" onClick={() => carryOver(l)} disabled={busy === l.id + '-co'}>
+                            {busy === l.id + '-co' ? '…' : 'Carry Over'}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+            {lockerList.length === 0 && (
+              <div style={{ textAlign: 'center', color: 'var(--grey)', fontSize: 13, padding: '32px 0' }}>No lockers assigned.</div>
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {activeTab === 'current' && (
+      <>
+
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, marginBottom: 24 }}>
         {[
@@ -269,7 +403,12 @@ export default function AdminLockers() {
           {eligibleWithoutLocker.map(s => (
             <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 10, marginBottom: 10, borderBottom: '1px solid rgba(255,165,0,0.15)' }}>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>{s.display_name}</div>
+                <button
+                  onClick={() => navigate(`/admin/students/${s.id}`)}
+                  style={{ fontSize: 14, fontWeight: 600, background: 'none', border: 'none', color: 'var(--white)', cursor: 'pointer', padding: 0, textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.2)' }}
+                >
+                  {s.display_name}
+                </button>
                 <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{s.enrolment_count} classes this season — entitled to a free locker</div>
               </div>
               <button className="btn btn-sm" style={{ background: 'var(--amber)', color: '#000', fontWeight: 700, flexShrink: 0 }}
@@ -344,7 +483,12 @@ export default function AdminLockers() {
                         #{String(l.number).padStart(2, '0')}
                       </td>
                       <td style={{ padding: '12px 12px' }}>
-                        <div style={{ fontWeight: 600 }}>{l.assigned_to_detail?.display_name}</div>
+                        <button
+                          onClick={() => navigate(`/admin/students/${l.assigned_to_detail?.id || l.assigned_to}`)}
+                          style={{ fontWeight: 600, background: 'none', border: 'none', color: 'var(--white)', cursor: 'pointer', padding: 0, textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.2)', fontSize: 13 }}
+                        >
+                          {l.assigned_to_detail?.display_name}
+                        </button>
                         <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 1 }}>{l.assigned_to_detail?.email}</div>
                       </td>
                       <td style={{ padding: '12px 12px' }}>
@@ -360,8 +504,8 @@ export default function AdminLockers() {
                       <td style={{ padding: '12px 12px', color: isOverdue ? 'var(--red)' : l.locker_type === 'paid' ? '#fff' : 'var(--grey)', fontWeight: isOverdue ? 700 : 400 }}>
                         {l.locker_type === 'paid' ? (isOverdue ? '$50 OVERDUE' : '$50') : '—'}
                       </td>
-                      <td style={{ padding: '12px 12px', color: isOverdue ? 'var(--red)' : isPaid ? 'var(--lime)' : l.locker_type === 'paid' ? 'var(--amber)' : 'var(--lime)', fontWeight: 600 }}>
-                        {isOverdue ? 'Overdue' : isPaid ? 'Paid' : l.locker_type === 'paid' ? 'Unpaid' : seasonName}
+                      <td style={{ padding: '12px 12px', color: isOverdue ? 'var(--red)' : isPaid ? 'var(--lime)' : l.payment_status === 'invoiced' ? 'var(--lav)' : l.locker_type === 'paid' ? 'var(--amber)' : 'var(--lime)', fontWeight: 600 }}>
+                        {isOverdue ? 'Overdue' : isPaid ? 'Paid' : l.payment_status === 'invoiced' ? 'Invoiced' : l.locker_type === 'paid' ? 'Unpaid' : seasonName}
                       </td>
                       <td style={{ padding: '12px 12px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -383,6 +527,19 @@ export default function AdminLockers() {
                       <td style={{ padding: '12px 12px', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                           <button className="btn btn-ghost btn-xs" onClick={() => openAssign(l.number)}>Edit</button>
+                          {nextSeason && (
+                            <button className="btn btn-ghost btn-xs" style={{ color: 'var(--lime)', fontSize: 10 }}
+                              onClick={() => carryOver(l)} disabled={busy === l.id + '-co'}
+                              title={`Carry over to ${nextSeason.name}`}>
+                              {busy === l.id + '-co' ? '…' : 'Carry Over'}
+                            </button>
+                          )}
+                          {l.locker_type === 'paid' && l.payment_status === 'unpaid' && (
+                            <button className="btn btn-ghost btn-xs" style={{ color: 'var(--lav)', fontSize: 10 }}
+                              onClick={() => invoiceLocker(l)} disabled={busy === l.id + '-inv'}>
+                              {busy === l.id + '-inv' ? '…' : 'Invoice'}
+                            </button>
+                          )}
                           {isOverdue && (
                             <button className="btn btn-xs" style={{ background: 'var(--amber)', color: '#000', fontWeight: 700 }}
                               onClick={() => chasePayment(l)} disabled={busy === l.id + '-chase'}>
@@ -393,6 +550,12 @@ export default function AdminLockers() {
                             <button className="btn btn-ghost btn-xs" style={{ color: 'var(--amber)', fontSize: 10 }}
                               onClick={() => reportLostKey(l)} disabled={busy === l.id + '-lk'}>
                               {busy === l.id + '-lk' ? '…' : 'Lost Key'}
+                            </button>
+                          )}
+                          {l.key_lost && (
+                            <button className="btn btn-ghost btn-xs" style={{ color: 'var(--lime)', fontSize: 10 }}
+                              onClick={() => resetLostKey(l)} disabled={busy === l.id + '-reset'}>
+                              {busy === l.id + '-reset' ? '…' : 'Reset Key'}
                             </button>
                           )}
                           <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => unassign(l)}>Unassign</button>
@@ -411,9 +574,13 @@ export default function AdminLockers() {
         <AssignModal
           locker={modal}
           activeSeason={activeSeason}
+          nextSeason={nextSeason}
           onClose={() => setModal(null)}
           onSaved={() => { setModal(null); refetch(); refetchEligible() }}
         />
+      )}
+
+      </> /* end activeTab === 'current' */
       )}
     </div>
   )

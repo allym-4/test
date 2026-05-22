@@ -157,6 +157,9 @@ class Season(models.Model):
     notes = models.TextField(blank=True)
     published_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    # Per-season discount tiers: {"2": 100, "3": 130, ...} — discount off base price for nth class
+    # If blank, falls back to StudioSettings.season_discount_tiers then system default
+    discount_tiers = models.JSONField(default=dict, blank=True)
 
     class Meta:
         ordering = ['-start_date']
@@ -179,6 +182,7 @@ class Locker(models.Model):
         ('paid', 'Paid'),
         ('unpaid', 'Unpaid'),
         ('waived', 'Waived'),
+        ('invoiced', 'Invoiced'),
     ]
 
     number = models.PositiveIntegerField(unique=True)

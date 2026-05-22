@@ -246,6 +246,7 @@ export default function DashboardScreen({ navigation }) {
   )
   const { data: pendingRequiredData, refetch: refetchPendingRequired } = useApi(() => formsApi.pendingRequired(), [user?.id])
   const { data: surveysData } = useApi(() => surveysApi.mine(), [user?.id])
+  const { data: balanceData } = useApi(() => user?.id ? payments.balance(user.id) : null, [user?.id])
 
   const [markingAway, setMarkingAway] = useState({})
   const [cancellingAway, setCancellingAway] = useState({})
@@ -434,6 +435,23 @@ export default function DashboardScreen({ navigation }) {
             <Text style={s.seasonBannerBtnText}>Book Now</Text>
           </TouchableOpacity>
         </View>
+      )}
+
+      {/* Outstanding balance / no-show fee notice */}
+      {balanceData && parseFloat(balanceData.balance) < 0 && (
+        <TouchableOpacity
+          style={s.balanceBanner}
+          onPress={() => navigation.navigate('Billing')}
+          activeOpacity={0.8}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={s.balanceBannerTitle}>Outstanding balance</Text>
+            <Text style={s.balanceBannerBody}>
+              You have an outstanding balance of ${Math.abs(parseFloat(balanceData.balance)).toFixed(2)} — tap to view billing.
+            </Text>
+          </View>
+          <Text style={{ fontSize: 16, color: '#ef4444' }}>→</Text>
+        </TouchableOpacity>
       )}
 
       {/* Profile incomplete banner */}
@@ -685,7 +703,7 @@ export default function DashboardScreen({ navigation }) {
         </View>
       )}
 
-      {waiverRequired && <WaiverModal onDone={refetchPendingRequired} />}
+      {waiverRequired && !trialItem && <WaiverModal onDone={refetchPendingRequired} />}
 
       {!waiverRequired && pendingOffers.length > 0 && !trialItem && (
         <CancellationOfferModal
@@ -695,7 +713,7 @@ export default function DashboardScreen({ navigation }) {
       )}
 
       {/* Post-trial feedback modal */}
-      {!waiverRequired && trialItem && (
+      {trialItem && (
         <Modal transparent animationType="fade" visible>
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
             <View style={{ backgroundColor: '#111', borderRadius: 16, width: '100%', maxWidth: 440, padding: 24 }}>
@@ -707,6 +725,14 @@ export default function DashboardScreen({ navigation }) {
                   <Text style={{ fontSize: 14, color: '#888', textAlign: 'center', lineHeight: 22, marginBottom: 22 }}>
                     Did you love it as much as we did? Would you like to enrol in the rest of the course?
                   </Text>
+                  {waiverRequired && (
+                    <View style={{ backgroundColor: 'rgba(255,170,0,0.1)', borderWidth: 1, borderColor: 'rgba(255,170,0,0.3)', borderRadius: 10, padding: 14, marginBottom: 16 }}>
+                      <Text style={{ color: '#f59e0b', fontWeight: '700', fontSize: 14, marginBottom: 4 }}>Waiver required before enrolling</Text>
+                      <Text style={{ color: '#aaa', fontSize: 13, lineHeight: 20 }}>
+                        Please sign your studio waiver before completing enrolment. Close this and tap the waiver prompt to get that sorted.
+                      </Text>
+                    </View>
+                  )}
                   <View style={{ backgroundColor: 'rgba(219,255,0,0.06)', borderWidth: 1, borderColor: 'rgba(219,255,0,0.2)', borderRadius: 10, padding: 14, marginBottom: 20 }}>
                     <Text style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>
                       {trialItem.season_name ? `${trialItem.season_name} · ` : ''}{trialItem.session_name}
@@ -719,10 +745,11 @@ export default function DashboardScreen({ navigation }) {
                     <Text style={{ fontSize: 12, color: '#666', marginTop: 4 }}>Your trial class is credited toward the season price</Text>
                   </View>
                   <TouchableOpacity
-                    style={{ backgroundColor: '#DBFF00', borderRadius: 10, padding: 16, alignItems: 'center', marginBottom: 10 }}
-                    onPress={() => setTrialScreen('payment')}
+                    style={{ backgroundColor: waiverRequired ? '#444' : '#DBFF00', borderRadius: 10, padding: 16, alignItems: 'center', marginBottom: 10, opacity: waiverRequired ? 0.6 : 1 }}
+                    onPress={() => !waiverRequired && setTrialScreen('payment')}
+                    disabled={waiverRequired}
                   >
-                    <Text style={{ color: '#000', fontWeight: '700', fontSize: 15 }}>Yes — enrol now · ${trialItem.enrol_price}</Text>
+                    <Text style={{ color: waiverRequired ? '#aaa' : '#000', fontWeight: '700', fontSize: 15 }}>Yes — enrol now · ${trialItem.enrol_price}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={{ borderWidth: 1, borderColor: '#333', borderRadius: 10, padding: 14, alignItems: 'center' }}
@@ -978,6 +1005,15 @@ const s = StyleSheet.create({
   seasonBannerText: { flex: 1, fontWeight: '700', fontSize: 14, color: '#000' },
   seasonBannerBtn: { backgroundColor: '#000', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
   seasonBannerBtnText: { color: '#ccff00', fontSize: 13, fontWeight: '700' },
+
+  // Outstanding balance banner
+  balanceBanner: {
+    backgroundColor: 'rgba(239,68,68,0.08)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)',
+    borderRadius: 12, padding: 14, marginBottom: 16,
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+  },
+  balanceBannerTitle: { fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.7, color: '#ef4444', marginBottom: 4, fontWeight: '700' },
+  balanceBannerBody: { fontSize: 13, color: '#ccc' },
 
   // Profile banner
   profileBanner: {

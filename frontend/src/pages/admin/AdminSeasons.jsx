@@ -176,14 +176,34 @@ function isoToLocalInput(iso) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
+function calcEndDate(startDate, weeks) {
+  if (!startDate || !weeks) return ''
+  const d = new Date(startDate + 'T00:00')
+  // End date = start of week + (weeks * 7) - 1 day = last Sunday of the final week
+  // Week is Mon–Sun, so move start to Monday first
+  const dayOfWeek = d.getDay() // 0=Sun, 1=Mon
+  const daysToMon = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+  const mon = new Date(d)
+  mon.setDate(d.getDate() + daysToMon)
+  // End = that Monday + (weeks * 7) - 1 = last Sunday
+  const end = new Date(mon)
+  end.setDate(mon.getDate() + weeks * 7 - 1)
+  return end.toISOString().slice(0, 10)
+}
+
 function SeasonModal({ season, onClose, onSaved, allSeasons = [] }) {
   const isEdit = !!season
   const otherSeasons = allSeasons.filter(s => !season || s.id !== season.id)
 
+  // For edit: calculate weeks from existing dates
+  const existingWeeks = season?.start_date && season?.end_date
+    ? Math.round((new Date(season.end_date + 'T00:00') - new Date(season.start_date + 'T00:00')) / (7 * 86400000)) + 1 / 7
+    : 8
+
   const [form, setForm] = useState({
     name: season?.name || '',
     start_date: season?.start_date || '',
-    end_date: season?.end_date || '',
+    weeks: isEdit ? Math.round(existingWeeks) : 8,
     status: season?.status || 'upcoming',
     notes: season?.notes || '',
     go_live_at: season?.go_live_at ? isoToLocalInput(season.go_live_at) : '',
@@ -192,24 +212,22 @@ function SeasonModal({ season, onClose, onSaved, allSeasons = [] }) {
   const [error, setError] = useState(null)
   function set(f, v) { setForm(x => ({ ...x, [f]: v })) }
 
+  const endDate = calcEndDate(form.start_date, form.weeks)
+
   function handleStartDate(val) {
     set('start_date', val)
-    if (val) {
-      const end = new Date(val + 'T00:00')
-      end.setDate(end.getDate() + 56)
-      set('end_date', end.toISOString().slice(0, 10))
-    }
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (!endDate) { setError('Pick a start date and number of weeks.'); return }
     setSaving(true)
     setError(null)
     try {
       const payload = {
         name: form.name,
         start_date: form.start_date,
-        end_date: form.end_date,
+        end_date: endDate,
         status: form.status,
         notes: form.notes,
         go_live_at: form.go_live_at ? localInputToISO(form.go_live_at) : null,
@@ -237,23 +255,35 @@ function SeasonModal({ season, onClose, onSaved, allSeasons = [] }) {
           {error && <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>{error}</div>}
           <div className="field"><label>Season Name *</label><input value={form.name} onChange={e => set('name', e.target.value)} required autoFocus placeholder="e.g. Season 4" /></div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'end', marginBottom: 12 }}>
             <SeasonCalendarPicker
               label="Start Date *"
               value={form.start_date}
               onChange={handleStartDate}
               existingSeasons={otherSeasons}
             />
-            <div>
-              <SeasonCalendarPicker
-                label="End Date *"
-                value={form.end_date}
-                onChange={v => set('end_date', v)}
-                existingSeasons={otherSeasons}
-              />
-              <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>Auto-set to 8 weeks · override if needed</div>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label>Runs for</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input
+                  type="number"
+                  min={1}
+                  max={52}
+                  value={form.weeks}
+                  onChange={e => set('weeks', parseInt(e.target.value) || 8)}
+                  style={{ width: 60, textAlign: 'center' }}
+                />
+                <span style={{ fontSize: 13, color: 'var(--grey)', whiteSpace: 'nowrap' }}>weeks</span>
+              </div>
             </div>
           </div>
+
+          {endDate && (
+            <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16, padding: '8px 12px', background: '#111', borderRadius: 8 }}>
+              End date: <span style={{ color: 'var(--white)', fontWeight: 600 }}>{new Date(endDate + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+              <span style={{ marginLeft: 8, color: 'var(--lime)' }}>({form.weeks} weeks, Mon–Sun)</span>
+            </div>
+          )}
 
           <div className="field">
             <label>Status</label>
@@ -288,7 +318,114 @@ function SeasonModal({ season, onClose, onSaved, allSeasons = [] }) {
   )
 }
 
-function SeasonDrawer({ season, onClose, onEdit, onStatusChange, onBookingsToggle, onToggleBookingsEnabled, onCloseSeason, onArchive, onDelete }) {
+function DiscountTiersEditor({ season, onUpdated }) {
+  const [tiers, setTiers] = useState(() => {
+    const t = season.discount_tiers || {}
+    if (Object.keys(t).length === 0) return []
+    return Object.entries(t).map(([pos, amt]) => ({ pos: String(pos), amt: String(amt) })).sort((a, b) => parseInt(a.pos) - parseInt(b.pos))
+  })
+  const [saving, setSaving] = useState(false)
+
+  function addRow() {
+    const maxPos = tiers.reduce((m, r) => Math.max(m, parseInt(r.pos) || 1), 1)
+    setTiers(prev => [...prev, { pos: String(maxPos + 1), amt: '' }])
+  }
+
+  function removeRow(i) {
+    setTiers(prev => prev.filter((_, idx) => idx !== i))
+  }
+
+  function updateRow(i, field, val) {
+    setTiers(prev => prev.map((r, idx) => idx === i ? { ...r, [field]: val } : r))
+  }
+
+  async function save() {
+    setSaving(true)
+    try {
+      const obj = {}
+      tiers.forEach(r => { if (r.pos && r.amt !== '') obj[r.pos] = parseFloat(r.amt) })
+      const res = await seasons.update(season.id, { discount_tiers: obj })
+      onUpdated(res.data)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const ordinalLabel = n => {
+    const s = parseInt(n)
+    if (isNaN(s)) return `${n}${''}`
+    return s === 2 ? '2nd' : s === 3 ? '3rd' : `${s}th`
+  }
+
+  return (
+    <div style={{ background: '#111', borderRadius: 10, padding: '16px' }}>
+      <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 12 }}>
+        Set a dollar discount off the base class price for each additional class enrolled in this season. Leave blank to use studio defaults.
+      </div>
+
+      {tiers.length === 0 && (
+        <div style={{ fontSize: 12, color: 'var(--grey)', fontStyle: 'italic', marginBottom: 12 }}>
+          No custom tiers set — using studio default discount structure.
+        </div>
+      )}
+
+      {tiers.map((row, i) => (
+        <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+          <div style={{ fontSize: 12, color: 'var(--grey)', width: 80, flexShrink: 0 }}>
+            <select
+              value={row.pos}
+              onChange={e => updateRow(i, 'pos', e.target.value)}
+              style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--white)', fontSize: 12, padding: '4px 6px', width: '100%' }}
+            >
+              {[2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{ordinalLabel(n)} class</option>)}
+            </select>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1 }}>
+            <span style={{ fontSize: 12, color: 'var(--grey)' }}>$</span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={row.amt}
+              onChange={e => updateRow(i, 'amt', e.target.value)}
+              placeholder="discount off"
+              style={{ flex: 1, background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, padding: '4px 8px', color: 'var(--white)', fontSize: 12 }}
+            />
+            <span style={{ fontSize: 11, color: 'var(--grey)' }}>off</span>
+          </div>
+          <button onClick={() => removeRow(i)} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 14, padding: '0 4px' }}>✕</button>
+        </div>
+      ))}
+
+      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+        <button
+          onClick={addRow}
+          style={{ background: 'rgba(204,255,0,0.08)', border: '1px solid rgba(204,255,0,0.2)', borderRadius: 6, color: 'var(--lime)', fontSize: 12, padding: '5px 12px', cursor: 'pointer' }}
+        >
+          + Add row
+        </button>
+        <button
+          onClick={save}
+          disabled={saving}
+          style={{ background: 'var(--lime)', border: 'none', borderRadius: 6, color: '#000', fontSize: 12, fontWeight: 700, padding: '5px 14px', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}
+        >
+          {saving ? 'Saving…' : 'Save tiers'}
+        </button>
+        {tiers.length > 0 && (
+          <button
+            onClick={async () => { setSaving(true); try { const res = await seasons.update(season.id, { discount_tiers: {} }); onUpdated(res.data); setTiers([]) } finally { setSaving(false) } }}
+            disabled={saving}
+            style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--grey)', fontSize: 12, padding: '5px 12px', cursor: 'pointer' }}
+          >
+            Reset to defaults
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function SeasonDrawer({ season, onClose, onEdit, onStatusChange, onBookingsToggle, onToggleBookingsEnabled, onCloseSeason, onArchive, onDelete, onSeasonUpdated }) {
   const { data: sessionsData, loading: loadingSessions } = useApi(
     () => classesApi.list({ season: season.id }),
     [season.id]
@@ -467,6 +604,14 @@ function SeasonDrawer({ season, onClose, onEdit, onStatusChange, onBookingsToggl
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Discount Tiers */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', fontWeight: 600, marginBottom: 10 }}>
+              Multi-class Discount Structure
+            </div>
+            <DiscountTiersEditor season={season} onUpdated={onSeasonUpdated} />
           </div>
 
           {/* Notes */}
@@ -798,6 +943,10 @@ export default function AdminSeasons() {
           onClose={() => setDrawerSeason(null)}
           onEdit={() => { setEditSeason(drawerSeason); setShowModal(true) }}
           onStatusChange={(status) => handleStatusChange(drawerSeason.id, status)}
+          onSeasonUpdated={updated => {
+            setDrawerSeason(updated)
+            setSeasonList(prev => (prev ?? allSeasons).map(s => s.id === updated.id ? updated : s))
+          }}
           onBookingsToggle={async () => {
             const res = await seasons.toggleBookings(drawerSeason.id)
             const updated = { ...drawerSeason, bookings_open: res.data.bookings_open }

@@ -76,9 +76,18 @@ class UserListView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        role = self.request.query_params.get('role')
-        if role:
-            qs = qs.filter(role=role)
+        include_staff_students = self.request.query_params.get('include_staff_students')
+        if include_staff_students:
+            from apps.enrolments.models import Enrolment
+            staff_with_enrolments = Enrolment.objects.values_list('student_id', flat=True).distinct()
+            qs = qs.filter(
+                Q(role='student') |
+                Q(id__in=staff_with_enrolments, role__in=['instructor', 'admin'])
+            )
+        else:
+            role = self.request.query_params.get('role')
+            if role:
+                qs = qs.filter(role=role)
         search = self.request.query_params.get('search')
         if search:
             qs = qs.filter(
@@ -248,6 +257,56 @@ class LeadDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Lead.objects.select_related('assigned_to')
     serializer_class = LeadSerializer
     permission_classes = [IsAdminOrInstructor]
+
+
+class PublicLeadCreateView(generics.CreateAPIView):
+    serializer_class = LeadSerializer
+    permission_classes = [AllowAny]
+
+    def perform_create(self, serializer):
+        lead = serializer.save(status='new')
+        self._notify_studio(lead)
+
+    def _notify_studio(self, lead):
+        from django.core.mail import send_mail
+        from django.conf import settings as django_settings
+        studio = StudioSettings.get()
+        to_email = studio.enquiries_email or studio.email
+        if not to_email:
+            return
+        try:
+            body = f'New enquiry from {lead.name}\n\n'
+            if lead.email:
+                body += f'Email: {lead.email}\n'
+            if lead.phone:
+                body += f'Phone: {lead.phone}\n'
+            body += f'Source: {lead.get_source_display()}\n'
+            if lead.notes:
+                body += f'\nMessage:\n{lead.notes}\n'
+            body += f'\nView in admin: /admin/leads'
+            send_mail(
+                subject=f'New studio enquiry — {lead.name}',
+                message=body,
+                from_email=django_settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[to_email],
+                fail_silently=True,
+            )
+        except Exception:
+            pass
+
+
+class LeadLogContactView(APIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        from django.utils import timezone
+        try:
+            lead = Lead.objects.get(pk=pk)
+        except Lead.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=404)
+        lead.last_contact_at = timezone.now()
+        lead.save(update_fields=['last_contact_at'])
+        return Response(LeadSerializer(lead).data)
 
 
 class StudioSettingsView(APIView):

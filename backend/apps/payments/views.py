@@ -6,11 +6,11 @@ from django.db.models import Sum, Q, Count, F
 from django.db.models.functions import TruncMonth
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
-from .models import Payment, PaymentPlan, PaymentPlanInstalment, Package, StudentPackage, MembershipType, GiftCard, PromoCode, CancellationOffer
+from .models import Payment, PaymentPlan, PaymentPlanInstalment, Package, StudentPackage, MembershipType, StudentMembership, GiftCard, PromoCode, CancellationOffer
 from .serializers import (
     PaymentSerializer, PaymentPlanSerializer,
     PaymentPlanInstalmentSerializer, StudentBalanceSerializer,
-    PackageSerializer, StudentPackageSerializer, MembershipTypeSerializer, GiftCardSerializer, PromoCodeSerializer,
+    PackageSerializer, StudentPackageSerializer, MembershipTypeSerializer, StudentMembershipSerializer, GiftCardSerializer, PromoCodeSerializer,
     CancellationOfferSerializer,
 )
 from apps.users.permissions import IsAdminOrInstructor, IsAdminUser
@@ -159,6 +159,49 @@ class MembershipTypeDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = MembershipType.objects.all()
     serializer_class = MembershipTypeSerializer
     permission_classes = [IsAdminOrInstructor]
+
+
+class StudentMembershipListView(generics.ListCreateAPIView):
+    serializer_class = StudentMembershipSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+    def get_queryset(self):
+        qs = StudentMembership.objects.select_related('student', 'membership_type')
+        student = self.request.query_params.get('student')
+        if student:
+            qs = qs.filter(student_id=student)
+        return qs
+
+
+class StudentMembershipDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = StudentMembership.objects.select_related('student', 'membership_type')
+    serializer_class = StudentMembershipSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class BulkAssignMembershipView(APIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request):
+        from django.utils.dateparse import parse_date
+        student_ids = request.data.get('student_ids', [])
+        membership_type_id = request.data.get('membership_type_id')
+        start_date = request.data.get('start_date')
+        if not student_ids or not membership_type_id or not start_date:
+            return Response({'detail': 'student_ids, membership_type_id and start_date are required.'}, status=400)
+        try:
+            membership_type = MembershipType.objects.get(pk=membership_type_id)
+        except MembershipType.DoesNotExist:
+            return Response({'detail': 'Membership type not found.'}, status=404)
+        created = []
+        for sid in student_ids:
+            obj, _ = StudentMembership.objects.get_or_create(
+                student_id=sid,
+                membership_type=membership_type,
+                defaults={'start_date': start_date, 'status': 'active'},
+            )
+            created.append(obj.id)
+        return Response({'assigned': len(created)})
 
 
 class GiftCardListView(generics.ListCreateAPIView):

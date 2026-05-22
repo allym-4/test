@@ -10,6 +10,181 @@ const STATUS_STYLE = {
   resolved: { label: 'Resolved', cls: 'tag-grey' },
   closed:   { label: 'Closed',   cls: 'tag-grey' },
 }
+
+const CR_STATUS_COLOR = {
+  pending: 'var(--amber)',
+  awaiting_response: '#f97316',
+  approved: 'var(--lime)',
+  rejected: 'var(--red)',
+}
+const CR_STATUS_LABEL = {
+  pending: 'Pending',
+  awaiting_response: 'Awaiting Response',
+  approved: 'Approved',
+  rejected: 'Rejected',
+}
+
+function ApproveModal({ req, onClose, onDone }) {
+  const currentClass = req.current_enrolment_detail?.class_session_detail?.name || req.current_class_name || '—'
+  const requestedClass = req.requested_session_detail?.name || req.requested_session_name || 'Not specified'
+  const [adminNotes, setAdminNotes] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+
+  async function handleApprove() {
+    setSaving(true); setError(null)
+    try {
+      const payload = {
+        new_session_id: req.requested_session || req.requested_session_detail?.id,
+        admin_notes: adminNotes,
+      }
+      const res = await enrolments.changeRequests.approve(req.id, payload)
+      onDone(res.data)
+      onClose()
+    } catch (err) {
+      setError(err.response?.data?.detail || JSON.stringify(err.response?.data) || 'Failed to approve')
+    } finally { setSaving(false) }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 480 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18 }}>Approve & Transfer</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="sd-body">
+          {error && <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>{error}</div>}
+          <div style={{ background: '#1a1a1a', borderRadius: 8, padding: '12px 14px', marginBottom: 16 }}>
+            <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>Transfer Summary</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
+              <span style={{ fontWeight: 500 }}>{currentClass}</span>
+              <span style={{ color: 'var(--lime)', fontSize: 16 }}>→</span>
+              <span style={{ fontWeight: 600, color: 'var(--lime)' }}>{requestedClass}</span>
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 6 }}>
+              Student: <span style={{ color: 'var(--white)' }}>{req.student_detail?.display_name || `Student #${req.student}`}</span>
+            </div>
+          </div>
+          <div style={{ fontSize: 13, color: '#aaa', marginBottom: 16, lineHeight: 1.5 }}>
+            Approving this request will automatically move the student from their current class to the requested class.
+          </div>
+          <div className="field">
+            <label>Admin Notes (optional)</label>
+            <textarea rows={3} value={adminNotes} onChange={e => setAdminNotes(e.target.value)} placeholder="Internal notes about this approval…" />
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button className="btn btn-lime btn-sm" onClick={handleApprove} disabled={saving}>
+              {saving ? 'Approving…' : 'Approve & Transfer'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ContactModal({ req, onClose, onDone }) {
+  const studentName = req.student_detail?.display_name || `Student #${req.student}`
+  const [message, setMessage] = useState(`Hi ${studentName},\n\nThank you for your transfer request. We'd like to get some more information before we can process this.\n\nCould you please let us know [details needed]?\n\nThanks,\nDuality Pole Studio`)
+  const [adminNotes, setAdminNotes] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+
+  async function handleSend() {
+    setSaving(true); setError(null)
+    try {
+      const res = await enrolments.changeRequests.requestInfo(req.id, { message, admin_notes: adminNotes })
+      onDone(res.data)
+      onClose()
+    } catch (err) {
+      setError(err.response?.data?.detail || JSON.stringify(err.response?.data) || 'Failed to send')
+    } finally { setSaving(false) }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 500 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18 }}>Contact for More Info</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="sd-body">
+          {error && <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>{error}</div>}
+          <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 14, padding: '8px 12px', background: '#1a1a1a', borderRadius: 7 }}>
+            This will send a message to <strong style={{ color: 'var(--white)' }}>{studentName}</strong> via their chat and set the request status to <strong style={{ color: '#f97316' }}>Awaiting Response</strong>.
+          </div>
+          <div className="field">
+            <label>Message to Student</label>
+            <textarea rows={7} value={message} onChange={e => setMessage(e.target.value)} />
+          </div>
+          <div className="field">
+            <label>Admin Notes (optional)</label>
+            <textarea rows={2} value={adminNotes} onChange={e => setAdminNotes(e.target.value)} placeholder="Internal notes…" />
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button className="btn btn-lime btn-sm" onClick={handleSend} disabled={saving || !message.trim()}>
+              {saving ? 'Sending…' : 'Send Message'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function RejectModal({ req, onClose, onDone }) {
+  const studentName = req.student_detail?.display_name || `Student #${req.student}`
+  const requestedClass = req.requested_session_detail?.name || req.requested_session_name || 'the requested class'
+  const [message, setMessage] = useState(`Hi ${studentName},\n\nThank you for submitting your transfer request to ${requestedClass}.\n\nUnfortunately, we're unable to process this transfer at this time. [Reason here]\n\nIf you have any questions, please don't hesitate to reach out.\n\nWarm regards,\nDuality Pole Studio`)
+  const [adminNotes, setAdminNotes] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+
+  async function handleReject() {
+    setSaving(true); setError(null)
+    try {
+      const res = await enrolments.changeRequests.reject(req.id, { message, admin_notes: adminNotes })
+      onDone(res.data)
+      onClose()
+    } catch (err) {
+      setError(err.response?.data?.detail || JSON.stringify(err.response?.data) || 'Failed to reject')
+    } finally { setSaving(false) }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 500 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18 }}>Reject Request</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="sd-body">
+          {error && <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>{error}</div>}
+          <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 14, padding: '8px 12px', background: '#1a1a1a', borderRadius: 7 }}>
+            This will send a rejection message to <strong style={{ color: 'var(--white)' }}>{studentName}</strong> via their chat and close the request.
+          </div>
+          <div className="field">
+            <label>Message to Student</label>
+            <textarea rows={8} value={message} onChange={e => setMessage(e.target.value)} />
+          </div>
+          <div className="field">
+            <label>Admin Notes (optional)</label>
+            <textarea rows={2} value={adminNotes} onChange={e => setAdminNotes(e.target.value)} placeholder="Internal notes…" />
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button className="btn btn-sm" style={{ background: 'rgba(255,68,68,0.15)', color: 'var(--red)', border: '1px solid rgba(255,68,68,0.3)' }} onClick={handleReject} disabled={saving}>
+              {saving ? 'Rejecting…' : 'Reject & Notify'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 const PRIORITY_COLOR = { high: 'var(--red)', medium: 'var(--amber)', low: 'var(--grey)' }
 const CATEGORIES = ['Booking', 'Billing', 'Membership', 'Technical', 'General']
 
@@ -86,9 +261,17 @@ export default function AdminHelpdesk() {
   const openCount = allTickets.filter(t => t.status === 'open').length
   const pendingCount = allTickets.filter(t => t.status === 'pending').length
 
-  const allChangeReqs = changeReqData?.results || changeReqData || []
-  const pendingChangeReqs = allChangeReqs.filter(r => r.status === 'pending')
+  const [allChangeReqs, setAllChangeReqs] = useState(null)
+  const changeReqs = allChangeReqs ?? (changeReqData?.results || changeReqData || [])
+  const pendingChangeReqs = changeReqs.filter(r => r.status === 'pending' || r.status === 'awaiting_response')
   const [changeReqFilter, setChangeReqFilter] = useState('pending')
+  const [approveModal, setApproveModal] = useState(null)
+  const [contactModal, setContactModal] = useState(null)
+  const [rejectModal, setRejectModal] = useState(null)
+
+  function updateChangeReq(updated) {
+    setAllChangeReqs(prev => (prev ?? (changeReqData?.results || changeReqData || [])).map(r => r.id === updated.id ? updated : r))
+  }
 
   async function openTicket(ticket) {
     setActiveTicket(ticket)
@@ -187,27 +370,28 @@ export default function AdminHelpdesk() {
       {mainTab === 'change-requests' ? (
         <div style={{ flex: 1, overflowY: 'auto' }}>
           <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
-            {[['pending', 'Pending'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['all', 'All']].map(([key, label]) => (
-              <span key={key} onClick={() => setChangeReqFilter(key)} style={{ fontSize: 11, padding: '4px 12px', borderRadius: 20, cursor: 'pointer', background: changeReqFilter === key ? 'var(--lime)' : '#1a1a1a', color: changeReqFilter === key ? '#000' : 'var(--grey)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', border: '1px solid var(--border)' }}>{label}</span>
+            {[['pending', 'Pending'], ['awaiting_response', 'Awaiting Response'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['all', 'All']].map(([key, label]) => (
+              <span key={key} onClick={() => setChangeReqFilter(key)} style={{ fontSize: 11, padding: '4px 12px', borderRadius: 20, cursor: 'pointer', background: changeReqFilter === key ? 'var(--lime)' : '#1a1a1a', color: changeReqFilter === key ? '#000' : 'var(--grey)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', border: '1px solid var(--border)', whiteSpace: 'nowrap' }}>{label}</span>
             ))}
-            <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--grey)' }}>{pendingChangeReqs.length} pending</span>
+            <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--grey)', flexShrink: 0 }}>{pendingChangeReqs.length} pending</span>
             <button className="btn btn-ghost btn-sm" onClick={refetchChangeReqs}>Refresh</button>
           </div>
           {changeReqLoading ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}><div className="spinner" /></div>
           ) : (() => {
-            const displayReqs = changeReqFilter === 'all' ? allChangeReqs : allChangeReqs.filter(r => r.status === changeReqFilter)
+            const displayReqs = changeReqFilter === 'all' ? changeReqs : changeReqs.filter(r => r.status === changeReqFilter)
             if (displayReqs.length === 0) return (
               <div style={{ textAlign: 'center', color: 'var(--grey)', fontSize: 13, padding: '48px 0' }}>No {changeReqFilter === 'all' ? '' : changeReqFilter} change requests</div>
             )
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {displayReqs.map(r => {
-                  const statusColor = r.status === 'pending' ? 'var(--amber)' : r.status === 'approved' ? 'var(--lime)' : 'var(--grey)'
+                  const statusColor = CR_STATUS_COLOR[r.status] || 'var(--grey)'
                   const studentName = r.student_detail?.display_name || r.student_name || `Student #${r.student}`
                   const currentClass = r.current_enrolment_detail?.class_session_detail?.name || r.current_class_name || '—'
                   const requestedClass = r.requested_session_detail?.name || r.requested_session_name || 'Not specified'
                   const studentId = r.student_detail?.id || r.student
+                  const isActionable = r.status === 'pending' || r.status === 'awaiting_response'
                   return (
                     <div key={r.id} style={{ background: '#111', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px', display: 'flex', gap: 16, alignItems: 'flex-start' }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -216,13 +400,19 @@ export default function AdminHelpdesk() {
                             {(studentName[0] || '?').toUpperCase()}
                           </div>
                           <div>
-                            <div style={{ fontWeight: 600, fontSize: 14 }}>{studentName}</div>
+                            <button
+                              onClick={() => navigate(`/admin/students/${studentId}`)}
+                              style={{ fontWeight: 600, fontSize: 14, background: 'none', border: 'none', color: 'var(--white)', cursor: 'pointer', padding: 0, textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.2)' }}
+                            >
+                              {studentName}
+                            </button>
                             <div style={{ fontSize: 11, color: 'var(--grey)' }}>
                               {new Date(r.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              {r.request_type && <span style={{ marginLeft: 6, textTransform: 'capitalize' }}>· {r.request_type}</span>}
                             </div>
                           </div>
-                          <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: statusColor, background: `${statusColor}22`, borderRadius: 20, padding: '3px 10px', border: `1px solid ${statusColor}44` }}>
-                            {r.status}
+                          <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: statusColor, background: `${statusColor}22`, borderRadius: 20, padding: '3px 10px', border: `1px solid ${statusColor}44`, whiteSpace: 'nowrap' }}>
+                            {CR_STATUS_LABEL[r.status] || r.status}
                           </span>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
@@ -232,7 +422,7 @@ export default function AdminHelpdesk() {
                           </div>
                           <div style={{ background: '#1a1a1a', borderRadius: 7, padding: '8px 12px' }}>
                             <div style={{ fontSize: 10, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>Requested Class</div>
-                            <div style={{ fontSize: 13, fontWeight: 500 }}>{requestedClass}</div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--lime)' }}>{requestedClass}</div>
                           </div>
                         </div>
                         {r.notes && (
@@ -247,17 +437,35 @@ export default function AdminHelpdesk() {
                         )}
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
-                        <button
-                          className="btn btn-ghost btn-xs"
-                          onClick={() => navigate(`/admin/students/${studentId}`)}
-                          style={{ whiteSpace: 'nowrap' }}
-                        >
-                          View Student →
-                        </button>
+                        {isActionable && (
+                          <>
+                            <button
+                              className="btn btn-lime btn-xs"
+                              onClick={() => setApproveModal(r)}
+                              style={{ whiteSpace: 'nowrap' }}
+                            >
+                              Approve & Action
+                            </button>
+                            <button
+                              className="btn btn-ghost btn-xs"
+                              onClick={() => setContactModal(r)}
+                              style={{ whiteSpace: 'nowrap' }}
+                            >
+                              Contact for Info
+                            </button>
+                            <button
+                              className="btn btn-ghost btn-xs"
+                              onClick={() => setRejectModal(r)}
+                              style={{ whiteSpace: 'nowrap', color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)' }}
+                            >
+                              Reject
+                            </button>
+                          </>
+                        )}
                         {r.ticket && (
                           <button
                             className="btn btn-ghost btn-xs"
-                            onClick={() => { setMainTab('tickets') }}
+                            onClick={() => setMainTab('tickets')}
                             style={{ whiteSpace: 'nowrap', fontSize: 10 }}
                           >
                             View Ticket #{r.ticket}
@@ -417,6 +625,9 @@ export default function AdminHelpdesk() {
       )}
 
       {showNew && mainTab === 'tickets' && <NewTicketModal students={students} onClose={() => setShowNew(false)} onCreated={ticket => { setTicketList(prev => [ticket, ...(prev ?? allTickets)]); openTicket(ticket) }} />}
+      {approveModal && <ApproveModal req={approveModal} onClose={() => setApproveModal(null)} onDone={updateChangeReq} />}
+      {contactModal && <ContactModal req={contactModal} onClose={() => setContactModal(null)} onDone={updateChangeReq} />}
+      {rejectModal && <RejectModal req={rejectModal} onClose={() => setRejectModal(null)} onDone={updateChangeReq} />}
     </div>
   )
 }

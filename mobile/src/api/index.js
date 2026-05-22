@@ -265,3 +265,9 @@ export const surveys = {
 export const studios = {
   list: () => client.get('/api/classes/studios/'),
 }
+
+export const leads = {
+  list: (params) => client.get('/api/leads/', { params }),
+  update: (id, data) => client.patch(`/api/leads/${id}/`, data),
+  logContact: (id) => client.post(`/api/leads/${id}/log-contact/`),
+}

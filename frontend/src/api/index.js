@@ -110,6 +110,7 @@ export const enrolments = {
     create: (data) => client.post('/api/enrolments/change-requests/', data),
     approve: (id, data) => client.post(`/api/enrolments/change-requests/${id}/approve/`, data),
     reject: (id, data) => client.post(`/api/enrolments/change-requests/${id}/reject/`, data),
+    requestInfo: (id, data) => client.post(`/api/enrolments/change-requests/${id}/request-info/`, data),
   },
   waitlist: {
     reorder: (data) => client.post('/api/enrolments/waitlist-reorder/', data),
@@ -167,6 +168,7 @@ export const leads = {
   create: (data) => client.post('/api/leads/', data),
   update: (id, data) => client.patch(`/api/leads/${id}/`, data),
   delete: (id) => client.delete(`/api/leads/${id}/`),
+  logContact: (id) => client.post(`/api/leads/${id}/log-contact/`),
 }
 
 export const seasons = {
@@ -191,6 +193,8 @@ export const lockers = {
   eligible: () => client.get('/api/classes/lockers/eligible/'),
   lostKey: (id) => client.post(`/api/classes/lockers/${id}/lost_key/`),
   chase: (id) => client.post(`/api/classes/lockers/${id}/chase/`),
+  carryOver: (id) => client.post(`/api/classes/lockers/${id}/carry-over/`),
+  invoice: (id, data) => client.post(`/api/classes/lockers/${id}/invoice/`, data || {}),
   markKeyIssued: (id, issued) => client.patch(`/api/classes/lockers/${id}/`, { key_issued: issued }),
 }
 
@@ -397,6 +401,13 @@ export const membershipTypes = {
   create: (data) => client.post('/api/payments/membership-types/', data),
   update: (id, data) => client.patch(`/api/payments/membership-types/${id}/`, data),
   delete: (id) => client.delete(`/api/payments/membership-types/${id}/`),
+}
+
+export const studentMemberships = {
+  list: (params) => client.get('/api/payments/student-memberships/', { params }),
+  create: (data) => client.post('/api/payments/student-memberships/', data),
+  update: (id, data) => client.patch(`/api/payments/student-memberships/${id}/`, data),
+  bulkAssign: (data) => client.post('/api/payments/student-memberships/bulk-assign/', data),
 }
 
 export const giftCards = {

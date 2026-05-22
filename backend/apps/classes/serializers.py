@@ -10,10 +10,15 @@ class StudioSerializer(serializers.ModelSerializer):
 
 
 class ClassCategorySerializer(serializers.ModelSerializer):
+    session_ids = serializers.SerializerMethodField()
+
+    def get_session_ids(self, obj):
+        return list(obj.sessions.values_list('id', flat=True))
+
     class Meta:
         model = ClassCategory
-        fields = ('id', 'name', 'colour', 'is_visible', 'is_addon_type', 'standalone_price', 'created_at')
-        read_only_fields = ('id', 'created_at')
+        fields = ('id', 'name', 'colour', 'is_visible', 'is_addon_type', 'standalone_price', 'created_at', 'session_ids')
+        read_only_fields = ('id', 'created_at', 'session_ids')
 
 
 class ClassSessionSerializer(serializers.ModelSerializer):
@@ -158,7 +163,7 @@ class SeasonSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Season
-        fields = ('id', 'name', 'start_date', 'end_date', 'status', 'bookings_open', 'go_live_at', 'bookings_enabled', 'archived', 'notes', 'published_at', 'created_at', 'session_count', 'enrolled_count')
+        fields = ('id', 'name', 'start_date', 'end_date', 'status', 'bookings_open', 'go_live_at', 'bookings_enabled', 'archived', 'notes', 'published_at', 'created_at', 'session_count', 'enrolled_count', 'discount_tiers')
         read_only_fields = ('id', 'created_at', 'session_count', 'enrolled_count')
 
     def get_session_count(self, obj):

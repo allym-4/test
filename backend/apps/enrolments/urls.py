@@ -10,6 +10,7 @@ urlpatterns = [
     path('change-requests/<int:pk>/', views.ClassChangeRequestDetailView.as_view(), name='change-request-detail'),
     path('change-requests/<int:pk>/approve/', views.ClassChangeRequestApproveView.as_view(), name='change-request-approve'),
     path('change-requests/<int:pk>/reject/', views.ClassChangeRequestRejectView.as_view(), name='change-request-reject'),
+    path('change-requests/<int:pk>/request-info/', views.ClassChangeRequestInfoView.as_view(), name='change-request-request-info'),
     path('waitlist-reorder/', views.WaitlistReorderView.as_view(), name='waitlist-reorder'),
     path('<int:pk>/promote-waitlist/', views.AdminPromoteSeasonWaitlistView.as_view(), name='promote-waitlist'),
     path('', views.EnrolmentListView.as_view(), name='enrolment-list'),

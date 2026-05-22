@@ -66,6 +66,9 @@ export default function LoginScreen({ navigation }) {
           <TouchableOpacity onPress={() => navigation.navigate('Register')} activeOpacity={0.7} style={s.linkWrap}>
             <Text style={s.link}>Don't have an account? <Text style={s.linkAccent}>Create account</Text></Text>
           </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Enquire')} activeOpacity={0.7} style={[s.linkWrap, { marginTop: 12 }]}>
+            <Text style={s.link}>Interested in joining? <Text style={s.linkAccent}>Send an enquiry</Text></Text>
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </>

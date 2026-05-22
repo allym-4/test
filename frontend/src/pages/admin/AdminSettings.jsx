@@ -254,7 +254,7 @@ export default function AdminSettings() {
 
   // FAQs tab
   const { data: faqData, refetch: refetchFaqs } = useApi(() => helpdeskApi.faqs.list(), [])
-  const faqList = faqData || []
+  const faqList = faqData?.results || faqData || []
   const [faqDraft, setFaqDraft] = useState({}) // { [id]: {field: val} } for inline edits
   const [faqSaving, setFaqSaving] = useState({}) // { [id]: true }
   const [newFaq, setNewFaq] = useState(null) // null | draft object for a new FAQ row

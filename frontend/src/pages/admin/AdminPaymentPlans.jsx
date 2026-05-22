@@ -551,10 +551,11 @@ export default function AdminPaymentPlans() {
 
   const pending = allPlans.filter(p => p.status === 'pending')
   const active = allPlans.filter(p => p.status === 'active')
+  const overduePlans = active.filter(p => p.instalments?.some(i => i.status === 'overdue'))
+  const healthyActive = active.filter(p => !p.instalments?.some(i => i.status === 'overdue'))
   const completed = allPlans.filter(p => p.status === 'completed')
 
   const totalActive = active.reduce((s, p) => s + parseFloat(p.total_amount || 0), 0)
-  const overdueCount = active.filter(p => p.instalments?.some(i => i.status === 'overdue')).length
   const collectedTotal = active.reduce((s, p) => s + parseFloat(p.amount_paid || 0), 0)
 
   async function approvePlan(id) {
@@ -601,7 +602,7 @@ export default function AdminPaymentPlans() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 28 }}>
         <StatCard label="Active Plans" value={active.length} sub={`$${totalActive.toFixed(2)} total value`} color="var(--lime)" />
         <StatCard label="Pending Approval" value={pending.length} sub="Awaiting your sign-off" color="var(--amber)" />
-        <StatCard label="Overdue Instalments" value={overdueCount} sub="Action required" color="var(--red)" />
+        <StatCard label="Overdue Plans" value={overduePlans.length} sub="Action required" color="var(--red)" />
         <StatCard label="Amount Collected" value={`$${collectedTotal.toFixed(2)}`} sub="Via instalment plans" />
       </div>
 
@@ -611,24 +612,22 @@ export default function AdminPaymentPlans() {
         <>
           {pending.length > 0 && (
             <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 12, fontWeight: 600 }}>Pending Approval</div>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--amber)', marginBottom: 12, fontWeight: 600 }}>Needing Approval ({pending.length})</div>
               <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
                 {pending.map((p, i) => (
-                  <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: i < pending.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                    <div>
+                  <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: i < pending.length - 1 ? '1px solid var(--border)' : 'none', cursor: 'pointer' }}
+                    onClick={() => setDetailPlan(p)}>
+                    <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 600, fontSize: 13 }}>{p.student_name}</div>
                       <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{p.description}</div>
                     </div>
-                    <div style={{ fontSize: 13, fontFamily: "'Archivo Black', sans-serif" }}>${parseFloat(p.total_amount).toFixed(2)}</div>
-                    <div style={{ fontSize: 12, color: 'var(--grey)' }}>
+                    <div style={{ fontSize: 13, fontFamily: "'Archivo Black', sans-serif", marginRight: 16 }}>${parseFloat(p.total_amount).toFixed(2)}</div>
+                    <div style={{ fontSize: 12, color: 'var(--grey)', marginRight: 16 }}>
                       {p.instalments?.length} × ${p.instalments?.length ? (parseFloat(p.total_amount) / p.instalments.length).toFixed(0) : 0}
                     </div>
-                    <div style={{ display: 'flex', gap: 6 }}>
+                    <div style={{ display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
                       <button className="btn btn-primary btn-xs" onClick={() => approvePlan(p.id)} disabled={acting[p.id]}>
                         {acting[p.id] === 'approving' ? '…' : 'Approve'}
-                      </button>
-                      <button className="btn btn-ghost btn-xs" onClick={() => setDetailPlan(p)}>
-                        Query
                       </button>
                       <button className="btn btn-ghost btn-xs" onClick={() => declinePlan(p.id)} disabled={acting[p.id]} style={{ color: 'var(--red)' }}>
                         {acting[p.id] === 'declining' ? '…' : 'Decline'}
@@ -640,9 +639,44 @@ export default function AdminPaymentPlans() {
             </div>
           )}
 
+          {overduePlans.length > 0 && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--red)', marginBottom: 12, fontWeight: 600 }}>Overdue Payments ({overduePlans.length})</div>
+              <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                      {['Student', 'Total', 'Paid', 'Remaining', 'Next Due', ''].map(h => (
+                        <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {overduePlans.map((p, i) => (
+                      <tr key={p.id} style={{ borderBottom: i < overduePlans.length - 1 ? '1px solid var(--border)' : 'none', cursor: 'pointer' }}
+                        onClick={() => setDetailPlan(p)}>
+                        <td style={{ padding: '12px 14px' }}>
+                          <div style={{ fontWeight: 600, fontSize: 13 }}>{p.student_name}</div>
+                          <div style={{ fontSize: 11, color: 'var(--grey)' }}>{p.description}</div>
+                        </td>
+                        <td style={{ padding: '12px 14px', fontSize: 13 }}>${parseFloat(p.total_amount).toFixed(2)}</td>
+                        <td style={{ padding: '12px 14px', fontSize: 13, color: 'var(--lime)' }}>${parseFloat(p.amount_paid || 0).toFixed(2)}</td>
+                        <td style={{ padding: '12px 14px', fontSize: 13, color: 'var(--red)' }}>${parseFloat(p.amount_remaining || 0).toFixed(2)}</td>
+                        <td style={{ padding: '12px 14px', fontSize: 12, color: 'var(--red)' }}>{nextDue(p)}</td>
+                        <td style={{ padding: '12px 14px', textAlign: 'right' }} onClick={e => e.stopPropagation()}>
+                          <button className="btn btn-ghost btn-xs" onClick={() => payments.plans.remind && payments.plans.remind(p.id)}>Remind</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           <div style={{ marginBottom: 28 }}>
-            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 12, fontWeight: 600 }}>Active Plans</div>
-            {active.length === 0 ? (
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 12, fontWeight: 600 }}>Active Plans ({healthyActive.length})</div>
+            {healthyActive.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--grey)', fontSize: 13 }}>No active plans.</div>
             ) : (
               <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
@@ -655,11 +689,11 @@ export default function AdminPaymentPlans() {
                     </tr>
                   </thead>
                   <tbody>
-                    {active.map((p, i) => {
+                    {healthyActive.map((p, i) => {
                       const ps = planStatus(p)
                       const st = STATUS_STYLE[ps]
                       return (
-                        <tr key={p.id} style={{ borderBottom: i < active.length - 1 ? '1px solid var(--border)' : 'none', cursor: 'pointer' }}
+                        <tr key={p.id} style={{ borderBottom: i < healthyActive.length - 1 ? '1px solid var(--border)' : 'none', cursor: 'pointer' }}
                           onClick={() => setDetailPlan(p)}>
                           <td style={{ padding: '12px 14px' }}>
                             <div style={{ fontWeight: 600, fontSize: 13 }}>{p.student_name}</div>

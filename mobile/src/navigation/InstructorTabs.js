@@ -17,6 +17,7 @@ import NotificationsScreen from '../screens/instructor/NotificationsScreen'
 import StudentDetailScreen from '../screens/instructor/StudentDetailScreen'
 import ClassDetailScreen from '../screens/instructor/ClassDetailScreen'
 import AssistantScreen from '../screens/instructor/AssistantScreen'
+import LeadsScreen from '../screens/instructor/LeadsScreen'
 
 const Tab = createBottomTabNavigator()
 const HomeStackNav = createNativeStackNavigator()
@@ -31,6 +32,7 @@ const ICONS = {
   HomeTab: '🏠',
   MyClassesTab: '📅',
   StudentsTab: '👥',
+  LeadsTab: '📋',
   AssistantTab: '🤖',
   MessagesTab: '💬',
 }
@@ -123,6 +125,7 @@ export default function InstructorTabs({ onSwitchToStudent }) {
         <Tab.Screen name="HomeTab" component={HomeStack} options={{ title: 'Home' }} />
         <Tab.Screen name="MyClassesTab" component={MyClassesStack} options={{ title: 'My Classes' }} />
         <Tab.Screen name="StudentsTab" component={StudentsStack} options={{ title: 'Students' }} />
+        <Tab.Screen name="LeadsTab" component={LeadsScreen} options={{ title: 'Leads', headerShown: true, headerStyle: { backgroundColor: '#000' }, headerTitleStyle: { color: '#fff', fontWeight: '700' } }} />
         <Tab.Screen name="AssistantTab" component={AssistantScreen} options={{ title: 'Assistant', headerShown: false }} />
         <Tab.Screen name="MessagesTab" component={MessagesStack} options={{ title: 'Messages' }} />
       </Tab.Navigator>

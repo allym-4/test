@@ -134,9 +134,10 @@ def _get_class_incremental_price(session, position):
         if session.category and session.category.standalone_price is not None
         else Decimal(str(settings.price_season if settings else 270))
     )
-    tiers = (settings.season_discount_tiers or {}) if settings else {}
-    if not tiers:
-        tiers = DEFAULT_DISCOUNT_TIERS
+    # Season-level tiers take priority over studio-level tiers
+    season_tiers = (session.season.discount_tiers or {}) if session.season_id else {}
+    studio_tiers = (settings.season_discount_tiers or {}) if settings else {}
+    tiers = season_tiers or studio_tiers or DEFAULT_DISCOUNT_TIERS
     discount = Decimal(str(tiers.get(str(position), 0)))
     return max(Decimal('0'), base_price - discount)
 
@@ -860,8 +861,8 @@ class ClassChangeRequestApproveView(APIView):
         from django.conf import settings as django_settings
 
         change_request = get_object_or_404(ClassChangeRequest, pk=pk)
-        if change_request.status != 'pending':
-            return Response({'detail': 'Request is not pending.'}, status=status.HTTP_400_BAD_REQUEST)
+        if change_request.status not in ('pending', 'awaiting_response'):
+            return Response({'detail': 'Request cannot be approved.'}, status=status.HTTP_400_BAD_REQUEST)
 
         new_session_id = request.data.get('new_session_id')
         refund_action = request.data.get('refund_action', 'none')  # 'none', 'credit', 'stripe'
@@ -988,6 +989,33 @@ class ClassChangeRequestApproveView(APIView):
         return Response(ClassChangeRequestSerializer(change_request).data)
 
 
+class ClassChangeRequestInfoView(APIView):
+    """Set change request to awaiting-response and send a DM to the student."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        from apps.helpdesk.models import Conversation, DirectMessage
+
+        change_request = get_object_or_404(ClassChangeRequest, pk=pk)
+        if change_request.status not in ('pending', 'awaiting_response'):
+            return Response({'detail': 'Request cannot be set to awaiting response.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        message_body = request.data.get('message', '').strip()
+        admin_notes = request.data.get('admin_notes', '')
+
+        change_request.status = 'awaiting_response'
+        change_request.admin_notes = admin_notes
+        change_request.save(update_fields=['status', 'admin_notes'])
+
+        if message_body:
+            conv, _ = Conversation.objects.get_or_create(student=change_request.student, instructor=None)
+            DirectMessage.objects.create(conversation=conv, sender=request.user, body=message_body)
+            conv.admin_unread = False
+            conv.save(update_fields=['updated_at', 'admin_unread'])
+
+        return Response(ClassChangeRequestSerializer(change_request).data)
+
+
 class ClassChangeRequestRejectView(APIView):
     permission_classes = [IsAdminOrInstructor]
 
@@ -995,14 +1023,23 @@ class ClassChangeRequestRejectView(APIView):
         from apps.users.models import Notification
 
         change_request = get_object_or_404(ClassChangeRequest, pk=pk)
-        if change_request.status != 'pending':
-            return Response({'detail': 'Request is not pending.'}, status=status.HTTP_400_BAD_REQUEST)
+        if change_request.status not in ('pending', 'awaiting_response'):
+            return Response({'detail': 'Request cannot be rejected.'}, status=status.HTTP_400_BAD_REQUEST)
 
         admin_notes = request.data.get('admin_notes', '')
+        message_body = request.data.get('message', '').strip()
         change_request.status = ClassChangeRequest.Status.REJECTED
         change_request.admin_notes = admin_notes
         change_request.resolved_at = timezone.now()
         change_request.save(update_fields=['status', 'admin_notes', 'resolved_at'])
+
+        # Send DM to student if message provided
+        if message_body:
+            from apps.helpdesk.models import Conversation, DirectMessage
+            conv, _ = Conversation.objects.get_or_create(student=change_request.student, instructor=None)
+            DirectMessage.objects.create(conversation=conv, sender=request.user, body=message_body)
+            conv.admin_unread = False
+            conv.save(update_fields=['updated_at', 'admin_unread'])
 
         # Close the linked helpdesk ticket if present
         if change_request.ticket:

@@ -100,6 +100,7 @@ class Lead(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    last_contact_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ['-created_at']
@@ -132,6 +133,8 @@ class StudioSettings(models.Model):
     abn = models.CharField(max_length=30, blank=True)
     kisi_api_key = models.CharField(max_length=200, blank=True)
     kisi_org_id = models.CharField(max_length=100, blank=True)
+    kisi_enrolment_place_id = models.CharField(max_length=200, blank=True, help_text='Kisi place ID for the "Duality Babes" group — auto-granted on enrolment')
+    kisi_practice_place_id = models.CharField(max_length=200, blank=True, help_text='Kisi place ID for the "Practice Time" group — auto-granted on practice booking')
     instagram_access_token = models.CharField(max_length=500, blank=True)
     instagram_page_id = models.CharField(max_length=100, blank=True)
     instagram_username = models.CharField(max_length=100, blank=True)
@@ -426,6 +429,10 @@ class StudentTag(models.Model):
 class SkillLevel(models.Model):
     name = models.CharField(max_length=50)
     order = models.PositiveIntegerField(default=0)
+    class_category = models.ForeignKey(
+        'classes.ClassCategory', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='skill_levels',
+    )
 
     class Meta:
         ordering = ['order']

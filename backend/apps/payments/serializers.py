@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.db.models import Sum
-from .models import Payment, PaymentPlan, PaymentPlanInstalment, Package, StudentPackage, MembershipType, GiftCard, PromoCode, CancellationOffer
+from .models import Payment, PaymentPlan, PaymentPlanInstalment, Package, StudentPackage, MembershipType, StudentMembership, GiftCard, PromoCode, CancellationOffer
 from apps.users.serializers import UserMinimalSerializer
 
 
@@ -85,6 +85,16 @@ class MembershipTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = MembershipType
         fields = ('id', 'name', 'price', 'duration', 'classes_per_week', 'is_active', 'created_at')
+        read_only_fields = ('id', 'created_at')
+
+
+class StudentMembershipSerializer(serializers.ModelSerializer):
+    membership_type_name = serializers.CharField(source='membership_type.name', read_only=True)
+    student_name = serializers.CharField(source='student.display_name', read_only=True)
+
+    class Meta:
+        model = StudentMembership
+        fields = ('id', 'student', 'student_name', 'membership_type', 'membership_type_name', 'status', 'start_date', 'end_date', 'created_at')
         read_only_fields = ('id', 'created_at')
 
 

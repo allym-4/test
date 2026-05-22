@@ -66,9 +66,11 @@ function SendMessageModal({ rec, onClose, onSent }) {
 }
 
 export default function AdminRecommendations() {
-  const { data: studentsData, loading: loadingStudents } = useApi(() => users.list({ role: 'student' }))
-  const { data: paymentsData } = useApi(() => payments.list())
-  const { data: attData } = useApi(() => attendance.list())
+  const { data: studentsData, loading: loadingStudents, refetch: refetchStudents } = useApi(() => users.list({ role: 'student' }))
+  const { data: paymentsData, refetch: refetchPayments } = useApi(() => payments.list())
+  const { data: attData, refetch: refetchAtt } = useApi(() => attendance.list())
+
+  function handleRefresh() { refetchStudents(); refetchPayments(); refetchAtt() }
 
   const [activeModal, setActiveModal] = useState(null)
   const [sentIds, setSentIds] = useState(new Set())
@@ -185,7 +187,12 @@ export default function AdminRecommendations() {
           <div className="page-title">Recommendations</div>
           <div className="page-sub">Insights computed from your studio data</div>
         </div>
-        <div style={{ fontSize: 11, color: 'var(--grey)' }}>Updated now · {recs.length + insights.length} insights</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ fontSize: 11, color: 'var(--grey)' }}>{recs.length + insights.length} insights</div>
+          <button className="btn btn-ghost btn-sm" onClick={handleRefresh} disabled={loadingStudents}>
+            {loadingStudents ? '…' : '↻ Refresh'}
+          </button>
+        </div>
       </div>
 
       {loading ? (

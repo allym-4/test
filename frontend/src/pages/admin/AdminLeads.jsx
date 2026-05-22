@@ -14,6 +14,25 @@ const STATUS_TAG = {
 
 const SOURCES = ['instagram', 'google', 'referral', 'website', 'walkin', 'other']
 
+function exportCsv(leadList) {
+  const headers = ['Name', 'Email', 'Phone', 'Source', 'Status', 'Enquiry Date', 'Last Contact', 'Notes']
+  const rows = leadList.map(l => [
+    l.name,
+    l.email || '',
+    l.phone || '',
+    l.source,
+    STATUS_TAG[l.status]?.label ?? l.status,
+    l.created_at ? new Date(l.created_at).toLocaleDateString('en-AU') : '',
+    l.last_contact_at ? new Date(l.last_contact_at).toLocaleDateString('en-AU') : '',
+    (l.notes || '').replace(/\n/g, ' '),
+  ])
+  const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
+  const blob = new Blob([csv], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a'); a.href = url; a.download = 'leads.csv'; a.click()
+  URL.revokeObjectURL(url)
+}
+
 function AddLeadModal({ onClose, onSaved }) {
   const [form, setForm] = useState({ name: '', email: '', phone: '', source: 'instagram', status: 'new', notes: '' })
   const [saving, setSaving] = useState(false)
@@ -77,8 +96,20 @@ function AddLeadModal({ onClose, onSaved }) {
 function LeadDetailModal({ lead: l, onClose, onUpdated }) {
   const [form, setForm] = useState({ name: l.name, email: l.email || '', phone: l.phone || '', source: l.source, status: l.status, notes: l.notes || '' })
   const [saving, setSaving] = useState(false)
+  const [loggingContact, setLoggingContact] = useState(false)
+  const [lastContact, setLastContact] = useState(l.last_contact_at)
   const [error, setError] = useState(null)
   function set(f, v) { setForm(x => ({ ...x, [f]: v })) }
+
+  async function handleLogContact() {
+    setLoggingContact(true)
+    try {
+      const res = await leads.logContact(l.id)
+      setLastContact(res.data.last_contact_at)
+      onUpdated(res.data)
+    } catch {}
+    finally { setLoggingContact(false) }
+  }
 
   async function handleSave(e) {
     e.preventDefault()
@@ -143,9 +174,13 @@ function LeadDetailModal({ lead: l, onClose, onUpdated }) {
           <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 12 }}>
             Added {new Date(l.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
             {l.assigned_to_name && ` · Assigned to ${l.assigned_to_name}`}
+            {lastContact && ` · Last contact: ${new Date(lastContact).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}`}
           </div>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
             <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={handleLogContact} disabled={loggingContact}>
+              {loggingContact ? 'Logging…' : '📞 Log contact'}
+            </button>
             <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : 'Save Changes'}</button>
           </div>
         </form>
@@ -190,7 +225,7 @@ export default function AdminLeads() {
           <div className="page-title">Leads</div>
           <div className="page-sub">Enquiries, sign-ups and trial follow-ups</div>
         </div>
-        <button className="btn btn-ghost btn-sm" onClick={() => alert('Export CSV downloaded')}>↓ Export</button>
+        <button className="btn btn-ghost btn-sm" onClick={() => exportCsv(allLeads)}>↓ Export</button>
         <button className="btn btn-lime btn-sm" onClick={() => setShowAdd(true)}>+ Add Lead</button>
       </div>
 

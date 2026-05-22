@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import '../StudentsPage.css'
 import { useApi } from '../../hooks/useApi'
-import { skillLevels } from '../../api'
+import { skillLevels, categories as categoriesApi } from '../../api'
 
 export default function AdminSkillLists() {
   const { data: levelsData, loading, refetch } = useApi(() => skillLevels.list())
+  const { data: catsData } = useApi(() => categoriesApi.list())
   const levels = levelsData?.results || levelsData || []
+  const cats = catsData?.results || catsData || []
 
   const [tab, setTab] = useState(null)
   const [modal, setModal] = useState(null)
@@ -13,6 +15,7 @@ export default function AdminSkillLists() {
   const [newSkillGroup, setNewSkillGroup] = useState('')
   const [newLevelName, setNewLevelName] = useState('')
   const [newGroupName, setNewGroupName] = useState('')
+  const [newLevelCategory, setNewLevelCategory] = useState('')
   const [saving, setSaving] = useState(false)
   const [deletingSkill, setDeletingSkill] = useState(null)
 
@@ -78,9 +81,10 @@ export default function AdminSkillLists() {
     e.preventDefault()
     setSaving(true)
     try {
-      await skillLevels.create({ name: newLevelName, order: levels.length })
+      await skillLevels.create({ name: newLevelName, order: levels.length, class_category: newLevelCategory || null })
       setModal(null)
       setNewLevelName('')
+      setNewLevelCategory('')
       refetch()
     } finally {
       setSaving(false)
@@ -117,7 +121,12 @@ export default function AdminSkillLists() {
 
       <div className="subtabs" style={{ marginBottom: 24 }}>
         {levels.map(level => (
-          <div key={level.id} className={`subtab ${activeTab === level.name ? 'active' : ''}`} onClick={() => setTab(level.name)}>{level.name}</div>
+          <div key={level.id} className={`subtab ${activeTab === level.name ? 'active' : ''}`} onClick={() => setTab(level.name)}>
+            {level.name}
+            {level.class_category_name && (
+              <span style={{ fontSize: 10, color: 'var(--grey)', marginLeft: 6, fontWeight: 400 }}>· {level.class_category_name}</span>
+            )}
+          </div>
         ))}
       </div>
 
@@ -226,7 +235,14 @@ export default function AdminSkillLists() {
               <button className="modal-close-btn" onClick={() => setModal(null)}>✕</button>
             </div>
             <form className="sd-body" onSubmit={handleAddLevel}>
-              <div className="field"><label>Level Name</label><input value={newLevelName} onChange={e => setNewLevelName(e.target.value)} placeholder="e.g. Level 4" required /></div>
+              <div className="field"><label>Skill List Name</label><input value={newLevelName} onChange={e => setNewLevelName(e.target.value)} placeholder="e.g. Level 4" required /></div>
+              <div className="field">
+                <label>Linked Class Type <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(optional)</span></label>
+                <select value={newLevelCategory} onChange={e => setNewLevelCategory(e.target.value)}>
+                  <option value="">— No class type —</option>
+                  {cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                 <button type="button" className="btn btn-ghost btn-sm" onClick={() => setModal(null)}>Cancel</button>
                 <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : 'Add'}</button>

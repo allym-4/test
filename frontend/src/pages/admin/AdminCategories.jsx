@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import '../StudentsPage.css'
 import { useApi } from '../../hooks/useApi'
-import { categories as categoriesApi } from '../../api'
+import { categories as categoriesApi, classes as sessionsApi } from '../../api'
 
 function CategoryModal({ existing, onClose, onSaved }) {
   const [name, setName] = useState(existing?.name || '')
@@ -10,6 +10,22 @@ function CategoryModal({ existing, onClose, onSaved }) {
   const [isAddonType, setIsAddonType] = useState(existing?.is_addon_type ?? false)
   const [standalonePrice, setStandalonePrice] = useState(existing?.standalone_price ?? '')
   const [saving, setSaving] = useState(false)
+  const [allSessions, setAllSessions] = useState([])
+  const [selectedSessionIds, setSelectedSessionIds] = useState(new Set(existing?.session_ids || []))
+
+  useEffect(() => {
+    sessionsApi.list({ is_active: true }).then(res => {
+      setAllSessions(res.data?.results || res.data || [])
+    }).catch(() => {})
+  }, [])
+
+  function toggleSession(id) {
+    setSelectedSessionIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
 
   async function submit(e) {
     e.preventDefault()
@@ -22,11 +38,23 @@ function CategoryModal({ existing, onClose, onSaved }) {
         is_addon_type: isAddonType,
         standalone_price: standalonePrice !== '' ? standalonePrice : null,
       }
-      if (existing?.id) {
-        await categoriesApi.update(existing.id, payload)
+      let catId = existing?.id
+      if (catId) {
+        await categoriesApi.update(catId, payload)
       } else {
-        await categoriesApi.create(payload)
+        const res = await categoriesApi.create(payload)
+        catId = res.data.id
       }
+
+      // Assign selected sessions to this category; deassign unselected ones that previously had it
+      const prevIds = new Set(existing?.session_ids || [])
+      const toAssign = [...selectedSessionIds].filter(id => !prevIds.has(id))
+      const toRemove = [...prevIds].filter(id => !selectedSessionIds.has(id))
+      await Promise.all([
+        ...toAssign.map(id => sessionsApi.update(id, { category: catId })),
+        ...toRemove.map(id => sessionsApi.update(id, { category: null })),
+      ])
+
       onSaved()
     } finally {
       setSaving(false)
@@ -76,6 +104,29 @@ function CategoryModal({ existing, onClose, onSaved }) {
             />
             <label htmlFor="is_addon_type" style={{ fontSize: 13, color: 'var(--grey)', cursor: 'pointer', margin: 0 }}>Add-on type class (e.g. Kiki, Unravel)</label>
           </div>
+
+          {allSessions.length > 0 && (
+            <div className="field">
+              <label>Classes in this category <span style={{ fontSize: 11, color: 'var(--grey)', fontWeight: 400 }}>— select all that apply</span></label>
+              <div style={{ maxHeight: 180, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 0' }}>
+                {allSessions.map(s => (
+                  <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 12px', cursor: 'pointer', fontSize: 13 }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedSessionIds.has(s.id)}
+                      onChange={() => toggleSession(s.id)}
+                      style={{ width: 14, height: 14, cursor: 'pointer', flexShrink: 0 }}
+                    />
+                    <span>{s.name}</span>
+                    {s.day_of_week_display && <span style={{ fontSize: 11, color: 'var(--grey)', marginLeft: 'auto' }}>{s.day_of_week_display}</span>}
+                  </label>
+                ))}
+              </div>
+              {selectedSessionIds.size > 0 && (
+                <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 6 }}>{selectedSessionIds.size} class{selectedSessionIds.size !== 1 ? 'es' : ''} selected</div>
+              )}
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
@@ -135,7 +186,7 @@ export default function AdminCategories() {
                 <tr key={cat.id}>
                   <td style={{ fontWeight: 600 }}>{cat.name}</td>
                   <td><span style={{ display: 'inline-block', width: 16, height: 16, background: cat.colour, borderRadius: 3 }} /></td>
-                  <td style={{ color: 'var(--grey)', fontSize: 12 }}>{cat.classes}</td>
+                  <td style={{ color: 'var(--grey)', fontSize: 12 }}>{cat.session_ids?.length || 0} class{cat.session_ids?.length !== 1 ? 'es' : ''}</td>
                   <td>
                     <div onClick={() => toggleVisible(cat)} style={{ width: 36, height: 20, borderRadius: 10, background: cat.is_visible ? 'var(--lime)' : '#333', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', display: 'inline-block' }}>
                       <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: cat.is_visible ? 19 : 3, transition: 'left 0.2s' }} />

@@ -119,11 +119,38 @@ export default function AdminTags() {
       </div>
 
       <div className="card" style={{ padding: '18px 20px' }}>
-        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 10 }}>Auto-tag Rules</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14 }}>Auto-tag Rules</div>
+          <button
+            className="btn btn-ghost btn-xs"
+            onClick={() => setModal({ existing: { name: '', colour: '#ccff00', auto_rule: '', is_manual: false } })}
+          >+ Add Rule</button>
+        </div>
         <p style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 14 }}>Tags with rules are applied automatically and updated daily. Manual-only tags must be applied individually.</p>
+
+        {/* Auto-rule tags from the tag list */}
+        {tags.filter(t => !t.is_manual && t.auto_rule && t.auto_rule !== 'Manual only').length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            {tags.filter(t => !t.is_manual && t.auto_rule && t.auto_rule !== 'Manual only').map(tag => (
+              <div key={tag.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #1a1a1a' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ display: 'inline-block', background: tag.colour + '33', color: tag.colour, fontSize: 11, fontWeight: 700, padding: '2px 9px', borderRadius: 20 }}>{tag.name}</span>
+                  <span style={{ fontSize: 12, color: 'var(--grey)' }}>{tag.auto_rule}</span>
+                </div>
+                <button className="btn btn-ghost btn-xs" onClick={() => setModal({ existing: tag })}>Edit</button>
+              </div>
+            ))}
+          </div>
+        )}
+        {tags.filter(t => !t.is_manual && t.auto_rule && t.auto_rule !== 'Manual only').length === 0 && (
+          <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16, fontStyle: 'italic' }}>
+            No auto-tag rules configured. Use "+ Add Rule" to create one, or enable "Auto-assign with rule" when editing a tag.
+          </div>
+        )}
+
         {[
           { label: 'Auto-remove tags when conditions no longer apply', sub: 'e.g. remove "At Risk" if student books again', val: autoRemove, set: setAutoRemove },
-          { label: 'Notify Mimi when a student gains an At Risk tag', sub: '', val: notifyAtRisk, set: setNotifyAtRisk },
+          { label: 'Notify admin when a student gains an At Risk tag', sub: '', val: notifyAtRisk, set: setNotifyAtRisk },
         ].map(({ label, sub, val, set }) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 0', borderBottom: '1px solid #1a1a1a' }}>
             <div>
