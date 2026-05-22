@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
 import { lockers, users, seasons } from '../../api'
 
@@ -135,6 +136,7 @@ function AssignModal({ locker, activeSeason, onClose, onSaved }) {
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function AdminLockers() {
+  const navigate = useNavigate()
   const { data: lockerData, loading, refetch } = useApi(() => lockers.list(), [])
   const { data: eligibleData, refetch: refetchEligible } = useApi(() => lockers.eligible(), [])
   const { data: seasonsData } = useApi(() => seasons.list(), [])
@@ -192,6 +194,19 @@ export default function AdminLockers() {
     setBusy(l.id + '-lk')
     try { await lockers.lostKey(l.id); refetch(); showToast('Key marked as lost. $50 charge created.') }
     catch (e) { showToast(e.response?.data?.detail || 'Failed to report lost key.', 'err') }
+    setBusy(null)
+  }
+
+  async function resetLostKey(l) {
+    if (!confirm(`Reset lost key flag for Locker #${l.number}? This marks the key as no longer lost (e.g. replacement issued).`)) return
+    setBusy(l.id + '-reset')
+    try {
+      await lockers.update(l.id, { key_lost: false, key_issued: true })
+      refetch()
+      showToast(`Locker #${l.number} key reset. Don't forget to issue the new key.`)
+    } catch (e) {
+      showToast(e.response?.data?.detail || 'Failed to reset key.', 'err')
+    }
     setBusy(null)
   }
 
@@ -269,7 +284,12 @@ export default function AdminLockers() {
           {eligibleWithoutLocker.map(s => (
             <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 10, marginBottom: 10, borderBottom: '1px solid rgba(255,165,0,0.15)' }}>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>{s.display_name}</div>
+                <button
+                  onClick={() => navigate(`/admin/students/${s.id}`)}
+                  style={{ fontSize: 14, fontWeight: 600, background: 'none', border: 'none', color: 'var(--white)', cursor: 'pointer', padding: 0, textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.2)' }}
+                >
+                  {s.display_name}
+                </button>
                 <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{s.enrolment_count} classes this season — entitled to a free locker</div>
               </div>
               <button className="btn btn-sm" style={{ background: 'var(--amber)', color: '#000', fontWeight: 700, flexShrink: 0 }}
@@ -344,7 +364,12 @@ export default function AdminLockers() {
                         #{String(l.number).padStart(2, '0')}
                       </td>
                       <td style={{ padding: '12px 12px' }}>
-                        <div style={{ fontWeight: 600 }}>{l.assigned_to_detail?.display_name}</div>
+                        <button
+                          onClick={() => navigate(`/admin/students/${l.assigned_to_detail?.id || l.assigned_to}`)}
+                          style={{ fontWeight: 600, background: 'none', border: 'none', color: 'var(--white)', cursor: 'pointer', padding: 0, textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.2)', fontSize: 13 }}
+                        >
+                          {l.assigned_to_detail?.display_name}
+                        </button>
                         <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 1 }}>{l.assigned_to_detail?.email}</div>
                       </td>
                       <td style={{ padding: '12px 12px' }}>
@@ -393,6 +418,12 @@ export default function AdminLockers() {
                             <button className="btn btn-ghost btn-xs" style={{ color: 'var(--amber)', fontSize: 10 }}
                               onClick={() => reportLostKey(l)} disabled={busy === l.id + '-lk'}>
                               {busy === l.id + '-lk' ? '…' : 'Lost Key'}
+                            </button>
+                          )}
+                          {l.key_lost && (
+                            <button className="btn btn-ghost btn-xs" style={{ color: 'var(--lime)', fontSize: 10 }}
+                              onClick={() => resetLostKey(l)} disabled={busy === l.id + '-reset'}>
+                              {busy === l.id + '-reset' ? '…' : 'Reset Key'}
                             </button>
                           )}
                           <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => unassign(l)}>Unassign</button>
