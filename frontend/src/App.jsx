@@ -35,6 +35,7 @@ import AdminRetail from './pages/admin/AdminRetail'
 import AdminLockers from './pages/admin/AdminLockers'
 import AdminHelpdesk from './pages/admin/AdminHelpdesk'
 import AdminClasses from './pages/admin/AdminClasses'
+import AdminWorkshopDetail from './pages/admin/AdminWorkshopDetail'
 import AdminClassDetail from './pages/admin/AdminClassDetail'
 import AdminPaymentPlans from './pages/admin/AdminPaymentPlans'
 import AdminKisi from './pages/admin/AdminKisi'
@@ -181,6 +182,8 @@ export default function App() {
             <Route path="classes" element={<AdminClasses />} />
             <Route path="classes/new" element={<AdminClassDetail />} />
             <Route path="classes/:id" element={<AdminClassDetail />} />
+            <Route path="workshops/new" element={<AdminWorkshopDetail />} />
+            <Route path="workshops/:id" element={<AdminWorkshopDetail />} />
             <Route path="payment-plans" element={<AdminPaymentPlans />} />
             <Route path="kisi" element={<AdminKisi />} />
             <Route path="action-log" element={<AdminActionLog />} />

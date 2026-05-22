@@ -29,6 +29,7 @@ export const classes = {
   },
   workshops: {
     list: () => client.get('/api/classes/workshops/'),
+    get: (id) => client.get(`/api/classes/workshops/${id}/`),
     create: (data) => client.post('/api/classes/workshops/', data),
     update: (id, data) => client.patch(`/api/classes/workshops/${id}/`, data),
     delete: (id) => client.delete(`/api/classes/workshops/${id}/`),
