@@ -307,7 +307,7 @@ export default function AdminStudentDetail() {
       .then(r => setChangeRequestsData(r.data.results || r.data || []))
       .catch(() => {})
 
-    classes.list()
+    classes.list({ page_size: 200 })
       .then(r => setAllSessions(r.data.results || r.data || []))
       .catch(() => {})
 

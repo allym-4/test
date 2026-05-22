@@ -335,7 +335,7 @@ export default function StudentDetailScreen({ navigation, route }) {
   // Load sessions for transfer when enrolments tab active
   useEffect(() => {
     if (tab !== 'enrolments' || allSessions.length > 0) return
-    client.get('/api/classes/sessions/').then(r => setAllSessions(r.data.results ?? r.data ?? [])).catch(() => {})
+    client.get('/api/classes/sessions/', { params: { page_size: 200 } }).then(r => setAllSessions(r.data.results ?? r.data ?? [])).catch(() => {})
   }, [tab, studentId])
 
   // Load comms when tab active
