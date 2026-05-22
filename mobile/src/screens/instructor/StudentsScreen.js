@@ -1,21 +1,19 @@
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   TextInput, ActivityIndicator, RefreshControl,
 } from 'react-native'
 import { useApi } from '../../hooks/useApi'
-import { users } from '../../api'
+import { users, payments as paymentsApi } from '../../api'
 
-const LEVEL_COLORS = {
-  1: '#b0a0ff', 2: '#b0a0ff', 3: '#ccff00',
-  4: '#ccff00', 5: '#ffaa00', 6: '#ff5050',
-}
-
-function StudentRow({ student, onPress }) {
+function StudentRow({ student, balance, onPress }) {
   const name = student.display_name || `${student.first_name ?? ''} ${student.last_name ?? ''}`.trim() || student.email || 'Student'
   const initial = (student.first_name || student.display_name || '?')[0].toUpperCase()
-  const level = student.level
-  const levelColor = LEVEL_COLORS[level] ?? '#888'
+  const isEnrolled = (student.active_enrolments_count ?? 0) > 0
+
+  const balNum = balance !== undefined ? balance : null
+  const isOwing = balNum !== null && balNum < 0
+  const hasCredit = balNum !== null && balNum > 0
 
   return (
     <TouchableOpacity style={s.row} onPress={onPress} activeOpacity={0.7}>
@@ -25,14 +23,19 @@ function StudentRow({ student, onPress }) {
       <View style={s.rowInfo}>
         <View style={s.rowTop}>
           <Text style={s.name} numberOfLines={1}>{name}</Text>
-          {level != null && (
-            <View style={[s.levelBadge, { borderColor: levelColor }]}>
-              <Text style={[s.levelBadgeText, { color: levelColor }]}>Level {level}</Text>
-            </View>
-          )}
+          <View style={[s.enrollBadge, isEnrolled ? s.enrollBadgeActive : s.enrollBadgeInactive]}>
+            <Text style={[s.enrollBadgeText, isEnrolled ? s.enrollBadgeTextActive : s.enrollBadgeTextInactive]}>
+              {isEnrolled ? 'Enrolled' : 'Not enrolled'}
+            </Text>
+          </View>
         </View>
         {student.pronouns ? <Text style={s.pronouns}>{student.pronouns}</Text> : null}
         {student.email ? <Text style={s.email} numberOfLines={1}>{student.email}</Text> : null}
+        {balNum !== null && (
+          <Text style={[s.balText, isOwing ? s.balOwing : hasCredit ? s.balCredit : s.balClear]}>
+            {isOwing ? `⚠ $${Math.abs(balNum).toFixed(2)} owing` : hasCredit ? `$${balNum.toFixed(2)} credit` : 'Balance clear'}
+          </Text>
+        )}
       </View>
       <Text style={s.chevron}>›</Text>
     </TouchableOpacity>
@@ -41,8 +44,18 @@ function StudentRow({ student, onPress }) {
 
 export default function StudentsScreen({ navigation }) {
   const [search, setSearch] = useState('')
+  const [balances, setBalances] = useState({})
   const { data, loading, error, refetch } = useApi(() => users.list({ role: 'student' }), [])
   const allStudents = data?.results ?? data ?? []
+
+  useEffect(() => {
+    if (!allStudents.length) return
+    allStudents.forEach(student => {
+      paymentsApi.balance(student.id)
+        .then(res => setBalances(prev => ({ ...prev, [student.id]: parseFloat(res.data.balance) })))
+        .catch(() => {})
+    })
+  }, [allStudents.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = search.trim()
     ? allStudents.filter(s => {
@@ -83,6 +96,7 @@ export default function StudentsScreen({ navigation }) {
           renderItem={({ item }) => (
             <StudentRow
               student={item}
+              balance={balances[item.id]}
               onPress={() => navigation.navigate('StudentDetail', {
                 studentId: item.id,
                 studentName: item.display_name || `${item.first_name ?? ''} ${item.last_name ?? ''}`.trim() || 'Student',
@@ -121,9 +135,17 @@ const s = StyleSheet.create({
   rowInfo: { flex: 1, minWidth: 0 },
   rowTop: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
   name: { fontSize: 14, fontWeight: '600', color: '#fff', flex: 1 },
-  levelBadge: { borderWidth: 1, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, flexShrink: 0 },
-  levelBadgeText: { fontSize: 10, fontWeight: '700' },
+  enrollBadge: { borderWidth: 1, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, flexShrink: 0 },
+  enrollBadgeActive: { borderColor: 'rgba(204,255,0,0.4)', backgroundColor: 'rgba(204,255,0,0.1)' },
+  enrollBadgeInactive: { borderColor: '#333', backgroundColor: '#1a1a1a' },
+  enrollBadgeText: { fontSize: 10, fontWeight: '700' },
+  enrollBadgeTextActive: { color: '#ccff00' },
+  enrollBadgeTextInactive: { color: '#555' },
   pronouns: { fontSize: 11, color: '#555', marginBottom: 1 },
   email: { fontSize: 12, color: '#888' },
+  balText: { fontSize: 11, fontWeight: '600', marginTop: 3 },
+  balOwing: { color: '#ff5050' },
+  balCredit: { color: '#ccff00' },
+  balClear: { color: '#444' },
   chevron: { fontSize: 20, color: '#444', flexShrink: 0 },
 })

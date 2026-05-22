@@ -24,11 +24,11 @@ const NOTE_TAGS = [
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
+  { key: 'notes', label: 'Notes' },
   { key: 'enrolments', label: 'Enrolments' },
   { key: 'attendance', label: 'Attendance' },
   { key: 'payments', label: 'Payments' },
   { key: 'progress', label: 'Progress' },
-  { key: 'notes', label: 'Notes' },
   { key: 'docs', label: 'Documents' },
   { key: 'comms', label: 'Comms' },
 ]
@@ -452,6 +452,39 @@ export default function StudentDetailScreen({ navigation, route }) {
         {/* ── OVERVIEW ─────────────────────────────────────────── */}
         {tab === 'overview' && (
           <>
+            {/* Balance banner */}
+            <TouchableOpacity
+              style={[s.balanceBanner, isOwing ? s.balanceBannerOwing : bal > 0 ? s.balanceBannerCredit : s.balanceBannerClear]}
+              onPress={() => setTab('payments')}
+              activeOpacity={0.8}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={s.balanceBannerLabel}>ACCOUNT BALANCE</Text>
+                <Text style={[s.balanceBannerAmount, isOwing ? { color: '#ff5050' } : bal > 0 ? { color: '#ccff00' } : { color: '#555' }]}>
+                  {isOwing ? `-$${Math.abs(bal).toFixed(2)}` : bal > 0 ? `+$${bal.toFixed(2)}` : '$0.00'}
+                </Text>
+                <Text style={s.balanceBannerSub}>
+                  {isOwing ? 'Outstanding — tap to view payments' : bal > 0 ? 'Credit on account' : 'Account is clear'}
+                </Text>
+              </View>
+              {isOwing && <Text style={s.balanceBannerArrow}>›</Text>}
+            </TouchableOpacity>
+
+            {/* Important notes surfaced on overview */}
+            {notesData.filter(n => !n.archived && (n.is_permanent || n.tag === 'medical' || n.tag === 'injury')).map(n => (
+              <TouchableOpacity key={n.id} style={s.importantNoteCard} onPress={() => setTab('notes')} activeOpacity={0.8}>
+                <View style={s.importantNoteTop}>
+                  <Text style={s.importantNoteIcon}>{n.tag === 'medical' ? '🏥' : n.tag === 'injury' ? '🩹' : '📌'}</Text>
+                  <View style={s.importantNoteTags}>
+                    {n.tag && <Text style={s.pillAmber}>{n.tag}</Text>}
+                    {n.is_permanent && <Text style={s.pillRed}>Permanent</Text>}
+                  </View>
+                  <Text style={s.importantNoteDate}>{fmtDate(n.created_at)}</Text>
+                </View>
+                <Text style={s.importantNoteBody} numberOfLines={3}>{n.body}</Text>
+              </TouchableOpacity>
+            ))}
+
             <SectionCard title="Contact Info">
               <InfoRow label="Email" value={student.email} />
               <InfoRow label="Phone" value={student.phone} />
@@ -1019,4 +1052,22 @@ const s = StyleSheet.create({
   checkLabel: { fontSize: 13, color: '#888', flex: 1 },
 
   empty: { textAlign: 'center', color: '#555', marginTop: 24, fontSize: 13 },
+
+  // Balance banner
+  balanceBanner: { borderRadius: 14, padding: 16, marginBottom: 12, borderWidth: 1, flexDirection: 'row', alignItems: 'center' },
+  balanceBannerOwing: { backgroundColor: 'rgba(255,80,80,0.07)', borderColor: 'rgba(255,80,80,0.3)' },
+  balanceBannerCredit: { backgroundColor: 'rgba(204,255,0,0.07)', borderColor: 'rgba(204,255,0,0.3)' },
+  balanceBannerClear: { backgroundColor: '#111', borderColor: '#222' },
+  balanceBannerLabel: { fontSize: 9, fontWeight: '700', color: '#555', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 4 },
+  balanceBannerAmount: { fontSize: 32, fontWeight: '700', letterSpacing: -0.5, marginBottom: 2 },
+  balanceBannerSub: { fontSize: 12, color: '#555' },
+  balanceBannerArrow: { fontSize: 28, color: '#ff5050', marginLeft: 8 },
+
+  // Important notes on overview
+  importantNoteCard: { backgroundColor: 'rgba(255,170,0,0.06)', borderRadius: 12, padding: 12, marginBottom: 10, borderWidth: 1, borderColor: 'rgba(255,170,0,0.25)' },
+  importantNoteTop: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  importantNoteIcon: { fontSize: 16 },
+  importantNoteTags: { flexDirection: 'row', gap: 6, flex: 1 },
+  importantNoteDate: { fontSize: 10, color: '#555' },
+  importantNoteBody: { fontSize: 13, color: '#ccc', lineHeight: 19 },
 })
