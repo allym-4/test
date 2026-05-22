@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useApi } from '../hooks/useApi'
@@ -24,6 +25,7 @@ const NAV_SECONDARY = [
 export default function Shell() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const [mobileOpen, setMobileOpen] = useState(false)
   const { data: notifData } = useApi(() => notificationsApi.list(), [])
   const allNotifs = notifData?.results || notifData || []
   const unreadCount = allNotifs.filter(n => !n.read).length
@@ -35,10 +37,32 @@ export default function Shell() {
 
   return (
     <div className="shell">
-      <nav className="sidebar">
+      {mobileOpen && <div className="instr-mob-overlay" onClick={() => setMobileOpen(false)} />}
+
+      <div className="instr-topbar">
+        <button className="instr-hamburger" onClick={() => setMobileOpen(true)}>☰</button>
+        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, letterSpacing: 2, color: 'var(--lime)' }}>DUALITY</div>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <NavLink to="/notifications" style={{ position: 'relative', display: 'flex', alignItems: 'center', color: 'inherit', textDecoration: 'none' }}>
+            <span style={{ fontSize: 20 }}>🔔</span>
+            {unreadCount > 0 && (
+              <span style={{
+                position: 'absolute', top: -4, right: -6,
+                background: '#ff5050', color: '#fff',
+                borderRadius: 9, minWidth: 18, height: 18,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 10, fontWeight: 800, padding: '0 3px',
+              }}>{unreadCount > 99 ? '99+' : unreadCount}</span>
+            )}
+          </NavLink>
+        </div>
+      </div>
+
+      <nav className={`sidebar${mobileOpen ? ' open' : ''}`}>
         <div className="sidebar-logo">
           <div className="sidebar-logo-line1">DUALITY</div>
           <div className="sidebar-logo-line2">POLE</div>
+          <button className="sidebar-close" onClick={() => setMobileOpen(false)}>✕</button>
         </div>
 
         <div className="sidebar-nav">
@@ -48,6 +72,7 @@ export default function Shell() {
               to={to}
               end={end}
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+              onClick={() => setMobileOpen(false)}
             >
               <span className="nav-icon">{icon}</span>
               <span className="nav-label">{label}</span>
@@ -56,11 +81,12 @@ export default function Shell() {
 
           <div className="nav-divider" />
 
-          {NAV_SECONDARY.map(({ to, label, icon, badge, mobileShow }) => (
+          {NAV_SECONDARY.map(({ to, label, icon, badge }) => (
             <NavLink
               key={to}
               to={to}
-              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}${!mobileShow ? ' nav-desktop-only' : ''}`}
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+              onClick={() => setMobileOpen(false)}
             >
               <span className="nav-icon">{icon}</span>
               <span className="nav-label">{label}</span>
