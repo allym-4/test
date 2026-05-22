@@ -247,6 +247,7 @@ export default function AdminStudentDetail() {
   const [casualBookingsData, setCasualBookingsData] = useState(null)
   const [makeupCreditsData, setMakeupCreditsData] = useState(null)
   const [enrolSubTab, setEnrolSubTab] = useState('current')
+  const [tcTransferClass, setTcTransferClass] = useState('')
 
   useEffect(() => {
     users.get(id).then(res => {
@@ -615,7 +616,7 @@ export default function AdminStudentDetail() {
                             }}
                           >{student.booking_blocked ? 'Unfreeze Account' : 'Freeze Account'}</button>
                           {activeEnrolments.length > 0 && (
-                            <button className="btn btn-ghost btn-xs" onClick={() => { setTcStep(null); setTcEnrolment(null); setTcNewSession(''); setTcResolution('credit'); setTcNotes(''); setTcError(null); setShowTransferCancel('list') }}>Transfer / Cancel</button>
+                            <button className="btn btn-ghost btn-xs" onClick={() => { setTcStep(null); setTcEnrolment(null); setTcNewSession(''); setTcResolution('credit'); setTcNotes(''); setTcError(null); setTcTransferClass(''); setShowTransferCancel('list') }}>Transfer / Cancel</button>
                           )}
                         </div>
                       </div>
@@ -640,7 +641,7 @@ export default function AdminStudentDetail() {
                                       {e.class_session_detail?.instructor_detail?.display_name && ` · ${e.class_session_detail.instructor_detail.display_name}`}
                                     </div>
                                   </div>
-                                  <button className="btn btn-ghost btn-xs" style={{ flexShrink: 0 }} onClick={ev => { ev.stopPropagation(); setTcEnrolment(e); setTcStep(null); setTcNewSession(''); setTcResolution('credit'); setTcNotes(''); setTcError(null); setShowTransferCancel('list') }}>Transfer / Cancel</button>
+                                  <button className="btn btn-ghost btn-xs" style={{ flexShrink: 0 }} onClick={ev => { ev.stopPropagation(); setTcEnrolment(e); setTcStep(null); setTcNewSession(''); setTcResolution('credit'); setTcNotes(''); setTcError(null); setTcTransferClass(''); setShowTransferCancel('list') }}>Transfer / Cancel</button>
                                 </div>
                               ))}
                             </div>
@@ -662,7 +663,7 @@ export default function AdminStudentDetail() {
                                       {e.class_session_detail?.instructor_detail?.display_name && ` · ${e.class_session_detail.instructor_detail.display_name}`}
                                     </div>
                                   </div>
-                                  <button className="btn btn-ghost btn-xs" style={{ flexShrink: 0 }} onClick={ev => { ev.stopPropagation(); setTcEnrolment(e); setTcStep(null); setTcNewSession(''); setTcResolution('credit'); setTcNotes(''); setTcError(null); setShowTransferCancel('list') }}>Transfer / Cancel</button>
+                                  <button className="btn btn-ghost btn-xs" style={{ flexShrink: 0 }} onClick={ev => { ev.stopPropagation(); setTcEnrolment(e); setTcStep(null); setTcNewSession(''); setTcResolution('credit'); setTcNotes(''); setTcError(null); setTcTransferClass(''); setShowTransferCancel('list') }}>Transfer / Cancel</button>
                                 </div>
                               ))}
                             </div>
@@ -1119,7 +1120,7 @@ export default function AdminStudentDetail() {
                   <button className="btn btn-lime btn-sm" onClick={() => setShowPayment(true)}>+ Record Payment</button>
                   <button className="btn btn-ghost btn-sm" onClick={() => setShowRefundCredit(true)}>Issue Refund / Credit</button>
                   <button className="btn btn-ghost btn-sm" onClick={() => setShowAccountCredit(true)}>Add Account Credit</button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => { setTcStep(null); setTcEnrolment(null); setTcNewSession(''); setTcResolution('credit'); setTcNotes(''); setTcError(null); setShowTransferCancel('list') }}>Transfer / Cancel Enrolment</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => { setTcStep(null); setTcEnrolment(null); setTcNewSession(''); setTcResolution('credit'); setTcNotes(''); setTcError(null); setTcTransferClass(''); setShowTransferCancel('list') }}>Transfer / Cancel Enrolment</button>
                   {savedCardsData?.payment_methods?.length > 0 && savedCardsData?.default_payment_method_id && bal < 0 && (() => {
                     const hasCashPending = (payData || []).some(p => p.payment_type === 'charge' && (p.description || '').toLowerCase().includes('pay at studio'))
                     return (
@@ -1676,7 +1677,7 @@ export default function AdminStudentDetail() {
         const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
         const activeList = (enrolData || []).filter(e => e.status === 'active')
 
-        const closeModal = () => { setShowTransferCancel(false); setTcStep(null); setTcEnrolment(null); setTcError(null) }
+        const closeModal = () => { setShowTransferCancel(false); setTcStep(null); setTcEnrolment(null); setTcError(null); setTcNewSession(''); setTcTransferClass('') }
 
         const submitTransfer = async () => {
           if (!tcNewSession) { setTcError('Please select a class to transfer to.'); return }
@@ -1752,7 +1753,10 @@ export default function AdminStudentDetail() {
               <div className="sd-header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   {tcStep && (
-                    <button className="btn btn-ghost btn-xs" onClick={() => { setTcStep(null); setTcError(null) }}>← Back</button>
+                    <button className="btn btn-ghost btn-xs" onClick={() => {
+                      if (tcStep === 'transfer' && tcTransferClass) { setTcTransferClass(''); setTcNewSession(''); return }
+                      setTcStep(null); setTcError(null); setTcTransferClass(''); setTcNewSession('')
+                    }}>← Back</button>
                   )}
                   <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>{modalTitle}</div>
                 </div>
@@ -1801,38 +1805,112 @@ export default function AdminStudentDetail() {
                   </>
                 )}
 
-                {/* Step 2a: Transfer */}
-                {tcStep === 'transfer' && (
-                  <>
-                    <div style={{ background: '#111', borderRadius: 8, padding: '10px 12px', marginBottom: 14, fontSize: 13, color: 'var(--grey)' }}>
-                      Transferring from: <strong style={{ color: 'var(--white)' }}>{tcEnrolment?.class_session_detail?.name}</strong>
-                    </div>
-                    <div className="field">
-                      <label>Transfer to</label>
-                      <select value={tcNewSession} onChange={e => setTcNewSession(e.target.value)}>
-                        <option value="">— Select class —</option>
-                        {transferSessions.length === 0
-                          ? <option disabled>No other classes available in this season</option>
-                          : transferSessions.map(s => (
-                            <option key={s.id} value={s.id}>
-                              {s.name} · {DAYS[s.day_of_week]} {s.start_time?.slice(0,5)}
-                            </option>
-                          ))
-                        }
-                      </select>
-                    </div>
-                    <div className="field">
-                      <label>Notes (optional)</label>
-                      <textarea value={tcNotes} onChange={e => setTcNotes(e.target.value)} rows={3} placeholder="Reason for transfer request…" />
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
-                      <button className="btn btn-ghost btn-sm" onClick={() => setTcStep(null)}>Back</button>
-                      <button className="btn btn-lime btn-sm" onClick={submitTransfer} disabled={tcSaving}>
-                        {tcSaving ? 'Submitting…' : 'Submit Transfer Request'}
-                      </button>
-                    </div>
-                  </>
-                )}
+                {/* Step 2a-i: Transfer — pick class name */}
+                {tcStep === 'transfer' && !tcTransferClass && (() => {
+                  const uniqueNames = [...new Set(transferSessions.map(s => s.name))].sort()
+                  return (
+                    <>
+                      <div style={{ background: '#111', borderRadius: 8, padding: '10px 12px', marginBottom: 14, fontSize: 13, color: 'var(--grey)' }}>
+                        Transferring from: <strong style={{ color: 'var(--white)' }}>{tcEnrolment?.class_session_detail?.name}</strong>
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 10 }}>Select a class to transfer to:</div>
+                      {uniqueNames.length === 0 ? (
+                        <div style={{ fontSize: 13, color: 'var(--grey)', padding: '12px 0' }}>No other classes available in this season.</div>
+                      ) : uniqueNames.map(name => (
+                        <button
+                          key={name}
+                          className="btn btn-ghost btn-sm"
+                          style={{ width: '100%', textAlign: 'left', marginBottom: 6, justifyContent: 'flex-start' }}
+                          onClick={() => { setTcTransferClass(name); setTcNewSession('') }}
+                        >
+                          {name}
+                        </button>
+                      ))}
+                      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setTcStep(null)}>Back</button>
+                      </div>
+                    </>
+                  )
+                })()}
+
+                {/* Step 2a-ii: Transfer — pick day/time */}
+                {tcStep === 'transfer' && tcTransferClass && (() => {
+                  const sessions = transferSessions.filter(s => s.name === tcTransferClass)
+                  return (
+                    <>
+                      <div style={{ background: '#111', borderRadius: 8, padding: '10px 12px', marginBottom: 6, fontSize: 13, color: 'var(--grey)' }}>
+                        Transferring from: <strong style={{ color: 'var(--white)' }}>{tcEnrolment?.class_session_detail?.name}</strong>
+                      </div>
+                      <div style={{ background: '#111', borderRadius: 8, padding: '10px 12px', marginBottom: 14, fontSize: 13, color: 'var(--grey)' }}>
+                        Class: <strong style={{ color: 'var(--white)' }}>{tcTransferClass}</strong>
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 10 }}>Select a day &amp; time:</div>
+                      {sessions.map(sess => {
+                        const spotsLeft = sess.spots_left ?? Math.max(0, (sess.capacity || 0) - (sess.enrolled_count || 0))
+                        const isFull = spotsLeft <= 0
+                        const isSelected = String(tcNewSession) === String(sess.id)
+                        return (
+                          <div key={sess.id} style={{ background: isSelected ? 'rgba(204,255,0,0.06)' : '#111', border: `1px solid ${isSelected ? 'rgba(204,255,0,0.3)' : 'var(--border)'}`, borderRadius: 8, padding: '12px 14px', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{DAYS[sess.day_of_week]} {sess.start_time?.slice(0,5)}</div>
+                              {sess.instructor_detail?.display_name && (
+                                <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 4 }}>{sess.instructor_detail.display_name}</div>
+                              )}
+                              {isFull ? (
+                                <span className="tag tag-red" style={{ fontSize: 10 }}>FULL</span>
+                              ) : (
+                                <span style={{ fontSize: 11, color: 'var(--grey)' }}>{spotsLeft} spot{spotsLeft !== 1 ? 's' : ''} available</span>
+                              )}
+                            </div>
+                            {isFull ? (
+                              <button
+                                className="btn btn-ghost btn-xs"
+                                style={{ color: 'var(--amber)', borderColor: 'rgba(255,170,0,0.3)', flexShrink: 0 }}
+                                disabled={tcSaving}
+                                onClick={async () => {
+                                  setTcSaving(true); setTcError(null)
+                                  try {
+                                    await enrolments.create({ class_session: sess.id, student: student.id, status: 'waitlisted', waitlist_type: 'season' })
+                                    const r = await enrolments.list({ student: student.id })
+                                    setEnrolData(r.data.results || [])
+                                    closeModal()
+                                  } catch (err) {
+                                    setTcError(err.response?.data?.detail || 'Could not join waitlist.')
+                                  } finally { setTcSaving(false) }
+                                }}
+                              >Add to Waitlist</button>
+                            ) : (
+                              <button
+                                className={`btn btn-sm ${isSelected ? 'btn-lime' : 'btn-ghost'}`}
+                                style={{ flexShrink: 0 }}
+                                onClick={() => setTcNewSession(String(sess.id))}
+                              >{isSelected ? '✓ Selected' : 'Select'}</button>
+                            )}
+                          </div>
+                        )
+                      })}
+                      {tcNewSession && (
+                        <>
+                          <div className="field" style={{ marginTop: 14 }}>
+                            <label>Notes (optional)</label>
+                            <textarea value={tcNotes} onChange={e => setTcNotes(e.target.value)} rows={3} placeholder="Reason for transfer request…" />
+                          </div>
+                          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+                            <button className="btn btn-ghost btn-sm" onClick={() => { setTcTransferClass(''); setTcNewSession('') }}>Back</button>
+                            <button className="btn btn-lime btn-sm" onClick={submitTransfer} disabled={tcSaving}>
+                              {tcSaving ? 'Submitting…' : 'Submit Transfer Request'}
+                            </button>
+                          </div>
+                        </>
+                      )}
+                      {!tcNewSession && (
+                        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
+                          <button className="btn btn-ghost btn-sm" onClick={() => { setTcTransferClass(''); setTcNewSession('') }}>Back</button>
+                        </div>
+                      )}
+                    </>
+                  )
+                })()}
 
                 {/* Step 2b: Cancel single */}
                 {tcStep === 'cancel' && (

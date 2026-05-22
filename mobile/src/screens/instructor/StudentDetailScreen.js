@@ -284,6 +284,7 @@ export default function StudentDetailScreen({ navigation, route }) {
   const [tcSaving, setTcSaving] = useState(false)
   const [tcError, setTcError] = useState(null)
   const [allSessions, setAllSessions] = useState([])
+  const [tcTransferClass, setTcTransferClass] = useState('')
 
   const loadAll = useCallback(async () => {
     if (!studentId) return
@@ -1092,7 +1093,11 @@ export default function StudentDetailScreen({ navigation, route }) {
       <Modal visible={tcModal} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setTcModal(false)}>
         <View style={s.modalRoot}>
           <View style={s.modalHeader}>
-            <TouchableOpacity onPress={() => tcStep === null ? setTcModal(false) : setTcStep(null)}>
+            <TouchableOpacity onPress={() => {
+              if (tcStep === null) { setTcModal(false); setTcTransferClass(''); return }
+              if (tcStep === 'transfer' && tcTransferClass) { setTcTransferClass(''); setTcNewSession(''); return }
+              setTcStep(null); setTcTransferClass(''); setTcNewSession('')
+            }}>
               <Text style={s.modalCancel}>{tcStep ? '← Back' : 'Close'}</Text>
             </TouchableOpacity>
             <Text style={s.modalTitle}>
@@ -1140,52 +1145,122 @@ export default function StudentDetailScreen({ navigation, route }) {
               )
             })()}
 
-            {/* Step: Transfer */}
-            {tcStep === 'transfer' && (() => {
-              const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+            {/* Step: Transfer — pick class name */}
+            {tcStep === 'transfer' && !tcTransferClass && (() => {
               const seasonId = tcEnrolment?.class_session_detail?.season
-              const sessions = allSessions.filter(s => s.season === seasonId && s.id !== tcEnrolment?.class_session)
+              const seasonSessions = allSessions.filter(s => String(s.season) === String(seasonId) && s.id !== tcEnrolment?.class_session)
+              const uniqueNames = [...new Set(seasonSessions.map(s => s.name))].sort()
               return (
                 <>
                   <View style={{ backgroundColor: '#1a1a1a', borderRadius: 8, padding: 12, marginBottom: 16 }}>
                     <Text style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>Transferring from</Text>
                     <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>{tcEnrolment?.class_session_detail?.name}</Text>
                   </View>
-                  <Text style={s.fieldLabel}>Transfer to</Text>
-                  <View style={[s.fieldInput, { padding: 0 }]}>
-                    {sessions.length === 0 ? (
-                      <Text style={{ color: '#555', padding: 12, fontSize: 13 }}>No other classes available in this season</Text>
-                    ) : sessions.map(sess => (
-                      <TouchableOpacity
-                        key={sess.id}
-                        style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: '#222', backgroundColor: tcNewSession === String(sess.id) ? 'rgba(204,255,0,0.08)' : 'transparent' }}
-                        onPress={() => setTcNewSession(String(sess.id))}
-                      >
-                        <Text style={{ fontSize: 13, color: tcNewSession === String(sess.id) ? '#ccff00' : '#fff', fontWeight: tcNewSession === String(sess.id) ? '600' : '400' }}>
-                          {sess.name} · {DAYS[sess.day_of_week]} {sess.start_time?.slice(0,5)}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
+                  <Text style={s.fieldLabel}>Select class</Text>
+                  {uniqueNames.length === 0 ? (
+                    <Text style={{ color: '#555', fontSize: 13, paddingVertical: 12 }}>No other classes available in this season.</Text>
+                  ) : uniqueNames.map(name => (
+                    <TouchableOpacity
+                      key={name}
+                      style={[s.enrCard, { marginBottom: 8 }]}
+                      onPress={() => { setTcTransferClass(name); setTcNewSession('') }}
+                    >
+                      <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>{name}</Text>
+                      <Text style={{ fontSize: 12, color: '#555', marginTop: 2 }}>
+                        {seasonSessions.filter(s => s.name === name).length} time{seasonSessions.filter(s => s.name === name).length !== 1 ? 's' : ''} available
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </>
+              )
+            })()}
+
+            {/* Step: Transfer — pick day/time */}
+            {tcStep === 'transfer' && tcTransferClass && (() => {
+              const seasonId = tcEnrolment?.class_session_detail?.season
+              const sessions = allSessions.filter(s => String(s.season) === String(seasonId) && s.id !== tcEnrolment?.class_session && s.name === tcTransferClass)
+              return (
+                <>
+                  <View style={{ backgroundColor: '#1a1a1a', borderRadius: 8, padding: 12, marginBottom: 8 }}>
+                    <Text style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>Transferring from</Text>
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>{tcEnrolment?.class_session_detail?.name}</Text>
                   </View>
-                  <Text style={[s.fieldLabel, { marginTop: 14 }]}>Notes (optional)</Text>
-                  <TextInput style={[s.fieldInput, { height: 80, textAlignVertical: 'top', paddingTop: 10 }]} value={tcNotes} onChangeText={setTcNotes} placeholder="Reason for transfer…" placeholderTextColor="#555" multiline />
-                  <TouchableOpacity
-                    style={[s.typeBtn, s.typeBtnActive, { marginTop: 16, alignItems: 'center', paddingVertical: 12 }]}
-                    onPress={async () => {
-                      if (!tcNewSession) { setTcError('Please select a class to transfer to.'); return }
-                      setTcSaving(true); setTcError(null)
-                      try {
-                        await enrolments.changeRequests.create({ current_enrolment: tcEnrolment.id, requested_session: tcNewSession, request_type: 'transfer', notes: tcNotes })
-                        const r = await enrolments.changeRequests.list({ student: studentId })
-                        setChangeRequests(r.data.results ?? r.data ?? [])
-                        setTcModal(false); setTcStep(null)
-                      } catch (err) { setTcError(err.response?.data?.detail || 'Could not submit.') }
-                      finally { setTcSaving(false) }
-                    }}
-                    disabled={tcSaving}
-                  >
-                    <Text style={s.typeBtnTextActive}>{tcSaving ? 'Submitting…' : 'Submit Transfer Request'}</Text>
-                  </TouchableOpacity>
+                  <View style={{ backgroundColor: '#1a1a1a', borderRadius: 8, padding: 12, marginBottom: 16 }}>
+                    <Text style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>Class</Text>
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>{tcTransferClass}</Text>
+                  </View>
+                  <Text style={s.fieldLabel}>Select day / time</Text>
+                  {sessions.map(sess => {
+                    const spotsLeft = sess.spots_left ?? Math.max(0, (sess.capacity || 0) - (sess.enrolled_count || 0))
+                    const isFull = spotsLeft <= 0
+                    const isSelected = String(tcNewSession) === String(sess.id)
+                    return (
+                      <View key={sess.id} style={[s.enrCard, { marginBottom: 8, borderColor: isSelected ? 'rgba(204,255,0,0.4)' : '#2a2a2a', backgroundColor: isSelected ? 'rgba(204,255,0,0.06)' : '#1a1a1a' }]}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff', marginBottom: 2 }}>
+                              {DAYS[sess.day_of_week]} {sess.start_time?.slice(0,5)}
+                            </Text>
+                            {sess.instructor_detail?.display_name ? (
+                              <Text style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>{sess.instructor_detail.display_name}</Text>
+                            ) : null}
+                            {isFull ? (
+                              <Text style={s.pillRed}>FULL</Text>
+                            ) : (
+                              <Text style={{ fontSize: 11, color: '#555' }}>{spotsLeft} spot{spotsLeft !== 1 ? 's' : ''} available</Text>
+                            )}
+                          </View>
+                          {isFull ? (
+                            <TouchableOpacity
+                              style={[s.tcBtnTransfer, { borderColor: 'rgba(255,170,0,0.3)', backgroundColor: 'rgba(255,170,0,0.1)' }]}
+                              disabled={tcSaving}
+                              onPress={async () => {
+                                setTcSaving(true); setTcError(null)
+                                try {
+                                  await enrolments.create({ class_session: sess.id, student: studentId, status: 'waitlisted', waitlist_type: 'season' })
+                                  const r = await enrolments.list({ student: studentId })
+                                  setEnrolData(r.data.results ?? r.data ?? [])
+                                  setTcModal(false); setTcStep(null); setTcTransferClass('')
+                                } catch (err) { setTcError(err.response?.data?.detail || 'Could not join waitlist.') }
+                                finally { setTcSaving(false) }
+                              }}
+                            >
+                              <Text style={{ fontSize: 12, fontWeight: '600', color: '#ffaa00' }}>Add to Waitlist</Text>
+                            </TouchableOpacity>
+                          ) : (
+                            <TouchableOpacity
+                              style={[isSelected ? s.typeBtnActive : s.typeBtn, { paddingHorizontal: 12, paddingVertical: 6 }]}
+                              onPress={() => setTcNewSession(isSelected ? '' : String(sess.id))}
+                            >
+                              <Text style={[isSelected ? s.typeBtnTextActive : s.typeBtnText, { fontSize: 12 }]}>{isSelected ? '✓ Selected' : 'Select'}</Text>
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      </View>
+                    )
+                  })}
+                  {tcNewSession ? (
+                    <>
+                      <Text style={[s.fieldLabel, { marginTop: 14 }]}>Notes (optional)</Text>
+                      <TextInput style={[s.fieldInput, { height: 80, textAlignVertical: 'top', paddingTop: 10 }]} value={tcNotes} onChangeText={setTcNotes} placeholder="Reason for transfer…" placeholderTextColor="#555" multiline />
+                      <TouchableOpacity
+                        style={[s.typeBtn, s.typeBtnActive, { marginTop: 16, alignItems: 'center', paddingVertical: 12 }]}
+                        onPress={async () => {
+                          setTcSaving(true); setTcError(null)
+                          try {
+                            await enrolments.changeRequests.create({ current_enrolment: tcEnrolment.id, requested_session: tcNewSession, request_type: 'transfer', notes: tcNotes })
+                            const r = await enrolments.changeRequests.list({ student: studentId })
+                            setChangeRequests(r.data.results ?? r.data ?? [])
+                            setTcModal(false); setTcStep(null); setTcTransferClass('')
+                          } catch (err) { setTcError(err.response?.data?.detail || 'Could not submit.') }
+                          finally { setTcSaving(false) }
+                        }}
+                        disabled={tcSaving}
+                      >
+                        <Text style={s.typeBtnTextActive}>{tcSaving ? 'Submitting…' : 'Submit Transfer Request'}</Text>
+                      </TouchableOpacity>
+                    </>
+                  ) : null}
                 </>
               )
             })()}

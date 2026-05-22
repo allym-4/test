@@ -1,12 +1,156 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
-  ActivityIndicator, RefreshControl,
+  ActivityIndicator, RefreshControl, TextInput, Alert,
 } from 'react-native'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { classes, homework, helpdesk } from '../../api'
 import client from '../../api/client'
+
+const NOTE_CATEGORIES = [
+  { key: 'general', label: 'General', emoji: '📝' },
+  { key: 'cash', label: 'Cash', emoji: '💵' },
+  { key: 'incident', label: 'Incident', emoji: '⚠️' },
+  { key: 'maintenance', label: 'Maintenance', emoji: '🔧' },
+  { key: 'student', label: 'Student', emoji: '👤' },
+]
+
+function StaffNotePanel() {
+  const [expanded, setExpanded] = useState(false)
+  const [body, setBody] = useState('')
+  const [category, setCategory] = useState('general')
+  const [saving, setSaving] = useState(false)
+  const [recentNotes, setRecentNotes] = useState([])
+  const [loadingNotes, setLoadingNotes] = useState(true)
+
+  async function loadNotes() {
+    setLoadingNotes(true)
+    try {
+      const res = await helpdesk.staffNotes.list({ resolved: 'false', limit: 5 })
+      setRecentNotes(res.data.results ?? res.data ?? [])
+    } catch { setRecentNotes([]) }
+    finally { setLoadingNotes(false) }
+  }
+
+  useEffect(() => { loadNotes() }, [])
+
+  async function submit() {
+    if (!body.trim()) return
+    setSaving(true)
+    try {
+      await helpdesk.staffNotes.create({ body: body.trim(), category })
+      setBody('')
+      setCategory('general')
+      setExpanded(false)
+      await loadNotes()
+    } catch {
+      Alert.alert('Error', 'Could not save note.')
+    } finally { setSaving(false) }
+  }
+
+  async function markResolved(id) {
+    try {
+      await helpdesk.staffNotes.resolve(id)
+      setRecentNotes(prev => prev.filter(n => n.id !== id))
+    } catch { Alert.alert('Error', 'Could not mark as done.') }
+  }
+
+  function fmtTime(str) {
+    if (!str) return ''
+    const d = new Date(str)
+    const now = new Date()
+    const diffMs = now - d
+    const diffMins = Math.floor(diffMs / 60000)
+    if (diffMins < 60) return `${diffMins}m ago`
+    const diffHrs = Math.floor(diffMins / 60)
+    if (diffHrs < 24) return `${diffHrs}h ago`
+    return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
+  }
+
+  return (
+    <View style={sn.panel}>
+      <TouchableOpacity style={sn.header} onPress={() => setExpanded(v => !v)} activeOpacity={0.7}>
+        <View style={{ flex: 1 }}>
+          <Text style={sn.headerTitle}>📓 Note for Mimi & Chloe</Text>
+          <Text style={sn.headerSub}>Leave a quick note — cash, incidents, anything worth flagging</Text>
+        </View>
+        <Text style={sn.headerChevron}>{expanded ? '▲' : '▼'}</Text>
+      </TouchableOpacity>
+
+      {expanded && (
+        <View style={sn.form}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingBottom: 4 }}>
+            {NOTE_CATEGORIES.map(cat => (
+              <TouchableOpacity
+                key={cat.key}
+                style={[sn.catBtn, category === cat.key && sn.catBtnActive]}
+                onPress={() => setCategory(cat.key)}
+              >
+                <Text style={[sn.catBtnText, category === cat.key && sn.catBtnTextActive]}>{cat.emoji} {cat.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <TextInput
+            style={sn.input}
+            value={body}
+            onChangeText={setBody}
+            placeholder="e.g. $40 cash left outside the till, or Dana fell in reception — may need follow up"
+            placeholderTextColor="#444"
+            multiline
+            autoFocus
+          />
+          <TouchableOpacity style={[sn.submitBtn, !body.trim() && { opacity: 0.4 }]} onPress={submit} disabled={saving || !body.trim()}>
+            <Text style={sn.submitBtnText}>{saving ? 'Saving…' : 'Leave Note'}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {recentNotes.length > 0 && (
+        <View style={sn.notesList}>
+          {loadingNotes ? null : recentNotes.map(note => {
+            const cat = NOTE_CATEGORIES.find(c => c.key === note.category)
+            return (
+              <View key={note.id} style={sn.noteRow}>
+                <Text style={sn.noteEmoji}>{cat?.emoji ?? '📝'}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={sn.noteBody} numberOfLines={2}>{note.body}</Text>
+                  <Text style={sn.noteMeta}>{note.author_name} · {fmtTime(note.created_at)}</Text>
+                </View>
+                <TouchableOpacity style={sn.resolveBtn} onPress={() => markResolved(note.id)}>
+                  <Text style={sn.resolveBtnText}>✓</Text>
+                </TouchableOpacity>
+              </View>
+            )
+          })}
+        </View>
+      )}
+    </View>
+  )
+}
+
+const sn = StyleSheet.create({
+  panel: { backgroundColor: '#111', borderRadius: 14, borderWidth: 1, borderColor: '#222', marginBottom: 16, overflow: 'hidden' },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 10 },
+  headerTitle: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 2 },
+  headerSub: { fontSize: 12, color: '#555' },
+  headerChevron: { fontSize: 12, color: '#555' },
+  form: { paddingHorizontal: 14, paddingBottom: 14, borderTopWidth: 1, borderTopColor: '#1a1a1a' },
+  catBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#333', backgroundColor: '#1a1a1a', marginTop: 10 },
+  catBtnActive: { borderColor: '#ccff00', backgroundColor: 'rgba(204,255,0,0.1)' },
+  catBtnText: { fontSize: 12, fontWeight: '600', color: '#555' },
+  catBtnTextActive: { color: '#ccff00' },
+  input: { marginTop: 10, borderWidth: 1, borderColor: '#333', borderRadius: 8, padding: 10, fontSize: 14, color: '#fff', backgroundColor: '#1a1a1a', minHeight: 80, textAlignVertical: 'top' },
+  submitBtn: { marginTop: 10, backgroundColor: '#ccff00', borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
+  submitBtnText: { fontSize: 14, fontWeight: '700', color: '#000' },
+  notesList: { borderTopWidth: 1, borderTopColor: '#1a1a1a', paddingVertical: 4 },
+  noteRow: { flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: 14, paddingVertical: 10, gap: 10, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' },
+  noteEmoji: { fontSize: 16, marginTop: 1 },
+  noteBody: { fontSize: 13, color: '#ccc', lineHeight: 18 },
+  noteMeta: { fontSize: 11, color: '#555', marginTop: 3 },
+  resolveBtn: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  resolveBtnText: { fontSize: 13, color: '#ccff00', fontWeight: '700' },
+})
 
 function greeting() {
   const h = new Date().getHours()
@@ -247,6 +391,9 @@ export default function DashboardScreen({ navigation }) {
       >
         <Text style={s.viewAllLinkText}>View all my classes →</Text>
       </TouchableOpacity>
+
+      <Text style={s.sectionTitle}>Notes for Mimi & Chloe</Text>
+      <StaffNotePanel />
 
       <Text style={s.sectionTitle}>All Classes Today</Text>
       {allOccLoading ? (
