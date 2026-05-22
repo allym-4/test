@@ -284,6 +284,8 @@ export default function StudentDetailScreen({ navigation, route }) {
   const [tcSaving, setTcSaving] = useState(false)
   const [tcError, setTcError] = useState(null)
   const [allSessions, setAllSessions] = useState([])
+  const [seasonSessions, setSeasonSessions] = useState([])
+  const [seasonSessionsLoading, setSeasonSessionsLoading] = useState(false)
   const [tcTransferClass, setTcTransferClass] = useState('')
 
   const loadAll = useCallback(async () => {
@@ -346,6 +348,19 @@ export default function StudentDetailScreen({ navigation, route }) {
       client.get('/api/users/notifications/', { params: { recipient: studentId } }).then(r => r.data.results ?? r.data ?? []).catch(() => []),
     ]).then(([convs, notifs]) => { setCommsData(convs); setNotifData(notifs) })
   }, [tab, studentId])
+
+  async function loadSeasonSessions(enrolment) {
+    const sid = enrolment?.class_session_detail?.season
+    if (!sid) return
+    setSeasonSessions([])
+    setSeasonSessionsLoading(true)
+    try {
+      const r = await client.get('/api/classes/sessions/', { params: { season: sid } })
+      setSeasonSessions(r.data.results ?? r.data ?? [])
+    } catch { } finally {
+      setSeasonSessionsLoading(false)
+    }
+  }
 
   async function reloadNotes() {
     const res = await users.notes(studentId, { archived: showArchivedNotes ? 'true' : 'false' })
@@ -677,7 +692,7 @@ export default function StudentDetailScreen({ navigation, route }) {
                           <View style={{ flexDirection: 'row', gap: 6, marginTop: 8 }}>
                             <TouchableOpacity
                               style={s.tcBtnTransfer}
-                              onPress={() => { setTcEnrolment(e); setTcNewSession(''); setTcNotes(''); setTcError(null); setTcStep('transfer'); setTcModal(true) }}
+                              onPress={() => { setTcEnrolment(e); setTcNewSession(''); setTcTransferClass(''); setTcNotes(''); setTcError(null); setTcStep('transfer'); setTcModal(true); loadSeasonSessions(e) }}
                             >
                               <Text style={s.tcBtnTransferText}>Transfer</Text>
                             </TouchableOpacity>
@@ -1124,7 +1139,7 @@ export default function StudentDetailScreen({ navigation, route }) {
                       <Text style={s.enrCardName} numberOfLines={1}>{e.class_session_detail?.name ?? 'Class'}</Text>
                       <Text style={s.enrCardMeta}>{DAYS[e.class_session_detail?.day_of_week] ?? ''} {e.class_session_detail?.start_time?.slice(0,5) ?? ''}</Text>
                       <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-                        <TouchableOpacity style={[s.tcBtnTransfer, { flex: 1 }]} onPress={() => { setTcEnrolment(e); setTcNewSession(''); setTcNotes(''); setTcError(null); setTcStep('transfer') }}>
+                        <TouchableOpacity style={[s.tcBtnTransfer, { flex: 1 }]} onPress={() => { setTcEnrolment(e); setTcNewSession(''); setTcTransferClass(''); setTcNotes(''); setTcError(null); setTcStep('transfer'); loadSeasonSessions(e) }}>
                           <Text style={s.tcBtnTransferText}>Transfer</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={[s.tcBtnCancel, { flex: 1 }]} onPress={() => { setTcEnrolment(e); setTcNotes(''); setTcResolution('credit'); setTcError(null); setTcStep('cancel') }}>
@@ -1147,9 +1162,8 @@ export default function StudentDetailScreen({ navigation, route }) {
 
             {/* Step: Transfer — pick class name */}
             {tcStep === 'transfer' && !tcTransferClass && (() => {
-              const seasonId = tcEnrolment?.class_session_detail?.season
-              const seasonSessions = allSessions.filter(s => String(s.season) === String(seasonId) && s.id !== tcEnrolment?.class_session)
-              const uniqueNames = [...new Set(seasonSessions.map(s => s.name))].sort()
+              const availSessions = seasonSessions.filter(s => s.id !== tcEnrolment?.class_session)
+              const uniqueNames = [...new Set(availSessions.map(s => s.name))].sort()
               return (
                 <>
                   <View style={{ backgroundColor: '#1a1a1a', borderRadius: 8, padding: 12, marginBottom: 16 }}>
@@ -1157,7 +1171,9 @@ export default function StudentDetailScreen({ navigation, route }) {
                     <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>{tcEnrolment?.class_session_detail?.name}</Text>
                   </View>
                   <Text style={s.fieldLabel}>Select class</Text>
-                  {uniqueNames.length === 0 ? (
+                  {seasonSessionsLoading ? (
+                    <Text style={{ color: '#555', fontSize: 13, paddingVertical: 12 }}>Loading classes…</Text>
+                  ) : uniqueNames.length === 0 ? (
                     <Text style={{ color: '#555', fontSize: 13, paddingVertical: 12 }}>No other classes available in this season.</Text>
                   ) : uniqueNames.map(name => (
                     <TouchableOpacity
@@ -1167,7 +1183,7 @@ export default function StudentDetailScreen({ navigation, route }) {
                     >
                       <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>{name}</Text>
                       <Text style={{ fontSize: 12, color: '#555', marginTop: 2 }}>
-                        {seasonSessions.filter(s => s.name === name).length} time{seasonSessions.filter(s => s.name === name).length !== 1 ? 's' : ''} available
+                        {availSessions.filter(s => s.name === name).length} time{availSessions.filter(s => s.name === name).length !== 1 ? 's' : ''} available
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -1177,8 +1193,7 @@ export default function StudentDetailScreen({ navigation, route }) {
 
             {/* Step: Transfer — pick day/time */}
             {tcStep === 'transfer' && tcTransferClass && (() => {
-              const seasonId = tcEnrolment?.class_session_detail?.season
-              const sessions = allSessions.filter(s => String(s.season) === String(seasonId) && s.id !== tcEnrolment?.class_session && s.name === tcTransferClass)
+              const sessions = seasonSessions.filter(s => s.id !== tcEnrolment?.class_session && s.name === tcTransferClass)
               return (
                 <>
                   <View style={{ backgroundColor: '#1a1a1a', borderRadius: 8, padding: 12, marginBottom: 8 }}>
@@ -1201,9 +1216,9 @@ export default function StudentDetailScreen({ navigation, route }) {
                             <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff', marginBottom: 2 }}>
                               {DAYS[sess.day_of_week]} {sess.start_time?.slice(0,5)}
                             </Text>
-                            {sess.instructor_detail?.display_name ? (
-                              <Text style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>{sess.instructor_detail.display_name}</Text>
-                            ) : null}
+                            <Text style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>
+                              {[sess.instructor_detail?.display_name, sess.studio_detail?.name].filter(Boolean).join(' · ')}
+                            </Text>
                             {isFull ? (
                               <Text style={s.pillRed}>FULL</Text>
                             ) : (

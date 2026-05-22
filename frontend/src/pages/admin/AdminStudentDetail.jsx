@@ -243,6 +243,8 @@ export default function AdminStudentDetail() {
   const [processingChangeReq, setProcessingChangeReq] = useState(false)
   const [changeReqError, setChangeReqError] = useState(null)
   const [allSessions, setAllSessions] = useState(null)
+  const [seasonSessions, setSeasonSessions] = useState([])
+  const [seasonSessionsLoading, setSeasonSessionsLoading] = useState(false)
   const [seasonsData, setSeasonsData] = useState(null)
   const [casualBookingsData, setCasualBookingsData] = useState(null)
   const [makeupCreditsData, setMakeupCreditsData] = useState(null)
@@ -315,6 +317,19 @@ export default function AdminStudentDetail() {
     attendance.makeupCredits.list({ student: student.id }).then(r => setMakeupCreditsData(r.data.results || r.data || [])).catch(() => {})
     client.get('/api/classes/casual-bookings/', { params: { student: student.id } }).then(r => setCasualBookingsData(r.data.results || r.data || [])).catch(() => {})
   }, [student?.id])
+
+  async function loadSeasonSessions(enrolment) {
+    const sid = enrolment?.class_session_detail?.season
+    if (!sid) return
+    setSeasonSessions([])
+    setSeasonSessionsLoading(true)
+    try {
+      const r = await classes.list({ season: sid })
+      setSeasonSessions(r.data.results || r.data || [])
+    } catch { } finally {
+      setSeasonSessionsLoading(false)
+    }
+  }
 
   async function reloadBalance() {
     const res = await payments.balance(student.id)
@@ -1744,7 +1759,7 @@ export default function AdminStudentDetail() {
 
         const seasonId = tcEnrolment?.class_session_detail?.season
         const transferSessions = tcStep === 'transfer'
-          ? (allSessions || []).filter(s => String(s.season) === String(seasonId) && s.id !== tcEnrolment?.class_session)
+          ? (seasonSessions || []).filter(s => s.id !== tcEnrolment?.class_session)
           : []
 
         return (
@@ -1786,7 +1801,7 @@ export default function AdminStudentDetail() {
                               </div>
                             </div>
                             <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                              <button className="btn btn-ghost btn-xs" onClick={() => { setTcEnrolment(e); setTcNewSession(''); setTcStep('transfer') }}>Transfer</button>
+                              <button className="btn btn-ghost btn-xs" onClick={() => { setTcEnrolment(e); setTcNewSession(''); setTcTransferClass(''); setTcStep('transfer'); loadSeasonSessions(e) }}>Transfer</button>
                               <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)' }} onClick={() => { setTcEnrolment(e); setTcStep('cancel') }}>Cancel</button>
                             </div>
                           </div>
@@ -1814,7 +1829,9 @@ export default function AdminStudentDetail() {
                         Transferring from: <strong style={{ color: 'var(--white)' }}>{tcEnrolment?.class_session_detail?.name}</strong>
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 10 }}>Select a class to transfer to:</div>
-                      {uniqueNames.length === 0 ? (
+                      {seasonSessionsLoading ? (
+                        <div style={{ fontSize: 13, color: 'var(--grey)', padding: '12px 0' }}>Loading classes…</div>
+                      ) : uniqueNames.length === 0 ? (
                         <div style={{ fontSize: 13, color: 'var(--grey)', padding: '12px 0' }}>No other classes available in this season.</div>
                       ) : uniqueNames.map(name => (
                         <button
@@ -1853,9 +1870,10 @@ export default function AdminStudentDetail() {
                           <div key={sess.id} style={{ background: isSelected ? 'rgba(204,255,0,0.06)' : '#111', border: `1px solid ${isSelected ? 'rgba(204,255,0,0.3)' : 'var(--border)'}`, borderRadius: 8, padding: '12px 14px', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{DAYS[sess.day_of_week]} {sess.start_time?.slice(0,5)}</div>
-                              {sess.instructor_detail?.display_name && (
-                                <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 4 }}>{sess.instructor_detail.display_name}</div>
-                              )}
+                              <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 4 }}>
+                                {sess.instructor_detail?.display_name || ''}
+                                {sess.studio_detail?.name ? ` · ${sess.studio_detail.name}` : ''}
+                              </div>
                               {isFull ? (
                                 <span className="tag tag-red" style={{ fontSize: 10 }}>FULL</span>
                               ) : (
