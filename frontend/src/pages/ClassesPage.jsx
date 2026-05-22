@@ -292,12 +292,19 @@ function MyClassesTab() {
 
 // ── All Classes tab ────────────────────────────────────────────────────────────
 
+function weekNumber(dateStr, seasonStartStr) {
+  if (!dateStr || !seasonStartStr) return null
+  const d = new Date(dateStr + 'T00:00')
+  const s = new Date(seasonStartStr + 'T00:00')
+  return Math.floor((d - s) / (7 * 24 * 3600 * 1000)) + 1
+}
+
 function AllClassesTab() {
   const [showUpcoming, setShowUpcoming] = useState(false)
   const today = todayStr()
   const upcoming7 = sevenDaysStr()
+  const navigate = typeof window !== 'undefined' ? null : null // use Link instead
 
-  // We always fetch today; upcoming is gated on toggle
   const { data: todayData, loading: todayLoading } = useApi(
     () => classes.occurrences({ date: today }),
     [today]
@@ -316,6 +323,14 @@ function AllClassesTab() {
     if (a.date !== b.date) return (a.date || '').localeCompare(b.date || '')
     return (a.start_time || '').localeCompare(b.start_time || '')
   })
+
+  // Group by date
+  const byDate = {}
+  for (const occ of occs) {
+    const d = occ.date || 'unknown'
+    if (!byDate[d]) byDate[d] = []
+    byDate[d].push(occ)
+  }
 
   return (
     <div>
@@ -344,55 +359,80 @@ function AllClassesTab() {
           {showUpcoming ? 'No classes in the next 7 days.' : 'No classes today.'}
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {occs.map(occ => {
-            const isOwn = occ.is_mine || occ.instructor_is_me
-            const name = occ.session_name || occ.session_detail?.name || occ.name || 'Class'
-            const instructorName = occ.instructor_detail?.display_name
-              || occ.instructor_name
-              || occ.session_detail?.instructor_detail?.display_name
-              || null
-            const studioName = occ.studio_name || occ.session_detail?.studio_detail?.name || null
-            const enrolled = occ.enrolled_count ?? null
-            const capacity = occ.capacity ?? occ.session_detail?.capacity ?? null
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {Object.entries(byDate).map(([date, dateOccs]) => {
+            const dateObj = new Date(date + 'T00:00')
+            const dayName = dateObj.toLocaleDateString('en-AU', { weekday: 'long' }).toUpperCase()
+            const dayNum = dateObj.getDate()
+            const monthName = dateObj.toLocaleDateString('en-AU', { month: 'long' }).toUpperCase()
+            // Get week/season from first occurrence
+            const firstOcc = dateOccs[0]
+            const seasonStart = firstOcc?.session_detail?.season_start_date
+            const seasonName = firstOcc?.session_detail?.season_name
+            const wk = weekNumber(date, seasonStart)
+            const dateLabel = [dayName, `${dayNum} ${monthName}`, wk != null && seasonName ? `— WEEK ${wk}, ${seasonName.toUpperCase()}` : ''].filter(Boolean).join(' ')
 
             return (
-              <div
-                key={occ.id}
-                style={{
-                  display: 'flex', alignItems: 'stretch',
-                  background: '#111',
-                  border: `1px solid ${isOwn ? 'rgba(204,255,0,0.2)' : '#1e1e1e'}`,
-                  borderRadius: 14, overflow: 'hidden',
-                }}
-              >
-                {/* Left accent — lime for own classes */}
-                <div style={{ width: 4, flexShrink: 0, background: isOwn ? 'var(--lime)' : '#1e1e1e' }} />
+              <div key={date}>
+                {/* Date group header */}
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--grey)', letterSpacing: '0.8px', marginBottom: 10, textTransform: 'uppercase' }}>
+                  {dateLabel}
+                </div>
 
-                <div style={{ flex: 1, minWidth: 0, padding: '14px 16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15 }}>{name}</div>
-                    {isOwn && (
-                      <span style={{ background: 'rgba(204,255,0,0.12)', color: 'var(--lime)', borderRadius: 6, fontSize: 10, fontWeight: 700, padding: '2px 7px', letterSpacing: '0.4px' }}>YOURS</span>
-                    )}
-                    {enrolled != null && capacity != null && enrolled >= capacity && (
-                      <span style={{ background: 'rgba(204,255,0,0.08)', color: 'var(--lime)', borderRadius: 6, fontSize: 10, fontWeight: 700, padding: '2px 7px' }}>FULL</span>
-                    )}
-                  </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {dateOccs.map(occ => {
+                    const isOwn = occ.is_mine || occ.instructor_is_me
+                    const name = occ.session_name || occ.session_detail?.name || 'Class'
+                    const instructorName = occ.substitute_instructor_detail?.display_name
+                      || occ.instructor_detail?.display_name
+                      || occ.session_detail?.instructor_detail?.display_name
+                      || null
+                    const studioName = occ.studio_name || occ.session_detail?.studio_detail?.name || null
+                    const enrolled = occ.enrolled_count ?? null
+                    const capacity = occ.capacity ?? occ.session_detail?.capacity ?? null
+                    const isFull = enrolled != null && capacity != null && enrolled >= capacity
+                    const sessionId = occ.session || occ.session_detail?.id
 
-                  <div style={{ fontSize: 12, color: 'var(--grey)' }}>
-                    {occ.start_time ? fmt12(occ.start_time) : ''}
-                    {occ.end_time ? ` – ${fmt12(occ.end_time)}` : ''}
-                    {studioName && <span style={{ marginLeft: 8, color: '#444' }}>· {studioName}</span>}
-                    {instructorName && <span style={{ marginLeft: 8, color: '#555' }}>· {instructorName}</span>}
-                    {enrolled != null && <span style={{ marginLeft: 8, color: '#555' }}>· {enrolled}{capacity != null ? `/${capacity}` : ''} enrolled</span>}
-                  </div>
+                    return (
+                      <Link key={occ.id} to={`/classes/${sessionId}/attendance`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                        <div
+                          style={{
+                            display: 'flex', alignItems: 'stretch',
+                            background: '#111',
+                            border: `1px solid ${isOwn ? 'rgba(204,255,0,0.2)' : '#1e1e1e'}`,
+                            borderRadius: 12, overflow: 'hidden',
+                            cursor: 'pointer',
+                            transition: 'border-color 0.12s',
+                          }}
+                        >
+                          {/* Left accent */}
+                          <div style={{ width: 4, flexShrink: 0, background: isOwn ? 'var(--lime)' : '#1e1e1e' }} />
 
-                  {showUpcoming && occ.date && (
-                    <div style={{ fontSize: 11, color: '#444', marginTop: 4 }}>
-                      {new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
-                    </div>
-                  )}
+                          <div style={{ flex: 1, minWidth: 0, padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
+                              <div style={{ fontSize: 12, color: 'var(--grey)' }}>
+                                {occ.start_time ? fmt12(occ.start_time) : ''}
+                                {studioName && ` · ${studioName}`}
+                                {instructorName && ` · ${instructorName}`}
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
+                              {isOwn && (
+                                <span style={{ background: 'rgba(204,255,0,0.12)', color: 'var(--lime)', borderRadius: 6, fontSize: 10, fontWeight: 700, padding: '3px 8px', letterSpacing: '0.4px' }}>YOURS</span>
+                              )}
+                              {enrolled != null && (
+                                <span style={{ background: isFull ? 'rgba(204,255,0,0.08)' : 'rgba(255,255,255,0.05)', color: isFull ? 'var(--lime)' : 'var(--grey)', borderRadius: 6, fontSize: 10, fontWeight: 600, padding: '3px 8px' }}>
+                                  {enrolled}{capacity != null ? `/${capacity}` : ''} enrolled
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    )
+                  })}
                 </div>
               </div>
             )
