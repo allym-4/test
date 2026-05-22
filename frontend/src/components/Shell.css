@@ -36,6 +36,18 @@
   line-height: 1;
   margin-top: 1px;
 }
+.sidebar-close {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--grey);
+  font-size: 16px;
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
 
 .sidebar-nav {
   flex: 1;
@@ -111,19 +123,6 @@
   min-width: 0;
   padding: 28px;
   overflow-y: auto;
-}
-
-.sidebar-close {
-  display: none;
-  background: none;
-  border: none;
-  color: var(--grey);
-  font-size: 16px;
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  cursor: pointer;
 }
 
 /* Topbar (hidden on desktop) */
