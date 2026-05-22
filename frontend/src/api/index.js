@@ -157,6 +157,9 @@ export const payments = {
     list: (params) => client.get('/api/payments/chase/', { params }),
     create: (data) => client.post('/api/payments/chase/', data),
   },
+  cashPromises: {
+    action: (id, data) => client.post(`/api/payments/cash-promises/${id}/action/`, data),
+  },
 }
 
 export const leads = {

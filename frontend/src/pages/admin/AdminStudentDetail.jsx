@@ -313,6 +313,7 @@ export default function AdminStudentDetail() {
   const [enrolSubTab, setEnrolSubTab] = useState('current')
   const [tcTransferClass, setTcTransferClass] = useState('')
   const [expandedTrialId, setExpandedTrialId] = useState(null)
+  const [chaseHistory, setChaseHistory] = useState(null)
 
   useEffect(() => {
     users.get(id).then(res => {
@@ -380,6 +381,7 @@ export default function AdminStudentDetail() {
     attendance.makeupCredits.list({ student: student.id }).then(r => setMakeupCreditsData(r.data.results || r.data || [])).catch(() => {})
     client.get('/api/classes/casual-bookings/', { params: { student: student.id } }).then(r => setCasualBookingsData(r.data.results || r.data || [])).catch(() => {})
     classes.practice.credits.list({ student: student.id }).then(r => setPracticeCreditsData(r.data?.results || r.data || [])).catch(() => {})
+    payments.chase.list({ student_id: id }).then(r => setChaseHistory(r.data?.results || r.data || [])).catch(() => setChaseHistory([]))
   }, [student?.id])
 
   async function loadSeasonSessions(enrolment) {
@@ -1333,6 +1335,30 @@ export default function AdminStudentDetail() {
                     </tbody>
                   </table>
                 </div>
+                {chaseHistory && chaseHistory.length > 0 && (
+                  <div style={{ marginTop: 24 }}>
+                    <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', fontWeight: 600, marginBottom: 12 }}>Chase History</div>
+                    <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+                      {chaseHistory.map((c, i) => (
+                        <div key={c.id} style={{
+                          display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+                          borderBottom: i < chaseHistory.length - 1 ? '1px solid var(--border)' : 'none',
+                        }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600 }}>{c.step_label}</div>
+                            <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>Sent by {c.sent_by_name}</div>
+                          </div>
+                          <div style={{ fontSize: 12, color: 'var(--grey)', flexShrink: 0 }}>
+                            {new Date(c.sent_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </div>
+                          {c.locked_account && (
+                            <span className="tag tag-red" style={{ fontSize: 10 }}>LOCKED</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

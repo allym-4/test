@@ -315,6 +315,7 @@ export default function AdminDashboard() {
   const outstandingBalance = dashData?.outstanding_balance ?? 0
   const recentPayments = dashData?.recent_payments ?? []
   const activeStudentCount = dashData?.active_student_count ?? null
+  const overdueCashPromises = dashData?.overdue_cash_promises ?? []
 
   const upcomingTrialsCasuals = trialsAndCasuals
     .filter(e => {
@@ -534,6 +535,61 @@ export default function AdminDashboard() {
           </div>
         </Link>
       </div>
+
+      {overdueCashPromises.length > 0 && (
+        <div className="card" style={{ marginBottom: 20, border: '1px solid rgba(255,170,0,0.3)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, color: 'var(--amber)' }}>
+              Cash Not Received
+            </div>
+            <span className="tag tag-amber" style={{ fontSize: 10 }}>{overdueCashPromises.length}</span>
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 12 }}>
+            Check if these were received and not recorded before sending reminders.
+          </div>
+          {overdueCashPromises.map(p => (
+            <div key={p.id} style={{
+              display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0',
+              borderTop: '1px solid var(--border)',
+            }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: 13 }}>{p.student_name}</div>
+                <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>
+                  {p.description} · promised {new Date(p.cash_promised_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                </div>
+                {p.reminder_sent && p.auto_charge_at && (
+                  <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 2 }}>
+                    Reminder sent · auto-charge {new Date(p.auto_charge_at).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                )}
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--red)', flexShrink: 0 }}>
+                ${p.amount.toFixed(2)}
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                <button
+                  className="btn btn-ghost btn-xs"
+                  style={{ color: 'var(--lime)' }}
+                  onClick={async () => {
+                    await payments.cashPromises.action(p.id, { action: 'received' })
+                    refetchDash()
+                  }}
+                >Mark Received</button>
+                {!p.reminder_sent && (
+                  <button
+                    className="btn btn-ghost btn-xs"
+                    style={{ color: 'var(--amber)' }}
+                    onClick={async () => {
+                      await payments.cashPromises.action(p.id, { action: 'remind' })
+                      refetchDash()
+                    }}
+                  >Send Reminder</button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
         <div>

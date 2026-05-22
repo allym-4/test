@@ -2189,7 +2189,7 @@ export default function StudentBook() {
     if (!co) return
     if (co.type === 'casual_occ') {
       try {
-        await classes.casual.book(co.occId, { enrolment_type: 'casual', payment_method: 'cash', notes })
+        await classes.casual.book(co.occId, { enrolment_type: 'casual', payment_method: 'cash', notes, ...(cashDate ? { cash_promised_date: cashDate } : {}) })
         refetchCasualOccs()
       } catch {}
     } else {
@@ -2197,7 +2197,7 @@ export default function StudentBook() {
       const overrideSessions = co.levelOverrideSessions || new Set()
       for (const sessionId of ids) {
         try {
-          const payload = { session: sessionId, status: 'active', enrolment_type: co.type || 'course', payment_method: 'cash', notes }
+          const payload = { session: sessionId, status: 'active', enrolment_type: co.type || 'course', payment_method: 'cash', notes, ...(cashDate ? { cash_promised_date: cashDate } : {}) }
           if (overrideSessions.has(sessionId)) payload.level_override = true
           await enrolments.create(payload)
         } catch {}
