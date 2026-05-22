@@ -12,6 +12,7 @@ class Command(BaseCommand):
             'send_class_reminders',
             'send_cover_needed_alerts',
             'send_underenrolled_alerts',
+            'send_unmarked_attendance_alerts',
             'complete_past_seasons',
         ]
         for task in tasks:
