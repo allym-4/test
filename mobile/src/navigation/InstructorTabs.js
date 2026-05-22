@@ -15,6 +15,7 @@ import SkillsApprovalScreen from '../screens/instructor/SkillsApprovalScreen'
 import PayScreen from '../screens/instructor/PayScreen'
 import NotificationsScreen from '../screens/instructor/NotificationsScreen'
 import StudentDetailScreen from '../screens/instructor/StudentDetailScreen'
+import ClassDetailScreen from '../screens/instructor/ClassDetailScreen'
 
 const Tab = createBottomTabNavigator()
 const HomeStackNav = createNativeStackNavigator()
@@ -73,6 +74,7 @@ function MyClassesStack() {
   return (
     <MyClassesStackNav.Navigator screenOptions={stackScreenOptions}>
       <MyClassesStackNav.Screen name="EnrolmentsHome" component={EnrolmentsScreen} options={{ title: 'My Classes' }} />
+      <MyClassesStackNav.Screen name="ClassDetail" component={ClassDetailScreen} options={({ route }) => ({ title: route.params?.occurrence?.session_name ?? route.params?.occurrence?.name ?? 'Class' })} />
       <MyClassesStackNav.Screen name="StudentDetail" component={StudentDetailScreen} options={({ route }) => ({ title: route.params?.studentName ?? 'Student' })} />
     </MyClassesStackNav.Navigator>
   )

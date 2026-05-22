@@ -1,15 +1,22 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  RefreshControl, TextInput, ActivityIndicator,
+  RefreshControl, ActivityIndicator,
 } from 'react-native'
 import { useApi } from '../../hooks/useApi'
-import { classes, enrolments } from '../../api'
+import { useAuth } from '../../contexts/AuthContext'
+import { classes } from '../../api'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10)
+}
+
+function sevenDaysFromNow() {
+  const d = new Date()
+  d.setDate(d.getDate() + 7)
+  return d.toISOString().slice(0, 10)
 }
 
 function formatOccurrenceDate(dateStr) {
@@ -20,41 +27,26 @@ function formatOccurrenceDate(dateStr) {
 
 function formatTime(timeStr) {
   if (!timeStr) return ''
-  // timeStr may be "HH:MM:SS" or "HH:MM"
   const [h, m] = timeStr.split(':').map(Number)
   const ampm = h >= 12 ? 'pm' : 'am'
   const hour = h % 12 || 12
   return `${hour}:${String(m).padStart(2, '0')}${ampm}`
 }
 
-// ── Enrolment card (Roster tab) ───────────────────────────────────────────────
-
-function EnrolmentCard({ enr, onViewStudent }) {
-  const studentName = enr.student?.display_name ?? enr.student?.email ?? 'Student'
-  return (
-    <View style={s.card}>
-      <View style={s.cardTop}>
-        <TouchableOpacity onPress={onViewStudent} hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}>
-          <Text style={[s.studentName, s.studentNameTappable]}>{studentName}</Text>
-        </TouchableOpacity>
-        <View style={[s.typeBadge, enr.enrolment_type === 'trial' && s.trialBadge]}>
-          <Text style={[s.typeBadgeText, enr.enrolment_type === 'trial' && s.trialBadgeText]}>
-            {enr.enrolment_type}
-          </Text>
-        </View>
-      </View>
-      <Text style={s.sessionName}>{enr.class_session_detail?.name ?? enr.session?.name ?? 'Class'}</Text>
-      {enr.student?.email && <Text style={s.email}>{enr.student.email}</Text>}
-      {enr.student?.phone && <Text style={s.email}>{enr.student.phone}</Text>}
-    </View>
-  )
+function dedupe(arr) {
+  const seen = new Set()
+  return arr.filter(x => {
+    if (seen.has(x.id)) return false
+    seen.add(x.id)
+    return true
+  })
 }
 
-// ── Occurrence card (Schedule tab) ────────────────────────────────────────────
+// ── My Classes occurrence card ─────────────────────────────────────────────────
 
-function OccurrenceCard({ occ }) {
-  const name = occ.class_session?.name ?? occ.session_name ?? occ.name ?? 'Class'
-  const studio = occ.studio?.name ?? occ.studio_name ?? null
+function MyOccurrenceCard({ occ, isCover, onPress }) {
+  const name = occ.class_session?.name ?? occ.session_name ?? occ.session_detail?.name ?? occ.name ?? 'Class'
+  const studio = occ.studio?.name ?? occ.studio_name ?? occ.session_detail?.studio_detail?.name ?? null
   const enrolled = occ.enrolled_count ?? occ.enrolment_count ?? null
   const dateLabel = formatOccurrenceDate(occ.date)
   const startTime = occ.start_time ? formatTime(occ.start_time) : null
@@ -64,14 +56,19 @@ function OccurrenceCard({ occ }) {
     : null
 
   return (
-    <View style={s.occCard}>
+    <TouchableOpacity style={s.occCard} onPress={onPress} activeOpacity={0.75}>
       <View style={s.occCardTop}>
         <Text style={s.occName} numberOfLines={1}>{name}</Text>
-        {enrolled !== null && (
-          <View style={s.enrolledChip}>
-            <Text style={s.enrolledChipText}>{enrolled} enrolled</Text>
-          </View>
-        )}
+        <View style={s.occBadges}>
+          {isCover && (
+            <View style={s.coverBadge}><Text style={s.coverBadgeText}>COVER</Text></View>
+          )}
+          {enrolled !== null && (
+            <View style={s.enrolledChip}>
+              <Text style={s.enrolledChipText}>{enrolled} enrolled</Text>
+            </View>
+          )}
+        </View>
       </View>
       <View style={s.occMeta}>
         {dateLabel ? <Text style={s.occMetaText}>{dateLabel}</Text> : null}
@@ -80,11 +77,55 @@ function OccurrenceCard({ occ }) {
         {studio ? <Text style={s.occMetaDot}> · </Text> : null}
         {studio ? <Text style={s.occMetaText}>{studio}</Text> : null}
       </View>
+      <Text style={s.tapHint}>View register →</Text>
+    </TouchableOpacity>
+  )
+}
+
+// ── All Classes occurrence card (read-only) ───────────────────────────────────
+
+function AllOccurrenceCard({ occ, isOwn }) {
+  const name = occ.class_session?.name ?? occ.session_name ?? occ.session_detail?.name ?? occ.name ?? 'Class'
+  const studio = occ.studio?.name ?? occ.studio_name ?? occ.session_detail?.studio_detail?.name ?? null
+  const enrolled = occ.enrolled_count ?? occ.enrolment_count ?? null
+  const instructorName = occ.instructor_detail?.display_name
+    ?? occ.instructor_name
+    ?? occ.session_detail?.instructor_detail?.display_name
+    ?? null
+  const startTime = occ.start_time ? formatTime(occ.start_time) : null
+  const endTime = occ.end_time ? formatTime(occ.end_time) : null
+  const timeLabel = startTime
+    ? endTime ? `${startTime} – ${endTime}` : startTime
+    : null
+
+  return (
+    <View style={[s.allCard, isOwn && s.allCardOwn]}>
+      {isOwn && <View style={s.ownAccent} />}
+      <View style={s.allCardBody}>
+        <View style={s.allCardTop}>
+          <Text style={s.occName} numberOfLines={1}>{name}</Text>
+          <View style={s.occBadges}>
+            {isOwn && <View style={s.ownBadge}><Text style={s.ownBadgeText}>YOURS</Text></View>}
+            {enrolled !== null && (
+              <View style={s.enrolledChip}>
+                <Text style={s.enrolledChipText}>{enrolled} enrolled</Text>
+              </View>
+            )}
+          </View>
+        </View>
+        <View style={s.occMeta}>
+          {timeLabel ? <Text style={s.occMetaText}>{timeLabel}</Text> : null}
+          {studio ? <Text style={s.occMetaDot}> · </Text> : null}
+          {studio ? <Text style={s.occMetaText}>{studio}</Text> : null}
+          {instructorName ? <Text style={s.occMetaDot}> · </Text> : null}
+          {instructorName ? <Text style={s.occMetaText}>{instructorName}</Text> : null}
+        </View>
+      </View>
     </View>
   )
 }
 
-// ── Schedule tab ──────────────────────────────────────────────────────────────
+// ── My Classes tab ─────────────────────────────────────────────────────────────
 
 const SCHEDULE_FILTERS = [
   { id: 'past',     label: 'Past' },
@@ -92,15 +133,35 @@ const SCHEDULE_FILTERS = [
   { id: 'upcoming', label: 'Upcoming' },
 ]
 
-function ScheduleTab() {
+function MyClassesTab({ navigation, currentUserId }) {
   const [filter, setFilter] = useState('today')
-  const { data: occData, loading, refetch } = useApi(
+
+  const { data: myOccData, loading: myLoading, refetch: refetchMy } = useApi(
     () => classes.occurrences({ instructor: 'me' }),
     []
   )
-  const today = todayStr()
-  const allOccs = occData?.results ?? occData ?? []
 
+  const { data: subOccData, loading: subLoading, refetch: refetchSub } = useApi(
+    () => currentUserId
+      ? classes.occurrences({ substitute_instructor: currentUserId })
+      : null,
+    [currentUserId]
+  )
+
+  const loading = myLoading || subLoading
+
+  function refetch() {
+    refetchMy()
+    refetchSub()
+  }
+
+  const myOccs = myOccData?.results ?? myOccData ?? []
+  const subOccs = subOccData?.results ?? subOccData ?? []
+  const subIds = new Set(subOccs.map(o => o.id))
+
+  const allOccs = useMemo(() => dedupe([...myOccs, ...subOccs]), [myOccs, subOccs])
+
+  const today = todayStr()
   const filtered = allOccs.filter(occ => {
     const d = occ.date
     if (!d) return false
@@ -112,7 +173,6 @@ function ScheduleTab() {
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Sub-toggle */}
       <View style={s.subToggleRow}>
         {SCHEDULE_FILTERS.map(f => (
           <TouchableOpacity
@@ -140,93 +200,92 @@ function ScheduleTab() {
               {filter === 'today' ? 'No classes today.' : filter === 'past' ? 'No past classes.' : 'No upcoming classes.'}
             </Text>
           }
-          renderItem={({ item }) => <OccurrenceCard occ={item} />}
+          renderItem={({ item }) => (
+            <MyOccurrenceCard
+              occ={item}
+              isCover={subIds.has(item.id)}
+              onPress={() => navigation.navigate('ClassDetail', { occurrence: item })}
+            />
+          )}
         />
       )}
     </View>
   )
 }
 
-// ── Roster tab ────────────────────────────────────────────────────────────────
+// ── All Classes tab ────────────────────────────────────────────────────────────
 
-function RosterTab({ navigation }) {
-  const [search, setSearch] = useState('')
-  const [selectedSession, setSelectedSession] = useState(null)
+function AllClassesTab({ currentUserId }) {
+  const [showUpcoming, setShowUpcoming] = useState(false)
+  const today = todayStr()
+  const upcoming7 = sevenDaysFromNow()
 
-  const { data: sessionsData, loading: sessLoading } = useApi(() => classes.list({ instructor: 'me' }), [])
-  const sessionList = sessionsData?.results ?? sessionsData ?? []
-
-  const { data: enrData, loading: enrLoading, refetch } = useApi(
-    () => selectedSession ? enrolments.list({ session: selectedSession.id, status: 'active' }) : null,
-    [selectedSession?.id]
+  const { data: todayData, loading: todayLoading, refetch: refetchToday } = useApi(
+    () => classes.occurrences({ date: today }),
+    [today]
   )
 
-  const allEnrolments = enrData?.results ?? enrData ?? []
-  const filtered = search
-    ? allEnrolments.filter(e => {
-        const name = (e.student?.display_name ?? e.student?.email ?? '').toLowerCase()
-        return name.includes(search.toLowerCase())
-      })
-    : allEnrolments
+  const { data: upcomingData, loading: upcomingLoading, refetch: refetchUpcoming } = useApi(
+    () => showUpcoming ? classes.occurrences({ date_after: today, date_before: upcoming7 }) : null,
+    [showUpcoming, today]
+  )
 
-  if (!selectedSession) {
-    return (
-      <View style={{ flex: 1 }}>
-        {sessLoading && <ActivityIndicator style={{ marginTop: 40 }} color="#ccff00" />}
-        {!sessLoading && sessionList.length === 0 && (
-          <Text style={s.empty}>No classes assigned to you.</Text>
-        )}
-        <FlatList
-          data={sessionList}
-          keyExtractor={item => String(item.id)}
-          contentContainerStyle={s.list}
-          renderItem={({ item }) => (
-            <TouchableOpacity style={s.sessionCard} onPress={() => setSelectedSession(item)}>
-              <Text style={s.sessionName}>{item.name}</Text>
-              {item.studio?.name && <Text style={s.sessionMeta}>{item.studio.name}</Text>}
-              <Text style={s.sessionArrow}>View enrolments →</Text>
-            </TouchableOpacity>
-          )}
-        />
-      </View>
-    )
+  const loading = showUpcoming ? upcomingLoading : todayLoading
+  const rawOccs = showUpcoming
+    ? (upcomingData?.results ?? upcomingData ?? [])
+    : (todayData?.results ?? todayData ?? [])
+
+  // Sort by date then time
+  const occs = [...rawOccs].sort((a, b) => {
+    if (a.date !== b.date) return (a.date || '').localeCompare(b.date || '')
+    return (a.start_time || '').localeCompare(b.start_time || '')
+  })
+
+  function refetch() {
+    if (showUpcoming) refetchUpcoming(); else refetchToday()
   }
 
   return (
     <View style={{ flex: 1 }}>
-      <TouchableOpacity style={s.back} onPress={() => { setSelectedSession(null); setSearch('') }}>
-        <Text style={s.backText}>← Back to classes</Text>
-      </TouchableOpacity>
-      <Text style={s.drillHeading}>{selectedSession.name}</Text>
-      <Text style={s.subheading}>{allEnrolments.length} enrolled</Text>
+      {/* Toggle: Today / Upcoming */}
+      <View style={s.subToggleRow}>
+        <TouchableOpacity
+          style={[s.subToggleBtn, !showUpcoming && s.subToggleBtnActive]}
+          onPress={() => setShowUpcoming(false)}
+        >
+          <Text style={[s.subToggleBtnText, !showUpcoming && s.subToggleBtnTextActive]}>Today</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[s.subToggleBtn, showUpcoming && s.subToggleBtnActive]}
+          onPress={() => setShowUpcoming(true)}
+        >
+          <Text style={[s.subToggleBtnText, showUpcoming && s.subToggleBtnTextActive]}>Next 7 Days</Text>
+        </TouchableOpacity>
+      </View>
 
-      <TextInput
-        style={s.search}
-        placeholder="Search students..."
-        placeholderTextColor="#555"
-        value={search}
-        onChangeText={setSearch}
-      />
-
-      <FlatList
-        data={filtered}
-        keyExtractor={e => String(e.id)}
-        contentContainerStyle={s.list}
-        refreshControl={<RefreshControl refreshing={enrLoading} onRefresh={refetch} tintColor="#ccff00" />}
-        ListEmptyComponent={
-          <Text style={s.empty}>{enrLoading ? '' : 'No enrolments found.'}</Text>
-        }
-        renderItem={({ item }) => (
-          <EnrolmentCard
-            enr={item}
-            onViewStudent={() => {
-              const sid = item.student?.id ?? item.student
-              const sName = item.student?.display_name ?? item.student?.email ?? 'Student'
-              navigation.navigate('StudentDetail', { studentId: sid, studentName: sName })
-            }}
-          />
-        )}
-      />
+      {loading ? (
+        <ActivityIndicator style={{ marginTop: 40 }} color="#ccff00" />
+      ) : (
+        <FlatList
+          data={occs}
+          keyExtractor={item => String(item.id)}
+          contentContainerStyle={s.list}
+          refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} tintColor="#ccff00" />}
+          ListEmptyComponent={
+            <Text style={s.empty}>
+              {showUpcoming ? 'No classes in the next 7 days.' : 'No classes today.'}
+            </Text>
+          }
+          renderItem={({ item }) => {
+            const isOwn = (
+              item.instructor === currentUserId ||
+              item.instructor_detail?.id === currentUserId ||
+              item.substitute_instructor === currentUserId
+            )
+            return <AllOccurrenceCard occ={item} isOwn={isOwn} />
+          }}
+        />
+      )}
     </View>
   )
 }
@@ -234,12 +293,14 @@ function RosterTab({ navigation }) {
 // ── Main screen ───────────────────────────────────────────────────────────────
 
 const MAIN_TABS = [
-  { id: 'schedule', label: 'Schedule' },
-  { id: 'roster',   label: 'Roster' },
+  { id: 'mine', label: 'My Classes' },
+  { id: 'all',  label: 'All Classes' },
 ]
 
 export default function EnrolmentsScreen({ navigation }) {
-  const [activeTab, setActiveTab] = useState('schedule')
+  const [activeTab, setActiveTab] = useState('mine')
+  const { user } = useAuth()
+  const currentUserId = user?.id ?? null
 
   return (
     <View style={s.root}>
@@ -260,7 +321,10 @@ export default function EnrolmentsScreen({ navigation }) {
         ))}
       </View>
 
-      {activeTab === 'schedule' ? <ScheduleTab /> : <RosterTab navigation={navigation} />}
+      {activeTab === 'mine'
+        ? <MyClassesTab navigation={navigation} currentUserId={currentUserId} />
+        : <AllClassesTab currentUserId={currentUserId} />
+      }
     </View>
   )
 }
@@ -268,11 +332,6 @@ export default function EnrolmentsScreen({ navigation }) {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000' },
   heading: { fontSize: 20, fontWeight: '700', color: '#fff', padding: 16, paddingBottom: 4 },
-  subheading: { fontSize: 13, color: '#888', paddingHorizontal: 16, marginBottom: 8 },
-  drillHeading: { fontSize: 18, fontWeight: '700', color: '#fff', paddingHorizontal: 16, paddingBottom: 2 },
-  back: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
-  backText: { color: '#ccff00', fontWeight: '600', fontSize: 15 },
-  search: { marginHorizontal: 16, marginBottom: 8, borderWidth: 1, borderColor: '#333', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 15, color: '#fff', backgroundColor: '#111' },
   list: { padding: 16, paddingBottom: 40 },
   empty: { textAlign: 'center', color: '#555', marginTop: 40 },
 
@@ -283,37 +342,33 @@ const s = StyleSheet.create({
   tabText: { fontSize: 14, fontWeight: '600', color: '#888' },
   tabTextActive: { color: '#ccff00' },
 
-  // Schedule sub-toggle
+  // Sub-toggle
   subToggleRow: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 12, gap: 8 },
   subToggleBtn: { flex: 1, paddingVertical: 7, alignItems: 'center', borderRadius: 8, backgroundColor: '#111', borderWidth: 1, borderColor: '#222' },
   subToggleBtnActive: { backgroundColor: 'rgba(204,255,0,0.12)', borderColor: 'rgba(204,255,0,0.3)' },
   subToggleBtnText: { fontSize: 13, fontWeight: '600', color: '#888' },
   subToggleBtnTextActive: { color: '#ccff00' },
 
-  // Occurrence card
+  // My Classes occurrence card
   occCard: { backgroundColor: '#111', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#222' },
   occCardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
   occName: { fontSize: 15, fontWeight: '700', color: '#fff', flex: 1, marginRight: 8 },
+  occBadges: { flexDirection: 'row', gap: 6, alignItems: 'center', flexShrink: 0 },
+  coverBadge: { backgroundColor: 'rgba(255,170,0,0.15)', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 },
+  coverBadgeText: { fontSize: 10, fontWeight: '700', color: '#ffaa00' },
   enrolledChip: { backgroundColor: 'rgba(204,255,0,0.12)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   enrolledChipText: { fontSize: 11, fontWeight: '600', color: '#ccff00' },
   occMeta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
   occMetaText: { fontSize: 12, color: '#888' },
   occMetaDot: { fontSize: 12, color: '#444' },
+  tapHint: { fontSize: 12, color: '#ccff00', fontWeight: '600', marginTop: 8 },
 
-  // Session cards (Roster tab)
-  sessionCard: { backgroundColor: '#111', borderRadius: 14, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#222' },
-  sessionName: { fontSize: 16, fontWeight: '700', color: '#fff' },
-  sessionMeta: { fontSize: 13, color: '#888', marginTop: 4 },
-  sessionArrow: { fontSize: 13, color: '#ccff00', fontWeight: '600', marginTop: 8 },
-
-  // Enrolment cards
-  card: { backgroundColor: '#111', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#222' },
-  cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 },
-  studentName: { fontSize: 15, fontWeight: '600', color: '#fff', flex: 1 },
-  studentNameTappable: { color: '#ccff00', textDecorationLine: 'underline' },
-  typeBadge: { backgroundColor: 'rgba(176,160,255,0.15)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  typeBadgeText: { fontSize: 11, fontWeight: '600', color: '#b0a0ff', textTransform: 'capitalize' },
-  trialBadge: { backgroundColor: 'rgba(245,158,11,0.15)' },
-  trialBadgeText: { color: '#f59e0b' },
-  email: { fontSize: 12, color: '#555', marginTop: 2 },
+  // All Classes card
+  allCard: { flexDirection: 'row', backgroundColor: '#111', borderRadius: 12, marginBottom: 8, borderWidth: 1, borderColor: '#222', overflow: 'hidden' },
+  allCardOwn: { borderColor: 'rgba(204,255,0,0.25)' },
+  ownAccent: { width: 3, backgroundColor: '#ccff00' },
+  allCardBody: { flex: 1, padding: 14 },
+  allCardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
+  ownBadge: { backgroundColor: 'rgba(204,255,0,0.12)', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 },
+  ownBadgeText: { fontSize: 10, fontWeight: '700', color: '#ccff00' },
 })
