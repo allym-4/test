@@ -379,6 +379,61 @@ class LockerChaseView(APIView):
         return Response({'detail': f'Chase notification sent to {student.display_name}.'})
 
 
+class LockerCarryOverView(APIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        try:
+            locker = Locker.objects.select_related('assigned_to').get(pk=pk)
+        except Locker.DoesNotExist:
+            return Response({'detail': 'Locker not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        next_season = Season.objects.filter(status='upcoming').order_by('start_date').first()
+        if not next_season:
+            return Response({'detail': 'No upcoming season found to carry over to.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not next_season.end_date:
+            return Response({'detail': 'Upcoming season has no end date set.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        locker.expires_at = next_season.end_date
+        if locker.locker_type == 'paid':
+            locker.payment_status = 'unpaid'
+        locker.key_returned = False
+        locker.save(update_fields=['expires_at', 'payment_status', 'key_returned'])
+
+        return Response(LockerSerializer(locker).data)
+
+
+class LockerInvoiceView(APIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        try:
+            locker = Locker.objects.select_related('assigned_to').get(pk=pk)
+        except Locker.DoesNotExist:
+            return Response({'detail': 'Locker not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not locker.assigned_to:
+            return Response({'detail': 'Locker is not assigned.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        amount = float(request.data.get('amount', 50))
+        description = request.data.get('description', f'Locker fee — Locker #{locker.number}')
+
+        from apps.payments.models import Payment
+        Payment.objects.create(
+            student=locker.assigned_to,
+            payment_type=Payment.PaymentType.CHARGE,
+            amount=amount,
+            description=description,
+            reference=f'locker-{locker.id}-fee',
+            created_by=request.user,
+        )
+
+        locker.payment_status = 'invoiced'
+        locker.save(update_fields=['payment_status'])
+
+        return Response(LockerSerializer(locker).data)
+
+
 class KisiGrantListView(APIView):
     permission_classes = [IsAdminUser]
 

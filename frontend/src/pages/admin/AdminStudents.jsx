@@ -1023,7 +1023,7 @@ export default function AdminStudents() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const studentPath = (id) => user?.role === 'admin' ? `/admin/students/${id}` : `/students/${id}`
-  const { data, loading } = useApi(() => users.list({ role: 'student' }))
+  const { data, loading } = useApi(() => users.list({ include_staff_students: 'true' }))
   const { data: sessionsData } = useApi(() => classesApi.list({ active: 'true' }))
   const [search, setSearch] = useState('')
   const [classFilter, setClassFilter] = useState('')
@@ -1221,7 +1221,7 @@ export default function AdminStudents() {
         <BulkImportModal
           onClose={() => setShowImport(false)}
           onImported={async () => {
-            const res = await users.list({ role: 'student' })
+            const res = await users.list({ include_staff_students: 'true' })
             setStudentList(res.data.results || [])
             setShowImport(false)
           }}

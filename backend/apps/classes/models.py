@@ -179,6 +179,7 @@ class Locker(models.Model):
         ('paid', 'Paid'),
         ('unpaid', 'Unpaid'),
         ('waived', 'Waived'),
+        ('invoiced', 'Invoiced'),
     ]
 
     number = models.PositiveIntegerField(unique=True)

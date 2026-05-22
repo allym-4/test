@@ -175,6 +175,8 @@ export const lockers = {
   eligible: () => client.get('/api/classes/lockers/eligible/'),
   lostKey: (id) => client.post(`/api/classes/lockers/${id}/lost_key/`),
   chase: (id) => client.post(`/api/classes/lockers/${id}/chase/`),
+  carryOver: (id) => client.post(`/api/classes/lockers/${id}/carry-over/`),
+  invoice: (id, data) => client.post(`/api/classes/lockers/${id}/invoice/`, data || {}),
   markKeyIssued: (id, issued) => client.patch(`/api/classes/lockers/${id}/`, { key_issued: issued }),
 }
 

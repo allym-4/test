@@ -124,7 +124,7 @@ class StudioSettingsSerializer(serializers.ModelSerializer):
             'primary_colour', 'enquiries_email', 'urgent_email',
             'cancellation_window_hours', 'no_show_fee', 'late_cancel_fee',
             'credit_expiry_days', 'max_freeze_weeks', 'gst_registered', 'abn',
-            'kisi_api_key', 'kisi_org_id',
+            'kisi_api_key', 'kisi_org_id', 'kisi_enrolment_place_id', 'kisi_practice_place_id',
             'instagram_access_token', 'instagram_page_id', 'instagram_username', 'meta_app_id',
             'price_casual', 'price_casual_enrolled', 'price_season', 'price_trial', 'price_class_pass', 'class_pass_size', 'season_pricing_config', 'season_discount_tiers',
             'studio_code',

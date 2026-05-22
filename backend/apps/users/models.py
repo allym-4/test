@@ -133,6 +133,8 @@ class StudioSettings(models.Model):
     abn = models.CharField(max_length=30, blank=True)
     kisi_api_key = models.CharField(max_length=200, blank=True)
     kisi_org_id = models.CharField(max_length=100, blank=True)
+    kisi_enrolment_place_id = models.CharField(max_length=200, blank=True, help_text='Kisi place ID for the "Duality Babes" group — auto-granted on enrolment')
+    kisi_practice_place_id = models.CharField(max_length=200, blank=True, help_text='Kisi place ID for the "Practice Time" group — auto-granted on practice booking')
     instagram_access_token = models.CharField(max_length=500, blank=True)
     instagram_page_id = models.CharField(max_length=100, blank=True)
     instagram_username = models.CharField(max_length=100, blank=True)

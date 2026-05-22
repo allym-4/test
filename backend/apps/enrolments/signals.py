@@ -225,3 +225,47 @@ def handle_enrolment_change(sender, instance, created, **kwargs):
     # Fire enrolment_active trigger for new active enrolments
     if instance.status == 'active':
         run_custom_automations('enrolment_active', student, context)
+
+    # Auto-grant Kisi access for new active enrolments
+    if created and instance.status == 'active' and student:
+        try:
+            from apps.users.models import StudioSettings
+            from apps.classes.models import KisiGrant
+            from apps.classes import kisi_service
+            settings_obj = StudioSettings.objects.first()
+            place_id = settings_obj.kisi_enrolment_place_id if settings_obj else ''
+            if place_id and settings_obj.kisi_api_key:
+                season = session.season if session else None
+                # Access starts at season start date; for casual/trial use the class date
+                import datetime as _dt
+                if instance.enrolment_type in ('casual', 'trial', 'catchup'):
+                    # Try to find the next occurrence date for this session
+                    try:
+                        from apps.classes.models import ClassOccurrence
+                        occ = ClassOccurrence.objects.filter(session=session, date__gte=timezone.now().date()).order_by('date').first()
+                        start_date = occ.date if occ else timezone.now().date()
+                    except Exception:
+                        start_date = timezone.now().date()
+                    valid_from = _dt.datetime.combine(start_date, _dt.time(0, 0)).isoformat()
+                elif season and season.start_date:
+                    valid_from = _dt.datetime.combine(season.start_date, _dt.time(0, 0)).isoformat()
+                else:
+                    valid_from = timezone.now().isoformat()
+                valid_until = season.end_date.isoformat() + 'T23:59:00' if season and season.end_date else None
+                link_data = kisi_service.create_link(
+                    place_id=place_id,
+                    name=f'{student.display_name} — {session.name if session else "enrolment"}',
+                    email=student.email or '',
+                    valid_from=valid_from,
+                    valid_until=valid_until,
+                )
+                KisiGrant.objects.create(
+                    student=student,
+                    studio=None,
+                    valid_from=valid_from,
+                    valid_until=valid_until,
+                    kisi_link_id=link_data.get('id', '') if link_data else '',
+                    link_sent=True,
+                )
+        except Exception:
+            pass  # Kisi failure should never break enrolment

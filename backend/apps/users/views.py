@@ -76,9 +76,18 @@ class UserListView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        role = self.request.query_params.get('role')
-        if role:
-            qs = qs.filter(role=role)
+        include_staff_students = self.request.query_params.get('include_staff_students')
+        if include_staff_students:
+            from apps.enrolments.models import Enrolment
+            staff_with_enrolments = Enrolment.objects.values_list('student_id', flat=True).distinct()
+            qs = qs.filter(
+                Q(role='student') |
+                Q(id__in=staff_with_enrolments, role__in=['instructor', 'admin'])
+            )
+        else:
+            role = self.request.query_params.get('role')
+            if role:
+                qs = qs.filter(role=role)
         search = self.request.query_params.get('search')
         if search:
             qs = qs.filter(

@@ -1,5 +1,59 @@
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
+from django.utils import timezone
+
+
+def _kisi_grant_practice(booking):
+    """Auto-create a Kisi grant for a practice time booking."""
+    try:
+        from apps.users.models import StudioSettings
+        from apps.classes.models import KisiGrant
+        from apps.classes import kisi_service
+        import datetime
+
+        settings_obj = StudioSettings.objects.first()
+        place_id = settings_obj.kisi_practice_place_id if settings_obj else ''
+        if not place_id or not (settings_obj and settings_obj.kisi_api_key):
+            return
+
+        student = booking.student
+        slot = booking.slot
+        slot_date = getattr(slot, 'date', None)
+        end_time = getattr(slot, 'end_time', None)
+
+        start_time = getattr(slot, 'start_time', None)
+        if slot_date and start_time:
+            valid_from = datetime.datetime.combine(slot_date, start_time).isoformat()
+        else:
+            valid_from = timezone.now().isoformat()
+        if slot_date and end_time:
+            valid_until = datetime.datetime.combine(slot_date, end_time).isoformat()
+        else:
+            valid_until = None
+
+        link_data = kisi_service.create_link(
+            place_id=place_id,
+            name=f'{student.display_name} — Practice {slot_date}',
+            email=student.email or '',
+            valid_from=valid_from,
+            valid_until=valid_until,
+        )
+        KisiGrant.objects.create(
+            student=student,
+            studio=None,
+            valid_from=valid_from,
+            valid_until=valid_until,
+            kisi_link_id=link_data.get('id', '') if link_data else '',
+            link_sent=True,
+        )
+    except Exception:
+        pass
+
+
+@receiver(post_save, sender='classes.PracticeBooking')
+def handle_practice_booking_kisi(sender, instance, created, **kwargs):
+    if created and instance.status == 'confirmed':
+        _kisi_grant_practice(instance)
 
 
 @receiver(pre_save, sender='classes.Season')

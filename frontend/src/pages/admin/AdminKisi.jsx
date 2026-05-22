@@ -127,6 +127,8 @@ export default function AdminKisi() {
     setConfig({
       kisi_api_key: settingsData.kisi_api_key || '',
       kisi_org_id: settingsData.kisi_org_id || '',
+      kisi_enrolment_place_id: settingsData.kisi_enrolment_place_id || '',
+      kisi_practice_place_id: settingsData.kisi_practice_place_id || '',
     })
   }
 
@@ -295,6 +297,19 @@ export default function AdminKisi() {
                   placeholder="12345"
                   style={{ width: '100%' }}
                 />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
+              <div>
+                <label className="form-label">Auto-Enrolment Place ID</label>
+                <input className="input" value={config.kisi_enrolment_place_id} onChange={e => setConfig(c => ({ ...c, kisi_enrolment_place_id: e.target.value }))} placeholder="Duality Babes group ID" style={{ width: '100%' }} />
+                <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>Auto-granted to enrolled students — expires at season end</div>
+              </div>
+              <div>
+                <label className="form-label">Practice Time Place ID</label>
+                <input className="input" value={config.kisi_practice_place_id} onChange={e => setConfig(c => ({ ...c, kisi_practice_place_id: e.target.value }))} placeholder="Practice Time group ID" style={{ width: '100%' }} />
+                <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>Auto-granted on practice booking — expires at practice end</div>
               </div>
             </div>
 
