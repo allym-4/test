@@ -569,44 +569,42 @@ export default function DashboardScreen({ navigation }) {
                   <Text style={s.classInstructor}>with {instructorName}</Text>
                 </View>
               </View>
-              {(e.upcoming_occurrences ?? []).length > 0 && (
-                <View style={{ marginTop: 10, borderTopWidth: 1, borderTopColor: '#222', paddingTop: 10, gap: 8 }}>
-                  {(e.upcoming_occurrences ?? []).map((occ, idx) => {
-                    const isAway = occ.marked_away
-                    const dateStr = new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
-                    return (
-                      <View key={occ.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <Text style={[s.nextDate, isAway && { color: '#ffaa00' }]}>
-                          {dateStr}{isAway ? '  · AWAY' : ''}
-                        </Text>
-                        {isAway ? (
-                          <TouchableOpacity
-                            style={s.canMakeItBtn}
-                            disabled={!!cancellingAway[occ.id]}
-                            onPress={() => handleCancelAway(occ.id)}
-                          >
-                            {cancellingAway[occ.id]
-                              ? <ActivityIndicator size="small" color="#ccff00" />
-                              : <Text style={s.canMakeItText}>I can make it!</Text>
-                            }
-                          </TouchableOpacity>
-                        ) : (
-                          <TouchableOpacity
-                            style={s.awayBtn}
-                            disabled={!!markingAway[occ.id]}
-                            onPress={() => handleMarkAway(occ, e.id)}
-                          >
-                            {markingAway[occ.id]
-                              ? <ActivityIndicator size="small" color="#ccff00" />
-                              : <Text style={s.awayBtnText}>Mark away</Text>
-                            }
-                          </TouchableOpacity>
-                        )}
-                      </View>
-                    )
-                  })}
-                </View>
-              )}
+              {(() => {
+                const occ = (e.upcoming_occurrences ?? [])[0]
+                if (!occ) return null
+                const isAway = occ.marked_away
+                const dateStr = new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+                return (
+                  <View style={{ marginTop: 10, borderTopWidth: 1, borderTopColor: '#222', paddingTop: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Text style={[s.nextDate, isAway && { color: '#ffaa00' }]}>
+                      {dateStr}{isAway ? '  · AWAY' : ''}
+                    </Text>
+                    {isAway ? (
+                      <TouchableOpacity
+                        style={s.canMakeItBtn}
+                        disabled={!!cancellingAway[occ.id]}
+                        onPress={() => handleCancelAway(occ.id)}
+                      >
+                        {cancellingAway[occ.id]
+                          ? <ActivityIndicator size="small" color="#ccff00" />
+                          : <Text style={s.canMakeItText}>I can make it!</Text>
+                        }
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity
+                        style={s.awayBtn}
+                        disabled={!!markingAway[occ.id]}
+                        onPress={() => handleMarkAway(occ, e.id)}
+                      >
+                        {markingAway[occ.id]
+                          ? <ActivityIndicator size="small" color="#ccff00" />
+                          : <Text style={s.awayBtnText}>Mark away</Text>
+                        }
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )
+              })()}
             </View>
           )
         })

@@ -214,7 +214,9 @@ function MonthCalendar({ items, selectedDate, onSelectDate }) {
 }
 
 function ItemRow({ item, onMarkAway, onUndoAway, onCancel }) {
+  const [showClassmates, setShowClassmates] = useState(false)
   const typeLabel = TYPE_LABELS[item.type] || item.type
+  const classmates = item.classmates ?? []
 
   return (
     <View style={s.itemCard}>
@@ -234,6 +236,21 @@ function ItemRow({ item, onMarkAway, onUndoAway, onCancel }) {
         <View style={{ marginTop: 6 }}>
           <StatusBadge item={item} />
         </View>
+        {item.type === 'enrolled' && (
+          <TouchableOpacity onPress={() => setShowClassmates(v => !v)} style={{ marginTop: 6 }}>
+            <Text style={{ fontSize: 11, color: '#ccff00', fontWeight: '600' }}>
+              {showClassmates ? 'Hide' : "Who's coming?"}
+            </Text>
+          </TouchableOpacity>
+        )}
+        {showClassmates && (
+          <View style={{ marginTop: 4, backgroundColor: '#0a0a0a', borderRadius: 8, padding: 8, borderWidth: 1, borderColor: '#222' }}>
+            {classmates.length === 0
+              ? <Text style={{ fontSize: 12, color: '#555' }}>No one's opted in yet.</Text>
+              : <Text style={{ fontSize: 12, color: '#ccc', lineHeight: 18 }}>{classmates.join('  ·  ')}</Text>
+            }
+          </View>
+        )}
       </View>
       <View style={{ flexShrink: 0, gap: 6, alignItems: 'flex-end' }}>
         {item.type === 'enrolled' && item.status === 'attending' && (
@@ -498,6 +515,23 @@ export default function UpcomingClassesScreen({ navigation }) {
 
   const items = data || []
 
+  // Season start date for week-number calculation
+  const seasonStartDate = useMemo(() => {
+    const enrols = enrolData?.results ?? enrolData ?? []
+    for (const e of enrols) {
+      const d = e.class_session_detail?.season_start_date
+      if (d) return new Date(d + 'T00:00')
+    }
+    return null
+  }, [enrolData])
+
+  function weekNumber(dateStr) {
+    if (!seasonStartDate) return null
+    const d = new Date(dateStr + 'T00:00')
+    const diff = Math.floor((d - seasonStartDate) / (7 * 24 * 60 * 60 * 1000))
+    return diff >= 0 ? diff + 1 : null
+  }
+
   const grouped = {}
   for (const item of items) {
     if (!grouped[item.date]) grouped[item.date] = []
@@ -597,9 +631,16 @@ export default function UpcomingClassesScreen({ navigation }) {
             </Text>
           ) : (
             <View style={{ gap: 20 }}>
-              {displayedDates.map(date => (
+              {displayedDates.map(date => {
+                const wk = weekNumber(date)
+                return (
                 <View key={date}>
-                  <Text style={s.dateLabel}>{formatDate(date)}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Text style={s.dateLabel}>{formatDate(date)}</Text>
+                    {wk != null && (
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: '#444', textTransform: 'uppercase', letterSpacing: 0.5 }}>Week {wk}</Text>
+                    )}
+                  </View>
                   <View style={{ gap: 8 }}>
                     {grouped[date].map(item => (
                       <ItemRow
@@ -612,7 +653,8 @@ export default function UpcomingClassesScreen({ navigation }) {
                     ))}
                   </View>
                 </View>
-              ))}
+                )
+              })}
             </View>
           )}
         </>

@@ -4,8 +4,18 @@ import {
   StyleSheet, FlatList, KeyboardAvoidingView, Platform,
   Modal, ActivityIndicator, Alert,
 } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
 import { useApi } from '../../hooks/useApi'
 import { helpdesk, settings as settingsApi } from '../../api'
+
+const LOCAL_FAQS = [
+  { q: "I can't access the studio", a: "Download the Kisi app — you'll receive a separate email with access before your first class. You only need it if you're more than 15 minutes early or a couple of minutes late.\n\nThe door auto-unlocks 15 minutes before each class and stays open until 1 minute after start — just push the door during that window, no app needed.\n\nIf you're 5 or more minutes late, you're too late and will forfeit the class. Missing warm-up is a safety issue and the class cannot be disrupted — no exceptions." },
+  { q: "I need to cancel a class", a: "You can mark yourself away from My Classes. If you cancel more than 4 hours before class, you'll receive a catch-up credit. Within 4 hours, no credit is issued — but please still mark away so your instructor knows." },
+  { q: "How do catch-up credits work?", a: "When you mark away more than 4 hours before class, a catch-up credit is added to your account. You can use it to book into another class in the same season — any class you're eligible for. Credits don't carry over between seasons." },
+  { q: "What classes can I catch up in?", a: "For conditioning classes (Invert Tech, Tricks, Kiki, Unravel, etc.) and dance classes, you can catch up any week. For level classes (Level 1–6) and routine classes, catch-ups can only be booked up to and including Week 3 — after that, the class has a set routine." },
+  { q: "How does practice time work?", a: "If you're enrolled in 3 classes this season, you get 1 free practice session per week (Mon–Sun). 4 or more classes = unlimited free practice. Non-enrolled rates are $20/hr if enrolled in the season, $30/hr otherwise." },
+  { q: "How does the waitlist work?", a: "Join the waitlist from the booking screen. If a spot opens up, you'll receive a notification and have a window to claim it — the timing varies depending on how close the class is." },
+]
 
 const CATEGORIES = [
   'Attendance & Make-ups',
@@ -195,11 +205,13 @@ const TABS = ['faqs', 'contact', 'tickets']
 const TAB_LABELS = { faqs: 'FAQs', contact: 'Contact Us', tickets: 'My Tickets' }
 
 export default function SupportScreen() {
+  const navigation = useNavigation()
   const [tab, setTab] = useState('faqs')
   const [openFaq, setOpenFaq] = useState(null)
 
   const { data: faqData, loading: faqLoading } = useApi(() => helpdesk.faqs(), [])
-  const faqs = (faqData?.results ?? faqData ?? []).map(f => ({ icon: f.icon, q: f.question, a: f.answer }))
+  const apiFaqs = (faqData?.results ?? faqData ?? []).map(f => ({ icon: f.icon, q: f.question, a: f.answer }))
+  const faqs = apiFaqs.length > 0 ? apiFaqs : LOCAL_FAQS
   const { data: studioSettings } = useApi(() => settingsApi.get(), [])
 
   const [category, setCategory] = useState('')
@@ -258,7 +270,31 @@ export default function SupportScreen() {
 
       {tab === 'faqs' && (
         <ScrollView contentContainerStyle={s.content}>
-          <Text style={s.sectionHeading}>Frequently Asked Questions</Text>
+          <TouchableOpacity
+            style={s.chatBtn}
+            onPress={() => navigation.navigate('Community', { screen: 'Chat' })}
+            activeOpacity={0.85}
+          >
+            <View>
+              <Text style={s.chatBtnTitle}>Chat with assistant</Text>
+              <Text style={s.chatBtnSub}>Get instant answers about classes, bookings & policies</Text>
+            </View>
+            <Text style={s.chatBtnArrow}>→</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={s.dmBtn}
+            onPress={() => navigation.navigate('Community', { screen: 'CommunityHome' })}
+            activeOpacity={0.85}
+          >
+            <View>
+              <Text style={s.dmBtnTitle}>Message Mimi & Chloe</Text>
+              <Text style={s.dmBtnSub}>Chat directly with the studio team</Text>
+            </View>
+            <Text style={s.dmBtnArrow}>→</Text>
+          </TouchableOpacity>
+
+          <Text style={[s.sectionHeading, { marginTop: 20 }]}>Frequently Asked Questions</Text>
           {faqLoading ? (
             <ActivityIndicator color="#ccff00" style={{ marginTop: 24 }} />
           ) : faqs.map((faq, i) => (
@@ -405,6 +441,15 @@ const s = StyleSheet.create({
 
   content: { padding: 16, paddingBottom: 40 },
   sectionHeading: { fontSize: 16, fontWeight: '700', color: '#fff', marginBottom: 14 },
+
+  chatBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(204,255,0,0.08)', borderWidth: 1.5, borderColor: 'rgba(204,255,0,0.3)', borderRadius: 14, padding: 16, marginBottom: 10 },
+  chatBtnTitle: { fontSize: 15, fontWeight: '700', color: '#ccff00', marginBottom: 3 },
+  chatBtnSub: { fontSize: 12, color: '#888' },
+  chatBtnArrow: { fontSize: 18, color: '#ccff00', fontWeight: '700' },
+  dmBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333', borderRadius: 14, padding: 16, marginBottom: 10 },
+  dmBtnTitle: { fontSize: 15, fontWeight: '700', color: '#fff', marginBottom: 3 },
+  dmBtnSub: { fontSize: 12, color: '#666' },
+  dmBtnArrow: { fontSize: 18, color: '#888', fontWeight: '700' },
 
   faqCard: { backgroundColor: '#111', borderRadius: 12, marginBottom: 8, borderWidth: 1, borderColor: '#222', overflow: 'hidden' },
   faqCardOpen: { borderColor: 'rgba(204,255,0,0.2)' },
