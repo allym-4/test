@@ -306,7 +306,7 @@ export default function AdminStudentDetail() {
       .then(r => setChangeRequestsData(r.data.results || r.data || []))
       .catch(() => {})
 
-    classes.list({ session_type: 'course', is_active: true })
+    classes.list()
       .then(r => setAllSessions(r.data.results || r.data || []))
       .catch(() => {})
 
@@ -1743,7 +1743,7 @@ export default function AdminStudentDetail() {
 
         const seasonId = tcEnrolment?.class_session_detail?.season
         const transferSessions = tcStep === 'transfer'
-          ? (allSessions || []).filter(s => s.season === seasonId && s.id !== tcEnrolment?.class_session)
+          ? (allSessions || []).filter(s => String(s.season) === String(seasonId) && s.id !== tcEnrolment?.class_session)
           : []
 
         return (
