@@ -222,3 +222,23 @@ class PromoCode(models.Model):
 
     def __str__(self):
         return self.code
+
+
+class PaymentChase(models.Model):
+    class Step(models.IntegerChoices):
+        FRIENDLY = 1, '1st Chase — Friendly reminder'
+        FIRM = 2, '2nd Chase — Firm notice'
+        FINAL = 3, 'Final warning — Account lock'
+
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payment_chases')
+    step = models.PositiveSmallIntegerField(choices=Step.choices)
+    message = models.TextField()
+    locked_account = models.BooleanField(default=False)
+    sent_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='chases_sent')
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-sent_at']
+
+    def __str__(self):
+        return f'{self.student.display_name} · Step {self.step} · {self.sent_at.date()}'

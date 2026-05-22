@@ -617,3 +617,80 @@ class DashboardStatsView(APIView):
             'pending_plans_count': pending_plans_count,
             'active_student_count': active_student_count,
         })
+
+
+class PaymentChaseListCreateView(generics.ListCreateAPIView):
+    """List chase history for a student; create a new chase."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def get_queryset(self):
+        from .models import PaymentChase
+        student_id = self.request.query_params.get('student_id')
+        qs = PaymentChase.objects.select_related('sent_by')
+        if student_id:
+            qs = qs.filter(student_id=student_id)
+        return qs
+
+    def list(self, request, *args, **kwargs):
+        from .models import PaymentChase
+        qs = self.get_queryset()
+        data = [
+            {
+                'id': c.id,
+                'step': c.step,
+                'step_label': c.get_step_display(),
+                'message': c.message,
+                'locked_account': c.locked_account,
+                'sent_by_name': c.sent_by.display_name if c.sent_by else '—',
+                'sent_at': c.sent_at.isoformat(),
+            }
+            for c in qs
+        ]
+        return Response(data)
+
+    def create(self, request, *args, **kwargs):
+        from .models import PaymentChase
+        from apps.users.models import User
+        student_id = request.data.get('student_id')
+        message = request.data.get('message', '')
+        lock_account = request.data.get('lock_account', False)
+
+        try:
+            student = User.objects.get(pk=student_id)
+        except User.DoesNotExist:
+            return Response({'detail': 'Student not found.'}, status=404)
+
+        # Determine next step
+        existing = PaymentChase.objects.filter(student=student).count()
+        step = min(existing + 1, 3)
+
+        chase = PaymentChase.objects.create(
+            student=student,
+            step=step,
+            message=message,
+            locked_account=bool(lock_account),
+            sent_by=request.user,
+        )
+
+        if lock_account:
+            student.booking_blocked = True
+            student.save(update_fields=['booking_blocked'])
+
+        # Send in-app notification
+        try:
+            from apps.notifications.models import Notification
+            Notification.objects.create(
+                user=student,
+                title='Payment reminder',
+                body=message,
+                notification_type='payment',
+            )
+        except Exception:
+            pass
+
+        return Response({
+            'id': chase.id,
+            'step': chase.step,
+            'step_label': chase.get_step_display(),
+            'locked_account': chase.locked_account,
+        }, status=201)

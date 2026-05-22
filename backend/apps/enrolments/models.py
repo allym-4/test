@@ -30,6 +30,7 @@ class Enrolment(models.Model):
     intro_email_sent = models.BooleanField(default=False)
     waiver_signed = models.BooleanField(default=False)
     flag_dismissed = models.BooleanField(default=False)
+    level_override = models.BooleanField(default=False)  # student bypassed level warning
 
     # Waitlist offer tracking
     waitlist_offered_at = models.DateTimeField(null=True, blank=True)

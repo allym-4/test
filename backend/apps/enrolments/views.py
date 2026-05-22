@@ -500,60 +500,11 @@ class FlaggedEnrolmentsView(generics.ListAPIView):
     serializer_class = EnrolmentSerializer
 
     def get_queryset(self):
-        from apps.users.models import SkillLevel, StudentSkill
-
-        # Build level rank map from DB
-        level_rank = {}
-        for sl in SkillLevel.objects.all():
-            level_rank[sl.name.lower().strip()] = sl.order
-
-        # Fallback if no SkillLevels configured
-        FALLBACK = ['level 1', 'level 2', 'level 3', 'high tricks', 'inter floor']
-        if not level_rank:
-            level_rank = {name: i for i, name in enumerate(FALLBACK)}
-
-        def rank(level_str):
-            if not level_str:
-                return -1
-            l = level_str.lower().strip()
-            if l in level_rank:
-                return level_rank[l]
-            for key, val in level_rank.items():
-                if key in l or l in key:
-                    return val
-            return -1
-
-        enrolments = Enrolment.objects.filter(
-            status='active',
+        return Enrolment.objects.filter(
+            level_override=True,
             flag_dismissed=False,
-        ).exclude(class_session__level='').select_related('student', 'class_session')
-
-        flagged_ids = []
-        self._flag_reasons = {}
-
-        for e in enrolments:
-            session_rank = rank(e.class_session.level)
-            if session_rank <= 0:
-                continue  # Level 1 or unknown — no flag needed
-
-            confirmed = StudentSkill.objects.filter(
-                student=e.student, teacher_confirmed=True
-            ).values_list('level', flat=True)
-
-            if not confirmed:
-                self._flag_reasons[e.id] = 'No prerequisite assessment completed'
-                flagged_ids.append(e.id)
-            else:
-                max_rank = max((rank(lvl) for lvl in confirmed), default=-1)
-                if max_rank < session_rank:
-                    current = next(
-                        (sl.name for sl in SkillLevel.objects.all() if rank(sl.name) == max_rank),
-                        f'Level {max_rank + 1}'
-                    )
-                    self._flag_reasons[e.id] = f'Enrolled above assessed level (currently {current})'
-                    flagged_ids.append(e.id)
-
-        return Enrolment.objects.filter(id__in=flagged_ids).select_related('student', 'class_session')
+            status='active',
+        ).select_related('student', 'class_session')
 
     def list(self, request, *args, **kwargs):
         qs = self.get_queryset()
@@ -565,7 +516,7 @@ class FlaggedEnrolmentsView(generics.ListAPIView):
                 'student_name': e.student.display_name,
                 'session_name': e.class_session.name,
                 'session_id': e.class_session_id,
-                'flag_reason': self._flag_reasons.get(e.id, ''),
+                'flag_reason': 'Self-enrolled above assessed level',
             })
         return Response(data)
 
