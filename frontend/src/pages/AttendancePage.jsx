@@ -13,6 +13,7 @@ function avatarColor(name) {
 }
 
 const STATUS_OPTS = [
+  { value: 'pending',        label: 'Pending',             color: '#555' },
   { value: 'present',        label: 'Attended',            color: '#ccff00' },
   { value: 'late',           label: 'Late',                color: '#ffaa00' },
   { value: 'no_show',        label: 'No-show + $20 fee',   color: '#ff5050' },
@@ -197,7 +198,7 @@ export default function AttendancePage() {
     setSaving(true)
     try {
       const records = students.map(e => {
-        const raw = register[e.student] || 'present'
+        const raw = register[e.student] || 'pending'
         return {
           student: e.student,
           status: raw === 'no_show_waived' ? 'no_show' : raw,
@@ -340,7 +341,7 @@ export default function AttendancePage() {
             </div>
           ) : shownStudents.map(e => {
             const st = e.student_detail
-            const status = register[e.student] || 'present'
+            const status = register[e.student] || 'pending'
             const owing = balances[e.student] < 0 ? Math.abs(balances[e.student]) : 0
             const hasNote = notes[e.student]
             const isFirstTime = e.is_first_class || e.classes_attended === 0 || e.total_attendance === 0
