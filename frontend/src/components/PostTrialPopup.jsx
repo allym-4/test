@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { enrolments as enrolmentsApi } from '../api'
+import CheckoutModal from './CheckoutModal'
 
 function StarRow({ label, value, onChange }) {
   return (
@@ -20,7 +21,7 @@ function StarRow({ label, value, onChange }) {
 
 export default function PostTrialPopup({ pending, onDone }) {
   const item = pending[0]
-  const [screen, setScreen] = useState('prompt') // prompt | feedback | thanks
+  const [screen, setScreen] = useState('prompt') // prompt | checkout | feedback | thanks
   const [ratings, setRatings] = useState({ class: 0, instructor: 0, facilities: 0, structure: 0 })
   const [reason, setReason] = useState('')
   const [error, setError] = useState(null)
@@ -30,14 +31,39 @@ export default function PostTrialPopup({ pending, onDone }) {
     setRatings(r => ({ ...r, [key]: val }))
   }
 
-  async function handleYes() {
+  async function handleCheckoutSuccess(paymentIntentId) {
     setSubmitting(true)
     try {
-      await enrolmentsApi.trialFeedback.submit(item.id, { enrolled: true })
-    } catch { }
+      await enrolmentsApi.convertTrial(item.id, {
+        payment_method: 'stripe',
+        payment_intent_id: paymentIntentId || '',
+        amount: item.enrol_price,
+      })
+      await enrolmentsApi.trialFeedback.submit(item.id, { enrolled: true }).catch(() => {})
+    } catch (e) {
+      setError('Something went wrong completing your enrolment. Please contact us.')
+      setSubmitting(false)
+      return
+    }
     setSubmitting(false)
     onDone()
-    window.location.href = '/portal/book'
+  }
+
+  async function handleCash() {
+    setSubmitting(true)
+    try {
+      await enrolmentsApi.convertTrial(item.id, {
+        payment_method: 'cash',
+        amount: item.enrol_price,
+      })
+      await enrolmentsApi.trialFeedback.submit(item.id, { enrolled: true }).catch(() => {})
+    } catch (e) {
+      setError('Something went wrong. Please contact us.')
+      setSubmitting(false)
+      return
+    }
+    setSubmitting(false)
+    onDone()
   }
 
   async function handleNoThanks() {
@@ -69,6 +95,18 @@ export default function PostTrialPopup({ pending, onDone }) {
     }
   }
 
+  if (screen === 'checkout') {
+    return (
+      <CheckoutModal
+        amount={item.enrol_price}
+        description={`Season enrolment — ${item.session_name} (trial credit applied)`}
+        onSuccess={handleCheckoutSuccess}
+        onClose={() => setScreen('prompt')}
+        onCash={handleCash}
+      />
+    )
+  }
+
   return (
     <div className="sd-overlay" style={{ zIndex: 1000 }}>
       <div className="sd-modal" style={{ maxWidth: 460 }}>
@@ -96,13 +134,14 @@ export default function PostTrialPopup({ pending, onDone }) {
                 </div>
               </div>
               <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 4 }}>
-                Your trial class is credited toward the season price
+                Your ${item.trial_price} trial class is credited toward the season price
               </div>
             </div>
+            {error && <div style={{ fontSize: 12, color: '#ff6b6b', marginBottom: 10 }}>{error}</div>}
             <button
               className="btn btn-lime"
               style={{ width: '100%', marginBottom: 10, fontSize: 15 }}
-              onClick={handleYes}
+              onClick={() => setScreen('checkout')}
               disabled={submitting}
             >
               Yes — enrol now · ${item.enrol_price}

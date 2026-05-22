@@ -101,7 +101,7 @@ function StudentDrawer({ student, onClose, onAction }) {
                         <td style={{ padding: '8px' }}>{tx.description || tx.payment_type}</td>
                         <td style={{ padding: '8px' }}>
                           <span className={`tag ${isPayment ? 'tag-lime' : isCharge ? 'tag-red' : 'tag-grey'}`} style={{ fontSize: 10 }}>
-                            {tx.payment_type.replace('_', ' ')}
+                            {({'no_show_fee': 'No-show fee', 'payment': 'Payment', 'charge': 'Charge', 'credit': 'Credit', 'refund': 'Refund'})[tx.payment_type] || tx.payment_type.replace(/_/g, ' ')}
                           </span>
                         </td>
                         <td style={{ padding: '8px 0 8px 8px', textAlign: 'right', color: isPayment ? 'var(--lime)' : isCharge ? 'var(--red)' : 'inherit', fontWeight: 600 }}>
