@@ -76,7 +76,10 @@ class ClassSession(models.Model):
         help_text='Detailed info shown to first-time students after they book this class.'
     )
     description = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True, null=True)  # null=True for existing rows
+    skill_level = models.ForeignKey(
+        'users.SkillLevel', on_delete=models.SET_NULL, null=True, blank=True, related_name='class_sessions'
+    )
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
 
     class Meta:
         ordering = ['day_of_week', 'start_time']

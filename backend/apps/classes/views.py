@@ -33,9 +33,39 @@ class ClassCategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAdminOrInstructor]
 
 
+def _auto_assign_skill_level(session):
+    """Auto-assign or create a SkillLevel for a ClassSession based on its name/level field."""
+    from apps.users.models import SkillLevel
+    candidate = session.level or session.name or ''
+    if not candidate:
+        return
+    # Try matching an existing SkillLevel by name (case-insensitive)
+    for sl in SkillLevel.objects.all():
+        if sl.name.lower() in candidate.lower() or candidate.lower() in sl.name.lower():
+            session.skill_level = sl
+            session.save(update_fields=['skill_level'])
+            return
+    # Extract level pattern like "Level 2" from name
+    import re
+    match = re.search(r'level\s*\d+', candidate, re.IGNORECASE)
+    if match:
+        level_name = match.group(0).title()  # e.g. "Level 2"
+        sl, _ = SkillLevel.objects.get_or_create(
+            name=level_name,
+            defaults={'order': int(re.search(r'\d+', level_name).group(0))},
+        )
+        session.skill_level = sl
+        session.save(update_fields=['skill_level'])
+
+
 class ClassSessionListView(generics.ListCreateAPIView):
     serializer_class = ClassSessionSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        session = serializer.save()
+        if not session.skill_level:
+            _auto_assign_skill_level(session)
 
     def get_queryset(self):
         qs = ClassSession.objects.select_related('instructor', 'studio')
@@ -56,6 +86,11 @@ class ClassSessionDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = ClassSession.objects.select_related('instructor', 'studio')
     serializer_class = ClassSessionSerializer
     permission_classes = [IsAdminOrInstructor]
+
+    def perform_update(self, serializer):
+        session = serializer.save()
+        if not session.skill_level:
+            _auto_assign_skill_level(session)
 
 
 class ClassRosterView(APIView):

@@ -25,6 +25,7 @@ class ClassSessionSerializer(serializers.ModelSerializer):
     season_name = serializers.CharField(source='season.name', read_only=True, allow_null=True)
     season_start_date = serializers.DateField(source='season.start_date', read_only=True, allow_null=True)
     season_base_price = serializers.SerializerMethodField()
+    skill_level_name = serializers.CharField(source='skill_level.name', read_only=True, allow_null=True)
 
     class Meta:
         model = ClassSession
@@ -38,8 +39,9 @@ class ClassSessionSerializer(serializers.ModelSerializer):
             'first_timer_headline', 'first_timer_body',
             'description', 'created_at',
             'season_base_price',
+            'skill_level', 'skill_level_name',
         )
-        read_only_fields = ('id', 'enrolled_count', 'instructor_detail', 'studio_detail', 'day_of_week_display', 'category_name', 'season_name', 'season_start_date', 'season_bookings_open', 'season_base_price', 'created_at')
+        read_only_fields = ('id', 'enrolled_count', 'instructor_detail', 'studio_detail', 'day_of_week_display', 'category_name', 'season_name', 'season_start_date', 'season_bookings_open', 'season_base_price', 'created_at', 'skill_level_name')
 
     def get_season_base_price(self, obj):
         if obj.category and obj.category.standalone_price is not None:

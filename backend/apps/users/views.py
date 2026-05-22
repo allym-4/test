@@ -893,6 +893,54 @@ class StudentSkillView(APIView):
         return Response(StudentSkillSerializer(obj).data)
 
 
+class StudentSkillSummaryView(APIView):
+    """Return all skills across all levels this student has ever been enrolled in, with progress."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, user_pk):
+        if request.user.role not in ('admin', 'instructor') and request.user.id != int(user_pk):
+            return Response({'detail': 'Not authorized'}, status=403)
+
+        from apps.enrolments.models import Enrolment
+        from apps.classes.models import ClassSession
+
+        # All SkillLevels this student has been enrolled in (any season, any status)
+        enrolled_level_ids = set(
+            ClassSession.objects.filter(
+                enrolments__student_id=user_pk,
+                skill_level__isnull=False,
+            ).values_list('skill_level_id', flat=True)
+        )
+
+        if not enrolled_level_ids:
+            return Response([])
+
+        # Student's current skill progress keyed by skill_name
+        progress_map = {
+            s.skill_name: {'self_assessed': s.self_assessed, 'teacher_confirmed': s.teacher_confirmed}
+            for s in StudentSkill.objects.filter(student_id=user_pk)
+        }
+
+        result = []
+        for level in SkillLevel.objects.filter(id__in=enrolled_level_ids).prefetch_related('groups__skills'):
+            level_data = {'id': level.id, 'name': level.name, 'order': level.order, 'groups': []}
+            for group in level.groups.all():
+                group_data = {'id': group.id, 'name': group.name, 'skills': []}
+                for skill in group.skills.all():
+                    prog = progress_map.get(skill.name, {})
+                    group_data['skills'].append({
+                        'id': skill.id,
+                        'name': skill.name,
+                        'self_assessed': prog.get('self_assessed', False),
+                        'teacher_confirmed': prog.get('teacher_confirmed', False),
+                    })
+                level_data['groups'].append(group_data)
+            result.append(level_data)
+
+        result.sort(key=lambda x: x['order'])
+        return Response(result)
+
+
 class CalculatePayView(APIView):
     """Return suggested pay amount for an instructor over a date range."""
     permission_classes = [IsAdminOrInstructor]

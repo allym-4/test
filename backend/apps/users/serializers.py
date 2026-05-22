@@ -289,10 +289,17 @@ class SkillGroupSerializer(serializers.ModelSerializer):
 
 class SkillLevelSerializer(serializers.ModelSerializer):
     groups = SkillGroupSerializer(many=True, read_only=True)
+    classes = serializers.SerializerMethodField()
+
+    def get_classes(self, obj):
+        return [
+            {'id': s.id, 'name': s.name, 'day': s.get_day_of_week_display(), 'time': str(s.start_time)[:5]}
+            for s in obj.class_sessions.filter(is_active=True).order_by('name', 'day_of_week')
+        ]
 
     class Meta:
         model = SkillLevel
-        fields = ('id', 'name', 'order', 'groups')
+        fields = ('id', 'name', 'order', 'groups', 'classes')
         read_only_fields = ('id',)
 
 
