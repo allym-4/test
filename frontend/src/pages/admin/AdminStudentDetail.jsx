@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi, settings as settingsApi, classes } from '../../api'
+import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi, settings as settingsApi, classes, seasons as seasonsApi } from '../../api'
 import client from '../../api/client'
 import '../StudentsPage.css'
 import EditStudentModal from '../../components/EditStudentModal'
@@ -236,6 +236,10 @@ export default function AdminStudentDetail() {
   const [processingChangeReq, setProcessingChangeReq] = useState(false)
   const [changeReqError, setChangeReqError] = useState(null)
   const [allSessions, setAllSessions] = useState(null)
+  const [seasonsData, setSeasonsData] = useState(null)
+  const [casualBookingsData, setCasualBookingsData] = useState(null)
+  const [makeupCreditsData, setMakeupCreditsData] = useState(null)
+  const [enrolSubTab, setEnrolSubTab] = useState('current')
 
   useEffect(() => {
     users.get(id).then(res => {
@@ -298,6 +302,10 @@ export default function AdminStudentDetail() {
     classes.list({ session_type: 'course', is_active: true })
       .then(r => setAllSessions(r.data.results || r.data || []))
       .catch(() => {})
+
+    seasonsApi.list().then(r => setSeasonsData(r.data.results || r.data || [])).catch(() => {})
+    attendance.makeupCredits.list({ student: student.id }).then(r => setMakeupCreditsData(r.data.results || r.data || [])).catch(() => {})
+    client.get('/api/classes/casual-bookings/', { params: { student: student.id } }).then(r => setCasualBookingsData(r.data.results || r.data || [])).catch(() => {})
   }, [student?.id])
 
   async function reloadBalance() {
@@ -429,9 +437,9 @@ export default function AdminStudentDetail() {
         </div>
 
         {/* Tab bar */}
-        <div style={{ display: 'flex', gap: 0, overflowX: 'auto', borderTop: '1px solid var(--border)', marginTop: 4 }}>
+        <div style={{ display: 'flex', gap: 0, overflowX: 'auto', borderTop: '1px solid var(--border)', marginTop: 4, WebkitOverflowScrolling: 'touch', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
           {TABS.map(t => (
-            <button key={t.key} onClick={() => setTab(t.key)} style={{ background: 'none', border: 'none', borderBottom: `2px solid ${tab === t.key ? 'var(--lime)' : 'transparent'}`, color: tab === t.key ? 'var(--white)' : 'var(--grey)', padding: '12px 16px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'color 0.15s' }}>
+            <button key={t.key} onClick={() => setTab(t.key)} style={{ background: 'none', border: 'none', borderBottom: `2px solid ${tab === t.key ? 'var(--lime)' : 'transparent'}`, color: tab === t.key ? 'var(--white)' : 'var(--grey)', padding: '10px 14px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'color 0.15s', flexShrink: 0 }}>
               {t.label}
             </button>
           ))}

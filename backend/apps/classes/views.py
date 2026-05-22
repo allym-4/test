@@ -969,6 +969,14 @@ class MyCasualBookingsView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        user = self.request.user
+        student_id = self.request.query_params.get('student')
+        if student_id and user.role in ('admin', 'instructor', 'staff'):
+            return CasualBooking.objects.filter(
+                student_id=student_id,
+            ).exclude(status='cancelled').select_related(
+                'occurrence__session__studio'
+            ).order_by('occurrence__date')
         return CasualBooking.objects.filter(
             student=self.request.user,
         ).exclude(status='cancelled').select_related(
