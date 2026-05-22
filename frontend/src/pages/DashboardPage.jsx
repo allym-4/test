@@ -149,23 +149,24 @@ export default function DashboardPage() {
             {todaySessions.map(s => {
               const isFull = s.enrolled_count >= s.capacity
               return (
-                <Link key={s.id} to={`/classes/${s.id}/attendance`} className="dashboard-class-row" style={{ textDecoration: 'none', background: '#111', border: '1px solid #222', borderRadius: 14, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
-                  <div style={{ textAlign: 'center', minWidth: 52, flexShrink: 0 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{DAYS[s.day_of_week]}</div>
-                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26, color: 'var(--lime)', lineHeight: 1 }}>{s.start_time?.slice(0, 5)}</div>
-                    <div style={{ fontSize: 10, color: 'var(--grey)' }}>pm</div>
+                <Link key={s.id} to={`/classes/${s.id}/attendance`} className="dashboard-class-row" style={{ textDecoration: 'none', background: '#111', border: '1px solid #222', borderRadius: 14, padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <div style={{ textAlign: 'center', width: 56, flexShrink: 0 }}>
+                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: 'var(--lime)', lineHeight: 1 }}>{s.start_time?.slice(0, 5)}</div>
+                    <div style={{ fontSize: 10, color: 'var(--grey)', marginTop: 2, textTransform: 'uppercase' }}>{DAYS[s.day_of_week]}</div>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, marginBottom: 4 }}>{s.name}</div>
-                    <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 8 }}>{s.studio_detail?.name} · {s.enrolled_count}/{s.capacity} enrolled</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.5px', padding: '3px 10px', borderRadius: 20, background: isFull ? 'rgba(255,170,0,0.15)' : 'rgba(204,255,0,0.1)', color: isFull ? 'var(--amber)' : 'var(--lime)', border: `1px solid ${isFull ? 'rgba(255,170,0,0.3)' : 'rgba(204,255,0,0.3)'}` }}>
+                    <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {s.studio_detail?.name} · {s.enrolled_count}/{s.capacity} enrolled
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.5px', padding: '2px 8px', borderRadius: 20, background: isFull ? 'rgba(255,170,0,0.15)' : 'rgba(204,255,0,0.1)', color: isFull ? 'var(--amber)' : 'var(--lime)', border: `1px solid ${isFull ? 'rgba(255,170,0,0.3)' : 'rgba(204,255,0,0.3)'}`, flexShrink: 0 }}>
                         {isFull ? 'FULL' : 'ACTIVE'}
                       </span>
-                      <span style={{ fontSize: 12, color: 'var(--grey)' }}>Register not yet saved</span>
+                      {!s.register_saved && <span style={{ fontSize: 11, color: 'var(--grey)' }}>Register unsaved</span>}
                     </div>
                   </div>
-                  <div style={{ fontSize: 13, color: 'var(--lime)', fontWeight: 600, flexShrink: 0 }}>Take Attendance →</div>
+                  <div style={{ fontSize: 12, color: 'var(--lime)', fontWeight: 700, flexShrink: 0 }}>Mark →</div>
                 </Link>
               )
             })}
