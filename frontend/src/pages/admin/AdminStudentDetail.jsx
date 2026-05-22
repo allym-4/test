@@ -250,6 +250,7 @@ export default function AdminStudentDetail() {
   const [makeupCreditsData, setMakeupCreditsData] = useState(null)
   const [enrolSubTab, setEnrolSubTab] = useState('current')
   const [tcTransferClass, setTcTransferClass] = useState('')
+  const [expandedTrialId, setExpandedTrialId] = useState(null)
 
   useEffect(() => {
     users.get(id).then(res => {
@@ -408,6 +409,7 @@ export default function AdminStudentDetail() {
     { key: 'documents', label: 'Documents' },
     { key: 'notes', label: `Notes${notesData?.length ? ` (${notesData.length})` : ''}` },
     { key: 'comms', label: 'Comms' },
+    { key: 'trials', label: 'Trials' },
   ]
 
   return (
@@ -1351,6 +1353,105 @@ export default function AdminStudentDetail() {
                 </div>
               </div>
             )}
+
+            {/* TRIALS */}
+            {tab === 'trials' && (() => {
+              const trialEnrols = (enrolData || []).filter(e => e.enrolment_type === 'trial')
+
+              const renderStars = (value, max = 5) => {
+                if (!value) return <span style={{ color: 'var(--grey)', fontSize: 12 }}>—</span>
+                return (
+                  <span style={{ fontSize: 13, letterSpacing: 1 }}>
+                    {Array.from({ length: max }, (_, i) => (
+                      <span key={i} style={{ color: i < value ? '#ccff00' : 'var(--border)' }}>★</span>
+                    ))}
+                  </span>
+                )
+              }
+
+              const renderOutcome = (fb) => {
+                if (!fb) return <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: 'rgba(255,255,255,0.06)', color: 'var(--grey)', border: '1px solid var(--border)' }}>Pending</span>
+                if (fb.enrolled) return <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: 'rgba(204,255,0,0.12)', color: 'var(--lime)', border: '1px solid rgba(204,255,0,0.3)', fontWeight: 700 }}>Converted ✓</span>
+                return <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: 'rgba(255,68,68,0.1)', color: 'var(--red)', border: '1px solid rgba(255,68,68,0.25)' }}>Declined</span>
+              }
+
+              return (
+                <div>
+                  {trialEnrols.length === 0 ? (
+                    <div className="empty-state">
+                      <div style={{ fontSize: 32, marginBottom: 12 }}>🎯</div>
+                      <div>No trial classes on record for this student</div>
+                    </div>
+                  ) : (
+                    <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+                      {trialEnrols.map((e, i) => {
+                        const fb = e.trial_feedback
+                        const isExpanded = expandedTrialId === e.id
+                        const ratings = fb ? [fb.class_rating, fb.instructor_rating, fb.facilities_rating, fb.structure_rating].filter(Boolean) : []
+                        const avg = ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : null
+                        return (
+                          <div key={e.id}>
+                            <div
+                              onClick={() => fb && setExpandedTrialId(isExpanded ? null : e.id)}
+                              style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 16px', borderBottom: (!isExpanded && i < trialEnrols.length - 1) ? '1px solid var(--border)' : 'none', cursor: fb ? 'pointer' : 'default', flexWrap: 'wrap' }}
+                            >
+                              <div style={{ flex: 1, minWidth: 120 }}>
+                                <div style={{ fontWeight: 600, fontSize: 13 }}>{e.class_name || e.class_session_detail?.name || '—'}</div>
+                                {e.class_session_detail?.season_name && <div style={{ fontSize: 11, color: 'var(--grey)' }}>{e.class_session_detail.season_name}</div>}
+                              </div>
+                              <div style={{ fontSize: 12, color: 'var(--grey)', minWidth: 80 }}>
+                                {e.enrolled_date ? new Date(e.enrolled_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                              </div>
+                              {renderOutcome(fb)}
+                              {avg ? (
+                                <span style={{ fontSize: 13 }}>
+                                  <span style={{ color: 'var(--lime)', fontWeight: 700 }}>{avg}</span>
+                                  <span style={{ color: 'var(--grey)', fontSize: 11 }}>/5</span>
+                                </span>
+                              ) : <span style={{ color: 'var(--grey)', fontSize: 12, minWidth: 30 }}>—</span>}
+                              {fb && <span style={{ fontSize: 12, color: 'var(--grey)' }}>{isExpanded ? '▲' : '▼'}</span>}
+                              {fb?.enrolled === false && !isExpanded && (
+                                <button className="btn btn-lime btn-xs" onClick={ev => { ev.stopPropagation(); setConvertTrialEnrol(e) }}>Convert →</button>
+                              )}
+                            </div>
+                            {isExpanded && fb && (
+                              <div style={{ borderBottom: i < trialEnrols.length - 1 ? '1px solid var(--border)' : 'none', padding: '0 16px 16px 16px' }}>
+                                <div style={{ background: '#111', borderRadius: 10, padding: '16px 20px', display: 'flex', gap: 32, flexWrap: 'wrap' }}>
+                                  <div>
+                                    <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>Ratings</div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                      {[['Class', fb.class_rating], ['Instructor', fb.instructor_rating], ['Facilities', fb.facilities_rating], ['Structure', fb.structure_rating]].map(([label, val]) => (
+                                        <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                          <span style={{ fontSize: 12, color: 'var(--grey)', width: 70 }}>{label}</span>
+                                          {renderStars(val)}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  {fb.reason && (
+                                    <div style={{ flex: 1, minWidth: 200 }}>
+                                      <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>
+                                        {fb.enrolled ? 'Notes' : 'Reason for not enrolling'}
+                                      </div>
+                                      <div style={{ fontSize: 13, color: 'var(--white)', lineHeight: 1.6, fontStyle: 'italic' }}>"{fb.reason}"</div>
+                                    </div>
+                                  )}
+                                  {!fb.enrolled && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                                      <button className="btn btn-lime btn-xs" onClick={() => setConvertTrialEnrol(e)}>Convert to Enrolment →</button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
 
             {/* COMMS */}
             {tab === 'comms' && (

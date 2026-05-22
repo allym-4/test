@@ -29,6 +29,7 @@ const NAV_GROUPS = [
       { to: '/admin/timetable',  label: 'Timetable',    icon: '📅' },
       { to: '/admin/classes',    label: 'Classes',      icon: '📚' },
       { to: '/admin/waitlist',   label: 'Waitlist',     icon: '⏳' },
+      { to: '/admin/trials',    label: 'Trials',       icon: '🎯' },
       { to: '/admin/seasons',    label: 'Seasons',      icon: '🌀' },
       { to: '/admin/practice',   label: 'Practice Time',icon: '🏋️' },
       { to: '/admin/categories', label: 'Categories',   icon: '🗂' },

@@ -1,8 +1,15 @@
 import datetime
 from rest_framework import serializers
-from .models import Enrolment, ClassChangeRequest
+from .models import Enrolment, ClassChangeRequest, TrialFeedback
 from apps.users.serializers import UserMinimalSerializer
 from apps.classes.serializers import ClassSessionSerializer
+
+
+class TrialFeedbackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TrialFeedback
+        fields = ('id', 'enrolled', 'class_rating', 'instructor_rating', 'facilities_rating', 'structure_rating', 'reason', 'created_at')
+        read_only_fields = ('id', 'created_at')
 
 
 class EnrolmentSerializer(serializers.ModelSerializer):
@@ -10,6 +17,7 @@ class EnrolmentSerializer(serializers.ModelSerializer):
     class_session_detail = ClassSessionSerializer(source='class_session', read_only=True)
     student_name = serializers.CharField(source='student.display_name', read_only=True)
     class_name = serializers.CharField(source='class_session.name', read_only=True)
+    trial_feedback = TrialFeedbackSerializer(read_only=True)
     upcoming_occurrences = serializers.SerializerMethodField()
 
     def get_upcoming_occurrences(self, obj):
@@ -48,7 +56,7 @@ class EnrolmentSerializer(serializers.ModelSerializer):
             'is_first_visit', 'intro_email_sent', 'waiver_signed',
             'waitlist_offered_at', 'waitlist_expires_at', 'waitlist_urgent',
             'displacement_casual_booking', 'displacement_expires_at',
-            'upcoming_occurrences',
+            'upcoming_occurrences', 'trial_feedback',
         )
         read_only_fields = (
             'id', 'enrolled_date',

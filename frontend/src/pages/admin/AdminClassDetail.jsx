@@ -51,7 +51,7 @@ function UpsellsPanel({ sessionId, allSessions }) {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    classes.upsells.list({ source_session: sessionId }).then(r => setUpsells(r.data || []))
+    classes.upsells.list({ source_session: sessionId }).then(r => setUpsells(r.data?.results || r.data || []))
   }, [sessionId])
 
   async function saveNew(e) {
@@ -61,7 +61,7 @@ function UpsellsPanel({ sessionId, allSessions }) {
     try {
       await classes.upsells.create({ source_session: sessionId, ...newForm })
       const r = await classes.upsells.list({ source_session: sessionId })
-      setUpsells(r.data || [])
+      setUpsells(r.data?.results || r.data || [])
       setNewForm({ suggested_session: '', headline: '', body: '' })
       setAdding(false)
     } finally {

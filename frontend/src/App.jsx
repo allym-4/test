@@ -55,6 +55,7 @@ import AdminStudioNotes from './pages/admin/AdminStudioNotes'
 import AdminSurveys from './pages/admin/AdminSurveys'
 import AdminChallenges from './pages/admin/AdminChallenges'
 import AdminPractice from './pages/admin/AdminPractice'
+import AdminTrials from './pages/admin/AdminTrials'
 
 // Student pages
 import StudentDashboard from './pages/student/StudentDashboard'
@@ -202,6 +203,7 @@ export default function App() {
             <Route path="surveys" element={<AdminSurveys />} />
             <Route path="challenges" element={<AdminChallenges />} />
             <Route path="practice" element={<AdminPractice />} />
+            <Route path="trials" element={<AdminTrials />} />
             <Route path="classes/:id/attendance" element={<AttendancePage />} />
           </Route>
 
