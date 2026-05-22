@@ -382,6 +382,17 @@ export default function DashboardScreen({ navigation }) {
       {/* Custom header row with bell */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <Text style={[s.greeting, { marginBottom: 0 }]}>{greeting()}, {user?.first_name || 'there'} 👋</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Support')}
+          style={{ padding: 4 }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          activeOpacity={0.7}
+        >
+          <View style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: '#ccff00', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 14, fontWeight: '900', color: '#ccff00', lineHeight: 16 }}>?</Text>
+          </View>
+        </TouchableOpacity>
         <TouchableOpacity
           onPress={() => navigation.navigate('Notifications')}
           style={{ position: 'relative', padding: 4 }}
@@ -407,6 +418,7 @@ export default function DashboardScreen({ navigation }) {
             </View>
           )}
         </TouchableOpacity>
+        </View>
       </View>
       <Text style={s.dateText}>
         {new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
