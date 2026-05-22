@@ -69,7 +69,8 @@ class ClassChangeRequestSerializer(serializers.ModelSerializer):
             'id', 'student', 'student_name',
             'current_enrolment', 'current_enrolment_detail',
             'requested_session', 'requested_session_detail',
-            'notes', 'status', 'admin_notes',
+            'request_type', 'cancellation_resolution',
+            'notes', 'status', 'admin_notes', 'admin_initiated',
             'created_at', 'resolved_at',
         )
         read_only_fields = ('id', 'student', 'status', 'admin_notes', 'created_at', 'resolved_at')

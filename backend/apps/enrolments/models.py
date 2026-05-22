@@ -57,6 +57,15 @@ class ClassChangeRequest(models.Model):
         APPROVED = 'approved', 'Approved'
         REJECTED = 'rejected', 'Rejected'
 
+    class RequestType(models.TextChoices):
+        TRANSFER = 'transfer', 'Transfer'
+        CANCEL = 'cancel', 'Cancel'
+
+    class CancellationResolution(models.TextChoices):
+        CREDIT = 'credit', 'Account Credit'
+        REFUND = 'refund', 'Refund'
+        NO_REFUND = 'no_refund', 'No Refund'
+
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='change_requests')
     current_enrolment = models.ForeignKey(
         Enrolment, on_delete=models.CASCADE, related_name='change_requests'
@@ -65,9 +74,12 @@ class ClassChangeRequest(models.Model):
         ClassSession, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='incoming_change_requests'
     )
+    request_type = models.CharField(max_length=10, choices=RequestType.choices, default=RequestType.TRANSFER)
+    cancellation_resolution = models.CharField(max_length=10, choices=CancellationResolution.choices, blank=True)
     notes = models.TextField(blank=True)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
     admin_notes = models.TextField(blank=True)
+    admin_initiated = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
     ticket = models.ForeignKey(

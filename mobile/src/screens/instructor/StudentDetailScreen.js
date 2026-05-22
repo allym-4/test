@@ -275,6 +275,15 @@ export default function StudentDetailScreen({ navigation, route }) {
   const [showCreditModal, setShowCreditModal] = useState(false)
   const [showNoteModal, setShowNoteModal] = useState(false)
   const [chargingSaved, setChargingSaved] = useState(false)
+  const [tcModal, setTcModal] = useState(false)
+  const [tcStep, setTcStep] = useState(null) // null | 'transfer' | 'cancel' | 'cancel_all'
+  const [tcEnrolment, setTcEnrolment] = useState(null)
+  const [tcNewSession, setTcNewSession] = useState('')
+  const [tcResolution, setTcResolution] = useState('credit')
+  const [tcNotes, setTcNotes] = useState('')
+  const [tcSaving, setTcSaving] = useState(false)
+  const [tcError, setTcError] = useState(null)
+  const [allSessions, setAllSessions] = useState([])
 
   const loadAll = useCallback(async () => {
     if (!studentId) return
@@ -321,6 +330,12 @@ export default function StudentDetailScreen({ navigation, route }) {
   }, [studentId])
 
   useEffect(() => { loadAll() }, [loadAll])
+
+  // Load sessions for transfer when enrolments tab active
+  useEffect(() => {
+    if (tab !== 'enrolments' || allSessions.length > 0) return
+    client.get('/api/classes/sessions/').then(r => setAllSessions(r.data.results ?? r.data ?? [])).catch(() => {})
+  }, [tab, studentId])
 
   // Load comms when tab active
   useEffect(() => {
@@ -658,6 +673,20 @@ export default function StudentDetailScreen({ navigation, route }) {
                           {e.class_session_detail?.instructor_name ? (
                             <Text style={s.enrCardInstructor}>{e.class_session_detail.instructor_name}</Text>
                           ) : null}
+                          <View style={{ flexDirection: 'row', gap: 6, marginTop: 8 }}>
+                            <TouchableOpacity
+                              style={s.tcBtnTransfer}
+                              onPress={() => { setTcEnrolment(e); setTcNewSession(''); setTcNotes(''); setTcError(null); setTcStep('transfer'); setTcModal(true) }}
+                            >
+                              <Text style={s.tcBtnTransferText}>Transfer</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={s.tcBtnCancel}
+                              onPress={() => { setTcEnrolment(e); setTcNotes(''); setTcResolution('credit'); setTcError(null); setTcStep('cancel'); setTcModal(true) }}
+                            >
+                              <Text style={s.tcBtnCancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                          </View>
                         </View>
                       ))}
                     </View>
@@ -680,6 +709,16 @@ export default function StudentDetailScreen({ navigation, route }) {
                       </TouchableOpacity>
                     </View>
                   ))}
+
+                  {/* Cancel All */}
+                  {activeEnrols.length > 0 && (
+                    <TouchableOpacity
+                      style={s.cancelAllBtn}
+                      onPress={() => { setTcNotes(''); setTcResolution('credit'); setTcError(null); setTcStep('cancel_all'); setTcModal(true) }}
+                    >
+                      <Text style={s.cancelAllBtnText}>Cancel All Enrolments</Text>
+                    </TouchableOpacity>
+                  )}
 
                   {/* Casual & Catch-up */}
                   <View style={s.creditRow}>
@@ -1048,6 +1087,188 @@ export default function StudentDetailScreen({ navigation, route }) {
         onClose={() => setShowNoteModal(false)}
         onSaved={() => reloadNotes()}
       />
+
+      {/* Transfer / Cancel Modal */}
+      <Modal visible={tcModal} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setTcModal(false)}>
+        <View style={s.modalRoot}>
+          <View style={s.modalHeader}>
+            <TouchableOpacity onPress={() => tcStep === null ? setTcModal(false) : setTcStep(null)}>
+              <Text style={s.modalCancel}>{tcStep ? '← Back' : 'Close'}</Text>
+            </TouchableOpacity>
+            <Text style={s.modalTitle}>
+              {tcStep === 'transfer' ? 'Transfer Enrolment' : tcStep === 'cancel' ? 'Cancel Enrolment' : tcStep === 'cancel_all' ? 'Cancel All' : 'Transfer / Cancel'}
+            </Text>
+            <View style={{ width: 50 }} />
+          </View>
+          <ScrollView style={s.modalBody} keyboardShouldPersistTaps="handled">
+            {tcError ? (
+              <View style={{ backgroundColor: 'rgba(255,68,68,0.1)', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,68,68,0.3)', padding: 12, marginBottom: 14 }}>
+                <Text style={{ color: '#ff5050', fontSize: 13 }}>{tcError}</Text>
+              </View>
+            ) : null}
+
+            {/* Step: class list */}
+            {!tcStep && (() => {
+              const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+              return (
+                <>
+                  {activeEnrols.length === 0 ? (
+                    <Text style={s.empty}>No active enrolments.</Text>
+                  ) : activeEnrols.map(e => (
+                    <View key={e.id} style={[s.enrCard, { marginBottom: 10 }]}>
+                      <Text style={s.enrCardName} numberOfLines={1}>{e.class_session_detail?.name ?? 'Class'}</Text>
+                      <Text style={s.enrCardMeta}>{DAYS[e.class_session_detail?.day_of_week] ?? ''} {e.class_session_detail?.start_time?.slice(0,5) ?? ''}</Text>
+                      <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+                        <TouchableOpacity style={[s.tcBtnTransfer, { flex: 1 }]} onPress={() => { setTcEnrolment(e); setTcNewSession(''); setTcNotes(''); setTcError(null); setTcStep('transfer') }}>
+                          <Text style={s.tcBtnTransferText}>Transfer</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={[s.tcBtnCancel, { flex: 1 }]} onPress={() => { setTcEnrolment(e); setTcNotes(''); setTcResolution('credit'); setTcError(null); setTcStep('cancel') }}>
+                          <Text style={s.tcBtnCancelText}>Cancel</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ))}
+                  <View style={{ borderTopWidth: 1, borderTopColor: '#222', marginTop: 8, paddingTop: 12 }}>
+                    <TouchableOpacity
+                      style={[s.tcBtnCancel, { alignItems: 'center', paddingVertical: 12 }]}
+                      onPress={() => { setTcNotes(''); setTcResolution('credit'); setTcError(null); setTcStep('cancel_all') }}
+                    >
+                      <Text style={s.tcBtnCancelText}>Cancel All Enrolments</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )
+            })()}
+
+            {/* Step: Transfer */}
+            {tcStep === 'transfer' && (() => {
+              const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+              const seasonId = tcEnrolment?.class_session_detail?.season
+              const sessions = allSessions.filter(s => s.season === seasonId && s.id !== tcEnrolment?.class_session)
+              return (
+                <>
+                  <View style={{ backgroundColor: '#1a1a1a', borderRadius: 8, padding: 12, marginBottom: 16 }}>
+                    <Text style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>Transferring from</Text>
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>{tcEnrolment?.class_session_detail?.name}</Text>
+                  </View>
+                  <Text style={s.fieldLabel}>Transfer to</Text>
+                  <View style={[s.fieldInput, { padding: 0 }]}>
+                    {sessions.length === 0 ? (
+                      <Text style={{ color: '#555', padding: 12, fontSize: 13 }}>No other classes available in this season</Text>
+                    ) : sessions.map(sess => (
+                      <TouchableOpacity
+                        key={sess.id}
+                        style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: '#222', backgroundColor: tcNewSession === String(sess.id) ? 'rgba(204,255,0,0.08)' : 'transparent' }}
+                        onPress={() => setTcNewSession(String(sess.id))}
+                      >
+                        <Text style={{ fontSize: 13, color: tcNewSession === String(sess.id) ? '#ccff00' : '#fff', fontWeight: tcNewSession === String(sess.id) ? '600' : '400' }}>
+                          {sess.name} · {DAYS[sess.day_of_week]} {sess.start_time?.slice(0,5)}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                  <Text style={[s.fieldLabel, { marginTop: 14 }]}>Notes (optional)</Text>
+                  <TextInput style={[s.fieldInput, { height: 80, textAlignVertical: 'top', paddingTop: 10 }]} value={tcNotes} onChangeText={setTcNotes} placeholder="Reason for transfer…" placeholderTextColor="#555" multiline />
+                  <TouchableOpacity
+                    style={[s.typeBtn, s.typeBtnActive, { marginTop: 16, alignItems: 'center', paddingVertical: 12 }]}
+                    onPress={async () => {
+                      if (!tcNewSession) { setTcError('Please select a class to transfer to.'); return }
+                      setTcSaving(true); setTcError(null)
+                      try {
+                        await enrolments.changeRequests.create({ current_enrolment: tcEnrolment.id, requested_session: tcNewSession, request_type: 'transfer', notes: tcNotes })
+                        const r = await enrolments.changeRequests.list({ student: studentId })
+                        setChangeRequests(r.data.results ?? r.data ?? [])
+                        setTcModal(false); setTcStep(null)
+                      } catch (err) { setTcError(err.response?.data?.detail || 'Could not submit.') }
+                      finally { setTcSaving(false) }
+                    }}
+                    disabled={tcSaving}
+                  >
+                    <Text style={s.typeBtnTextActive}>{tcSaving ? 'Submitting…' : 'Submit Transfer Request'}</Text>
+                  </TouchableOpacity>
+                </>
+              )
+            })()}
+
+            {/* Step: Cancel single */}
+            {tcStep === 'cancel' && (
+              <>
+                <View style={{ backgroundColor: '#1a1a1a', borderRadius: 8, padding: 12, marginBottom: 16 }}>
+                  <Text style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>Cancelling</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>{tcEnrolment?.class_session_detail?.name}</Text>
+                </View>
+                <Text style={s.fieldLabel}>Resolution</Text>
+                <View style={s.typeRow}>
+                  {[['credit','Account Credit'],['refund','Refund'],['no_refund','No Refund']].map(([val,lbl]) => (
+                    <TouchableOpacity key={val} style={[s.typeBtn, tcResolution === val && s.typeBtnActive]} onPress={() => setTcResolution(val)}>
+                      <Text style={[s.typeBtnText, tcResolution === val && s.typeBtnTextActive]}>{lbl}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <Text style={[s.fieldLabel, { marginTop: 14 }]}>Notes / reason</Text>
+                <TextInput style={[s.fieldInput, { height: 80, textAlignVertical: 'top', paddingTop: 10 }]} value={tcNotes} onChangeText={setTcNotes} placeholder="Reason for cancellation…" placeholderTextColor="#555" multiline />
+                <Text style={{ fontSize: 12, color: '#555', marginTop: 10, marginBottom: 16 }}>This submits a cancellation request to Mimi &amp; Chloe for review.</Text>
+                <TouchableOpacity
+                  style={[s.tcBtnCancel, { alignItems: 'center', paddingVertical: 12 }]}
+                  onPress={async () => {
+                    setTcSaving(true); setTcError(null)
+                    try {
+                      await enrolments.changeRequests.create({ current_enrolment: tcEnrolment.id, request_type: 'cancel', cancellation_resolution: tcResolution, notes: tcNotes })
+                      const r = await enrolments.changeRequests.list({ student: studentId })
+                      setChangeRequests(r.data.results ?? r.data ?? [])
+                      setTcModal(false); setTcStep(null)
+                    } catch (err) { setTcError(err.response?.data?.detail || 'Could not submit.') }
+                    finally { setTcSaving(false) }
+                  }}
+                  disabled={tcSaving}
+                >
+                  <Text style={s.tcBtnCancelText}>{tcSaving ? 'Submitting…' : 'Submit Cancellation Request'}</Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+            {/* Step: Cancel all */}
+            {tcStep === 'cancel_all' && (
+              <>
+                <View style={{ backgroundColor: 'rgba(255,68,68,0.08)', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,68,68,0.2)', padding: 12, marginBottom: 16 }}>
+                  <Text style={{ fontSize: 13, color: '#ff5050' }}>This will submit cancellation requests for all {activeEnrols.length} active enrolment{activeEnrols.length !== 1 ? 's' : ''}.</Text>
+                </View>
+                {activeEnrols.map(e => (
+                  <Text key={e.id} style={{ fontSize: 13, color: '#666', paddingBottom: 4 }}>· {e.class_session_detail?.name}</Text>
+                ))}
+                <Text style={s.fieldLabel}>Resolution</Text>
+                <View style={s.typeRow}>
+                  {[['credit','Account Credit'],['refund','Refund'],['no_refund','No Refund']].map(([val,lbl]) => (
+                    <TouchableOpacity key={val} style={[s.typeBtn, tcResolution === val && s.typeBtnActive]} onPress={() => setTcResolution(val)}>
+                      <Text style={[s.typeBtnText, tcResolution === val && s.typeBtnTextActive]}>{lbl}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <Text style={[s.fieldLabel, { marginTop: 14 }]}>Notes / reason</Text>
+                <TextInput style={[s.fieldInput, { height: 80, textAlignVertical: 'top', paddingTop: 10 }]} value={tcNotes} onChangeText={setTcNotes} placeholder="Reason for cancellation…" placeholderTextColor="#555" multiline />
+                <TouchableOpacity
+                  style={[s.tcBtnCancel, { alignItems: 'center', paddingVertical: 12, marginTop: 16 }]}
+                  onPress={async () => {
+                    setTcSaving(true); setTcError(null)
+                    try {
+                      for (const e of activeEnrols) {
+                        await enrolments.changeRequests.create({ current_enrolment: e.id, request_type: 'cancel', cancellation_resolution: tcResolution, notes: tcNotes })
+                      }
+                      const r = await enrolments.changeRequests.list({ student: studentId })
+                      setChangeRequests(r.data.results ?? r.data ?? [])
+                      setTcModal(false); setTcStep(null)
+                    } catch (err) { setTcError(err.response?.data?.detail || 'One or more requests failed.') }
+                    finally { setTcSaving(false) }
+                  }}
+                  disabled={tcSaving}
+                >
+                  <Text style={s.tcBtnCancelText}>{tcSaving ? 'Submitting…' : 'Submit All Cancellation Requests'}</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </ScrollView>
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -1125,6 +1346,12 @@ const s = StyleSheet.create({
   creditBox: { flex: 1, backgroundColor: '#1a1a1a', borderRadius: 10, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#2a2a2a' },
   creditBoxVal: { fontSize: 24, fontWeight: '700', color: '#ccff00', marginBottom: 4 },
   creditBoxLabel: { fontSize: 11, color: '#666', textAlign: 'center' },
+  cancelAllBtn: { backgroundColor: 'rgba(255,68,68,0.08)', borderRadius: 8, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,68,68,0.25)', marginBottom: 14 },
+  cancelAllBtnText: { fontSize: 13, fontWeight: '600', color: '#ff5050' },
+  tcBtnTransfer: { backgroundColor: 'rgba(204,255,0,0.1)', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: 'rgba(204,255,0,0.3)' },
+  tcBtnTransferText: { fontSize: 12, fontWeight: '600', color: '#ccff00' },
+  tcBtnCancel: { backgroundColor: 'rgba(255,68,68,0.08)', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: 'rgba(255,68,68,0.25)' },
+  tcBtnCancelText: { fontSize: 12, fontWeight: '600', color: '#ff5050' },
   changeReqCard: { backgroundColor: '#1a1a1a', borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#2a2a2a' },
   changeReqTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   changeReqFrom: { fontSize: 13, fontWeight: '600', color: '#fff', flex: 1, marginRight: 8 },
