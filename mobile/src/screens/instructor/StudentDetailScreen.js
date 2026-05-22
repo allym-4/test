@@ -1144,7 +1144,8 @@ export default function StudentDetailScreen({ navigation, route }) {
             {tcStep === 'transfer' && (() => {
               const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
               const seasonId = tcEnrolment?.class_session_detail?.season
-              const sessions = allSessions.filter(s => s.season === seasonId && s.id !== tcEnrolment?.class_session)
+              const sessions = allSessions.filter(s => String(s.season) === String(seasonId) && s.id !== tcEnrolment?.class_session)
+              const selectedSession = sessions.find(s => String(s.id) === String(tcNewSession))
               return (
                 <>
                   <View style={{ backgroundColor: '#1a1a1a', borderRadius: 8, padding: 12, marginBottom: 16 }}>
@@ -1152,21 +1153,33 @@ export default function StudentDetailScreen({ navigation, route }) {
                     <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>{tcEnrolment?.class_session_detail?.name}</Text>
                   </View>
                   <Text style={s.fieldLabel}>Transfer to</Text>
-                  <View style={[s.fieldInput, { padding: 0 }]}>
-                    {sessions.length === 0 ? (
-                      <Text style={{ color: '#555', padding: 12, fontSize: 13 }}>No other classes available in this season</Text>
-                    ) : sessions.map(sess => (
-                      <TouchableOpacity
-                        key={sess.id}
-                        style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: '#222', backgroundColor: tcNewSession === String(sess.id) ? 'rgba(204,255,0,0.08)' : 'transparent' }}
-                        onPress={() => setTcNewSession(String(sess.id))}
-                      >
-                        <Text style={{ fontSize: 13, color: tcNewSession === String(sess.id) ? '#ccff00' : '#fff', fontWeight: tcNewSession === String(sess.id) ? '600' : '400' }}>
-                          {sess.name} · {DAYS[sess.day_of_week]} {sess.start_time?.slice(0,5)}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
+                  {sessions.length === 0 ? (
+                    <View style={[s.fieldInput, { justifyContent: 'center' }]}>
+                      <Text style={{ color: '#555', fontSize: 13 }}>No other classes available in this season</Text>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={[s.fieldInput, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
+                      onPress={() => Alert.alert(
+                        'Select class',
+                        undefined,
+                        [
+                          ...sessions.map(sess => ({
+                            text: `${sess.name} · ${DAYS[sess.day_of_week]} ${sess.start_time?.slice(0,5)}`,
+                            onPress: () => setTcNewSession(String(sess.id)),
+                          })),
+                          { text: 'Cancel', style: 'cancel' },
+                        ]
+                      )}
+                    >
+                      <Text style={{ fontSize: 13, color: selectedSession ? '#fff' : '#555', flex: 1 }}>
+                        {selectedSession
+                          ? `${selectedSession.name} · ${DAYS[selectedSession.day_of_week]} ${selectedSession.start_time?.slice(0,5)}`
+                          : '— Select class —'}
+                      </Text>
+                      <Text style={{ color: '#555', fontSize: 16 }}>▾</Text>
+                    </TouchableOpacity>
+                  )}
                   <Text style={[s.fieldLabel, { marginTop: 14 }]}>Notes (optional)</Text>
                   <TextInput style={[s.fieldInput, { height: 80, textAlignVertical: 'top', paddingTop: 10 }]} value={tcNotes} onChangeText={setTcNotes} placeholder="Reason for transfer…" placeholderTextColor="#555" multiline />
                   <TouchableOpacity
