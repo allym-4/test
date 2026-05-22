@@ -344,12 +344,14 @@ export default function HomeworkPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>Homework</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22 }}>Homework</div>
           <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 4 }}>Assignments for your classes</div>
         </div>
         <button className="btn btn-lime btn-sm" onClick={() => setShowNew(true)}>+ Assign Homework</button>
+        </div>
       </div>
 
       <div style={{ borderBottom: '1px solid #1e1e1e', display: 'flex', gap: 4, marginBottom: 24, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>

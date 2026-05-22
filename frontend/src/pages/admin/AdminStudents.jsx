@@ -1043,15 +1043,15 @@ export default function AdminStudents() {
           placeholder="Search name, email…"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          style={{ maxWidth: 280, background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', padding: '8px 12px', fontSize: 13, outline: 'none', width: '100%' }}
+          style={{ maxWidth: 280, background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', padding: '8px 12px', fontSize: 13, outline: 'none', width: '100%', minWidth: 0 }}
         />
-        <select value={classFilter} onChange={e => setClassFilter(e.target.value)} style={selectStyle}>
+        <select value={classFilter} onChange={e => setClassFilter(e.target.value)} style={{ ...selectStyle, minWidth: 0, maxWidth: '100%' }}>
           <option value="">All Classes</option>
           {(sessionsData?.results || sessionsData || []).map(s => (
             <option key={s.id} value={String(s.id)}>{s.name}</option>
           ))}
         </select>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={selectStyle}>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ ...selectStyle, minWidth: 0 }}>
           <option value="">All Statuses</option>
           <option value="Active">Active</option>
           <option value="Frozen">Frozen</option>

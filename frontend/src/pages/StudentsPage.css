@@ -139,3 +139,23 @@
   .sd-header { padding: 14px 16px 12px; }
   .sd-tab { padding: 10px 12px; font-size: 11px; }
 }
+
+/* Progress subtabs scroll on mobile */
+.subtabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.subtabs::-webkit-scrollbar { display: none; }
+.subtab {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  /* Two-column overview card grid becomes single column */
+  .card-grid-2 { grid-template-columns: 1fr !important; }
+}

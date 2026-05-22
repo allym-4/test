@@ -95,7 +95,7 @@ export default function InstructorPay() {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
         <div>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>Pay &amp; Earnings</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22 }}>Pay &amp; Earnings</div>
           <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 4 }}>Your classes taught and income</div>
         </div>
       </div>
@@ -133,7 +133,8 @@ export default function InstructorPay() {
               </div>
             ) : (
               <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 480 }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--border)' }}>
                       {['Date', 'Class', 'Students', 'Hours', 'Rate', 'Amount'].map(h => (
@@ -162,6 +163,7 @@ export default function InstructorPay() {
                     </tr>
                   </tfoot>
                 </table>
+                </div>
               </div>
             )}
           </div>
@@ -176,8 +178,8 @@ export default function InstructorPay() {
             ) : (
               <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
                 {records.map((r, i) => (
-                  <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: i < records.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                    <div>
+                  <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: i < records.length - 1 ? '1px solid var(--border)' : 'none', gap: 10, flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 3 }}>{r.description || 'Payment'}</div>
                       <div style={{ fontSize: 11, color: 'var(--grey)' }}>
                         {r.period_start && r.period_end

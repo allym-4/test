@@ -932,7 +932,7 @@ export default function AdminStudentDetail() {
             {/* ATTENDANCE */}
             {tab === 'attendance' && (
               <div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 12, marginBottom: 20 }}>
                   {[
                     ['Total', attData?.length || 0, ''],
                     ['Attendance Rate', `${attRate}%`, 'kpi-lime'],
@@ -971,7 +971,7 @@ export default function AdminStudentDetail() {
             {/* PAYMENTS */}
             {tab === 'payments' && (
               <div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12, marginBottom: 20 }}>
                   <div className={`kpi ${isOwing ? 'kpi-red' : ''}`} style={{ textAlign: 'center' }}>
                     <div className="kpi-label">Outstanding</div>
                     <div className="kpi-value" style={{ fontSize: 28 }}>{isOwing ? `$${Math.abs(bal).toFixed(2)}` : '$0'}</div>

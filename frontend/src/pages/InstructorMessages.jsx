@@ -448,7 +448,7 @@ export default function InstructorMessages() {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
         <div>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>Messages</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22 }}>Messages</div>
           <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 4 }}>Student conversations</div>
         </div>
         <button className="btn btn-lime btn-sm" onClick={() => setComposing(true)}>+ New Message</button>

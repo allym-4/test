@@ -67,7 +67,7 @@ export default function DashboardPage() {
     <div>
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, marginBottom: 2 }}>
+        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, marginBottom: 2 }}>
           {greeting()}, {user?.first_name}
         </div>
         <div style={{ fontSize: 13, color: 'var(--grey)' }}>{todayLabel()}</div>
@@ -116,7 +116,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPIs */}
-      <div className="kpi-grid" style={{ display: 'grid', gap: 12, marginBottom: 28 }}>
+      <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12, marginBottom: 28 }}>
         <Link to="/classes" style={{ textDecoration: 'none', background: '#111', border: '1px solid #222', borderRadius: 12, padding: '16px 18px' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Students Today</div>
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 32, color: 'var(--lime)', marginBottom: 4 }}>

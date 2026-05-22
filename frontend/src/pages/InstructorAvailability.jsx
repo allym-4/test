@@ -114,7 +114,7 @@ export default function InstructorAvailability() {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
         <div>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>Availability &amp; Cover</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22 }}>Availability &amp; Cover</div>
           <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 4 }}>Manage your schedule and cover requests</div>
         </div>
       </div>

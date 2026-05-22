@@ -412,7 +412,7 @@ export default function ClassesPage() {
     <div>
       {/* Page heading */}
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>My Classes</div>
+        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22 }}>My Classes</div>
       </div>
 
       {/* Tab strip */}

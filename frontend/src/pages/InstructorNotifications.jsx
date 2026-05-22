@@ -35,7 +35,7 @@ export default function InstructorNotifications() {
     <div style={{ maxWidth: 680, width: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
         <div>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26, marginBottom: 4 }}>Notifications</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, marginBottom: 4 }}>Notifications</div>
           <div style={{ fontSize: 13, color: 'var(--grey)' }}>
             {loading ? '…' : unread.length > 0 ? `${unread.length} unread` : 'All caught up'}
           </div>

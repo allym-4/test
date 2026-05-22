@@ -124,7 +124,7 @@ export default function StudentsPage() {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
         <div>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>All Students</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22 }}>All Students</div>
           <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 4 }}>{allStudents.length} students</div>
         </div>
       </div>
