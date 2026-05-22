@@ -55,6 +55,11 @@ export const classes = {
     cancel: (id) => client.post(`/api/classes/practice/${id}/cancel/`),
     myBookings: () => client.get('/api/classes/practice/my-bookings/'),
     allBookings: (params) => client.get('/api/classes/practice/all-bookings/', { params }),
+    credits: {
+      list: (params) => client.get('/api/classes/practice/credits/', { params }),
+      create: (data) => client.post('/api/classes/practice/credits/', data),
+      delete: (id) => client.delete(`/api/classes/practice/credits/${id}/`),
+    },
   },
   upsells: {
     list: (params) => client.get('/api/classes/upsells/', { params }),

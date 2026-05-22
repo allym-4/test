@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, Workshop, WorkshopBooking, PracticeSlot, PracticeBooking, CasualBooking, ClassUpsell
+from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, Workshop, WorkshopBooking, PracticeSlot, PracticeBooking, PracticeCredit, CasualBooking, ClassUpsell
 from apps.users.serializers import UserMinimalSerializer
 
 
@@ -362,3 +362,12 @@ class PracticeBookingSerializer(serializers.ModelSerializer):
             'status', 'price_charged', 'is_free', 'payment_type', 'created_at',
         )
         read_only_fields = ('id', 'created_at')
+
+
+class PracticeCreditSerializer(serializers.ModelSerializer):
+    created_by_name = serializers.CharField(source='created_by.display_name', read_only=True, default=None)
+
+    class Meta:
+        model = PracticeCredit
+        fields = ('id', 'student', 'status', 'notes', 'created_by', 'created_by_name', 'used_for_booking', 'created_at', 'used_at')
+        read_only_fields = ('id', 'created_at', 'used_at', 'used_for_booking', 'created_by', 'created_by_name')

@@ -257,6 +257,28 @@ class PracticeBooking(models.Model):
         return f'{self.student.display_name} → {self.slot}'
 
 
+class PracticeCredit(models.Model):
+    """A prepaid practice session credit for a student."""
+    class Status(models.TextChoices):
+        AVAILABLE = 'available', 'Available'
+        USED = 'used', 'Used'
+        EXPIRED = 'expired', 'Expired'
+
+    student = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='practice_credits')
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.AVAILABLE)
+    notes = models.CharField(max_length=200, blank=True)  # e.g. "4-session prepay pack"
+    created_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='practice_credits_issued')
+    used_for_booking = models.OneToOneField(PracticeBooking, on_delete=models.SET_NULL, null=True, blank=True, related_name='practice_credit')
+    created_at = models.DateTimeField(auto_now_add=True)
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'Practice credit for {self.student.display_name} ({self.status})'
+
+
 class CasualBooking(models.Model):
     """A booking for a specific class occurrence — used for casual drop-ins and catch-ups."""
 

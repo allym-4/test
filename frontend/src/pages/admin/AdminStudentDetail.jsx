@@ -172,6 +172,66 @@ function ConvertTrialModal({ enrolment, student, onClose, onSuccess }) {
   )
 }
 
+function AddPracticeCreditsModal({ student, onClose, onSuccess }) {
+  const [count, setCount] = useState(1)
+  const [notes, setNotes] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setSaving(true)
+    setError(null)
+    try {
+      const res = await classes.practice.credits.create({
+        student: student.id,
+        count: parseInt(count),
+        notes,
+      })
+      onSuccess(res.data)
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to add credits.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 400 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>Add Practice Credits</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <form className="sd-body" onSubmit={handleSubmit}>
+          {error && (
+            <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>{error}</div>
+          )}
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 16 }}>
+            Adding prepaid practice session credits to <strong style={{ color: 'var(--white)' }}>{student.first_name} {student.last_name}</strong>. Each credit = 1 free practice session.
+          </div>
+          <div className="field">
+            <label>Number of credits</label>
+            <select value={count} onChange={e => setCount(e.target.value)}>
+              {[1,2,3,4,5,6,8,10].map(n => <option key={n} value={n}>{n} credit{n !== 1 ? 's' : ''}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label>Notes <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(optional)</span></label>
+            <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. 4-session prepay pack" />
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>
+              {saving ? 'Adding…' : `Add ${count} Credit${count != 1 ? 's' : ''}`}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminStudentDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -248,6 +308,8 @@ export default function AdminStudentDetail() {
   const [seasonsData, setSeasonsData] = useState(null)
   const [casualBookingsData, setCasualBookingsData] = useState(null)
   const [makeupCreditsData, setMakeupCreditsData] = useState(null)
+  const [practiceCreditsData, setPracticeCreditsData] = useState(null)
+  const [showAddPracticeCredits, setShowAddPracticeCredits] = useState(false)
   const [enrolSubTab, setEnrolSubTab] = useState('current')
   const [tcTransferClass, setTcTransferClass] = useState('')
   const [expandedTrialId, setExpandedTrialId] = useState(null)
@@ -317,6 +379,7 @@ export default function AdminStudentDetail() {
     seasonsApi.list().then(r => setSeasonsData(r.data.results || r.data || [])).catch(() => {})
     attendance.makeupCredits.list({ student: student.id }).then(r => setMakeupCreditsData(r.data.results || r.data || [])).catch(() => {})
     client.get('/api/classes/casual-bookings/', { params: { student: student.id } }).then(r => setCasualBookingsData(r.data.results || r.data || [])).catch(() => {})
+    classes.practice.credits.list({ student: student.id }).then(r => setPracticeCreditsData(r.data?.results || r.data || [])).catch(() => {})
   }, [student?.id])
 
   async function loadSeasonSessions(enrolment) {
@@ -918,6 +981,56 @@ export default function AdminStudentDetail() {
                             })}
                           </div>
                         )}
+                      </div>
+
+                      {/* Practice Credits */}
+                      <div style={{ marginBottom: 24 }}>
+                        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 13, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          Practice Credits
+                          <button className="btn btn-ghost btn-xs" onClick={() => setShowAddPracticeCredits(true)}>+ Add Credits</button>
+                        </div>
+                        {(() => {
+                          const credits = practiceCreditsData || []
+                          const available = credits.filter(c => c.status === 'available')
+                          const used = credits.filter(c => c.status === 'used')
+                          return (
+                            <div>
+                              <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+                                <div className="card" style={{ flex: 1, padding: '12px 14px' }}>
+                                  <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', marginBottom: 4 }}>Available</div>
+                                  <div style={{ fontSize: 20, fontWeight: 700, color: available.length > 0 ? 'var(--lime)' : 'var(--grey)' }}>{available.length}</div>
+                                </div>
+                                <div className="card" style={{ flex: 1, padding: '12px 14px' }}>
+                                  <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', marginBottom: 4 }}>Used</div>
+                                  <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--grey)' }}>{used.length}</div>
+                                </div>
+                              </div>
+                              {available.length > 0 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                  {available.map(c => (
+                                    <div key={c.id} className="card" style={{ padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                      <div>
+                                        <span className="tag tag-lime" style={{ fontSize: 10, marginRight: 8 }}>Credit</span>
+                                        <span style={{ fontSize: 12, color: 'var(--grey)' }}>{c.notes || 'Practice session'}</span>
+                                      </div>
+                                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                        <span style={{ fontSize: 11, color: 'var(--grey)' }}>{new Date(c.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                        <button
+                                          className="btn btn-ghost btn-xs"
+                                          style={{ color: 'var(--red)' }}
+                                          onClick={async () => {
+                                            await classes.practice.credits.delete(c.id)
+                                            setPracticeCreditsData(prev => prev.filter(x => x.id !== c.id))
+                                          }}
+                                        >✕</button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })()}
                       </div>
 
                       {/* Waitlisted */}
@@ -2242,6 +2355,17 @@ export default function AdminStudentDetail() {
             </div>
           </div>
         </div>
+      )}
+
+      {showAddPracticeCredits && (
+        <AddPracticeCreditsModal
+          student={student}
+          onClose={() => setShowAddPracticeCredits(false)}
+          onSuccess={(newCredits) => {
+            setPracticeCreditsData(prev => [...(prev || []), ...newCredits])
+            setShowAddPracticeCredits(false)
+          }}
+        />
       )}
     </div>
   )

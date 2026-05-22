@@ -4,8 +4,8 @@ from django.db.models import Count
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, ClassChatMessage, Workshop, WorkshopBooking, PracticeSlot, PracticeBooking, CasualBooking, ClassUpsell
-from .serializers import StudioSerializer, ClassCategorySerializer, ClassSessionSerializer, ClassOccurrenceSerializer, SeasonSerializer, LockerSerializer, KisiGrantSerializer, WorkshopSerializer, WorkshopBookingSerializer, PracticeSlotSerializer, PracticeBookingSerializer, CasualBookingSerializer, ClassUpsellSerializer
+from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, ClassChatMessage, Workshop, WorkshopBooking, PracticeSlot, PracticeBooking, PracticeCredit, CasualBooking, ClassUpsell
+from .serializers import StudioSerializer, ClassCategorySerializer, ClassSessionSerializer, ClassOccurrenceSerializer, SeasonSerializer, LockerSerializer, KisiGrantSerializer, WorkshopSerializer, WorkshopBookingSerializer, PracticeSlotSerializer, PracticeBookingSerializer, PracticeCreditSerializer, CasualBookingSerializer, ClassUpsellSerializer
 from apps.users.permissions import IsAdminOrInstructor, IsAdminUser
 
 
@@ -725,9 +725,14 @@ class PracticeSlotBookView(APIView):
 
     def _calc_price(self, slot, user):
         from apps.enrolments.models import Enrolment
-        from apps.classes.models import Season, PracticeBooking
+        from apps.classes.models import Season, PracticeBooking, PracticeCredit
         from django.utils import timezone
         import datetime
+
+        # Practice credits take priority
+        if PracticeCredit.objects.filter(student=user, status='available').exists():
+            return 0, True
+
         active_season = Season.objects.filter(status__in=['active', 'upcoming']).order_by('-start_date').first()
         course_enrolments = Enrolment.objects.filter(
             student=user,
@@ -814,6 +819,21 @@ class PracticeSlotBookView(APIView):
             is_free=is_free,
             payment_type=payment_type,
         )
+
+        # Consume a practice credit if available
+        if is_free:
+            from django.utils import timezone as tz
+            credit = PracticeCredit.objects.filter(
+                student=request.user, status='available'
+            ).order_by('created_at').first()
+            if credit:
+                credit.status = 'used'
+                credit.used_at = tz.now()
+                credit.used_for_booking = booking
+                credit.save(update_fields=['status', 'used_at', 'used_for_booking'])
+                booking.payment_type = 'credit'
+                booking.save(update_fields=['payment_type'])
+
         return Response(PracticeBookingSerializer(booking, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
 
@@ -1460,3 +1480,39 @@ class AdminPromoteCasualWaitlistView(APIView):
         )
 
         return Response({'status': 'ok', 'id': booking.id})
+
+
+class PracticeCreditListView(generics.ListCreateAPIView):
+    """Admin: list and create practice credits for a student."""
+    serializer_class = PracticeCreditSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+    def get_queryset(self):
+        student_id = self.request.query_params.get('student')
+        qs = PracticeCredit.objects.select_related('student', 'created_by')
+        if student_id:
+            qs = qs.filter(student_id=student_id)
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        count = int(request.data.get('count', 1))
+        student_id = request.data.get('student')
+        notes = request.data.get('notes', '')
+        if not student_id:
+            return Response({'detail': 'student is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        created = []
+        for _ in range(count):
+            credit = PracticeCredit.objects.create(
+                student_id=student_id,
+                notes=notes,
+                created_by=request.user,
+            )
+            created.append(credit)
+        return Response(PracticeCreditSerializer(created, many=True).data, status=status.HTTP_201_CREATED)
+
+
+class PracticeCreditDetailView(generics.DestroyAPIView):
+    """Admin: delete (void) a practice credit."""
+    queryset = PracticeCredit.objects.all()
+    serializer_class = PracticeCreditSerializer
+    permission_classes = [IsAdminOrInstructor]
