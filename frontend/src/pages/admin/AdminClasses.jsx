@@ -70,6 +70,7 @@ function WorkshopModal({ w, instructorList, studioList, onSave, onClose }) {
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const TYPE_LABELS = { course: 'Course', casual: 'Drop-In' }
 
+// UpsellsPanel kept for reference but not used directly in list page anymore
 function UpsellsPanel({ sessionId, allSessions }) {
   const [upsells, setUpsells] = useState([])
   const [adding, setAdding] = useState(false)
@@ -451,17 +452,16 @@ function ClassEmailModal({ session, onClose }) {
 }
 
 export default function AdminClasses() {
+  const navigate = useNavigate()
   const [tab, setTab] = useState('classes')
   const [typeFilter, setTypeFilter] = useState('all')
   const [search, setSearch] = useState('')
-  const [modal, setModal] = useState(null)
   const [deleting, setDeleting] = useState(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [workshopModal, setWorkshopModal] = useState(null)
   const [deletingWorkshop, setDeletingWorkshop] = useState(null)
   const [confirmDeleteWorkshopId, setConfirmDeleteWorkshopId] = useState(null)
   const [bookingsWorkshop, setBookingsWorkshop] = useState(null)
-  const [createMenuOpen, setCreateMenuOpen] = useState(false)
   const [emailSession, setEmailSession] = useState(null)
 
   const { data: sessData, loading, refetch } = useApi(() => classes.list(), [])
@@ -474,7 +474,15 @@ export default function AdminClasses() {
   const studioList = studioData?.results || studioData || []
   const workshopList = workshopsData?.results || workshopsData || []
 
-  const filtered = sessions.filter(s => {
+  // Deduplicate by (name, day_of_week, start_time) — keep highest id (most recent)
+  const seen = new Map()
+  sessions.forEach(s => {
+    const key = `${s.name}__${s.day_of_week}__${s.start_time}`
+    if (!seen.has(key) || s.id > seen.get(key).id) seen.set(key, s)
+  })
+  const deduped = Array.from(seen.values())
+
+  const filtered = deduped.filter(s => {
     const matchType = typeFilter === 'all' || s.session_type === typeFilter
     const matchSearch = !search || s.name.toLowerCase().includes(search.toLowerCase())
     return matchType && matchSearch
@@ -502,22 +510,8 @@ export default function AdminClasses() {
     }
   }
 
-  function openCreate(type) {
-    setModal({ _new: true, session_type: type })
-  }
-
   return (
     <div>
-      {(modal && modal !== null) && (
-        <ClassModal
-          cls={modal._new ? { session_type: modal.session_type } : modal}
-          instructors={instructors}
-          studios={studioList}
-          allSessions={sessions}
-          onSave={() => { setModal(null); refetch() }}
-          onClose={() => setModal(null)}
-        />
-      )}
       {workshopModal !== null && (
         <WorkshopModal
           w={workshopModal._new ? null : workshopModal}
@@ -541,24 +535,9 @@ export default function AdminClasses() {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           {tab === 'classes' && (
-            <div style={{ position: 'relative' }}>
-              <button className="btn btn-lime btn-sm" onClick={() => setCreateMenuOpen(o => !o)}>
-                + Create New Class ▾
-              </button>
-              {createMenuOpen && (
-                <div style={{ position: 'absolute', right: 0, top: 36, background: 'var(--dark)', border: '1px solid var(--border)', borderRadius: 8, minWidth: 200, zIndex: 200, overflow: 'hidden' }}
-                  onMouseLeave={() => setCreateMenuOpen(false)}>
-                  <div style={{ padding: '10px 16px', fontSize: 13, cursor: 'pointer' }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#1a1a1a'}
-                    onMouseLeave={e => e.currentTarget.style.background = ''}
-                    onClick={() => { setCreateMenuOpen(false); openCreate('course') }}>Create Course Class</div>
-                  <div style={{ padding: '10px 16px', fontSize: 13, cursor: 'pointer' }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#1a1a1a'}
-                    onMouseLeave={e => e.currentTarget.style.background = ''}
-                    onClick={() => { setCreateMenuOpen(false); openCreate('casual') }}>Create Drop-In Class</div>
-                </div>
-              )}
-            </div>
+            <button className="btn btn-lime btn-sm" onClick={() => navigate('/admin/classes/new')}>
+              + Create New Class
+            </button>
           )}
           {tab === 'workshops' && (
             <button className="btn btn-lime btn-sm" onClick={() => setWorkshopModal({ _new: true })}>+ Workshop</button>
@@ -611,10 +590,8 @@ export default function AdminClasses() {
                     <tr key={s.id} style={{ borderBottom: i < filtered.length - 1 ? '1px solid var(--border)' : 'none' }}>
                       <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'flex', gap: 4 }}>
-                          <button className="btn btn-ghost btn-xs" title="View" onClick={() => setModal(s)}>👁</button>
-                          <button className="btn btn-ghost btn-xs" title="Edit" onClick={() => setModal(s)}>✏</button>
+                          <button className="btn btn-ghost btn-xs" title="View/Edit" onClick={() => navigate(`/admin/classes/${s.id}`)}>✏</button>
                           <button className="btn btn-ghost btn-xs" title="Email Class" onClick={() => setEmailSession(s)}>✉</button>
-                          <button className="btn btn-ghost btn-xs" title="Duplicate" onClick={() => { const copy = { ...s, id: undefined, name: s.name + ' (copy)' }; setModal(copy) }}>⧉</button>
                           {confirmDeleteId === s.id ? (
                             <>
                               <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => handleDelete(s.id)} disabled={deleting === s.id}>{deleting === s.id ? '…' : '✓'}</button>
