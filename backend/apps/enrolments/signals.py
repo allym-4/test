@@ -230,28 +230,30 @@ def handle_enrolment_change(sender, instance, created, **kwargs):
     if created and instance.status == 'active' and student:
         try:
             from apps.users.models import StudioSettings
-            from apps.classes.models import KisiGrant
+            from apps.classes.models import KisiGrant, ClassOccurrence
             from apps.classes import kisi_service
+            import datetime as _dt
             settings_obj = StudioSettings.objects.first()
             place_id = settings_obj.kisi_enrolment_place_id if settings_obj else ''
             if place_id and settings_obj.kisi_api_key:
                 season = session.season if session else None
-                # Access starts at season start date; for casual/trial use the class date
-                import datetime as _dt
                 if instance.enrolment_type in ('casual', 'trial', 'catchup'):
-                    # Try to find the next occurrence date for this session
-                    try:
-                        from apps.classes.models import ClassOccurrence
-                        occ = ClassOccurrence.objects.filter(session=session, date__gte=timezone.now().date()).order_by('date').first()
-                        start_date = occ.date if occ else timezone.now().date()
-                    except Exception:
-                        start_date = timezone.now().date()
-                    valid_from = _dt.datetime.combine(start_date, _dt.time(0, 0)).isoformat()
+                    # Access window = duration of the single class only
+                    occ = ClassOccurrence.objects.filter(
+                        session=session, date__gte=timezone.now().date()
+                    ).order_by('date').first()
+                    if occ:
+                        valid_from = _dt.datetime.combine(occ.date, session.start_time)
+                        valid_until = valid_from + _dt.timedelta(minutes=session.duration_minutes)
+                    else:
+                        valid_from = timezone.now()
+                        valid_until = valid_from + _dt.timedelta(hours=2)
                 elif season and season.start_date:
-                    valid_from = _dt.datetime.combine(season.start_date, _dt.time(0, 0)).isoformat()
+                    valid_from = _dt.datetime.combine(season.start_date, _dt.time(0, 0))
+                    valid_until = _dt.datetime.combine(season.end_date, _dt.time(23, 59)) if season.end_date else None
                 else:
-                    valid_from = timezone.now().isoformat()
-                valid_until = season.end_date.isoformat() + 'T23:59:00' if season and season.end_date else None
+                    valid_from = timezone.now()
+                    valid_until = None
                 link_data = kisi_service.create_link(
                     place_id=place_id,
                     name=f'{student.display_name} — {session.name if session else "enrolment"}',
@@ -269,3 +271,26 @@ def handle_enrolment_change(sender, instance, created, **kwargs):
                 )
         except Exception:
             pass  # Kisi failure should never break enrolment
+
+    # Revoke Kisi access when a full season enrolment is cancelled
+    if not created and instance.status == 'cancelled' and instance.enrolment_type not in ('casual', 'trial', 'catchup') and student:
+        try:
+            from apps.users.models import StudioSettings
+            from apps.classes.models import KisiGrant
+            from apps.classes import kisi_service
+            settings_obj = StudioSettings.objects.first()
+            if settings_obj and settings_obj.kisi_api_key:
+                season = session.season if session else None
+                if season and season.end_date:
+                    grants = KisiGrant.objects.filter(
+                        student=student,
+                        revoked=False,
+                        valid_until__date=season.end_date,
+                    )
+                    for grant in grants:
+                        if grant.kisi_link_id:
+                            kisi_service.revoke_link(grant.kisi_link_id)
+                        grant.revoked = True
+                        grant.save(update_fields=['revoked'])
+        except Exception:
+            pass  # Kisi failure should never break cancellation

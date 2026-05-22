@@ -14,15 +14,22 @@ def _headers():
     }
 
 
+def _to_iso(v):
+    if v is None:
+        return None
+    return v if isinstance(v, str) else v.isoformat()
+
+
 def create_link(place_id, name, email, valid_from, valid_until):
     """Create a Kisi access link for a student. Returns the Kisi link object."""
     payload = {
         'lock_group_id': int(place_id),
         'name': name,
         'email': email,
-        'starts_at': valid_from.isoformat(),
-        'ends_at': valid_until.isoformat(),
+        'starts_at': _to_iso(valid_from),
     }
+    if valid_until is not None:
+        payload['ends_at'] = _to_iso(valid_until)
     r = requests.post(f'{KISI_BASE}/share_links', json=payload, headers=_headers(), timeout=10)
     r.raise_for_status()
     return r.json()
