@@ -566,128 +566,326 @@ export default function AdminStudentDetail() {
             {/* ENROLMENTS */}
             {tab === 'enrolments' && (
               <div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-                  <button className="btn btn-lime btn-sm" onClick={() => setShowAddToClass(true)}>+ Add to Class</button>
-                </div>
-                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 10 }}>Current Enrolments</div>
-                {activeEnrolments.length === 0 ? (
-                  <div className="empty-state" style={{ padding: '20px 0' }}>No active enrolments</div>
-                ) : (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12, marginBottom: 24 }}>
-                    {activeEnrolments.map(e => (
-                      <div key={e.id} className="card" style={{ padding: 16 }}>
-                        <div style={{ fontWeight: 600, marginBottom: 4 }}>{e.class_session_detail?.name}</div>
-                        <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 8 }}>
-                          {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][e.class_session_detail?.day_of_week]} {e.class_session_detail?.start_time?.slice(0,5)} · {e.class_session_detail?.studio_detail?.name}
-                        </div>
-                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                          <span className={`tag ${e.enrolment_type === 'trial' ? 'tag-amber' : 'tag-lime'}`} style={{ fontSize: 10 }}>
-                            {e.enrolment_type === 'trial' ? 'Trial' : 'Enrolled'}
-                          </span>
-                          {e.enrolment_type === 'trial' && (
-                            <button className="btn btn-ghost btn-xs" style={{ fontSize: 10, color: 'var(--lime)' }} onClick={() => setConvertTrialEnrol(e)}>
-                              Convert to Full →
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {/* Membership Status */}
                 {(() => {
-                  const SEASON_PRICES = {1: 270, 2: 440, 3: 580, 4: 700, 5: 800, 6: 900}
-                  const n = activeEnrolments.length
-                  const nextClassPrice = n === 0 ? 270 : (SEASON_PRICES[Math.min(n + 1, 6)] - SEASON_PRICES[Math.min(n, 5)])
+                  const courseEnrols = (enrolData || []).filter(e => e.enrolment_type === 'course')
+                  const activeEnrols = courseEnrols.filter(e => e.status === 'active')
+                  const activeSeason = (seasonsData || []).find(s => s.status === 'active')
+                  const activeSeasonEnrols = activeEnrols.filter(e => e.class_session_detail?.season === activeSeason?.id)
+
+                  let statusLabel, statusColor, statusBg
+                  if (!student.is_active) {
+                    statusLabel = 'Blocked'; statusColor = 'var(--red)'; statusBg = 'rgba(255,68,68,0.1)'
+                  } else if (isOwing) {
+                    statusLabel = 'On hold — payment issue'; statusColor = '#ffaa00'; statusBg = 'rgba(255,170,0,0.1)'
+                  } else if (activeSeasonEnrols.length > 0) {
+                    statusLabel = 'Enrolled'; statusColor = 'var(--lime)'; statusBg = 'rgba(204,255,0,0.08)'
+                  } else if (courseEnrols.length === 0) {
+                    statusLabel = 'Never enrolled'; statusColor = 'var(--grey)'; statusBg = 'rgba(255,255,255,0.04)'
+                  } else {
+                    statusLabel = 'Not enrolled'; statusColor = 'var(--grey)'; statusBg = 'rgba(255,255,255,0.04)'
+                  }
                   return (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, padding: '8px 12px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }}>
-                      <span style={{ fontSize: 12, color: 'var(--grey)' }}>
-                        <strong>Add-on pricing:</strong> Adding a class to this student's schedule costs <strong>${nextClassPrice}</strong>
-                      </span>
+                    <div style={{ background: statusBg, border: `1px solid ${statusColor}33`, borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 3 }}>Membership Status</div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: statusColor }}>{statusLabel}</div>
+                      </div>
+                      <button className="btn btn-lime btn-xs" onClick={() => setShowAddToClass(true)}>+ Add to Class</button>
                     </div>
                   )
                 })()}
-                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 10 }}>Waitlisted</div>
-                {(enrolData || []).filter(e => e.status === 'waitlisted').length === 0 ? (
-                  <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 20 }}>None</div>
-                ) : (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12, marginBottom: 24 }}>
-                    {(enrolData || []).filter(e => e.status === 'waitlisted').map(e => (
-                      <div key={e.id} className="card" style={{ padding: 16 }}>
-                        <div style={{ fontWeight: 600, marginBottom: 4 }}>{e.class_session_detail?.name}</div>
-                        <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 8 }}>
-                          {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][e.class_session_detail?.day_of_week]} {e.class_session_detail?.start_time?.slice(0,5)}
-                        </div>
-                        <span className="tag tag-amber" style={{ fontSize: 10 }}>Waitlisted</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
 
-                {/* Class Change Requests */}
-                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 10, marginTop: 8 }}>
-                  Class Change Requests
-                  {(changeRequestsData || []).filter(r => r.status === 'pending').length > 0 && (
-                    <span style={{ background: 'var(--lime)', color: '#000', borderRadius: 12, fontSize: 10, fontWeight: 700, padding: '1px 7px', marginLeft: 8 }}>
-                      {(changeRequestsData || []).filter(r => r.status === 'pending').length} pending
-                    </span>
-                  )}
+                {/* Sub-tab bar */}
+                <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border)', marginBottom: 20 }}>
+                  {[['current','Current'],['past','Past']].map(([key,label]) => (
+                    <button key={key} onClick={() => setEnrolSubTab(key)} style={{ background: 'none', border: 'none', borderBottom: `2px solid ${enrolSubTab===key ? 'var(--lime)' : 'transparent'}`, color: enrolSubTab===key ? 'var(--white)' : 'var(--grey)', padding: '8px 16px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', marginBottom: -1 }}>
+                      {label}
+                    </button>
+                  ))}
                 </div>
-                {(changeRequestsData || []).length === 0 ? (
-                  <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 20 }}>No change requests</div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
-                    {(changeRequestsData || []).map(req => (
-                      <div key={req.id} className="card" style={{ padding: 16 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 600, marginBottom: 4 }}>
-                              {req.current_enrolment_detail?.class_session_detail?.name || 'Unknown class'}
+
+                {enrolSubTab === 'current' && (() => {
+                  const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+                  const courseEnrols = (enrolData || []).filter(e => e.enrolment_type === 'course')
+                  const activeEnrols = courseEnrols.filter(e => e.status === 'active')
+                  const waitlistedEnrols = (enrolData || []).filter(e => e.status === 'waitlisted')
+                  const activeSeason = (seasonsData || []).find(s => s.status === 'active')
+                  const upcomingSeasons = (seasonsData || []).filter(s => s.status === 'upcoming' && s.bookings_open)
+
+                  // Group active enrolments by season
+                  const bySeasonId = {}
+                  for (const e of activeEnrols) {
+                    const sid = e.class_session_detail?.season || 'none'
+                    const sname = e.class_session_detail?.season_name || 'Unseasoned'
+                    if (!bySeasonId[sid]) bySeasonId[sid] = { name: sname, enrols: [] }
+                    bySeasonId[sid].enrols.push(e)
+                  }
+
+                  // Group waitlisted by season
+                  const waitlistBySeason = {}
+                  for (const e of waitlistedEnrols) {
+                    const sid = e.class_session_detail?.season || 'none'
+                    const sname = e.class_session_detail?.season_name || 'Unseasoned'
+                    if (!waitlistBySeason[sid]) waitlistBySeason[sid] = { name: sname, enrols: [] }
+                    waitlistBySeason[sid].enrols.push(e)
+                  }
+
+                  const SEASON_PRICES = {1:270,2:440,3:580,4:700,5:800,6:900}
+                  const n = activeEnrols.length
+                  const addOnPrice = n === 0 ? 270 : (SEASON_PRICES[Math.min(n+1,6)] - SEASON_PRICES[Math.min(n,6)])
+
+                  const upcomingActiveSeasonIds = new Set(activeEnrols.map(e => e.class_session_detail?.season))
+
+                  const availableCredits = (makeupCreditsData || []).filter(c => c.status === 'available')
+                  const upcomingCasuals = (casualBookingsData || []).filter(b => new Date(b.occurrence_date || b.occurrence?.date) >= new Date())
+
+                  return (
+                    <div>
+                      {/* Current season enrolments */}
+                      {Object.keys(bySeasonId).length === 0 ? (
+                        <div className="empty-state" style={{ padding: '20px 0', marginBottom: 20 }}>No active enrolments</div>
+                      ) : (
+                        Object.entries(bySeasonId).map(([sid, { name, enrols }]) => (
+                          <div key={sid} style={{ marginBottom: 24 }}>
+                            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 10 }}>{name}</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                              {enrols.map(e => (
+                                <div key={e.id} className="card" style={{ padding: '14px 16px', cursor: 'pointer' }}
+                                  onClick={() => navigate(`/classes?session=${e.class_session}`)}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    <div style={{ flex: 1 }}>
+                                      <div style={{ fontWeight: 600, marginBottom: 3 }}>{e.class_session_detail?.name}</div>
+                                      <div style={{ fontSize: 12, color: 'var(--grey)' }}>
+                                        {DAYS[e.class_session_detail?.day_of_week]} {e.class_session_detail?.start_time?.slice(0,5)}
+                                        {e.class_session_detail?.instructor_detail?.display_name && ` · ${e.class_session_detail.instructor_detail.display_name}`}
+                                      </div>
+                                    </div>
+                                    <button className="btn btn-ghost btn-xs" style={{ flexShrink: 0, marginLeft: 8 }}
+                                      onClick={ev => { ev.stopPropagation(); setShowTransferCancel(e) }}>
+                                      Transfer / Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                            {req.requested_session_detail && (
-                              <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 4 }}>
-                                → Requesting: {req.requested_session_detail.name}
-                              </div>
-                            )}
-                            {req.notes && (
-                              <div style={{ fontSize: 13, color: 'var(--white)', marginTop: 4, padding: '8px 10px', background: '#1a1a1a', borderRadius: 6 }}>
-                                "{req.notes}"
-                              </div>
-                            )}
-                            <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 6 }}>
-                              {new Date(req.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
-                            </div>
-                            {req.admin_notes && (
-                              <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 4, fontStyle: 'italic' }}>
-                                Admin: {req.admin_notes}
-                              </div>
-                            )}
                           </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
-                            <span className={`tag ${req.status === 'pending' ? 'tag-amber' : req.status === 'approved' ? 'tag-lime' : 'tag-red'}`} style={{ fontSize: 10 }}>
-                              {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
-                            </span>
-                            {req.status === 'pending' && (
-                              <button
-                                className="btn btn-lime btn-xs"
-                                onClick={() => {
-                                  setShowChangeRequestModal(req)
-                                  setChangeReqNewSession(req.requested_session?.toString() || '')
-                                  setChangeReqRefundAction('none')
-                                  setChangeReqRefundAmount('')
-                                  setChangeReqChargeAmount('')
-                                  setChangeReqAdminNotes('')
-                                  setChangeReqError(null)
-                                }}
-                              >
-                                Process →
-                              </button>
-                            )}
+                        ))
+                      )}
+
+                      {/* Add-on pricing */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24, padding: '8px 12px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }}>
+                        <span style={{ fontSize: 12, color: 'var(--grey)' }}>
+                          <strong>Add-on pricing:</strong> Adding a class to this student's schedule costs <strong style={{ color: 'var(--white)' }}>${addOnPrice}</strong>
+                        </span>
+                      </div>
+
+                      {/* Upcoming seasons */}
+                      {upcomingSeasons.length > 0 && (
+                        <div style={{ marginBottom: 24 }}>
+                          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 13, marginBottom: 12 }}>Upcoming Enrolments</div>
+                          {upcomingSeasons.map(season => {
+                            const seasonEnrols = activeEnrols.filter(e => e.class_session_detail?.season === season.id)
+                            const isNotEnrolled = seasonEnrols.length === 0
+                            return (
+                              <div key={season.id} style={{ marginBottom: 16 }}>
+                                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 8 }}>{season.name}</div>
+                                {isNotEnrolled ? (
+                                  <div style={{ background: 'rgba(255,170,0,0.08)', border: '1px solid rgba(255,170,0,0.25)', borderRadius: 8, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                                    <span style={{ fontSize: 13, color: '#ffaa00' }}>⚠ Not enrolled in {season.name} — follow up!</span>
+                                    <button className="btn btn-ghost btn-xs" style={{ flexShrink: 0 }}
+                                      onClick={async () => {
+                                        const text = `Not enrolled in ${season.name} — follow up required.`
+                                        await users.addNote(student.id, { text, tag: 'general', is_permanent: false })
+                                        reloadNotes()
+                                      }}>
+                                      + Note
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                    {seasonEnrols.map(e => (
+                                      <div key={e.id} className="card" style={{ padding: '14px 16px', cursor: 'pointer' }}
+                                        onClick={() => navigate(`/classes?session=${e.class_session}`)}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                          <div style={{ flex: 1 }}>
+                                            <div style={{ fontWeight: 600, marginBottom: 3 }}>{e.class_session_detail?.name}</div>
+                                            <div style={{ fontSize: 12, color: 'var(--grey)' }}>
+                                              {DAYS[e.class_session_detail?.day_of_week]} {e.class_session_detail?.start_time?.slice(0,5)}
+                                              {e.class_session_detail?.instructor_detail?.display_name && ` · ${e.class_session_detail.instructor_detail.display_name}`}
+                                            </div>
+                                          </div>
+                                          <button className="btn btn-ghost btn-xs" style={{ flexShrink: 0, marginLeft: 8 }}
+                                            onClick={ev => { ev.stopPropagation(); setShowTransferCancel(e) }}>
+                                            Transfer / Cancel
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+
+                      {/* Casual / Catch-up */}
+                      <div style={{ marginBottom: 24 }}>
+                        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 13, marginBottom: 12 }}>Casual & Catch-up</div>
+                        <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+                          <div className="card" style={{ flex: 1, padding: '12px 14px' }}>
+                            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', marginBottom: 4 }}>Catch-up Credits</div>
+                            <div style={{ fontSize: 20, fontWeight: 700, color: availableCredits.length > 0 ? 'var(--lime)' : 'var(--grey)' }}>{availableCredits.length}</div>
+                          </div>
+                          <div className="card" style={{ flex: 1, padding: '12px 14px' }}>
+                            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', marginBottom: 4 }}>Upcoming Casuals</div>
+                            <div style={{ fontSize: 20, fontWeight: 700, color: upcomingCasuals.length > 0 ? 'var(--lav)' : 'var(--grey)' }}>{upcomingCasuals.length}</div>
                           </div>
                         </div>
+                        {upcomingCasuals.length > 0 && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {upcomingCasuals.map((b, i) => {
+                              const dateStr = b.occurrence_date || b.occurrence?.date
+                              const sessionName = b.occurrence_detail?.session_detail?.name || b.session_name || '—'
+                              return (
+                                <div key={i} className="card" style={{ padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <div>
+                                    <div style={{ fontSize: 13, fontWeight: 500 }}>{sessionName}</div>
+                                    {dateStr && <div style={{ fontSize: 11, color: 'var(--grey)' }}>{new Date(dateStr + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}</div>}
+                                  </div>
+                                  <span className="tag tag-lav" style={{ fontSize: 10 }}>Casual</span>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                )}
+
+                      {/* Waitlisted */}
+                      <div style={{ marginBottom: 24 }}>
+                        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 13, marginBottom: 12 }}>Waitlisted</div>
+                        {Object.keys(waitlistBySeason).length === 0 ? (
+                          <div style={{ fontSize: 13, color: 'var(--grey)' }}>None</div>
+                        ) : (
+                          Object.entries(waitlistBySeason).map(([sid, { name, enrols }]) => (
+                            <div key={sid} style={{ marginBottom: 16 }}>
+                              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 8 }}>{name}</div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                {enrols.map(e => (
+                                  <div key={e.id} className="card" style={{ padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                      <div style={{ fontSize: 13, fontWeight: 500 }}>{e.class_session_detail?.name}</div>
+                                      <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>
+                                        {DAYS[e.class_session_detail?.day_of_week]} {e.class_session_detail?.start_time?.slice(0,5)}
+                                      </div>
+                                    </div>
+                                    <span className="tag tag-amber" style={{ fontSize: 10 }}>
+                                      {e.waitlist_type === 'single' ? 'Single class' : 'Season waitlist'}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {/* Class Change Requests */}
+                      <div style={{ marginBottom: 16 }}>
+                        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 13, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                          Class Change Requests
+                          {(changeRequestsData || []).filter(r => r.status === 'pending').length > 0 && (
+                            <span style={{ background: 'var(--lime)', color: '#000', borderRadius: 12, fontSize: 10, fontWeight: 700, padding: '1px 7px' }}>
+                              {(changeRequestsData || []).filter(r => r.status === 'pending').length} pending
+                            </span>
+                          )}
+                        </div>
+                        {(changeRequestsData || []).length === 0 ? (
+                          <div style={{ fontSize: 13, color: 'var(--grey)' }}>No change requests</div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {(changeRequestsData || []).map(req => (
+                              <div key={req.id} className="card" style={{ padding: 16 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: 600, marginBottom: 2 }}>
+                                      {req.current_enrolment_detail?.class_session_detail?.name || 'Unknown class'}
+                                    </div>
+                                    {req.requested_session_detail && (
+                                      <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 4 }}>→ {req.requested_session_detail.name}</div>
+                                    )}
+                                    {req.notes && (
+                                      <div style={{ fontSize: 12, color: 'var(--white)', marginTop: 4, padding: '6px 10px', background: '#1a1a1a', borderRadius: 6 }}>"{req.notes}"</div>
+                                    )}
+                                    <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 6 }}>
+                                      {new Date(req.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                    </div>
+                                  </div>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end', flexShrink: 0 }}>
+                                    <span className={`tag ${req.status === 'pending' ? 'tag-amber' : req.status === 'approved' ? 'tag-lime' : 'tag-red'}`} style={{ fontSize: 10 }}>
+                                      {req.status === 'pending' ? 'In Progress' : req.status === 'approved' ? 'Approved' : 'Denied'}
+                                    </span>
+                                    {req.status === 'pending' && (
+                                      <button className="btn btn-lime btn-xs"
+                                        onClick={() => { setShowChangeRequestModal(req); setChangeReqNewSession(req.requested_session?.toString() || ''); setChangeReqRefundAction('none'); setChangeReqRefundAmount(''); setChangeReqChargeAmount(''); setChangeReqAdminNotes(''); setChangeReqError(null) }}>
+                                        Process →
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {enrolSubTab === 'past' && (() => {
+                  const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+                  const pastEnrols = (enrolData || []).filter(e => ['completed','cancelled','suspended'].includes(e.status) && e.enrolment_type === 'course')
+
+                  // Group by season
+                  const bySeason = {}
+                  for (const e of pastEnrols) {
+                    const sid = e.class_session_detail?.season || 'none'
+                    const sname = e.class_session_detail?.season_name || 'No Season'
+                    if (!bySeason[sid]) bySeason[sid] = { name: sname, enrols: [] }
+                    bySeason[sid].enrols.push(e)
+                  }
+
+                  return (
+                    <div>
+                      {Object.keys(bySeason).length === 0 ? (
+                        <div className="empty-state" style={{ padding: '20px 0' }}>No past enrolments</div>
+                      ) : (
+                        Object.entries(bySeason).map(([sid, { name, enrols }]) => (
+                          <div key={sid} style={{ marginBottom: 24 }}>
+                            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 10 }}>{name}</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                              {enrols.map(e => (
+                                <div key={e.id} className="card" style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <div>
+                                    <div style={{ fontSize: 13, fontWeight: 500 }}>{e.class_session_detail?.name}</div>
+                                    <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>
+                                      {DAYS[e.class_session_detail?.day_of_week]} {e.class_session_detail?.start_time?.slice(0,5)}
+                                      {e.class_session_detail?.instructor_detail?.display_name && ` · ${e.class_session_detail.instructor_detail.display_name}`}
+                                    </div>
+                                  </div>
+                                  <span className={`tag ${e.status === 'completed' ? 'tag-grey' : 'tag-red'}`} style={{ fontSize: 10 }}>
+                                    {e.status.charAt(0).toUpperCase() + e.status.slice(1)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )
+                })()}
               </div>
             )}
 
