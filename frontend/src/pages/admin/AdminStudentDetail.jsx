@@ -495,38 +495,131 @@ export default function AdminStudentDetail() {
                     </div>
                   </div>
                 </div>
-                {activeEnrolments.length > 0 && (
-                  <div className="card" style={{ padding: '16px 18px', borderColor: student.booking_blocked ? 'var(--amber)' : undefined }}>
-                    {student.booking_blocked && (
-                      <div style={{ background: 'rgba(255,170,0,0.1)', border: '1px solid rgba(255,170,0,0.3)', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: 12, color: 'var(--amber)', fontWeight: 600 }}>
-                        ⚠ Account frozen — new bookings blocked. Will show alert at check-in.
-                      </div>
-                    )}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                      <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px' }}>Membership Status</div>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <button
-                          className="btn btn-ghost btn-xs"
-                          style={student.booking_blocked ? { borderColor: 'var(--amber)', color: 'var(--amber)' } : {}}
-                          onClick={async () => {
-                            await users.update(student.id, { booking_blocked: !student.booking_blocked })
-                            setStudent(s => ({ ...s, booking_blocked: !s.booking_blocked }))
-                          }}
-                        >{student.booking_blocked ? 'Unfreeze Account' : 'Freeze Account'}</button>
-                        <button className="btn btn-ghost btn-xs" onClick={() => setShowTransferCancel(true)}>Cancel Enrolment</button>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-                      {activeEnrolments.slice(0, 3).map(e => (
-                        <div key={e.id}>
-                          <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 4 }}>Class</div>
-                          <div style={{ fontSize: 14, fontWeight: 500 }}>{e.class_session_detail?.name}</div>
-                          <div style={{ fontSize: 12, color: 'var(--grey)' }}>{e.class_session_detail?.instructor_detail?.display_name} · {e.class_session_detail?.studio_detail?.name}</div>
+                {/* Membership status + enrolments snapshot */}
+                {(() => {
+                  const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+                  const isBlocked = student.booking_blocked
+                  const hasEverEnrolled = (enrolData || []).length > 0
+                  let statusLabel, statusColor, statusBg, statusBorder
+                  if (isBlocked) {
+                    statusLabel = 'Blocked'; statusColor = 'var(--red)'
+                    statusBg = 'rgba(255,68,68,0.08)'; statusBorder = 'rgba(255,68,68,0.25)'
+                  } else if (isOwing) {
+                    statusLabel = 'On Hold — Payment Issue'; statusColor = 'var(--amber)'
+                    statusBg = 'rgba(255,170,0,0.08)'; statusBorder = 'rgba(255,170,0,0.25)'
+                  } else if (activeEnrolments.length > 0) {
+                    statusLabel = 'Enrolled'; statusColor = 'var(--lime)'
+                    statusBg = 'rgba(204,255,0,0.06)'; statusBorder = 'rgba(204,255,0,0.2)'
+                  } else if (hasEverEnrolled) {
+                    statusLabel = 'Not Currently Enrolled'; statusColor = 'var(--grey)'
+                    statusBg = 'rgba(255,255,255,0.03)'; statusBorder = 'var(--border)'
+                  } else {
+                    statusLabel = 'Never Enrolled'; statusColor = '#555'
+                    statusBg = 'rgba(255,255,255,0.03)'; statusBorder = 'var(--border)'
+                  }
+
+                  // Group active enrolments by season
+                  const currentEnrols = activeEnrolments.filter(e => {
+                    const s = (seasonsData || []).find(s => s.id === e.class_session_detail?.season)
+                    return !s || s.status === 'active'
+                  })
+                  const upcomingEnrols = activeEnrolments.filter(e => {
+                    const s = (seasonsData || []).find(s => s.id === e.class_session_detail?.season)
+                    return s && s.status === 'upcoming'
+                  })
+
+                  const groupBySeason = list => {
+                    const map = {}
+                    for (const e of list) {
+                      const sid = e.class_session_detail?.season ?? 'unknown'
+                      const sname = e.class_session_detail?.season_name ?? 'Unknown Season'
+                      if (!map[sid]) map[sid] = { name: sname, enrols: [] }
+                      map[sid].enrols.push(e)
+                    }
+                    return map
+                  }
+
+                  const currentBySeason = groupBySeason(currentEnrols)
+                  const upcomingBySeason = groupBySeason(upcomingEnrols)
+
+                  return (
+                    <div className="card" style={{ padding: '16px 18px', marginBottom: 16 }}>
+                      {/* Status header row */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                        <div>
+                          <div style={{ fontSize: 10, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 4 }}>Membership Status</div>
+                          <div style={{ fontSize: 15, fontWeight: 700, color: statusColor }}>{statusLabel}</div>
                         </div>
-                      ))}
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button
+                            className="btn btn-ghost btn-xs"
+                            style={student.booking_blocked ? { borderColor: 'var(--amber)', color: 'var(--amber)' } : {}}
+                            onClick={async () => {
+                              await users.update(student.id, { booking_blocked: !student.booking_blocked })
+                              setStudent(s => ({ ...s, booking_blocked: !s.booking_blocked }))
+                            }}
+                          >{student.booking_blocked ? 'Unfreeze Account' : 'Freeze Account'}</button>
+                          {activeEnrolments.length > 0 && (
+                            <button className="btn btn-ghost btn-xs" onClick={() => setShowTransferCancel(true)}>Cancel Enrolment</button>
+                          )}
+                        </div>
+                      </div>
+
+                      {activeEnrolments.length === 0 ? (
+                        <div style={{ fontSize: 13, color: 'var(--grey)', padding: '6px 0 2px' }}>No active enrolments.</div>
+                      ) : (
+                        <>
+                          {/* Current enrolments */}
+                          {Object.keys(currentBySeason).length > 0 && Object.entries(currentBySeason).map(([sid, { name, enrols }]) => (
+                            <div key={sid} style={{ marginBottom: 14 }}>
+                              <div style={{ fontSize: 10, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 8 }}>Current — {name}</div>
+                              {enrols.map(e => (
+                                <div key={e.id}
+                                  onClick={() => navigate(`/classes?session=${e.class_session}`)}
+                                  style={{ cursor: 'pointer', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', marginBottom: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}
+                                >
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.class_session_detail?.name}</div>
+                                    <div style={{ fontSize: 12, color: 'var(--grey)' }}>
+                                      {DAYS[e.class_session_detail?.day_of_week]} {e.class_session_detail?.start_time?.slice(0,5)}
+                                      {e.class_session_detail?.instructor_detail?.display_name && ` · ${e.class_session_detail.instructor_detail.display_name}`}
+                                    </div>
+                                  </div>
+                                  <button className="btn btn-ghost btn-xs" style={{ flexShrink: 0 }} onClick={ev => { ev.stopPropagation(); setShowTransferCancel(e) }}>Transfer / Cancel</button>
+                                </div>
+                              ))}
+                            </div>
+                          ))}
+
+                          {/* Upcoming enrolments */}
+                          {Object.keys(upcomingBySeason).length > 0 && Object.entries(upcomingBySeason).map(([sid, { name, enrols }]) => (
+                            <div key={sid} style={{ marginBottom: 14 }}>
+                              <div style={{ fontSize: 10, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 8 }}>Upcoming — {name}</div>
+                              {enrols.map(e => (
+                                <div key={e.id}
+                                  onClick={() => navigate(`/classes?session=${e.class_session}`)}
+                                  style={{ cursor: 'pointer', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', marginBottom: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}
+                                >
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.class_session_detail?.name}</div>
+                                    <div style={{ fontSize: 12, color: 'var(--grey)' }}>
+                                      {DAYS[e.class_session_detail?.day_of_week]} {e.class_session_detail?.start_time?.slice(0,5)}
+                                      {e.class_session_detail?.instructor_detail?.display_name && ` · ${e.class_session_detail.instructor_detail.display_name}`}
+                                    </div>
+                                  </div>
+                                  <button className="btn btn-ghost btn-xs" style={{ flexShrink: 0 }} onClick={ev => { ev.stopPropagation(); setShowTransferCancel(e) }}>Transfer / Cancel</button>
+                                </div>
+                              ))}
+                            </div>
+                          ))}
+                        </>
+                      )}
+
+                      {/* View all link */}
+                      <button className="btn btn-ghost btn-xs" style={{ marginTop: 4 }} onClick={() => setTab('enrolments')}>View all enrolments →</button>
                     </div>
-                  </div>
-                )}
+                  )
+                })()}
                 {lockerData && (
                   <div className="card" style={{ padding: '16px 18px' }}>
                     <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 14 }}>Locker</div>
