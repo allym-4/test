@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, ActivityIndicator,
   TouchableOpacity, TextInput, Alert, Modal, FlatList,
 } from 'react-native'
-import { users, enrolments, attendance, payments as paymentsApi, skills as skillsApi, forms as formsApi, helpdesk } from '../../api'
+import { users, enrolments, attendance, payments as paymentsApi, skills as skillsApi, forms as formsApi, helpdesk, seasons as seasonsApi } from '../../api'
 import client from '../../api/client'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -262,6 +262,10 @@ export default function StudentDetailScreen({ navigation, route }) {
   const [changeRequests, setChangeRequests] = useState([])
   const [commsData, setCommsData] = useState(null)
   const [notifData, setNotifData] = useState([])
+  const [seasonsData, setSeasonsData] = useState([])
+  const [makeupCredits, setMakeupCredits] = useState([])
+  const [casualBookings, setCasualBookings] = useState([])
+  const [enrolSubTab, setEnrolSubTab] = useState('current')
 
   // UI state
   const [skillLevel, setSkillLevel] = useState('Level 1')
@@ -276,7 +280,7 @@ export default function StudentDetailScreen({ navigation, route }) {
     if (!studentId) return
     setLoading(true)
     try {
-      const [userRes, balRes, enrRes, attRes, payRes, noteRes, formsRes, cardsRes, lockerRes, crRes] = await Promise.all([
+      const [userRes, balRes, enrRes, attRes, payRes, noteRes, formsRes, cardsRes, lockerRes, crRes, seasonsRes, makeupRes, casualRes] = await Promise.all([
         users.get(studentId),
         paymentsApi.balance(studentId),
         enrolments.list({ student: studentId }),
@@ -287,6 +291,9 @@ export default function StudentDetailScreen({ navigation, route }) {
         paymentsApi.stripe.paymentMethods({ student_id: studentId }).catch(() => ({ data: null })),
         client.get('/api/classes/lockers/', { params: { assigned_to: studentId } }).catch(() => ({ data: [] })),
         enrolments.changeRequests.list({ student: studentId }).catch(() => ({ data: [] })),
+        seasonsApi.list().catch(() => ({ data: [] })),
+        attendance.makeupCredits.list({ student: studentId }).catch(() => ({ data: [] })),
+        client.get('/api/classes/casual-bookings/', { params: { student: studentId } }).catch(() => ({ data: [] })),
       ])
       setStudent(userRes.data)
       setBalanceData(balRes.data)
@@ -299,6 +306,9 @@ export default function StudentDetailScreen({ navigation, route }) {
       const lockers = lockerRes.data?.results ?? lockerRes.data ?? []
       setLockerData(lockers[0] ?? null)
       setChangeRequests(crRes.data.results ?? crRes.data ?? [])
+      setSeasonsData(seasonsRes.data.results ?? seasonsRes.data ?? [])
+      setMakeupCredits(makeupRes.data.results ?? makeupRes.data ?? [])
+      setCasualBookings(casualRes.data.results ?? casualRes.data ?? [])
     } finally { setLoading(false) }
 
     // Skills async
@@ -540,77 +550,233 @@ export default function StudentDetailScreen({ navigation, route }) {
         )}
 
         {/* ── ENROLMENTS ───────────────────────────────────────── */}
-        {tab === 'enrolments' && (
-          <>
-            {/* Add-on pricing */}
-            {(() => {
-              const PRICES = {1:270,2:440,3:580,4:700,5:800,6:900}
-              const n = activeEnrols.length
-              const next = n === 0 ? 270 : (PRICES[Math.min(n+1,6)] - PRICES[Math.min(n,5)])
-              return (
-                <View style={s.pricingBanner}>
-                  <Text style={s.pricingText}>Next class add-on cost: <Text style={{ color: '#ccff00', fontWeight: '700' }}>${next}</Text></Text>
-                </View>
-              )
-            })()}
+        {tab === 'enrolments' && (() => {
+          const PRICES = {1:270,2:440,3:580,4:700,5:800,6:900}
+          const n = activeEnrols.length
+          const nextCost = n === 0 ? 270 : (PRICES[Math.min(n+1,6)] - PRICES[Math.min(n,5)])
 
-            <SectionCard title={`Active (${activeEnrols.length})`}>
-              {activeEnrols.length === 0 ? <Text style={s.empty}>No active enrolments</Text> : activeEnrols.map(e => (
-                <View key={e.id} style={s.enrCard}>
-                  <View style={s.enrCardTop}>
-                    <Text style={s.enrCardName} numberOfLines={1}>{e.class_session_detail?.name ?? 'Class'}</Text>
-                    <Text style={[s.pill, e.enrolment_type === 'trial' ? s.pillAmber : s.pillGreen]}>{e.enrolment_type === 'trial' ? 'Trial' : 'Enrolled'}</Text>
-                  </View>
-                  <Text style={s.enrCardMeta}>{DAYS[e.class_session_detail?.day_of_week] ?? ''} {e.class_session_detail?.start_time?.slice(0,5) ?? ''} · {e.class_session_detail?.studio_detail?.name ?? ''}</Text>
-                  <Text style={s.enrCardSeason}>{e.class_session_detail?.season_name ?? ''}</Text>
-                </View>
-              ))}
-            </SectionCard>
+          // Membership status
+          const isBlocked = student.booking_blocked
+          const hasOwing = isOwing
+          const hasEverEnrolled = enrolData.length > 0
+          let memberStatus, memberColor, memberBg
+          if (isBlocked) { memberStatus = 'Blocked'; memberColor = '#ff5050'; memberBg = 'rgba(255,80,80,0.1)' }
+          else if (hasOwing) { memberStatus = 'On Hold — Payment Issue'; memberColor = '#ffaa00'; memberBg = 'rgba(255,170,0,0.1)' }
+          else if (activeEnrols.length > 0) { memberStatus = 'Enrolled'; memberColor = '#ccff00'; memberBg = 'rgba(204,255,0,0.1)' }
+          else if (hasEverEnrolled) { memberStatus = 'Not Currently Enrolled'; memberColor = '#888'; memberBg = 'rgba(255,255,255,0.04)' }
+          else { memberStatus = 'Never Enrolled'; memberColor = '#555'; memberBg = 'rgba(255,255,255,0.04)' }
 
-            {enrolData.filter(e => e.status === 'waitlisted').length > 0 && (
-              <SectionCard title="Waitlisted">
-                {enrolData.filter(e => e.status === 'waitlisted').map(e => (
-                  <View key={e.id} style={s.enrCard}>
-                    <Text style={s.enrCardName}>{e.class_session_detail?.name ?? 'Class'}</Text>
-                    <Text style={s.enrCardMeta}>{DAYS[e.class_session_detail?.day_of_week] ?? ''} {e.class_session_detail?.start_time?.slice(0,5) ?? ''}</Text>
-                  </View>
+          // Group active enrolments by season
+          const activeBySeasonId = {}
+          for (const e of activeEnrols) {
+            const sid = e.class_session_detail?.season ?? 'unknown'
+            if (!activeBySeasonId[sid]) activeBySeasonId[sid] = { name: e.class_session_detail?.season_name ?? 'Unknown Season', enrols: [] }
+            activeBySeasonId[sid].enrols.push(e)
+          }
+
+          // Upcoming seasons not enrolled
+          const upcomingUnbooked = seasonsData.filter(s =>
+            (s.status === 'upcoming' || s.status === 'active') && s.bookings_open &&
+            !activeEnrols.some(e => e.class_session_detail?.season === s.id)
+          )
+
+          // Casual bookings upcoming
+          const upcomingCasuals = casualBookings.filter(cb => {
+            const d = cb.occurrence_detail?.date ?? cb.date
+            return d && new Date(d) >= new Date()
+          })
+          const unusedCredits = makeupCredits.filter(c => !c.used)
+
+          // Waitlisted grouped by season
+          const waitlisted = enrolData.filter(e => e.status === 'waitlisted')
+          const waitlistBySeason = {}
+          for (const e of waitlisted) {
+            const sid = e.class_session_detail?.season ?? 'unknown'
+            if (!waitlistBySeason[sid]) waitlistBySeason[sid] = { name: e.class_session_detail?.season_name ?? 'Unknown Season', enrols: [] }
+            waitlistBySeason[sid].enrols.push(e)
+          }
+
+          // Past enrolments grouped by season
+          const pastEnrols = enrolData.filter(e => ['completed','cancelled'].includes(e.status))
+          const pastBySeason = {}
+          for (const e of pastEnrols) {
+            const sid = e.class_session_detail?.season ?? 'unknown'
+            if (!pastBySeason[sid]) pastBySeason[sid] = { name: e.class_session_detail?.season_name ?? 'Unknown Season', enrols: [] }
+            pastBySeason[sid].enrols.push(e)
+          }
+
+          // Change request label helper
+          const crLabel = status => {
+            if (status === 'pending') return 'In Progress'
+            if (status === 'approved') return 'Approved'
+            if (status === 'denied') return 'Denied'
+            return status
+          }
+          const crPillStyle = status => status === 'approved' ? s.pillGreen : status === 'denied' ? s.pillRed : s.pillAmber
+
+          return (
+            <>
+              {/* Membership status */}
+              <View style={[s.memberStatusBanner, { backgroundColor: memberBg, borderColor: memberColor + '44' }]}>
+                <Text style={s.memberStatusLabel}>MEMBERSHIP STATUS</Text>
+                <Text style={[s.memberStatusVal, { color: memberColor }]}>{memberStatus}</Text>
+              </View>
+
+              {/* Add-on pricing */}
+              <View style={s.pricingBanner}>
+                <Text style={s.pricingText}>Next class add-on: <Text style={{ color: '#ccff00', fontWeight: '700' }}>${nextCost}</Text></Text>
+              </View>
+
+              {/* Sub-tabs */}
+              <View style={s.enrSubTabs}>
+                {[['current','Current'],['past','Past']].map(([key,lbl]) => (
+                  <TouchableOpacity key={key} style={[s.enrSubTab, enrolSubTab === key && s.enrSubTabActive]} onPress={() => setEnrolSubTab(key)}>
+                    <Text style={[s.enrSubTabText, enrolSubTab === key && s.enrSubTabTextActive]}>{lbl}</Text>
+                  </TouchableOpacity>
                 ))}
-              </SectionCard>
-            )}
+              </View>
 
-            {/* Past */}
-            {enrolData.filter(e => !['active','waitlisted'].includes(e.status)).length > 0 && (
-              <SectionCard title="Past / Cancelled">
-                {enrolData.filter(e => !['active','waitlisted'].includes(e.status)).map(e => (
-                  <View key={e.id} style={[s.enrCard, { opacity: 0.6 }]}>
-                    <View style={s.enrCardTop}>
-                      <Text style={s.enrCardName} numberOfLines={1}>{e.class_session_detail?.name ?? 'Class'}</Text>
-                      <Text style={s.pillGrey}>{e.status}</Text>
+              {enrolSubTab === 'current' && (
+                <>
+                  {/* Active enrolments grouped by season */}
+                  {Object.keys(activeBySeasonId).length === 0 ? (
+                    <View style={s.enrEmptyBlock}><Text style={s.empty}>No active enrolments</Text></View>
+                  ) : Object.entries(activeBySeasonId).map(([sid, group]) => (
+                    <View key={sid} style={s.seasonGroup}>
+                      <Text style={s.seasonGroupTitle}>{group.name}</Text>
+                      {group.enrols.map(e => (
+                        <View key={e.id} style={s.enrCard}>
+                          <View style={s.enrCardTop}>
+                            <Text style={s.enrCardName} numberOfLines={1}>{e.class_session_detail?.name ?? 'Class'}</Text>
+                            <Text style={[s.pill, e.enrolment_type === 'trial' ? s.pillAmber : s.pillGreen]}>
+                              {e.enrolment_type === 'trial' ? 'Trial' : 'Enrolled'}
+                            </Text>
+                          </View>
+                          <Text style={s.enrCardMeta}>
+                            {DAYS[e.class_session_detail?.day_of_week] ?? ''} {e.class_session_detail?.start_time?.slice(0,5) ?? ''} · {e.class_session_detail?.studio_detail?.name ?? ''}
+                          </Text>
+                          {e.class_session_detail?.instructor_name ? (
+                            <Text style={s.enrCardInstructor}>{e.class_session_detail.instructor_name}</Text>
+                          ) : null}
+                        </View>
+                      ))}
                     </View>
-                    <Text style={s.enrCardSeason}>{e.class_session_detail?.season_name ?? ''}</Text>
-                  </View>
-                ))}
-              </SectionCard>
-            )}
+                  ))}
 
-            {/* Change requests */}
-            {changeRequests.length > 0 && (
-              <SectionCard title="Class Change Requests">
-                {changeRequests.map(req => (
-                  <View key={req.id} style={s.changeReqCard}>
-                    <View style={s.changeReqTop}>
-                      <Text style={s.changeReqFrom} numberOfLines={1}>{req.current_enrolment_detail?.class_session_detail?.name ?? 'Unknown'}</Text>
-                      <Text style={[s.pill, req.status === 'pending' ? s.pillAmber : req.status === 'approved' ? s.pillGreen : s.pillRed]}>{req.status}</Text>
+                  {/* Upcoming seasons not enrolled */}
+                  {upcomingUnbooked.map(season => (
+                    <View key={season.id} style={s.notEnrolledWarning}>
+                      <Text style={s.notEnrolledText}>⚠ Not enrolled in {season.name} — follow up!</Text>
+                      <TouchableOpacity
+                        style={s.addNoteSmallBtn}
+                        onPress={async () => {
+                          try {
+                            await users.addNote(studentId, { body: `Not enrolled in ${season.name} — follow up.`, tag: 'general' })
+                            Alert.alert('Note added', `Note added for ${season.name}.`)
+                          } catch { Alert.alert('Error', 'Could not add note.') }
+                        }}
+                      >
+                        <Text style={s.addNoteSmallBtnText}>+ Note</Text>
+                      </TouchableOpacity>
                     </View>
-                    {req.requested_session_detail && <Text style={s.changeReqTo}>→ {req.requested_session_detail.name}</Text>}
-                    {req.notes ? <Text style={s.changeReqNote}>"{req.notes}"</Text> : null}
-                    <Text style={s.changeReqDate}>{fmtDate(req.created_at)}</Text>
+                  ))}
+
+                  {/* Casual & Catch-up */}
+                  <View style={s.creditRow}>
+                    <View style={s.creditBox}>
+                      <Text style={s.creditBoxVal}>{unusedCredits.length}</Text>
+                      <Text style={s.creditBoxLabel}>Catch-up Credits</Text>
+                    </View>
+                    <View style={s.creditBox}>
+                      <Text style={s.creditBoxVal}>{upcomingCasuals.length}</Text>
+                      <Text style={s.creditBoxLabel}>Upcoming Casuals</Text>
+                    </View>
                   </View>
-                ))}
-              </SectionCard>
-            )}
-          </>
-        )}
+
+                  {upcomingCasuals.length > 0 && (
+                    <SectionCard title="Upcoming Casual Bookings">
+                      {upcomingCasuals.map(cb => (
+                        <View key={cb.id} style={s.enrCard}>
+                          <Text style={s.enrCardName} numberOfLines={1}>
+                            {cb.occurrence_detail?.session_detail?.name ?? cb.class_name ?? 'Casual Class'}
+                          </Text>
+                          <Text style={s.enrCardMeta}>{cb.occurrence_detail?.date ? fmtDate(cb.occurrence_detail.date) : ''}</Text>
+                          <Text style={[s.pill, cb.booking_type === 'catchup' ? s.pillAmber : s.pillGreen]}>
+                            {cb.booking_type === 'catchup' ? 'Catch-up' : 'Casual'}
+                          </Text>
+                        </View>
+                      ))}
+                    </SectionCard>
+                  )}
+
+                  {/* Waitlisted */}
+                  {Object.keys(waitlistBySeason).length > 0 && (
+                    <>
+                      {Object.entries(waitlistBySeason).map(([sid, group]) => (
+                        <View key={sid} style={s.seasonGroup}>
+                          <Text style={s.seasonGroupTitle}>{group.name} — Waitlist</Text>
+                          {group.enrols.map(e => (
+                            <View key={e.id} style={s.enrCard}>
+                              <View style={s.enrCardTop}>
+                                <Text style={s.enrCardName} numberOfLines={1}>{e.class_session_detail?.name ?? 'Class'}</Text>
+                                <Text style={s.pillAmber}>{e.waitlist_type === 'single' ? 'Single class' : 'Full season'}</Text>
+                              </View>
+                              <Text style={s.enrCardMeta}>
+                                {DAYS[e.class_session_detail?.day_of_week] ?? ''} {e.class_session_detail?.start_time?.slice(0,5) ?? ''}
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Change requests */}
+                  {changeRequests.length > 0 && (
+                    <SectionCard title="Class Change Requests">
+                      {changeRequests.map(req => (
+                        <View key={req.id} style={s.changeReqCard}>
+                          <View style={s.changeReqTop}>
+                            <Text style={s.changeReqFrom} numberOfLines={1}>{req.current_enrolment_detail?.class_session_detail?.name ?? 'Unknown'}</Text>
+                            <Text style={[s.pill, crPillStyle(req.status)]}>{crLabel(req.status)}</Text>
+                          </View>
+                          {req.requested_session_detail && <Text style={s.changeReqTo}>→ {req.requested_session_detail.name}</Text>}
+                          {req.notes ? <Text style={s.changeReqNote}>"{req.notes}"</Text> : null}
+                          <Text style={s.changeReqDate}>{fmtDate(req.created_at)}</Text>
+                        </View>
+                      ))}
+                    </SectionCard>
+                  )}
+                </>
+              )}
+
+              {enrolSubTab === 'past' && (
+                <>
+                  {Object.keys(pastBySeason).length === 0 ? (
+                    <View style={s.enrEmptyBlock}><Text style={s.empty}>No past enrolments</Text></View>
+                  ) : Object.entries(pastBySeason).map(([sid, group]) => (
+                    <View key={sid} style={s.seasonGroup}>
+                      <Text style={s.seasonGroupTitle}>{group.name}</Text>
+                      {group.enrols.map(e => (
+                        <View key={e.id} style={[s.enrCard, { opacity: 0.65 }]}>
+                          <View style={s.enrCardTop}>
+                            <Text style={s.enrCardName} numberOfLines={1}>{e.class_session_detail?.name ?? 'Class'}</Text>
+                            <Text style={[s.pill, e.status === 'completed' ? s.pillGrey : s.pillRed]}>
+                              {e.status === 'completed' ? 'Completed' : 'Cancelled'}
+                            </Text>
+                          </View>
+                          <Text style={s.enrCardMeta}>
+                            {DAYS[e.class_session_detail?.day_of_week] ?? ''} {e.class_session_detail?.start_time?.slice(0,5) ?? ''}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  ))}
+                </>
+              )}
+            </>
+          )
+        })()}
 
         {/* ── ATTENDANCE ───────────────────────────────────────── */}
         {tab === 'attendance' && (
@@ -937,8 +1103,28 @@ const s = StyleSheet.create({
   enrCardName: { fontSize: 14, fontWeight: '600', color: '#fff', flex: 1, marginRight: 8 },
   enrCardMeta: { fontSize: 12, color: '#888', marginBottom: 2 },
   enrCardSeason: { fontSize: 11, color: '#555' },
-  pricingBanner: { backgroundColor: '#1a1a1a', borderRadius: 8, padding: '10px 14px', marginBottom: 12, borderWidth: 1, borderColor: '#2a2a2a', paddingHorizontal: 12, paddingVertical: 10 },
+  enrCardInstructor: { fontSize: 11, color: '#666', marginTop: 2 },
+  enrEmptyBlock: { paddingVertical: 12, paddingHorizontal: 4 },
+  pricingBanner: { backgroundColor: '#1a1a1a', borderRadius: 8, marginBottom: 10, borderWidth: 1, borderColor: '#2a2a2a', paddingHorizontal: 12, paddingVertical: 10 },
   pricingText: { fontSize: 12, color: '#888' },
+  memberStatusBanner: { borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 10, borderWidth: 1 },
+  memberStatusLabel: { fontSize: 10, color: '#555', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 },
+  memberStatusVal: { fontSize: 15, fontWeight: '700' },
+  enrSubTabs: { flexDirection: 'row', backgroundColor: '#1a1a1a', borderRadius: 8, overflow: 'hidden', marginBottom: 14, borderWidth: 1, borderColor: '#222' },
+  enrSubTab: { flex: 1, paddingVertical: 9, alignItems: 'center' },
+  enrSubTabActive: { backgroundColor: '#ccff00' },
+  enrSubTabText: { fontSize: 13, fontWeight: '600', color: '#666' },
+  enrSubTabTextActive: { color: '#000' },
+  seasonGroup: { marginBottom: 14 },
+  seasonGroupTitle: { fontSize: 11, fontWeight: '700', color: '#555', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 },
+  notEnrolledWarning: { backgroundColor: 'rgba(255,170,0,0.08)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,170,0,0.25)', padding: 12, marginBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  notEnrolledText: { fontSize: 13, color: '#ffaa00', flex: 1, marginRight: 8 },
+  addNoteSmallBtn: { backgroundColor: 'rgba(255,170,0,0.15)', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: 'rgba(255,170,0,0.3)' },
+  addNoteSmallBtnText: { fontSize: 12, fontWeight: '600', color: '#ffaa00' },
+  creditRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
+  creditBox: { flex: 1, backgroundColor: '#1a1a1a', borderRadius: 10, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#2a2a2a' },
+  creditBoxVal: { fontSize: 24, fontWeight: '700', color: '#ccff00', marginBottom: 4 },
+  creditBoxLabel: { fontSize: 11, color: '#666', textAlign: 'center' },
   changeReqCard: { backgroundColor: '#1a1a1a', borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#2a2a2a' },
   changeReqTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   changeReqFrom: { fontSize: 13, fontWeight: '600', color: '#fff', flex: 1, marginRight: 8 },
