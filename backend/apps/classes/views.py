@@ -729,8 +729,13 @@ class PracticeSlotBookView(APIView):
         from django.utils import timezone
         import datetime
 
-        # Practice credits take priority
+        # Prepaid practice credits take priority
         if PracticeCredit.objects.filter(student=user, status='available').exists():
+            return 0, True
+
+        # Makeup credits (any source) can also be used for practice
+        from apps.attendance.models import MakeupCredit
+        if MakeupCredit.objects.filter(student=user, status='available').exists():
             return 0, True
 
         active_season = Season.objects.filter(status__in=['active', 'upcoming']).order_by('-start_date').first()
@@ -820,19 +825,30 @@ class PracticeSlotBookView(APIView):
             payment_type=payment_type,
         )
 
-        # Consume a practice credit if available
+        # Consume a credit if this booking is free
         if is_free:
             from django.utils import timezone as tz
-            credit = PracticeCredit.objects.filter(
+            from apps.attendance.models import MakeupCredit
+            practice_credit = PracticeCredit.objects.filter(
                 student=request.user, status='available'
             ).order_by('created_at').first()
-            if credit:
-                credit.status = 'used'
-                credit.used_at = tz.now()
-                credit.used_for_booking = booking
-                credit.save(update_fields=['status', 'used_at', 'used_for_booking'])
+            if practice_credit:
+                practice_credit.status = 'used'
+                practice_credit.used_at = tz.now()
+                practice_credit.used_for_booking = booking
+                practice_credit.save(update_fields=['status', 'used_at', 'used_for_booking'])
                 booking.payment_type = 'credit'
                 booking.save(update_fields=['payment_type'])
+            else:
+                makeup_credit = MakeupCredit.objects.filter(
+                    student=request.user, status='available'
+                ).order_by('created_at').first()
+                if makeup_credit:
+                    makeup_credit.status = 'used'
+                    makeup_credit.used_at = tz.now()
+                    makeup_credit.save(update_fields=['status', 'used_at'])
+                    booking.payment_type = 'makeup_credit'
+                    booking.save(update_fields=['payment_type'])
 
         return Response(PracticeBookingSerializer(booking, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
@@ -906,6 +922,16 @@ class CasualBookView(APIView):
             ).order_by('created_at').first()
             if not credit:
                 return Response({'detail': 'No catch-up credits available.'}, status=status.HTTP_400_BAD_REQUEST)
+            # Addon-source credits (Kiki/Unravel) can only be used in addon classes
+            if credit.source_occurrence_id:
+                src_cat = getattr(getattr(credit.source_occurrence, 'session', None), 'category', None)
+                if src_cat and src_cat.is_addon_type:
+                    tgt_cat = getattr(occurrence.session, 'category', None)
+                    if not (tgt_cat and tgt_cat.is_addon_type):
+                        return Response(
+                            {'detail': 'This catch-up credit is from a Kiki or Unravel class and can only be used in Kiki, Unravel, or Practice Time.'},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
         elif enrolment_type == 'classpass':
             from apps.attendance.models import ClassPass
             from datetime import date as _date

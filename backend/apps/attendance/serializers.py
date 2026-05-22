@@ -23,6 +23,8 @@ class MakeupCreditSerializer(serializers.ModelSerializer):
     student_name = serializers.StringRelatedField(source='student')
     issued_by_name = serializers.StringRelatedField(source='issued_by')
     season_end_date = serializers.SerializerMethodField()
+    is_addon_restricted = serializers.SerializerMethodField()
+    source_class_name = serializers.SerializerMethodField()
 
     def get_season_end_date(self, obj):
         if obj.expires_at:
@@ -31,9 +33,25 @@ class MakeupCreditSerializer(serializers.ModelSerializer):
             return str(obj.season.end_date)
         return None
 
+    def get_is_addon_restricted(self, obj):
+        if not obj.source_occurrence_id:
+            return False
+        cat = getattr(getattr(obj.source_occurrence, 'session', None), 'category', None)
+        return bool(cat and cat.is_addon_type)
+
+    def get_source_class_name(self, obj):
+        if not obj.source_occurrence_id:
+            return None
+        session = getattr(obj.source_occurrence, 'session', None)
+        return session.name if session else None
+
     class Meta:
         model = MakeupCredit
-        fields = ('id', 'student', 'student_name', 'season', 'reason', 'status', 'issued_by', 'issued_by_name', 'created_at', 'used_at', 'expires_at', 'season_end_date')
+        fields = (
+            'id', 'student', 'student_name', 'season', 'reason', 'status',
+            'issued_by', 'issued_by_name', 'created_at', 'used_at', 'expires_at',
+            'season_end_date', 'source_occurrence', 'source_class_name', 'is_addon_restricted',
+        )
         read_only_fields = ('id', 'issued_by', 'created_at')
 
 

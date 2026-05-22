@@ -40,6 +40,9 @@ class MakeupCredit(models.Model):
 
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='makeup_credits')
     season = models.ForeignKey(Season, on_delete=models.SET_NULL, null=True, blank=True, related_name='makeup_credits')
+    source_occurrence = models.ForeignKey(
+        'classes.ClassOccurrence', on_delete=models.SET_NULL, null=True, blank=True, related_name='issued_credits'
+    )
     reason = models.CharField(max_length=200, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.AVAILABLE)
     issued_by = models.ForeignKey(

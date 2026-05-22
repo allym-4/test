@@ -75,7 +75,7 @@ def bulk_save_register(request, occurrence_pk):
             MakeupCredit.objects.get_or_create(
                 student_id=record['student'],
                 reason=f'Absent: {session_name} on {occurrence.date}',
-                defaults={'issued_by': request.user, 'status': 'available', 'season': season},
+                defaults={'issued_by': request.user, 'status': 'available', 'season': season, 'source_occurrence': occurrence},
             )
 
         saved.append(obj)
@@ -144,7 +144,7 @@ class StudentMarkAwayView(APIView):
                 _, created = MakeupCredit.objects.get_or_create(
                     student=request.user,
                     reason=f'Marked away: {session.name} on {occurrence.date}',
-                    defaults={'issued_by': request.user, 'status': 'available', 'season': season},
+                    defaults={'issued_by': request.user, 'status': 'available', 'season': season, 'source_occurrence': occurrence},
                 )
                 credit_issued = created
         except Exception:

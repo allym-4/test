@@ -1,9 +1,17 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
+import { useAuth } from '../../contexts/AuthContext'
 import { classes, payments, enrolments, orders, notifications, settings as settingsApi, users } from '../../api'
 import client from '../../api/client'
 import '../StudentsPage.css'
+
+function greeting() {
+  const h = new Date().getHours()
+  if (h < 12) return 'Good morning'
+  if (h < 17) return 'Good afternoon'
+  return 'Good evening'
+}
 
 function todayLabel() {
   return new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -101,7 +109,9 @@ function ConvertTrialModal({ enrolment: e, onClose, onSuccess }) {
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [actionItemsVisible, setActionItemsVisible] = useState(true)
+  const [flaggedExpanded, setFlaggedExpanded] = useState(false)
   const [checkedItems, setCheckedItems] = useState({})
   const [confirmCancelId, setConfirmCancelId] = useState(null)
   const [convertTrialEnrol, setConvertTrialEnrol] = useState(null)
@@ -268,13 +278,15 @@ export default function AdminDashboard() {
 
   const pendingActionsCount = exemptions.length + pendingPlans.length
 
+  const firstName = user?.first_name || user?.display_name?.split(' ')[0] || user?.username || 'there'
+
   return (
     <div>
-      <div className="page-header">
-        <div>
-          <div className="page-title">Dashboard</div>
-          <div className="page-sub">{todayLabel()}</div>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 28, lineHeight: 1.1, marginBottom: 4 }}>
+          {greeting()}, {firstName}
         </div>
+        <div style={{ fontSize: 13, color: 'var(--grey)' }}>{todayLabel()}</div>
       </div>
 
       <div className="card" style={{ marginBottom: 20 }}>
@@ -369,57 +381,55 @@ export default function AdminDashboard() {
           {todaySessions.length === 0 ? (
             <div style={{ color: 'var(--grey)', fontSize: 13, padding: '20px 0' }}>No classes today</div>
           ) : (
-            <div className="tbl-section">
-              <table>
-                <thead>
-                  <tr>
-                    <th>CLASS</th>
-                    <th>TIME</th>
-                    <th>INSTRUCTOR</th>
-                    <th>STUDIO</th>
-                    <th>ENROLLED</th>
-                    <th>STATUS</th>
-                    <th>ACTION</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {todaySessions.map(s => {
-                    const isFull = s.enrolled_count >= s.capacity
-                    const isCancelled = s.is_cancelled || s.status === 'cancelled'
-                    const instrName = s.instructor_detail?.display_name || s.instructor_detail?.first_name || '—'
-                    return (
-                      <tr key={s.id}>
-                        <td><b>{s.name}</b></td>
-                        <td style={{ color: 'var(--grey)' }}>{fmtTime(s.start_time)}</td>
-                        <td style={{ color: 'var(--grey)' }}>{instrName}</td>
-                        <td style={{ color: 'var(--grey)' }}>{s.studio_detail?.name || '—'}</td>
-                        <td>{s.enrolled_count ?? '—'}/{s.capacity ?? '—'}</td>
-                        <td>
-                          {isCancelled
-                            ? <span className="tag tag-red" style={{ fontSize: 10 }}>CANCELLED</span>
-                            : isFull
-                              ? <span className="tag tag-amber" style={{ fontSize: 10 }}>FULL</span>
-                              : <span className="tag tag-lime" style={{ fontSize: 10 }}>ACTIVE</span>
-                          }
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                            <button className="btn btn-ghost btn-xs" onClick={() => coverSession(s)}>COVER</button>
-                            {confirmCancelId === s.id ? (
-                              <>
-                                <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => cancelSession(s)}>Confirm</button>
-                                <button className="btn btn-ghost btn-xs" onClick={() => setConfirmCancelId(null)}>No</button>
-                              </>
-                            ) : (
-                              <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => setConfirmCancelId(s.id)}>CANCEL</button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {todaySessions.map(s => {
+                const isFull = s.enrolled_count >= s.capacity
+                const isCancelled = s.is_cancelled || s.status === 'cancelled'
+                const instrName = s.instructor_detail?.display_name || s.instructor_detail?.first_name || '—'
+                return (
+                  <div key={s.id} style={{
+                    background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10,
+                    padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14,
+                  }}>
+                    <div style={{ minWidth: 44, textAlign: 'center' }}>
+                      <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, color: 'var(--lime)', lineHeight: 1 }}>
+                        {fmtTime(s.start_time)}
+                      </div>
+                      <div style={{ fontSize: 10, color: 'var(--grey)', textTransform: 'uppercase', marginTop: 2 }}>pm</div>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, marginBottom: 3 }}>{s.name}</div>
+                      <div style={{ fontSize: 12, color: 'var(--grey)' }}>
+                        {s.studio_detail?.name || '—'} · {instrName} · {s.enrolled_count ?? '—'}/{s.capacity ?? '—'} enrolled
+                      </div>
+                      <div style={{ marginTop: 6, display: 'flex', gap: 6, alignItems: 'center' }}>
+                        {isCancelled
+                          ? <span className="tag tag-red" style={{ fontSize: 10 }}>CANCELLED</span>
+                          : isFull
+                            ? <span className="tag tag-amber" style={{ fontSize: 10 }}>FULL</span>
+                            : <span className="tag tag-lime" style={{ fontSize: 10 }}>ACTIVE</span>
+                        }
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
+                      <button className="btn btn-ghost btn-xs" onClick={() => navigate(`/admin/timetable`)}>
+                        Attendance →
+                      </button>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        <button className="btn btn-ghost btn-xs" onClick={() => coverSession(s)}>COVER</button>
+                        {confirmCancelId === s.id ? (
+                          <>
+                            <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => cancelSession(s)}>Confirm</button>
+                            <button className="btn btn-ghost btn-xs" onClick={() => setConfirmCancelId(null)}>No</button>
+                          </>
+                        ) : (
+                          <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => setConfirmCancelId(s.id)}>CANCEL</button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
@@ -626,9 +636,15 @@ export default function AdminDashboard() {
 
       {flaggedEnrolments.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <div className="section-title" style={{ fontSize: 14, marginBottom: 14 }}>Flagged Enrolments</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div className="section-title" style={{ fontSize: 14 }}>Flagged Enrolments</div>
+              <span className="tag tag-amber" style={{ fontSize: 10 }}>{flaggedEnrolments.length}</span>
+            </div>
+            <Link to="/admin/students" style={{ fontSize: 12, color: 'var(--grey)' }}>SEE ALL →</Link>
+          </div>
           <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 10 }}>
-            Students can still attend — these are flagged for your awareness. Ignore to clear the flag, or Contact to reach out.
+            Students can still attend — flagged for awareness. Ignore to clear, or Contact to reach out.
           </div>
           <div className="tbl-section">
             <table className="data-table">
@@ -641,7 +657,7 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {flaggedEnrolments.map(f => (
+                {(flaggedExpanded ? flaggedEnrolments : flaggedEnrolments.slice(0, 5)).map(f => (
                   <tr key={f.id}>
                     <td style={{ fontWeight: 600 }}>{f.student_name}</td>
                     <td style={{ color: 'var(--grey)', fontSize: 13 }}>{f.session_name}</td>
@@ -666,6 +682,15 @@ export default function AdminDashboard() {
               </tbody>
             </table>
           </div>
+          {flaggedEnrolments.length > 5 && (
+            <button
+              className="btn btn-ghost btn-xs"
+              style={{ marginTop: 8, width: '100%' }}
+              onClick={() => setFlaggedExpanded(v => !v)}
+            >
+              {flaggedExpanded ? 'Show less ↑' : `Show all ${flaggedEnrolments.length} →`}
+            </button>
+          )}
         </div>
       )}
 
