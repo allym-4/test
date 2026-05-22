@@ -822,6 +822,23 @@ function CasualBookingOptionsModal({ visible, occ, priceCasual, priceCasualEnrol
             </TouchableOpacity>
           </View>
 
+          {/* Season upsell — top of options */}
+          {seasonCanEnrol && (
+            <TouchableOpacity
+              style={bo.seasonCard}
+              onPress={() => { onClose(); onEnrolSeason() }}
+              activeOpacity={0.8}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={bo.seasonCardTitle}>Enrol in the full season instead</Text>
+                <Text style={bo.seasonCardSub}>
+                  {bookingSeason?.name ?? 'Season'} · ${seasonUpsellPrice ?? '—'} total · better value
+                </Text>
+              </View>
+              <Text style={bo.seasonCardArrow}>→</Text>
+            </TouchableOpacity>
+          )}
+
           {/* Credit option — always shown, disabled if none available */}
           <OptionRow id="credit"
             title="Use a credit"
@@ -863,23 +880,6 @@ function CasualBookingOptionsModal({ visible, occ, priceCasual, priceCasualEnrol
             <Text style={bo.actionBtnText}>{actionLabel}</Text>
           </TouchableOpacity>
 
-          {/* Season upsell */}
-          {seasonCanEnrol && (
-            <TouchableOpacity
-              style={bo.seasonCard}
-              onPress={() => { onClose(); onEnrolSeason() }}
-              activeOpacity={0.8}
-            >
-              <View style={{ flex: 1 }}>
-                <Text style={bo.seasonCardTitle}>Enrol in the full season instead</Text>
-                <Text style={bo.seasonCardSub}>
-                  {bookingSeason?.name ?? 'Season'} · ${seasonUpsellPrice ?? '—'} total · better value
-                </Text>
-              </View>
-              <Text style={bo.seasonCardArrow}>→</Text>
-            </TouchableOpacity>
-          )}
-
           <TouchableOpacity style={bo.cancelBtn} onPress={onClose}>
             <Text style={bo.cancelBtnText}>Maybe later</Text>
           </TouchableOpacity>
@@ -907,10 +907,10 @@ const bo = StyleSheet.create({
   optionPrice: { fontSize: 18, fontWeight: '900', color: '#ccff00', marginLeft: 12 },
   cancelBtn: { alignItems: 'center', paddingVertical: 14 },
   cancelBtnText: { color: '#555', fontSize: 13 },
-  seasonCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(204,255,0,0.06)', borderWidth: 1, borderColor: 'rgba(204,255,0,0.2)', borderRadius: 14, padding: 16, marginTop: 4, marginBottom: 4, gap: 12 },
-  seasonCardTitle: { fontSize: 14, fontWeight: '700', color: '#ccff00', marginBottom: 3 },
+  seasonCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(176,160,255,0.08)', borderWidth: 1, borderColor: 'rgba(176,160,255,0.35)', borderRadius: 14, padding: 16, marginBottom: 12, gap: 12 },
+  seasonCardTitle: { fontSize: 14, fontWeight: '700', color: '#b0a0ff', marginBottom: 3 },
   seasonCardSub: { fontSize: 12, color: '#888', lineHeight: 18 },
-  seasonCardArrow: { fontSize: 18, color: '#ccff00', fontWeight: '700' },
+  seasonCardArrow: { fontSize: 18, color: '#b0a0ff', fontWeight: '700' },
 })
 
 // ─── CatchupSessionPanel ──────────────────────────────────────────────────────

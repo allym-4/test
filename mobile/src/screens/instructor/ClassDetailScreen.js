@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   View, Text, TouchableOpacity, StyleSheet, FlatList,
   ActivityIndicator, Alert, TextInput,
 } from 'react-native'
 import { useApi } from '../../hooks/useApi'
-import { attendance, payments as paymentsApi } from '../../api'
+import { attendance, enrolments, payments as paymentsApi } from '../../api'
 import client from '../../api/client'
 
 const STATUS_OPTS = [
@@ -57,7 +57,7 @@ function StudentRow({ entry, status, balance, onStatusChange, onNote, note, onVi
   const name = st?.display_name || `${st?.first_name ?? ''} ${st?.last_name ?? ''}`.trim() || 'Student'
   const owing = balance < 0 ? Math.abs(balance) : 0
   const currentColor = STATUS_COLOR[status] || '#fff'
-  const isFirst = entry.is_first_class
+  const isFirst = entry.is_first_visit || entry.is_first_class
   const isWaitlistPromo = entry.promoted_from_waitlist
 
   const [expanded, setExpanded] = useState(false)
@@ -141,6 +141,7 @@ function WaitlistRow({ item, position }) {
 export default function ClassDetailScreen({ navigation, route }) {
   const occ = route.params?.occurrence
   const occurrenceId = occ?.id
+  const sessionId = occ?.session  // integer FK
 
   const [tab, setTab] = useState('attending')
   const [register, setRegister] = useState({})
@@ -151,26 +152,46 @@ export default function ClassDetailScreen({ navigation, route }) {
   const [noteModal, setNoteModal] = useState(null)
   const [noteText, setNoteText] = useState('')
 
-  const { data: enrData, loading: enrLoading, refetch: refetchEnr } = useApi(
+  // Enrolled students — source of truth for who is in this class
+  const { data: enrData, loading: enrLoading } = useApi(
+    () => sessionId ? enrolments.list({ session: sessionId, status: 'active' }) : null,
+    [sessionId]
+  )
+  // Saved attendance records — used to overlay status
+  const { data: attData, refetch: refetchAtt } = useApi(
     () => occurrenceId ? attendance.list({ occurrence: occurrenceId }) : null,
     [occurrenceId]
   )
-  const students = enrData?.results ?? enrData ?? []
 
-  // Init register from attendance data
+  const enrolledStudents = useMemo(() => enrData?.results ?? enrData ?? [], [enrData])
+  const attRecords = useMemo(() => attData?.results ?? attData ?? [], [attData])
+
+  // Merge: enrolments as base, overlay with saved attendance status
+  const students = useMemo(() => {
+    const attMap = {}
+    attRecords.forEach(r => {
+      const sid = String(r.student ?? r.student_id ?? '')
+      if (sid) attMap[sid] = r
+    })
+    return enrolledStudents.map(enr => ({
+      ...enr,
+      _attRecord: attMap[String(enr.student)] ?? null,
+    }))
+  }, [enrolledStudents, attRecords])
+
+  // Init register from saved attendance records
   useEffect(() => {
-    if (!students.length) return
     const init = {}
     const initNotes = {}
-    students.forEach(r => {
-      const sid = r.student_id ?? r.student?.id ?? r.student
-      const rawStatus = r.status === 'no_show' && r.no_show_fee_waived ? 'no_show_waived' : r.status
-      init[sid] = rawStatus || 'present'
+    attRecords.forEach(r => {
+      const sid = String(r.student ?? r.student_id ?? '')
+      if (!sid) return
+      init[sid] = r.status === 'no_show' && r.no_show_fee_waived ? 'no_show_waived' : r.status
       initNotes[sid] = r.note || ''
     })
     setRegister(init)
     setNotes(initNotes)
-  }, [students.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [attRecords])
 
   // Load waitlist
   useEffect(() => {
@@ -178,7 +199,6 @@ export default function ClassDetailScreen({ navigation, route }) {
     client.get('/api/classes/waitlist/', { params: { occurrence: occurrenceId } })
       .then(r => setWaitlist(r.data?.results ?? r.data ?? []))
       .catch(() => {
-        const sessionId = occ?.session?.id ?? occ?.class_session?.id
         if (sessionId) {
           client.get('/api/classes/waitlist/', { params: { session: sessionId } })
             .then(r => setWaitlist(r.data?.results ?? r.data ?? []))
@@ -189,35 +209,35 @@ export default function ClassDetailScreen({ navigation, route }) {
       })
   }, [occurrenceId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Load balances
+  // Load balances once students are known
   useEffect(() => {
     if (!students.length) return
-    students.forEach(r => {
-      const sid = r.student_id ?? r.student?.id ?? r.student
+    students.forEach(enr => {
+      const sid = enr.student
       if (!sid) return
       paymentsApi.balance(sid).then(res => {
-        setBalances(prev => ({ ...prev, [sid]: parseFloat(res.data.balance) }))
+        setBalances(prev => ({ ...prev, [String(sid)]: parseFloat(res.data.balance) }))
       }).catch(() => {})
     })
   }, [students.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function setStatus(sid, status) {
-    setRegister(prev => ({ ...prev, [sid]: status }))
+    setRegister(prev => ({ ...prev, [String(sid)]: status }))
   }
 
   async function saveRegister() {
     if (!occurrenceId) return
     setSaving(true)
     try {
-      const records = students.map(r => {
-        const sid = r.student_id ?? r.student?.id ?? r.student
-        const raw = register[sid] || 'present'
+      const records = students.map(enr => {
+        const sid = enr.student
+        const raw = register[String(sid)] || 'present'
         const status = raw === 'no_show_waived' ? 'no_show' : raw
-        return { student: sid, status, no_show_fee_waived: raw === 'no_show_waived', note: notes[sid] || '' }
+        return { student: sid, status, no_show_fee_waived: raw === 'no_show_waived', note: notes[String(sid)] || '' }
       })
       await attendance.bulkSave(occurrenceId, records)
       Alert.alert('Saved', 'Register saved.')
-      refetchEnr()
+      refetchAtt()
     } catch (err) {
       Alert.alert('Error', err.response?.data?.detail || 'Could not save register.')
     } finally {
@@ -225,28 +245,17 @@ export default function ClassDetailScreen({ navigation, route }) {
     }
   }
 
-  function messageBroadcast(label, count) {
-    Alert.prompt(
+  function messageStudents(label, studentList) {
+    Alert.alert(
       `Message ${label}`,
-      `Broadcast to ${count} student${count !== 1 ? 's' : ''}`,
+      `Send a message to ${studentList.length} student${studentList.length !== 1 ? 's' : ''}`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Send', onPress: async (text) => {
-          if (!text?.trim()) return
-          try {
-            const sessionId = occ?.session?.id ?? occ?.class_session?.id
-            if (sessionId) {
-              await client.post(`/api/community/groups/${sessionId}/posts/`, { body: text })
-              Alert.alert('Sent', 'Message broadcast sent.')
-            } else {
-              Alert.alert('Coming soon', 'Broadcast messaging coming soon.')
-            }
-          } catch {
-            Alert.alert('Coming soon', 'Broadcast messaging coming soon.')
-          }
-        }},
-      ],
-      'plain-text'
+        {
+          text: 'Go to Messages',
+          onPress: () => navigation.navigate('MessagesTab'),
+        },
+      ]
     )
   }
 
@@ -265,12 +274,12 @@ export default function ClassDetailScreen({ navigation, route }) {
   const timeLabel = startTime ? (endTime ? `${startTime} – ${endTime}` : startTime) : null
   const studioName = occ.studio?.name ?? occ.studio_name ?? occ.session_detail?.studio_detail?.name ?? null
 
-  const attending = students.filter(r => {
-    const sid = r.student_id ?? r.student?.id ?? r.student
+  const attending = students.filter(enr => {
+    const sid = String(enr.student)
     return !AWAY_STATUSES.includes(register[sid] || 'present')
   })
-  const away = students.filter(r => {
-    const sid = r.student_id ?? r.student?.id ?? r.student
+  const away = students.filter(enr => {
+    const sid = String(enr.student)
     return AWAY_STATUSES.includes(register[sid] || 'present')
   })
 
@@ -322,13 +331,13 @@ export default function ClassDetailScreen({ navigation, route }) {
         <View style={s.msgRow}>
           <TouchableOpacity
             style={s.msgBtn}
-            onPress={() => messageBroadcast("Today's Attendees", attending.length)}
+            onPress={() => messageStudents("Today's Attendees", attending)}
           >
             <Text style={s.msgBtnText}>💬 Message Attendees</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={s.msgBtn}
-            onPress={() => messageBroadcast('All Enrolled', students.length)}
+            onPress={() => messageStudents('All Enrolled', students)}
           >
             <Text style={s.msgBtnText}>📣 Message All Enrolled</Text>
           </TouchableOpacity>
@@ -345,14 +354,14 @@ export default function ClassDetailScreen({ navigation, route }) {
           contentContainerStyle={[s.list, { paddingBottom: 120 }]}
           ListEmptyComponent={
             <Text style={s.empty}>
-              {tab === 'waitlist' ? 'No one on the waitlist.' : tab === 'away' ? 'No one marked away.' : 'No students attending.'}
+              {tab === 'waitlist' ? 'No one on the waitlist.' : tab === 'away' ? 'No one marked away.' : 'No students enrolled.'}
             </Text>
           }
           renderItem={({ item, index }) => {
             if (tab === 'waitlist') {
               return <WaitlistRow item={item} position={index + 1} />
             }
-            const sid = item.student_id ?? item.student?.id ?? item.student
+            const sid = String(item.student)
             const studentName = item.student_detail?.display_name || `${item.student_detail?.first_name ?? ''} ${item.student_detail?.last_name ?? ''}`.trim() || 'Student'
             return (
               <StudentRow
@@ -362,7 +371,7 @@ export default function ClassDetailScreen({ navigation, route }) {
                 note={notes[sid] || ''}
                 onStatusChange={status => setStatus(sid, status)}
                 onNote={() => { setNoteModal(sid); setNoteText(notes[sid] || '') }}
-                onViewStudent={() => navigation.navigate('StudentDetail', { studentId: sid, studentName })}
+                onViewStudent={() => navigation.navigate('StudentDetail', { studentId: item.student, studentName })}
               />
             )
           }}
@@ -385,7 +394,7 @@ export default function ClassDetailScreen({ navigation, route }) {
         <View style={s.noteOverlay}>
           <View style={s.noteModal}>
             <Text style={s.noteModalTitle}>
-              Note — {students.find(r => (r.student_id ?? r.student?.id ?? r.student) === noteModal)?.student_detail?.display_name ?? 'Student'}
+              Note — {students.find(enr => String(enr.student) === noteModal)?.student_detail?.display_name ?? 'Student'}
             </Text>
             <TextInput
               style={s.noteInput}

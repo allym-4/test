@@ -57,7 +57,10 @@ export const enrolments = {
   },
   changeRequests: {
     mine: () => client.get('/api/enrolments/change-requests/'),
+    list: (params) => client.get('/api/enrolments/change-requests/', { params }),
     create: (data) => client.post('/api/enrolments/change-requests/', data),
+    approve: (id, data) => client.post(`/api/enrolments/change-requests/${id}/approve/`, data),
+    reject: (id, data) => client.post(`/api/enrolments/change-requests/${id}/reject/`, data),
   },
   enrolAfterTrial: (id, data) => client.post(`/api/enrolments/${id}/enrol-after-trial/`, data),
 }
@@ -97,6 +100,7 @@ export const helpdesk = {
 export const payments = {
   balance: (studentId) => client.get(`/api/payments/balance/${studentId}/`),
   list: (params) => client.get('/api/payments/', { params }),
+  create: (data) => client.post('/api/payments/', data),
   stripe: {
     config: () => client.get('/api/payments/stripe/config/'),
     createPaymentIntent: (data) => client.post('/api/payments/stripe/payment-intent/', data),
@@ -104,6 +108,7 @@ export const payments = {
     paymentMethods: (params) => client.get('/api/payments/stripe/payment-methods/', { params }),
     removePaymentMethod: (data) => client.delete('/api/payments/stripe/payment-methods/', { data }),
     updateAutoCharge: (data) => client.patch('/api/payments/stripe/config/', data),
+    chargeSaved: (data) => client.post('/api/payments/stripe/charge-saved/', data),
   },
   promoCodes: {
     validate: (data) => client.post('/api/payments/promo-codes/validate/', data),
@@ -151,12 +156,18 @@ export const homework = {
 
 export const users = {
   get: (id) => client.get(`/api/users/${id}/`),
+  update: (id, data) => client.patch(`/api/users/${id}/`, data),
   list: (params) => client.get('/api/users/', { params }),
   instructorsPublic: () => client.get('/api/users/instructors/public/'),
+  notes: (id, params) => client.get(`/api/users/${id}/notes/`, { params }),
+  addNote: (id, data) => client.post(`/api/users/${id}/notes/`, data),
+  updateNote: (id, noteId, data) => client.patch(`/api/users/${id}/notes/${noteId}/`, data),
+  deleteNote: (id, noteId) => client.delete(`/api/users/${id}/notes/${noteId}/`),
 }
 
 export const forms = {
   list: () => client.get('/api/users/forms/'),
+  listForStudent: (studentId) => client.get('/api/users/forms/', { params: { student: studentId } }),
   submit: (form_type, responses) => client.post('/api/users/forms/', { form_type, responses }),
   pendingRequired: () => client.get('/api/users/forms/pending-required/'),
 }
