@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  RefreshControl, ActivityIndicator,
+  RefreshControl, ActivityIndicator, Alert,
 } from 'react-native'
 import { useApi } from '../../hooks/useApi'
 import { useAuth } from '../../contexts/AuthContext'
@@ -102,24 +102,53 @@ function groupOccurrences(occs, keyFn, labelFn) {
 
 // ── My Classes occurrence card ─────────────────────────────────────────────────
 
-function MyOccurrenceCard({ occ, isCover, onPress }) {
+function MyOccurrenceCard({ occ, isCover, onPress, onCoverRequested }) {
   const name = occ.class_session?.name ?? occ.session_name ?? occ.session_detail?.name ?? occ.name ?? 'Class'
   const studio = occ.studio?.name ?? occ.studio_name ?? occ.session_detail?.studio_detail?.name ?? null
   const enrolled = occ.enrolled_count ?? occ.enrolment_count ?? null
   const dateLabel = formatOccurrenceDate(occ.date)
   const startTime = occ.start_time ? formatTime(occ.start_time) : null
   const endTime = occ.end_time ? formatTime(occ.end_time) : null
-  const timeLabel = startTime
-    ? endTime ? `${startTime} – ${endTime}` : startTime
-    : null
+  const timeLabel = startTime ? (endTime ? `${startTime} – ${endTime}` : startTime) : null
+  const [requesting, setRequesting] = useState(false)
+  const [coverRequested, setCoverRequested] = useState(occ.cover_needed ?? false)
+
+  async function handleRequestCover() {
+    Alert.alert(
+      'Request Cover?',
+      `This will notify admin that you need someone to cover ${name} on ${dateLabel}.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Request Cover',
+          onPress: async () => {
+            setRequesting(true)
+            try {
+              await classes.requestCover(occ.id)
+              setCoverRequested(true)
+              Alert.alert('Sent', 'Admin has been notified and will arrange cover.')
+              onCoverRequested?.()
+            } catch (err) {
+              Alert.alert('Error', err.response?.data?.detail || 'Could not send cover request.')
+            } finally {
+              setRequesting(false)
+            }
+          },
+        },
+      ]
+    )
+  }
 
   return (
-    <TouchableOpacity style={s.occCard} onPress={onPress} activeOpacity={0.75}>
+    <TouchableOpacity style={[s.occCard, coverRequested && s.occCardCoverNeeded]} onPress={onPress} activeOpacity={0.75}>
       <View style={s.occCardTop}>
         <Text style={s.occName} numberOfLines={1}>{name}</Text>
         <View style={s.occBadges}>
           {isCover && (
             <View style={s.coverBadge}><Text style={s.coverBadgeText}>COVER</Text></View>
+          )}
+          {coverRequested && (
+            <View style={s.coverNeededBadge}><Text style={s.coverNeededBadgeText}>COVER NEEDED</Text></View>
           )}
           {enrolled !== null && (
             <View style={s.enrolledChip}>
@@ -135,7 +164,19 @@ function MyOccurrenceCard({ occ, isCover, onPress }) {
         {studio ? <Text style={s.occMetaDot}> · </Text> : null}
         {studio ? <Text style={s.occMetaText}>{studio}</Text> : null}
       </View>
-      <Text style={s.tapHint}>View register →</Text>
+      <View style={s.occCardFooter}>
+        <Text style={s.tapHint}>View register →</Text>
+        {!coverRequested && (
+          <TouchableOpacity
+            style={[s.coverBtn, requesting && { opacity: 0.5 }]}
+            onPress={handleRequestCover}
+            disabled={requesting}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={s.coverBtnText}>{requesting ? 'Sending…' : 'Request Cover'}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </TouchableOpacity>
   )
 }
@@ -437,17 +478,23 @@ const s = StyleSheet.create({
 
   // My Classes occurrence card
   occCard: { backgroundColor: '#111', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#222' },
+  occCardCoverNeeded: { borderColor: 'rgba(255,80,80,0.35)', backgroundColor: 'rgba(255,80,80,0.04)' },
   occCardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
   occName: { fontSize: 15, fontWeight: '700', color: '#fff', flex: 1, marginRight: 8 },
   occBadges: { flexDirection: 'row', gap: 6, alignItems: 'center', flexShrink: 0 },
   coverBadge: { backgroundColor: 'rgba(255,170,0,0.15)', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 },
   coverBadgeText: { fontSize: 10, fontWeight: '700', color: '#ffaa00' },
+  coverNeededBadge: { backgroundColor: 'rgba(255,80,80,0.15)', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 },
+  coverNeededBadgeText: { fontSize: 10, fontWeight: '700', color: '#ff5050' },
   enrolledChip: { backgroundColor: 'rgba(204,255,0,0.12)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   enrolledChipText: { fontSize: 11, fontWeight: '600', color: '#ccff00' },
   occMeta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
   occMetaText: { fontSize: 12, color: '#888' },
   occMetaDot: { fontSize: 12, color: '#444' },
-  tapHint: { fontSize: 12, color: '#ccff00', fontWeight: '600', marginTop: 8 },
+  occCardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
+  tapHint: { fontSize: 12, color: '#ccff00', fontWeight: '600' },
+  coverBtn: { backgroundColor: 'rgba(255,80,80,0.12)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: 'rgba(255,80,80,0.3)' },
+  coverBtnText: { fontSize: 11, fontWeight: '700', color: '#ff5050' },
 
   // All Classes card
   allCard: { flexDirection: 'row', backgroundColor: '#111', borderRadius: 12, marginBottom: 8, borderWidth: 1, borderColor: '#222', overflow: 'hidden' },

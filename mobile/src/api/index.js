@@ -39,6 +39,7 @@ export const classes = {
     myBookings: () => client.get('/api/classes/practice/my-bookings/'),
   },
   myUpcoming: () => client.get('/api/classes/my-upcoming/'),
+  requestCover: (occurrenceId) => client.post(`/api/classes/occurrences/${occurrenceId}/request-cover/`),
 }
 
 export const media = {

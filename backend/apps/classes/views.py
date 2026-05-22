@@ -114,6 +114,59 @@ class ClassOccurrenceDetailView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAdminOrInstructor]
 
 
+class RequestCoverView(APIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        from django.core.mail import send_mail
+        from django.conf import settings
+        from apps.users.models import Notification, User
+
+        try:
+            occ = ClassOccurrence.objects.select_related('session__studio', 'session__instructor').get(pk=pk)
+        except ClassOccurrence.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        occ.cover_needed = True
+        occ.save(update_fields=['cover_needed'])
+
+        session_name = occ.session.name
+        day_str = occ.date.strftime('%-d %B')
+        time_str = occ.session.start_time.strftime('%I:%M %p').lstrip('0') if occ.session.start_time else ''
+        studio_str = f' at {occ.session.studio.name}' if occ.session.studio else ''
+        requesting = request.user.get_full_name() or request.user.first_name or request.user.username
+
+        admins = User.objects.filter(role='admin', is_active=True)
+        for admin in admins:
+            Notification.objects.create(
+                recipient=admin,
+                title=f'Cover requested: {session_name}',
+                body=(
+                    f'{requesting} has requested cover for {session_name} on {day_str}'
+                    f'{f" at {time_str}" if time_str else ""}{studio_str}.'
+                ),
+                notification_type='info',
+                action_label='View Classes',
+                action_url='/admin/classes',
+            )
+            if admin.email:
+                send_mail(
+                    subject=f'Cover requested: {session_name} on {day_str}',
+                    message=(
+                        f'Hi {admin.first_name},\n\n'
+                        f'{requesting} has requested cover for {session_name} on {day_str}'
+                        f'{f" at {time_str}" if time_str else ""}{studio_str}.\n\n'
+                        f'Please arrange a substitute instructor as soon as possible.\n\n'
+                        f'Duality Pole Studio'
+                    ),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[admin.email],
+                    fail_silently=True,
+                )
+
+        return Response({'detail': 'Cover request sent.'}, status=status.HTTP_200_OK)
+
+
 class SeasonListView(generics.ListCreateAPIView):
     queryset = Season.objects.all()
     serializer_class = SeasonSerializer
