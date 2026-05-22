@@ -21,7 +21,7 @@
 
 /* Stats */
 .att-stats-row {
-  display: grid; grid-template-columns: repeat(5, 1fr);
+  display: grid; grid-template-columns: repeat(6, 1fr);
   gap: 8px; margin-bottom: 16px;
 }
 .att-stat-chip {
@@ -144,6 +144,8 @@
 
 @media (max-width: 640px) {
   .att-stats-row { grid-template-columns: repeat(3, 1fr); }
+  .att-stat-chip { padding: 10px 6px; }
+  .att-page { padding: 0; }
   .att-info-bar { gap: 10px; }
   .att-info-divider { display: none; }
 }

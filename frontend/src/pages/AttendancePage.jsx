@@ -233,17 +233,15 @@ export default function AttendancePage() {
   return (
     <div className="att-page">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <Link to="/classes" style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 8, textDecoration: 'none' }}>← My Classes</Link>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 26 }}>{session?.name}</div>
-          <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 4 }}>
-            {occurrence ? new Date(occurrence.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'No occurrence today'}
-            {session?.start_time && <span style={{ marginLeft: 8 }}>· {session.start_time.slice(0, 5)}</span>}
-            {session?.studio_detail?.name && <span style={{ marginLeft: 8 }}>· {session.studio_detail.name}</span>}
-          </div>
+      <div style={{ marginBottom: 20 }}>
+        <Link to="/classes" style={{ fontSize: 12, color: 'var(--grey)', display: 'inline-block', marginBottom: 10, textDecoration: 'none' }}>← My Classes</Link>
+        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, lineHeight: 1.2, marginBottom: 6 }}>{session?.name}</div>
+        <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 14 }}>
+          {occurrence ? new Date(occurrence.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : 'No occurrence today'}
+          {session?.start_time && <span> · {session.start_time.slice(0, 5)}</span>}
+          {session?.studio_detail?.name && <span> · {session.studio_detail.name}</span>}
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-ghost btn-sm" onClick={markAllPresent}>✓ All Present</button>
           <button className={`btn btn-sm ${saved ? 'btn-ghost' : 'btn-lime'}`} onClick={handleSave} disabled={saving || !occurrence}>
             {saving ? <span className="spinner" style={{ width: 14, height: 14 }} /> : saved ? '✓ Saved' : 'Save Register'}
@@ -260,38 +258,36 @@ export default function AttendancePage() {
       )}
 
       {/* Stats strip */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+      <div className="att-stats-row" style={{ marginBottom: 20 }}>
         {[
           ['Enrolled', students.length, '#fff'],
           ['Attended', counts.present, '#ccff00'],
           ['Late', counts.late, '#ffaa00'],
           ['No-show', counts.no_show, '#ff5050'],
           ['Absent', counts.absent, '#555'],
+          ['Waitlist', waitlist.length, 'var(--lav)'],
         ].map(([label, val, color]) => (
-          <div key={label} style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: 10, padding: '10px 16px', textAlign: 'center', minWidth: 72 }}>
-            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, color, lineHeight: 1 }}>{val}</div>
+          <div key={label} className="att-stat-chip">
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color, lineHeight: 1 }}>{val}</div>
             <div style={{ fontSize: 10, color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: 4 }}>{label}</div>
           </div>
         ))}
-        <div style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: 10, padding: '10px 16px', textAlign: 'center', minWidth: 72 }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, color: 'var(--lav)', lineHeight: 1 }}>{waitlist.length}</div>
-          <div style={{ fontSize: 10, color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: 4 }}>Waitlist</div>
-        </div>
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', borderBottom: '1px solid #1e1e1e', marginBottom: 16, gap: 4 }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid #1e1e1e', marginBottom: 16, overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
         {[
           ['attending', `Attending (${attendingStudents.length})`],
           ['waitlist', `Waitlist (${waitlist.length})`],
-          ['away', `Away / Cancelled (${awayStudents.length})`],
+          ['away', `Away (${awayStudents.length})`],
         ].map(([key, label]) => (
           <button
             key={key}
             onClick={() => setTab(key)}
             style={{
-              padding: '10px 16px', border: 'none', background: 'transparent',
-              fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              padding: '10px 14px', border: 'none', background: 'transparent',
+              fontSize: 13, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+              whiteSpace: 'nowrap',
               color: tab === key ? 'var(--lime)' : 'var(--grey)',
               borderBottom: `2px solid ${tab === key ? 'var(--lime)' : 'transparent'}`,
               marginBottom: -1,
