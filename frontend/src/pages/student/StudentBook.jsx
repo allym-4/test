@@ -1588,6 +1588,7 @@ function SeasonTab({
   const [showEligibleOnly, setShowEligibleOnly] = useState(false)
   const [demoNoLevel, setDemoNoLevel] = useState(false)
   const [levelOverrideSession, setLevelOverrideSession] = useState(null)
+  const [levelOverrideSessions, setLevelOverrideSessions] = useState(new Set())
 
   // Pick the first bookable season by default
   const activeSeason = bookableSeasons.find(s => s.id === selectedSeasonId) || bookableSeasons[0] || null
@@ -1698,7 +1699,7 @@ function SeasonTab({
   }, [])
 
   function handleProceed() {
-    onProceedToCheckout(selectedSessions, incrementalPrice)
+    onProceedToCheckout(selectedSessions, incrementalPrice, levelOverrideSessions)
   }
 
   if (bookableSeasons.length === 0) {
@@ -1740,7 +1741,7 @@ function SeasonTab({
             </div>
           </div>
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, color: '#ccff00', flexShrink: 0 }}>${incrementalPrice}</div>
-          <button onClick={handleProceed} style={{ background: '#ccff00', color: '#000', border: 'none', borderRadius: 10, padding: '10px 16px', fontWeight: 900, fontSize: 12, letterSpacing: 0.5, cursor: 'pointer', flexShrink: 0 }}>CHECKOUT</button>
+          <button onClick={() => onProceedToCheckout(selectedSessions, incrementalPrice, levelOverrideSessions)} style={{ background: '#ccff00', color: '#000', border: 'none', borderRadius: 10, padding: '10px 16px', fontWeight: 900, fontSize: 12, letterSpacing: 0.5, cursor: 'pointer', flexShrink: 0 }}>CHECKOUT</button>
         </div>
       </div>
     )}
@@ -1943,7 +1944,11 @@ function SeasonTab({
     {levelOverrideSession && (
       <SeasonLevelHeadsUpModal
         session={levelOverrideSession}
-        onConfirm={() => { toggleSession(levelOverrideSession); setLevelOverrideSession(null) }}
+        onConfirm={() => {
+            toggleSession(levelOverrideSession)
+            setLevelOverrideSessions(prev => new Set([...prev, levelOverrideSession.id]))
+            setLevelOverrideSession(null)
+          }}
         onCancel={() => setLevelOverrideSession(null)}
       />
     )}
@@ -2155,7 +2160,7 @@ export default function StudentBook() {
   }
 
   // Season multi-select checkout
-  function handleSeasonProceed(selectedSessions, incrementalPrice) {
+  function handleSeasonProceed(selectedSessions, incrementalPrice, overrideSessions) {
     if (!selectedSessions.length) return
     const sessionIds = selectedSessions.map(s => s.id)
     const count = selectedSessions.length
@@ -2169,6 +2174,7 @@ export default function StudentBook() {
       description,
       seasonStartDate: season?.start_date || null,
       session: selectedSessions[0],
+      levelOverrideSessions: overrideSessions || new Set(),
     })
   }
 
@@ -2188,9 +2194,12 @@ export default function StudentBook() {
       } catch {}
     } else {
       const ids = co.sessionIds || (co.session ? [co.session.id] : [])
+      const overrideSessions = co.levelOverrideSessions || new Set()
       for (const sessionId of ids) {
         try {
-          await enrolments.create({ session: sessionId, status: 'active', enrolment_type: co.type || 'course', payment_method: 'cash', notes })
+          const payload = { session: sessionId, status: 'active', enrolment_type: co.type || 'course', payment_method: 'cash', notes }
+          if (overrideSessions.has(sessionId)) payload.level_override = true
+          await enrolments.create(payload)
         } catch {}
       }
       setBooked(b => [...b, ...(co.sessionIds || (co.session ? [co.session.id] : []))])
@@ -2266,9 +2275,12 @@ export default function StudentBook() {
       return
     }
     // Create enrolments for all session IDs
+    const overrideSessions = checkout.levelOverrideSessions || new Set()
     for (const sessionId of ids) {
       try {
-        await enrolments.create({ session: sessionId, status: 'active', enrolment_type: type || 'casual' })
+        const payload = { session: sessionId, status: 'active', enrolment_type: type || 'casual' }
+        if (overrideSessions.has(sessionId)) payload.level_override = true
+        await enrolments.create(payload)
       } catch {}
     }
     if (type === 'catchup') refetchCredits()

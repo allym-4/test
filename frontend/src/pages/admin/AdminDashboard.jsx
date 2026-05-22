@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
 import { useAuth } from '../../contexts/AuthContext'
@@ -107,6 +107,171 @@ function ConvertTrialModal({ enrolment: e, onClose, onSuccess }) {
   )
 }
 
+function ChasePaymentModal({ student, onClose }) {
+  const [chaseHistory, setChaseHistory] = useState(null)
+  const [message, setMessage] = useState('')
+  const [lockAccount, setLockAccount] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
+
+  useEffect(() => {
+    payments.chase.list({ student_id: student.student_id })
+      .then(r => {
+        const history = r.data?.results || r.data || []
+        setChaseHistory(history)
+        // Set default message for next step
+        const nextStep = Math.min(history.length + 1, 3)
+        setMessage(defaultMessage(nextStep, student))
+      })
+      .catch(() => setChaseHistory([]))
+  }, [student.student_id])
+
+  function defaultMessage(step, s) {
+    const first = s.name?.split(' ')[0] || 'there'
+    const amt = `$${parseFloat(s.owing || 0).toFixed(0)}`
+    if (step === 1) return `Hi ${first}, just a friendly reminder that you have an outstanding balance of ${amt}. Please reach out if you have any questions — we're happy to help. — Duality Pole`
+    if (step === 2) return `Hi ${first}, this is a second reminder about your outstanding balance of ${amt}. This needs to be resolved to keep your account in good standing. If you're having difficulty, please reach out to discuss payment options. — Duality Pole`
+    return `Hi ${first}, this is your final notice regarding your outstanding balance of ${amt}. If this is not resolved within 48 hours, your account will be locked and you will be unable to make new bookings or access the studio until it is cleared. Please contact us immediately if you need assistance. — Duality Pole`
+  }
+
+  if (!chaseHistory) return (
+    <div className="sd-overlay">
+      <div className="sd-modal" style={{ maxWidth: 520 }}>
+        <div style={{ padding: 32, textAlign: 'center', color: 'var(--grey)' }}>Loading…</div>
+      </div>
+    </div>
+  )
+
+  const nextStep = Math.min(chaseHistory.length + 1, 3)
+  const stepColors = { 1: 'var(--grey)', 2: 'var(--amber)', 3: 'var(--red)' }
+  const stepTitles = {
+    1: '1st Chase — Friendly Reminder',
+    2: '2nd Chase — Firm Notice',
+    3: 'Send Final Warning — Account Lock',
+  }
+  const stepDescs = {
+    1: 'A friendly nudge will be sent. Two more chases available before the final warning.',
+    2: 'A firmer notice will be sent. One more chase before the final warning.',
+    3: 'This is the final warning. After this, the account can be locked until the balance is cleared or an exemption is granted.',
+  }
+  const btnLabels = {
+    1: 'SEND 1ST REMINDER',
+    2: 'SEND 2ND REMINDER',
+    3: 'SEND FINAL WARNING',
+  }
+  const btnColors = { 1: 'var(--lime)', 2: 'var(--amber)', 3: 'var(--red)' }
+  const btnTextColors = { 1: '#000', 2: '#000', 3: '#fff' }
+
+  const chaseStepLabels = ['1st Chase — Friendly reminder', '2nd Chase — Firm notice', 'Final warning — Account lock']
+
+  async function handleSend() {
+    setSending(true)
+    try {
+      await payments.chase.create({
+        student_id: student.student_id,
+        message,
+        lock_account: lockAccount,
+      })
+      setSent(true)
+      setTimeout(onClose, 1500)
+    } catch {
+      setSending(false)
+    }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 520 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>Chase Payment</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="sd-body">
+          {/* Student card */}
+          <div style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px', marginBottom: 20 }}>
+            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 2 }}>{student.name}</div>
+            {student.description && <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 8 }}>{student.description}</div>}
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 24, color: 'var(--red)' }}>
+              ${parseFloat(student.owing || 0).toFixed(0)}
+            </div>
+          </div>
+
+          {/* Chase history */}
+          {chaseHistory.length > 0 && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', fontWeight: 600, marginBottom: 10 }}>Chase History</div>
+              {chaseHistory.map((c, i) => (
+                <div key={c.id} style={{
+                  display: 'flex', gap: 16, padding: '10px 0',
+                  borderBottom: i < chaseHistory.length - 1 ? '1px solid var(--border)' : 'none',
+                }}>
+                  <div style={{ fontSize: 12, color: 'var(--grey)', minWidth: 80, flexShrink: 0 }}>
+                    {new Date(c.sent_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>{c.step_label || chaseStepLabels[(c.step || 1) - 1]}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Next action */}
+          {sent ? (
+            <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--lime)', fontWeight: 700 }}>Sent ✓</div>
+          ) : (
+            <div style={{ background: '#1a1a1a', border: `1px solid ${stepColors[nextStep]}33`, borderRadius: 10, padding: '16px' }}>
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: stepColors[nextStep], marginBottom: 6 }}>
+                {stepTitles[nextStep]}
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 14, lineHeight: 1.6 }}>
+                {stepDescs[nextStep]}
+              </div>
+              <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', fontWeight: 600, marginBottom: 8 }}>Message Preview</div>
+              <textarea
+                value={message}
+                onChange={e => setMessage(e.target.value)}
+                rows={5}
+                style={{
+                  width: '100%', background: '#111', border: '1px solid var(--border)',
+                  borderRadius: 8, padding: '10px 12px', color: 'var(--white)',
+                  fontSize: 13, lineHeight: 1.6, resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box',
+                }}
+              />
+              {nextStep === 3 && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, fontSize: 13, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={lockAccount}
+                    onChange={e => setLockAccount(e.target.checked)}
+                    style={{ accentColor: 'var(--red)', width: 16, height: 16 }}
+                  />
+                  Lock account immediately (prevents bookings and app access)
+                </label>
+              )}
+            </div>
+          )}
+        </div>
+        {!sent && (
+          <div style={{ display: 'flex', gap: 10, padding: '16px 20px', borderTop: '1px solid var(--border)' }}>
+            <button className="btn btn-ghost" style={{ flex: 1 }} onClick={onClose}>CANCEL</button>
+            <button
+              style={{
+                flex: 1, background: btnColors[nextStep], color: btnTextColors[nextStep],
+                border: 'none', borderRadius: 10, padding: '14px 0', fontWeight: 900,
+                fontSize: 12, letterSpacing: 0.5, cursor: sending ? 'not-allowed' : 'pointer',
+                opacity: sending ? 0.7 : 1,
+              }}
+              disabled={sending}
+              onClick={handleSend}
+            >
+              {sending ? 'SENDING…' : btnLabels[nextStep]}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function AdminDashboard() {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -201,12 +366,6 @@ export default function AdminDashboard() {
   async function cancelSession(session) {
     await upsertOccurrence(session, { status: 'cancelled' })
     setConfirmCancelId(null)
-  }
-
-  async function chasePayment(studentId) {
-    try {
-      await notifications.send(studentId, 'Outstanding balance reminder', 'You have an outstanding balance. Please contact the studio to arrange payment.')
-    } catch { /* non-critical */ }
   }
 
   async function sendWelcome(studentId) {
@@ -768,6 +927,12 @@ export default function AdminDashboard() {
           enrolment={convertTrialEnrol}
           onClose={() => setConvertTrialEnrol(null)}
           onSuccess={() => { setConvertTrialEnrol(null); refetchTrialsAndCasuals() }}
+        />
+      )}
+      {chaseStudent && (
+        <ChasePaymentModal
+          student={chaseStudent}
+          onClose={() => setChaseStudent(null)}
         />
       )}
     </div>
