@@ -12,6 +12,7 @@ export default function AdminSkillLists() {
   const [newSkillName, setNewSkillName] = useState('')
   const [newSkillGroup, setNewSkillGroup] = useState('')
   const [newLevelName, setNewLevelName] = useState('')
+  const [newGroupName, setNewGroupName] = useState('')
   const [saving, setSaving] = useState(false)
   const [deletingSkill, setDeletingSkill] = useState(null)
 
@@ -59,6 +60,20 @@ export default function AdminSkillLists() {
     }
   }
 
+  async function handleAddGroup(e) {
+    e.preventDefault()
+    if (!activeLevel) return
+    setSaving(true)
+    try {
+      await skillLevels.createGroup({ level: activeLevel.id, name: newGroupName, order: groups.length })
+      setModal(null)
+      setNewGroupName('')
+      refetch()
+    } finally {
+      setSaving(false)
+    }
+  }
+
   async function handleAddLevel(e) {
     e.preventDefault()
     setSaving(true)
@@ -95,6 +110,7 @@ export default function AdminSkillLists() {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-ghost btn-sm" onClick={() => setModal({ type: 'level' })}>+ Add Skill List</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => setModal({ type: 'group' })}>+ Add Skill Group</button>
           <button className="btn btn-lime btn-sm" onClick={() => setModal({ type: 'skill' })}>+ Add Skill</button>
         </div>
       </div>
@@ -122,6 +138,25 @@ export default function AdminSkillLists() {
           </div>
         ))}
       </div>
+
+      {activeLevel?.classes?.length > 0 && (
+        <div style={{ marginTop: 28 }}>
+          <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', fontWeight: 600, marginBottom: 12 }}>
+            Classes using this list
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {activeLevel.classes.map(c => (
+              <div key={c.id} style={{
+                background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8,
+                padding: '6px 12px', fontSize: 12,
+              }}>
+                <span style={{ fontWeight: 600 }}>{c.name}</span>
+                <span style={{ color: 'var(--grey)', marginLeft: 6 }}>{c.day} {c.time}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {modal?.type === 'skill' && (
         <div className="sd-overlay" onClick={e => e.target === e.currentTarget && setModal(null)}>
@@ -159,6 +194,24 @@ export default function AdminSkillLists() {
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                 <button type="button" className="btn btn-ghost btn-sm" onClick={() => setModal(null)}>Cancel</button>
                 <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {modal?.type === 'group' && (
+        <div className="sd-overlay" onClick={e => e.target === e.currentTarget && setModal(null)}>
+          <div className="sd-modal" style={{ maxWidth: 400 }}>
+            <div className="sd-header">
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>Add Skill Group</div>
+              <button className="modal-close-btn" onClick={() => setModal(null)}>✕</button>
+            </div>
+            <form className="sd-body" onSubmit={handleAddGroup}>
+              <div className="field"><label>Group Name</label><input value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder="e.g. Spins" required /></div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setModal(null)}>Cancel</button>
+                <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : 'Add'}</button>
               </div>
             </form>
           </div>

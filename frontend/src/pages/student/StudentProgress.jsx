@@ -4,6 +4,7 @@ import { useApi } from '../../hooks/useApi'
 import { enrolments, skills as skillsApi, media, classes, challenges as challengesApi } from '../../api'
 import client from '../../api/client'
 
+
 const TYPE_BADGE = {
   video: { label: 'Video', color: 'var(--lime)', textColor: '#000' },
   pdf:   { label: 'PDF',   color: 'var(--lav)',  textColor: '#000' },
@@ -23,59 +24,40 @@ export default function StudentProgress() {
   )
   const enrolList = enrolData?.results || enrolData || []
 
-  // Unique levels from enrolments (deduplicated)
-  const enrolledLevels = [...new Set(
-    enrolList.map(e => e.class_session_detail?.level || e.class_session_detail?.name).filter(Boolean)
-  )]
-  const activeLevel = selectedLevel || enrolledLevels[0] || null
-
   useEffect(() => {
     if (enrolList.length && !chatClassId) setChatClassId(enrolList[0].id)
   }, [enrolList.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Skills (student's saved progress)
-  const [skillProgress, setSkillProgress] = useState({})
-  const [selfAssessed, setSelfAssessed] = useState({})
+  // Skill summary from enrolled-levels endpoint
+  const { data: skillSummaryData, loading: loadingSkills } = useApi(
+    () => user?.id ? client.get(`/api/users/${user.id}/skill-summary/`) : null,
+    [user?.id]
+  )
+  const skillLevels = skillSummaryData?.data || skillSummaryData || []
 
-  useEffect(() => {
-    if (!user?.id) return
-    skillsApi.list(user.id).then(res => {
-      const map = {}
-      for (const s of (res.data?.results || res.data || [])) {
-        map[s.skill_name] = { self: s.self_assessed, teacher: s.teacher_confirmed, id: s.id }
-      }
-      setSkillProgress(map)
-    }).catch(() => setSkillProgress({}))
-  }, [user?.id])
+  // Sort levels by order for "previous levels" logic
+  const sortedLevels = [...skillLevels].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+  const highestOrder = sortedLevels.length ? sortedLevels[sortedLevels.length - 1].order ?? 0 : 0
 
-  // Skill definitions from API
-  const { data: skillLevelData } = useApi(() => client.get('/api/users/skill-levels/'), [])
-  const skillLevels = skillLevelData?.results || skillLevelData || []
+  const activeLevel = selectedLevel || (sortedLevels.length ? sortedLevels[sortedLevels.length - 1].name : null)
+  const activeLevelObj = skillLevels.find(l => l.name === activeLevel) || null
 
-  const [skillDefs, setSkillDefs] = useState([])
-  useEffect(() => {
-    if (!skillLevels.length) return
-    Promise.all(
-      skillLevels.map(lv =>
-        client.get('/api/users/skill-groups/', { params: { level: lv.id } }).then(r => {
-          const groups = r.data?.results || r.data || []
-          return Promise.all(
-            groups.map(g =>
-              client.get('/api/users/skill-definitions/', { params: { group: g.id } }).then(r2 => {
-                const defs = r2.data?.results || r2.data || []
-                return defs.map(d => ({ ...d, levelName: lv.name, groupName: g.name }))
-              })
-            )
-          ).then(nested => nested.flat())
-        })
-      )
-    ).then(all => setSkillDefs(all.flat())).catch(() => setSkillDefs([]))
-  }, [skillLevels.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Flatten skills from a level object
+  function getSkillsForLevel(levelObj) {
+    return (levelObj?.groups || []).flatMap(g => (g.skills || []).map(s => ({ ...s, groupName: g.name, levelName: levelObj.name, levelOrder: levelObj.order ?? 0 })))
+  }
 
-  // Skills filtered to the selected level
-  const levelSkills = skillDefs.filter(d => !activeLevel || d.levelName === activeLevel)
-  const unlockedCount = levelSkills.filter(d => skillProgress[d.name]?.teacher).length
+  const levelSkills = activeLevelObj ? getSkillsForLevel(activeLevelObj) : []
+  const unlockedCount = levelSkills.filter(s => s.teacher_confirmed).length
   const totalCount = levelSkills.length
+
+  // Pending skills from previous levels (teacher_confirmed=false, lower order than highest)
+  const pendingFromPrevious = sortedLevels
+    .filter(l => (l.order ?? 0) < highestOrder)
+    .flatMap(l => getSkillsForLevel(l).filter(s => !s.teacher_confirmed))
+
+  // Self-assessed state (local toggles before submit)
+  const [selfAssessed, setSelfAssessed] = useState({})
 
   function toggleSelf(skillName) {
     setSelfAssessed(prev => ({ ...prev, [skillName]: !prev[skillName] }))
@@ -85,16 +67,11 @@ export default function StudentProgress() {
 
   function submitSelfAssessed() {
     for (const name of selfAssessedNames) {
-      const current = skillProgress[name] || {}
+      const levelName = activeLevel
       skillsApi.save(user.id, {
         skill_name: name,
         self_assessed: true,
-        teacher_confirmed: current.teacher || false,
-      }).then(res => {
-        setSkillProgress(p => ({
-          ...p,
-          [name]: { self: res.data.self_assessed, teacher: res.data.teacher_confirmed, id: res.data.id },
-        }))
+        level: levelName,
       }).catch(() => {})
     }
     setSelfAssessed({})
@@ -249,26 +226,77 @@ export default function StudentProgress() {
       {/* ── TRICKS TAB ── */}
       {mainTab === 'tricks' && (
         <div>
-          {enrolList.length === 0 ? (
-            <div className="empty-state">No active enrolments found</div>
+          {loadingSkills ? (
+            <div style={{ padding: 32, textAlign: 'center', color: 'var(--grey)' }}>Loading…</div>
+          ) : skillLevels.length === 0 ? (
+            <div className="empty-state">No skill lists available yet</div>
           ) : (
             <>
+              {/* Pending from previous levels */}
+              {pendingFromPrevious.length > 0 && (
+                <div style={{ marginBottom: 28 }}>
+                  <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--amber, #ffaa00)', fontWeight: 600, marginBottom: 12 }}>
+                    Pending from previous levels
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
+                    {pendingFromPrevious.map(skill => {
+                      const isSelf = selfAssessed[skill.name]
+                      return (
+                        <div
+                          key={`prev-${skill.id}`}
+                          onClick={() => toggleSelf(skill.name)}
+                          style={{
+                            background: 'var(--card)',
+                            border: `1px solid ${isSelf ? 'rgba(255,170,0,0.3)' : 'rgba(255,170,0,0.15)'}`,
+                            borderRadius: 10,
+                            padding: '12px 14px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: 8,
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 3 }}>{skill.name}</div>
+                            <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+                              {skill.groupName && <div style={{ fontSize: 10, color: 'var(--grey)' }}>{skill.groupName}</div>}
+                              <span style={{ fontSize: 9, background: 'rgba(255,170,0,0.15)', color: '#ffaa00', borderRadius: 4, padding: '1px 5px', fontWeight: 600 }}>Previous level</span>
+                            </div>
+                          </div>
+                          <div style={{ flexShrink: 0, textAlign: 'right' }}>
+                            {isSelf ? (
+                              <span style={{ fontSize: 10, color: 'var(--lime)' }}>✓ Self-assessed</span>
+                            ) : (
+                              <span style={{ fontSize: 10, color: 'var(--grey)' }}>Tap if ready</span>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Level selector */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-                {enrolledLevels.map(level => (
+                {sortedLevels.map(level => (
                   <button
-                    key={level}
-                    onClick={() => setSelectedLevel(level)}
+                    key={level.id}
+                    onClick={() => setSelectedLevel(level.name)}
                     style={{
-                      borderBottom: `2px solid ${activeLevel === level ? 'var(--lime)' : 'transparent'}`,
-                      color: activeLevel === level ? 'var(--white)' : 'var(--grey)',
+                      background: 'none',
+                      border: 'none',
+                      borderBottom: `2px solid ${activeLevel === level.name ? 'var(--lime)' : 'transparent'}`,
+                      color: activeLevel === level.name ? 'var(--white)' : 'var(--grey)',
                       padding: '6px 14px',
                       fontSize: 13,
                       cursor: 'pointer',
+                      fontFamily: 'inherit',
                       transition: 'color 0.15s',
                     }}
                   >
-                    {level}
+                    {level.name}
                   </button>
                 ))}
               </div>
@@ -313,17 +341,16 @@ export default function StudentProgress() {
                       }}
                       className="trick-grid"
                     >
-                      {levelSkills.map(def => {
-                        const prog = skillProgress[def.name] || {}
-                        const unlocked = prog.teacher
-                        const isSelf = selfAssessed[def.name]
+                      {levelSkills.map(skill => {
+                        const unlocked = skill.teacher_confirmed
+                        const isSelf = selfAssessed[skill.name] || skill.self_assessed
                         return (
                           <div
-                            key={def.id}
-                            onClick={() => !unlocked && toggleSelf(def.name)}
+                            key={skill.id}
+                            onClick={() => !unlocked && toggleSelf(skill.name)}
                             style={{
                               background: 'var(--card)',
-                              border: `1px solid ${unlocked ? 'rgba(204,255,0,0.3)' : isSelf ? 'rgba(204,255,0,0.15)' : 'var(--border)'}`,
+                              border: `1px solid ${unlocked ? 'rgba(204,255,0,0.3)' : selfAssessed[skill.name] ? 'rgba(204,255,0,0.15)' : 'var(--border)'}`,
                               borderRadius: 10,
                               padding: '12px 14px',
                               cursor: unlocked ? 'default' : 'pointer',
@@ -334,16 +361,18 @@ export default function StudentProgress() {
                             }}
                           >
                             <div>
-                              <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 3 }}>{def.name}</div>
-                              {def.groupName && (
-                                <div style={{ fontSize: 10, color: 'var(--grey)' }}>{def.groupName}</div>
+                              <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 3 }}>{skill.name}</div>
+                              {skill.groupName && (
+                                <div style={{ fontSize: 10, color: 'var(--grey)' }}>{skill.groupName}</div>
                               )}
                             </div>
                             <div style={{ flexShrink: 0, textAlign: 'right' }}>
                               {unlocked ? (
                                 <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--lime)' }} title="Unlocked" />
-                              ) : isSelf ? (
+                              ) : selfAssessed[skill.name] ? (
                                 <span style={{ fontSize: 10, color: 'var(--lime)' }}>✓ Self-assessed</span>
+                              ) : isSelf ? (
+                                <span style={{ fontSize: 10, color: 'var(--grey)' }}>Self-assessed</span>
                               ) : (
                                 <span style={{ fontSize: 10, color: 'var(--grey)' }}>Tap if ready</span>
                               )}
