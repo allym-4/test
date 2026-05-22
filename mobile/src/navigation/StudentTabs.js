@@ -2,7 +2,6 @@ import { createContext, useContext } from 'react'
 import { View } from 'react-native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
-import HelpFloatingButton from '../components/HelpFloatingButton'
 
 import DashboardScreen from '../screens/student/DashboardScreen'
 import BookScreen from '../screens/student/BookScreen'
@@ -113,7 +112,6 @@ export default function StudentTabs({ onSwitchToInstructor }) {
         <Tab.Screen name="Community" component={CommunityStack} />
         <Tab.Screen name="Account" component={AccountStack} />
       </Tab.Navigator>
-      <HelpFloatingButton />
       </View>
     </SwitchContext.Provider>
   )
