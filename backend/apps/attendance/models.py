@@ -5,6 +5,7 @@ from apps.classes.models import ClassOccurrence, Season
 
 class AttendanceRecord(models.Model):
     class AttendanceStatus(models.TextChoices):
+        PENDING = 'pending', 'Pending'
         PRESENT = 'present', 'Present'
         LATE = 'late', 'Late'
         ABSENT = 'absent', 'Absent'
