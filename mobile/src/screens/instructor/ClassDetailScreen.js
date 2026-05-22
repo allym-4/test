@@ -8,8 +8,9 @@ import { attendance, enrolments, payments as paymentsApi } from '../../api'
 import client from '../../api/client'
 
 const STATUS_OPTS = [
-  { key: 'present',        label: 'Attended',       color: '#ccff00' },
-  { key: 'late',           label: 'Late',            color: '#ffaa00' },
+  { key: 'pending',        label: 'Pending',         color: '#888' },
+  { key: 'present',        label: 'Attended',        color: '#ccff00' },
+  { key: 'late',           label: 'Late',             color: '#ffaa00' },
   { key: 'no_show',        label: 'No-show +$20',    color: '#ff5050' },
   { key: 'no_show_waived', label: 'No-show waived',  color: '#ff8888' },
   { key: 'absent',         label: 'Excused',          color: '#555' },
@@ -231,8 +232,8 @@ export default function ClassDetailScreen({ navigation, route }) {
     try {
       const records = students.map(enr => {
         const sid = enr.student
-        const raw = register[String(sid)] || 'present'
-        const status = raw === 'no_show_waived' ? 'no_show' : raw
+        const raw = register[String(sid)] || 'pending'
+        const status = raw === 'no_show_waived' ? 'no_show' : raw === 'pending' ? 'present' : raw
         return { student: sid, status, no_show_fee_waived: raw === 'no_show_waived', note: notes[String(sid)] || '' }
       })
       await attendance.bulkSave(occurrenceId, records)
@@ -276,11 +277,11 @@ export default function ClassDetailScreen({ navigation, route }) {
 
   const attending = students.filter(enr => {
     const sid = String(enr.student)
-    return !AWAY_STATUSES.includes(register[sid] || 'present')
+    return !AWAY_STATUSES.includes(register[sid] || 'pending')
   })
   const away = students.filter(enr => {
     const sid = String(enr.student)
-    return AWAY_STATUSES.includes(register[sid] || 'present')
+    return AWAY_STATUSES.includes(register[sid] || 'pending')
   })
 
   const listData = tab === 'attending' ? attending : tab === 'away' ? away : waitlist
@@ -366,7 +367,7 @@ export default function ClassDetailScreen({ navigation, route }) {
             return (
               <StudentRow
                 entry={item}
-                status={register[sid] || 'present'}
+                status={register[sid] || 'pending'}
                 balance={balances[sid] ?? 0}
                 note={notes[sid] || ''}
                 onStatusChange={status => setStatus(sid, status)}
