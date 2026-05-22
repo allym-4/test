@@ -1,11 +1,13 @@
 from rest_framework import generics, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Ticket, TicketMessage, Conversation, DirectMessage, FAQ
+from rest_framework.decorators import action
+from django.utils import timezone
+from .models import Ticket, TicketMessage, Conversation, DirectMessage, FAQ, StaffNote
 from .serializers import (
     TicketSerializer, TicketListSerializer, TicketMessageSerializer,
     ConversationSerializer, ConversationListSerializer, DirectMessageSerializer,
-    FAQSerializer,
+    FAQSerializer, StaffNoteSerializer,
 )
 from apps.users.permissions import IsAdminOrInstructor, IsAdminUser
 
@@ -210,3 +212,37 @@ class FAQDetailView(generics.RetrieveUpdateDestroyAPIView):
         if self.request.method == 'GET':
             return [permissions.IsAuthenticated()]
         return [IsAdminUser()]
+
+
+class StaffNoteListView(generics.ListCreateAPIView):
+    serializer_class = StaffNoteSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+    def get_queryset(self):
+        qs = StaffNote.objects.select_related('author', 'resolved_by')
+        resolved = self.request.query_params.get('resolved')
+        if resolved == 'false':
+            qs = qs.filter(is_resolved=False)
+        elif resolved == 'true':
+            qs = qs.filter(is_resolved=True)
+        limit = self.request.query_params.get('limit')
+        if limit:
+            qs = qs[:int(limit)]
+        return qs
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+
+class StaffNoteDetailView(generics.RetrieveUpdateAPIView):
+    queryset = StaffNote.objects.select_related('author', 'resolved_by')
+    serializer_class = StaffNoteSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+    def perform_update(self, serializer):
+        instance = self.get_object()
+        data = self.request.data
+        if data.get('is_resolved') and not instance.is_resolved:
+            serializer.save(is_resolved=True, resolved_by=self.request.user, resolved_at=timezone.now())
+        else:
+            serializer.save()

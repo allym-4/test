@@ -85,6 +85,29 @@ class DirectMessage(models.Model):
         return f'DM from {self.sender} in convo #{self.conversation_id}'
 
 
+class StaffNote(models.Model):
+    class Category(models.TextChoices):
+        GENERAL = 'general', 'General'
+        CASH = 'cash', 'Cash / Money'
+        INCIDENT = 'incident', 'Incident'
+        MAINTENANCE = 'maintenance', 'Maintenance'
+        STUDENT = 'student', 'Student'
+
+    author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='instructor_notes_authored')
+    body = models.TextField()
+    category = models.CharField(max_length=20, choices=Category.choices, default=Category.GENERAL)
+    is_resolved = models.BooleanField(default=False)
+    resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='instructor_notes_resolved')
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'[{self.category}] {self.body[:60]}'
+
+
 class FAQ(models.Model):
     question = models.TextField()
     answer = models.TextField()

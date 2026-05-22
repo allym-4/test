@@ -198,6 +198,11 @@ export const helpdesk = {
     update: (id, d) => client.patch('/api/helpdesk/faqs/' + id + '/', d),
     delete: (id) => client.delete('/api/helpdesk/faqs/' + id + '/'),
   },
+  staffNotes: {
+    list: (params) => client.get('/api/helpdesk/staff-notes/', { params }),
+    create: (data) => client.post('/api/helpdesk/staff-notes/', data),
+    resolve: (id) => client.patch(`/api/helpdesk/staff-notes/${id}/`, { is_resolved: true }),
+  },
 }
 
 export const homework = {

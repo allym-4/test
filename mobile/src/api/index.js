@@ -96,6 +96,11 @@ export const helpdesk = {
   conversations: () => client.get('/api/helpdesk/conversations/'),
   dms: (convId) => client.get(`/api/helpdesk/conversations/${convId}/messages/`),
   sendDm: (convId, data) => client.post(`/api/helpdesk/conversations/${convId}/messages/`, data),
+  staffNotes: {
+    list: (params) => client.get('/api/helpdesk/staff-notes/', { params }),
+    create: (data) => client.post('/api/helpdesk/staff-notes/', data),
+    resolve: (id) => client.patch(`/api/helpdesk/staff-notes/${id}/`, { is_resolved: true }),
+  },
 }
 
 export const payments = {

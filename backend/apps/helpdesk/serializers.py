@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Ticket, TicketMessage, Conversation, DirectMessage, FAQ
+from .models import Ticket, TicketMessage, Conversation, DirectMessage, FAQ, StaffNote
 from apps.users.serializers import UserMinimalSerializer
 
 
@@ -133,3 +133,23 @@ class FAQSerializer(serializers.ModelSerializer):
     class Meta:
         model = FAQ
         fields = ('id', 'question', 'answer', 'icon', 'order', 'is_active')
+
+
+class StaffNoteSerializer(serializers.ModelSerializer):
+    author_name = serializers.SerializerMethodField()
+    resolved_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StaffNote
+        fields = ('id', 'author', 'author_name', 'body', 'category', 'is_resolved', 'resolved_by', 'resolved_by_name', 'resolved_at', 'created_at')
+        read_only_fields = ('id', 'author', 'author_name', 'resolved_by', 'resolved_by_name', 'resolved_at', 'created_at')
+
+    def get_author_name(self, obj):
+        if obj.author:
+            return obj.author.display_name or obj.author.get_full_name() or obj.author.username
+        return ''
+
+    def get_resolved_by_name(self, obj):
+        if obj.resolved_by:
+            return obj.resolved_by.display_name or obj.resolved_by.get_full_name()
+        return ''

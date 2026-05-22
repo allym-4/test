@@ -14,4 +14,6 @@ urlpatterns = [
     path('submit/', views.StudentTicketCreateView.as_view(), name='student-ticket-create'),
     path('faqs/', views.FAQListView.as_view(), name='faq-list'),
     path('faqs/<int:pk>/', views.FAQDetailView.as_view(), name='faq-detail'),
+    path('staff-notes/', views.StaffNoteListView.as_view(), name='staff-note-list'),
+    path('staff-notes/<int:pk>/', views.StaffNoteDetailView.as_view(), name='staff-note-detail'),
 ]
