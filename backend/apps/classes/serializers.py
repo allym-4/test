@@ -10,10 +10,15 @@ class StudioSerializer(serializers.ModelSerializer):
 
 
 class ClassCategorySerializer(serializers.ModelSerializer):
+    session_ids = serializers.SerializerMethodField()
+
+    def get_session_ids(self, obj):
+        return list(obj.sessions.values_list('id', flat=True))
+
     class Meta:
         model = ClassCategory
-        fields = ('id', 'name', 'colour', 'is_visible', 'is_addon_type', 'standalone_price', 'created_at')
-        read_only_fields = ('id', 'created_at')
+        fields = ('id', 'name', 'colour', 'is_visible', 'is_addon_type', 'standalone_price', 'created_at', 'session_ids')
+        read_only_fields = ('id', 'created_at', 'session_ids')
 
 
 class ClassSessionSerializer(serializers.ModelSerializer):
