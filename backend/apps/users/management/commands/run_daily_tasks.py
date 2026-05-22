@@ -39,4 +39,7 @@ class Command(BaseCommand):
         self.stdout.write('-- Running built-in automations (reengagement, welfare, birthday, PAR-Q) --')
         call_command('run_built_in_automations')
 
+        self.stdout.write('-- Auto-charging overdue cash promises --')
+        call_command('auto_charge_cash')
+
         self.stdout.write('=== Done ===')

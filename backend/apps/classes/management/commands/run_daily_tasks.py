@@ -14,6 +14,7 @@ class Command(BaseCommand):
             'send_underenrolled_alerts',
             'send_unmarked_attendance_alerts',
             'complete_past_seasons',
+            'auto_charge_cash',
         ]
         for task in tasks:
             self.stdout.write(f'→ {task}')
