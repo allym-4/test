@@ -101,7 +101,7 @@ class LeadSerializer(serializers.ModelSerializer):
         model = Lead
         fields = (
             'id', 'name', 'email', 'phone', 'source', 'status', 'notes',
-            'assigned_to', 'assigned_to_name', 'created_at', 'updated_at',
+            'assigned_to', 'assigned_to_name', 'created_at', 'updated_at', 'last_contact_at',
         )
         read_only_fields = ('id', 'created_at', 'updated_at')
 

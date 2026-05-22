@@ -149,6 +149,7 @@ export const leads = {
   create: (data) => client.post('/api/leads/', data),
   update: (id, data) => client.patch(`/api/leads/${id}/`, data),
   delete: (id) => client.delete(`/api/leads/${id}/`),
+  logContact: (id) => client.post(`/api/leads/${id}/log-contact/`),
 }
 
 export const seasons = {

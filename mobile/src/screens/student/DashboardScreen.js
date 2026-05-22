@@ -246,6 +246,7 @@ export default function DashboardScreen({ navigation }) {
   )
   const { data: pendingRequiredData, refetch: refetchPendingRequired } = useApi(() => formsApi.pendingRequired(), [user?.id])
   const { data: surveysData } = useApi(() => surveysApi.mine(), [user?.id])
+  const { data: balanceData } = useApi(() => user?.id ? payments.balance(user.id) : null, [user?.id])
 
   const [markingAway, setMarkingAway] = useState({})
   const [cancellingAway, setCancellingAway] = useState({})
@@ -422,6 +423,23 @@ export default function DashboardScreen({ navigation }) {
             <Text style={s.seasonBannerBtnText}>Book Now</Text>
           </TouchableOpacity>
         </View>
+      )}
+
+      {/* Outstanding balance / no-show fee notice */}
+      {balanceData && parseFloat(balanceData.balance) < 0 && (
+        <TouchableOpacity
+          style={s.balanceBanner}
+          onPress={() => navigation.navigate('Billing')}
+          activeOpacity={0.8}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={s.balanceBannerTitle}>Outstanding balance</Text>
+            <Text style={s.balanceBannerBody}>
+              You have an outstanding balance of ${Math.abs(parseFloat(balanceData.balance)).toFixed(2)} — tap to view billing.
+            </Text>
+          </View>
+          <Text style={{ fontSize: 16, color: '#ef4444' }}>→</Text>
+        </TouchableOpacity>
       )}
 
       {/* Profile incomplete banner */}
@@ -675,7 +693,7 @@ export default function DashboardScreen({ navigation }) {
         </View>
       )}
 
-      {waiverRequired && <WaiverModal onDone={refetchPendingRequired} />}
+      {waiverRequired && !trialItem && <WaiverModal onDone={refetchPendingRequired} />}
 
       {!waiverRequired && pendingOffers.length > 0 && !trialItem && (
         <CancellationOfferModal
@@ -977,6 +995,15 @@ const s = StyleSheet.create({
   seasonBannerText: { flex: 1, fontWeight: '700', fontSize: 14, color: '#000' },
   seasonBannerBtn: { backgroundColor: '#000', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
   seasonBannerBtnText: { color: '#ccff00', fontSize: 13, fontWeight: '700' },
+
+  // Outstanding balance banner
+  balanceBanner: {
+    backgroundColor: 'rgba(239,68,68,0.08)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)',
+    borderRadius: 12, padding: 14, marginBottom: 16,
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+  },
+  balanceBannerTitle: { fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.7, color: '#ef4444', marginBottom: 4, fontWeight: '700' },
+  balanceBannerBody: { fontSize: 13, color: '#ccc' },
 
   // Profile banner
   profileBanner: {

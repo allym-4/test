@@ -255,7 +255,49 @@ class PublicLeadCreateView(generics.CreateAPIView):
     permission_classes = [AllowAny]
 
     def perform_create(self, serializer):
-        serializer.save(status='new')
+        lead = serializer.save(status='new')
+        self._notify_studio(lead)
+
+    def _notify_studio(self, lead):
+        from django.core.mail import send_mail
+        from django.conf import settings as django_settings
+        studio = StudioSettings.get()
+        to_email = studio.enquiries_email or studio.email
+        if not to_email:
+            return
+        try:
+            body = f'New enquiry from {lead.name}\n\n'
+            if lead.email:
+                body += f'Email: {lead.email}\n'
+            if lead.phone:
+                body += f'Phone: {lead.phone}\n'
+            body += f'Source: {lead.get_source_display()}\n'
+            if lead.notes:
+                body += f'\nMessage:\n{lead.notes}\n'
+            body += f'\nView in admin: /admin/leads'
+            send_mail(
+                subject=f'New studio enquiry — {lead.name}',
+                message=body,
+                from_email=django_settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[to_email],
+                fail_silently=True,
+            )
+        except Exception:
+            pass
+
+
+class LeadLogContactView(APIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        from django.utils import timezone
+        try:
+            lead = Lead.objects.get(pk=pk)
+        except Lead.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=404)
+        lead.last_contact_at = timezone.now()
+        lead.save(update_fields=['last_contact_at'])
+        return Response(LeadSerializer(lead).data)
 
 
 class StudioSettingsView(APIView):

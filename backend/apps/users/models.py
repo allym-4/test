@@ -100,6 +100,7 @@ class Lead(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    last_contact_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ['-created_at']
