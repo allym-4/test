@@ -455,6 +455,46 @@ export default function AdminStudentDetail() {
             {/* OVERVIEW */}
             {tab === 'overview' && (
               <div>
+                {/* Balance banner */}
+                <div
+                  onClick={() => setTab('payments')}
+                  style={{
+                    cursor: 'pointer', borderRadius: 10, padding: '14px 18px', marginBottom: 14,
+                    background: isOwing ? 'rgba(255,68,68,0.1)' : bal > 0 ? 'rgba(204,255,0,0.08)' : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${isOwing ? 'rgba(255,68,68,0.3)' : bal > 0 ? 'rgba(204,255,0,0.25)' : 'var(--border)'}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--grey)', marginBottom: 3 }}>Account Balance</div>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: isOwing ? 'var(--red)' : bal > 0 ? 'var(--lime)' : 'var(--grey)' }}>
+                      {isOwing ? `-$${Math.abs(bal).toFixed(2)}` : bal > 0 ? `$${bal.toFixed(2)}` : '$0 clear'}
+                    </div>
+                    {isOwing && <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 2 }}>Balance owing — tap to view payments</div>}
+                  </div>
+                  <span style={{ fontSize: 18, opacity: 0.5 }}>→</span>
+                </div>
+
+                {/* Important notes (medical / injury / permanent) */}
+                {(notesData || []).filter(n => !n.archived && (n.is_permanent || n.tag === 'medical' || n.tag === 'injury')).length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    {(notesData || []).filter(n => !n.archived && (n.is_permanent || n.tag === 'medical' || n.tag === 'injury')).map(n => (
+                      <div key={n.id} onClick={() => setTab('notes')} style={{
+                        cursor: 'pointer', marginBottom: 8, borderRadius: 8, padding: '10px 14px',
+                        background: n.tag === 'medical' ? 'rgba(255,100,100,0.08)' : n.tag === 'injury' ? 'rgba(255,170,0,0.08)' : 'rgba(176,160,255,0.08)',
+                        border: `1px solid ${n.tag === 'medical' ? 'rgba(255,100,100,0.25)' : n.tag === 'injury' ? 'rgba(255,170,0,0.25)' : 'rgba(176,160,255,0.25)'}`,
+                      }}>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: n.tag === 'medical' ? 'var(--red)' : n.tag === 'injury' ? '#ffaa00' : 'var(--lav)' }}>
+                            {n.is_permanent ? '📌 Permanent' : n.tag === 'medical' ? '🏥 Medical' : '🩹 Injury'}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: 13, color: 'var(--white)', lineHeight: 1.4 }}>{n.text}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <div className="sd-overview-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
                   <div className="card" style={{ padding: '16px 18px' }}>
                     <div style={{ fontSize: 11, marginBottom: 12, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px' }}>Contact Info</div>
