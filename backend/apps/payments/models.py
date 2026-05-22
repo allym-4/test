@@ -133,6 +133,26 @@ class MembershipType(models.Model):
         return self.name
 
 
+class StudentMembership(models.Model):
+    class Status(models.TextChoices):
+        ACTIVE = 'active', 'Active'
+        CANCELLED = 'cancelled', 'Cancelled'
+        EXPIRED = 'expired', 'Expired'
+
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='memberships')
+    membership_type = models.ForeignKey(MembershipType, on_delete=models.CASCADE, related_name='student_memberships')
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.student} — {self.membership_type}'
+
+
 class GiftCard(models.Model):
     code = models.CharField(max_length=20, unique=True)
     value = models.DecimalField(max_digits=8, decimal_places=2)

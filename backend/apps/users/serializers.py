@@ -289,10 +289,11 @@ class SkillGroupSerializer(serializers.ModelSerializer):
 
 class SkillLevelSerializer(serializers.ModelSerializer):
     groups = SkillGroupSerializer(many=True, read_only=True)
+    class_category_name = serializers.CharField(source='class_category.name', read_only=True, default=None)
 
     class Meta:
         model = SkillLevel
-        fields = ('id', 'name', 'order', 'groups')
+        fields = ('id', 'name', 'order', 'class_category', 'class_category_name', 'groups')
         read_only_fields = ('id',)
 
 

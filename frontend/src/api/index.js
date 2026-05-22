@@ -382,6 +382,13 @@ export const membershipTypes = {
   delete: (id) => client.delete(`/api/payments/membership-types/${id}/`),
 }
 
+export const studentMemberships = {
+  list: (params) => client.get('/api/payments/student-memberships/', { params }),
+  create: (data) => client.post('/api/payments/student-memberships/', data),
+  update: (id, data) => client.patch(`/api/payments/student-memberships/${id}/`, data),
+  bulkAssign: (data) => client.post('/api/payments/student-memberships/bulk-assign/', data),
+}
+
 export const giftCards = {
   list: (params) => client.get('/api/payments/gift-cards/', { params }),
   create: (data) => client.post('/api/payments/gift-cards/', data),

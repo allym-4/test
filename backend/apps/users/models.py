@@ -427,6 +427,10 @@ class StudentTag(models.Model):
 class SkillLevel(models.Model):
     name = models.CharField(max_length=50)
     order = models.PositiveIntegerField(default=0)
+    class_category = models.ForeignKey(
+        'classes.ClassCategory', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='skill_levels',
+    )
 
     class Meta:
         ordering = ['order']
