@@ -161,7 +161,7 @@ class SeasonSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Season
-        fields = ('id', 'name', 'start_date', 'end_date', 'status', 'bookings_open', 'go_live_at', 'bookings_enabled', 'archived', 'notes', 'published_at', 'created_at', 'session_count', 'enrolled_count')
+        fields = ('id', 'name', 'start_date', 'end_date', 'status', 'bookings_open', 'go_live_at', 'bookings_enabled', 'archived', 'notes', 'published_at', 'created_at', 'session_count', 'enrolled_count', 'discount_tiers')
         read_only_fields = ('id', 'created_at', 'session_count', 'enrolled_count')
 
     def get_session_count(self, obj):

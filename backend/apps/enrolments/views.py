@@ -134,9 +134,10 @@ def _get_class_incremental_price(session, position):
         if session.category and session.category.standalone_price is not None
         else Decimal(str(settings.price_season if settings else 270))
     )
-    tiers = (settings.season_discount_tiers or {}) if settings else {}
-    if not tiers:
-        tiers = DEFAULT_DISCOUNT_TIERS
+    # Season-level tiers take priority over studio-level tiers
+    season_tiers = (session.season.discount_tiers or {}) if session.season_id else {}
+    studio_tiers = (settings.season_discount_tiers or {}) if settings else {}
+    tiers = season_tiers or studio_tiers or DEFAULT_DISCOUNT_TIERS
     discount = Decimal(str(tiers.get(str(position), 0)))
     return max(Decimal('0'), base_price - discount)
 
