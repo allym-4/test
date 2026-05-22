@@ -1,15 +1,14 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   TextInput, ActivityIndicator, RefreshControl,
 } from 'react-native'
 import { useApi } from '../../hooks/useApi'
-import { users, payments as paymentsApi } from '../../api'
+import { users, payments as paymentsApi, enrolments } from '../../api'
 
-function StudentRow({ student, balance, onPress }) {
+function StudentRow({ student, balance, isEnrolled, onPress }) {
   const name = student.display_name || `${student.first_name ?? ''} ${student.last_name ?? ''}`.trim() || student.email || 'Student'
   const initial = (student.first_name || student.display_name || '?')[0].toUpperCase()
-  const isEnrolled = (student.active_enrolments_count ?? 0) > 0
 
   const balNum = balance !== undefined ? balance : null
   const isOwing = balNum !== null && balNum < 0
@@ -33,7 +32,7 @@ function StudentRow({ student, balance, onPress }) {
         {student.email ? <Text style={s.email} numberOfLines={1}>{student.email}</Text> : null}
         {balNum !== null && (
           <Text style={[s.balText, isOwing ? s.balOwing : hasCredit ? s.balCredit : s.balClear]}>
-            {isOwing ? `⚠ $${Math.abs(balNum).toFixed(2)} owing` : hasCredit ? `$${balNum.toFixed(2)} credit` : 'Balance clear'}
+            {isOwing ? `⚠ $${Math.abs(balNum).toFixed(2)} owing` : hasCredit ? `$${balNum.toFixed(2)} credit` : '$0 clear'}
           </Text>
         )}
       </View>
@@ -45,9 +44,21 @@ function StudentRow({ student, balance, onPress }) {
 export default function StudentsScreen({ navigation }) {
   const [search, setSearch] = useState('')
   const [balances, setBalances] = useState({})
+  const [enrolledIds, setEnrolledIds] = useState(new Set())
   const { data, loading, error, refetch } = useApi(() => users.list({ role: 'student' }), [])
   const allStudents = data?.results ?? data ?? []
 
+  // Fetch all active enrolments once to determine enrolled status
+  useEffect(() => {
+    enrolments.list({ status: 'active', page_size: 500 })
+      .then(res => {
+        const items = res.data?.results ?? res.data ?? []
+        setEnrolledIds(new Set(items.map(e => e.student ?? e.student_id)))
+      })
+      .catch(() => {})
+  }, [])
+
+  // Fetch balances for all students
   useEffect(() => {
     if (!allStudents.length) return
     allStudents.forEach(student => {
@@ -97,6 +108,7 @@ export default function StudentsScreen({ navigation }) {
             <StudentRow
               student={item}
               balance={balances[item.id]}
+              isEnrolled={enrolledIds.has(item.id)}
               onPress={() => navigation.navigate('StudentDetail', {
                 studentId: item.id,
                 studentName: item.display_name || `${item.first_name ?? ''} ${item.last_name ?? ''}`.trim() || 'Student',
@@ -146,6 +158,6 @@ const s = StyleSheet.create({
   balText: { fontSize: 11, fontWeight: '600', marginTop: 3 },
   balOwing: { color: '#ff5050' },
   balCredit: { color: '#ccff00' },
-  balClear: { color: '#444' },
+  balClear: { color: '#555' },
   chevron: { fontSize: 20, color: '#444', flexShrink: 0 },
 })
