@@ -61,7 +61,7 @@ class Command(BaseCommand):
                 ),
                 notification_type='reminder',
                 action_label='View Classes',
-                action_url='/classes',
+                action_url='/portal/classes',
             )
 
             if instructor.email:

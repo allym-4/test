@@ -44,6 +44,7 @@ export const classes = {
     myBookings: () => client.get('/api/classes/casual-bookings/'),
     upgrade: (bookingId) => client.post(`/api/classes/casual-bookings/${bookingId}/upgrade/`),
     release: (bookingId) => client.post(`/api/classes/casual-bookings/${bookingId}/release/`),
+    exemptionRequest: (sessionId, data) => client.post('/api/enrolments/', { class_session: sessionId, status: 'exemption_requested', ...data }),
   },
   practice: {
     list: (params) => client.get('/api/classes/practice/', { params }),

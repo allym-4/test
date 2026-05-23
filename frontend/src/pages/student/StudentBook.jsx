@@ -1426,7 +1426,7 @@ function SeasonClassRow({ session, userLevel, selected, onToggle, onJoinWaitlist
                 )}
               </div>
               <a
-                href="/portal/studio-info"
+                href="/portal/studio"
                 onClick={e => e.stopPropagation()}
                 style={{ fontSize: 11, color: '#555', textDecoration: 'underline', textDecorationStyle: 'dotted', whiteSpace: 'nowrap', flexShrink: 0 }}
               >

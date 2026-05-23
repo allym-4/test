@@ -86,7 +86,7 @@ def _trigger_displacement_if_needed(enrolment):
             ),
             notification_type='warning',
             action_label='View Offer',
-            action_url='/portal/my-classes',
+            action_url='/portal/classes',
         )
         send_mail(
             subject=f'Action required: Upgrade or release your spot — {session.name}',
@@ -98,7 +98,7 @@ def _trigger_displacement_if_needed(enrolment):
                 f'• Release your spot (your account will be credited ${casual.price_charged})\n'
                 f'• Message Duality if you have questions\n\n'
                 f'Log in to your student portal to respond:\n'
-                f'{getattr(settings, "FRONTEND_URL", "https://dualitypole.com.au")}/portal/my-classes\n\n'
+                f'{getattr(settings, "FRONTEND_URL", "https://dualitypole.com.au")}/portal/classes\n\n'
                 f'Duality Pole Studio'
             ),
             from_email=settings.DEFAULT_FROM_EMAIL,
@@ -116,7 +116,7 @@ def _trigger_displacement_if_needed(enrolment):
         ),
         notification_type='info',
         action_label='View My Classes',
-        action_url='/portal/my-classes',
+        action_url='/portal/classes',
     )
 
 

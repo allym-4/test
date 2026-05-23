@@ -113,7 +113,7 @@ export const payments = {
     setupIntent: () => client.post('/api/payments/stripe/setup-intent/'),
     paymentMethods: (params) => client.get('/api/payments/stripe/payment-methods/', { params }),
     removePaymentMethod: (data) => client.delete('/api/payments/stripe/payment-methods/', { data }),
-    updateAutoCharge: (data) => client.patch('/api/payments/stripe/config/', data),
+    updateAutoCharge: (data) => client.patch('/api/payments/stripe/payment-methods/', data),
     chargeSaved: (data) => client.post('/api/payments/stripe/charge-saved/', data),
   },
   promoCodes: {

@@ -166,7 +166,7 @@ function MarkAwayModal({ occurrence, session, cancellationWindowHours, noShowFee
               <Text style={ma.infoBody}>
                 {'This is more than '}
                 <Text style={{ fontWeight: '700' }}>{windowHours} hours</Text>
-                {' before your class — you\'re within the cancellation window. A catch-up credit will be added to your account to use within this season.'}
+                {' before your class — you\'re outside the cancellation window. A catch-up credit will be added to your account to use within this season.'}
               </Text>
             </View>
           )}
@@ -1332,7 +1332,19 @@ export default function MyClassesScreen({ navigation }) {
       const name = sess?.name ?? 'Pole Class'
       const studio = sess?.studio_detail?.name ?? sess?.studio?.name ?? 'Duality Pole Studio'
       const startTime = sess?.start_time?.replace(/:/g, '').slice(0, 4) ?? '0900'
-      const endTime = sess?.end_time?.replace(/:/g, '').slice(0, 4) ?? '1000'
+      let endTime = sess?.end_time?.replace(/:/g, '').slice(0, 4) ?? null
+      if (!endTime) {
+        // Compute end time from start_time + duration_minutes
+        if (sess?.start_time && sess?.duration_minutes) {
+          const [sh, sm] = sess.start_time.split(':').map(Number)
+          const totalMins = sh * 60 + sm + Number(sess.duration_minutes)
+          const eh = Math.floor(totalMins / 60) % 24
+          const em = totalMins % 60
+          endTime = String(eh).padStart(2, '0') + String(em).padStart(2, '0')
+        } else {
+          endTime = '1000'
+        }
+      }
       const dayNum = sess?.day_of_week
       const byday = dayNum != null ? DAYS[dayNum] : null
       const now = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z'

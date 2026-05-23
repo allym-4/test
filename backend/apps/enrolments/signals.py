@@ -113,7 +113,7 @@ def _offer_waitlist_spot(session):
                 body=f"A spot opened up! You have until {expires_str} to claim it. Tap to confirm.",
                 notification_type='waitlist',
                 action_label='Claim My Spot',
-                action_url='/portal/my-classes',
+                action_url='/portal/classes',
             )
 
         if prefs.get('waitlist_email', True) and student.email:
@@ -144,7 +144,7 @@ def _send_waitlist_reminder(enrolment):
             body="Your waitlist offer expires soon! Log in now to confirm your spot.",
             notification_type='waitlist',
             action_label='Claim My Spot',
-            action_url='/portal/my-classes',
+            action_url='/portal/classes',
         )
 
     if prefs.get('waitlist_email', True) and student.email:

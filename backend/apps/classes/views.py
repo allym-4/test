@@ -998,6 +998,20 @@ class CasualBookView(APIView):
         if enrolment_type not in ('casual', 'catchup', 'classpass'):
             return Response({'detail': 'Invalid enrolment_type.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Fix 6: Enforce week-3 drop-in cutoff server-side
+        session = occurrence.session
+        if session.catchup_cutoff_weeks:
+            season = getattr(session, 'season', None)
+            if season and season.start_date:
+                from django.utils import timezone as _tz
+                today = _tz.localdate()
+                week_number = (today - season.start_date).days // 7 + 1
+                if week_number > session.catchup_cutoff_weeks:
+                    return Response(
+                        {'detail': f'Drop-in bookings for {session.name} closed after week {session.catchup_cutoff_weeks} of the season.'},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
         if CasualBooking.objects.filter(
             occurrence=occurrence, student=request.user
         ).exclude(status='cancelled').exists():
@@ -1070,18 +1084,37 @@ class CasualBookView(APIView):
 
         is_free = enrolment_type in ('catchup', 'classpass')
         if is_free:
-            price = 0
+            price_charged = 0
         else:
             from apps.users.models import StudioSettings
+            from apps.enrolments.models import Enrolment as _Enrolment
             _s = StudioSettings.objects.first()
-            price = float(_s.price_casual) if _s else 0
+            _session = occurrence.session
+            _season = getattr(_session, 'season', None)
+            is_enrolled_this_season = (
+                _season is not None and
+                _Enrolment.objects.filter(
+                    student=request.user,
+                    class_session__season=_season,
+                    status='active',
+                ).exists()
+            )
+            if is_enrolled_this_season:
+                price_charged = float(_s.price_casual_enrolled) if _s else 30
+            else:
+                price_charged = float(_s.price_casual) if _s else 40
+
+        # Fix 5: respect payment_method and cash_promised_date from request
+        # CasualBooking model does not have payment_method or cash_promised_date fields,
+        # so we only store what the model supports (price_charged, is_free).
+        # No additional fields to set.
 
         booking = CasualBooking.objects.create(
             occurrence=occurrence,
             student=request.user,
             enrolment_type=enrolment_type,
             status='confirmed',
-            price_charged=price,
+            price_charged=price_charged,
             is_free=is_free,
         )
         return Response(
@@ -1236,7 +1269,7 @@ class CasualReleaseView(APIView):
                 body=f'The casual student released their spot. You\'re confirmed for the full season in {session.name}!',
                 notification_type='success',
                 action_label='View My Classes',
-                action_url='/portal/my-classes',
+                action_url='/portal/classes',
             )
 
         # Notify the casual student of credit
@@ -1286,7 +1319,7 @@ class CasualAdminDisplaceView(APIView):
                 body=f'Your spot in {session.name} has been confirmed for the full season!',
                 notification_type='success',
                 action_label='View My Classes',
-                action_url='/portal/my-classes',
+                action_url='/portal/classes',
             )
 
         # Notify the casual student of credit

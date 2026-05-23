@@ -52,7 +52,7 @@ export default function MarkAwayModal({ occurrence, cancellationWindowHours, noS
             <div style={{ background: 'rgba(204,255,0,0.07)', border: '1.5px solid var(--lime)', borderRadius: 12, padding: '16px', marginBottom: 20 }}>
               <div style={{ fontWeight: 800, color: 'var(--lime)', marginBottom: 8, fontSize: 15 }}>You'll receive a catch-up credit</div>
               <div style={{ fontSize: 14, color: 'var(--white)', lineHeight: 1.6 }}>
-                This is more than <strong>{windowHours} hours</strong> before your class — you're within the cancellation window. A catch-up credit will be added to your account to use within this season.
+                This is more than <strong>{windowHours} hours</strong> before your class — you're outside the cancellation window. A catch-up credit will be added to your account to use within this season.
               </div>
             </div>
           )}
