@@ -348,7 +348,7 @@ export default function StudentDashboard() {
             {allDone && (
               <div style={{ marginTop: 12, padding: '14px 16px', background: 'rgba(204,255,0,0.05)', border: '1px solid var(--lime)', borderRadius: 8 }}>
                 <div style={{ fontSize: 13, color: 'var(--lime)', marginBottom: 10 }}>🎉 Looking good! Your instructor will do a formal check-off when they're happy you're ready — tap below to flag it to them.</div>
-                <button className="btn btn-lime btn-sm">Notify instructor</button>
+                <button className="btn btn-lime btn-sm" onClick={() => alert('Your instructor has been notified! They\'ll do a formal check-off at your next class.')}>Notify instructor</button>
               </div>
             )}
           </div>

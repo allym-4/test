@@ -55,7 +55,7 @@ class Command(BaseCommand):
                     body=f"The casual student's upgrade window expired. You're confirmed for the full season in {session.name}!",
                     notification_type='success',
                     action_label='View My Classes',
-                    action_url='/portal/my-classes',
+                    action_url='/portal/classes',
                 )
 
         # Also find any pending_displacement enrolments whose window expired
@@ -78,7 +78,7 @@ class Command(BaseCommand):
                 body=f"Your spot in {enrolment.class_session.name} has been confirmed for the full season!",
                 notification_type='success',
                 action_label='View My Classes',
-                action_url='/portal/my-classes',
+                action_url='/portal/classes',
             )
 
         self.stdout.write(

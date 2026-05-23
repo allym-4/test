@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments as enrolmentsApi, attendance, classes as classesApi, helpdesk as helpdeskApi, attendance as attendanceApi, settings as settingsApi } from '../../api'
+import { enrolments as enrolmentsApi, attendance, classes as classesApi, helpdesk as helpdeskApi, settings as settingsApi } from '../../api'
 import MarkAwayModal from '../../components/MarkAwayModal'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -540,7 +540,7 @@ export default function StudentMyClasses() {
   const { data: enrolData, loading, refetch: refetchEnrol } = useApi(() => enrolmentsApi.list({ student: user?.id }), [user?.id])
   const { data: casualBookingsData, refetch: refetchCasual } = useApi(() => classesApi.casual.myBookings(), [])
   const { data: workshopsData } = useApi(() => classesApi.workshops.list(), [])
-  const { data: creditsData } = useApi(() => user?.id ? attendanceApi.makeupCredits.list({ student: user.id, status: 'available' }) : null, [user?.id])
+  const { data: creditsData } = useApi(() => user?.id ? attendance.makeupCredits.list({ student: user.id, status: 'available' }) : null, [user?.id])
   const { data: studioSettings } = useApi(() => settingsApi.get(), [])
 
   const [tab, setTab] = useState('active')
@@ -567,7 +567,7 @@ export default function StudentMyClasses() {
   const waitlisted = enrolments_.filter(e => e.status === 'waitlisted')
   const seasonWaitlisted = waitlisted.filter(e => e.enrolment_type === 'course')
   const classWaitlisted = waitlisted.filter(e => e.enrolment_type !== 'course')
-  const pastEnrolments = enrolments_.filter(e => ['completed', 'cancelled', 'expired'].includes(e.status))
+  const pastEnrolments = enrolments_.filter(e => ['completed', 'cancelled'].includes(e.status))
 
   const currentEnrolments = active.filter(e => {
     const start = e.class_session_detail?.season_start_date

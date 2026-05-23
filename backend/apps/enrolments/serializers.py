@@ -20,6 +20,18 @@ class EnrolmentSerializer(serializers.ModelSerializer):
     trial_feedback = TrialFeedbackSerializer(read_only=True)
     upcoming_occurrences = serializers.SerializerMethodField()
     season_enrolment_count = serializers.SerializerMethodField()
+    season_detail = serializers.SerializerMethodField()
+
+    def get_season_detail(self, obj):
+        season = getattr(getattr(obj, 'class_session', None), 'season', None)
+        if not season:
+            return None
+        return {
+            'id': season.id,
+            'name': season.name,
+            'start_date': str(season.start_date) if season.start_date else None,
+            'end_date': str(season.end_date) if season.end_date else None,
+        }
 
     def get_season_enrolment_count(self, obj):
         season_id = getattr(obj.class_session, 'season_id', None)
@@ -72,12 +84,13 @@ class EnrolmentSerializer(serializers.ModelSerializer):
             'waitlist_position',
             'displacement_casual_booking', 'displacement_expires_at',
             'upcoming_occurrences', 'trial_feedback', 'season_enrolment_count',
+            'season_detail',
         )
         read_only_fields = (
             'id', 'enrolled_date',
             'waitlist_offered_at', 'waitlist_expires_at', 'waitlist_urgent',
             'displacement_casual_booking', 'displacement_expires_at',
-            'upcoming_occurrences', 'season_enrolment_count',
+            'upcoming_occurrences', 'season_enrolment_count', 'season_detail',
         )
 
 

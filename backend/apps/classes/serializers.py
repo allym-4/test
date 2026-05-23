@@ -29,24 +29,26 @@ class ClassSessionSerializer(serializers.ModelSerializer):
     category_name = serializers.StringRelatedField(source='category', read_only=True)
     season_name = serializers.CharField(source='season.name', read_only=True, allow_null=True)
     season_start_date = serializers.DateField(source='season.start_date', read_only=True, allow_null=True)
+    season_end_date = serializers.DateField(source='season.end_date', read_only=True, allow_null=True)
     season_base_price = serializers.SerializerMethodField()
     skill_level_name = serializers.CharField(source='skill_level.name', read_only=True, allow_null=True)
+    end_time = serializers.SerializerMethodField()
 
     class Meta:
         model = ClassSession
         fields = (
             'id', 'name', 'level', 'instructor', 'instructor_detail',
             'studio', 'studio_detail', 'day_of_week', 'day_of_week_display',
-            'start_time', 'duration_minutes', 'capacity', 'enrolled_count',
+            'start_time', 'end_time', 'duration_minutes', 'capacity', 'enrolled_count',
             'session_type', 'is_active', 'category', 'category_name',
-            'season', 'season_name', 'season_start_date', 'season_bookings_open',
+            'season', 'season_name', 'season_start_date', 'season_end_date', 'season_bookings_open',
             'catchup_cutoff_weeks',
             'first_timer_headline', 'first_timer_body',
             'description', 'created_at',
             'season_base_price',
             'skill_level', 'skill_level_name',
         )
-        read_only_fields = ('id', 'enrolled_count', 'instructor_detail', 'studio_detail', 'day_of_week_display', 'category_name', 'season_name', 'season_start_date', 'season_bookings_open', 'season_base_price', 'created_at', 'skill_level_name')
+        read_only_fields = ('id', 'enrolled_count', 'instructor_detail', 'studio_detail', 'day_of_week_display', 'category_name', 'season_name', 'season_start_date', 'season_end_date', 'season_bookings_open', 'season_base_price', 'created_at', 'skill_level_name', 'end_time')
 
     def get_season_base_price(self, obj):
         if obj.category and obj.category.standalone_price is not None:
@@ -61,6 +63,14 @@ class ClassSessionSerializer(serializers.ModelSerializer):
         if obj.season_id is None:
             return True  # no season = always open
         return obj.season.bookings_open
+
+    def get_end_time(self, obj):
+        if not obj.start_time or not obj.duration_minutes:
+            return None
+        import datetime
+        start = datetime.datetime.combine(datetime.date.today(), obj.start_time)
+        end = start + datetime.timedelta(minutes=obj.duration_minutes)
+        return end.strftime('%H:%M:%S')
 
 
 class ClassOccurrenceSerializer(serializers.ModelSerializer):
