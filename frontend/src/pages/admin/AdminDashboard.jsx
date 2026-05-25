@@ -296,7 +296,7 @@ export default function AdminDashboard() {
   const { data: pendingOrdersData } = useApi(() => orders.list({ status: 'pending' }))
   const { data: trialsData } = useApi(() => enrolments.list({ enrolment_type: 'trial' }))
   const { data: pendingPlansData, refetch: refetchPendingPlans } = useApi(() => payments.plans.list({ status: 'pending_approval' }))
-  const { data: exemptionData } = useApi(() => enrolments.list({ status: 'exemption_requested' }))
+  const { data: exemptionData, refetch: refetchExemptions } = useApi(() => enrolments.list({ status: 'exemption_requested' }))
   const { data: trialsAndCasualsData, refetch: refetchTrialsAndCasuals } = useApi(() => enrolments.list({ enrolment_type: 'trial,casual' }))
   const { data: flaggedData, refetch: refetchFlagged } = useApi(() => enrolments.flagged())
   const { data: recheckNotesData } = useApi(() => users.recheckNotesToday())
@@ -461,7 +461,21 @@ export default function AdminDashboard() {
 
   const toggleCheck = (id) => setCheckedItems(prev => ({ ...prev, [id]: !prev[id] }))
 
-  const pendingActionsCount = pendingPlans.length
+  async function approveExemption(e) {
+    try {
+      await enrolments.update(e.id, { status: 'active', exemption_approved: true })
+      refetchExemptions()
+    } catch {}
+  }
+
+  async function declineExemption(e) {
+    try {
+      await enrolments.update(e.id, { status: 'declined' })
+      refetchExemptions()
+    } catch {}
+  }
+
+  const pendingActionsCount = pendingPlans.length + exemptions.length
 
   const firstName = user?.first_name || user?.display_name?.split(' ')[0] || user?.username || 'there'
 
@@ -735,7 +749,7 @@ export default function AdminDashboard() {
           </div>
 
           {pendingPlans.length > 0 && (
-            <div>
+            <div style={{ marginBottom: exemptions.length > 0 ? 16 : 0 }}>
               <div style={{ ...subsectionLabel, color: 'var(--grey)' }}>
                 Payment Plan Requests
               </div>
@@ -754,6 +768,31 @@ export default function AdminDashboard() {
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button className="btn btn-ghost btn-xs" style={{ color: 'var(--lime)' }} onClick={() => approvePlan(p)}>APPROVE</button>
                       <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => denyPlan(p)}>DENY</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {exemptions.length > 0 && (
+            <div>
+              <div style={{ ...subsectionLabel, color: 'var(--grey)' }}>
+                Late Drop-in Exemption Requests
+              </div>
+              <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+                {exemptions.map((e, i) => (
+                  <div key={e.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+                    borderBottom: i < exemptions.length - 1 ? '1px solid var(--border)' : 'none',
+                  }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>{e.student_name || 'Student'}</div>
+                      <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{e.class_session_detail?.name || 'Class'}{e.exemption_reason ? ` — ${e.exemption_reason}` : ''}</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--lime)' }} onClick={() => approveExemption(e)}>APPROVE</button>
+                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => declineExemption(e)}>DECLINE</button>
                     </div>
                   </div>
                 ))}
