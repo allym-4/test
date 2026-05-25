@@ -45,6 +45,19 @@ def send_welcome_email(sender, instance, created, **kwargs):
             )
 
         run_custom_automations('student_created', instance)
+
+        # Auto-sync new student to Mailchimp
+        try:
+            from apps.users.models import StudioSettings
+            from apps.users.mailchimp_service import sync_members
+            s = StudioSettings.get()
+            if s.mailchimp_api_key and s.mailchimp_list_id and instance.email:
+                sync_members(s.mailchimp_api_key, s.mailchimp_list_id, [
+                    {'email': instance.email, 'first_name': instance.first_name, 'last_name': instance.last_name}
+                ])
+        except Exception:
+            pass
+
     except Exception:
         pass
 
@@ -131,3 +144,22 @@ def handle_payment_overdue(sender, instance, created, **kwargs):
     )
 
     run_custom_automations('payment_overdue', student, {'amount': str(instance.amount), 'due_date': str(instance.due_date)})
+
+
+@receiver(post_save, sender='users.Lead')
+def sync_lead_to_mailchimp(sender, instance, created, **kwargs):
+    if not instance.email:
+        return
+    try:
+        from apps.users.models import StudioSettings
+        from apps.users.mailchimp_service import sync_members
+        s = StudioSettings.get()
+        if s.mailchimp_api_key and s.mailchimp_list_id:
+            name_parts = instance.name.split() if instance.name else []
+            sync_members(s.mailchimp_api_key, s.mailchimp_list_id, [{
+                'email': instance.email,
+                'first_name': name_parts[0] if name_parts else '',
+                'last_name': ' '.join(name_parts[1:]) if len(name_parts) > 1 else '',
+            }])
+    except Exception:
+        pass

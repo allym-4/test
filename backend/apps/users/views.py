@@ -430,12 +430,61 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
         return super().update(request, *args, **kwargs)
 
 
+BUILT_IN_AUTOMATIONS = [
+    {'slug': 'welcome_email', 'name': 'Welcome Email', 'description': 'Sends a welcome email to new students when they register.', 'trigger_type': 'student_registered'},
+    {'slug': 'class_reminder', 'name': 'Class Reminder', 'description': 'Sends a reminder to students 24 hours before their class.', 'trigger_type': 'daily'},
+    {'slug': 'noshow_fee', 'name': 'No-Show Fee', 'description': 'Charges a $20 no-show fee when a student misses class without marking away.', 'trigger_type': 'attendance_marked'},
+    {'slug': 'waitlist_notify', 'name': 'Waitlist Spot Available', 'description': 'Notifies the next waitlisted student when a spot opens up.', 'trigger_type': 'enrolment_cancelled'},
+    {'slug': 'season_renewal_reminder', 'name': 'Season Renewal Reminder', 'description': 'Reminds students to re-enrol when the next season opens in week 5.', 'trigger_type': 'daily'},
+    {'slug': 'season_enrol_open', 'name': 'Season Enrolments Open', 'description': 'Notifies all students when a new season becomes available to book.', 'trigger_type': 'season_published'},
+    {'slug': 'locker_renewal_reminder', 'name': 'Locker Renewal Reminder', 'description': 'Reminds students in week 8 that their locker expires with the season.', 'trigger_type': 'daily'},
+    {'slug': 'reengagement', 'name': 'Re-engagement', 'description': 'Sends a check-in message to students who haven\'t been active recently.', 'trigger_type': 'daily'},
+    {'slug': 'welfare_checkin', 'name': 'Welfare Check-in', 'description': 'Sends a welfare check-in message after a student has missed several classes.', 'trigger_type': 'daily'},
+    {'slug': 'birthday', 'name': 'Birthday Message', 'description': 'Sends a birthday message to students on their birthday.', 'trigger_type': 'daily'},
+    {'slug': 'parq_reminder', 'name': 'PAR-Q Reminder', 'description': 'Reminds students to complete their health screening form if outstanding.', 'trigger_type': 'daily'},
+    {'slug': 'payment_overdue', 'name': 'Payment Overdue', 'description': 'Notifies admin and student when a payment is more than 14 days overdue.', 'trigger_type': 'daily'},
+    {'slug': 'underenrolled_alert', 'name': 'Under-enrolled Class Alert', 'description': 'Alerts admin when a class has too few students to run.', 'trigger_type': 'daily'},
+    {'slug': 'cover_needed_alert', 'name': 'Cover Needed Alert', 'description': 'Notifies admins when an instructor marks themselves unavailable for a class.', 'trigger_type': 'unavailability_set'},
+]
+
+BUILT_IN_SLUGS = {a['slug'] for a in BUILT_IN_AUTOMATIONS}
+
+
 class AutomationRuleView(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request):
-        rules = AutomationRule.objects.all()
-        return Response(AutomationRuleSerializer(rules, many=True).data)
+        db_rules = {r.slug: r for r in AutomationRule.objects.all()}
+        result = []
+        for defn in BUILT_IN_AUTOMATIONS:
+            rule = db_rules.get(defn['slug'])
+            if rule:
+                # Fill in name/description from definition if blank in DB
+                if not rule.name:
+                    rule.name = defn['name']
+                if not rule.description:
+                    rule.description = defn['description']
+                if not rule.trigger_type:
+                    rule.trigger_type = defn['trigger_type']
+                result.append(AutomationRuleSerializer(rule).data)
+            else:
+                result.append({
+                    'id': None,
+                    'slug': defn['slug'],
+                    'enabled': True,
+                    'name': defn['name'],
+                    'description': defn['description'],
+                    'trigger_type': defn['trigger_type'],
+                    'conditions': [],
+                    'actions': [],
+                    'is_custom': False,
+                    'created_at': None,
+                })
+        # Append any custom rules
+        for rule in db_rules.values():
+            if rule.slug not in BUILT_IN_SLUGS:
+                result.append(AutomationRuleSerializer(rule).data)
+        return Response(result)
 
     def post(self, request):
         data = request.data.copy()
@@ -2211,8 +2260,13 @@ class MailchimpSyncView(APIView):
             User.objects.filter(role='student', is_active=True)
             .values('email', 'first_name', 'last_name')
         )
-        added, updated, errors = sync_members(s.mailchimp_api_key, s.mailchimp_list_id, students)
-        return Response({'added': added, 'updated': updated, 'errors': errors, 'total': len(students)})
+        leads = [
+            {'email': l['email'], 'first_name': l['name'].split()[0] if l['name'] else '', 'last_name': ' '.join(l['name'].split()[1:]) if l['name'] else ''}
+            for l in Lead.objects.filter(email__isnull=False).exclude(email='').values('email', 'name')
+        ]
+        contacts = students + leads
+        added, updated, errors = sync_members(s.mailchimp_api_key, s.mailchimp_list_id, contacts)
+        return Response({'added': added, 'updated': updated, 'errors': errors, 'total': len(contacts), 'students': len(students), 'leads': len(leads)})
 
 
 class XeroConnectView(APIView):

@@ -120,6 +120,70 @@ function CampaignViewModal({ campaign, onClose }) {
   )
 }
 
+function CreateListModal({ onClose, onCreated }) {
+  const [form, setForm] = useState({ name: '', is_auto: false, query_slug: '' })
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState(null)
+
+  const AUTO_SLUGS = [
+    { value: 'active_students', label: 'Active Students' },
+    { value: 'all_students', label: 'All Students' },
+    { value: 'leads', label: 'Leads' },
+    { value: 'trial_booked', label: 'Trial Booked' },
+    { value: 'enrolled_current', label: 'Enrolled This Season' },
+  ]
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!form.name.trim()) { setErr('Name is required'); return }
+    setSaving(true)
+    setErr(null)
+    try {
+      await emailListsApi.create(form)
+      onCreated()
+      onClose()
+    } catch (ex) {
+      setErr(ex.response?.data?.detail || 'Failed to create list')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div className="card" style={{ width: 460, padding: '28px 32px' }}>
+        <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 20 }}>New Customer List</div>
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 4 }}>List Name *</label>
+            <input className="input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. VIP Students" style={{ width: '100%' }} />
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: 'var(--white)' }}>
+              <input type="checkbox" checked={form.is_auto} onChange={e => setForm(f => ({ ...f, is_auto: e.target.checked, query_slug: e.target.checked ? f.query_slug : '' }))} />
+              Auto-updated list (based on a filter)
+            </label>
+          </div>
+          {form.is_auto && (
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 4 }}>Filter</label>
+              <select className="input" value={form.query_slug} onChange={e => setForm(f => ({ ...f, query_slug: e.target.value }))} style={{ width: '100%' }}>
+                <option value="">Select filter…</option>
+                {AUTO_SLUGS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+              </select>
+            </div>
+          )}
+          {err && <div style={{ color: 'var(--red, #f55)', fontSize: 12, marginBottom: 12 }}>{err}</div>}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Creating…' : 'Create List'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 function MailchimpTab() {
   const [form, setForm] = useState({ mailchimp_api_key: '', mailchimp_list_id: '' })
   const [status, setStatus] = useState(null) // null | {connected, account_name, list_name, member_count, error}
@@ -239,13 +303,13 @@ function MailchimpTab() {
             <div><span style={{ color: 'var(--lime)', fontWeight: 700 }}>{syncResult.added}</span> added</div>
             <div><span style={{ color: 'var(--lav)', fontWeight: 700 }}>{syncResult.updated}</span> updated</div>
             {syncResult.errors > 0 && <div><span style={{ color: 'var(--red)', fontWeight: 700 }}>{syncResult.errors}</span> errors</div>}
-            <div style={{ color: 'var(--grey)' }}>{syncResult.total} total students</div>
+            <div style={{ color: 'var(--grey)' }}>{syncResult.students ?? syncResult.total} students · {syncResult.leads ?? 0} leads</div>
           </div>
         </div>
       )}
 
       <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 16, lineHeight: 1.6 }}>
-        Sync pushes all active students to your Mailchimp audience as subscribed contacts. Re-running sync is safe — existing members are updated, not duplicated.
+        Sync pushes all active students and leads to your Mailchimp audience. New students and leads are automatically synced when they're added. Re-running is safe — existing members are updated, not duplicated.
       </div>
     </div>
   )
@@ -259,6 +323,7 @@ export default function AdminMarketing() {
   const [sendingCampaignId, setSendingCampaignId] = useState(null)
   const [confirmSendId, setConfirmSendId] = useState(null)
   const [sendResult, setSendResult] = useState(null)
+  const [showCreateList, setShowCreateList] = useState(false)
 
   const { data: campData, loading: loadingCamp, refetch: refetchCamp } = useApi(() => campaignsApi.list())
   const campaignList = campData?.results || campData || []
@@ -270,7 +335,11 @@ export default function AdminMarketing() {
   const automationList = autoData?.results || autoData || []
 
   async function toggleAutomation(rule) {
-    await automationsApi.update(rule.id, { enabled: !rule.enabled })
+    if (rule.id) {
+      await automationsApi.update(rule.id, { enabled: !rule.enabled })
+    } else {
+      await automationsApi.toggle(rule.slug, !rule.enabled)
+    }
     refetchAuto()
   }
 
@@ -297,7 +366,7 @@ export default function AdminMarketing() {
           <div className="page-sub">Campaigns, customer lists and automations</div>
         </div>
         {tab === 'campaigns' && <button className="btn btn-lime btn-sm" onClick={() => { setShowCreateCampaign(true); setEditCampaign(null) }}>+ New Campaign</button>}
-        {tab === 'lists' && <button className="btn btn-lime btn-sm">+ New List</button>}
+        {tab === 'lists' && <button className="btn btn-lime btn-sm" onClick={() => setShowCreateList(true)}>+ New List</button>}
       </div>
 
       <div className="subtabs" style={{ marginBottom: 24 }}>
@@ -409,6 +478,12 @@ export default function AdminMarketing() {
         </div>
       )}
 
+      {showCreateList && (
+        <CreateListModal
+          onClose={() => setShowCreateList(false)}
+          onCreated={refetchLists}
+        />
+      )}
       {(showCreateCampaign || editCampaign) && (
         <CreateCampaignModal
           existing={editCampaign || null}
