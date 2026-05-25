@@ -96,7 +96,37 @@ function detectConflicts(sessions) {
   return conflicts
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+/**
+ * Assign sub-column indices to sessions in a single day so overlapping cards
+ * sit side-by-side rather than on top of each other.
+ * Returns an array of { session, col, totalCols }.
+ */
+function assignSubColumns(sessions) {
+  const sorted = [...sessions].sort((a, b) => timeToMinutes(a.start_time) - timeToMinutes(b.start_time))
+  const slots = [] // [{ endMins, col }]
+  const result = sorted.map(s => {
+    const startMins = timeToMinutes(s.start_time)
+    const endMins   = startMins + (s.duration_minutes ?? 60)
+    // Remove finished sessions
+    const active = slots.filter(x => x.endMins > startMins)
+    // Find first free column
+    const used = new Set(active.map(x => x.col))
+    let col = 0
+    while (used.has(col)) col++
+    active.push({ endMins, col })
+    slots.length = 0
+    active.forEach(x => slots.push(x))
+    return { session: s, col, _active: [...active] }
+  })
+  // Second pass: set totalCols = max col used by any overlapping peer + 1
+  return result.map(r => ({
+    session:   r.session,
+    col:       r.col,
+    totalCols: Math.max(...r._active.map(x => x.col)) + 1,
+  }))
+}
+
+
 
 /** Modal shown when a calendar card is clicked */
 function SessionDetailModal({ session, onClose }) {
@@ -184,40 +214,45 @@ function SessionDetailModal({ session, onClose }) {
  * Must be rendered as a direct child of a grid container that uses
  * gridTemplateRows: `repeat(${TOTAL_SLOTS}, ${SLOT_HEIGHT}px)`.
  */
-function CalendarCard({ session, conflicting, onClick }) {
-  const theme    = cardTheme(session.name)
+function CalendarCard({ session, conflicting, onClick, col = 0, totalCols = 1 }) {
+  const theme      = cardTheme(session.name)
   const instructor = session.instructor_detail?.display_name || '—'
   const studio     = session.studio_detail?.name || '—'
 
-  const startMins      = timeToMinutes(session.start_time)
-  const duration       = session.duration_minutes ?? 60
-  const rowStart       = minutesToRow(startMins)
-  const rowSpan        = Math.max(1, duration / 30)
+  const startMins  = timeToMinutes(session.start_time)
+  const duration   = session.duration_minutes ?? 60
+  const rowStart   = minutesToRow(startMins)
+  const rowSpan    = Math.max(1, duration / 30)
 
-  // Clamp to visible grid bounds
   const clampedStart = Math.max(0, rowStart)
   const clampedEnd   = Math.min(TOTAL_SLOTS, rowStart + rowSpan)
   if (clampedEnd <= clampedStart) return null
+
+  const pct   = 100 / totalCols
+  const left  = `calc(${col * pct}% + 2px)`
+  const width = `calc(${pct}% - 4px)`
+  const top   = clampedStart * SLOT_HEIGHT + 1
+  const height = Math.max(20, (clampedEnd - clampedStart) * SLOT_HEIGHT - 2)
 
   return (
     <div
       onClick={onClick}
       title={`${session.name} — ${session.start_time?.slice(0, 5)}`}
       style={{
-        gridRowStart: clampedStart + 1,
-        gridRowEnd:   clampedEnd   + 1,
-        gridColumn:   1,             // single column inside the day container
+        position:     'absolute',
+        top,
+        height,
+        left,
+        width,
         background:   theme.bg,
         borderLeft:   conflicting
           ? '3px solid var(--red, #ff4444)'
           : `3px solid ${theme.border}`,
-        outline:      conflicting ? '1px solid var(--red, #ff4444)' : 'none',
+        outline:      conflicting ? '1px solid rgba(255,68,68,0.4)' : 'none',
         borderRadius: 4,
         padding:      '3px 5px',
         cursor:       'pointer',
         overflow:     'hidden',
-        margin:       '1px 2px',
-        minHeight:    0,
         display:      'flex',
         flexDirection:'column',
         gap:          1,
@@ -375,42 +410,50 @@ function CalendarGrid({ sessions, weekStart, conflictIds, onDismissConflicts, co
           </div>
 
           {/* Seven day columns */}
-          {Array.from({ length: 7 }, (_, dayIdx) => (
-            <div
-              key={dayIdx}
-              style={{
-                display: 'grid',
-                gridTemplateRows: `repeat(${TOTAL_SLOTS}, ${SLOT_HEIGHT}px)`,
-                borderLeft: '1px solid var(--border, #222)',
-                position: 'relative',
-              }}
-            >
-              {/* Alternating slot background stripes */}
-              {Array.from({ length: TOTAL_SLOTS }, (_, si) => (
-                <div
-                  key={si}
-                  style={{
-                    gridRow: `${si + 1} / ${si + 2}`,
-                    gridColumn: 1,
-                    background: si % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'transparent',
-                    borderTop: si === 0 ? 'none' : '1px solid var(--border, #1e1e2e)',
-                    pointerEvents: 'none',
-                    zIndex: 1,
-                  }}
-                />
-              ))}
+          {Array.from({ length: 7 }, (_, dayIdx) => {
+            const positioned = assignSubColumns(byDay[dayIdx])
+            const colHeight  = TOTAL_SLOTS * SLOT_HEIGHT
+            return (
+              <div
+                key={dayIdx}
+                style={{
+                  borderLeft: '1px solid var(--border, #222)',
+                  position:   'relative',
+                  height:     colHeight,
+                }}
+              >
+                {/* Alternating slot background stripes — plain divs stacked */}
+                {Array.from({ length: TOTAL_SLOTS }, (_, si) => (
+                  <div
+                    key={si}
+                    style={{
+                      position:   'absolute',
+                      top:        si * SLOT_HEIGHT,
+                      left:       0,
+                      right:      0,
+                      height:     SLOT_HEIGHT,
+                      background: si % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'transparent',
+                      borderTop:  si === 0 ? 'none' : '1px solid var(--border, #1e1e2e)',
+                      pointerEvents: 'none',
+                      zIndex:     1,
+                    }}
+                  />
+                ))}
 
-              {/* Class cards — placed by gridRowStart/End within the same grid */}
-              {byDay[dayIdx].map(s => (
-                <CalendarCard
-                  key={s.id}
-                  session={s}
-                  conflicting={conflictIds.has(s.id)}
-                  onClick={() => setSelectedSession(s)}
-                />
-              ))}
-            </div>
-          ))}
+                {/* Class cards — absolutely positioned with sub-column layout */}
+                {positioned.map(({ session: s, col, totalCols }) => (
+                  <CalendarCard
+                    key={s.id}
+                    session={s}
+                    conflicting={conflictIds.has(s.id)}
+                    col={col}
+                    totalCols={totalCols}
+                    onClick={() => setSelectedSession(s)}
+                  />
+                ))}
+              </div>
+            )
+          })}
         </div>
       </div>
 
@@ -443,10 +486,7 @@ export default function AdminTimetable() {
   const [setupFilterWaitlist,  setSetupFilterWaitlist]  = useState(false)
   const [setupFilterLow,       setSetupFilterLow]       = useState(false)
 
-  // Load active sessions
-  const { data, loading } = useApi(() => classes.list({ active: true }))
-
-  // Load seasons for the dropdown (best-effort; falls back to hardcoded)
+  // Load seasons first so we know which season to fetch sessions for
   const { data: seasonsData } = useApi(() => seasonsApi.list())
   const seasonOptions = seasonsData?.results ?? []
 
@@ -454,6 +494,13 @@ export default function AdminTimetable() {
   const activeSeason = selectedSeasonId
     ? (seasonOptions?.find(s => s.id === selectedSeasonId) ?? seasonOptions?.find(s => s.status === 'active') ?? null)
     : (seasonOptions?.find(s => s.status === 'active') ?? null)
+
+  // Load sessions filtered to the selected season — avoids cross-season conflicts
+  const seasonIdForFetch = activeSeason?.id
+  const { data, loading } = useApi(
+    () => seasonIdForFetch ? classes.list({ season: seasonIdForFetch }) : classes.list({ active: true }),
+    [seasonIdForFetch]
+  )
   const seasonStart = activeSeason?.start_date
     ? new Date(activeSeason.start_date + 'T00:00:00')
     : FALLBACK_SEASON_START
@@ -462,6 +509,10 @@ export default function AdminTimetable() {
     ? Math.round((seasonEnd - seasonStart) / (7 * 24 * 60 * 60 * 1000))
     : FALLBACK_SEASON_WEEKS
   const seasonLabel = activeSeason?.name ?? FALLBACK_SEASON_LABEL
+
+  // Clear any locally-edited session list when season changes
+  const [prevSeasonId, setPrevSeasonId] = useState(null)
+  if (seasonIdForFetch !== prevSeasonId) { setPrevSeasonId(seasonIdForFetch); setSessionList(null) }
 
   const sessions = sessionList ?? (data?.results ?? [])
 

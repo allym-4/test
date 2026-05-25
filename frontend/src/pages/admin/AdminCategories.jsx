@@ -3,12 +3,15 @@ import '../StudentsPage.css'
 import { useApi } from '../../hooks/useApi'
 import { categories as categoriesApi, classes as sessionsApi } from '../../api'
 
-function CategoryModal({ existing, onClose, onSaved }) {
+function CategoryModal({ existing, onClose, onSaved, allCategories = [] }) {
   const [name, setName] = useState(existing?.name || '')
   const [colour, setColour] = useState(existing?.colour || '#ccff00')
   const [visible, setVisible] = useState(existing?.is_visible ?? true)
   const [isAddonType, setIsAddonType] = useState(existing?.is_addon_type ?? false)
   const [standalonePrice, setStandalonePrice] = useState(existing?.standalone_price ?? '')
+  const [upsellHeadline, setUpsellHeadline] = useState(existing?.upsell_headline || '')
+  const [upsellBody, setUpsellBody] = useState(existing?.upsell_body || '')
+  const [upsellTargetCategory, setUpsellTargetCategory] = useState(existing?.upsell_target_category || '')
   const [saving, setSaving] = useState(false)
   const [allSessions, setAllSessions] = useState([])
   const [selectedSessionIds, setSelectedSessionIds] = useState(new Set(existing?.session_ids || []))
@@ -37,6 +40,9 @@ function CategoryModal({ existing, onClose, onSaved }) {
         is_visible: visible,
         is_addon_type: isAddonType,
         standalone_price: standalonePrice !== '' ? standalonePrice : null,
+        upsell_headline: upsellHeadline,
+        upsell_body: upsellBody,
+        upsell_target_category: upsellTargetCategory || null,
       }
       let catId = existing?.id
       if (catId) {
@@ -128,6 +134,33 @@ function CategoryModal({ existing, onClose, onSaved }) {
             </div>
           )}
 
+          {/* Upsell defaults */}
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16, marginTop: 4 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', marginBottom: 12 }}>Default upsell for this class type</div>
+            <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 12 }}>Shown automatically when a student books any class in this category. Individual classes can override this.</div>
+            <div className="field">
+              <label>Suggest which other class type?</label>
+              <select value={upsellTargetCategory} onChange={e => setUpsellTargetCategory(e.target.value)}>
+                <option value="">None</option>
+                {allCategories.filter(c => c.id !== existing?.id).map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            {upsellTargetCategory && (
+              <>
+                <div className="field">
+                  <label>Headline</label>
+                  <input value={upsellHeadline} onChange={e => setUpsellHeadline(e.target.value)} placeholder="e.g. Want to add a second class?" />
+                </div>
+                <div className="field">
+                  <label>Body text <span style={{ fontSize: 11, color: 'var(--grey)', fontWeight: 400 }}>— optional</span></label>
+                  <textarea rows={2} value={upsellBody} onChange={e => setUpsellBody(e.target.value)} placeholder="e.g. Students who do Strip alongside Level classes progress faster. Add Strip Virgin for just $140 more." />
+                </div>
+              </>
+            )}
+          </div>
+
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
             <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
@@ -205,7 +238,7 @@ export default function AdminCategories() {
         )}
       </div>
 
-      {modal && <CategoryModal existing={modal.existing} onClose={() => setModal(null)} onSaved={handleSaved} />}
+      {modal && <CategoryModal existing={modal.existing} onClose={() => setModal(null)} onSaved={handleSaved} allCategories={categories} />}
     </div>
   )
 }

@@ -17,7 +17,8 @@ class ClassCategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ClassCategory
-        fields = ('id', 'name', 'colour', 'is_visible', 'is_addon_type', 'standalone_price', 'created_at', 'session_ids')
+        fields = ('id', 'name', 'colour', 'is_visible', 'is_addon_type', 'standalone_price',
+                  'upsell_headline', 'upsell_body', 'upsell_target_category', 'created_at', 'session_ids')
         read_only_fields = ('id', 'created_at', 'session_ids')
 
 

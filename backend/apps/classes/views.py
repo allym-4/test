@@ -940,7 +940,12 @@ class ClassUpsellDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class UpsellSuggestView(APIView):
-    """Given a list of session IDs, return active upsells for any of them."""
+    """Given a list of session IDs, return active upsells for any of them.
+
+    Priority:
+    1. Session-level ClassUpsell (manually configured per session)
+    2. Category-level upsell (default on the session's ClassCategory)
+    """
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
@@ -948,15 +953,49 @@ class UpsellSuggestView(APIView):
         session_ids = [int(i) for i in ids_param.split(',') if i.strip().isdigit()]
         if not session_ids:
             return Response([])
+
+        # 1. Session-level upsells
         upsells = ClassUpsell.objects.filter(
             source_session_id__in=session_ids, is_active=True
         ).select_related('source_session', 'suggested_session', 'suggested_session__category')
-        seen = set()
+        seen_source = set()
+        seen_suggested = set()
         results = []
         for u in upsells:
-            if u.suggested_session_id not in seen:
-                seen.add(u.suggested_session_id)
+            if u.suggested_session_id not in seen_suggested:
+                seen_source.add(u.source_session_id)
+                seen_suggested.add(u.suggested_session_id)
                 results.append(ClassUpsellSerializer(u).data)
+
+        # 2. Category-level fallback for sessions that have no session-level upsell
+        sessions_without_upsell = ClassSession.objects.filter(
+            id__in=session_ids
+        ).exclude(id__in=seen_source).select_related(
+            'category', 'category__upsell_target_category'
+        )
+        for session in sessions_without_upsell:
+            cat = session.category
+            if not cat or not cat.upsell_target_category_id or not cat.upsell_headline:
+                continue
+            target_cat = cat.upsell_target_category
+            # Find the first active session in the target category (same season preferred)
+            suggested = ClassSession.objects.filter(
+                category=target_cat, is_active=True
+            ).exclude(id__in=seen_suggested).order_by('day_of_week', 'start_time').first()
+            if suggested and suggested.id not in seen_suggested:
+                seen_suggested.add(suggested.id)
+                results.append({
+                    'id': None,
+                    'source_session': session.id,
+                    'source_session_name': session.name,
+                    'suggested_session': suggested.id,
+                    'suggested_session_name': suggested.name,
+                    'headline': cat.upsell_headline,
+                    'body': cat.upsell_body,
+                    'is_active': True,
+                    'from_category': True,
+                })
+
         return Response(results)
 
 

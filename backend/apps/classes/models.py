@@ -22,6 +22,13 @@ class ClassCategory(models.Model):
     is_visible = models.BooleanField(default=True)
     is_addon_type = models.BooleanField(default=False)  # True for Kiki, Unravel, etc.
     standalone_price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)  # e.g. 250 for Kiki/Unravel
+    # Default upsell shown to students booking any class in this category
+    upsell_headline = models.CharField(max_length=200, blank=True)
+    upsell_body = models.TextField(blank=True)
+    upsell_target_category = models.ForeignKey(
+        'self', on_delete=models.SET_NULL, null=True, blank=True, related_name='upsell_sources',
+        help_text='Category to suggest when a student books a class in this category.'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
