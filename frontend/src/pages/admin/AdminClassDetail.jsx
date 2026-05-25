@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
-import { classes, users, studios, categories as categoriesApi } from '../../api'
-
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+import { classes, categories as categoriesApi } from '../../api'
 
 const inputStyle = {
   width: '100%',
@@ -150,13 +148,9 @@ export default function AdminClassDetail() {
     }
   }, [id, isNew])
 
-  const { data: instrData } = useApi(() => users.list({ role: 'instructor' }), [])
-  const { data: studioData } = useApi(() => studios.list(), [])
   const { data: categoriesData } = useApi(() => categoriesApi.list(), [])
   const { data: allSessionsData } = useApi(() => classes.list(), [])
 
-  const instructors = instrData?.results || instrData || []
-  const studioList = studioData?.results || studioData || []
   const categoryList = categoriesData?.results || categoriesData || []
   const allSessions = allSessionsData?.results || allSessionsData || []
 
@@ -165,12 +159,6 @@ export default function AdminClassDetail() {
     session_type: 'course',
     level: '',
     category: '',
-    day_of_week: 0,
-    start_time: '09:00',
-    duration_minutes: 90,
-    capacity: 12,
-    instructor: '',
-    studio: '',
     catchup_cutoff_weeks: '',
     description: '',
     first_timer_headline: '',
@@ -187,12 +175,6 @@ export default function AdminClassDetail() {
         session_type: cls.session_type || 'course',
         level: cls.level || '',
         category: cls.category || '',
-        day_of_week: cls.day_of_week ?? 0,
-        start_time: cls.start_time?.slice(0, 5) || '09:00',
-        duration_minutes: cls.duration_minutes || 90,
-        capacity: cls.capacity || 12,
-        instructor: cls.instructor || '',
-        studio: cls.studio || '',
         catchup_cutoff_weeks: cls.catchup_cutoff_weeks ?? '',
         description: cls.description || '',
         first_timer_headline: cls.first_timer_headline || '',
@@ -211,8 +193,6 @@ export default function AdminClassDetail() {
     try {
       const payload = {
         ...form,
-        instructor: form.instructor || null,
-        studio: form.studio || null,
         category: form.category || null,
         catchup_cutoff_weeks: form.catchup_cutoff_weeks !== '' ? parseInt(form.catchup_cutoff_weeks) : null,
       }
@@ -250,7 +230,7 @@ export default function AdminClassDetail() {
               {isNew ? 'New Class' : (cls?.name || 'Edit Class')}
             </div>
             <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 2 }}>
-              {isNew ? 'Create a new recurring class' : 'Edit class details'}
+              Define the class type, description, and booking rules — scheduling is done in the Timetable.
             </div>
           </div>
         </div>
@@ -306,50 +286,12 @@ export default function AdminClassDetail() {
             <input style={inputStyle} value={form.level} onChange={e => set('level', e.target.value)} placeholder="e.g. Level 2, Specialty" />
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-          <div>
-            <label style={labelStyle}>Category</label>
-            <select style={inputStyle} value={form.category} onChange={e => set('category', e.target.value)}>
-              <option value="">— None —</option>
-              {categoryList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={labelStyle}>Day of Week</label>
-            <select style={inputStyle} value={form.day_of_week} onChange={e => set('day_of_week', parseInt(e.target.value))}>
-              {DAYS.map((d, i) => <option key={i} value={i}>{d}</option>)}
-            </select>
-          </div>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
-          <div>
-            <label style={labelStyle}>Start Time</label>
-            <input style={inputStyle} type="time" value={form.start_time} onChange={e => set('start_time', e.target.value)} />
-          </div>
-          <div>
-            <label style={labelStyle}>Duration (mins)</label>
-            <input style={inputStyle} type="number" min="1" value={form.duration_minutes} onChange={e => set('duration_minutes', parseInt(e.target.value))} />
-          </div>
-          <div>
-            <label style={labelStyle}>Capacity</label>
-            <input style={inputStyle} type="number" min="1" value={form.capacity} onChange={e => set('capacity', parseInt(e.target.value))} />
-          </div>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-          <div>
-            <label style={labelStyle}>Instructor</label>
-            <select style={inputStyle} value={form.instructor || ''} onChange={e => set('instructor', e.target.value)}>
-              <option value="">— None —</option>
-              {instructors.map(i => <option key={i.id} value={i.id}>{i.display_name || i.first_name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={labelStyle}>Studio / Room</label>
-            <select style={inputStyle} value={form.studio || ''} onChange={e => set('studio', e.target.value)}>
-              <option value="">— None —</option>
-              {studioList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-          </div>
+        <div style={{ marginBottom: 16 }}>
+          <label style={labelStyle}>Category</label>
+          <select style={inputStyle} value={form.category} onChange={e => set('category', e.target.value)}>
+            <option value="">— None —</option>
+            {categoryList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
         </div>
         <div>
           <label style={labelStyle}>Catch-up Cutoff (weeks)</label>

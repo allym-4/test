@@ -85,9 +85,9 @@ export default function AdminClasses() {
     return 'classes'
   })
   const [typeFilter, setTypeFilter] = useState('all')
+  const [search, setSearch] = useState('')
   const [deleting, setDeleting] = useState(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
-  const [emailSession, setEmailSession] = useState(null)
 
   const { data: sessData, loading, refetch } = useApi(() => classes.list(), [])
   const { data: workshopsData, loading: loadingWorkshops } = useApi(() => classes.workshops.list(), [])
@@ -95,16 +95,16 @@ export default function AdminClasses() {
   const sessions = sessData?.results || sessData || []
   const workshopList = workshopsData?.results || workshopsData || []
 
-  // Deduplicate by (name, day_of_week, start_time) — keep highest id (most recent season)
+  // Deduplicate by name only — keep highest id (most recent season)
   const seen = new Map()
   sessions.forEach(s => {
-    const key = `${s.name}__${s.day_of_week}__${s.start_time}`
-    if (!seen.has(key) || s.id > seen.get(key).id) seen.set(key, s)
+    if (!seen.has(s.name) || s.id > seen.get(s.name).id) seen.set(s.name, s)
   })
-  const deduped = Array.from(seen.values())
+  const deduped = Array.from(seen.values()).sort((a, b) => a.name.localeCompare(b.name))
 
   const filtered = deduped.filter(s =>
-    typeFilter === 'all' || s.session_type === typeFilter
+    (typeFilter === 'all' || s.session_type === typeFilter) &&
+    s.name.toLowerCase().includes(search.toLowerCase())
   )
 
   async function handleDelete(id) {
@@ -120,10 +120,6 @@ export default function AdminClasses() {
 
   return (
     <div>
-      {emailSession && (
-        <ClassEmailModal session={emailSession} onClose={() => setEmailSession(null)} />
-      )}
-
       <div className="page-header">
         <div>
           <div className="page-title">Classes</div>
@@ -151,19 +147,30 @@ export default function AdminClasses() {
 
       {tab === 'classes' && (
         <>
-          <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
-            {[['all', 'All Types'], ['course', 'Course'], ['casual', 'Drop-In']].map(([v, l]) => (
-              <button
-                key={v}
-                onClick={() => setTypeFilter(v)}
-                style={{
-                  padding: '5px 14px', borderRadius: 20, fontSize: 12, border: '1px solid var(--border)',
-                  background: typeFilter === v ? 'var(--lime)' : 'transparent',
-                  color: typeFilter === v ? '#000' : 'var(--grey)',
-                  cursor: 'pointer',
-                }}
-              >{l}</button>
-            ))}
+          <div style={{ display: 'flex', gap: 10, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search by class name…"
+              style={{
+                background: '#111', border: '1px solid #222', borderRadius: 8,
+                padding: '8px 12px', fontSize: 13, color: '#fff', outline: 'none', width: 280,
+              }}
+            />
+            <div style={{ display: 'flex', gap: 6 }}>
+              {[['all', 'All Types'], ['course', 'Course'], ['casual', 'Drop-In']].map(([v, l]) => (
+                <button
+                  key={v}
+                  onClick={() => setTypeFilter(v)}
+                  style={{
+                    padding: '5px 14px', borderRadius: 20, fontSize: 12, border: '1px solid var(--border)',
+                    background: typeFilter === v ? 'var(--lime)' : 'transparent',
+                    color: typeFilter === v ? '#000' : 'var(--grey)',
+                    cursor: 'pointer',
+                  }}
+                >{l}</button>
+              ))}
+            </div>
           </div>
 
           {loading ? (
@@ -176,14 +183,12 @@ export default function AdminClasses() {
                     <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Actions</th>
                     <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Name</th>
                     <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Type</th>
-                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Day / Time</th>
-                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Studio</th>
-                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Created</th>
+                    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>Description</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.length === 0 ? (
-                    <tr><td colSpan={6} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--grey)', fontSize: 13 }}>No classes yet.</td></tr>
+                    <tr><td colSpan={4} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--grey)', fontSize: 13 }}>No classes found.</td></tr>
                   ) : filtered.map((s, i) => (
                     <tr
                       key={s.id}
@@ -193,7 +198,6 @@ export default function AdminClasses() {
                       <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
                         <div style={{ display: 'flex', gap: 4 }}>
                           <button className="btn btn-ghost btn-xs" title="Edit" onClick={() => navigate(`/admin/classes/${s.id}`)}>✏</button>
-                          <button className="btn btn-ghost btn-xs" title="Email Class" onClick={() => setEmailSession(s)}>✉</button>
                           {confirmDeleteId === s.id ? (
                             <>
                               <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => handleDelete(s.id)} disabled={deleting === s.id}>{deleting === s.id ? '…' : '✓'}</button>
@@ -214,13 +218,7 @@ export default function AdminClasses() {
                         </span>
                       </td>
                       <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--grey)' }}>
-                        {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][s.day_of_week]} {s.start_time?.slice(0,5)}
-                      </td>
-                      <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--grey)' }}>
-                        {s.studio_detail?.name || '—'}
-                      </td>
-                      <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--grey)' }}>
-                        {s.created_at ? new Date(s.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                        {s.description ? (s.description.length > 80 ? s.description.slice(0, 80) + '…' : s.description) : <span style={{ fontStyle: 'italic' }}>—</span>}
                       </td>
                     </tr>
                   ))}
