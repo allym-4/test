@@ -968,7 +968,7 @@ export default function AdminStudentDetail() {
                     statusLabel = 'Blocked'; statusColor = 'var(--red)'
                     statusBg = 'rgba(255,68,68,0.08)'; statusBorder = 'rgba(255,68,68,0.25)'
                   } else if (isOwing) {
-                    statusLabel = 'On Hold — Payment Issue'; statusColor = 'var(--amber)'
+                    statusLabel = 'Balance Owing'; statusColor = 'var(--amber)'
                     statusBg = 'rgba(255,170,0,0.08)'; statusBorder = 'rgba(255,170,0,0.25)'
                   } else if (activeEnrolments.length > 0) {
                     statusLabel = 'Enrolled'; statusColor = 'var(--lime)'

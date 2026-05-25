@@ -254,8 +254,8 @@ function BroadcastModal({ onClose }) {
             </div>
 
             {/* CTA button toggle */}
-            <div className="field" style={{ marginBottom: showCta ? 0 : 18 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 0 }}>
+            <div style={{ marginBottom: showCta ? 0 : 18 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: 'var(--white)', textTransform: 'none', letterSpacing: 0 }}>
                 <input type="checkbox" checked={showCta} onChange={e => setShowCta(e.target.checked)} style={{ accentColor: 'var(--lime)', width: 14, height: 14 }} />
                 <span>Add a call-to-action button</span>
               </label>
@@ -273,8 +273,8 @@ function BroadcastModal({ onClose }) {
               </div>
             )}
 
-            <div className="field" style={{ marginBottom: 18 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 0 }}>
+            <div style={{ marginBottom: 18 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: 'var(--white)', textTransform: 'none', letterSpacing: 0 }}>
                 <input type="checkbox" checked={sendEmail} onChange={e => setSendEmail(e.target.checked)} style={{ accentColor: 'var(--lime)', width: 14, height: 14 }} />
                 <span>Also send by email</span>
               </label>

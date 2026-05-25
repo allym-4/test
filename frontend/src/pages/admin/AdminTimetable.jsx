@@ -114,7 +114,7 @@ function SessionDetailModal({ session, onClose }) {
     >
       <div
         style={{
-          background: 'var(--surface, #1a1a2e)',
+          background: '#111',
           border: '1px solid var(--border, #333)',
           borderTop: `3px solid ${theme.border}`,
           borderRadius: 8,
@@ -312,7 +312,7 @@ function CalendarGrid({ sessions, weekStart, conflictIds, onDismissConflicts, co
           position: 'sticky',
           top: 0,
           zIndex: 10,
-          background: 'var(--surface, #1a1a2e)',
+          background: '#111',
           borderBottom: '1px solid var(--border, #333)',
         }}>
           {/* Empty corner */}
@@ -512,7 +512,7 @@ export default function AdminTimetable() {
               value={selectedSeasonId ?? activeSeason?.id ?? ''}
               onChange={e => setSelectedSeasonId(Number(e.target.value) || null)}
               style={{
-                background: 'var(--surface, #1a1a2e)',
+                background: '#1a1a1a',
                 border: '1px solid var(--border, #333)',
                 color: 'var(--grey)',
                 borderRadius: 4,
