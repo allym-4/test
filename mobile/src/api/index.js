@@ -144,6 +144,8 @@ export const announcements = {
   list: (params) => client.get('/api/users/announcements/', { params }),
   acknowledge: (id) =>
     client.post(`/api/users/announcements/${id}/acknowledge/`),
+  dismiss: (id) =>
+    client.post(`/api/users/announcements/${id}/dismiss/`),
 }
 
 export const skills = {

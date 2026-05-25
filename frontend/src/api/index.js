@@ -276,6 +276,7 @@ export const announcements = {
   update: (id, data) => client.patch(`/api/users/announcements/${id}/`, data),
   delete: (id) => client.delete(`/api/users/announcements/${id}/`),
   acknowledge: (id) => client.post(`/api/users/announcements/${id}/acknowledge/`),
+  dismiss: (id) => client.post(`/api/users/announcements/${id}/dismiss/`),
 }
 
 export const products = {

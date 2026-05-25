@@ -1,12 +1,90 @@
 import { useState, useMemo, useEffect } from 'react'
 import {
   ScrollView, View, Text, TouchableOpacity, StyleSheet,
-  RefreshControl, Alert, Modal, ActivityIndicator, TextInput, Platform, StatusBar,
+  RefreshControl, Alert, Modal, ActivityIndicator, TextInput, Platform, StatusBar, Linking,
 } from 'react-native'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { enrolments, seasons, attendance as attendanceApi, skills as skillsApi, announcements as announcementsApi, payments, notifications as notificationsApi, forms as formsApi, surveys as surveysApi, settings as settingsApi } from '../../api'
 import { useStripePayment } from '../../hooks/useStripePayment'
+
+function ModalBody({ text, style, linkStyle }) {
+  const parts = text.split(/(\[[^\]]+\]\([^)]+\))/g)
+  return (
+    <Text style={style}>
+      {parts.map((part, i) => {
+        const m = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/)
+        if (m) return <Text key={i} style={linkStyle} onPress={() => Linking.openURL(m[2])}>{m[1]}</Text>
+        return <Text key={i}>{part}</Text>
+      })}
+    </Text>
+  )
+}
+
+function AnnouncementModalQueue({ modals, onDismissed }) {
+  const [idx, setIdx] = useState(0)
+  const [dismissing, setDismissing] = useState(false)
+  const ann = modals[idx]
+  if (!ann) return null
+
+  async function dismiss() {
+    setDismissing(true)
+    try {
+      await announcementsApi.dismiss(ann.id)
+    } catch { /* silent */ } finally {
+      setDismissing(false)
+    }
+    if (idx + 1 < modals.length) {
+      setIdx(i => i + 1)
+    } else {
+      onDismissed()
+    }
+  }
+
+  return (
+    <Modal visible transparent animationType="fade">
+      <View style={amq.overlay}>
+        <View style={amq.card}>
+          {modals.length > 1 && (
+            <Text style={amq.counter}>{idx + 1} of {modals.length}</Text>
+          )}
+          <Text style={amq.title}>{ann.title}</Text>
+          <ModalBody text={ann.body} style={amq.body} linkStyle={amq.bodyLink} />
+          {!!(ann.cta_label && ann.cta_url) && (
+            <TouchableOpacity
+              style={amq.ctaBtn}
+              onPress={() => Linking.openURL(ann.cta_url)}
+              activeOpacity={0.8}
+            >
+              <Text style={amq.ctaBtnText}>{ann.cta_label}</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            style={amq.dismissBtn}
+            onPress={dismiss}
+            disabled={dismissing}
+            activeOpacity={0.7}
+          >
+            <Text style={amq.dismissBtnText}>{dismissing ? 'Dismissing…' : 'Got it'}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  )
+}
+
+const amq = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.88)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  card: { backgroundColor: '#1a1a1a', borderRadius: 16, padding: 28, width: '100%', maxWidth: 460, borderWidth: 1, borderColor: '#333' },
+  counter: { fontSize: 11, color: '#555', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
+  title: { fontSize: 22, fontWeight: '800', color: '#fff', marginBottom: 14, fontFamily: 'Archivo Black' },
+  body: { fontSize: 14, color: '#aaa', lineHeight: 23, marginBottom: 24 },
+  bodyLink: { color: '#ccff00', textDecorationLine: 'underline' },
+  ctaBtn: { backgroundColor: '#ccff00', borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 10 },
+  ctaBtnText: { color: '#000', fontWeight: '700', fontSize: 15 },
+  dismissBtn: { borderWidth: 1, borderColor: '#333', borderRadius: 10, padding: 12, alignItems: 'center' },
+  dismissBtnText: { color: '#888', fontWeight: '600', fontSize: 14 },
+})
 
 const DAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -248,6 +326,7 @@ export default function DashboardScreen({ navigation }) {
   const { data: surveysData } = useApi(() => surveysApi.mine(), [user?.id])
   const { data: balanceData } = useApi(() => user?.id ? payments.balance(user.id) : null, [user?.id])
 
+  const [modalsDismissed, setModalsDismissed] = useState(false)
   const [markingAway, setMarkingAway] = useState({})
   const [cancellingAway, setCancellingAway] = useState({})
   const [acknowledging, setAcknowledging] = useState({})
@@ -266,6 +345,7 @@ export default function DashboardScreen({ navigation }) {
 
   const allAnnouncements = annData?.results || annData || []
   const pendingAnnouncements = allAnnouncements.filter(a => !a.is_acknowledged)
+  const pendingModals = allAnnouncements.filter(a => a.show_as_modal && !a.is_modal_dismissed)
 
   const allNotifs = notifData?.results || notifData || []
   const unreadNotifs = allNotifs.filter(n => !n.read).length
@@ -701,6 +781,13 @@ export default function DashboardScreen({ navigation }) {
             <Text style={s.upsellBtnText}>Add a class</Text>
           </TouchableOpacity>
         </View>
+      )}
+
+      {!modalsDismissed && pendingModals.length > 0 && (
+        <AnnouncementModalQueue
+          modals={pendingModals}
+          onDismissed={() => setModalsDismissed(true)}
+        />
       )}
 
       {waiverRequired && !trialItem && <WaiverModal onDone={refetchPendingRequired} />}

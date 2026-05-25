@@ -6,6 +6,87 @@ import { payments, notifications as notificationsApi, announcements as announcem
 import HelpPanel from './HelpPanel'
 import './StudentShell.css'
 
+function renderBody(text) {
+  const parts = text.split(/(\[[^\]]+\]\([^)]+\))/g)
+  return parts.map((part, i) => {
+    const match = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/)
+    if (match) return <a key={i} href={match[2]} target="_blank" rel="noreferrer" style={{ color: '#ccff00' }}>{match[1]}</a>
+    return <span key={i}>{part}</span>
+  })
+}
+
+function AnnouncementModalQueue({ modals, onDismissed }) {
+  const [idx, setIdx] = useState(0)
+  const [dismissing, setDismissing] = useState(false)
+  const ann = modals[idx]
+  if (!ann) return null
+
+  async function dismiss() {
+    setDismissing(true)
+    try {
+      await announcementsApi.dismiss(ann.id)
+    } catch { /* silent */ } finally {
+      setDismissing(false)
+    }
+    if (idx + 1 < modals.length) {
+      setIdx(i => i + 1)
+    } else {
+      onDismissed()
+    }
+  }
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 99999,
+      background: 'rgba(0,0,0,0.88)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', padding: 20,
+    }}>
+      <div style={{
+        background: '#1a1a1a', borderRadius: 16, padding: 28,
+        maxWidth: 460, width: '100%', border: '1px solid #333',
+        boxShadow: '0 24px 80px rgba(0,0,0,0.7)',
+      }}>
+        {modals.length > 1 && (
+          <div style={{ fontSize: 11, color: '#555', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
+            {idx + 1} of {modals.length}
+          </div>
+        )}
+        <h2 style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: '#fff', margin: '0 0 14px' }}>
+          {ann.title}
+        </h2>
+        <p style={{ fontSize: 14, color: '#aaa', lineHeight: 1.65, margin: '0 0 24px' }}>
+          {renderBody(ann.body)}
+        </p>
+        <div style={{ display: 'flex', gap: 10, flexDirection: 'column' }}>
+          {ann.cta_label && ann.cta_url && (
+            <a
+              href={ann.cta_url}
+              style={{
+                display: 'block', background: '#ccff00', color: '#000',
+                fontWeight: 700, fontSize: 15, borderRadius: 10,
+                padding: '13px 20px', textAlign: 'center', textDecoration: 'none',
+              }}
+            >
+              {ann.cta_label}
+            </a>
+          )}
+          <button
+            onClick={dismiss}
+            disabled={dismissing}
+            style={{
+              background: 'transparent', border: '1px solid #333', color: '#888',
+              borderRadius: 10, padding: '11px 20px', cursor: 'pointer',
+              fontSize: 14, fontWeight: 600,
+            }}
+          >
+            {dismissing ? 'Dismissing…' : 'Got it'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const NAV = [
   { to: '/portal',               label: 'Dashboard',    icon: '◆', end: true },
   { to: '/portal/book',          label: 'Book a Class', icon: '+' },
@@ -29,6 +110,7 @@ export default function StudentShell() {
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
+  const [modalsDismissed, setModalsDismissed] = useState(false)
   const { data: balData } = useApi(() => user ? payments.balance(user.id) : null, [user?.id])
   const { data: notifData } = useApi(() => notificationsApi.list(), [])
   const { data: annData } = useApi(() => announcementsApi.list({ note_type: 'announcement' }), [])
@@ -41,6 +123,10 @@ export default function StudentShell() {
   const unreadNotifs = allNotifs.filter(n => !n.read).length
   const unackAnns = allAnns.filter(a => a.requires_acknowledgement && !a.is_acknowledged).length
   const notifBadge = unreadNotifs + unackAnns
+
+  const pendingModals = !modalsDismissed
+    ? allAnns.filter(a => a.show_as_modal && !a.is_modal_dismissed)
+    : []
 
   function handleLogout() {
     logout()
@@ -178,6 +264,13 @@ export default function StudentShell() {
       </main>
 
       <HelpPanel open={helpOpen} onClose={() => setHelpOpen(false)} />
+
+      {pendingModals.length > 0 && (
+        <AnnouncementModalQueue
+          modals={pendingModals}
+          onDismissed={() => setModalsDismissed(true)}
+        />
+      )}
 
       {/* Mobile bottom nav */}
       <nav className="student-bottom-nav">

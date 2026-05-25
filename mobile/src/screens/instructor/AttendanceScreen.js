@@ -8,7 +8,8 @@ import { classes, attendance, payments as paymentsApi } from '../../api'
 import client from '../../api/client'
 
 const STATUS_OPTS = [
-  { key: 'present',        label: 'Attended',      color: '#ccff00' },
+  { key: 'pending',        label: 'Pending',        color: '#555' },
+  { key: 'present',        label: 'Attended',       color: '#ccff00' },
   { key: 'late',           label: 'Late',           color: '#ffaa00' },
   { key: 'no_show',        label: 'No-show +$20',  color: '#ff5050' },
   { key: 'no_show_waived', label: 'No-show waived', color: '#ff8888' },
@@ -19,6 +20,41 @@ const AWAY_STATUSES = ['absent', 'cancelled', 'no_show', 'no_show_waived']
 const STATUS_COLOR = Object.fromEntries(STATUS_OPTS.map(o => [o.key, o.color]))
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+function getMilestones(st, today) {
+  const badges = []
+  if (!st) return badges
+
+  // Birthday
+  if (st.date_of_birth) {
+    const dob = new Date(st.date_of_birth)
+    const thisYear = new Date(today.getFullYear(), dob.getMonth(), dob.getDate())
+    const diff = Math.round((thisYear - today) / 86400000)
+    if (diff === 0) badges.push({ icon: '🎂', label: 'Birthday today' })
+    else if (diff === 1) badges.push({ icon: '🎂', label: 'Birthday tomorrow' })
+    else if (diff > 1 && diff <= 7) badges.push({ icon: '🎂', label: `Birthday in ${diff} days` })
+  }
+
+  // Class count milestones
+  const count = st.total_classes_attended || 0
+  const MILESTONES = [10, 25, 50, 75, 100, 150, 200, 300, 500]
+  if (MILESTONES.includes(count)) {
+    badges.push({ icon: '🎉', label: `${count} classes` })
+  }
+
+  // Studio anniversary
+  if (st.date_joined) {
+    const joined = new Date(st.date_joined)
+    const years = today.getFullYear() - joined.getFullYear()
+    if (years > 0) {
+      const anniversary = new Date(today.getFullYear(), joined.getMonth(), joined.getDate())
+      const diff = Math.round((anniversary - today) / 86400000)
+      if (diff === 0) badges.push({ icon: '🥂', label: `${years} year${years !== 1 ? 's' : ''} at Duality` })
+    }
+  }
+
+  return badges
+}
 
 function enrollLabel(e) {
   if (e.enrolment_type === 'trial') return 'Trial class'
@@ -38,13 +74,21 @@ function avatarLetter(e) {
 
 // ── Student row ───────────────────────────────────────────────────────────────
 
-function StudentRow({ entry, status, balance, onStatusChange, onNote, note, onViewStudent }) {
+const NOTE_TAGS = [
+  { id: 'injury', label: '🩹 Injury' },
+  { id: 'general', label: '📝 General' },
+  { id: 'vibes', label: '✨ Vibes' },
+]
+
+function StudentRow({ entry, status, balance, onStatusChange, onNote, note, noteTag, onNoteTagChange, onViewStudent }) {
   const st = entry.student_detail
   const name = st?.display_name || `${st?.first_name ?? ''} ${st?.last_name ?? ''}`.trim() || 'Student'
   const owing = balance < 0 ? Math.abs(balance) : 0
   const currentColor = STATUS_COLOR[status] || '#fff'
   const isFirst = entry.is_first_class
   const isWaitlistPromo = entry.promoted_from_waitlist
+  const today = new Date()
+  const milestones = getMilestones(st, today)
 
   const [expanded, setExpanded] = useState(false)
 
@@ -77,6 +121,11 @@ function StudentRow({ entry, status, balance, onStatusChange, onNote, note, onVi
             {owing > 0 && (
               <View style={s.badgeRed}><Text style={s.badgeRedText}>⚠ ${owing.toFixed(0)} owing</Text></View>
             )}
+            {milestones.map((m, i) => (
+              <View key={i} style={s.badgeMilestone}>
+                <Text style={s.badgeMilestoneText}>{m.icon} {m.label}</Text>
+              </View>
+            ))}
           </View>
         </View>
         <View style={[s.statusPill, { borderColor: currentColor }]}>
@@ -86,7 +135,7 @@ function StudentRow({ entry, status, balance, onStatusChange, onNote, note, onVi
         </View>
       </TouchableOpacity>
 
-      {/* Expanded: status options + note */}
+      {/* Expanded: status options + note tags + note */}
       {expanded && (
         <View style={s.expanded}>
           <View style={s.statusGrid}>
@@ -98,6 +147,20 @@ function StudentRow({ entry, status, balance, onStatusChange, onNote, note, onVi
               >
                 <Text style={[s.statusBtnText, status === opt.key && { color: opt.color }]}>
                   {opt.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {/* Note tags */}
+          <View style={s.noteTagRow}>
+            {NOTE_TAGS.map(tag => (
+              <TouchableOpacity
+                key={tag.id}
+                style={[s.noteTagChip, noteTag === tag.id && s.noteTagChipActive]}
+                onPress={() => onNoteTagChange(noteTag === tag.id ? '' : tag.id)}
+              >
+                <Text style={[s.noteTagChipText, noteTag === tag.id && s.noteTagChipTextActive]}>
+                  {tag.label}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -136,6 +199,7 @@ export default function AttendanceScreen({ navigation, route }) {
   const [tab, setTab] = useState('attending')
   const [register, setRegister] = useState({})
   const [notes, setNotes] = useState({})
+  const [noteTags, setNoteTags] = useState({})
   const [balances, setBalances] = useState({})
   const [waitlist, setWaitlist] = useState([])
   const [saving, setSaving] = useState(false)
@@ -158,14 +222,17 @@ export default function AttendanceScreen({ navigation, route }) {
     if (!students.length) return
     const init = {}
     const initNotes = {}
+    const initNoteTags = {}
     students.forEach(r => {
       const sid = r.student_id ?? r.student?.id ?? r.student
       const rawStatus = r.status === 'no_show' && r.no_show_fee_waived ? 'no_show_waived' : r.status
-      init[sid] = rawStatus || 'present'
+      init[sid] = rawStatus || 'pending'
       initNotes[sid] = r.note || ''
+      initNoteTags[sid] = r.note_tag || ''
     })
     setRegister(init)
     setNotes(initNotes)
+    setNoteTags(initNoteTags)
   }, [students.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load balances + waitlist when occurrence selected
@@ -201,9 +268,9 @@ export default function AttendanceScreen({ navigation, route }) {
     try {
       const records = students.map(r => {
         const sid = r.student_id ?? r.student?.id ?? r.student
-        const raw = register[sid] || 'present'
+        const raw = register[sid] || 'pending'
         const status = raw === 'no_show_waived' ? 'no_show' : raw
-        return { student: sid, status, no_show_fee_waived: raw === 'no_show_waived', note: notes[sid] || '' }
+        return { student: sid, status, no_show_fee_waived: raw === 'no_show_waived', note: notes[sid] || '', note_tag: noteTags[sid] || '' }
       })
       await attendance.bulkSave(selectedOcc.id, records)
       Alert.alert('Saved', 'Register saved.')
@@ -251,11 +318,11 @@ export default function AttendanceScreen({ navigation, route }) {
   // ── Register view ───────────────────────────────────────────────────────────
   const attending = students.filter(r => {
     const sid = r.student_id ?? r.student?.id ?? r.student
-    return !AWAY_STATUSES.includes(register[sid] || 'present')
+    return !AWAY_STATUSES.includes(register[sid] || 'pending')
   })
   const away = students.filter(r => {
     const sid = r.student_id ?? r.student?.id ?? r.student
-    return AWAY_STATUSES.includes(register[sid] || 'present')
+    return AWAY_STATUSES.includes(register[sid] || 'pending')
   })
 
   const sessionName = selectedOcc.session_name || selectedOcc.session_detail?.name || 'Class'
@@ -264,7 +331,7 @@ export default function AttendanceScreen({ navigation, route }) {
   return (
     <View style={s.root}>
       {/* Header */}
-      <TouchableOpacity style={s.back} onPress={() => { setSelectedOcc(null); setRegister({}); setNotes({}); setBalances({}) }}>
+      <TouchableOpacity style={s.back} onPress={() => { setSelectedOcc(null); setRegister({}); setNotes({}); setNoteTags({}); setBalances({}) }}>
         <Text style={s.backText}>← Back</Text>
       </TouchableOpacity>
       <Text style={s.heading}>{sessionName}</Text>
@@ -320,11 +387,13 @@ export default function AttendanceScreen({ navigation, route }) {
             return (
               <StudentRow
                 entry={item}
-                status={register[sid] || 'present'}
+                status={register[sid] || 'pending'}
                 balance={balances[sid] ?? 0}
                 note={notes[sid] || ''}
+                noteTag={noteTags[sid] || ''}
                 onStatusChange={status => setStatus(sid, status)}
                 onNote={() => { setNoteModal(sid); setNoteText(notes[sid] || '') }}
+                onNoteTagChange={tag => setNoteTags(prev => ({ ...prev, [sid]: tag }))}
                 onViewStudent={() => goToStudent(sid, studentName)}
               />
             )
@@ -425,6 +494,8 @@ const s = StyleSheet.create({
   badgeLavText: { fontSize: 9, fontWeight: '700', color: '#b0a0ff' },
   badgeRed: { backgroundColor: 'rgba(255,80,80,0.12)', borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2 },
   badgeRedText: { fontSize: 9, fontWeight: '700', color: '#ff5050' },
+  badgeMilestone: { backgroundColor: '#1a0a4a', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2, marginRight: 4 },
+  badgeMilestoneText: { color: '#ccff00', fontSize: 10, fontWeight: '700' },
 
   // Status pill (right side)
   statusPill: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, flexShrink: 0, maxWidth: 110, alignItems: 'center' },
@@ -435,6 +506,11 @@ const s = StyleSheet.create({
   statusGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   statusBtn: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333' },
   statusBtnText: { fontSize: 12, fontWeight: '600', color: '#666' },
+  noteTagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 6 },
+  noteTagChip: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333' },
+  noteTagChipActive: { backgroundColor: 'rgba(204,255,0,0.1)', borderColor: 'rgba(204,255,0,0.4)' },
+  noteTagChipText: { fontSize: 12, fontWeight: '600', color: '#555' },
+  noteTagChipTextActive: { color: '#ccff00' },
   noteBtn: { paddingVertical: 6 },
   noteBtnText: { fontSize: 12, color: '#555' },
 
