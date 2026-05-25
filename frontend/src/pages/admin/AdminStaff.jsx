@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useApi } from '../../hooks/useApi'
-import { users, classes, instructorPay as instructorPayApi } from '../../api'
+import { users, classes, instructorPay as instructorPayApi, availability as availabilityApi } from '../../api'
 import AddEditStaffModal from '../../components/AddEditStaffModal'
 
 const AVATAR_COLORS = ['#b0a0ff', '#ccff00', '#ffaa00', '#ff88aa', '#44ffcc', '#ffcc88', '#b0f0b0', '#9ac4ff', '#ffb3de', '#44ff99']
@@ -230,6 +230,213 @@ function PayTab({ allStaff }) {
   )
 }
 
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const SLOTS = [
+  { key: 'morning', label: 'Morning', sub: '9am–12pm' },
+  { key: 'afternoon', label: 'Afternoon', sub: '12pm–5pm' },
+  { key: 'evening', label: 'Evening', sub: '5pm–10pm' },
+]
+
+function InstructorScheduleTab({ allStaff, sessions }) {
+  const instructors = allStaff.filter(s => s.role === 'instructor' || s.role === 'admin')
+  const [selectedId, setSelectedId] = useState(instructors[0]?.id || null)
+  const [avail, setAvail] = useState({}) // { '0_morning': true, ... }
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    if (!selectedId) return
+    availabilityApi.list(selectedId).then(res => {
+      const map = {}
+      for (const row of (res.data?.results || res.data || [])) {
+        map[`${row.day_of_week}_${row.slot}`] = row.available
+      }
+      setAvail(map)
+    }).catch(() => setAvail({}))
+  }, [selectedId])
+
+  function toggle(day, slot) {
+    const key = `${day}_${slot}`
+    setAvail(prev => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  async function handleSave() {
+    if (!selectedId) return
+    setSaving(true)
+    try {
+      const slots = []
+      for (let d = 0; d < 7; d++) {
+        for (const s of SLOTS) {
+          slots.push({ instructor: selectedId, day_of_week: d, slot: s.key, available: !!avail[`${d}_${s.key}`] })
+        }
+      }
+      await availabilityApi.save(slots)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const selected = instructors.find(s => s.id === selectedId)
+  const myClasses = sessions.filter(s => s.instructor === selectedId)
+
+  return (
+    <div>
+      {/* Instructor picker */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+        {instructors.map(s => (
+          <button
+            key={s.id}
+            onClick={() => setSelectedId(s.id)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 10,
+              border: `1px solid ${selectedId === s.id ? 'var(--lime)' : 'var(--border)'}`,
+              background: selectedId === s.id ? 'rgba(204,255,0,0.08)' : 'var(--card)',
+              cursor: 'pointer', fontSize: 13,
+            }}
+          >
+            <div style={{ width: 24, height: 24, borderRadius: '50%', background: avatarColor(s.display_name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#000', fontWeight: 700 }}>
+              {s.first_name?.[0] || '?'}
+            </div>
+            <span style={{ color: selectedId === s.id ? 'var(--lime)' : 'var(--white)' }}>{s.display_name}</span>
+          </button>
+        ))}
+      </div>
+
+      {selected && (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
+            {/* Availability grid */}
+            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 18px' }}>
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 14 }}>Weekly Availability</div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <thead>
+                    <tr>
+                      <th style={{ padding: '4px 8px', textAlign: 'left', color: 'var(--grey)', width: 90 }}></th>
+                      {DAYS.map(d => (
+                        <th key={d} style={{ padding: '4px 6px', textAlign: 'center', color: 'var(--grey)', fontWeight: 600 }}>{d}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {SLOTS.map(slot => (
+                      <tr key={slot.key}>
+                        <td style={{ padding: '6px 8px', color: 'var(--grey)' }}>
+                          <div style={{ fontWeight: 600 }}>{slot.label}</div>
+                          <div style={{ fontSize: 10, color: '#555' }}>{slot.sub}</div>
+                        </td>
+                        {DAYS.map((_, d) => {
+                          const key = `${d}_${slot.key}`
+                          const isAvail = !!avail[key]
+                          // Check if they actually have a class in this slot
+                          const hasClass = myClasses.some(s => {
+                            if (s.day_of_week !== d) return false
+                            const hr = parseInt((s.start_time || '').split(':')[0])
+                            if (slot.key === 'morning') return hr >= 9 && hr < 12
+                            if (slot.key === 'afternoon') return hr >= 12 && hr < 17
+                            return hr >= 17
+                          })
+                          return (
+                            <td key={d} style={{ padding: '4px 6px', textAlign: 'center' }}>
+                              <div
+                                onClick={() => toggle(d, slot.key)}
+                                style={{
+                                  width: 28, height: 28, borderRadius: 6, cursor: 'pointer', margin: '0 auto',
+                                  background: hasClass ? 'rgba(204,255,0,0.2)' : isAvail ? 'rgba(204,255,0,0.12)' : 'rgba(255,255,255,0.04)',
+                                  border: `1px solid ${hasClass ? 'var(--lime)' : isAvail ? 'rgba(204,255,0,0.3)' : 'var(--border)'}`,
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  fontSize: 13,
+                                  transition: 'all 0.15s',
+                                }}
+                                title={hasClass ? 'Teaching a class here' : isAvail ? 'Available' : 'Not available'}
+                              >
+                                {hasClass ? '★' : isAvail ? '✓' : ''}
+                              </div>
+                            </td>
+                          )
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 10, display: 'flex', gap: 14 }}>
+                <span><span style={{ color: 'var(--lime)' }}>★</span> Teaching</span>
+                <span><span style={{ color: 'var(--lime)' }}>✓</span> Available</span>
+                <span style={{ opacity: 0.5 }}>□ Unavailable</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                <button className="btn btn-lime btn-sm" onClick={handleSave} disabled={saving}>
+                  {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save Availability'}
+                </button>
+              </div>
+            </div>
+
+            {/* Assigned classes */}
+            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 18px' }}>
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 14 }}>
+                Teaching Schedule
+                {myClasses.length > 0 && <span style={{ fontSize: 12, color: 'var(--grey)', fontFamily: 'inherit', fontWeight: 400, marginLeft: 8 }}>{myClasses.length} class{myClasses.length !== 1 ? 'es' : ''}</span>}
+              </div>
+              {myClasses.length === 0 ? (
+                <div style={{ color: 'var(--grey)', fontSize: 13 }}>No classes assigned.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[...myClasses].sort((a, b) => a.day_of_week - b.day_of_week || (a.start_time || '').localeCompare(b.start_time || '')).map(s => (
+                    <div key={s.id} style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 13 }}>{s.name}</div>
+                        <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>
+                          {DAYS[s.day_of_week]} {s.start_time?.slice(0, 5)} · {s.studio_detail?.name || '—'}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 12, color: s.enrolled_count >= s.capacity ? 'var(--amber)' : 'var(--lime)' }}>
+                          {s.enrolled_count}/{s.capacity}
+                        </div>
+                        <span className={`tag ${s.is_active ? 'tag-lime' : 'tag-grey'}`} style={{ fontSize: 9, marginTop: 2 }}>
+                          {s.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Pay rate and shadow instructor */}
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 18px' }}>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, marginBottom: 12 }}>Pay Settings</div>
+            <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'center', fontSize: 13 }}>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 4 }}>Pay rate</div>
+                <div style={{ fontWeight: 600 }}>{selected.pay_rate ? `$${selected.pay_rate}/class` : 'Not set (defaults to $40)'}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 4 }}>Shadow instructor</div>
+                <div style={{ fontWeight: 600, color: selected.is_shadow_instructor ? 'var(--amber)' : 'var(--grey)' }}>
+                  {selected.is_shadow_instructor ? 'Yes — $30/class' : 'No'}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 4 }}>Total classes (active)</div>
+                <div style={{ fontWeight: 600 }}>{myClasses.filter(s => s.is_active).length}</div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {instructors.length === 0 && (
+        <div className="empty-state">No instructors yet — add staff above.</div>
+      )}
+    </div>
+  )
+}
+
 export default function AdminStaff() {
   const [tab, setTab] = useState('team')
   const { data: instructorsData, loading } = useApi(() => users.list({ role: 'instructor' }))
@@ -422,49 +629,7 @@ export default function AdminStaff() {
       )}
 
       {tab === 'availability' && (
-        <div>
-          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 20 }}>
-            Classes assigned to each instructor across the week.
-          </div>
-          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, dow) => {
-            const daySessions = sessions.filter(s => s.day_of_week === dow)
-            if (daySessions.length === 0) return null
-            return (
-              <div key={day} style={{ marginBottom: 18 }}>
-                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--grey)', marginBottom: 8, fontWeight: 600 }}>{day}</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {[...daySessions].sort((a, b) => (a.start_time || '').localeCompare(b.start_time || '')).map(s => {
-                    const instructor = allStaff.find(st => st.id === s.instructor)
-                    return (
-                      <div key={s.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: 14 }}>{s.name}</div>
-                          <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{s.start_time?.slice(0, 5)} · {s.studio_detail?.name}</div>
-                        </div>
-                        {instructor ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ width: 28, height: 28, borderRadius: '50%', background: avatarColor(instructor.display_name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#000', fontWeight: 700 }}>
-                              {instructor.first_name?.[0] || '?'}
-                            </div>
-                            <span style={{ fontSize: 13, color: 'var(--grey)' }}>{instructor.display_name}</span>
-                          </div>
-                        ) : (
-                          <span style={{ fontSize: 12, color: 'var(--amber)' }}>Unassigned</span>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )
-          })}
-          {sessions.length === 0 && (
-            <div className="empty-state">
-              <div style={{ fontSize: 32, marginBottom: 12 }}>📅</div>
-              <div>No classes scheduled yet</div>
-            </div>
-          )}
-        </div>
+        <InstructorScheduleTab allStaff={allStaff} sessions={sessions} />
       )}
 
       {tab === 'pay' && <PayTab allStaff={allStaff} />}

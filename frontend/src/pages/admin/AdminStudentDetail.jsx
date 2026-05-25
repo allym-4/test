@@ -148,6 +148,163 @@ function BlockAccountModal({ student, onClose, onConfirm }) {
   )
 }
 
+function StudentNewPlanModal({ student, seasonsData, onClose, onSaved }) {
+  const today = new Date().toISOString().slice(0, 10)
+  const currentSeason = seasonsData.find(s => s.status === 'active') || seasonsData[0]
+  const [form, setForm] = useState({
+    description: '',
+    total_amount: '',
+    deposit: '',
+    frequency: 'fortnightly',
+    num_instalments: '4',
+    start_date_type: 'today',
+    custom_start_date: today,
+    notes: '',
+  })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+  const [preview, setPreview] = useState(false)
+  function set(k, v) { setForm(f => ({ ...f, [k]: v })) }
+
+  function getStartDate() {
+    if (form.start_date_type === 'today') return today
+    if (form.start_date_type === 'season_start') return currentSeason?.start_date || today
+    return form.custom_start_date || today
+  }
+
+  function addDays(d, n) { const x = new Date(d + 'T00:00'); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10) }
+  function nextDate(cursor, freq, i) {
+    if (freq === 'weekly') return addDays(cursor, 7)
+    if (freq === 'fortnightly') return addDays(cursor, 14)
+    const x = new Date(cursor + 'T00:00'); x.setMonth(x.getMonth() + 1); return x.toISOString().slice(0, 10)
+  }
+
+  const previewInstalments = (() => {
+    if (!form.total_amount) return []
+    const total = parseFloat(form.total_amount)
+    const dep = parseFloat(form.deposit || 0)
+    const count = parseInt(form.num_instalments) || 4
+    const start = getStartDate()
+    const items = []
+    if (dep > 0) items.push({ label: 'Deposit', amount: dep.toFixed(2), due_date: start })
+    const remaining = total - dep
+    if (remaining > 0 && count > 0) {
+      const instAmt = (remaining / count).toFixed(2)
+      let cursor = start
+      for (let i = 0; i < count; i++) {
+        cursor = nextDate(cursor, form.frequency, i)
+        items.push({ label: `Instalment ${i + 1}`, amount: instAmt, due_date: cursor })
+      }
+    }
+    return items
+  })()
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setSaving(true)
+    setError(null)
+    try {
+      const res = await payments.plans.create({
+        student: student.id,
+        description: form.description,
+        total_amount: parseFloat(form.total_amount),
+        status: 'active',
+        notes: form.notes,
+      })
+      for (const ins of previewInstalments) {
+        await payments.plans.createInstalment({ plan: res.data.id, amount: parseFloat(ins.amount), due_date: ins.due_date, status: 'pending' })
+      }
+      onSaved()
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to create plan')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 500 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>New Payment Plan — {student.display_name}</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <form className="sd-body" onSubmit={handleSubmit}>
+          {error && <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>{error}</div>}
+          <div className="field">
+            <label>Description</label>
+            <input value={form.description} onChange={e => set('description', e.target.value)} required placeholder="e.g. Season 4 — Level 2" />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="field">
+              <label>Total Amount ($)</label>
+              <input type="number" step="0.01" value={form.total_amount} onChange={e => set('total_amount', e.target.value)} required placeholder="0.00" />
+            </div>
+            <div className="field">
+              <label>Deposit / Upfront ($)</label>
+              <input type="number" step="0.01" value={form.deposit} onChange={e => set('deposit', e.target.value)} placeholder="0.00" />
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="field">
+              <label>Frequency</label>
+              <select value={form.frequency} onChange={e => set('frequency', e.target.value)}>
+                <option value="weekly">Weekly</option>
+                <option value="fortnightly">Fortnightly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+            <div className="field">
+              <label>Number of Instalments</label>
+              <input type="number" min="1" max="52" value={form.num_instalments} onChange={e => set('num_instalments', e.target.value)} />
+            </div>
+          </div>
+          <div className="field">
+            <label>Start Date</label>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+              {[['today', 'Today'], ['season_start', `Season start${currentSeason?.start_date ? ` (${new Date(currentSeason.start_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })})` : ''}`], ['custom', 'Custom']].map(([v, lbl]) => (
+                <button key={v} type="button" onClick={() => set('start_date_type', v)}
+                  style={{ padding: '5px 12px', borderRadius: 8, border: '1px solid', borderColor: form.start_date_type === v ? 'var(--lime)' : 'var(--border)', background: form.start_date_type === v ? 'rgba(204,255,0,0.1)' : 'transparent', color: form.start_date_type === v ? 'var(--lime)' : 'var(--grey)', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                  {lbl}
+                </button>
+              ))}
+            </div>
+            {form.start_date_type === 'custom' && (
+              <input type="date" value={form.custom_start_date} onChange={e => set('custom_start_date', e.target.value)} />
+            )}
+          </div>
+          {previewInstalments.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <button type="button" style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 12, padding: 0, marginBottom: 8 }} onClick={() => setPreview(p => !p)}>
+                {preview ? '▾' : '▸'} Preview {previewInstalments.length} instalment{previewInstalments.length !== 1 ? 's' : ''}
+              </button>
+              {preview && (
+                <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+                  {previewInstalments.map((ins, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 12px', borderBottom: i < previewInstalments.length - 1 ? '1px solid var(--border)' : 'none', fontSize: 12 }}>
+                      <span style={{ color: 'var(--grey)' }}>{ins.label}</span>
+                      <span>${ins.amount}</span>
+                      <span style={{ color: 'var(--grey)' }}>{new Date(ins.due_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          <div className="field">
+            <label>Notes (optional)</label>
+            <textarea rows={2} value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Internal notes…" />
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>{saving ? 'Creating…' : 'Create Plan'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 const NOTE_CATS = [
   { key: 'all',     label: 'All' },
   { key: 'medical', label: '🏥 Medical' },
@@ -440,8 +597,10 @@ export default function AdminStudentDetail() {
   const [showAddPracticeCredits, setShowAddPracticeCredits] = useState(false)
   const [enrolSubTab, setEnrolSubTab] = useState('current')
   const [tcTransferClass, setTcTransferClass] = useState('')
+  const [tcTransferSeasonId, setTcTransferSeasonId] = useState(null)
   const [expandedTrialId, setExpandedTrialId] = useState(null)
   const [chaseHistory, setChaseHistory] = useState(null)
+  const [showNewPlanModal, setShowNewPlanModal] = useState(false)
 
   useEffect(() => {
     users.get(id).then(res => {
@@ -512,8 +671,8 @@ export default function AdminStudentDetail() {
     payments.chase.list({ student_id: id }).then(r => setChaseHistory(r.data?.results || r.data || [])).catch(() => setChaseHistory([]))
   }, [student?.id])
 
-  async function loadSeasonSessions(enrolment) {
-    const sid = enrolment?.class_session_detail?.season
+  async function loadSeasonSessions(enrolment, overrideSeasonId) {
+    const sid = overrideSeasonId ?? enrolment?.class_session_detail?.season
     if (!sid) return
     setSeasonSessions([])
     setSeasonSessionsLoading(true)
@@ -1418,6 +1577,7 @@ export default function AdminStudentDetail() {
                   <button className="btn btn-lime btn-sm" onClick={() => setShowPayment(true)}>+ Record Payment</button>
                   <button className="btn btn-ghost btn-sm" onClick={() => setShowRefundCredit(true)}>Issue Refund / Credit</button>
                   <button className="btn btn-ghost btn-sm" onClick={() => setShowAccountCredit(true)}>Add Account Credit</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setShowNewPlanModal(true)}>⊞ Payment Plan</button>
                   <button className="btn btn-ghost btn-sm" onClick={() => { setTcStep(null); setTcEnrolment(null); setTcNewSession(''); setTcResolution('credit'); setTcNotes(''); setTcError(null); setTcTransferClass(''); setShowTransferCancel('list') }}>Transfer / Cancel Enrolment</button>
                   {savedCardsData?.payment_methods?.length > 0 && savedCardsData?.default_payment_method_id && bal < 0 && (() => {
                     const hasCashPending = (payData || []).some(p => p.payment_type === 'charge' && (p.description || '').toLowerCase().includes('pay at studio'))
@@ -2143,7 +2303,8 @@ export default function AdminStudentDetail() {
           : tcStep === 'cancel_all' ? 'Cancel All Enrolments'
           : 'Transfer / Cancel'
 
-        const seasonId = tcEnrolment?.class_session_detail?.season
+        const defaultSeasonId = tcEnrolment?.class_session_detail?.season
+        const effectiveSeasonId = tcTransferSeasonId ?? defaultSeasonId
         const transferSessions = tcStep === 'transfer'
           ? (seasonSessions || []).filter(s => s.id !== tcEnrolment?.class_session)
           : []
@@ -2187,7 +2348,7 @@ export default function AdminStudentDetail() {
                               </div>
                             </div>
                             <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                              <button className="btn btn-ghost btn-xs" onClick={() => { setTcEnrolment(e); setTcNewSession(''); setTcTransferClass(''); setTcStep('transfer'); loadSeasonSessions(e) }}>Transfer</button>
+                              <button className="btn btn-ghost btn-xs" onClick={() => { setTcEnrolment(e); setTcNewSession(''); setTcTransferClass(''); setTcTransferSeasonId(null); setTcStep('transfer'); loadSeasonSessions(e) }}>Transfer</button>
                               <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)' }} onClick={() => { setTcEnrolment(e); setTcStep('cancel') }}>Cancel</button>
                             </div>
                           </div>
@@ -2206,7 +2367,7 @@ export default function AdminStudentDetail() {
                   </>
                 )}
 
-                {/* Step 2a-i: Transfer — pick class name */}
+                {/* Step 2a-i: Transfer — pick season + class name */}
                 {tcStep === 'transfer' && !tcTransferClass && (() => {
                   const uniqueNames = [...new Set(transferSessions.map(s => s.name))].sort()
                   return (
@@ -2214,6 +2375,27 @@ export default function AdminStudentDetail() {
                       <div style={{ background: '#111', borderRadius: 8, padding: '10px 12px', marginBottom: 14, fontSize: 13, color: 'var(--grey)' }}>
                         Transferring from: <strong style={{ color: 'var(--white)' }}>{tcEnrolment?.class_session_detail?.name}</strong>
                       </div>
+                      {/* Season selector */}
+                      {(seasonsData || []).length > 1 && (
+                        <div className="field" style={{ marginBottom: 12 }}>
+                          <label style={{ fontSize: 11 }}>Season</label>
+                          <select
+                            value={effectiveSeasonId || ''}
+                            onChange={e => {
+                              const sid = parseInt(e.target.value) || defaultSeasonId
+                              setTcTransferSeasonId(sid)
+                              setTcTransferClass('')
+                              setTcNewSession('')
+                              loadSeasonSessions(tcEnrolment, sid)
+                            }}
+                            style={{ background: '#111', color: '#fff', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 10px', fontSize: 13, width: '100%' }}
+                          >
+                            {(seasonsData || []).filter(s => s.status === 'active' || s.status === 'upcoming').map(s => (
+                              <option key={s.id} value={s.id}>{s.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                       <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 10 }}>Select a class to transfer to:</div>
                       {seasonSessionsLoading ? (
                         <div style={{ fontSize: 13, color: 'var(--grey)', padding: '12px 0' }}>Loading classes…</div>
@@ -2542,6 +2724,21 @@ export default function AdminStudentDetail() {
 
       {selectedPayment && (
         <PaymentDetailModal payment={selectedPayment} onClose={() => setSelectedPayment(null)} />
+      )}
+
+      {showNewPlanModal && student && (
+        <StudentNewPlanModal
+          student={student}
+          seasonsData={seasonsData || []}
+          onClose={() => setShowNewPlanModal(false)}
+          onSaved={() => {
+            setShowNewPlanModal(false)
+            payments.list({ student: student.id }).then(r => {
+              // refresh balance
+              reloadBalance()
+            })
+          }}
+        />
       )}
     </div>
   )

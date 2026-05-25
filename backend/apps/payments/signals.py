@@ -68,7 +68,7 @@ def credit_referrer_on_full_payment(sender, instance, created, **kwargs):
         return
     if not instance.student_id:
         return
-    if float(instance.amount or 0) < 100:
+    if float(instance.amount or 0) < 270:
         return
 
     from apps.users.models import Referral, Notification

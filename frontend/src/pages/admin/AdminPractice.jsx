@@ -15,7 +15,7 @@ function fmtDate(d) {
   return dt.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
-const EMPTY_SLOT = { studio: '', date: '', start_time: '', end_time: '', capacity: 6, notes: '' }
+const EMPTY_SLOT = { studio: '', date: '', start_time: '', end_time: '', capacity: 6, notes: '', repeat_weeks: 1 }
 
 export default function AdminPractice() {
   const today = new Date().toISOString().split('T')[0]
@@ -56,13 +56,24 @@ export default function AdminPractice() {
     setModal(slot)
   }
 
+  function addDaysToDate(dateStr, n) {
+    const d = new Date(dateStr + 'T00:00')
+    d.setDate(d.getDate() + n)
+    return d.toISOString().slice(0, 10)
+  }
+
   async function handleSave() {
     setBusy(true)
     try {
       if (modal === 'new') {
-        await classesApi.practice.create(form)
+        const weeks = parseInt(form.repeat_weeks) || 1
+        const { repeat_weeks, ...slotData } = form
+        for (let i = 0; i < weeks; i++) {
+          await classesApi.practice.create({ ...slotData, date: addDaysToDate(form.date, i * 7) })
+        }
       } else {
-        await classesApi.practice.update(modal.id, form)
+        const { repeat_weeks, ...slotData } = form
+        await classesApi.practice.update(modal.id, slotData)
       }
       setModal(null)
       refetch()
@@ -182,6 +193,23 @@ export default function AdminPractice() {
                 {field}
               </div>
             ))}
+            {modal === 'new' && (
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Repeat for</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input
+                    type="number" min={1} max={52}
+                    value={form.repeat_weeks}
+                    onChange={e => setForm(f => ({ ...f, repeat_weeks: parseInt(e.target.value) || 1 }))}
+                    style={{ width: 70 }}
+                  />
+                  <span style={{ fontSize: 13, color: 'var(--grey)' }}>week{form.repeat_weeks !== 1 ? 's' : ''}</span>
+                  {form.repeat_weeks > 1 && (
+                    <span style={{ fontSize: 11, color: 'var(--lime)' }}>→ creates {form.repeat_weeks} slots</span>
+                  )}
+                </div>
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
               <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={() => setModal(null)}>Cancel</button>
               <button className="btn btn-lime btn-sm" style={{ flex: 1 }} disabled={busy} onClick={handleSave}>
