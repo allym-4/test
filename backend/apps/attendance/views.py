@@ -99,6 +99,12 @@ class StudentMarkAwayView(APIView):
         import pytz
         from apps.users.models import StudioSettings
 
+        if request.user.booking_blocked:
+            return Response(
+                {'detail': 'Your account is on hold. Please come in and settle your balance.'},
+                status=403,
+            )
+
         occurrence_id = request.data.get('occurrence_id')
         enrolment_id = request.data.get('enrolment_id')
         if not occurrence_id and not enrolment_id:

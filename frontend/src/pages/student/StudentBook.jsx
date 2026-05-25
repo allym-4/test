@@ -2300,20 +2300,20 @@ export default function StudentBook() {
   const cartSessionId = cart?.session?.id
 
   const balance = balanceData ? parseFloat(balanceData.balance) : null
-  const isOwing = balance !== null && balance < 0
+  const isBlocked = balanceData?.booking_blocked === true
 
-  if (isOwing) {
+  if (isBlocked) {
     return (
       <div style={{ maxWidth: 480, margin: '40px auto', padding: '0 16px' }}>
         <div style={{ background: 'rgba(255,68,68,0.08)', border: '1px solid rgba(255,68,68,0.25)', borderRadius: 14, padding: '28px 24px', textAlign: 'center' }}>
           <div style={{ fontSize: 28, marginBottom: 12 }}>🔒</div>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, marginBottom: 8 }}>Outstanding balance</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, marginBottom: 8 }}>Account on hold</div>
           <div style={{ fontSize: 14, color: 'var(--grey)', marginBottom: 20, lineHeight: 1.6 }}>
-            You have an outstanding balance of <span style={{ color: 'var(--red)', fontWeight: 600 }}>${Math.abs(balance).toFixed(2)}</span>.
-            Please settle your account before booking another class.
+            Your account has an outstanding balance{balance !== null && balance < 0 ? <> of <span style={{ color: 'var(--red)', fontWeight: 600 }}>${Math.abs(balance).toFixed(2)}</span></> : ''}.
+            Please settle your account to resume booking.
           </div>
           <a href="/portal/billing" style={{ display: 'inline-block', background: 'var(--lime)', color: '#000', fontWeight: 700, borderRadius: 8, padding: '11px 24px', textDecoration: 'none', fontSize: 14 }}>
-            Pay now
+            View billing
           </a>
         </div>
       </div>

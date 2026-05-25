@@ -129,6 +129,9 @@ export default function StudentDashboard() {
   const { data: trialPendingData, refetch: refetchTrialFeedback } = useApi(() => enrolments.trialFeedback.pending(), [])
   const { data: studioSettings } = useApi(() => settingsApi.get(), [])
 
+  const { data: balanceData } = useApi(() => user?.id ? payments.balance(user.id) : null, [user?.id])
+  const isBlocked = balanceData?.booking_blocked === true
+
   const [markAwayEnrol, setMarkAwayEnrol] = useState(null)
   const [acknowledging, setAcknowledging] = useState({})
 
@@ -307,7 +310,12 @@ export default function StudentDashboard() {
                     <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s?.name} · {s?.studio_detail?.name}</div>
                     <div style={{ fontSize: 12, color: 'var(--grey)' }}>{s?.start_time?.slice(0, 5)} · {instructorName}</div>
                   </div>
-                  <button className="btn btn-ghost btn-sm" style={{ flexShrink: 0 }} onClick={() => setMarkAwayEnrol(e)}>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    style={{ flexShrink: 0 }}
+                    onClick={() => isBlocked ? alert('Your account is on hold. Please come in and settle your balance before marking away.') : setMarkAwayEnrol(e)}
+                    title={isBlocked ? 'Account on hold' : undefined}
+                  >
                     Mark Away
                   </button>
                 </div>

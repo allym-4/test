@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments as enrolmentsApi, attendance, classes as classesApi, helpdesk as helpdeskApi, settings as settingsApi } from '../../api'
+import { enrolments as enrolmentsApi, attendance, classes as classesApi, helpdesk as helpdeskApi, settings as settingsApi, payments as paymentsApi } from '../../api'
 import MarkAwayModal from '../../components/MarkAwayModal'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -542,6 +542,8 @@ export default function StudentMyClasses() {
   const { data: workshopsData } = useApi(() => classesApi.workshops.list(), [])
   const { data: creditsData } = useApi(() => user?.id ? attendance.makeupCredits.list({ student: user.id, status: 'available' }) : null, [user?.id])
   const { data: studioSettings } = useApi(() => settingsApi.get(), [])
+  const { data: balanceData } = useApi(() => user?.id ? paymentsApi.balance(user.id) : null, [user?.id])
+  const isBlocked = balanceData?.booking_blocked === true
 
   const [tab, setTab] = useState('active')
   const [cancelPolicyEnrol, setCancelPolicyEnrol] = useState(null)
@@ -701,8 +703,9 @@ export default function StudentMyClasses() {
                     <span style={{ fontSize: 11, color: 'var(--amber)', fontWeight: 600 }}>Away</span>
                   ) : (
                     <button
-                      onClick={() => setMarkAwayOcc({ id: occ.id, date: occ.date, session_detail: { name: s?.name, start_time: occ.start_time } })}
-                      style={{ background: 'none', border: '1px solid rgba(255,170,0,0.35)', borderRadius: 6, padding: '3px 9px', cursor: 'pointer', fontSize: 10, fontWeight: 700, color: 'var(--amber)', letterSpacing: '0.3px' }}
+                      onClick={() => isBlocked ? alert('Your account is on hold. Please come in and settle your balance.') : setMarkAwayOcc({ id: occ.id, date: occ.date, session_detail: { name: s?.name, start_time: occ.start_time } })}
+                      style={{ background: 'none', border: `1px solid ${isBlocked ? 'rgba(255,68,68,0.35)' : 'rgba(255,170,0,0.35)'}`, borderRadius: 6, padding: '3px 9px', cursor: isBlocked ? 'not-allowed' : 'pointer', fontSize: 10, fontWeight: 700, color: isBlocked ? 'var(--red)' : 'var(--amber)', letterSpacing: '0.3px' }}
+                      title={isBlocked ? 'Account on hold — come in to pay' : undefined}
                     >
                       MARK AWAY
                     </button>

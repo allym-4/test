@@ -255,22 +255,12 @@ class EnrolmentListView(generics.ListCreateAPIView):
                         f'Please complete your required forms before booking: {", ".join(pending)}.'
                     )
 
-        # Block students with an outstanding balance from booking
-        if user.role == 'student':
-            credit_types = ('payment', 'refund', 'credit')
-            debit_types = ('charge', 'no_show_fee')
-            total_paid = Payment.objects.filter(
-                student=user, payment_type__in=credit_types
-            ).aggregate(t=Sum('amount'))['t'] or 0
-            total_charged = Payment.objects.filter(
-                student=user, payment_type__in=debit_types
-            ).aggregate(t=Sum('amount'))['t'] or 0
-            balance = float(total_paid) - float(total_charged)
-            if balance < 0:
-                raise PermissionDenied(
-                    f'You have an outstanding balance of ${abs(balance):.2f}. '
-                    'Please settle your account before booking.'
-                )
+        # Block students whose account has been placed on hold
+        if user.role == 'student' and user.booking_blocked:
+            raise PermissionDenied(
+                'Your account is currently on hold due to an outstanding balance. '
+                'Please settle your account before booking.'
+            )
             enrolment = serializer.save(student=user)
         else:
             enrolment = serializer.save()
