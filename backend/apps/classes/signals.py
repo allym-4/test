@@ -23,11 +23,14 @@ def _kisi_grant_practice(booking):
 
         start_time = getattr(slot, 'start_time', None)
         if slot_date and start_time:
-            valid_from = datetime.datetime.combine(slot_date, start_time).isoformat()
+            # Access: 15 min before practice starts, 20 min after it ends
+            dt_start = datetime.datetime.combine(slot_date, start_time)
+            valid_from = (dt_start - datetime.timedelta(minutes=15)).isoformat()
         else:
             valid_from = timezone.now().isoformat()
         if slot_date and end_time:
-            valid_until = datetime.datetime.combine(slot_date, end_time).isoformat()
+            dt_end = datetime.datetime.combine(slot_date, end_time)
+            valid_until = (dt_end + datetime.timedelta(minutes=20)).isoformat()
         else:
             valid_until = None
 

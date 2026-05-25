@@ -238,16 +238,17 @@ def handle_enrolment_change(sender, instance, created, **kwargs):
             if place_id and settings_obj.kisi_api_key:
                 season = session.season if session else None
                 if instance.enrolment_type in ('casual', 'trial', 'catchup'):
-                    # Access window = duration of the single class only
+                    # Access: 45 min before class starts, until 4m59s into class
                     occ = ClassOccurrence.objects.filter(
                         session=session, date__gte=timezone.now().date()
                     ).order_by('date').first()
                     if occ:
-                        valid_from = _dt.datetime.combine(occ.date, session.start_time)
-                        valid_until = valid_from + _dt.timedelta(minutes=session.duration_minutes)
+                        class_start = _dt.datetime.combine(occ.date, session.start_time)
+                        valid_from = class_start - _dt.timedelta(minutes=45)
+                        valid_until = class_start + _dt.timedelta(minutes=4, seconds=59)
                     else:
                         valid_from = timezone.now()
-                        valid_until = valid_from + _dt.timedelta(hours=2)
+                        valid_until = valid_from + _dt.timedelta(minutes=50)
                 elif season and season.start_date:
                     valid_from = _dt.datetime.combine(season.start_date, _dt.time(0, 0))
                     valid_until = _dt.datetime.combine(season.end_date, _dt.time(23, 59)) if season.end_date else None
