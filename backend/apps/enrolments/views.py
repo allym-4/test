@@ -859,6 +859,8 @@ class ClassChangeRequestApproveView(APIView):
         refund_amount = request.data.get('refund_amount')
         charge_amount = request.data.get('charge_amount')
         admin_notes = request.data.get('admin_notes', '')
+        force_override = request.data.get('force', False)
+        action = request.data.get('action', 'transfer')  # 'transfer' | 'waitlist'
 
         if not new_session_id:
             return Response({'detail': 'new_session_id is required.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -872,19 +874,68 @@ class ClassChangeRequestApproveView(APIView):
         old_session = enrolment.class_session
         student = change_request.student
 
-        # Check capacity on target session
+        # Check capacity on target session (skip for force override or waitlist)
         active_count = Enrolment.objects.filter(class_session=new_session, status='active').count()
-        if active_count >= new_session.capacity:
+        if active_count >= new_session.capacity and not force_override and action != 'waitlist':
             return Response({'detail': f'{new_session.name} is at capacity ({new_session.capacity} students).'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check target session is not already enrolled
-        if Enrolment.objects.filter(student=student, class_session=new_session, status='active').exists():
+        # Check target session is not already enrolled/waitlisted
+        if Enrolment.objects.filter(student=student, class_session=new_session, status__in=('active', 'waitlisted')).exists():
             return Response(
-                {'detail': 'Student is already enrolled in the target session.'},
+                {'detail': 'Student is already enrolled or waitlisted in the target session.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Move the enrolment
+        if action == 'waitlist':
+            # Create a new waitlisted enrolment on the target session; leave current enrolment active
+            waitlist_pos = Enrolment.objects.filter(class_session=new_session, status='waitlisted').count() + 1
+            Enrolment.objects.create(
+                student=student,
+                class_session=new_session,
+                status='waitlisted',
+                enrolment_type=enrolment.enrolment_type,
+                waitlist_position=waitlist_pos,
+            )
+            # Resolve the change request as approved (waitlisted)
+            change_request.status = ClassChangeRequest.Status.APPROVED
+            change_request.admin_notes = (admin_notes + ' [Waitlisted]').strip()
+            change_request.resolved_at = timezone.now()
+            change_request.save(update_fields=['status', 'admin_notes', 'resolved_at'])
+            if change_request.ticket:
+                change_request.ticket.status = 'resolved'
+                change_request.ticket.save(update_fields=['status'])
+            Notification.objects.create(
+                recipient=student,
+                title=f'You\'ve been added to the waitlist for {new_session.name}',
+                body=(
+                    f'Your transfer request has been reviewed. {new_session.name} is currently full, '
+                    f'so you\'ve been added to the waitlist (position #{waitlist_pos}). '
+                    'You\'ll be notified as soon as a spot opens up.'
+                ),
+                notification_type='info',
+            )
+            if student.email:
+                from apps.users.email_utils import send_branded_email
+                send_branded_email(
+                    to_email=student.email,
+                    subject=f'Waitlisted for {new_session.name}',
+                    template_name='class_change_approved',
+                    context={
+                        'first_name': student.first_name,
+                        'greeting': f'Hi {student.first_name},',
+                        'old_session': old_session.name,
+                        'new_session': f'{new_session.name} (waitlisted — position #{waitlist_pos})',
+                        'admin_notes': admin_notes,
+                        'plain_text': (
+                            f'Hi {student.first_name},\n\n'
+                            f'{new_session.name} is currently full, so you\'ve been added to the waitlist at position #{waitlist_pos}. '
+                            'We\'ll notify you as soon as a spot becomes available.\n\nDuality Pole Studio'
+                        ),
+                    }
+                )
+            return Response(ClassChangeRequestSerializer(change_request).data)
+
+        # Move the enrolment (transfer, with optional force override)
         enrolment.class_session = new_session
         enrolment.save(update_fields=['class_session'])
 

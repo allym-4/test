@@ -43,24 +43,29 @@ function ApproveModal({ req, onClose, onDone }) {
   const currentSchedule = fmtSessionLabel(currentSession)
   const requestedSchedule = fmtSessionLabel(requestedSession)
   const isFull = requestedSession && requestedSession.enrolled_count >= requestedSession.capacity
+
   const [adminNotes, setAdminNotes] = useState('')
-  const [saving, setSaving] = useState(false)
+  const [saving, setSaving] = useState(null) // null | 'transfer' | 'override' | 'waitlist'
   const [error, setError] = useState(null)
 
-  async function handleApprove() {
-    setSaving(true); setError(null)
+  async function handleAction(action, force = false) {
+    setSaving(action); setError(null)
     try {
       const payload = {
-        new_session_id: req.requested_session || req.requested_session_detail?.id,
+        new_session_id: req.requested_session || requestedSession?.id,
         admin_notes: adminNotes,
+        action,
+        ...(force && { force: true }),
       }
       const res = await enrolments.changeRequests.approve(req.id, payload)
       onDone(res.data)
       onClose()
     } catch (err) {
-      setError(err.response?.data?.detail || JSON.stringify(err.response?.data) || 'Failed to approve')
-    } finally { setSaving(false) }
+      setError(err.response?.data?.detail || JSON.stringify(err.response?.data) || 'Failed')
+    } finally { setSaving(null) }
   }
+
+  const transferLabel = isFull ? 'Transfer anyway (override)' : 'Approve & Transfer'
 
   return (
     <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -71,11 +76,8 @@ function ApproveModal({ req, onClose, onDone }) {
         </div>
         <div className="sd-body">
           {error && <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>{error}</div>}
-          {isFull && (
-            <div style={{ background: 'rgba(255,170,0,0.08)', border: '1px solid rgba(255,170,0,0.3)', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontSize: 13, color: 'var(--amber)' }}>
-              ⚠ <strong>Class is full</strong> ({requestedSession.enrolled_count}/{requestedSession.capacity}). Approving will override the capacity limit.
-            </div>
-          )}
+
+          {/* Transfer summary */}
           <div style={{ background: '#1a1a1a', borderRadius: 8, padding: '12px 14px', marginBottom: 16 }}>
             <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10 }}>Transfer Summary</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 8, fontSize: 13 }}>
@@ -87,24 +89,72 @@ function ApproveModal({ req, onClose, onDone }) {
               <div>
                 <div style={{ fontWeight: 600, color: isFull ? 'var(--amber)' : 'var(--lime)' }}>{requestedClass}</div>
                 {requestedSchedule && <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{requestedSchedule}</div>}
+                {isFull && <div style={{ fontSize: 10, color: 'var(--amber)', marginTop: 3, fontWeight: 700 }}>FULL {requestedSession.enrolled_count}/{requestedSession.capacity}</div>}
               </div>
             </div>
             <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 10, borderTop: '1px solid #2a2a2a', paddingTop: 8 }}>
               Student: <span style={{ color: 'var(--white)' }}>{req.student_detail?.display_name || `Student #${req.student}`}</span>
             </div>
           </div>
-          <div style={{ fontSize: 13, color: '#aaa', marginBottom: 16, lineHeight: 1.5 }}>
-            Approving this request will automatically move the student from their current class to the requested class.
-          </div>
+
+          {/* Full class options */}
+          {isFull && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>Class is full — choose how to proceed</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ background: 'rgba(255,170,0,0.06)', border: '1px solid rgba(255,170,0,0.25)', borderRadius: 8, padding: '12px 14px' }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--amber)', marginBottom: 4 }}>⚠ Override capacity</div>
+                  <div style={{ fontSize: 12, color: 'var(--grey)', lineHeight: 1.5 }}>
+                    Move the student in anyway, taking the class to {requestedSession.enrolled_count + 1}/{requestedSession.capacity}. Use when you're ok with exceeding the cap.
+                  </div>
+                </div>
+                <div style={{ background: 'rgba(176,160,255,0.06)', border: '1px solid rgba(176,160,255,0.25)', borderRadius: 8, padding: '12px 14px' }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--lav)', marginBottom: 4 }}>📋 Add to waitlist</div>
+                  <div style={{ fontSize: 12, color: 'var(--grey)', lineHeight: 1.5 }}>
+                    Keep the student in their current class and put them on the waitlist for {requestedClass}. They'll be notified automatically when a spot opens.
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!isFull && (
+            <div style={{ fontSize: 13, color: '#aaa', marginBottom: 16, lineHeight: 1.5 }}>
+              This will move the student from their current class to the requested class.
+            </div>
+          )}
+
           <div className="field">
             <label>Admin Notes (optional)</label>
-            <textarea rows={3} value={adminNotes} onChange={e => setAdminNotes(e.target.value)} placeholder="Internal notes about this approval…" />
+            <textarea rows={2} value={adminNotes} onChange={e => setAdminNotes(e.target.value)} placeholder="Internal notes about this approval…" />
           </div>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
             <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-            <button className="btn btn-lime btn-sm" onClick={handleApprove} disabled={saving}>
-              {saving ? 'Approving…' : 'Approve & Transfer'}
-            </button>
+            {isFull ? (
+              <>
+                <button
+                  className="btn btn-sm"
+                  style={{ background: 'rgba(176,160,255,0.15)', color: 'var(--lav)', border: '1px solid rgba(176,160,255,0.3)' }}
+                  onClick={() => handleAction('waitlist')}
+                  disabled={!!saving}
+                >
+                  {saving === 'waitlist' ? 'Adding…' : '📋 Waitlist'}
+                </button>
+                <button
+                  className="btn btn-sm"
+                  style={{ background: 'rgba(255,170,0,0.15)', color: 'var(--amber)', border: '1px solid rgba(255,170,0,0.3)' }}
+                  onClick={() => handleAction('transfer', true)}
+                  disabled={!!saving}
+                >
+                  {saving === 'transfer' ? 'Approving…' : '⚠ Override & Transfer'}
+                </button>
+              </>
+            ) : (
+              <button className="btn btn-lime btn-sm" onClick={() => handleAction('transfer')} disabled={!!saving}>
+                {saving ? 'Approving…' : 'Approve & Transfer'}
+              </button>
+            )}
           </div>
         </div>
       </div>
