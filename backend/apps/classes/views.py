@@ -216,11 +216,10 @@ class SeasonListView(generics.ListCreateAPIView):
         from django.utils import timezone
         qs = Season.objects.all()
         user = self.request.user
-        # Admins and instructors see everything (including draft/hidden seasons)
-        if user.role in ('admin', 'instructor'):
+        # Only admins see draft seasons
+        if user.role == 'admin':
             return qs.filter(archived=False)
-        # Students only see seasons that are live: active, or bookings explicitly open,
-        # or the go_live_at timestamp has passed
+        # Students and instructors only see seasons that are live
         now = timezone.now()
         return qs.filter(archived=False).filter(
             models.Q(status='active') |
