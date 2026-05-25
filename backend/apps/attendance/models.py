@@ -17,7 +17,13 @@ class AttendanceRecord(models.Model):
     status = models.CharField(max_length=15, choices=AttendanceStatus.choices, default=AttendanceStatus.PRESENT)
     no_show_fee_charged = models.BooleanField(default=False)
     no_show_fee_waived = models.BooleanField(default=False)
+    class NoteTag(models.TextChoices):
+        GENERAL = 'general', 'General'
+        INJURY = 'injury', 'Injury'
+        VIBES = 'vibes', 'Vibes'
+
     note = models.TextField(blank=True)
+    note_tag = models.CharField(max_length=20, choices=NoteTag.choices, blank=True, default='')
     recorded_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name='attendance_recorded'
     )

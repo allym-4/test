@@ -63,6 +63,7 @@ def bulk_save_register(request, occurrence_pk):
                 'no_show_fee_charged': record.get('no_show_fee_charged', False),
                 'no_show_fee_waived': record.get('no_show_fee_waived', False),
                 'note': record.get('note', ''),
+                'note_tag': record.get('note_tag', ''),
                 'recorded_by': request.user,
             }
         )

@@ -4,7 +4,6 @@ import {
   ActivityIndicator, Alert,
 } from 'react-native'
 import { useApi } from '../../hooks/useApi'
-import { useAuth } from '../../contexts/AuthContext'
 import { skills } from '../../api'
 
 const LEVEL_COLORS = {
@@ -27,25 +26,27 @@ function LevelBadge({ level }) {
   )
 }
 
-function SkillRow({ studentId, skill, onConfirmed }) {
-  const [confirming, setConfirming] = useState(false)
+function SkillRow({ studentId, skill, onReviewed }) {
+  const [status, setStatus] = useState(null)
 
-  async function handleConfirm() {
-    setConfirming(true)
+  async function handleReview(instructorStatus) {
+    setStatus('saving')
     try {
       await skills.save(studentId, {
         skill_name: skill.skill_name,
         level: skill.level,
-        self_assessed: false,
+        self_assessed: skill.self_assessed,
+        teacher_confirmed: instructorStatus === 'approved',
+        instructor_status: instructorStatus,
       })
-      onConfirmed()
+      setStatus(instructorStatus)
+      if (instructorStatus === 'approved') onReviewed()
     } catch (err) {
       Alert.alert(
         'Error',
-        err.response?.data?.detail || 'Could not confirm skill. Please try again.',
+        err.response?.data?.detail || 'Could not save. Please try again.',
       )
-    } finally {
-      setConfirming(false)
+      setStatus(null)
     }
   }
 
@@ -55,27 +56,64 @@ function SkillRow({ studentId, skill, onConfirmed }) {
         <Text style={s.skillName}>{skill.skill_name}</Text>
         <LevelBadge level={skill.level} />
       </View>
-      <TouchableOpacity
-        style={[s.confirmBtn, confirming && s.confirmBtnDisabled]}
-        onPress={handleConfirm}
-        disabled={confirming}
-        accessibilityLabel={`Confirm ${skill.skill_name}`}
-      >
-        {confirming
-          ? <ActivityIndicator color="#000" size="small" />
-          : <Text style={s.confirmBtnText}>✓</Text>
-        }
-      </TouchableOpacity>
+      {status === 'saving' ? (
+        <ActivityIndicator color="#ccff00" size="small" style={{ marginLeft: 12 }} />
+      ) : status === 'approved' ? (
+        <Text style={s.doneApproved}>Approved ✓</Text>
+      ) : status === 'not_quite' ? (
+        <Text style={s.doneNotQuite}>Not Quite</Text>
+      ) : status === 'not_approved' ? (
+        <Text style={s.doneNo}>Not Approved</Text>
+      ) : (
+        <View style={s.btnRow}>
+          <TouchableOpacity
+            style={s.approveBtn}
+            onPress={() => handleReview('approved')}
+            accessibilityLabel={`Approve ${skill.skill_name}`}
+          >
+            <Text style={s.approveBtnText}>✓</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={s.notQuiteBtn}
+            onPress={() => handleReview('not_quite')}
+            accessibilityLabel={`Not quite ${skill.skill_name}`}
+          >
+            <Text style={s.notQuiteBtnText}>~</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={s.noBtn}
+            onPress={() => handleReview('not_approved')}
+            accessibilityLabel={`Not approved ${skill.skill_name}`}
+          >
+            <Text style={s.noBtnText}>✕</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   )
 }
 
-function StudentGroup({ group, onSkillConfirmed }) {
+function StudentGroup({ group, onSkillConfirmed, onApproveAll }) {
   const [removedKeys, setRemovedKeys] = useState(new Set())
+  const [approvingAll, setApprovingAll] = useState(false)
 
   function handleConfirmed(skillName) {
     setRemovedKeys(prev => new Set([...prev, skillName]))
     onSkillConfirmed()
+  }
+
+  async function handleApproveAll() {
+    setApprovingAll(true)
+    try {
+      const skillNames = group.skills.map(s => s.skill_name)
+      await skills.batchApprove(group.student_id, skillNames)
+      setRemovedKeys(new Set(skillNames))
+      onSkillConfirmed()
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.detail || 'Could not approve all. Please try again.')
+    } finally {
+      setApprovingAll(false)
+    }
   }
 
   const visibleSkills = group.skills.filter(sk => !removedKeys.has(sk.skill_name))
@@ -91,6 +129,16 @@ function StudentGroup({ group, onSkillConfirmed }) {
             {visibleSkills.length} skill{visibleSkills.length !== 1 ? 's' : ''} pending
           </Text>
         </View>
+        <TouchableOpacity
+          style={[s.approveAllBtn, approvingAll && s.approveAllBtnDisabled]}
+          onPress={handleApproveAll}
+          disabled={approvingAll}
+        >
+          {approvingAll
+            ? <ActivityIndicator color="#000" size="small" />
+            : <Text style={s.approveAllBtnText}>Approve All</Text>
+          }
+        </TouchableOpacity>
       </View>
       <View style={s.groupBody}>
         {visibleSkills.map(skill => (
@@ -98,7 +146,7 @@ function StudentGroup({ group, onSkillConfirmed }) {
             key={skill.skill_name}
             studentId={group.student_id}
             skill={skill}
-            onConfirmed={() => handleConfirmed(skill.skill_name)}
+            onReviewed={() => handleConfirmed(skill.skill_name)}
           />
         ))}
       </View>
@@ -111,7 +159,6 @@ export default function SkillsApprovalScreen() {
   const [refreshing, setRefreshing] = useState(false)
 
   const groups = data ?? []
-
   const totalPending = groups.reduce((acc, g) => acc + g.skills.length, 0)
 
   async function handleRefresh() {
@@ -143,8 +190,8 @@ export default function SkillsApprovalScreen() {
       <Text style={s.heading}>Skill Approvals</Text>
       <Text style={s.subheading}>
         {totalPending > 0
-          ? `${totalPending} skill${totalPending !== 1 ? 's' : ''} awaiting confirmation`
-          : 'All skills confirmed'}
+          ? `${totalPending} skill${totalPending !== 1 ? 's' : ''} awaiting review`
+          : 'All skills reviewed'}
       </Text>
 
       <FlatList
@@ -156,7 +203,7 @@ export default function SkillsApprovalScreen() {
         ListEmptyComponent={
           <View style={s.emptyState}>
             <Text style={s.emptyIcon}>✅</Text>
-            <Text style={s.emptyTitle}>No pending skills to approve</Text>
+            <Text style={s.emptyTitle}>No pending skills to review</Text>
             <Text style={s.emptyBody}>
               Students who self-assess skills will appear here for your review.
             </Text>
@@ -180,16 +227,11 @@ const s = StyleSheet.create({
   list: { padding: 16, paddingBottom: 40 },
   errorText: { textAlign: 'center', color: '#ef4444', marginTop: 40, paddingHorizontal: 24 },
 
-  // Student group card
   groupCard: {
     backgroundColor: '#111',
     borderRadius: 14,
     marginBottom: 14,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
   },
   groupHeader: {
     flexDirection: 'row',
@@ -203,7 +245,6 @@ const s = StyleSheet.create({
   groupCount: { fontSize: 12, color: '#888', marginTop: 2 },
   groupBody: { paddingHorizontal: 16, paddingBottom: 6 },
 
-  // Skill row
   skillRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -215,25 +256,54 @@ const s = StyleSheet.create({
   skillInfo: { flexDirection: 'row', alignItems: 'center', flex: 1, flexWrap: 'wrap', gap: 8 },
   skillName: { fontSize: 14, fontWeight: '500', color: '#fff' },
 
-  // Level badge
   levelBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   levelBadgeText: { fontSize: 11, fontWeight: '600' },
 
-  // Confirm button
-  confirmBtn: {
+  btnRow: { flexDirection: 'row', gap: 6, marginLeft: 12, flexShrink: 0 },
+
+  approveBtn: {
     backgroundColor: '#ccff00',
-    borderRadius: 20,
-    width: 36,
-    height: 36,
+    borderRadius: 18,
+    width: 32,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 12,
-    flexShrink: 0,
   },
-  confirmBtnDisabled: { backgroundColor: 'rgba(204,255,0,0.3)' },
-  confirmBtnText: { color: '#000', fontWeight: '700', fontSize: 16 },
+  approveBtnText: { color: '#000', fontWeight: '700', fontSize: 15 },
 
-  // Empty state
+  notQuiteBtn: {
+    backgroundColor: 'rgba(245,158,11,0.15)',
+    borderRadius: 18,
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notQuiteBtnText: { color: '#f59e0b', fontWeight: '700', fontSize: 16 },
+
+  noBtn: {
+    backgroundColor: 'rgba(239,68,68,0.12)',
+    borderRadius: 18,
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noBtnText: { color: '#ef4444', fontWeight: '700', fontSize: 13 },
+
+  doneApproved: { fontSize: 11, color: '#ccff00', fontWeight: '600', marginLeft: 12 },
+  doneNotQuite: { fontSize: 11, color: '#f59e0b', fontWeight: '600', marginLeft: 12 },
+  doneNo: { fontSize: 11, color: '#ef4444', fontWeight: '600', marginLeft: 12 },
+
+  approveAllBtn: {
+    backgroundColor: '#ccff00',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  approveAllBtnDisabled: { backgroundColor: 'rgba(204,255,0,0.3)' },
+  approveAllBtnText: { color: '#000', fontWeight: '700', fontSize: 13 },
+
   emptyState: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 32 },
   emptyIcon: { fontSize: 40, marginBottom: 12 },
   emptyTitle: { fontSize: 16, fontWeight: '700', color: '#ccc', marginBottom: 6 },

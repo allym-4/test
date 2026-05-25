@@ -4,10 +4,17 @@ from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product
 
 class UserMinimalSerializer(serializers.ModelSerializer):
     display_name = serializers.ReadOnlyField()
+    total_classes_attended = serializers.SerializerMethodField()
+
+    def get_total_classes_attended(self, obj):
+        from apps.attendance.models import AttendanceRecord
+        return AttendanceRecord.objects.filter(
+            student=obj, status__in=['present', 'late']
+        ).count()
 
     class Meta:
         model = User
-        fields = ('id', 'display_name', 'first_name', 'last_name', 'pronouns', 'role')
+        fields = ('id', 'display_name', 'first_name', 'last_name', 'pronouns', 'role', 'date_of_birth', 'date_joined', 'total_classes_attended')
 
 
 class UserSerializer(serializers.ModelSerializer):

@@ -23,6 +23,48 @@ const STATUS_OPTS = [
 ]
 const STATUS_COLOR = Object.fromEntries(STATUS_OPTS.map(o => [o.value, o.color]))
 
+const NOTE_TAGS = [
+  { id: 'general', label: 'General', color: '#888' },
+  { id: 'injury',  label: 'Injury',  color: '#ff8888' },
+  { id: 'vibes',   label: 'Vibes',   color: '#b0a0ff' },
+]
+const NOTE_TAG_COLOR = Object.fromEntries(NOTE_TAGS.map(t => [t.id, t.color]))
+
+function getMilestones(st, today) {
+  const badges = []
+  if (!st) return badges
+
+  // Birthday
+  if (st.date_of_birth) {
+    const dob = new Date(st.date_of_birth)
+    const thisYear = new Date(today.getFullYear(), dob.getMonth(), dob.getDate())
+    const diff = Math.round((thisYear - today) / 86400000)
+    if (diff === 0) badges.push({ label: 'Birthday today 🎂', color: '#ffaa00', bg: 'rgba(255,170,0,0.1)', border: 'rgba(255,170,0,0.35)' })
+    else if (diff === 1) badges.push({ label: 'Birthday tomorrow 🎂', color: '#ffaa00', bg: 'rgba(255,170,0,0.08)', border: 'rgba(255,170,0,0.25)' })
+    else if (diff > 1 && diff <= 7) badges.push({ label: `Birthday in ${diff} days 🎂`, color: '#ffaa00', bg: 'rgba(255,170,0,0.06)', border: 'rgba(255,170,0,0.2)' })
+  }
+
+  // Class count milestones — show when they've just hit a round number
+  const count = st.total_classes_attended || 0
+  const MILESTONES = [10, 25, 50, 75, 100, 150, 200, 300, 500]
+  if (MILESTONES.includes(count)) {
+    badges.push({ label: `${count} classes 🎉`, color: '#ccff00', bg: 'rgba(204,255,0,0.08)', border: 'rgba(204,255,0,0.25)' })
+  }
+
+  // Studio anniversary (years)
+  if (st.date_joined) {
+    const joined = new Date(st.date_joined)
+    const years = today.getFullYear() - joined.getFullYear()
+    if (years > 0) {
+      const anniversary = new Date(today.getFullYear(), joined.getMonth(), joined.getDate())
+      const diff = Math.round((anniversary - today) / 86400000)
+      if (diff === 0) badges.push({ label: `${years} year${years !== 1 ? 's' : ''} at Duality 🥂`, color: '#b0a0ff', bg: 'rgba(176,160,255,0.1)', border: 'rgba(176,160,255,0.3)' })
+    }
+  }
+
+  return badges
+}
+
 function enrollLabel(e, session) {
   const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
   if (e.enrolment_type === 'trial') return 'Trial class'
@@ -112,14 +154,18 @@ export default function AttendancePage() {
   const [register, setRegister]       = useState({})
   const [balances, setBalances]       = useState({})
   const [notes, setNotes]             = useState({})
+  const [noteTags, setNoteTags]       = useState({})
   const [saving, setSaving]           = useState(false)
   const [saved, setSaved]             = useState(false)
   const [loading, setLoading]         = useState(true)
   const [tab, setTab]                 = useState('attending')
   const [noteModal, setNoteModal]     = useState(null)
   const [noteText, setNoteText]       = useState('')
+  const [noteTag, setNoteTag]         = useState('')
   const [saveBanner, setSaveBanner]   = useState(false)
   const [convertEnrol, setConvertEnrol] = useState(null)
+
+  const today = new Date()
 
   useEffect(() => {
     async function load() {
@@ -132,8 +178,8 @@ export default function AttendancePage() {
         ])
         const s = sessRes.data
         const occs = occRes.data.results || []
-        const today = new Date().toISOString().slice(0, 10)
-        const occ = occs.find(o => o.date === today) || occs[0] || null
+        const todayStr = new Date().toISOString().slice(0, 10)
+        const occ = occs.find(o => o.date === todayStr) || occs[0] || null
         setSession(s)
         setOccurrence(occ)
 
@@ -142,11 +188,13 @@ export default function AttendancePage() {
 
         const initial = {}
         const initialNotes = {}
+        const initialNoteTags = {}
         if (occ) {
           const attRes = await attendance.list({ occurrence: occ.id })
           for (const r of (attRes.data.results || [])) {
             initial[r.student] = r.status === 'no_show' && r.no_show_fee_waived ? 'no_show_waived' : r.status
             initialNotes[r.student] = r.note || ''
+            initialNoteTags[r.student] = r.note_tag || ''
           }
 
           // Load waitlist
@@ -160,11 +208,13 @@ export default function AttendancePage() {
             } catch { setWaitlist([]) }
           }
         }
+        // Default to pending (not present) for unrecorded students
         for (const e of enrolled) {
-          if (!initial[e.student]) initial[e.student] = 'present'
+          if (!initial[e.student]) initial[e.student] = 'pending'
         }
         setRegister(initial)
         setNotes(initialNotes)
+        setNoteTags(initialNoteTags)
 
         const balMap = {}
         await Promise.all(enrolled.map(async e => {
@@ -205,6 +255,7 @@ export default function AttendancePage() {
           no_show_fee_charged: raw === 'no_show',
           no_show_fee_waived: raw === 'no_show_waived',
           note: notes[e.student] || '',
+          note_tag: noteTags[e.student] || '',
         }
       })
       await attendance.bulkSave(occurrence.id, records)
@@ -216,8 +267,8 @@ export default function AttendancePage() {
   }
 
   const awayStatuses = ['no_show', 'no_show_waived', 'absent', 'cancelled']
-  const attendingStudents = students.filter(e => !awayStatuses.includes(register[e.student] || 'present'))
-  const awayStudents = students.filter(e => awayStatuses.includes(register[e.student] || 'present'))
+  const attendingStudents = students.filter(e => !awayStatuses.includes(register[e.student] || 'pending'))
+  const awayStudents = students.filter(e => awayStatuses.includes(register[e.student] || 'pending'))
 
   const counts = {
     present: Object.values(register).filter(v => v === 'present').length,
@@ -339,120 +390,137 @@ export default function AttendancePage() {
             const st = e.student_detail
             const status = register[e.student] || 'pending'
             const owing = balances[e.student] < 0 ? Math.abs(balances[e.student]) : 0
-            const hasNote = notes[e.student]
+            const noteText_ = notes[e.student]
+            const noteTag_ = noteTags[e.student]
             const isFirstTime = e.is_first_class || e.classes_attended === 0 || e.total_attendance === 0
             const fromWaitlist = e.promoted_from_waitlist || e.from_waitlist
+            const milestones = getMilestones(st, today)
 
             return (
               <div
                 key={e.student}
                 className="att-student-row"
                 style={{
-                  display: 'flex', alignItems: 'flex-start', gap: 12,
                   background: '#111', border: '1px solid #1e1e1e',
                   borderRadius: 14, padding: '14px 16px',
                 }}
               >
-                {/* Avatar */}
-                <div className="avatar" style={{ background: avatarColor(st?.display_name || ''), flexShrink: 0, marginTop: 2 }}>
-                  {st?.first_name?.[0] || '?'}
-                </div>
-
-                {/* Left: identity + enrolment + callouts */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  {/* Name row */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 3 }}>
-                    <span
-                      style={{ fontWeight: 700, fontSize: 15, cursor: 'pointer', textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.2)' }}
-                      onClick={ev => { ev.stopPropagation(); navigate(`/students/${e.student}`) }}
-                    >{st?.display_name}</span>
-                    {st?.pronouns && <span style={{ fontSize: 12, color: '#555' }}>{st.pronouns}</span>}
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                  {/* Avatar */}
+                  <div className="avatar" style={{ background: avatarColor(st?.display_name || ''), flexShrink: 0, marginTop: 2 }}>
+                    {st?.first_name?.[0] || '?'}
                   </div>
 
-                  {/* Enrolment type */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
-                    <span style={{ fontSize: 12, color: 'var(--grey)' }}>{enrollLabel(e, session)}</span>
-                    {e.enrolment_type === 'trial' && e.status === 'active' && (
+                  {/* Left: identity + enrolment + callouts */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {/* Name row */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 3 }}>
+                      <span
+                        style={{ fontWeight: 700, fontSize: 15, cursor: 'pointer', textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.2)' }}
+                        onClick={ev => { ev.stopPropagation(); navigate(`/students/${e.student}`) }}
+                      >{st?.display_name}</span>
+                      {st?.pronouns && <span style={{ fontSize: 12, color: '#555' }}>{st.pronouns}</span>}
+                    </div>
+
+                    {/* Enrolment type */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+                      <span style={{ fontSize: 12, color: 'var(--grey)' }}>{enrollLabel(e, session)}</span>
+                      {e.enrolment_type === 'trial' && e.status === 'active' && (
+                        <button
+                          className="btn btn-lime btn-xs"
+                          style={{ fontSize: 10, padding: '2px 8px' }}
+                          onClick={ev => { ev.stopPropagation(); setConvertEnrol(e) }}
+                        >
+                          Convert to full →
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Callout badges */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      {isFirstTime && (
+                        <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--lime)', background: 'rgba(204,255,0,0.08)', border: '1px solid rgba(204,255,0,0.2)', borderRadius: 6, padding: '2px 8px' }}>
+                          🌟 FIRST TIME
+                        </span>
+                      )}
+                      {fromWaitlist && (
+                        <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--lav)', background: 'rgba(176,160,255,0.1)', border: '1px solid rgba(176,160,255,0.25)', borderRadius: 6, padding: '2px 8px' }}>
+                          WAITLIST PROMO
+                        </span>
+                      )}
+                      {owing > 0 && (
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#ff8888', background: 'rgba(255,80,80,0.08)', border: '1px solid rgba(255,80,80,0.25)', borderRadius: 6, padding: '2px 8px' }}>
+                          ⚠ ${Math.round(owing)} owing — collect today
+                        </span>
+                      )}
+                      {milestones.map((m, i) => (
+                        <span key={i} style={{ fontSize: 10, fontWeight: 700, color: m.color, background: m.bg, border: `1px solid ${m.border}`, borderRadius: 6, padding: '2px 8px' }}>
+                          {m.label}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Inline note display */}
+                    {noteText_ && (
+                      <div style={{ marginTop: 8, display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                        {noteTag_ && (
+                          <span style={{ fontSize: 10, fontWeight: 700, color: NOTE_TAG_COLOR[noteTag_] || '#888', background: 'rgba(255,255,255,0.05)', border: `1px solid ${NOTE_TAG_COLOR[noteTag_] || '#333'}44`, borderRadius: 4, padding: '2px 6px', flexShrink: 0, marginTop: 1 }}>
+                            {noteTag_}
+                          </span>
+                        )}
+                        <span style={{ fontSize: 12, color: '#aaa', lineHeight: 1.4 }}>{noteText_}</span>
+                        <button
+                          onClick={() => { setNoteModal(e.student); setNoteText(notes[e.student] || ''); setNoteTag(noteTags[e.student] || '') }}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#555', fontSize: 11, padding: '1px 4px', flexShrink: 0 }}
+                        >Edit</button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right: add note + status */}
+                  <div className="att-right" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+                    {/* Add note button (only when no note) */}
+                    {!noteText_ && (
                       <button
-                        className="btn btn-lime btn-xs"
-                        style={{ fontSize: 10, padding: '2px 8px' }}
-                        onClick={ev => { ev.stopPropagation(); setConvertEnrol(e) }}
+                        onClick={() => { setNoteModal(e.student); setNoteText(''); setNoteTag('') }}
+                        style={{
+                          background: '#1a1a1a', border: '1px solid #2a2a2a',
+                          borderRadius: 8, cursor: 'pointer',
+                          padding: '5px 8px', fontSize: 11,
+                          color: 'var(--grey)',
+                        }}
                       >
-                        Convert to full →
+                        + Note
                       </button>
                     )}
-                  </div>
 
-                  {/* Callout badges */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    {isFirstTime && (
-                      <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--lime)', background: 'rgba(204,255,0,0.08)', border: '1px solid rgba(204,255,0,0.2)', borderRadius: 6, padding: '2px 8px' }}>
-                        🌟 FIRST TIME
-                      </span>
-                    )}
-                    {fromWaitlist && (
-                      <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--lav)', background: 'rgba(176,160,255,0.1)', border: '1px solid rgba(176,160,255,0.25)', borderRadius: 6, padding: '2px 8px' }}>
-                        WAITLIST PROMO
-                      </span>
-                    )}
-                    {owing > 0 && (
-                      <span style={{ fontSize: 11, fontWeight: 700, color: '#ff8888', background: 'rgba(255,80,80,0.08)', border: '1px solid rgba(255,80,80,0.25)', borderRadius: 6, padding: '2px 8px' }}>
-                        ⚠ ${Math.round(owing)} owing — collect today
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Right: note + status */}
-                <div className="att-right" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
-                  {/* Note row */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    {hasNote && (
-                      <span style={{ fontSize: 11, color: 'var(--amber)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        ⚠ {notes[e.student]}
-                      </span>
-                    )}
-                    <button
-                      onClick={() => { setNoteModal(e.student); setNoteText(notes[e.student] || '') }}
+                    {/* Status select */}
+                    <select
+                      value={status}
+                      onChange={ev => setStatus(e.student, ev.target.value)}
+                      className="att-status-select"
                       style={{
-                        background: hasNote ? 'rgba(255,170,0,0.1)' : '#1a1a1a',
-                        border: `1px solid ${hasNote ? 'rgba(255,170,0,0.35)' : '#2a2a2a'}`,
-                        borderRadius: 8, cursor: 'pointer',
-                        padding: '5px 8px', fontSize: 13,
-                        color: hasNote ? 'var(--amber)' : 'var(--grey)',
+                        background: '#0a0a0a',
+                        border: `1px solid ${STATUS_COLOR[status] || '#333'}44`,
+                        borderRadius: 8,
+                        padding: '6px 10px',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: STATUS_COLOR[status] || '#fff',
+                        cursor: 'pointer',
+                        minWidth: 170,
+                        outline: 'none',
                       }}
-                      title={hasNote ? 'Edit note' : 'Add note'}
                     >
-                      📝
-                    </button>
+                      {STATUS_OPTS.map(o => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+
+                    {status === 'no_show' && (
+                      <span style={{ fontSize: 10, color: '#ff5050' }}>$20 fee will be charged</span>
+                    )}
                   </div>
-
-                  {/* Status select */}
-                  <select
-                    value={status}
-                    onChange={ev => setStatus(e.student, ev.target.value)}
-                    className="att-status-select"
-                    style={{
-                      background: '#0a0a0a',
-                      border: `1px solid ${STATUS_COLOR[status] || '#333'}44`,
-                      borderRadius: 8,
-                      padding: '6px 10px',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: STATUS_COLOR[status] || '#fff',
-                      cursor: 'pointer',
-                      minWidth: 170,
-                      outline: 'none',
-                    }}
-                  >
-                    {STATUS_OPTS.map(o => (
-                      <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
-                  </select>
-
-                  {status === 'no_show' && (
-                    <span style={{ fontSize: 10, color: '#ff5050' }}>$20 fee will be charged</span>
-                  )}
                 </div>
               </div>
             )
@@ -485,23 +553,52 @@ export default function AttendancePage() {
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setNoteModal(null)}>
           <div className="modal-box">
             <div className="modal-title">
-              Attendance Note
+              Add a Note — {students.find(e => e.student === noteModal)?.student_detail?.display_name}
               <button className="modal-close" onClick={() => setNoteModal(null)}>✕</button>
             </div>
             <div className="field">
-              <label>Note for {students.find(e => e.student === noteModal)?.student_detail?.display_name}</label>
+              <label>Tag</label>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 4 }}>
+                {NOTE_TAGS.map(t => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setNoteTag(noteTag === t.id ? '' : t.id)}
+                    style={{
+                      padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                      background: noteTag === t.id ? `${t.color}22` : '#1a1a1a',
+                      border: `1px solid ${noteTag === t.id ? t.color : '#2a2a2a'}`,
+                      color: noteTag === t.id ? t.color : '#888',
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="field">
+              <label>Note</label>
               <textarea
                 rows={3}
                 value={noteText}
                 onChange={e => setNoteText(e.target.value)}
-                placeholder="e.g. Arrived late, left early, injury noted…"
+                placeholder="e.g. Arrived late, left early, wrist injury noted…"
                 autoFocus
               />
             </div>
             <div className="modal-footer">
               <button className="btn btn-ghost btn-sm" onClick={() => setNoteModal(null)}>Cancel</button>
+              {notes[noteModal] && (
+                <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }} onClick={() => {
+                  setNotes(n => ({ ...n, [noteModal]: '' }))
+                  setNoteTags(t => ({ ...t, [noteModal]: '' }))
+                  setNoteModal(null)
+                  setSaved(false)
+                }}>Remove</button>
+              )}
               <button className="btn btn-lime btn-sm" onClick={() => {
                 setNotes(n => ({ ...n, [noteModal]: noteText }))
+                setNoteTags(t => ({ ...t, [noteModal]: noteTag }))
                 setNoteModal(null)
                 setSaved(false)
               }}>Save Note</button>
