@@ -891,22 +891,24 @@ function PaymentPlanModal({ checkout, onClose, onConfirm }) {
 
             {/* Deposit field (only when season commences) */}
             {timing === 'commences' && (
-              <div style={{ background: 'rgba(204,255,0,0.04)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 10, padding: '12px 14px', marginTop: 4, marginBottom: 8 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#ccff00', marginBottom: 8 }}>Deposit due today</div>
+              <div style={{ background: 'rgba(204,255,0,0.04)', border: `1px solid ${depositAmount <= 0 ? 'rgba(255,68,68,0.4)' : 'rgba(204,255,0,0.15)'}`, borderRadius: 10, padding: '12px 14px', marginTop: 4, marginBottom: 8 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#ccff00', marginBottom: 8 }}>Deposit due today <span style={{ color: '#ff4444' }}>*</span></div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontSize: 14, color: '#888' }}>$</span>
                   <input
                     type="number"
-                    min="0"
+                    min="1"
                     max={checkout.amount}
                     step="10"
                     value={depositAmount}
                     onChange={e => setDepositAmount(parseFloat(e.target.value) || 0)}
-                    style={{ background: '#0d0d0d', border: '1px solid #333', borderRadius: 8, color: '#fff', fontSize: 16, fontWeight: 700, padding: '8px 12px', width: 100 }}
+                    style={{ background: '#0d0d0d', border: `1px solid ${depositAmount <= 0 ? '#ff4444' : '#333'}`, borderRadius: 8, color: '#fff', fontSize: 16, fontWeight: 700, padding: '8px 12px', width: 100 }}
                   />
                   <span style={{ fontSize: 12, color: '#555' }}>of ${(checkout.amount || 0).toFixed(0)} total</span>
                 </div>
-                <div style={{ fontSize: 11, color: '#555', marginTop: 6 }}>50% suggested · your card will be charged this amount now</div>
+                <div style={{ fontSize: 11, color: depositAmount <= 0 ? '#ff6666' : '#555', marginTop: 6 }}>
+                  {depositAmount <= 0 ? 'A deposit is required when selecting this option.' : '50% suggested · your card will be charged this amount now'}
+                </div>
               </div>
             )}
 
@@ -922,9 +924,9 @@ function PaymentPlanModal({ checkout, onClose, onConfirm }) {
               <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
               <button
                 className="btn btn-sm"
-                style={{ flex: 2, background: '#b0a0ff', color: '#000', fontWeight: 700, border: 'none', opacity: loadingStripe ? 0.6 : 1 }}
+                style={{ flex: 2, background: '#b0a0ff', color: '#000', fontWeight: 700, border: 'none', opacity: (loadingStripe || (timing === 'commences' && depositAmount <= 0)) ? 0.5 : 1 }}
                 onClick={goToCardStep}
-                disabled={loadingStripe}
+                disabled={loadingStripe || (timing === 'commences' && depositAmount <= 0)}
               >{loadingStripe ? 'Loading…' : needsDeposit ? `Continue — pay $${depositAmount.toFixed(0)} deposit` : 'Continue — add card'}</button>
             </div>
           </>

@@ -27,7 +27,7 @@ function formatDayDate(dayOfWeek) {
   return d.getDate()
 }
 
-function MarkAwayModal({ enrolment, cancellationWindowHours, onClose, onDone }) {
+function DashboardInlineMarkAway({ enrolment, cancellationWindowHours, noShowFee, onCancel, onDone }) {
   const s = enrolment.class_session_detail
   const [confirming, setConfirming] = useState(false)
   const [done, setDone] = useState(false)
@@ -40,11 +40,16 @@ function MarkAwayModal({ enrolment, cancellationWindowHours, onClose, onDone }) 
   const nextOcc = occData?.results?.[0] || occData?.[0] || null
 
   const windowHours = cancellationWindowHours ?? 4
+  const feeAmount = noShowFee ? `$${parseFloat(noShowFee).toFixed(0)}` : '$20'
   const withinCutoff = useMemo(() => {
     if (!nextOcc?.date || !s?.start_time) return false
     const classDateTime = new Date(`${nextOcc.date}T${s.start_time}`)
     return (classDateTime - new Date()) < windowHours * 60 * 60 * 1000
   }, [nextOcc, s, windowHours])
+
+  const nextDateLabel = nextOcc?.date
+    ? new Date(nextOcc.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+    : null
 
   async function handleConfirm() {
     if (!nextOcc) { setError('No upcoming class found'); return }
@@ -56,63 +61,50 @@ function MarkAwayModal({ enrolment, cancellationWindowHours, onClose, onDone }) 
       setTimeout(onDone, 1200)
     } catch (err) {
       setError(err.response?.data?.detail || 'Could not mark away')
-    } finally {
       setConfirming(false)
     }
   }
 
-  const nextDateLabel = nextOcc?.date
-    ? new Date(nextOcc.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
-    : null
+  if (done) {
+    return (
+      <div style={{ padding: '10px 0 4px', textAlign: 'center', color: 'var(--lime)', fontWeight: 600, fontSize: 13 }}>✓ Marked as away</div>
+    )
+  }
 
   return (
-    <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
-      onClick={e => e.target === e.currentTarget && onClose()}
-    >
-      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, maxWidth: 420, width: '100%' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', borderBottom: '1px solid var(--border)' }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>Mark Away</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 18 }}>✕</button>
-        </div>
-        <div style={{ padding: '18px 20px' }}>
-          <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>{s?.name}</div>
-          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: nextDateLabel ? 4 : 16 }}>
-            {DAYS_FULL[s?.day_of_week]} · {s?.start_time?.slice(0, 5)}
+    <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+      {nextDateLabel && <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 10 }}>Next class: {nextDateLabel}</div>}
+      {!nextOcc && !occData ? (
+        <div style={{ fontSize: 12, color: 'var(--grey)' }}>Loading…</div>
+      ) : !nextOcc ? (
+        <div style={{ fontSize: 12, color: 'var(--grey)' }}>No upcoming class found.</div>
+      ) : withinCutoff ? (
+        <div style={{ background: 'rgba(180,80,0,0.2)', border: '1px solid var(--amber)', borderRadius: 10, padding: '12px 14px', marginBottom: 10 }}>
+          <div style={{ fontWeight: 800, color: 'var(--amber)', marginBottom: 6, fontSize: 13 }}>No catch-up credit for this one</div>
+          <div style={{ fontSize: 12, color: 'var(--white)', lineHeight: 1.6 }}>
+            Within <strong>{windowHours} hours</strong> of class — you can still mark away but no credit will be issued. Not marking away may result in a <strong style={{ color: 'var(--amber)' }}>{feeAmount} no-show fee</strong>.
           </div>
-          {nextDateLabel && (
-            <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16 }}>{nextDateLabel}</div>
-          )}
-
-          {!withinCutoff ? (
-            <div style={{ background: '#0f1600', border: '1px solid var(--lime)', borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
-              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: 'var(--lime)', marginBottom: 6 }}>You'll receive a catch-up credit</div>
-              <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
-                You're outside the cancellation window — a catch-up credit will be added to your account to use within this season.
-              </div>
-            </div>
-          ) : (
-            <div style={{ background: '#1a0900', border: '1px solid #ffaa44', borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
-              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: '#ffaa44', marginBottom: 6 }}>No catch-up credit for this one</div>
-              <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
-                You're within the cancellation window — no credit will be issued. You can still mark away so we know you're not coming, but no credit will be issued.{' '}
-                If you don't mark away and don't attend, a <strong style={{ color: '#ffaa44' }}>$20 no-show fee</strong> will be charged.
-              </div>
-            </div>
-          )}
-
-          {error && <div style={{ color: 'var(--red)', fontSize: 12, marginBottom: 12 }}>{error}</div>}
-          {done ? (
-            <div style={{ textAlign: 'center', color: 'var(--lime)', fontWeight: 600, padding: '8px 0' }}>✓ Marked as away</div>
-          ) : (
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
-              <button className="btn btn-lime btn-sm" style={{ flex: 1 }} onClick={handleConfirm} disabled={confirming || !nextOcc}>
-                {confirming ? 'Saving…' : withinCutoff ? 'Mark away anyway' : 'Confirm — mark me away'}
-              </button>
-            </div>
-          )}
         </div>
+      ) : (
+        <div style={{ background: 'rgba(204,255,0,0.06)', border: '1px solid var(--lime)', borderRadius: 10, padding: '12px 14px', marginBottom: 10 }}>
+          <div style={{ fontWeight: 800, color: 'var(--lime)', marginBottom: 6, fontSize: 13 }}>You'll receive a catch-up credit</div>
+          <div style={{ fontSize: 12, color: 'var(--white)', lineHeight: 1.6 }}>
+            More than <strong>{windowHours} hours</strong> before class — a catch-up credit will be added to your account to use this season.
+          </div>
+        </div>
+      )}
+      {error && <div style={{ color: 'var(--red)', fontSize: 12, marginBottom: 8 }}>{error}</div>}
+      <div style={{ display: 'flex', gap: 8 }}>
+        {withinCutoff ? (
+          <button className="btn btn-ghost btn-sm" onClick={handleConfirm} disabled={confirming || !nextOcc} style={{ flex: 1, fontWeight: 700, fontSize: 11 }}>
+            {confirming ? 'Saving…' : 'MARK AWAY ANYWAY'}
+          </button>
+        ) : (
+          <button className="btn btn-lime btn-sm" onClick={handleConfirm} disabled={confirming || !nextOcc} style={{ flex: 1, fontWeight: 700, fontSize: 11 }}>
+            {confirming ? 'Saving…' : 'CONFIRM — MARK ME AWAY'}
+          </button>
+        )}
+        <button className="btn btn-ghost btn-sm" onClick={onCancel} style={{ fontSize: 11 }}>CANCEL</button>
       </div>
     </div>
   )
@@ -299,26 +291,38 @@ export default function StudentDashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {enrolments_.map(e => {
               const s = e.class_session_detail
+              const isExpanded = markAwayEnrol?.id === e.id
               const instructorName = s?.instructor_detail
                 ? `${s.instructor_detail.first_name || ''} ${s.instructor_detail.last_name || ''}`.trim()
                 : (s?.instructor_name || '—')
               return (
-                <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <div style={{ textAlign: 'center', flexShrink: 0, width: 44 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', color: 'var(--grey)', textTransform: 'uppercase' }}>{DAYS_SHORT[s?.day_of_week]}</div>
-                    <div style={{ fontSize: 'clamp(17px, 5vw, 24px)', fontWeight: 800, fontFamily: "'Archivo Black', sans-serif", color: 'var(--lime)', lineHeight: 1.1 }}>{formatDayDate(s?.day_of_week)}</div>
+                <div key={e.id} style={{ background: 'var(--card)', border: `1px solid ${isExpanded ? 'rgba(204,255,0,0.2)' : 'var(--border)'}`, borderRadius: 12, padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{ textAlign: 'center', flexShrink: 0, width: 44 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', color: 'var(--grey)', textTransform: 'uppercase' }}>{DAYS_SHORT[s?.day_of_week]}</div>
+                      <div style={{ fontSize: 'clamp(17px, 5vw, 24px)', fontWeight: 800, fontFamily: "'Archivo Black', sans-serif", color: 'var(--lime)', lineHeight: 1.1 }}>{formatDayDate(s?.day_of_week)}</div>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s?.name} · {s?.studio_detail?.name}</div>
+                      <div style={{ fontSize: 12, color: 'var(--grey)' }}>{s?.start_time?.slice(0, 5)} · {instructorName}</div>
+                    </div>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ flexShrink: 0, color: isBlocked ? 'var(--red)' : isExpanded ? 'var(--grey)' : undefined, borderColor: isBlocked ? 'rgba(255,68,68,0.4)' : undefined }}
+                      onClick={() => { if (isBlocked) { setShowBlockedBanner(true) } else { setMarkAwayEnrol(isExpanded ? null : e) } }}
+                    >
+                      {isExpanded ? '✕ Close' : 'Mark Away'}
+                    </button>
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s?.name} · {s?.studio_detail?.name}</div>
-                    <div style={{ fontSize: 12, color: 'var(--grey)' }}>{s?.start_time?.slice(0, 5)} · {instructorName}</div>
-                  </div>
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    style={{ flexShrink: 0, color: isBlocked ? 'var(--red)' : undefined, borderColor: isBlocked ? 'rgba(255,68,68,0.4)' : undefined }}
-                    onClick={() => { if (isBlocked) { setShowBlockedBanner(true) } else { setMarkAwayEnrol(e) } }}
-                  >
-                    Mark Away
-                  </button>
+                  {isExpanded && (
+                    <DashboardInlineMarkAway
+                      enrolment={e}
+                      cancellationWindowHours={studioSettings?.cancellation_window_hours}
+                      noShowFee={studioSettings?.no_show_fee}
+                      onCancel={() => setMarkAwayEnrol(null)}
+                      onDone={() => setMarkAwayEnrol(null)}
+                    />
+                  )}
                 </div>
               )
             })}
@@ -419,15 +423,6 @@ export default function StudentDashboard() {
           </div>
         )
       })()}
-
-      {markAwayEnrol && (
-        <MarkAwayModal
-          enrolment={markAwayEnrol}
-          cancellationWindowHours={studioSettings?.cancellation_window_hours ?? 4}
-          onClose={() => setMarkAwayEnrol(null)}
-          onDone={() => setMarkAwayEnrol(null)}
-        />
-      )}
 
       {showBlockedBanner && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}

@@ -214,11 +214,14 @@ class EnrolmentListView(generics.ListCreateAPIView):
         # Season booking gate — course/catchup enrolments only (not casual/trial)
         if user.role == 'student' and session and enrolment_type in ('course', 'catchup', 'catch_up'):
             season = getattr(session, 'season', None)
-            if season and not season.bookings_open:
-                raise ValidationError(
-                    f'Bookings for {season.name} are not open yet. '
-                    'Keep an eye on your email for when they open!'
-                )
+            if season:
+                now = timezone.now()
+                season_open = season.bookings_open or (season.go_live_at and season.go_live_at <= now)
+                if not season_open:
+                    raise ValidationError(
+                        f'Bookings for {season.name} are not open yet. '
+                        'Keep an eye on your email for when they open!'
+                    )
 
         # Catch-up cutoff week gate
         if session and enrolment_type in ('catchup', 'catch_up'):
@@ -307,6 +310,15 @@ class EnrolmentDetailView(generics.RetrieveUpdateDestroyAPIView):
         if user.role == 'student':
             return qs.filter(student=user)
         return qs
+
+    def destroy(self, request, *args, **kwargs):
+        if request.user.role == 'student':
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied(
+                'Season enrolments cannot be cancelled. If you need to make changes, '
+                'please use the transfer request option in your classes.'
+            )
+        return super().destroy(request, *args, **kwargs)
 
 
 class ConvertTrialView(APIView):
