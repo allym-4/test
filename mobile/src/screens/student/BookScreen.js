@@ -233,6 +233,65 @@ function CashCalendar({ selected, onSelect }) {
   )
 }
 
+function SeasonNotifyCard({ season, defaultEmail = '' }) {
+  const [email, setEmail] = useState(defaultEmail)
+  const [submitted, setSubmitted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleSubmit() {
+    if (!email.trim() || !email.includes('@')) { setError('Enter a valid email.'); return }
+    setError('')
+    setLoading(true)
+    try {
+      await seasons.notifyMe(season.id, { email: email.trim() })
+      setSubmitted(true)
+    } catch (e) {
+      setError(e?.response?.data?.detail || 'Could not register — please try again.')
+    } finally { setLoading(false) }
+  }
+
+  if (submitted) {
+    return (
+      <View style={{ backgroundColor: 'rgba(204,255,0,0.06)', borderWidth: 1, borderColor: 'rgba(204,255,0,0.25)', borderRadius: 14, padding: 16, marginBottom: 14 }}>
+        <Text style={{ fontWeight: '700', fontSize: 15, color: '#ccff00', marginBottom: 6 }}>You're on the list!</Text>
+        <Text style={{ fontSize: 13, color: '#ccc', lineHeight: 20 }}>
+          We'll email {email} the moment casuals and trials open for {season.name}.
+        </Text>
+      </View>
+    )
+  }
+
+  return (
+    <View style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: '#222', borderRadius: 14, padding: 16, marginBottom: 14 }}>
+      <Text style={{ fontWeight: '700', fontSize: 15, color: '#fff', marginBottom: 6 }}>Looking for a future date?</Text>
+      <Text style={{ fontSize: 13, color: '#888', lineHeight: 20, marginBottom: 14 }}>
+        Casual and trial bookings for <Text style={{ color: '#ccc', fontWeight: '600' }}>{season.name}</Text> open the week before the season starts. Drop your email and we'll ping you the moment they're live.
+      </Text>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <TextInput
+          value={email}
+          onChangeText={setEmail}
+          placeholder="your@email.com"
+          placeholderTextColor="#555"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          style={{ flex: 1, backgroundColor: '#0d0d0d', borderWidth: 1, borderColor: '#333', borderRadius: 8, color: '#fff', fontSize: 14, paddingHorizontal: 12, paddingVertical: 10 }}
+        />
+        <TouchableOpacity
+          onPress={handleSubmit}
+          disabled={loading}
+          style={{ backgroundColor: '#ccff00', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10, justifyContent: 'center', opacity: loading ? 0.6 : 1 }}
+        >
+          <Text style={{ color: '#000', fontWeight: '900', fontSize: 13 }}>{loading ? '…' : 'Notify me'}</Text>
+        </TouchableOpacity>
+      </View>
+      {!!error && <Text style={{ color: '#ff6666', fontSize: 12, marginTop: 8 }}>{error}</Text>}
+    </View>
+  )
+}
+
+
 function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, upcomingSeason, onClose, onConfirm }) {
   const { initPaymentSheet, presentPaymentSheet } = useStripe()
 
@@ -1850,6 +1909,11 @@ export default function BookScreen({ navigation }) {
                     </Text>
                   )}
                 </View>
+              )}
+
+              {/* Upcoming season notify card — shown when casuals aren't open yet */}
+              {currentSeasonWeek < 8 && nextSeason && nextSeason.status === 'upcoming' && (
+                <SeasonNotifyCard season={nextSeason} defaultEmail={user?.email || ''} />
               )}
 
               {/* Trial banner */}

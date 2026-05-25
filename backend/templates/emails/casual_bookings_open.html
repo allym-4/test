@@ -1,0 +1,26 @@
+{% extends "emails/base.html" %}
+{% block content %}
+<p>Hey {{ first_name }},</p>
+
+<p>You told us you wanted to drop into a class during <strong>{{ season_name }}</strong> — and babe, the time has come.</p>
+
+<p>{{ season_name }} kicks off <strong>{{ season_start }}</strong>, and casual bookings are officially open. If you're not quite ready to commit to a full season yet, come try us out for a class or two. No pressure, just good vibes.</p>
+
+<div class="highlight-box">
+  <strong>What's available:</strong><br>
+  Casual classes — $30 if you're enrolled this season, $40 if you're new.<br>
+  Trial class — $35 for first-timers (deducted from your season fee if you decide to commit).
+</div>
+
+<p>Spots fill up fast, so don't sleep on it.</p>
+
+<a href="{{ booking_url }}" class="btn">BOOK NOW →</a>
+
+<p style="color: #888; font-size: 13px;">
+  Questions? Reply to this email or flick us a message anytime.
+</p>
+{% endblock %}
+
+{% block footer_extra %}
+You received this because you asked us to notify you when {{ season_name }} bookings opened.
+{% endblock %}

@@ -185,6 +185,7 @@ export const seasons = {
   archive: (id) => client.post(`/api/classes/seasons/${id}/archive/`),
   close: (id) => client.post(`/api/classes/seasons/${id}/close/`),
   duplicate: (id, data) => client.post(`/api/classes/seasons/${id}/duplicate/`, data),
+  notifyMe: (id, data) => client.post(`/api/classes/seasons/${id}/notify-me/`, data),
 }
 
 export const lockers = {

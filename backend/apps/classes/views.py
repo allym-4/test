@@ -1970,3 +1970,30 @@ class RevenueStatsView(APIView):
             })
 
         return Response({'sessions': result})
+
+
+class SeasonNotifyMeView(APIView):
+    """Register interest in being notified when casual/trial bookings open for an upcoming season."""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, pk):
+        from apps.classes.models import Season, SeasonNotificationInterest
+        try:
+            season = Season.objects.get(pk=pk, status='upcoming')
+        except Season.DoesNotExist:
+            return Response({'detail': 'Season not found or not upcoming.'}, status=404)
+
+        email = (request.data.get('email') or '').strip().lower()
+        first_name = (request.data.get('first_name') or '').strip()
+        if not email or '@' not in email:
+            return Response({'detail': 'A valid email is required.'}, status=400)
+
+        obj, created = SeasonNotificationInterest.objects.get_or_create(
+            season=season, email=email,
+            defaults={'first_name': first_name},
+        )
+        if not created and first_name and not obj.first_name:
+            obj.first_name = first_name
+            obj.save(update_fields=['first_name'])
+
+        return Response({'registered': True, 'season': season.name})

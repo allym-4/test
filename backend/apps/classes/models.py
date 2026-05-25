@@ -402,3 +402,19 @@ class WorkshopBooking(models.Model):
 
     def __str__(self):
         return f'{self.student} → {self.workshop}'
+
+
+class SeasonNotificationInterest(models.Model):
+    """Records interest in being notified when casual/trial bookings open for an upcoming season."""
+    season = models.ForeignKey(Season, on_delete=models.CASCADE, related_name='notification_interests')
+    email = models.EmailField()
+    first_name = models.CharField(max_length=100, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    notified_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = [('season', 'email')]
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.email} → {self.season}'

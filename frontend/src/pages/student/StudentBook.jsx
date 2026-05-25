@@ -623,6 +623,71 @@ function getCurrentSeasonWeek(startDate) {
   return Math.max(0, Math.floor(diffDays / 7) + 1)
 }
 
+function SeasonNotifyCard({ season, defaultEmail = '' }) {
+  const [email, setEmail] = useState(defaultEmail)
+  const [submitted, setSubmitted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      await seasonsApi.notifyMe(season.id, { email: email.trim() })
+      setSubmitted(true)
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Could not register — please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const weeksUntilOpen = (() => {
+    // Casuals open in week 8 of the active season — give a rough "X weeks away" hint
+    return null
+  })()
+
+  if (submitted) {
+    return (
+      <div style={{ background: 'rgba(204,255,0,0.06)', border: '1px solid rgba(204,255,0,0.25)', borderRadius: 14, padding: '16px 20px', marginBottom: 16 }}>
+        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: '#ccff00', marginBottom: 6 }}>You're on the list!</div>
+        <div style={{ fontSize: 13, color: '#ccc', lineHeight: 1.6 }}>
+          We'll email <strong>{email}</strong> as soon as casuals and trials open for {season.name}. Stay tuned.
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #222', borderRadius: 14, padding: '16px 20px', marginBottom: 16 }}>
+      <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, marginBottom: 6 }}>Looking for a future date?</div>
+      <div style={{ fontSize: 13, color: '#888', lineHeight: 1.6, marginBottom: 14 }}>
+        Casual and trial bookings for <strong style={{ color: '#ccc' }}>{season.name}</strong> open the week before the season starts.
+        Drop your email and we'll ping you the moment they're live — with a direct link to book.
+      </div>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          placeholder="your@email.com"
+          style={{ flex: 1, minWidth: 180, background: '#0d0d0d', border: '1px solid #333', borderRadius: 8, color: '#fff', fontSize: 14, padding: '10px 14px', outline: 'none', boxSizing: 'border-box' }}
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          style={{ background: '#ccff00', color: '#000', border: 'none', borderRadius: 8, padding: '10px 20px', fontWeight: 900, fontSize: 13, cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.6 : 1, whiteSpace: 'nowrap' }}
+        >
+          {loading ? 'Saving…' : 'Notify me'}
+        </button>
+      </form>
+      {error && <div style={{ color: '#ff6666', fontSize: 12, marginTop: 8 }}>{error}</div>}
+    </div>
+  )
+}
+
 // ─── Cash payment modal ───────────────────────────────────────────────────────
 
 function CashPaymentModal({ checkout, onClose, onConfirm }) {
@@ -2138,6 +2203,9 @@ export default function StudentBook() {
   const upcomingSeason = allSeasons.find(s => s.status === 'upcoming') ||
     allSeasons.find(s => s.start_date && new Date(s.start_date) > now) ||
     allSeasons.find(s => s.status === 'active')
+  const casualActiveSeason = allSeasons.find(s => s.status === 'active')
+  const casualActiveSeasonWeek = getCurrentSeasonWeek(casualActiveSeason?.start_date)
+  const nextSeasonCasualsNotYetOpen = upcomingSeason && upcomingSeason.status === 'upcoming' && casualActiveSeasonWeek < 8
 
   const sessions = sessionsData?.results || sessionsData || []
   const workshops = workshopsData?.results || workshopsData || []
@@ -2649,6 +2717,11 @@ export default function StudentBook() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Upcoming season notify card */}
+          {nextSeasonCasualsNotYetOpen && (
+            <SeasonNotifyCard season={upcomingSeason} defaultEmail={user?.email || ''} />
           )}
 
           {/* Level info bar */}

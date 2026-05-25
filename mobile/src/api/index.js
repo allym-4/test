@@ -133,6 +133,7 @@ export const payments = {
 
 export const seasons = {
   list: () => client.get('/api/classes/seasons/'),
+  notifyMe: (id, data) => client.post(`/api/classes/seasons/${id}/notify-me/`, data),
 }
 
 export const notifications = {
