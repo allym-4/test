@@ -113,6 +113,9 @@ function CancelPolicyModal({ enrolment, isWaitlist, onClose, onDone }) {
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [allSessions, setAllSessions] = useState(null)
+  const [selectedClassName, setSelectedClassName] = useState('')
+  const [selectedSessionId, setSelectedSessionId] = useState('')
   const s = enrolment.class_session_detail
 
   async function leaveWaitlist() {
@@ -128,20 +131,56 @@ function CancelPolicyModal({ enrolment, isWaitlist, onClose, onDone }) {
     }
   }
 
+  async function loadSessions() {
+    if (allSessions) return
+    try {
+      const res = await classesApi.list({ active: true })
+      const sessions = res.data?.results || res.data || []
+      // Exclude the class they're already in
+      setAllSessions(sessions.filter(s2 => s2.id !== enrolment.class_session))
+    } catch {
+      setAllSessions([])
+    }
+  }
+
+  function goToTransfer() {
+    setStep('transfer')
+    loadSessions()
+  }
+
   async function submitTransfer() {
+    if (!selectedSessionId) { setError('Please select a class to transfer to.'); return }
     setSubmitting(true)
     setError('')
     try {
-      await helpdeskApi.submitTicket({
-        subject: `Transfer Request — ${s?.name || 'Class'}`,
-        body: `Student requests a transfer from ${s?.name || 'their class'}.${notes ? '\n\nNotes: ' + notes : ''}`,
+      await enrolmentsApi.changeRequests.create({
+        current_enrolment: enrolment.id,
+        requested_session: selectedSessionId,
+        request_type: 'transfer',
+        notes,
       })
       setStep('success')
-    } catch {
-      setError('Failed to submit — please try again.')
+    } catch (e) {
+      setError(e.response?.data?.detail || e.response?.data?.non_field_errors?.[0] || 'Failed to submit — please try again.')
     } finally {
       setSubmitting(false)
     }
+  }
+
+  // Derived: unique class names sorted, and sessions for selected name
+  const classNames = allSessions
+    ? [...new Set(allSessions.map(s2 => s2.name))].sort()
+    : []
+  const sessionsForName = selectedClassName
+    ? (allSessions || []).filter(s2 => s2.name === selectedClassName)
+    : []
+
+  const DAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+  function fmtTime(t) {
+    if (!t) return ''
+    const [h, m] = t.split(':').map(Number)
+    const h12 = h % 12 || 12
+    return `${h12}:${String(m).padStart(2, '0')}${h >= 12 ? 'pm' : 'am'}`
   }
 
   return (
@@ -185,7 +224,7 @@ function CancelPolicyModal({ enrolment, isWaitlist, onClose, onDone }) {
                   </div>
                   <div style={{ display: 'flex', gap: 10 }}>
                     <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Close</button>
-                    <button className="btn btn-lime btn-sm" style={{ flex: 1 }} onClick={() => setStep('transfer')}>Contact Us →</button>
+                    <button className="btn btn-lime btn-sm" style={{ flex: 1 }} onClick={goToTransfer}>Request Transfer →</button>
                   </div>
                 </>
               )}
@@ -193,22 +232,95 @@ function CancelPolicyModal({ enrolment, isWaitlist, onClose, onDone }) {
           )}
           {step === 'transfer' && (
             <>
-              <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 12, lineHeight: 1.6 }}>
-                Tell us a little about your situation and we'll get back to you as soon as possible.
+              <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 14, lineHeight: 1.6 }}>
+                Which class would you like to transfer to?
               </div>
-              <textarea
-                className="input"
-                placeholder="Optional: what's changed? Any preferred days/times for the transfer?"
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-                rows={4}
-                style={{ width: '100%', resize: 'vertical', marginBottom: 12, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }}
-              />
+
+              {/* Step 1: class name */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 6 }}>Class</div>
+                {!allSessions ? (
+                  <div style={{ fontSize: 13, color: 'var(--grey)' }}>Loading…</div>
+                ) : (
+                  <select
+                    value={selectedClassName}
+                    onChange={e => { setSelectedClassName(e.target.value); setSelectedSessionId('') }}
+                    style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', color: selectedClassName ? 'var(--white)' : 'var(--grey)', borderRadius: 8, padding: '9px 12px', fontSize: 13, fontFamily: 'inherit' }}
+                  >
+                    <option value=''>Select a class…</option>
+                    {classNames.map(name => (
+                      <option key={name} value={name}>{name}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {/* Step 2: session picker */}
+              {selectedClassName && sessionsForName.length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 6 }}>Available times</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {sessionsForName.map(sess => {
+                      const day = DAYS_FULL[sess.day_of_week] ?? ''
+                      const time = fmtTime(sess.start_time)
+                      const instructor = sess.instructor_detail?.display_name || sess.instructor_name || ''
+                      const isFull = sess.enrolled_count >= sess.capacity
+                      const isSelected = selectedSessionId === String(sess.id)
+                      return (
+                        <button
+                          key={sess.id}
+                          type='button'
+                          onClick={() => setSelectedSessionId(String(sess.id))}
+                          style={{
+                            background: isSelected ? 'rgba(204,255,0,0.08)' : '#1a1a1a',
+                            border: `1px solid ${isSelected ? 'var(--lime)' : 'var(--border)'}`,
+                            borderRadius: 8,
+                            padding: '10px 14px',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: 8,
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: isSelected ? 'var(--lime)' : 'var(--white)' }}>
+                              {day} {time}
+                            </div>
+                            {instructor && (
+                              <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>with {instructor}</div>
+                            )}
+                          </div>
+                          {isFull && (
+                            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--amber)', background: 'rgba(255,170,0,0.1)', border: '1px solid rgba(255,170,0,0.3)', borderRadius: 10, padding: '2px 8px', whiteSpace: 'nowrap' }}>
+                              FULL
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Optional notes */}
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 6 }}>Notes (optional)</div>
+                <textarea
+                  placeholder="Any context that might help us process your request…"
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  rows={2}
+                  style={{ width: '100%', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', padding: '9px 12px', fontSize: 13, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box', outline: 'none' }}
+                />
+              </div>
+
               {error && <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 8 }}>{error}</div>}
               <div style={{ display: 'flex', gap: 10 }}>
                 <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={() => setStep('policy')}>Back</button>
-                <button className="btn btn-lime btn-sm" style={{ flex: 1 }} onClick={submitTransfer} disabled={submitting}>
-                  {submitting ? 'Sending…' : 'Submit Request'}
+                <button className="btn btn-lime btn-sm" style={{ flex: 1 }} onClick={submitTransfer} disabled={submitting || !selectedSessionId}>
+                  {submitting ? 'Submitting…' : 'Submit Request'}
                 </button>
               </div>
             </>
