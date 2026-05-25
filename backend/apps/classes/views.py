@@ -1,5 +1,7 @@
 from datetime import date
 from django.db import models
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.db.models import Count
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
@@ -1789,6 +1791,126 @@ class AdminPromoteCasualWaitlistView(APIView):
         )
 
         return Response({'status': 'ok', 'id': booking.id})
+
+
+class AdminSendCasualWaitlistOfferView(APIView):
+    """Admin: manually send (or resend) a waitlist offer to a casual/catchup/trial booking."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        from datetime import timedelta
+        from apps.users.models import Notification
+        from django.core.mail import send_mail
+        from django.conf import settings
+
+        booking = get_object_or_404(CasualBooking, pk=pk, status='waitlisted')
+        occ = booking.occurrence
+        session = occ.session
+        student = booking.student
+
+        try:
+            expires_hours = max(1, int(request.data.get('expires_hours', 4)))
+        except (ValueError, TypeError):
+            expires_hours = 4
+
+        now = timezone.now()
+        expires_at = now + timedelta(hours=expires_hours)
+        expires_str = expires_at.strftime('%I:%M %p')
+
+        booking.waitlist_offered_at = now
+        booking.waitlist_expires_at = expires_at
+        booking.save(update_fields=['waitlist_offered_at', 'waitlist_expires_at'])
+
+        prefs = student.notification_preferences or {}
+        if prefs.get('waitlist_app', True):
+            Notification.objects.create(
+                recipient=student,
+                title=f"Spot available — {session.name}",
+                body=f"A spot is available for you on {occ.date.strftime('%d %b')}! You have {expires_hours} hour{'s' if expires_hours != 1 else ''} to claim it (until {expires_str}).",
+                notification_type='waitlist',
+                action_label='Claim My Spot',
+                action_url='/portal/classes',
+            )
+
+        if prefs.get('waitlist_email', True) and student.email:
+            send_mail(
+                subject=f"A spot has opened up — {session.name}!",
+                message=(
+                    f"Hi {student.first_name},\n\n"
+                    f"A spot has opened up in {session.name} on {occ.date.strftime('%d %B')}!\n\n"
+                    f"You have {expires_hours} hour{'s' if expires_hours != 1 else ''} to claim your spot (until {expires_str}). "
+                    "If you don't confirm by then, your spot will be offered to the next person.\n\n"
+                    "Log in to confirm your booking.\n\n"
+                    "Duality Pole Studio"
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[student.email],
+                fail_silently=True,
+            )
+
+        return Response({
+            'waitlist_offered_at': booking.waitlist_offered_at.isoformat(),
+            'waitlist_expires_at': booking.waitlist_expires_at.isoformat(),
+        })
+
+
+class ToggleAutoPromoteWaitlistView(APIView):
+    """Admin: toggle auto_promote_waitlist on a class session."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        session = get_object_or_404(ClassSession, pk=pk)
+        session.auto_promote_waitlist = not session.auto_promote_waitlist
+        session.save(update_fields=['auto_promote_waitlist'])
+        return Response({'auto_promote_waitlist': session.auto_promote_waitlist})
+
+
+class AdminBulkCasualWaitlistView(APIView):
+    """Admin: bulk promote or remove waitlisted casual/catchup/trial bookings."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request):
+        from apps.users.models import Notification
+
+        action = request.data.get('action')
+        ids = request.data.get('ids', [])
+        override = request.data.get('override_capacity', False)
+
+        if action not in ('promote', 'remove'):
+            return Response({'detail': 'action must be promote or remove'}, status=status.HTTP_400_BAD_REQUEST)
+        if not ids:
+            return Response({'detail': 'ids required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        bookings = CasualBooking.objects.filter(pk__in=ids, status='waitlisted').select_related(
+            'occurrence__session', 'student'
+        )
+        results = {'succeeded': [], 'failed': []}
+
+        for booking in bookings:
+            if action == 'remove':
+                bid = booking.id
+                booking.delete()
+                results['succeeded'].append(bid)
+            else:
+                occ = booking.occurrence
+                confirmed_count = occ.casual_bookings.filter(status='confirmed').count()
+                capacity = occ.session.capacity
+                if not override and confirmed_count >= capacity:
+                    results['failed'].append({'id': booking.id, 'reason': 'at_capacity'})
+                    continue
+                booking.status = 'confirmed'
+                booking.waitlist_offered_at = None
+                booking.waitlist_expires_at = None
+                booking.save(update_fields=['status', 'waitlist_offered_at', 'waitlist_expires_at'])
+                Notification.objects.create(
+                    recipient=booking.student,
+                    title=f"Spot confirmed — {occ.session.name}",
+                    body=f"You've been moved from the waitlist to confirmed for {occ.session.name} on {occ.date.strftime('%d %b')}.",
+                    notification_type='success',
+                )
+                results['succeeded'].append(booking.id)
+
+        return Response(results)
 
 
 class PracticeCreditListView(generics.ListCreateAPIView):

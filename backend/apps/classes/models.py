@@ -79,6 +79,10 @@ class ClassSession(models.Model):
     skill_level = models.ForeignKey(
         'users.SkillLevel', on_delete=models.SET_NULL, null=True, blank=True, related_name='class_sessions'
     )
+    auto_promote_waitlist = models.BooleanField(
+        default=False,
+        help_text='When enabled, the next waitlisted student is automatically enrolled when a spot opens instead of receiving an offer to claim.'
+    )
     created_at = models.DateTimeField(auto_now_add=True, null=True)
 
     class Meta:

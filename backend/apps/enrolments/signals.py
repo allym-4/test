@@ -21,6 +21,7 @@ def _is_silent_hours():
 def _offer_waitlist_spot(session):
     """
     When a spot opens in a session:
+    - If auto_promote_waitlist is enabled: directly enrol #1 waitlisted student.
     - If the next class occurrence is within 4 hours AND it's not silent hours:
       notify ALL waitlisted students simultaneously (first to claim wins).
     - Otherwise: notify only the #1 student, give them 4 hours to claim.
@@ -37,9 +38,43 @@ def _offer_waitlist_spot(session):
             class_session=session,
             status='waitlisted',
             waitlist_offered_at__isnull=True,  # not already offered
-        ).order_by('id').select_related('student')
+        ).order_by('waitlist_position', 'id').select_related('student')
     )
     if not waitlisted:
+        return
+
+    # Auto-promote: skip the offer/claim step and directly enrol the next student
+    if getattr(session, 'auto_promote_waitlist', False):
+        enrolment = waitlisted[0]
+        enrolment.status = 'active'
+        enrolment.waitlist_offered_at = None
+        enrolment.waitlist_expires_at = None
+        enrolment.waitlist_urgent = False
+        enrolment.waitlist_position = None
+        enrolment.save(update_fields=['status', 'waitlist_offered_at', 'waitlist_expires_at', 'waitlist_urgent', 'waitlist_position'])
+        Notification.objects.create(
+            recipient=enrolment.student,
+            title=f"You're in! — {session.name}",
+            body=f"A spot opened up in {session.name} and you've been automatically enrolled from the waitlist!",
+            notification_type='success',
+            action_label='View My Classes',
+            action_url='/portal/classes',
+        )
+        student = enrolment.student
+        prefs = student.notification_preferences or {}
+        if prefs.get('waitlist_email', True) and student.email:
+            send_mail(
+                subject=f"You're enrolled — {session.name}!",
+                message=(
+                    f"Hi {student.first_name},\n\n"
+                    f"A spot opened up in {session.name} and you've been automatically enrolled from the waitlist.\n\n"
+                    "Log in to view your updated schedule.\n\n"
+                    "Duality Pole Studio"
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[student.email],
+                fail_silently=True,
+            )
         return
 
     # Determine how far away the next class occurrence is

@@ -1260,3 +1260,110 @@ class AdminPromoteSeasonWaitlistView(APIView):
         )
 
         return Response(EnrolmentSerializer(enrolment).data)
+
+
+class AdminSendSeasonWaitlistOfferView(APIView):
+    """Admin: manually send (or resend) a waitlist offer with optional custom expiry."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        from datetime import timedelta
+        from apps.users.models import Notification
+
+        enrolment = get_object_or_404(Enrolment, pk=pk, status='waitlisted')
+        session = enrolment.class_session
+        student = enrolment.student
+
+        try:
+            expires_hours = max(1, int(request.data.get('expires_hours', 4)))
+        except (ValueError, TypeError):
+            expires_hours = 4
+
+        now = timezone.now()
+        expires_at = now + timedelta(hours=expires_hours)
+        expires_str = expires_at.strftime('%I:%M %p')
+
+        enrolment.waitlist_offered_at = now
+        enrolment.waitlist_expires_at = expires_at
+        enrolment.waitlist_urgent = False
+        enrolment.save(update_fields=['waitlist_offered_at', 'waitlist_expires_at', 'waitlist_urgent'])
+
+        prefs = student.notification_preferences or {}
+        if prefs.get('waitlist_app', True):
+            Notification.objects.create(
+                recipient=student,
+                title=f"Spot available — {session.name}",
+                body=f"A spot is available for you! You have {expires_hours} hour{'s' if expires_hours != 1 else ''} to claim it (until {expires_str}).",
+                notification_type='waitlist',
+                action_label='Claim My Spot',
+                action_url='/portal/classes',
+            )
+
+        if prefs.get('waitlist_email', True) and student.email:
+            send_mail(
+                subject=f"A spot has opened up — {session.name}!",
+                message=(
+                    f"Hi {student.first_name},\n\n"
+                    f"A spot has opened up in {session.name}!\n\n"
+                    f"You have {expires_hours} hour{'s' if expires_hours != 1 else ''} to claim your spot (until {expires_str}). "
+                    "If you don't confirm by then, your spot will be offered to the next person.\n\n"
+                    "Log in to confirm your enrolment.\n\n"
+                    "Duality Pole Studio"
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[student.email],
+                fail_silently=True,
+            )
+
+        return Response({
+            'waitlist_offered_at': enrolment.waitlist_offered_at.isoformat(),
+            'waitlist_expires_at': enrolment.waitlist_expires_at.isoformat(),
+        })
+
+
+class AdminBulkSeasonWaitlistView(APIView):
+    """Admin: bulk promote or remove waitlisted season enrolments."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request):
+        from apps.users.models import Notification
+
+        action = request.data.get('action')
+        ids = request.data.get('ids', [])
+        override = request.data.get('override_capacity', False)
+
+        if action not in ('promote', 'remove'):
+            return Response({'detail': 'action must be promote or remove'}, status=400)
+        if not ids:
+            return Response({'detail': 'ids required'}, status=400)
+
+        enrolment_qs = Enrolment.objects.filter(pk__in=ids, status='waitlisted').select_related('class_session', 'student')
+        results = {'succeeded': [], 'failed': []}
+
+        for enrolment in enrolment_qs:
+            if action == 'remove':
+                eid = enrolment.id
+                enrolment.delete()
+                results['succeeded'].append(eid)
+            else:
+                session = enrolment.class_session
+                active_count = Enrolment.objects.filter(class_session=session, status='active').count()
+                capacity = getattr(session, 'capacity', None)
+                if not override and capacity and active_count >= capacity:
+                    results['failed'].append({'id': enrolment.id, 'reason': 'at_capacity'})
+                    continue
+                enrolment.status = 'active'
+                enrolment.waitlist_offered_at = None
+                enrolment.waitlist_expires_at = None
+                enrolment.waitlist_urgent = False
+                enrolment.waitlist_position = None
+                enrolment.save(update_fields=['status', 'waitlist_offered_at', 'waitlist_expires_at', 'waitlist_urgent', 'waitlist_position'])
+                Notification.objects.create(
+                    recipient=enrolment.student,
+                    title=f"You're in! — {session.name}",
+                    body=f"You've been promoted from the waitlist for {session.name}. You're now enrolled!",
+                    notification_type='success',
+                )
+                results['succeeded'].append(enrolment.id)
+
+        return Response(results)

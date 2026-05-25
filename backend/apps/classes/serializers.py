@@ -47,6 +47,7 @@ class ClassSessionSerializer(serializers.ModelSerializer):
             'description', 'created_at',
             'season_base_price',
             'skill_level', 'skill_level_name',
+            'auto_promote_waitlist',
         )
         read_only_fields = ('id', 'enrolled_count', 'instructor_detail', 'studio_detail', 'day_of_week_display', 'category_name', 'season_name', 'season_start_date', 'season_end_date', 'season_bookings_open', 'season_base_price', 'created_at', 'skill_level_name', 'end_time')
 
