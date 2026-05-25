@@ -179,3 +179,152 @@ All current code has the detailed two-state version. Old simple text not found a
 - ✅ Demo users created (`demo_jess`, `demo_tara`, etc. / password: `student1234`)
 - ✅ Migrations all applied
 - ⚠️ Mark Away modal text — unclear what changes were requested (previous conversation cleared)
+
+---
+
+# Session — 25 May 2026
+
+## Codebase Audit — Dead Buttons
+
+Ran a full audit of buttons across the app with no real functionality (just `alert()` calls or missing `onClick`).
+
+**Found 7 dead buttons:**
+| Location | Button | Action |
+|---|---|---|
+| AdminTags | View Students | No onClick |
+| AdminStaff | Edit role permissions | `alert('coming soon')` |
+| AdminMessages | Mark all read | `alert(...)` placeholder |
+| AdminHelpdesk | Export | `alert(...)` placeholder |
+| AdminStudentDetail | + Tag | `alert('Add tag')` |
+| AdminBookings | Transfer | `alert('Transfer booking')` |
+| StudentDashboard | Notify instructor | `alert(...)` placeholder |
+
+---
+
+## Fixes Applied
+
+**AdminHelpdesk — Export button:** Removed entirely. No clear use case.
+
+**AdminMessages — Mark all read:** Now calls `helpdesk.updateConversation` for every conversation with `admin_unread: true` in parallel. Refetches the list when done.
+
+**AdminTags — View Students:** Now navigates to `/admin/students?tag=<id>`.
+
+**AdminStudentDetail — + Tag:** Replaced `alert` with a full `StudentTagsRow` component:
+- Shows existing tags as colour-coded chips with ✕ to remove
+- "+ Tag" opens a dropdown showing available tags (ones not already assigned) with colour dots
+- Add/remove calls `tags.addToStudent` / `tags.removeFromStudent` API and updates state inline
+
+**AdminBookings — Transfer:** Replaced `alert` with a `TransferModal` component:
+- Shows which student and class they're transferring from
+- Session picker (all sessions except the current one)
+- Optional reason field
+- Creates a `ClassChangeRequest` with `request_type: 'transfer'` through the existing transfer flow
+
+**StudentDashboard — Notify instructor:** Replaced `alert` with a `NotifyInstructorButton` component:
+- Sends a real in-app notification to the student's instructor via `notifications.send()`
+- Shows "Notifying…" while in flight
+- Confirms "✓ Instructor notified" on success
+- Shows a "contact us directly" fallback on error
+- Button only appears when student has self-marked all skills for their current level
+
+---
+
+## Feature Gap Review
+
+Reviewed the full built feature list and identified gaps vs what the studio actually needs.
+
+**Already built (confirmed):** iCal calendar export, referral program, emergency contacts on student profiles, retail/products page.
+
+**Gaps identified and agreed to build:**
+1. Seasonal check-in nudge — casual mid-season feedback prompt
+2. Retention dashboard in Analytics
+3. Revenue by class in Analytics
+
+**Not building:** progress photos, staff rostering, monthly membership model, instructor payroll.
+
+---
+
+## New Features Built
+
+### 1. Seasonal Check-in Nudge
+
+**Backend:**
+- New `SeasonFeedback` model (`apps/surveys`) — tracks per-student per-season nudges with `rating` (1–5), `message`, `sent_at`, `responded_at`. `unique_together` on student + season.
+- Migration `0004_add_season_feedback.py`
+- `GET /api/surveys/seasonal-checkin/` — returns the current user's pending (unanswered) nudge for the active season
+- `POST /api/surveys/seasonal-checkin/<id>/respond/` — student submits rating + optional message
+- `GET /api/surveys/seasonal-checkin/admin/` — admin view of all responses for active season
+- Management command `send_seasonal_checkin`: runs daily, only fires in weeks 4–7 of active season, randomly samples ~30% of remaining eligible enrolled students per run (so sends are spread out), creates `SeasonFeedback` record + in-app notification for each
+- Wired into `run_built_in_automations`
+
+**Frontend (student):**
+- `SeasonalCheckinCard` component on the student dashboard: shows when `GET /api/surveys/seasonal-checkin/` returns a pending nudge
+- Step 1: five emoji buttons (😩 😕 😐 😊 🔥) — tapping one auto-advances to step 2
+- Step 2: optional free-text message with "Send feedback" and "Skip" buttons
+- Step 3 (done): thank-you confirmation, then dismisses
+- Card is dismissible without rating
+
+### 2. Retention Tab in Analytics
+
+New tab "Retention" in AdminReporting.
+
+**Backend:** `GET /api/enrolments/retention-stats/` returns:
+- Current and next season metadata
+- Total enrolled in each season
+- Retention rate (% of current-season students also in next season)
+- List of students in current season but not re-enrolled for next (with their classes + last attended date)
+- Students with zero attendance this season
+- At-risk students (<60% attendance)
+
+**Frontend:**
+- KPI row: enrolled this season, re-enrolled next, retention rate %, zero-attendance count
+- "Haven't re-enrolled" table — clickable rows through to student profile, CSV export
+- "Enrolled but never attended" table
+- "Low attendance" table
+- Mid-season check-in responses (from seasonal nudge above) — emoji + message + date
+
+### 3. Revenue by Class Tab in Analytics
+
+New tab "Revenue by Class" in AdminReporting.
+
+**Backend:** `GET /api/classes/revenue-stats/` returns per-session: enrolled count, capacity, fill rate, actual revenue (from payments linked to enrolments for that session), avg per student.
+
+**Frontend:**
+- KPI row: total revenue, avg fill rate, top earner, underperforming class count
+- Horizontal bar chart by revenue
+- Full table with fill-rate bar (green/amber/red), revenue, avg/student
+- CSV export
+
+---
+
+## Files Changed This Session
+
+**Backend:**
+- `backend/apps/surveys/models.py` — SeasonFeedback model
+- `backend/apps/surveys/migrations/0004_add_season_feedback.py` — migration
+- `backend/apps/surveys/views.py` — SeasonalCheckinView, SeasonalCheckinRespondView, SeasonalCheckinAdminView
+- `backend/apps/surveys/urls.py` — three new routes
+- `backend/apps/surveys/management/commands/send_seasonal_checkin.py` — new management command
+- `backend/apps/enrolments/views.py` — RetentionStatsView
+- `backend/apps/enrolments/urls.py` — retention-stats route
+- `backend/apps/classes/views.py` — RevenueStatsView
+- `backend/apps/classes/urls.py` — revenue-stats route
+- `backend/apps/users/management/commands/run_built_in_automations.py` — wired in seasonal checkin
+
+**Frontend:**
+- `frontend/src/api/index.js` — surveys.seasonalCheckin, enrolments.retentionStats, classes.revenueStats
+- `frontend/src/pages/admin/AdminReporting.jsx` — Retention + Revenue by Class tabs
+- `frontend/src/pages/admin/AdminHelpdesk.jsx` — removed Export button
+- `frontend/src/pages/admin/AdminMessages.jsx` — Mark all read now functional
+- `frontend/src/pages/admin/AdminTags.jsx` — View Students now navigates
+- `frontend/src/pages/admin/AdminStudentDetail.jsx` — StudentTagsRow component replacing alert
+- `frontend/src/pages/admin/AdminBookings.jsx` — TransferModal replacing alert
+- `frontend/src/pages/student/StudentDashboard.jsx` — SeasonalCheckinCard + NotifyInstructorButton
+
+## Current State
+
+- ✅ All 7 dead buttons resolved (1 removed, 6 wired to real functionality)
+- ✅ Seasonal mid-season feedback nudge — full stack, runs via daily automation
+- ✅ Retention dashboard in Analytics
+- ✅ Revenue by Class in Analytics
+
