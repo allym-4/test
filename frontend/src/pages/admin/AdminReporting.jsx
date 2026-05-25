@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
-import { classes, payments, attendance as attendanceApi } from '../../api'
+import { classes, payments, attendance as attendanceApi, enrolments as enrolmentsApi, surveys as surveysApi } from '../../api'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   PieChart, Pie, Legend,
@@ -28,17 +29,21 @@ function downloadCSV(filename, rows, headers) {
   URL.revokeObjectURL(url)
 }
 
-const TABS = ['Overview', 'Enrolments', 'Financial', 'Attendance']
+const TABS = ['Overview', 'Enrolments', 'Financial', 'Attendance', 'Retention', 'Revenue by Class']
 
 const CHART_COLOURS = ['#ccff00', '#b0a0ff', '#ffaa00', '#ff4444', '#00cfff', '#ff88cc']
 
 export default function AdminReporting() {
+  const navigate = useNavigate()
   const [tab, setTab] = useState('Overview')
 
   const { data: classStats } = useApi(() => classes.stats(), [])
   const { data: sessionsData } = useApi(() => classes.list())
   const { data: payStats } = useApi(() => payments.stats(), [])
   const { data: attStats, loading: attLoading } = useApi(() => attendanceApi.stats(), [])
+  const { data: retentionData, loading: retentionLoading } = useApi(() => tab === 'Retention' ? enrolmentsApi.retentionStats() : null, [tab])
+  const { data: revenueData, loading: revenueLoading } = useApi(() => tab === 'Revenue by Class' ? classes.revenueStats() : null, [tab])
+  const { data: checkinAdminData, loading: checkinLoading } = useApi(() => tab === 'Retention' ? surveysApi.seasonalCheckin.adminList() : null, [tab])
 
   const sessions = sessionsData?.results || []
 
@@ -509,6 +514,234 @@ export default function AdminReporting() {
             )}
           </>
         )
+      )}
+
+      {/* ── Retention ── */}
+      {tab === 'Retention' && (
+        retentionLoading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>
+        ) : !retentionData ? (
+          <div className="empty-state" style={{ padding: '60px 0', textAlign: 'center', color: 'var(--grey)' }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>📊</div>
+            <div style={{ fontSize: 15, fontWeight: 600 }}>No retention data yet</div>
+          </div>
+        ) : (
+          <>
+            {/* KPI row */}
+            <div className="kpi-grid" style={{ marginBottom: 28 }}>
+              <div className="kpi kpi-lime">
+                <div className="kpi-label">Enrolled this season</div>
+                <div className="kpi-value">{retentionData.total_enrolled_current ?? '—'}</div>
+                <div className="kpi-sub">{retentionData.current_season?.name || 'Current season'}</div>
+              </div>
+              <div className="kpi" style={{ border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px' }}>
+                <div className="kpi-label">Re-enrolled next season</div>
+                <div className="kpi-value">{retentionData.total_enrolled_next ?? '—'}</div>
+                <div className="kpi-sub">{retentionData.next_season?.name || 'Next season'}</div>
+              </div>
+              <div className="kpi kpi-lav">
+                <div className="kpi-label">Retention rate</div>
+                <div className="kpi-value">{retentionData.retention_rate != null ? `${retentionData.retention_rate}%` : '—'}</div>
+                <div className="kpi-sub">Season-over-season</div>
+              </div>
+              <div className="kpi kpi-red">
+                <div className="kpi-label">Zero attendance</div>
+                <div className="kpi-value">{retentionData.zero_attendance?.length ?? 0}</div>
+                <div className="kpi-sub">Enrolled but never showed</div>
+              </div>
+            </div>
+
+            {/* Not re-enrolled */}
+            {retentionData.next_season && (retentionData.not_re_enrolled || []).length > 0 && (
+              <div className="section" style={{ padding: '20px 24px', marginBottom: 24 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                  <div>
+                    <div className="section-title" style={{ fontSize: 15 }}>Haven't re-enrolled for {retentionData.next_season.name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{retentionData.not_re_enrolled.length} student{retentionData.not_re_enrolled.length !== 1 ? 's' : ''}</div>
+                  </div>
+                  <button className="btn btn-ghost btn-sm" onClick={() => downloadCSV('not-re-enrolled.csv', retentionData.not_re_enrolled.map(s => [s.name, (s.classes || []).join(', '), s.last_attended || '—']), ['Student', 'Classes', 'Last attended'])}>Download CSV</button>
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    {['Student', 'Current classes', 'Last attended'].map(h => <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>{h}</th>)}
+                  </tr></thead>
+                  <tbody>
+                    {retentionData.not_re_enrolled.map((s, i) => (
+                      <tr key={s.id} style={{ borderBottom: i < retentionData.not_re_enrolled.length - 1 ? '1px solid var(--border)' : 'none', cursor: 'pointer' }} onClick={() => navigate(`/admin/students/${s.id}`)}>
+                        <td style={{ padding: '10px 12px', fontWeight: 600, fontSize: 13 }}>{s.name}</td>
+                        <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--grey)' }}>{(s.classes || []).join(', ') || '—'}</td>
+                        <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--grey)' }}>{s.last_attended ? new Date(s.last_attended).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Zero attendance */}
+            {(retentionData.zero_attendance || []).length > 0 && (
+              <div className="section" style={{ padding: '20px 24px', marginBottom: 24 }}>
+                <div style={{ marginBottom: 14 }}>
+                  <div className="section-title" style={{ fontSize: 15 }}>Enrolled but never attended</div>
+                  <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{retentionData.zero_attendance.length} student{retentionData.zero_attendance.length !== 1 ? 's' : ''}</div>
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    {['Student', 'Classes enrolled'].map(h => <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>{h}</th>)}
+                  </tr></thead>
+                  <tbody>
+                    {retentionData.zero_attendance.map((s, i) => (
+                      <tr key={s.id} style={{ borderBottom: i < retentionData.zero_attendance.length - 1 ? '1px solid var(--border)' : 'none', cursor: 'pointer' }} onClick={() => navigate(`/admin/students/${s.id}`)}>
+                        <td style={{ padding: '10px 12px', fontWeight: 600, fontSize: 13 }}>{s.name}</td>
+                        <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--grey)' }}>{s.enrolled_classes} class{s.enrolled_classes !== 1 ? 'es' : ''}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* At-risk students */}
+            {(retentionData.at_risk || []).length > 0 && (
+              <div className="section" style={{ padding: '20px 24px', marginBottom: 24 }}>
+                <div style={{ marginBottom: 14 }}>
+                  <div className="section-title" style={{ fontSize: 15 }}>Low attendance (&lt;60%)</div>
+                  <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{retentionData.at_risk.length} student{retentionData.at_risk.length !== 1 ? 's' : ''}</div>
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    {['Student', 'Attendance rate', 'Classes missed'].map(h => <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>{h}</th>)}
+                  </tr></thead>
+                  <tbody>
+                    {retentionData.at_risk.map((s, i) => (
+                      <tr key={s.id} style={{ borderBottom: i < retentionData.at_risk.length - 1 ? '1px solid var(--border)' : 'none', cursor: 'pointer' }} onClick={() => navigate(`/admin/students/${s.id}`)}>
+                        <td style={{ padding: '10px 12px', fontWeight: 600, fontSize: 13 }}>{s.name}</td>
+                        <td style={{ padding: '10px 12px' }}><span style={{ fontSize: 12, fontWeight: 700, color: s.attendance_rate < 40 ? 'var(--red)' : 'var(--amber)' }}>{s.attendance_rate}%</span></td>
+                        <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--grey)' }}>{s.classes_missed}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Season feedback responses */}
+            {!checkinLoading && (checkinAdminData || []).length > 0 && (
+              <div className="section" style={{ padding: '20px 24px', marginBottom: 24 }}>
+                <div style={{ marginBottom: 14 }}>
+                  <div className="section-title" style={{ fontSize: 15 }}>Mid-season check-in responses</div>
+                  <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{checkinAdminData.filter(r => r.responded_at).length} of {checkinAdminData.length} responded</div>
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    {['Student', 'Rating', 'Feedback', 'Date'].map(h => <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>{h}</th>)}
+                  </tr></thead>
+                  <tbody>
+                    {checkinAdminData.filter(r => r.responded_at).map((r, i) => (
+                      <tr key={r.id} style={{ borderBottom: i < checkinAdminData.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                        <td style={{ padding: '10px 12px', fontWeight: 600, fontSize: 13 }}>{r.student_name}</td>
+                        <td style={{ padding: '10px 12px', fontSize: 18 }}>{r.rating ? ['😩', '😕', '😐', '😊', '🔥'][r.rating - 1] : '—'}</td>
+                        <td style={{ padding: '10px 12px', fontSize: 12, color: r.message ? 'var(--white)' : 'var(--grey)', maxWidth: 300 }}>{r.message || 'No message'}</td>
+                        <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--grey)' }}>{new Date(r.responded_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )
+      )}
+
+      {/* ── Revenue by Class ── */}
+      {tab === 'Revenue by Class' && (
+        revenueLoading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>
+        ) : !revenueData || (revenueData.sessions || []).length === 0 ? (
+          <div className="empty-state" style={{ padding: '60px 0', textAlign: 'center', color: 'var(--grey)' }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>💰</div>
+            <div style={{ fontSize: 15, fontWeight: 600 }}>No revenue data yet</div>
+            <div style={{ fontSize: 13, marginTop: 8 }}>Data appears once payments are recorded against enrolments.</div>
+          </div>
+        ) : (() => {
+          const sessions = [...(revenueData.sessions || [])].sort((a, b) => b.revenue - a.revenue)
+          const totalRevenue = sessions.reduce((s, c) => s + (c.revenue || 0), 0)
+          const avgFill = sessions.length ? Math.round(sessions.reduce((s, c) => s + (c.fill_rate || 0), 0) / sessions.length) : 0
+          const topClass = sessions[0]
+          return (
+            <>
+              <div className="kpi-grid" style={{ marginBottom: 28 }}>
+                <div className="kpi kpi-lime">
+                  <div className="kpi-label">Total revenue</div>
+                  <div className="kpi-value">${totalRevenue.toFixed(0)}</div>
+                  <div className="kpi-sub">Across {sessions.length} classes</div>
+                </div>
+                <div className="kpi kpi-lav">
+                  <div className="kpi-label">Average fill rate</div>
+                  <div className="kpi-value">{avgFill}%</div>
+                  <div className="kpi-sub">Across all classes</div>
+                </div>
+                <div className="kpi kpi-amber">
+                  <div className="kpi-label">Top earner</div>
+                  <div className="kpi-value" style={{ fontSize: 18 }}>{topClass?.name || '—'}</div>
+                  <div className="kpi-sub">${topClass?.revenue?.toFixed(0) || 0}</div>
+                </div>
+                <div className="kpi" style={{ border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px' }}>
+                  <div className="kpi-label">Underperforming</div>
+                  <div className="kpi-value">{sessions.filter(s => (s.fill_rate || 0) < 50).length}</div>
+                  <div className="kpi-sub">Classes under 50% full</div>
+                </div>
+              </div>
+
+              {/* Revenue bar chart */}
+              <div className="section" style={{ padding: '20px 24px', marginBottom: 24 }}>
+                <div className="section-title" style={{ fontSize: 15, marginBottom: 18 }}>Revenue by class</div>
+                <ResponsiveContainer width="100%" height={Math.max(200, sessions.length * 36)}>
+                  <BarChart data={sessions.map(s => ({ name: s.name, revenue: s.revenue || 0 }))} layout="vertical" margin={{ top: 4, right: 60, left: 8, bottom: 4 }}>
+                    <XAxis type="number" tick={{ fill: '#888', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
+                    <YAxis type="category" dataKey="name" tick={{ fill: '#ccc', fontSize: 11 }} axisLine={false} tickLine={false} width={140} />
+                    <Tooltip contentStyle={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 8, fontSize: 12 }} formatter={v => [`$${parseFloat(v).toFixed(0)}`, 'Revenue']} />
+                    <Bar dataKey="revenue" radius={[0, 4, 4, 0]}>
+                      {sessions.map((_, i) => <Cell key={i} fill={CHART_COLOURS[i % CHART_COLOURS.length]} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Table */}
+              <div className="section" style={{ padding: '20px 24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                  <div className="section-title" style={{ fontSize: 15 }}>Full breakdown</div>
+                  <button className="btn btn-ghost btn-sm" onClick={() => downloadCSV('revenue-by-class.csv', sessions.map(s => [s.name, s.instructor || '—', s.enrolled, s.capacity, `${s.fill_rate}%`, `$${(s.revenue || 0).toFixed(0)}`, `$${(s.avg_per_student || 0).toFixed(0)}`]), ['Class', 'Instructor', 'Enrolled', 'Capacity', 'Fill %', 'Revenue', 'Avg/student'])}>Download CSV</button>
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    {['Class', 'Instructor', 'Enrolled', 'Fill', 'Revenue', 'Avg/student'].map(h => <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', fontWeight: 600 }}>{h}</th>)}
+                  </tr></thead>
+                  <tbody>
+                    {sessions.map((s, i) => (
+                      <tr key={s.id} style={{ borderBottom: i < sessions.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                        <td style={{ padding: '10px 12px', fontWeight: 600, fontSize: 13 }}>{s.name}</td>
+                        <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--grey)' }}>{s.instructor || '—'}</td>
+                        <td style={{ padding: '10px 12px', fontSize: 12 }}>{s.enrolled} / {s.capacity}</td>
+                        <td style={{ padding: '10px 12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ height: 6, width: 60, background: 'var(--border)', borderRadius: 3, overflow: 'hidden' }}>
+                              <div style={{ height: '100%', width: `${s.fill_rate || 0}%`, background: s.fill_rate >= 80 ? 'var(--lime)' : s.fill_rate >= 50 ? 'var(--amber)' : 'var(--red)', borderRadius: 3 }} />
+                            </div>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: s.fill_rate >= 80 ? 'var(--lime)' : s.fill_rate >= 50 ? 'var(--amber)' : 'var(--red)' }}>{s.fill_rate || 0}%</span>
+                          </div>
+                        </td>
+                        <td style={{ padding: '10px 12px', fontSize: 13, fontWeight: 600, color: 'var(--lime)' }}>${(s.revenue || 0).toFixed(0)}</td>
+                        <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--grey)' }}>${(s.avg_per_student || 0).toFixed(0)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )
+        })()
       )}
     </div>
   )

@@ -1,12 +1,97 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, seasons, attendance as attendanceApi, classes as classesApi, skills as skillsApi, announcements as announcementsApi, payments, settings as settingsApi, notifications as notificationsApi } from '../../api'
+import { enrolments, seasons, attendance as attendanceApi, classes as classesApi, skills as skillsApi, announcements as announcementsApi, payments, settings as settingsApi, notifications as notificationsApi, surveys as surveysApi } from '../../api'
 import CancellationOfferPopup from '../../components/CancellationOfferPopup'
 import PostTrialPopup from '../../components/PostTrialPopup'
 import MarkAwayModal from '../../components/MarkAwayModal'
 
 import { Link } from 'react-router-dom'
+
+function SeasonalCheckinCard({ checkin, onDone }) {
+  const [rating, setRating] = useState(null)
+  const [message, setMessage] = useState('')
+  const [step, setStep] = useState('rate') // 'rate' | 'message' | 'done'
+  const [saving, setSaving] = useState(false)
+
+  async function submit() {
+    setSaving(true)
+    try {
+      await surveysApi.seasonalCheckin.respond(checkin.id, { rating, message })
+      setStep('done')
+      setTimeout(onDone, 2000)
+    } catch {
+      setSaving(false)
+    }
+  }
+
+  if (step === 'done') {
+    return (
+      <div style={{ background: 'rgba(204,255,0,0.06)', border: '1px solid rgba(204,255,0,0.3)', borderRadius: 12, padding: '18px 20px', marginBottom: 20 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--lime)', marginBottom: 4 }}>Thanks for the feedback! 🌶️</div>
+        <div style={{ fontSize: 13, color: 'var(--grey)' }}>We really appreciate it — it helps us make the studio better for everyone.</div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ background: 'rgba(176,160,255,0.06)', border: '1px solid rgba(176,160,255,0.25)', borderRadius: 12, padding: '18px 20px', marginBottom: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+        <div>
+          <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--lav)', marginBottom: 4 }}>Quick check-in</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--white)' }}>How's your season going?</div>
+        </div>
+        <button onClick={onDone} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 16, padding: 0 }}>✕</button>
+      </div>
+
+      {step === 'rate' && (
+        <>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 14 }}>Be spicy, we love it. 🌶️</div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
+            {[1, 2, 3, 4, 5].map(n => (
+              <button
+                key={n}
+                onClick={() => { setRating(n); setStep('message') }}
+                style={{
+                  flex: 1,
+                  padding: '10px 0',
+                  borderRadius: 8,
+                  border: `1px solid ${rating === n ? 'var(--lav)' : 'var(--border)'}`,
+                  background: rating === n ? 'rgba(176,160,255,0.15)' : '#1a1a1a',
+                  color: 'var(--white)',
+                  fontSize: 20,
+                  cursor: 'pointer',
+                }}
+              >
+                {['😩', '😕', '😐', '😊', '🔥'][n - 1]}
+              </button>
+            ))}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--grey)', padding: '0 2px' }}>
+            <span>Not great</span><span>On fire</span>
+          </div>
+        </>
+      )}
+
+      {step === 'message' && (
+        <>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 12 }}>Anything you'd like us to know? (totally optional)</div>
+          <textarea
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+            placeholder="Any feedback, suggestions, or things we should know…"
+            rows={3}
+            style={{ width: '100%', background: '#111', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', padding: '10px 12px', fontSize: 13, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box', outline: 'none', marginBottom: 12 }}
+          />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-lav btn-sm" onClick={submit} disabled={saving}>{saving ? 'Sending…' : 'Send feedback'}</button>
+            <button className="btn btn-ghost btn-sm" onClick={submit} disabled={saving}>Skip</button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
 
 function NotifyInstructorButton({ instructorId, studentName }) {
   const [state, setState] = useState('idle') // idle | sending | done | error
@@ -106,6 +191,10 @@ export default function StudentDashboard() {
   const isBlocked = balanceData?.booking_blocked === true
   const owingAmount = balanceData && parseFloat(balanceData.balance) < 0 ? Math.abs(parseFloat(balanceData.balance)) : null
 
+  const { data: checkinData, refetch: refetchCheckin } = useApi(() => surveysApi.seasonalCheckin.pending(), [])
+  const pendingCheckin = checkinData?.id ? checkinData : null
+  const [checkinDismissed, setCheckinDismissed] = useState(false)
+
   const [markAwayEnrol, setMarkAwayEnrol] = useState(null)
   const [showBlockedBanner, setShowBlockedBanner] = useState(false)
   const [acknowledging, setAcknowledging] = useState({})
@@ -174,6 +263,14 @@ export default function StudentDashboard() {
           onResolved={() => refetchOffers()}
         />
       )}
+      {/* Seasonal check-in nudge */}
+      {pendingCheckin && !checkinDismissed && (
+        <SeasonalCheckinCard
+          checkin={pendingCheckin}
+          onDone={() => { setCheckinDismissed(true); refetchCheckin() }}
+        />
+      )}
+
       {/* Season open banner — shown when no active enrolments */}
       {!loadingEnrol && !hasEnrolments && (
         <div style={{ background: 'var(--lime)', borderRadius: 12, padding: '14px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>

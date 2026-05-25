@@ -10,4 +10,8 @@ urlpatterns = [
     path('questions/', views.SurveyQuestionListView.as_view()),
     path('questions/<int:pk>/', views.SurveyQuestionDetailView.as_view()),
     path('responses/', views.SurveyResponseListView.as_view()),
+    # Seasonal check-in
+    path('seasonal-checkin/', views.SeasonalCheckinView.as_view()),
+    path('seasonal-checkin/admin/', views.SeasonalCheckinAdminView.as_view()),
+    path('seasonal-checkin/<int:pk>/respond/', views.SeasonalCheckinRespondView.as_view()),
 ]

@@ -1848,3 +1848,72 @@ class SessionNamesView(APIView):
                 seen.add(key)
                 result.append(n.strip())
         return Response(result)
+
+
+class RevenueStatsView(APIView):
+    """Admin-only endpoint returning revenue and fill stats per class session."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def get(self, request):
+        from django.db.models import Sum
+        from apps.payments.models import Payment
+        from apps.enrolments.models import Enrolment
+
+        # Filter sessions to the current active season if one exists
+        try:
+            active_season = Season.objects.get(status='active')
+            sessions = ClassSession.objects.filter(
+                season=active_season, is_active=True
+            ).select_related('instructor', 'studio')
+        except Season.DoesNotExist:
+            sessions = ClassSession.objects.filter(is_active=True).select_related(
+                'instructor', 'studio'
+            )
+        except Season.MultipleObjectsReturned:
+            active_season = Season.objects.filter(status='active').order_by('-start_date').first()
+            sessions = ClassSession.objects.filter(
+                season=active_season, is_active=True
+            ).select_related('instructor', 'studio')
+
+        day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        result = []
+
+        for session in sessions:
+            enrolled = Enrolment.objects.filter(
+                class_session=session, status='active'
+            ).count()
+            capacity = session.capacity or 0
+            fill_rate = round(enrolled / capacity * 100) if capacity > 0 else 0
+
+            # Revenue: sum payments from students enrolled in this session
+            enrolled_student_ids = Enrolment.objects.filter(
+                class_session=session,
+                status='active',
+            ).values_list('student_id', flat=True)
+
+            revenue_agg = Payment.objects.filter(
+                student_id__in=enrolled_student_ids,
+                payment_type='payment',
+                description__icontains=session.name,
+            ).aggregate(total=Sum('amount'))
+            revenue = float(revenue_agg['total'] or 0)
+
+            avg_per_student = round(revenue / enrolled, 2) if enrolled > 0 else 0.0
+
+            instructor_name = ''
+            if session.instructor:
+                instructor_name = session.instructor.first_name or session.instructor.display_name
+
+            result.append({
+                'id': session.id,
+                'name': session.name,
+                'day': day_names[session.day_of_week] if session.day_of_week is not None else '',
+                'instructor': instructor_name,
+                'enrolled': enrolled,
+                'capacity': capacity,
+                'fill_rate': fill_rate,
+                'revenue': revenue,
+                'avg_per_student': avg_per_student,
+            })
+
+        return Response({'sessions': result})

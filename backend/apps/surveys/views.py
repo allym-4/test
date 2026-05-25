@@ -3,9 +3,9 @@ from django.utils import timezone
 from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Survey, SurveyQuestion, SurveyResponse, SurveyAnswer
+from .models import Survey, SurveyQuestion, SurveyResponse, SurveyAnswer, SeasonFeedback
 from .serializers import SurveySerializer, SurveyQuestionSerializer, SurveyResponseSerializer
-from apps.users.permissions import IsAdminOrInstructor
+from apps.users.permissions import IsAdminOrInstructor, IsAdminUser
 
 
 class SurveyListView(generics.ListCreateAPIView):
@@ -193,3 +193,104 @@ class SurveyExportCsvView(APIView):
             writer.writerow(row)
 
         return response
+
+
+# ── Seasonal Check-in / Feedback ────────────────────────────────────────────
+
+class SeasonalCheckinView(APIView):
+    """GET: return the current user's pending SeasonFeedback for the active season."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from apps.classes.models import Season
+        try:
+            season = Season.objects.get(status='active')
+        except Season.DoesNotExist:
+            return Response(None, status=200)
+        except Season.MultipleObjectsReturned:
+            season = Season.objects.filter(status='active').order_by('-start_date').first()
+
+        feedback = SeasonFeedback.objects.filter(
+            student=request.user,
+            season=season,
+            responded_at__isnull=True,
+        ).first()
+
+        if not feedback:
+            return Response(None, status=200)
+
+        return Response({
+            'id': feedback.id,
+            'season_name': season.name,
+            'sent_at': feedback.sent_at,
+        })
+
+
+class SeasonalCheckinRespondView(APIView):
+    """POST: student submits their seasonal feedback response."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            feedback = SeasonFeedback.objects.select_related('season').get(
+                pk=pk, student=request.user
+            )
+        except SeasonFeedback.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=404)
+
+        if feedback.responded_at:
+            return Response({'detail': 'Already responded.'}, status=400)
+
+        rating = request.data.get('rating')
+        message = request.data.get('message', '')
+
+        if rating is not None:
+            try:
+                rating = int(rating)
+            except (ValueError, TypeError):
+                return Response({'detail': 'Rating must be an integer 1–5.'}, status=400)
+            if rating < 1 or rating > 5:
+                return Response({'detail': 'Rating must be between 1 and 5.'}, status=400)
+            feedback.rating = rating
+
+        feedback.message = message
+        feedback.responded_at = timezone.now()
+        feedback.save(update_fields=['rating', 'message', 'responded_at'])
+
+        return Response({
+            'id': feedback.id,
+            'season_name': feedback.season.name,
+            'sent_at': feedback.sent_at,
+            'rating': feedback.rating,
+            'message': feedback.message,
+            'responded_at': feedback.responded_at,
+        })
+
+
+class SeasonalCheckinAdminView(APIView):
+    """GET: admin view of all SeasonFeedback for the active season."""
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        from apps.classes.models import Season
+        try:
+            season = Season.objects.get(status='active')
+        except Season.DoesNotExist:
+            return Response([])
+        except Season.MultipleObjectsReturned:
+            season = Season.objects.filter(status='active').order_by('-start_date').first()
+
+        feedbacks = SeasonFeedback.objects.filter(season=season).select_related('student')
+        data = [
+            {
+                'id': fb.id,
+                'student_id': fb.student_id,
+                'student_name': fb.student.display_name,
+                'sent_at': fb.sent_at,
+                'rating': fb.rating,
+                'message': fb.message,
+                'responded_at': fb.responded_at,
+            }
+            for fb in feedbacks
+        ]
+        return Response(data)

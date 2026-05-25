@@ -22,6 +22,7 @@ export const classes = {
   occurrences: (params) => client.get('/api/classes/occurrences/', { params }),
   getOccurrence: (id) => client.get(`/api/classes/occurrences/${id}/`),
   stats: () => client.get('/api/classes/stats/'),
+  revenueStats: () => client.get('/api/classes/revenue-stats/'),
   roster: (sessionId) => client.get(`/api/classes/sessions/${sessionId}/roster/`),
   chat: {
     list: (sessionId) => client.get(`/api/classes/sessions/${sessionId}/chat/`),
@@ -101,6 +102,7 @@ export const enrolments = {
   claimSpot: (id) => client.post(`/api/enrolments/${id}/claim-spot/`),
   pricing: (student, session) => client.get('/api/enrolments/pricing/', { params: { student, session } }),
   flagged: () => client.get('/api/enrolments/flagged/'),
+  retentionStats: () => client.get('/api/enrolments/retention-stats/'),
   dismissFlag: (id) => client.patch(`/api/enrolments/flagged/${id}/dismiss/`, {}),
   trialFeedback: {
     pending: () => client.get('/api/enrolments/trial-feedback/pending/'),
@@ -453,6 +455,11 @@ export const surveys = {
   respond: (data) => client.post('/api/surveys/responses/', data),
   responses: (surveyId) => client.get('/api/surveys/responses/', { params: { survey: surveyId } }),
   exportCsv: (surveyId) => client.get(`/api/surveys/${surveyId}/export-csv/`, { responseType: 'blob' }),
+  seasonalCheckin: {
+    pending: () => client.get('/api/surveys/seasonal-checkin/'),
+    respond: (id, data) => client.post(`/api/surveys/seasonal-checkin/${id}/respond/`, data),
+    adminList: () => client.get('/api/surveys/seasonal-checkin/admin/'),
+  },
 }
 
 export const media = {
