@@ -19,7 +19,7 @@ try:
     ANTHROPIC_AVAILABLE = True
 except ImportError:
     ANTHROPIC_AVAILABLE = False
-from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, AutomationRun, Order, Notification, InstructorAvailability, InstructorUnavailableDate, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList, Referral, ActionItem, Challenge, ChallengeProgress
+from .models import User, StaffNote, Lead, StudioSettings, Announcement, Product, AutomationRule, AutomationRun, Order, Notification, InstructorAvailability, InstructorUnavailableDate, StudentForm, InstructorPayRecord, StudentSkill, Tag, StudentTag, SkillLevel, SkillGroup, SkillDefinition, MediaItem, EmailCampaign, EmailList, Referral, ActionItem, Challenge, ChallengeProgress, AssistantMessage
 from .serializers import (
     UserSerializer, UserCreateSerializer, StaffNoteSerializer, LeadSerializer,
     StudioSettingsSerializer, AnnouncementSerializer, ProductSerializer, AutomationRuleSerializer,
@@ -1629,6 +1629,41 @@ ADMIN_TOOLS = [
             "required": ["slug_or_name", "enabled"],
         },
     },
+    {
+        "name": "escalate_to_staff",
+        "description": (
+            "Use this when you cannot answer a question or complete a request — it opens a support ticket and notifies Mimi and Chloe directly. "
+            "Always use this rather than saying 'I don't know' or 'contact the studio'. "
+            "Provide a summary of what the user was asking and what you tried."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "summary": {"type": "string", "description": "Brief description of what the user needs and why you couldn't help"},
+                "urgency": {"type": "string", "enum": ["low", "normal", "urgent"], "description": "How urgent this is"},
+            },
+            "required": ["summary"],
+        },
+    },
+]
+
+STUDENT_TOOLS_EXTRA = [
+    {
+        "name": "escalate_to_staff",
+        "description": (
+            "Use this when you cannot answer a question, resolve an issue, or if the student specifically asks to speak to a human. "
+            "Opens a support ticket so Mimi or Chloe can follow up with the student. "
+            "Provide a clear summary of the issue."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "summary": {"type": "string", "description": "What the student needs and why you couldn't help"},
+                "urgency": {"type": "string", "enum": ["low", "normal", "urgent"], "description": "How urgent"},
+            },
+            "required": ["summary"],
+        },
+    },
 ]
 
 STUDENT_TOOLS = [
@@ -2169,6 +2204,34 @@ def execute_tool(tool_name, tool_input, acting_user=None):
         state = 'enabled' if enabled else 'disabled'
         return f"Automation '{rule.name or rule.slug}' is now {state}."
 
+    elif tool_name == 'escalate_to_staff':
+        summary = tool_input.get('summary', '')
+        urgency = tool_input.get('urgency', 'normal')
+        from apps.helpdesk.models import Ticket, TicketMessage
+        student = acting_user if acting_user.role == 'student' else None
+        ticket = Ticket.objects.create(
+            student=student,
+            subject=f'Assistant escalation: {summary[:80]}',
+            status='open',
+            priority=urgency if urgency in ('low', 'normal', 'urgent') else 'normal',
+        )
+        TicketMessage.objects.create(
+            ticket=ticket,
+            sender=student,
+            body=f'Escalated from assistant chat.\n\nSummary: {summary}',
+        )
+        # Notify admins (Mimi/Chloe)
+        admins = User.objects.filter(role='admin', is_active=True)
+        for admin in admins:
+            Notification.objects.create(
+                recipient=admin,
+                title='Assistant escalation',
+                body=f'{acting_user.display_name} needs help: {summary[:120]}',
+                notification_type='warning',
+                action_url=f'/admin/helpdesk',
+            )
+        return f"Done — I've opened a support ticket and notified the team. Someone will follow up with you shortly. Ticket #{ticket.id}."
+
     return f"Unknown tool: {tool_name}"
 
 
@@ -2244,11 +2307,14 @@ class AssistantView(APIView):
                 f"Makeup credits are for TIMELY cancellations (not illness/injury) and expire within the same season.\n\n"
                 f"{user.display_name}'s classes: {class_list}\n\n"
                 f"IMPORTANT: If someone is locked out, can't get in, or has an urgent issue, use the contact_reception tool immediately.\n"
-                f"Be warm, friendly, and concise. Use tools to get live data (schedule, balance, practice slots). "
-                f"For anything you can't help with, direct them to call (02) 9160 0223 or email intrigued@dualitypole.com.\n"
+                f"If you genuinely cannot answer or the student asks to speak to a human, use the escalate_to_staff tool — never just say 'I don't know' or tell them to call/email. "
+                f"Be warm, friendly, and concise. Use tools to get live data (schedule, balance, practice slots).\n"
                 f"Today is {today}."
             )
-            tools = STUDENT_TOOLS
+            tools = STUDENT_TOOLS + STUDENT_TOOLS_EXTRA
+
+        # Persist user message
+        AssistantMessage.objects.create(user=user, role='user', content=message)
 
         try:
             ai_client = anthropic.Anthropic(api_key=api_key)
@@ -2288,8 +2354,41 @@ class AssistantView(APIView):
         except Exception as e:
             reply_text = "I'm having trouble connecting right now — please contact the studio directly for help."
 
+        # Persist assistant reply
+        escalated = 'escalat' in reply_text.lower() or 'ticket #' in reply_text.lower()
+        AssistantMessage.objects.create(user=user, role='assistant', content=reply_text, escalated=escalated)
+
         # Return both keys so both frontend callers work
         return Response({'response': reply_text, 'reply': reply_text})
+
+
+class AssistantChatHistoryView(APIView):
+    """Admin: list all users who have chatted, or get messages for a specific user."""
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        user_id = request.query_params.get('user_id')
+        if user_id:
+            msgs = AssistantMessage.objects.filter(user_id=user_id).select_related('user').order_by('created_at')
+            return Response([
+                {
+                    'id': m.id,
+                    'role': m.role,
+                    'content': m.content,
+                    'escalated': m.escalated,
+                    'created_at': m.created_at,
+                }
+                for m in msgs
+            ])
+        # Return list of users who have messages, with last message time and count
+        from django.db.models import Count, Max
+        users = (
+            AssistantMessage.objects
+            .values('user_id', 'user__first_name', 'user__last_name', 'user__display_name', 'user__role')
+            .annotate(message_count=Count('id'), last_at=Max('created_at'))
+            .order_by('-last_at')
+        )
+        return Response(list(users))
 
 
 class ChangePasswordView(APIView):

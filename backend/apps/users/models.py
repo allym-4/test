@@ -509,6 +509,20 @@ class EmailList(models.Model):
         return self.name
 
 
+class AssistantMessage(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='assistant_messages')
+    role = models.CharField(max_length=10)  # 'user' | 'assistant'
+    content = models.TextField()
+    escalated = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'{self.user} [{self.role}] {self.created_at.date()}'
+
+
 class Referral(models.Model):
     class Status(models.TextChoices):
         PENDING = 'pending', 'Pending'

@@ -69,6 +69,7 @@ urlpatterns = [
     path('xero/status/', views.XeroStatusView.as_view()),
     path('xero/sync/', views.XeroSyncView.as_view()),
     path('assistant/', views.AssistantView.as_view()),
+    path('assistant/chats/', views.AssistantChatHistoryView.as_view()),
     path('change-password/', views.ChangePasswordView.as_view()),
     path('instructors/public/', views.PublicInstructorListView.as_view(), name='instructor-public-list'),
     path('', views.UserListView.as_view(), name='user-list'),

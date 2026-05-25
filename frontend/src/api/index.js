@@ -490,6 +490,8 @@ export const referrals = {
 
 export const assistant = {
   chat: (message) => client.post('/api/users/assistant/', { message }),
+  chats: () => client.get('/api/users/assistant/chats/'),
+  userChats: (userId) => client.get('/api/users/assistant/chats/', { params: { user_id: userId } }),
 }
 
 export const actionItems = {
