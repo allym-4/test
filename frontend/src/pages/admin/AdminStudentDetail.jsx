@@ -702,6 +702,8 @@ export default function AdminStudentDetail() {
   const [formsData, setFormsData] = useState(null)
   const [lockerData, setLockerData] = useState(null)
   const [commsData, setCommsData] = useState(null)
+  const [chatHistory, setChatHistory] = useState(null)
+  const [loadingChat, setLoadingChat] = useState(false)
   const [notificationsData, setNotificationsData] = useState(null)
   const [commsFilter, setCommsFilter] = useState('all')
   const [loadingComms, setLoadingComms] = useState(false)
@@ -764,6 +766,12 @@ export default function AdminStudentDetail() {
       setCommsData(tickets)
       setNotificationsData(notifs)
     }).finally(() => setLoadingComms(false))
+    // Load assistant chat history
+    setLoadingChat(true)
+    client.get('/api/users/assistant/chats/', { params: { user_id: student.id } })
+      .then(res => setChatHistory(res.data || []))
+      .catch(() => setChatHistory([]))
+      .finally(() => setLoadingChat(false))
   }, [tab, student?.id])
 
   useEffect(() => {
@@ -2085,7 +2093,7 @@ export default function AdminStudentDetail() {
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                   <div style={{ display: 'flex', gap: 6 }}>
-                    {[['all', 'All'], ['emails', 'Emails & Notifications'], ['tickets', 'Tickets']].map(([key, label]) => (
+                    {[['all', 'All'], ['emails', 'Emails & Notifications'], ['tickets', 'Tickets'], ['chat', 'Chat History']].map(([key, label]) => (
                       <button key={key} onClick={() => setCommsFilter(key)} className={`btn btn-xs ${commsFilter === key ? 'btn-lime' : 'btn-ghost'}`}>{label}</button>
                     ))}
                   </div>
@@ -2121,6 +2129,34 @@ export default function AdminStudentDetail() {
                         )}
                       </div>
                     )}
+                    {(commsFilter === 'all' || commsFilter === 'chat') && (
+                      <div style={{ marginBottom: commsFilter === 'all' ? 24 : 0 }}>
+                        {commsFilter === 'all' && <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 10 }}>AI Assistant Chat</div>}
+                        {loadingChat ? (
+                          <div style={{ display: 'flex', justifyContent: 'center', padding: 24 }}><div className="spinner" /></div>
+                        ) : !chatHistory || chatHistory.length === 0 ? (
+                          <div className="empty-state">No assistant conversations</div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 480, overflowY: 'auto', padding: 2 }}>
+                            {chatHistory.map(m => (
+                              <div key={m.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexDirection: m.role === 'user' ? 'row-reverse' : 'row' }}>
+                                <div style={{ width: 26, height: 26, borderRadius: '50%', background: m.role === 'user' ? 'var(--lav)' : '#333', color: m.role === 'user' ? '#000' : 'var(--grey)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
+                                  {m.role === 'user' ? (student?.first_name?.[0] || '?') : 'AI'}
+                                </div>
+                                <div style={{ maxWidth: '75%', background: m.role === 'user' ? 'rgba(176,160,255,0.12)' : '#1a1a1a', border: `1px solid ${m.role === 'user' ? 'rgba(176,160,255,0.2)' : 'var(--border)'}`, borderRadius: 8, padding: '8px 12px' }}>
+                                  <div style={{ fontSize: 12, color: 'var(--white)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{m.content}</div>
+                                  <div style={{ fontSize: 10, color: 'var(--grey)', marginTop: 4, textAlign: m.role === 'user' ? 'right' : 'left' }}>
+                                    {new Date(m.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} {new Date(m.created_at).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}
+                                    {m.escalated && <span style={{ marginLeft: 6, color: 'var(--amber)' }}>↑ escalated</span>}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {(commsFilter === 'all' || commsFilter === 'tickets') && (
                       <div>
                         {commsFilter === 'all' && <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 10 }}>Support Tickets</div>}

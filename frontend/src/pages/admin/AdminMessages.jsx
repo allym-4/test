@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useApi } from '../../hooks/useApi'
-import { helpdesk, users, settings, notifications as notificationsApi, classes as classesApi, tags as tagsApi } from '../../api'
+import { helpdesk, users, settings, notifications as notificationsApi, classes as classesApi, tags as tagsApi, assistant as assistantApi } from '../../api'
 import { useAuth } from '../../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 
@@ -312,6 +312,11 @@ export default function AdminMessages() {
   const [tab, setTab] = useState('all')
   const [showNew, setShowNew] = useState(false)
   const [showBroadcast, setShowBroadcast] = useState(false)
+  const [mainView, setMainView] = useState('dm') // 'dm' | 'assistant'
+  const [aiChats, setAiChats] = useState(null)
+  const [aiChatUser, setAiChatUser] = useState(null) // { id, name } — drilled-in user
+  const [aiChatMessages, setAiChatMessages] = useState(null)
+  const [loadingAi, setLoadingAi] = useState(false)
   const threadRef = useRef(null)
 
   const activeConvo = conversations.find(c => c.id === activeId)
@@ -362,12 +367,30 @@ export default function AdminMessages() {
 
   const student = activeConvo?.student_detail
 
+  function openAiOverview() {
+    setMainView('assistant')
+    setAiChatUser(null)
+    setAiChatMessages(null)
+    if (aiChats) return
+    setLoadingAi(true)
+    assistantApi.chats().then(r => setAiChats(r.data || [])).catch(() => setAiChats([])).finally(() => setLoadingAi(false))
+  }
+
+  function openAiUser(u) {
+    setAiChatUser(u)
+    setAiChatMessages(null)
+    assistantApi.userChats(u.user_id).then(r => setAiChatMessages(r.data || [])).catch(() => setAiChatMessages([]))
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 80px)' }}>
       <div className="page-header" style={{ marginBottom: 0, paddingBottom: 16 }}>
         <div>
-          <div className="page-title">Messages</div>
-          <div className="page-sub">{instagramConnected ? 'Instagram DMs · connected via Meta Messaging API' : 'Student direct messages'}</div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
+            <button onClick={() => setMainView('dm')} style={{ background: 'none', border: 'none', borderBottom: `2px solid ${mainView === 'dm' ? 'var(--lime)' : 'transparent'}`, color: mainView === 'dm' ? 'var(--white)' : 'var(--grey)', fontFamily: "'Archivo Black', sans-serif", fontSize: 18, cursor: 'pointer', padding: '0 0 4px', transition: 'color 0.15s' }}>Messages</button>
+            <button onClick={openAiOverview} style={{ background: 'none', border: 'none', borderBottom: `2px solid ${mainView === 'assistant' ? 'var(--lime)' : 'transparent'}`, color: mainView === 'assistant' ? 'var(--white)' : 'var(--grey)', fontFamily: "'Archivo Black', sans-serif", fontSize: 18, cursor: 'pointer', padding: '0 0 4px', transition: 'color 0.15s' }}>AI Assistant</button>
+          </div>
+          <div className="page-sub">{mainView === 'assistant' ? 'Student conversations with the AI assistant' : instagramConnected ? 'Instagram DMs · connected via Meta Messaging API' : 'Student direct messages'}</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-ghost btn-sm" onClick={() => navigate('/admin/settings')}>⚙ Manage Connection</button>
@@ -382,7 +405,52 @@ export default function AdminMessages() {
       </div>
 
       {/* Instagram connection banner */}
-      {!instagramConnected ? (
+      {/* ── AI Assistant view ── */}
+      {mainView === 'assistant' && (
+        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', gap: 0, border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+          {/* Left: student list */}
+          <div style={{ width: 280, borderRight: '1px solid var(--border)', overflowY: 'auto', flexShrink: 0 }}>
+            <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border)', fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Students</div>
+            {loadingAi && <div style={{ padding: 16, fontSize: 12, color: 'var(--grey)' }}>Loading…</div>}
+            {(aiChats || []).map(u => (
+              <div key={u.user_id} onClick={() => openAiUser(u)} style={{ padding: '12px 14px', borderBottom: '1px solid #111', cursor: 'pointer', background: aiChatUser?.user_id === u.user_id ? '#161616' : 'transparent', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--lav)', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                  {(u.user__display_name || u.user__first_name || '?')[0].toUpperCase()}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 500, fontSize: 13 }}>{u.user__display_name || `${u.user__first_name || ''} ${u.user__last_name || ''}`.trim() || 'Unknown'}</div>
+                  <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{u.message_count} message{u.message_count !== 1 ? 's' : ''} · {u.last_at ? new Date(u.last_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : '—'}</div>
+                </div>
+              </div>
+            ))}
+            {!loadingAi && (aiChats || []).length === 0 && (
+              <div style={{ padding: 24, fontSize: 12, color: 'var(--grey)', textAlign: 'center' }}>No assistant conversations yet</div>
+            )}
+          </div>
+          {/* Right: conversation thread */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {!aiChatUser && <div style={{ color: 'var(--grey)', fontSize: 13, textAlign: 'center', marginTop: 60 }}>Select a student to view their conversation</div>}
+            {aiChatUser && !aiChatMessages && <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><div className="spinner" /></div>}
+            {aiChatUser && aiChatMessages && aiChatMessages.length === 0 && <div style={{ color: 'var(--grey)', fontSize: 13, textAlign: 'center', marginTop: 40 }}>No messages found</div>}
+            {aiChatUser && (aiChatMessages || []).map(m => (
+              <div key={m.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexDirection: m.role === 'user' ? 'row-reverse' : 'row' }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: m.role === 'user' ? 'var(--lav)' : '#2a2a2a', color: m.role === 'user' ? '#000' : 'var(--grey)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
+                  {m.role === 'user' ? (aiChatUser.user__display_name?.[0] || '?') : 'AI'}
+                </div>
+                <div style={{ maxWidth: '68%', background: m.role === 'user' ? 'rgba(176,160,255,0.12)' : '#1a1a1a', border: `1px solid ${m.role === 'user' ? 'rgba(176,160,255,0.2)' : 'var(--border)'}`, borderRadius: 8, padding: '8px 12px' }}>
+                  <div style={{ fontSize: 13, color: 'var(--white)', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{m.content}</div>
+                  <div style={{ fontSize: 10, color: 'var(--grey)', marginTop: 4, textAlign: m.role === 'user' ? 'right' : 'left' }}>
+                    {new Date(m.created_at).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    {m.escalated && <span style={{ marginLeft: 8, color: 'var(--amber)', fontWeight: 600 }}>↑ escalated to staff</span>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {mainView === 'dm' && (!instagramConnected ? (
         <div style={{ background: 'rgba(176,160,255,0.08)', border: '1px solid rgba(176,160,255,0.2)', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, fontSize: 13 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: 18 }}>📸</span>
@@ -398,9 +466,9 @@ export default function AdminMessages() {
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--lime)', flexShrink: 0 }} />
           <span>Instagram connected{instagramUsername ? ` — @${instagramUsername}` : ''}. DMs from Instagram will appear here.</span>
         </div>
-      )}
+      ))}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr 260px', gap: 0, flex: 1, border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+      {mainView === 'dm' && <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr 260px', gap: 0, flex: 1, border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
         {/* Left: convo list */}
         <div style={{ borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
           <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border)' }}>
@@ -523,7 +591,7 @@ export default function AdminMessages() {
             </div>
           )}
         </div>
-      </div>
+      </div>}
 
       {showNew && (
         <NewConvoModal
