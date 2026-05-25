@@ -565,6 +565,9 @@ export default function AdminStudentDetail() {
   const [showArchivedNotes, setShowArchivedNotes] = useState(false)
   const [skillLevel, setSkillLevel] = useState('Level 1')
   const [skillProgress, setSkillProgress] = useState({})
+  const [regressionModal, setRegressionModal] = useState(null) // { skillName, level } | null
+  const [regressionNote, setRegressionNote] = useState('')
+  const [savingRegression, setSavingRegression] = useState(false)
   const [formsData, setFormsData] = useState(null)
   const [lockerData, setLockerData] = useState(null)
   const [commsData, setCommsData] = useState(null)
@@ -1712,7 +1715,15 @@ export default function AdminStudentDetail() {
                         <span style={{ fontSize: 13 }}>{skill}</span>
                         <div style={{ display: 'flex', gap: 6 }}>
                           <div onClick={() => toggleSkill(skill, 'self')} style={{ width: 10, height: 10, borderRadius: '50%', background: prog.self ? 'var(--lav)' : 'none', border: '1px solid var(--lav)', cursor: 'pointer' }} title="Self-assessed" />
-                          <div onClick={() => toggleSkill(skill, 'teacher')} style={{ width: 10, height: 10, borderRadius: '50%', background: prog.teacher ? 'var(--lime)' : 'none', border: '1px solid var(--lime)', cursor: 'pointer' }} title="Teacher confirmed" />
+                          <div onClick={() => {
+                            if (prog.teacher) {
+                              const today = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })
+                              setRegressionNote(`${skill} was re-checked on ${today}. Not where it needs to be to gain approval for level progression`)
+                              setRegressionModal({ skillName: skill, level: skillLevel })
+                            } else {
+                              toggleSkill(skill, 'teacher')
+                            }
+                          }} style={{ width: 10, height: 10, borderRadius: '50%', background: prog.teacher ? 'var(--lime)' : 'none', border: '1px solid var(--lime)', cursor: 'pointer' }} title="Teacher confirmed" />
                         </div>
                       </div>
                     )
@@ -2027,6 +2038,55 @@ export default function AdminStudentDetail() {
             payments.balance(student.id).then(r => setBalanceData(r.data))
           }}
         />
+      )}
+      {regressionModal && (
+        <div className="sd-overlay" onClick={e => e.target === e.currentTarget && setRegressionModal(null)}>
+          <div className="sd-modal" style={{ maxWidth: 460 }}>
+            <div className="sd-header">
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>Uncheck Skill</div>
+              <button className="modal-close-btn" onClick={() => setRegressionModal(null)}>✕</button>
+            </div>
+            <div className="sd-body">
+              <p style={{ fontSize: 13, color: 'var(--grey)', marginTop: 0, marginBottom: 16 }}>
+                This will uncheck <strong style={{ color: '#fff' }}>{regressionModal.skillName}</strong> and add a note to this student's profile.
+              </p>
+              <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 6 }}>Note</label>
+              <textarea
+                value={regressionNote}
+                onChange={e => setRegressionNote(e.target.value)}
+                rows={4}
+                style={{ width: '100%', boxSizing: 'border-box', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: '#fff', fontSize: 13, padding: '10px 12px', resize: 'vertical' }}
+              />
+            </div>
+            <div className="sd-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button className="btn btn-ghost btn-sm" onClick={() => setRegressionModal(null)} disabled={savingRegression}>Cancel</button>
+              <button
+                className="btn btn-sm"
+                style={{ background: 'var(--red)', color: '#fff' }}
+                disabled={savingRegression || !regressionNote.trim()}
+                onClick={async () => {
+                  setSavingRegression(true)
+                  try {
+                    await users.addNote(student.id, { body: regressionNote, tag: 'general', is_permanent: false })
+                    const payload = {
+                      skill_name: regressionModal.skillName,
+                      level: regressionModal.level,
+                      self_assessed: skillProgress[regressionModal.skillName]?.self || false,
+                      teacher_confirmed: false,
+                      instructor_status: 'pending',
+                    }
+                    const res = await skillsApi.save(student.id, payload)
+                    setSkillProgress(p => ({ ...p, [regressionModal.skillName]: { self: res.data.self_assessed, teacher: res.data.teacher_confirmed, instructor_status: res.data.instructor_status, id: res.data.id } }))
+                    await reloadNotes()
+                    setRegressionModal(null)
+                  } finally { setSavingRegression(false) }
+                }}
+              >
+                {savingRegression ? 'Saving…' : 'Uncheck & Save Note'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       {viewForm && (
         <div className="sd-overlay" onClick={e => e.target === e.currentTarget && setViewForm(null)}>

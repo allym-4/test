@@ -205,13 +205,28 @@ class RequestCoverView(APIView):
 
 
 class SeasonListView(generics.ListCreateAPIView):
-    queryset = Season.objects.all()
     serializer_class = SeasonSerializer
 
     def get_permissions(self):
         if self.request.method == 'GET':
             return [permissions.IsAuthenticated()]
         return [IsAdminOrInstructor()]
+
+    def get_queryset(self):
+        from django.utils import timezone
+        qs = Season.objects.all()
+        user = self.request.user
+        # Admins and instructors see everything (including draft/hidden seasons)
+        if user.role in ('admin', 'instructor'):
+            return qs.filter(archived=False)
+        # Students only see seasons that are live: active, or bookings explicitly open,
+        # or the go_live_at timestamp has passed
+        now = timezone.now()
+        return qs.filter(archived=False).filter(
+            models.Q(status='active') |
+            models.Q(bookings_open=True) |
+            models.Q(go_live_at__lte=now)
+        )
 
 
 class SeasonDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -270,6 +285,7 @@ class SeasonDuplicateView(APIView):
 
         end_date = start_date + datetime.timedelta(days=weeks * 7 - 1)
 
+        from django.utils import timezone as tz
         new_season = Season.objects.create(
             name=name,
             start_date=start_date,
@@ -278,6 +294,7 @@ class SeasonDuplicateView(APIView):
             bookings_open=False,
             bookings_enabled=True,
             discount_tiers=source.discount_tiers or {},
+            published_at=tz.now(),  # generate occurrences immediately; hidden from students until bookings_open
         )
 
         # Copy all active class sessions from the source season
