@@ -352,10 +352,32 @@ class AnnouncementListView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        qs = Announcement.objects.select_related('created_by')
+        from apps.enrolments.models import Enrolment
+        user = self.request.user
+        qs = Announcement.objects.select_related('created_by').prefetch_related(
+            'audience_students', 'modal_dismissed_by'
+        )
         note_type = self.request.query_params.get('note_type')
         if note_type:
             qs = qs.filter(note_type=note_type)
+
+        # For students: filter by audience visibility and modal_dismissed
+        if user.role == 'student':
+            enrolled_seasons = Enrolment.objects.filter(
+                student=user, status='active'
+            ).values_list('class_session__season_id', flat=True).distinct()
+
+            qs = qs.filter(
+                Q(audience='all') |
+                Q(audience='specific', audience_students=user) |
+                Q(audience='enrolled_season', audience_season_id__in=enrolled_seasons) |
+                Q(audience='level', audience_levels__contains=[user.level] if user.level else [])
+            ).distinct()
+
+            # If ?modal=true, exclude already-dismissed modals
+            if self.request.query_params.get('modal') == 'true':
+                qs = qs.filter(show_as_modal=True).exclude(modal_dismissed_by=user)
+
         return qs
 
     def perform_create(self, serializer):
@@ -380,6 +402,18 @@ class AnnouncementAcknowledgeView(APIView):
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
         ann.acknowledged_by.add(request.user)
         return Response({'status': 'acknowledged'})
+
+
+class AnnouncementDismissView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            ann = Announcement.objects.get(pk=pk)
+        except Announcement.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        ann.modal_dismissed_by.add(request.user)
+        return Response({'status': 'dismissed'})
 
 
 class ProductListView(generics.ListCreateAPIView):

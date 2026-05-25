@@ -167,6 +167,10 @@ class AnnouncementSerializer(serializers.ModelSerializer):
     created_by_name = serializers.StringRelatedField(source='created_by')
     is_acknowledged = serializers.SerializerMethodField()
     acknowledged_count = serializers.SerializerMethodField()
+    is_modal_dismissed = serializers.SerializerMethodField()
+    audience_students = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=User.objects.all(), required=False,
+    )
 
     def get_is_acknowledged(self, obj):
         request = self.context.get('request')
@@ -177,14 +181,23 @@ class AnnouncementSerializer(serializers.ModelSerializer):
     def get_acknowledged_count(self, obj):
         return obj.acknowledged_by.count()
 
+    def get_is_modal_dismissed(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.modal_dismissed_by.filter(pk=request.user.pk).exists()
+
     class Meta:
         model = Announcement
         fields = (
             'id', 'title', 'body', 'note_type', 'created_by', 'created_by_name',
             'is_pinned', 'requires_acknowledgement', 'is_acknowledged', 'acknowledged_count',
+            'show_as_modal', 'cta_label', 'cta_url',
+            'audience', 'audience_students', 'audience_season', 'audience_levels',
+            'is_modal_dismissed',
             'created_at', 'updated_at',
         )
-        read_only_fields = ('id', 'created_by', 'created_at', 'updated_at', 'is_acknowledged', 'acknowledged_count')
+        read_only_fields = ('id', 'created_by', 'created_at', 'updated_at', 'is_acknowledged', 'acknowledged_count', 'is_modal_dismissed')
 
 
 class ProductSerializer(serializers.ModelSerializer):

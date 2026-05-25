@@ -200,6 +200,17 @@ class Announcement(models.Model):
         ANNOUNCEMENT = 'announcement', 'Student Announcement'
         STAFF = 'staff', 'Staff Note'
 
+    AUDIENCE_ALL = 'all'
+    AUDIENCE_SPECIFIC = 'specific'
+    AUDIENCE_ENROLLED = 'enrolled_season'
+    AUDIENCE_LEVEL = 'level'
+    AUDIENCE_CHOICES = [
+        ('all', 'All students'),
+        ('specific', 'Specific students'),
+        ('enrolled_season', 'Enrolled in season'),
+        ('level', 'Students at level(s)'),
+    ]
+
     title = models.CharField(max_length=200)
     body = models.TextField()
     note_type = models.CharField(max_length=20, choices=NoteType.choices, default=NoteType.ANNOUNCEMENT)
@@ -212,11 +223,43 @@ class Announcement(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # Modal pop-up fields
+    show_as_modal = models.BooleanField(default=False)
+    cta_label = models.CharField(max_length=80, blank=True)
+    cta_url = models.CharField(max_length=500, blank=True)
+
+    # Audience targeting
+    audience = models.CharField(max_length=20, choices=AUDIENCE_CHOICES, default='all')
+    audience_students = models.ManyToManyField(
+        'users.User', blank=True, related_name='targeted_announcements',
+    )
+    audience_season = models.ForeignKey(
+        'classes.Season', null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+    )
+    audience_levels = models.JSONField(default=list, blank=True)
+    modal_dismissed_by = models.ManyToManyField(
+        'users.User', blank=True, related_name='dismissed_modal_announcements',
+    )
+
     class Meta:
         ordering = ['-is_pinned', '-created_at']
 
     def __str__(self):
         return self.title
+
+    def is_visible_to(self, user):
+        if self.audience == 'all':
+            return True
+        if self.audience == 'specific':
+            return self.audience_students.filter(pk=user.pk).exists()
+        if self.audience == 'enrolled_season' and self.audience_season_id:
+            from apps.enrolments.models import Enrolment
+            return Enrolment.objects.filter(
+                student=user, class_session__season=self.audience_season, status='active'
+            ).exists()
+        if self.audience == 'level':
+            return user.level in (self.audience_levels or [])
+        return False
 
 
 class Product(models.Model):

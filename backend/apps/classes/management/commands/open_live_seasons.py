@@ -37,6 +37,22 @@ class Command(BaseCommand):
                 for student in students
             ]
             Notification.objects.bulk_create(notifs, ignore_conflicts=True)
+
+            # Also create a modal announcement
+            from apps.users.models import Announcement
+            Announcement.objects.create(
+                title=f'{season.name} bookings are now open!',
+                body=(
+                    f'Enrolments for **{season.name}** are now open. '
+                    f'Book your spot before classes fill up!'
+                ),
+                note_type='announcement',
+                show_as_modal=True,
+                cta_label='Book Now',
+                cta_url='/portal/book',
+                audience='all',
+            )
+
             opened += 1
 
         self.stdout.write(f'open_live_seasons: {opened} season(s) opened')
