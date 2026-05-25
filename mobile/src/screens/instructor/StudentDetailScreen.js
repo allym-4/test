@@ -271,6 +271,9 @@ export default function StudentDetailScreen({ navigation, route }) {
   const [skillLevel, setSkillLevel] = useState('Level 1')
   const [noteCatFilter, setNoteCatFilter] = useState('all')
   const [showArchivedNotes, setShowArchivedNotes] = useState(false)
+  const [regressionModal, setRegressionModal] = useState(null) // { skillName, level } | null
+  const [regressionNote, setRegressionNote] = useState('')
+  const [savingRegression, setSavingRegression] = useState(false)
   const [showPayModal, setShowPayModal] = useState(false)
   const [showCreditModal, setShowCreditModal] = useState(false)
   const [showNoteModal, setShowNoteModal] = useState(false)
@@ -376,6 +379,13 @@ export default function StudentDetailScreen({ navigation, route }) {
 
   async function toggleSkill(skillName, type) {
     const current = skillProgress[skillName] ?? {}
+    // If unchecking a teacher-confirmed skill, show regression modal
+    if (type === 'teacher' && current.teacher) {
+      const today = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })
+      setRegressionNote(`${skillName} was re-checked on ${today}. Not where it needs to be to gain approval for level progression`)
+      setRegressionModal({ skillName, level: skillLevel })
+      return
+    }
     const newVal = !current[type]
     const updated = { ...skillProgress, [skillName]: { ...current, [type]: newVal } }
     setSkillProgress(updated)
@@ -389,6 +399,30 @@ export default function StudentDetailScreen({ navigation, route }) {
       setSkillProgress(p => ({ ...p, [skillName]: { self: res.data.self_assessed, teacher: res.data.teacher_confirmed, id: res.data.id } }))
     } catch {
       setSkillProgress(p => ({ ...p, [skillName]: current }))
+    }
+  }
+
+  async function confirmRegression() {
+    if (!regressionModal || !regressionNote.trim()) return
+    setSavingRegression(true)
+    try {
+      await users.addNote(studentId, { body: regressionNote, tag: 'general', is_permanent: false })
+      const payload = {
+        skill_name: regressionModal.skillName,
+        level: regressionModal.level,
+        self_assessed: skillProgress[regressionModal.skillName]?.self ?? false,
+        teacher_confirmed: false,
+        instructor_status: 'pending',
+      }
+      const res = await skillsApi.save(studentId, payload)
+      setSkillProgress(p => ({ ...p, [regressionModal.skillName]: { self: res.data.self_assessed, teacher: res.data.teacher_confirmed, instructor_status: res.data.instructor_status, id: res.data.id } }))
+      await reloadNotes()
+      setRegressionModal(null)
+      setRegressionNote('')
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.detail || 'Could not save regression.')
+    } finally {
+      setSavingRegression(false)
     }
   }
 
@@ -1359,6 +1393,49 @@ export default function StudentDetailScreen({ navigation, route }) {
           </ScrollView>
         </View>
       </Modal>
+
+      {/* Regression Modal */}
+      <Modal visible={!!regressionModal} animationType="fade" transparent onRequestClose={() => { if (!savingRegression) { setRegressionModal(null); setRegressionNote('') } }}>
+        <View style={s.regressionOverlay}>
+          <View style={s.regressionCard}>
+            <Text style={s.regressionTitle}>Regress skill?</Text>
+            <Text style={s.regressionBody}>
+              <Text style={{ color: '#fff', fontWeight: '600' }}>{regressionModal?.skillName}</Text>
+              {' '}is already confirmed. Add a note explaining why it's being regressed.
+            </Text>
+            <Text style={s.regressionLabel}>Note</Text>
+            <TextInput
+              style={s.regressionInput}
+              value={regressionNote}
+              onChangeText={setRegressionNote}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+              placeholder="Reason for regression…"
+              placeholderTextColor="#555"
+            />
+            <View style={s.regressionFooter}>
+              <TouchableOpacity
+                style={s.regressionCancelBtn}
+                onPress={() => { setRegressionModal(null); setRegressionNote('') }}
+                disabled={savingRegression}
+              >
+                <Text style={s.regressionCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.regressionConfirmBtn, (!regressionNote.trim() || savingRegression) && s.regressionConfirmBtnDisabled]}
+                onPress={confirmRegression}
+                disabled={!regressionNote.trim() || savingRegression}
+              >
+                {savingRegression
+                  ? <ActivityIndicator size="small" color="#000" />
+                  : <Text style={s.regressionConfirmText}>Confirm regression</Text>
+                }
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -1573,4 +1650,18 @@ const s = StyleSheet.create({
   importantNoteTags: { flexDirection: 'row', gap: 6, flex: 1 },
   importantNoteDate: { fontSize: 10, color: '#555' },
   importantNoteBody: { fontSize: 13, color: '#ccc', lineHeight: 19 },
+
+  // Regression modal
+  regressionOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  regressionCard: { backgroundColor: '#1a1a1a', borderRadius: 16, padding: 20, width: '100%', maxWidth: 420, borderWidth: 1, borderColor: '#333' },
+  regressionTitle: { fontSize: 17, fontWeight: '700', color: '#fff', marginBottom: 8 },
+  regressionBody: { fontSize: 13, color: '#888', marginBottom: 16, lineHeight: 19 },
+  regressionLabel: { fontSize: 11, fontWeight: '600', color: '#888', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
+  regressionInput: { borderWidth: 1, borderColor: '#333', borderRadius: 8, backgroundColor: '#111', color: '#fff', fontSize: 13, padding: 10, minHeight: 80, marginBottom: 16 },
+  regressionFooter: { flexDirection: 'row', gap: 10, justifyContent: 'flex-end' },
+  regressionCancelBtn: { borderWidth: 1, borderColor: '#333', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10 },
+  regressionCancelText: { color: '#aaa', fontSize: 14, fontWeight: '600' },
+  regressionConfirmBtn: { backgroundColor: '#ccff00', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10 },
+  regressionConfirmBtnDisabled: { opacity: 0.4 },
+  regressionConfirmText: { color: '#000', fontSize: 14, fontWeight: '700' },
 })

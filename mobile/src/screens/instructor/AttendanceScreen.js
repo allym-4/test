@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   View, Text, TouchableOpacity, StyleSheet, FlatList,
   ActivityIndicator, Alert, ScrollView, TextInput,
 } from 'react-native'
 import { useApi } from '../../hooks/useApi'
-import { classes, attendance, payments as paymentsApi } from '../../api'
+import { classes, attendance, enrolments, payments as paymentsApi } from '../../api'
 import client from '../../api/client'
 
 const STATUS_OPTS = [
@@ -211,20 +211,46 @@ export default function AttendanceScreen({ navigation, route }) {
   )
   const occurrences = occData?.results ?? occData ?? []
 
+  // Use enrolments as source of truth (matches enrolled_count from class list)
+  const sessionId = selectedOcc?.session ?? selectedOcc?.session_detail?.id ?? null
   const { data: enrData, loading: enrLoading, refetch: refetchEnr } = useApi(
+    () => sessionId ? enrolments.list({ session: sessionId, status: 'active' }) : null,
+    [sessionId]
+  )
+  // Saved attendance records — to overlay status onto enrolment list
+  const { data: attData, refetch: refetchAtt } = useApi(
     () => selectedOcc ? attendance.list({ occurrence: selectedOcc.id }) : null,
     [selectedOcc?.id]
   )
-  const students = enrData?.results ?? enrData ?? []
+  const enrolledStudents = useMemo(() => enrData?.results ?? enrData ?? [], [enrData])
+  const attRecords = useMemo(() => attData?.results ?? attData ?? [], [attData])
 
-  // Init register from attendance data
+  // Merge: enrolments as base, overlay with saved attendance status
+  const students = useMemo(() => {
+    const attMap = {}
+    attRecords.forEach(r => {
+      const sid = String(r.student ?? r.student_id ?? '')
+      if (sid) attMap[sid] = r
+    })
+    return enrolledStudents.map(enr => ({
+      ...enr,
+      _attRecord: attMap[String(enr.student)] ?? null,
+    }))
+  }, [enrolledStudents, attRecords])
+
+  function refetchEnrAndAtt() {
+    refetchEnr()
+    refetchAtt()
+  }
+
+  // Init register from saved attendance records
   useEffect(() => {
-    if (!students.length) return
     const init = {}
     const initNotes = {}
     const initNoteTags = {}
-    students.forEach(r => {
-      const sid = r.student_id ?? r.student?.id ?? r.student
+    attRecords.forEach(r => {
+      const sid = String(r.student ?? r.student_id ?? '')
+      if (!sid) return
       const rawStatus = r.status === 'no_show' && r.no_show_fee_waived ? 'no_show_waived' : r.status
       init[sid] = rawStatus || 'pending'
       initNotes[sid] = r.note || ''
@@ -233,7 +259,7 @@ export default function AttendanceScreen({ navigation, route }) {
     setRegister(init)
     setNotes(initNotes)
     setNoteTags(initNoteTags)
-  }, [students.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [attRecords]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load balances + waitlist when occurrence selected
   useEffect(() => {
@@ -249,11 +275,11 @@ export default function AttendanceScreen({ navigation, route }) {
   // Load balances
   useEffect(() => {
     if (!students.length) return
-    students.forEach(r => {
-      const sid = r.student_id ?? r.student?.id ?? r.student
+    students.forEach(enr => {
+      const sid = enr.student
       if (!sid) return
       paymentsApi.balance(sid).then(res => {
-        setBalances(prev => ({ ...prev, [sid]: parseFloat(res.data.balance) }))
+        setBalances(prev => ({ ...prev, [String(sid)]: parseFloat(res.data.balance) }))
       }).catch(() => {})
     })
   }, [students.length]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -266,15 +292,15 @@ export default function AttendanceScreen({ navigation, route }) {
     if (!selectedOcc) return
     setSaving(true)
     try {
-      const records = students.map(r => {
-        const sid = r.student_id ?? r.student?.id ?? r.student
+      const records = students.map(enr => {
+        const sid = String(enr.student)
         const raw = register[sid] || 'pending'
         const status = raw === 'no_show_waived' ? 'no_show' : raw
         return { student: sid, status, no_show_fee_waived: raw === 'no_show_waived', note: notes[sid] || '', note_tag: noteTags[sid] || '' }
       })
       await attendance.bulkSave(selectedOcc.id, records)
       Alert.alert('Saved', 'Register saved.')
-      refetchEnr()
+      refetchEnrAndAtt()
     } catch (err) {
       Alert.alert('Error', err.response?.data?.detail || 'Could not save register.')
     } finally {
@@ -316,12 +342,12 @@ export default function AttendanceScreen({ navigation, route }) {
   }
 
   // ── Register view ───────────────────────────────────────────────────────────
-  const attending = students.filter(r => {
-    const sid = r.student_id ?? r.student?.id ?? r.student
+  const attending = students.filter(enr => {
+    const sid = String(enr.student)
     return !AWAY_STATUSES.includes(register[sid] || 'pending')
   })
-  const away = students.filter(r => {
-    const sid = r.student_id ?? r.student?.id ?? r.student
+  const away = students.filter(enr => {
+    const sid = String(enr.student)
     return AWAY_STATUSES.includes(register[sid] || 'pending')
   })
 
@@ -382,7 +408,7 @@ export default function AttendanceScreen({ navigation, route }) {
             if (tab === 'waitlist') {
               return <WaitlistRow item={item} position={index + 1} />
             }
-            const sid = item.student_id ?? item.student?.id ?? item.student
+            const sid = String(item.student)
             const studentName = item.student_detail?.display_name || `${item.student_detail?.first_name ?? ''} ${item.student_detail?.last_name ?? ''}`.trim() || 'Student'
             return (
               <StudentRow
@@ -417,7 +443,7 @@ export default function AttendanceScreen({ navigation, route }) {
         <View style={s.noteOverlay}>
           <View style={s.noteModal}>
             <Text style={s.noteModalTitle}>
-              Note — {students.find(r => (r.student_id ?? r.student?.id ?? r.student) === noteModal)?.student_detail?.display_name ?? 'Student'}
+              Note — {students.find(r => String(r.student) === String(noteModal))?.student_detail?.display_name ?? 'Student'}
             </Text>
             <TextInput
               style={s.noteInput}

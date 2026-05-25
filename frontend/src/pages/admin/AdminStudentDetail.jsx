@@ -2633,147 +2633,166 @@ export default function AdminStudentDetail() {
       })()}
 
       {/* Process Change Request Modal */}
-      {showChangeRequestModal && (
-        <div className="sd-overlay" onClick={e => e.target === e.currentTarget && setShowChangeRequestModal(null)}>
-          <div className="sd-modal" style={{ maxWidth: 500 }}>
-            <div className="sd-header">
-              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>Process Class Change Request</div>
-              <button className="modal-close-btn" onClick={() => setShowChangeRequestModal(null)}>✕</button>
-            </div>
-            <div className="sd-body">
-              <div style={{ background: '#111', borderRadius: 8, padding: '12px 14px', marginBottom: 16, fontSize: 13 }}>
-                <div style={{ color: 'var(--grey)', marginBottom: 4 }}>Current class</div>
-                <div style={{ fontWeight: 600, color: 'var(--white)' }}>
-                  {showChangeRequestModal.current_enrolment_detail?.class_session_detail?.name || 'Unknown'}
+      {showChangeRequestModal && (() => {
+        const isCancelRequest = showChangeRequestModal.request_type === 'cancel'
+        return (
+          <div className="sd-overlay" onClick={e => e.target === e.currentTarget && setShowChangeRequestModal(null)}>
+            <div className="sd-modal" style={{ maxWidth: 500 }}>
+              <div className="sd-header">
+                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>
+                  {isCancelRequest ? 'Process Cancellation Request' : 'Process Class Change Request'}
                 </div>
-                {showChangeRequestModal.notes && (
-                  <div style={{ marginTop: 8, padding: '8px 10px', background: '#1a1a1a', borderRadius: 6, color: 'var(--grey)', fontStyle: 'italic', fontSize: 12 }}>
-                    "{showChangeRequestModal.notes}"
+                <button className="modal-close-btn" onClick={() => setShowChangeRequestModal(null)}>✕</button>
+              </div>
+              <div className="sd-body">
+                <div style={{ background: '#111', borderRadius: 8, padding: '12px 14px', marginBottom: 16, fontSize: 13 }}>
+                  <div style={{ color: 'var(--grey)', marginBottom: 4 }}>
+                    {isCancelRequest ? 'Cancelling enrolment in' : 'Current class'}
+                  </div>
+                  <div style={{ fontWeight: 600, color: 'var(--white)' }}>
+                    {showChangeRequestModal.current_enrolment_detail?.class_session_detail?.name || 'Unknown'}
+                  </div>
+                  {isCancelRequest && showChangeRequestModal.cancellation_resolution && (
+                    <div style={{ marginTop: 6, fontSize: 12, color: 'var(--grey)' }}>
+                      Requested resolution: <strong style={{ color: '#fff' }}>
+                        {showChangeRequestModal.cancellation_resolution === 'credit' ? 'Account Credit' : showChangeRequestModal.cancellation_resolution === 'refund' ? 'Refund to Card' : 'No Refund'}
+                      </strong>
+                    </div>
+                  )}
+                  {showChangeRequestModal.notes && (
+                    <div style={{ marginTop: 8, padding: '8px 10px', background: '#1a1a1a', borderRadius: 6, color: 'var(--grey)', fontStyle: 'italic', fontSize: 12 }}>
+                      "{showChangeRequestModal.notes}"
+                    </div>
+                  )}
+                </div>
+
+                {changeReqError && (
+                  <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>
+                    {changeReqError}
                   </div>
                 )}
-              </div>
 
-              {changeReqError && (
-                <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>
-                  {changeReqError}
-                </div>
-              )}
+                {!isCancelRequest && (
+                  <div className="field">
+                    <label>Move to class</label>
+                    <select
+                      value={changeReqNewSession}
+                      onChange={e => setChangeReqNewSession(e.target.value)}
+                    >
+                      <option value="">— Select new class —</option>
+                      {(allSessions || []).map(s => (
+                        <option key={s.id} value={s.id}>
+                          {s.name} · {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][s.day_of_week]} {s.start_time?.slice(0,5)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
-              <div className="field">
-                <label>Move to class</label>
-                <select
-                  value={changeReqNewSession}
-                  onChange={e => setChangeReqNewSession(e.target.value)}
-                >
-                  <option value="">— Select new class —</option>
-                  {(allSessions || []).map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} · {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][s.day_of_week]} {s.start_time?.slice(0,5)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="field">
-                <label>Payment adjustment</label>
-                <select value={changeReqRefundAction} onChange={e => setChangeReqRefundAction(e.target.value)}>
-                  <option value="none">No adjustment</option>
-                  <option value="credit">Issue studio credit</option>
-                  <option value="stripe">Refund to card (Stripe)</option>
-                  <option value="charge">Charge extra</option>
-                </select>
-              </div>
-
-              {(changeReqRefundAction === 'credit' || changeReqRefundAction === 'stripe') && (
                 <div className="field">
-                  <label>Refund / credit amount ($)</label>
+                  <label>Payment adjustment</label>
+                  <select value={changeReqRefundAction} onChange={e => setChangeReqRefundAction(e.target.value)}>
+                    <option value="none">No refund</option>
+                    <option value="credit">Issue account credit</option>
+                    <option value="stripe">Refund to card (Stripe)</option>
+                    {!isCancelRequest && <option value="charge">Charge extra</option>}
+                  </select>
+                </div>
+
+                {(changeReqRefundAction === 'credit' || changeReqRefundAction === 'stripe') && (
+                  <div className="field">
+                    <label>Refund / credit amount ($)</label>
+                    <input
+                      type="number" step="0.01" min="0"
+                      value={changeReqRefundAmount}
+                      onChange={e => setChangeReqRefundAmount(e.target.value)}
+                      placeholder="0.00"
+                    />
+                  </div>
+                )}
+
+                {!isCancelRequest && changeReqRefundAction === 'charge' && (
+                  <div className="field">
+                    <label>Additional charge amount ($)</label>
+                    <input
+                      type="number" step="0.01" min="0"
+                      value={changeReqChargeAmount}
+                      onChange={e => setChangeReqChargeAmount(e.target.value)}
+                      placeholder="0.00"
+                    />
+                  </div>
+                )}
+
+                <div className="field">
+                  <label>Admin notes <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(sent to student)</span></label>
                   <input
-                    type="number" step="0.01" min="0"
-                    value={changeReqRefundAmount}
-                    onChange={e => setChangeReqRefundAmount(e.target.value)}
-                    placeholder="0.00"
+                    value={changeReqAdminNotes}
+                    onChange={e => setChangeReqAdminNotes(e.target.value)}
+                    placeholder="Optional note to include in the student notification"
                   />
                 </div>
-              )}
 
-              {changeReqRefundAction === 'charge' && (
-                <div className="field">
-                  <label>Additional charge amount ($)</label>
-                  <input
-                    type="number" step="0.01" min="0"
-                    value={changeReqChargeAmount}
-                    onChange={e => setChangeReqChargeAmount(e.target.value)}
-                    placeholder="0.00"
-                  />
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    style={{ color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)' }}
+                    disabled={processingChangeReq}
+                    onClick={async () => {
+                      setProcessingChangeReq(true)
+                      setChangeReqError(null)
+                      try {
+                        await enrolments.changeRequests.reject(showChangeRequestModal.id, { admin_notes: changeReqAdminNotes })
+                        const r = await enrolments.changeRequests.list({ student: student.id })
+                        setChangeRequestsData(r.data.results || r.data || [])
+                        setShowChangeRequestModal(null)
+                      } catch (err) {
+                        setChangeReqError(err.response?.data?.detail || 'Failed to reject.')
+                      } finally {
+                        setProcessingChangeReq(false)
+                      }
+                    }}
+                  >
+                    Reject
+                  </button>
+                  <button
+                    className="btn btn-lime btn-sm"
+                    disabled={processingChangeReq || (!isCancelRequest && !changeReqNewSession)}
+                    onClick={async () => {
+                      setProcessingChangeReq(true)
+                      setChangeReqError(null)
+                      try {
+                        const payload = {
+                          refund_action: (!isCancelRequest && changeReqRefundAction === 'charge') ? 'none' : changeReqRefundAction,
+                          refund_amount: (changeReqRefundAction === 'credit' || changeReqRefundAction === 'stripe') ? parseFloat(changeReqRefundAmount || 0) : undefined,
+                          admin_notes: changeReqAdminNotes,
+                        }
+                        if (!isCancelRequest) {
+                          payload.new_session_id = parseInt(changeReqNewSession)
+                          payload.charge_amount = changeReqRefundAction === 'charge' ? parseFloat(changeReqChargeAmount || 0) : undefined
+                        }
+                        await enrolments.changeRequests.approve(showChangeRequestModal.id, payload)
+                        const [enrolRes, reqRes] = await Promise.all([
+                          enrolments.list({ student: student.id }),
+                          enrolments.changeRequests.list({ student: student.id }),
+                        ])
+                        setEnrolData(enrolRes.data.results || [])
+                        setChangeRequestsData(reqRes.data.results || reqRes.data || [])
+                        setShowChangeRequestModal(null)
+                      } catch (err) {
+                        setChangeReqError(err.response?.data?.detail || 'Failed to approve.')
+                      } finally {
+                        setProcessingChangeReq(false)
+                      }
+                    }}
+                  >
+                    {processingChangeReq ? 'Processing…' : isCancelRequest ? 'Approve Cancellation' : 'Approve & Move'}
+                  </button>
                 </div>
-              )}
-
-              <div className="field">
-                <label>Admin notes <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(sent to student)</span></label>
-                <input
-                  value={changeReqAdminNotes}
-                  onChange={e => setChangeReqAdminNotes(e.target.value)}
-                  placeholder="Optional note to include in the student notification"
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
-                <button
-                  className="btn btn-ghost btn-sm"
-                  style={{ color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)' }}
-                  disabled={processingChangeReq}
-                  onClick={async () => {
-                    setProcessingChangeReq(true)
-                    setChangeReqError(null)
-                    try {
-                      await enrolments.changeRequests.reject(showChangeRequestModal.id, { admin_notes: changeReqAdminNotes })
-                      const r = await enrolments.changeRequests.list({ student: student.id })
-                      setChangeRequestsData(r.data.results || r.data || [])
-                      setShowChangeRequestModal(null)
-                    } catch (err) {
-                      setChangeReqError(err.response?.data?.detail || 'Failed to reject.')
-                    } finally {
-                      setProcessingChangeReq(false)
-                    }
-                  }}
-                >
-                  Reject
-                </button>
-                <button
-                  className="btn btn-lime btn-sm"
-                  disabled={processingChangeReq || !changeReqNewSession}
-                  onClick={async () => {
-                    setProcessingChangeReq(true)
-                    setChangeReqError(null)
-                    try {
-                      await enrolments.changeRequests.approve(showChangeRequestModal.id, {
-                        new_session_id: parseInt(changeReqNewSession),
-                        refund_action: changeReqRefundAction === 'charge' ? 'none' : changeReqRefundAction,
-                        refund_amount: (changeReqRefundAction === 'credit' || changeReqRefundAction === 'stripe') ? parseFloat(changeReqRefundAmount || 0) : undefined,
-                        charge_amount: changeReqRefundAction === 'charge' ? parseFloat(changeReqChargeAmount || 0) : undefined,
-                        admin_notes: changeReqAdminNotes,
-                      })
-                      const [enrolRes, reqRes] = await Promise.all([
-                        enrolments.list({ student: student.id }),
-                        enrolments.changeRequests.list({ student: student.id }),
-                      ])
-                      setEnrolData(enrolRes.data.results || [])
-                      setChangeRequestsData(reqRes.data.results || reqRes.data || [])
-                      setShowChangeRequestModal(null)
-                    } catch (err) {
-                      setChangeReqError(err.response?.data?.detail || 'Failed to approve.')
-                    } finally {
-                      setProcessingChangeReq(false)
-                    }
-                  }}
-                >
-                  {processingChangeReq ? 'Processing…' : 'Approve & Move'}
-                </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {showAddPracticeCredits && (
         <AddPracticeCreditsModal

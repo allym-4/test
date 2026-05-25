@@ -862,6 +862,98 @@ class ClassChangeRequestApproveView(APIView):
         force_override = request.data.get('force', False)
         action = request.data.get('action', 'transfer')  # 'transfer' | 'waitlist'
 
+        # Handle cancel requests separately — no new session required
+        if change_request.request_type == ClassChangeRequest.RequestType.CANCEL:
+            enrolment = change_request.current_enrolment
+            student = change_request.student
+            session_name = enrolment.class_session.name
+
+            # Cancel the enrolment
+            enrolment.status = 'cancelled'
+            enrolment.cancelled_date = timezone.now().date()
+            enrolment.save(update_fields=['status', 'cancelled_date'])
+
+            # Handle refund / credit
+            if refund_amount and float(refund_amount) > 0:
+                if refund_action == 'credit':
+                    Payment.objects.create(
+                        student=student,
+                        payment_type=Payment.PaymentType.CREDIT,
+                        amount=Decimal(str(refund_amount)),
+                        description=f'Cancellation credit: {session_name}',
+                        created_by=request.user,
+                    )
+                elif refund_action == 'stripe':
+                    stripe.api_key = django_settings.STRIPE_SECRET_KEY
+                    last_payment = Payment.objects.filter(
+                        student=student,
+                        payment_type__in=['payment', 'charge'],
+                        reference__startswith='pi_',
+                    ).order_by('-created_at').first()
+                    if last_payment and last_payment.reference:
+                        try:
+                            stripe.Refund.create(
+                                payment_intent=last_payment.reference,
+                                amount=int(float(refund_amount) * 100),
+                            )
+                            Payment.objects.create(
+                                student=student,
+                                payment_type=Payment.PaymentType.REFUND,
+                                amount=Decimal(str(refund_amount)),
+                                description=f'Cancellation refund: {session_name}',
+                                reference=last_payment.reference,
+                                created_by=request.user,
+                            )
+                        except Exception as e:
+                            return Response(
+                                {'detail': f'Stripe refund failed: {str(e)}. Consider issuing studio credit instead.'},
+                                status=status.HTTP_502_BAD_GATEWAY,
+                            )
+                    else:
+                        return Response(
+                            {'detail': 'No Stripe payment found for this student. Issue credit instead.'},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+            # Resolve the request
+            change_request.status = ClassChangeRequest.Status.APPROVED
+            change_request.admin_notes = admin_notes
+            change_request.resolved_at = timezone.now()
+            change_request.save(update_fields=['status', 'admin_notes', 'resolved_at'])
+
+            if change_request.ticket:
+                change_request.ticket.status = 'resolved'
+                change_request.ticket.save(update_fields=['status'])
+
+            resolution_label = {'credit': 'account credit issued', 'stripe': 'refund processed', 'none': 'no refund'}.get(refund_action, 'no refund')
+            Notification.objects.create(
+                recipient=student,
+                title='Enrolment cancelled',
+                body=f'Your enrolment in {session_name} has been cancelled. {admin_notes}'.strip(),
+                notification_type='info',
+            )
+            if student.email:
+                from apps.users.email_utils import send_branded_email
+                send_branded_email(
+                    to_email=student.email,
+                    subject=f'Enrolment cancelled — {session_name}',
+                    template_name='class_change_approved',
+                    context={
+                        'first_name': student.first_name,
+                        'greeting': f'Hi {student.first_name},',
+                        'old_session': session_name,
+                        'new_session': f'Cancelled ({resolution_label})',
+                        'admin_notes': admin_notes,
+                        'plain_text': (
+                            f'Hi {student.first_name},\n\n'
+                            f'Your enrolment in {session_name} has been cancelled.\n\n'
+                            + (f'{admin_notes}\n\n' if admin_notes else '')
+                            + f'Duality Pole Studio'
+                        ),
+                    }
+                )
+            return Response(ClassChangeRequestSerializer(change_request).data)
+
         if not new_session_id:
             return Response({'detail': 'new_session_id is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
