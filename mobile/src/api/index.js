@@ -152,7 +152,7 @@ export const skills = {
   list: (userId) => client.get(`/api/users/${userId}/skills/`),
   save: (userId, data) => client.post(`/api/users/${userId}/skills/`, data),
   pendingAll: () => client.get('/api/users/pending-skills/'),
-  batchApprove: (userId, skillNames) => client.post(`/api/users/${userId}/skills/batch-approve/`, { skill_names: skillNames }),
+  batchApprove: (userId, skills) => client.post(`/api/users/${userId}/skills/batch-approve/`, { skills }),
 }
 
 export const homework = {

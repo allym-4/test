@@ -105,8 +105,9 @@ function StudentGroup({ group, onSkillConfirmed, onApproveAll }) {
   async function handleApproveAll() {
     setApprovingAll(true)
     try {
-      const skillNames = group.skills.map(s => s.skill_name)
-      await skills.batchApprove(group.student_id, skillNames)
+      const skillObjects = group.skills.map(s => ({ skill_name: s.skill_name, level: s.level || '' }))
+      const skillNames = skillObjects.map(s => s.skill_name)
+      await skills.batchApprove(group.student_id, skillObjects)
       setRemovedKeys(new Set(skillNames))
       onSkillConfirmed()
     } catch (err) {
