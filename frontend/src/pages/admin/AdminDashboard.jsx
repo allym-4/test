@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
 import { useAuth } from '../../contexts/AuthContext'
-import { classes, payments, enrolments, orders, notifications, settings as settingsApi, users } from '../../api'
+import { classes, payments, enrolments, orders, notifications, settings as settingsApi, users, seasons } from '../../api'
 import client from '../../api/client'
 import '../StudentsPage.css'
 
@@ -282,7 +282,9 @@ export default function AdminDashboard() {
   const [convertTrialEnrol, setConvertTrialEnrol] = useState(null)
   const [chaseStudent, setChaseStudent] = useState(null)
 
-  const { data: sessionsData } = useApi(() => classes.list({ active: 'true' }))
+  const { data: seasonsData } = useApi(() => seasons.list())
+  const activeSeason = seasonsData?.results?.find(s => s.status === 'active')
+  const { data: sessionsData } = useApi(() => activeSeason ? classes.list({ active: 'true', season: activeSeason.id }) : null, [activeSeason?.id])
   const { data: dashData, refetch: refetchDash } = useApi(() => payments.dashboard())
   const { data: plansData, refetch: refetchPlans } = useApi(() => payments.plans.list())
   const { data: pendingOrdersData } = useApi(() => orders.list({ status: 'pending' }))

@@ -258,6 +258,14 @@ class Command(BaseCommand):
 
         instructors = self._resolve_instructors()
 
+        # Deactivate course sessions from any season other than current/upcoming
+        stale = ClassSession.objects.filter(
+            is_active=True, session_type='course'
+        ).exclude(season__in=[season, upcoming_season])
+        stale_count = stale.update(is_active=False)
+        if stale_count:
+            self.stdout.write(f'  Deactivated {stale_count} stale sessions from old seasons')
+
         self.stdout.write('Creating / verifying class sessions...')
         session_index = {}
 
