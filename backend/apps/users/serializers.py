@@ -252,7 +252,7 @@ class InstructorPayRecordSerializer(serializers.ModelSerializer):
 class StudentSkillSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentSkill
-        fields = ('id', 'skill_name', 'level', 'self_assessed', 'teacher_confirmed', 'updated_at')
+        fields = ('id', 'skill_name', 'level', 'self_assessed', 'teacher_confirmed', 'instructor_status', 'is_focus', 'updated_at')
         read_only_fields = ('id', 'updated_at')
 
 
@@ -294,10 +294,19 @@ class SkillLevelSerializer(serializers.ModelSerializer):
     class_category_name = serializers.CharField(source='class_category.name', read_only=True, default=None)
 
     def get_classes(self, obj):
-        return [
-            {'id': s.id, 'name': s.name, 'day': s.get_day_of_week_display(), 'time': str(s.start_time)[:5]}
-            for s in obj.class_sessions.filter(is_active=True).order_by('name', 'day_of_week')
-        ]
+        from apps.classes.models import ClassSession
+        from django.db.models import Q
+        sessions = ClassSession.objects.filter(
+            Q(skill_level=obj) | Q(name__iexact=obj.name),
+            is_active=True,
+        ).distinct().order_by('name', 'day_of_week')
+        seen = set()
+        result = []
+        for s in sessions:
+            if s.name not in seen:
+                seen.add(s.name)
+                result.append({'id': s.id, 'name': s.name})
+        return result
 
     class Meta:
         model = SkillLevel

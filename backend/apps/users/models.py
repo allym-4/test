@@ -397,11 +397,21 @@ class InstructorPayRecord(models.Model):
 
 
 class StudentSkill(models.Model):
+    class InstructorStatus(models.TextChoices):
+        PENDING = 'pending', 'Pending Review'
+        APPROVED = 'approved', 'Approved'
+        NOT_QUITE = 'not_quite', 'Not Quite Yet'
+        NOT_APPROVED = 'not_approved', 'Not Approved'
+
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='skill_records')
     skill_name = models.CharField(max_length=100)
     level = models.CharField(max_length=50)
     self_assessed = models.BooleanField(default=False)
     teacher_confirmed = models.BooleanField(default=False)
+    instructor_status = models.CharField(
+        max_length=20, choices=InstructorStatus.choices, default=InstructorStatus.PENDING
+    )
+    is_focus = models.BooleanField(default=False)  # skill added outside student's enrolled level
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

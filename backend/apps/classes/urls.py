@@ -57,4 +57,5 @@ urlpatterns = [
     path('upsells/<int:pk>/', views.ClassUpsellDetailView.as_view(), name='upsell-detail'),
     path('upsells/suggest/', views.UpsellSuggestView.as_view(), name='upsell-suggest'),
     path('my-upcoming/', views.MyUpcomingClassesView.as_view(), name='my-upcoming-classes'),
+    path('session-names/', views.SessionNamesView.as_view(), name='session-names'),
 ]

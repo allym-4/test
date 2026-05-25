@@ -347,6 +347,7 @@ export const forms = {
 export const skills = {
   list: (userId) => client.get(`/api/users/${userId}/skills/`),
   save: (userId, data) => client.post(`/api/users/${userId}/skills/`, data),
+  batchApprove: (userId, skills) => client.post(`/api/users/${userId}/skills/batch-approve/`, { skills }),
   pendingAll: () => client.get('/api/users/pending-skills/'),
 }
 
@@ -383,14 +384,10 @@ export const skillLevels = {
   create: (data) => client.post('/api/users/skill-levels/', data),
   update: (id, data) => client.patch(`/api/users/skill-levels/${id}/`, data),
   delete: (id) => client.delete(`/api/users/skill-levels/${id}/`),
-  groups: (levelId) => client.get('/api/users/skill-groups/', { params: { level: levelId } }),
-  createGroup: (data) => client.post('/api/users/skill-groups/', data),
-  updateGroup: (id, data) => client.patch(`/api/users/skill-groups/${id}/`, data),
-  deleteGroup: (id) => client.delete(`/api/users/skill-groups/${id}/`),
-  definitions: (groupId) => client.get('/api/users/skill-definitions/', { params: { group: groupId } }),
-  createDefinition: (data) => client.post('/api/users/skill-definitions/', data),
+  addSkill: (levelId, name) => client.post(`/api/users/skill-levels/${levelId}/skills/`, { name }),
   updateDefinition: (id, data) => client.patch(`/api/users/skill-definitions/${id}/`, data),
   deleteDefinition: (id) => client.delete(`/api/users/skill-definitions/${id}/`),
+  sessionNames: () => client.get('/api/classes/session-names/'),
 }
 
 export const packages = {

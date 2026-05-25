@@ -993,12 +993,24 @@ class StudentSkillView(APIView):
         defaults = {'level': level}
         if 'self_assessed' in request.data:
             defaults['self_assessed'] = request.data['self_assessed']
-        if 'teacher_confirmed' in request.data and request.user.role in ('admin', 'instructor'):
-            defaults['teacher_confirmed'] = request.data['teacher_confirmed']
+        if 'is_focus' in request.data and request.user.role in ('admin', 'instructor'):
+            defaults['is_focus'] = request.data['is_focus']
         previously_confirmed = False
+        previously_status = 'pending'
+        if request.user.role in ('admin', 'instructor'):
+            if 'teacher_confirmed' in request.data:
+                defaults['teacher_confirmed'] = request.data['teacher_confirmed']
+            if 'instructor_status' in request.data:
+                defaults['instructor_status'] = request.data['instructor_status']
+                # Keep teacher_confirmed in sync
+                if request.data['instructor_status'] == 'approved':
+                    defaults['teacher_confirmed'] = True
+                elif request.data['instructor_status'] in ('not_quite', 'not_approved'):
+                    defaults['teacher_confirmed'] = False
         try:
             existing = StudentSkill.objects.get(student_id=user_pk, skill_name=skill_name)
             previously_confirmed = existing.teacher_confirmed
+            previously_status = existing.instructor_status
         except StudentSkill.DoesNotExist:
             pass
 
@@ -1008,13 +1020,32 @@ class StudentSkillView(APIView):
             defaults=defaults,
         )
 
-        if obj.teacher_confirmed and not previously_confirmed and request.user.role in ('admin', 'instructor'):
+        # Single-skill approval notification (not batch)
+        batch = request.data.get('batch', False)
+        if not batch and obj.teacher_confirmed and not previously_confirmed and request.user.role in ('admin', 'instructor'):
             Notification.objects.create(
                 recipient_id=user_pk,
-                title='Skill unlocked!',
-                body=f'{skill_name} has been confirmed by your instructor.',
+                title='Skill approved!',
+                body=f'Your instructor approved: {skill_name}.',
                 notification_type='success',
             )
+        # Not-quite / not-approved feedback notification
+        if not batch and request.user.role in ('admin', 'instructor'):
+            new_status = obj.instructor_status
+            if new_status == 'not_quite' and previously_status != 'not_quite':
+                Notification.objects.create(
+                    recipient_id=user_pk,
+                    title='Skill feedback',
+                    body=f"Not quite there yet on {skill_name} — keep practising! Your instructor will check again next class.",
+                    notification_type='info',
+                )
+            elif new_status == 'not_approved' and previously_status != 'not_approved':
+                Notification.objects.create(
+                    recipient_id=user_pk,
+                    title='Skill review',
+                    body=f"Your instructor reviewed {skill_name} — not approved yet. Ask them what to work on.",
+                    notification_type='warning',
+                )
 
         return Response(StudentSkillSerializer(obj).data)
 
@@ -1042,28 +1073,59 @@ class StudentSkillSummaryView(APIView):
             return Response([])
 
         # Student's current skill progress keyed by skill_name
+        all_student_skills = list(StudentSkill.objects.filter(student_id=user_pk))
         progress_map = {
-            s.skill_name: {'self_assessed': s.self_assessed, 'teacher_confirmed': s.teacher_confirmed}
-            for s in StudentSkill.objects.filter(student_id=user_pk)
+            s.skill_name: {
+                'self_assessed': s.self_assessed,
+                'teacher_confirmed': s.teacher_confirmed,
+                'instructor_status': s.instructor_status,
+                'is_focus': s.is_focus,
+            }
+            for s in all_student_skills
         }
 
         result = []
+        known_skill_names = set()
         for level in SkillLevel.objects.filter(id__in=enrolled_level_ids).prefetch_related('groups__skills'):
-            level_data = {'id': level.id, 'name': level.name, 'order': level.order, 'groups': []}
+            level_data = {'id': level.id, 'name': level.name, 'order': level.order, 'skills': []}
             for group in level.groups.all():
-                group_data = {'id': group.id, 'name': group.name, 'skills': []}
                 for skill in group.skills.all():
                     prog = progress_map.get(skill.name, {})
-                    group_data['skills'].append({
+                    level_data['skills'].append({
                         'id': skill.id,
                         'name': skill.name,
                         'self_assessed': prog.get('self_assessed', False),
                         'teacher_confirmed': prog.get('teacher_confirmed', False),
+                        'instructor_status': prog.get('instructor_status', 'pending'),
                     })
-                level_data['groups'].append(group_data)
+                    known_skill_names.add(skill.name)
             result.append(level_data)
 
         result.sort(key=lambda x: x['order'])
+
+        # Focus tricks: instructor-added skills not in enrolled levels
+        focus_skills = [
+            s for s in all_student_skills
+            if s.skill_name not in known_skill_names and (s.is_focus or s.teacher_confirmed)
+        ]
+        if focus_skills:
+            result.append({
+                'id': None,
+                'name': 'Focus Tricks',
+                'order': 999,
+                'is_focus_section': True,
+                'skills': [
+                    {
+                        'id': None,
+                        'name': s.skill_name,
+                        'self_assessed': s.self_assessed,
+                        'teacher_confirmed': s.teacher_confirmed,
+                        'instructor_status': s.instructor_status,
+                    }
+                    for s in focus_skills
+                ],
+            })
+
         return Response(result)
 
 
@@ -1185,11 +1247,87 @@ class SkillLevelListView(generics.ListCreateAPIView):
     serializer_class = SkillLevelSerializer
     permission_classes = [IsAdminOrInstructor]
 
+    def perform_create(self, serializer):
+        level = serializer.save()
+        # Auto-create default skill group
+        SkillGroup.objects.get_or_create(level=level, defaults={'name': 'Skills', 'order': 0})
+        # Auto-link matching ClassSessions by name
+        from apps.classes.models import ClassSession
+        ClassSession.objects.filter(
+            name__iexact=level.name, is_active=True, skill_level__isnull=True
+        ).update(skill_level=level)
+
 
 class SkillLevelDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = SkillLevel.objects.all()
     serializer_class = SkillLevelSerializer
     permission_classes = [IsAdminOrInstructor]
+
+
+class SkillLevelAddSkillView(APIView):
+    """Add a skill directly to a skill level (uses the first/default group)."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        try:
+            level = SkillLevel.objects.get(pk=pk)
+        except SkillLevel.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=404)
+        name = request.data.get('name', '').strip()
+        if not name:
+            return Response({'detail': 'name required'}, status=400)
+        group = level.groups.first()
+        if not group:
+            group = SkillGroup.objects.create(level=level, name='Skills', order=0)
+        skill, created = SkillDefinition.objects.get_or_create(
+            group=group, name=name, defaults={'order': group.skills.count()}
+        )
+        return Response(
+            {'id': skill.id, 'name': skill.name, 'created': created},
+            status=201 if created else 200,
+        )
+
+
+class SkillBatchApproveView(APIView):
+    """Approve multiple skills for a student and send ONE notification."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, user_pk):
+        skills = request.data.get('skills', [])  # list of {skill_name, level}
+        if not skills:
+            return Response({'detail': 'skills list required'}, status=400)
+
+        approved_names = []
+        for item in skills:
+            skill_name = item.get('skill_name', '').strip()
+            if not skill_name:
+                continue
+            defaults = {
+                'level': item.get('level', ''),
+                'teacher_confirmed': True,
+                'instructor_status': 'approved',
+            }
+            StudentSkill.objects.update_or_create(
+                student_id=user_pk,
+                skill_name=skill_name,
+                defaults=defaults,
+            )
+            approved_names.append(skill_name)
+
+        if approved_names:
+            count = len(approved_names)
+            if count == 1:
+                body = f'Your instructor approved: {approved_names[0]}.'
+            else:
+                body = f'Your instructor approved {count} skills: {", ".join(approved_names[:3])}{"..." if count > 3 else ""}.'
+            Notification.objects.create(
+                recipient_id=user_pk,
+                title=f'{count} skill{"s" if count > 1 else ""} approved!',
+                body=body,
+                notification_type='success',
+            )
+
+        return Response({'approved': len(approved_names)})
 
 
 class SkillGroupListView(generics.ListCreateAPIView):

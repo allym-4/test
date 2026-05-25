@@ -1749,3 +1749,26 @@ class PracticeCreditDetailView(generics.DestroyAPIView):
     queryset = PracticeCredit.objects.all()
     serializer_class = PracticeCreditSerializer
     permission_classes = [IsAdminOrInstructor]
+
+
+class SessionNamesView(APIView):
+    """Return distinct class session names for skill list creation."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def get(self, request):
+        names = (
+            ClassSession.objects
+            .filter(is_active=True)
+            .values_list('name', flat=True)
+            .distinct()
+            .order_by('name')
+        )
+        # Deduplicate case-insensitively (e.g. "Level 1" vs "level 1")
+        seen = set()
+        result = []
+        for n in names:
+            key = n.strip().lower()
+            if key not in seen:
+                seen.add(key)
+                result.append(n.strip())
+        return Response(result)
