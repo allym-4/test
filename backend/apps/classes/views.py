@@ -1412,10 +1412,14 @@ class SeasonCloseView(APIView):
         season.bookings_open = False
         season.save(update_fields=['status', 'bookings_open'])
 
+        # Deactivate all class sessions belonging to this season
+        deactivated_count = ClassSession.objects.filter(season=season, is_active=True).update(is_active=False)
+
         from .serializers import SeasonSerializer
         return Response({
             'season': SeasonSerializer(season).data,
             'enrolments_completed': completed_count,
+            'sessions_deactivated': deactivated_count,
         })
 
 
