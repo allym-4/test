@@ -716,8 +716,12 @@ export default function AdminStudentDetail() {
         self_assessed: type === 'self' ? newVal : (current.self || false),
         teacher_confirmed: type === 'teacher' ? newVal : (current.teacher || false),
       }
+      // When toggling teacher confirmed, sync instructor_status to avoid stale state
+      if (type === 'teacher') {
+        payload.instructor_status = newVal ? 'approved' : 'pending'
+      }
       skillsApi.save(student.id, payload).then(res => {
-        setSkillProgress(p => ({ ...p, [skillName]: { self: res.data.self_assessed, teacher: res.data.teacher_confirmed, id: res.data.id } }))
+        setSkillProgress(p => ({ ...p, [skillName]: { self: res.data.self_assessed, teacher: res.data.teacher_confirmed, instructor_status: res.data.instructor_status, id: res.data.id } }))
       }).catch(() => {
         setSkillProgress(p => ({ ...p, [skillName]: current }))
       })

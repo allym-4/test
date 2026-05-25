@@ -182,6 +182,7 @@ export const seasons = {
   toggleBookingsEnabled: (id) => client.post(`/api/classes/seasons/${id}/toggle-bookings-enabled/`),
   archive: (id) => client.post(`/api/classes/seasons/${id}/archive/`),
   close: (id) => client.post(`/api/classes/seasons/${id}/close/`),
+  duplicate: (id, data) => client.post(`/api/classes/seasons/${id}/duplicate/`, data),
 }
 
 export const lockers = {

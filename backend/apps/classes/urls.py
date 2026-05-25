@@ -15,6 +15,7 @@ urlpatterns = [
     path('seasons/<int:pk>/', views.SeasonDetailView.as_view(), name='season-detail'),
     path('seasons/<int:pk>/toggle-bookings/', views.SeasonToggleBookingsView.as_view(), name='season-toggle-bookings'),
     path('seasons/<int:pk>/toggle-bookings-enabled/', views.SeasonToggleBookingsEnabledView.as_view(), name='season-toggle-bookings-enabled'),
+    path('seasons/<int:pk>/duplicate/', views.SeasonDuplicateView.as_view(), name='season-duplicate'),
     path('seasons/<int:pk>/archive/', views.SeasonArchiveView.as_view(), name='season-archive'),
     path('seasons/<int:pk>/close/', views.SeasonCloseView.as_view(), name='season-close'),
     path('lockers/', views.LockerListView.as_view(), name='locker-list'),

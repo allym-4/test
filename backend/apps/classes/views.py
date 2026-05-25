@@ -246,6 +246,66 @@ class SeasonToggleBookingsEnabledView(APIView):
         return Response({'bookings_enabled': season.bookings_enabled})
 
 
+class SeasonDuplicateView(APIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        import datetime
+        try:
+            source = Season.objects.get(pk=pk)
+        except Season.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        start_date_str = request.data.get('start_date')
+        weeks = int(request.data.get('weeks', 8))
+        name = request.data.get('name') or f'{source.name} (copy)'
+
+        if not start_date_str:
+            return Response({'detail': 'start_date is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            start_date = datetime.date.fromisoformat(start_date_str)
+        except ValueError:
+            return Response({'detail': 'Invalid start_date format. Use YYYY-MM-DD.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        end_date = start_date + datetime.timedelta(days=weeks * 7 - 1)
+
+        new_season = Season.objects.create(
+            name=name,
+            start_date=start_date,
+            end_date=end_date,
+            status='upcoming',
+            bookings_open=False,
+            bookings_enabled=True,
+            discount_tiers=source.discount_tiers or {},
+        )
+
+        # Copy all active class sessions from the source season
+        for session in source.sessions.filter(is_active=True):
+            ClassSession.objects.create(
+                season=new_season,
+                name=session.name,
+                level=session.level,
+                session_type=session.session_type,
+                day_of_week=session.day_of_week,
+                start_time=session.start_time,
+                duration_minutes=session.duration_minutes,
+                capacity=session.capacity,
+                instructor=session.instructor,
+                studio=session.studio,
+                category=session.category,
+                catchup_cutoff_weeks=session.catchup_cutoff_weeks,
+                description=session.description,
+                first_timer_headline=session.first_timer_headline,
+                first_timer_body=session.first_timer_body,
+                skill_level=session.skill_level,
+                is_active=True,
+            )
+
+        from apps.classes.serializers import SeasonSerializer
+        return Response(SeasonSerializer(new_season).data, status=status.HTTP_201_CREATED)
+
+
 class SeasonArchiveView(APIView):
     permission_classes = [IsAdminOrInstructor]
 

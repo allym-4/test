@@ -426,7 +426,113 @@ function DiscountTiersEditor({ season, onUpdated }) {
   )
 }
 
-function SeasonDrawer({ season, onClose, onStatusChange, onBookingsToggle, onToggleBookingsEnabled, onCloseSeason, onArchive, onDelete, onSeasonUpdated }) {
+function DuplicateSeasonModal({ season, onClose, onCreated }) {
+  const [form, setForm] = useState({
+    name: '',
+    start_date: '',
+    weeks: 8,
+  })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+  function set(f, v) { setForm(x => ({ ...x, [f]: v })) }
+
+  const endDate = calcEndDate(form.start_date, form.weeks)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!form.start_date) { setError('Pick a start date.'); return }
+    if (!form.name.trim()) { setError('Enter a name for the new season.'); return }
+    setSaving(true)
+    setError(null)
+    try {
+      const res = await seasons.duplicate(season.id, {
+        name: form.name.trim(),
+        start_date: form.start_date,
+        weeks: form.weeks,
+      })
+      onCreated(res.data)
+      onClose()
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Duplication failed.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 480 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>Duplicate Season — {season.name}</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <form className="sd-body" onSubmit={handleSubmit}>
+          {error && (
+            <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>{error}</div>
+          )}
+
+          <div style={{ background: 'rgba(176,160,255,0.07)', border: '1px solid rgba(176,160,255,0.2)', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: 'var(--grey)', marginBottom: 16, lineHeight: 1.6 }}>
+            This will copy all {season.session_count ?? 'class'} session templates from <strong style={{ color: 'var(--white)' }}>{season.name}</strong> into a new season — same instructors, rooms, and days. Enrolments and waitlists are not copied.
+          </div>
+
+          <div className="field">
+            <label>New Season Name *</label>
+            <input
+              value={form.name}
+              onChange={e => set('name', e.target.value)}
+              placeholder={`e.g. ${season.name.replace(/\d+/, n => parseInt(n) + 1) || 'Season 4'}`}
+              autoFocus
+              required
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'end', marginBottom: 12 }}>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label>Start Date *</label>
+              <input
+                type="date"
+                value={form.start_date}
+                onChange={e => set('start_date', e.target.value)}
+                style={{ colorScheme: 'dark', width: '100%' }}
+                required
+              />
+            </div>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label>Weeks</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input
+                  type="number"
+                  min={1}
+                  max={52}
+                  value={form.weeks}
+                  onChange={e => set('weeks', parseInt(e.target.value) || 8)}
+                  style={{ width: 64, textAlign: 'center' }}
+                />
+                <span style={{ fontSize: 13, color: 'var(--grey)', whiteSpace: 'nowrap' }}>weeks</span>
+              </div>
+            </div>
+          </div>
+
+          {endDate && (
+            <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16, padding: '8px 12px', background: '#111', borderRadius: 8 }}>
+              End date: <span style={{ color: 'var(--white)', fontWeight: 600 }}>{new Date(endDate + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+              <span style={{ marginLeft: 8, color: 'var(--lime)' }}>({form.weeks} weeks)</span>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-lime btn-sm" disabled={saving || !form.start_date || !form.name.trim()}>
+              {saving ? 'Duplicating…' : 'Duplicate Season'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function SeasonDrawer({ season, onClose, onStatusChange, onBookingsToggle, onToggleBookingsEnabled, onCloseSeason, onArchive, onDelete, onSeasonUpdated, onDuplicate }) {
   const navigate = useNavigate()
   const { data: sessionsData, loading: loadingSessions } = useApi(
     () => classesApi.list({ season: season.id }),
@@ -534,6 +640,7 @@ function SeasonDrawer({ season, onClose, onStatusChange, onBookingsToggle, onTog
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button className="btn btn-ghost btn-xs" onClick={onDuplicate}>Duplicate</button>
             <button className="btn btn-ghost btn-xs" onClick={() => navigate(`/admin/seasons/${season.id}`)}>Edit</button>
             <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>✕</button>
           </div>
@@ -788,6 +895,7 @@ export default function AdminSeasons() {
   const [drawerSeason, setDrawerSeason] = useState(null)
   const [seasonList, setSeasonList] = useState(null)
   const [showArchived, setShowArchived] = useState(false)
+  const [duplicatingFrom, setDuplicatingFrom] = useState(null)
 
   const allSeasons = seasonList ?? (data?.results || data || [])
 
@@ -967,6 +1075,20 @@ export default function AdminSeasons() {
             await seasons.delete(drawerSeason.id)
             setDrawerSeason(null)
             setSeasonList(prev => (prev ?? allSeasons).filter(s => s.id !== drawerSeason.id))
+          }}
+          onDuplicate={() => setDuplicatingFrom(drawerSeason)}
+        />
+      )}
+
+      {duplicatingFrom && (
+        <DuplicateSeasonModal
+          season={duplicatingFrom}
+          onClose={() => setDuplicatingFrom(null)}
+          onCreated={newSeason => {
+            setSeasonList(prev => [newSeason, ...(prev ?? allSeasons)])
+            setDuplicatingFrom(null)
+            setDrawerSeason(null)
+            navigate(`/admin/seasons/${newSeason.id}`)
           }}
         />
       )}
