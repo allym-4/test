@@ -24,9 +24,25 @@ const CR_STATUS_LABEL = {
   rejected: 'Rejected',
 }
 
+const DAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+function fmtSessionLabel(session) {
+  if (!session) return null
+  const day = DAYS_FULL[session.day_of_week] ?? ''
+  const time = session.start_time ? session.start_time.slice(0, 5) : ''
+  const [h, m] = time.split(':').map(Number)
+  const h12 = h % 12 || 12
+  const ampm = h >= 12 ? 'pm' : 'am'
+  return `${day} ${h12}:${String(m).padStart(2, '0')}${ampm}`
+}
+
 function ApproveModal({ req, onClose, onDone }) {
-  const currentClass = req.current_enrolment_detail?.class_session_detail?.name || req.current_class_name || '—'
-  const requestedClass = req.requested_session_detail?.name || req.requested_session_name || 'Not specified'
+  const currentSession = req.current_enrolment_detail?.class_session_detail
+  const requestedSession = req.requested_session_detail
+  const currentClass = currentSession?.name || req.current_class_name || '—'
+  const requestedClass = requestedSession?.name || req.requested_session_name || 'Not specified'
+  const currentSchedule = fmtSessionLabel(currentSession)
+  const requestedSchedule = fmtSessionLabel(requestedSession)
+  const isFull = requestedSession && requestedSession.enrolled_count >= requestedSession.capacity
   const [adminNotes, setAdminNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -55,14 +71,25 @@ function ApproveModal({ req, onClose, onDone }) {
         </div>
         <div className="sd-body">
           {error && <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>{error}</div>}
-          <div style={{ background: '#1a1a1a', borderRadius: 8, padding: '12px 14px', marginBottom: 16 }}>
-            <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>Transfer Summary</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
-              <span style={{ fontWeight: 500 }}>{currentClass}</span>
-              <span style={{ color: 'var(--lime)', fontSize: 16 }}>→</span>
-              <span style={{ fontWeight: 600, color: 'var(--lime)' }}>{requestedClass}</span>
+          {isFull && (
+            <div style={{ background: 'rgba(255,170,0,0.08)', border: '1px solid rgba(255,170,0,0.3)', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontSize: 13, color: 'var(--amber)' }}>
+              ⚠ <strong>Class is full</strong> ({requestedSession.enrolled_count}/{requestedSession.capacity}). Approving will override the capacity limit.
             </div>
-            <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 6 }}>
+          )}
+          <div style={{ background: '#1a1a1a', borderRadius: 8, padding: '12px 14px', marginBottom: 16 }}>
+            <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10 }}>Transfer Summary</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 8, fontSize: 13 }}>
+              <div>
+                <div style={{ fontWeight: 500 }}>{currentClass}</div>
+                {currentSchedule && <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{currentSchedule}</div>}
+              </div>
+              <span style={{ color: 'var(--lime)', fontSize: 18 }}>→</span>
+              <div>
+                <div style={{ fontWeight: 600, color: isFull ? 'var(--amber)' : 'var(--lime)' }}>{requestedClass}</div>
+                {requestedSchedule && <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{requestedSchedule}</div>}
+              </div>
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 10, borderTop: '1px solid #2a2a2a', paddingTop: 8 }}>
               Student: <span style={{ color: 'var(--white)' }}>{req.student_detail?.display_name || `Student #${req.student}`}</span>
             </div>
           </div>
@@ -312,6 +339,17 @@ export default function AdminHelpdesk() {
   const fmtTime = iso => new Date(iso).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })
   const fmtDate = iso => new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
 
+  const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+  function fmtSession(session) {
+    if (!session) return null
+    const day = DAYS[session.day_of_week] ?? ''
+    const time = session.start_time ? session.start_time.slice(0, 5) : ''
+    const [h, m] = time.split(':').map(Number)
+    const h12 = h % 12 || 12
+    const ampm = h >= 12 ? 'pm' : 'am'
+    return `${day} ${h12}:${String(m).padStart(2, '0')}${ampm}`
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 80px)' }}>
       <div className="page-header" style={{ marginBottom: 0, paddingBottom: 16 }}>
@@ -388,12 +426,17 @@ export default function AdminHelpdesk() {
                 {displayReqs.map(r => {
                   const statusColor = CR_STATUS_COLOR[r.status] || 'var(--grey)'
                   const studentName = r.student_detail?.display_name || r.student_name || `Student #${r.student}`
-                  const currentClass = r.current_enrolment_detail?.class_session_detail?.name || r.current_class_name || '—'
-                  const requestedClass = r.requested_session_detail?.name || r.requested_session_name || 'Not specified'
+                  const currentSession = r.current_enrolment_detail?.class_session_detail
+                  const requestedSession = r.requested_session_detail
+                  const currentClass = currentSession?.name || r.current_class_name || '—'
+                  const requestedClass = requestedSession?.name || r.requested_session_name || 'Not specified'
+                  const currentSchedule = fmtSession(currentSession)
+                  const requestedSchedule = fmtSession(requestedSession)
+                  const requestedFull = requestedSession && requestedSession.enrolled_count >= requestedSession.capacity
                   const studentId = r.student_detail?.id || r.student
                   const isActionable = r.status === 'pending' || r.status === 'awaiting_response'
                   return (
-                    <div key={r.id} style={{ background: '#111', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px', display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                    <div key={r.id} style={{ background: '#111', border: `1px solid ${requestedFull && isActionable ? 'rgba(255,170,0,0.4)' : 'var(--border)'}`, borderRadius: 10, padding: '14px 16px', display: 'flex', gap: 16, alignItems: 'flex-start' }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                           <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--lav)', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
@@ -415,14 +458,24 @@ export default function AdminHelpdesk() {
                             {CR_STATUS_LABEL[r.status] || r.status}
                           </span>
                         </div>
+
+                        {requestedFull && isActionable && (
+                          <div style={{ background: 'rgba(255,170,0,0.08)', border: '1px solid rgba(255,170,0,0.3)', borderRadius: 7, padding: '7px 12px', marginBottom: 10, fontSize: 12, color: 'var(--amber)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                            ⚠ Requested class is full ({requestedSession.enrolled_count}/{requestedSession.capacity}) — you'll need to manually override or waitlist
+                          </div>
+                        )}
+
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
                           <div style={{ background: '#1a1a1a', borderRadius: 7, padding: '8px 12px' }}>
                             <div style={{ fontSize: 10, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>Current Class</div>
                             <div style={{ fontSize: 13, fontWeight: 500 }}>{currentClass}</div>
+                            {currentSchedule && <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 3 }}>{currentSchedule}</div>}
                           </div>
                           <div style={{ background: '#1a1a1a', borderRadius: 7, padding: '8px 12px' }}>
                             <div style={{ fontSize: 10, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>Requested Class</div>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--lime)' }}>{requestedClass}</div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: requestedFull ? 'var(--amber)' : 'var(--lime)' }}>{requestedClass}</div>
+                            {requestedSchedule && <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 3 }}>{requestedSchedule}</div>}
+                            {requestedFull && <div style={{ fontSize: 10, color: 'var(--amber)', marginTop: 3, fontWeight: 600 }}>FULL {requestedSession.enrolled_count}/{requestedSession.capacity}</div>}
                           </div>
                         </div>
                         {r.notes && (
