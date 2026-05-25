@@ -24,6 +24,7 @@ import AdminTimetable from './pages/admin/AdminTimetable'
 import AdminReporting from './pages/admin/AdminReporting'
 import AdminBookings from './pages/admin/AdminBookings'
 import AdminSeasons from './pages/admin/AdminSeasons'
+import AdminSeasonDetail from './pages/admin/AdminSeasonDetail'
 import AdminWaitlist from './pages/admin/AdminWaitlist'
 import AdminLeads from './pages/admin/AdminLeads'
 import AdminRecommendations from './pages/admin/AdminRecommendations'
@@ -171,6 +172,8 @@ export default function App() {
             <Route path="timetable" element={<AdminTimetable />} />
             <Route path="reporting" element={<AdminReporting />} />
             <Route path="bookings" element={<AdminBookings />} />
+            <Route path="seasons/new" element={<AdminSeasonDetail />} />
+            <Route path="seasons/:id" element={<AdminSeasonDetail />} />
             <Route path="seasons" element={<AdminSeasons />} />
             <Route path="waitlist" element={<AdminWaitlist />} />
             <Route path="leads" element={<AdminLeads />} />

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
 import { seasons, classes as classesApi } from '../../api'
 import '../StudentsPage.css'
@@ -425,7 +426,8 @@ function DiscountTiersEditor({ season, onUpdated }) {
   )
 }
 
-function SeasonDrawer({ season, onClose, onEdit, onStatusChange, onBookingsToggle, onToggleBookingsEnabled, onCloseSeason, onArchive, onDelete, onSeasonUpdated }) {
+function SeasonDrawer({ season, onClose, onStatusChange, onBookingsToggle, onToggleBookingsEnabled, onCloseSeason, onArchive, onDelete, onSeasonUpdated }) {
+  const navigate = useNavigate()
   const { data: sessionsData, loading: loadingSessions } = useApi(
     () => classesApi.list({ season: season.id }),
     [season.id]
@@ -532,7 +534,7 @@ function SeasonDrawer({ season, onClose, onEdit, onStatusChange, onBookingsToggl
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <button className="btn btn-ghost btn-xs" onClick={onEdit}>Edit</button>
+            <button className="btn btn-ghost btn-xs" onClick={() => navigate(`/admin/seasons/${season.id}`)}>Edit</button>
             <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>✕</button>
           </div>
         </div>
@@ -781,23 +783,13 @@ function SeasonDrawer({ season, onClose, onEdit, onStatusChange, onBookingsToggl
 }
 
 export default function AdminSeasons() {
-  const { data, loading, refetch } = useApi(() => seasons.list())
-  const [showModal, setShowModal] = useState(false)
-  const [editSeason, setEditSeason] = useState(null)
+  const navigate = useNavigate()
+  const { data, loading } = useApi(() => seasons.list())
   const [drawerSeason, setDrawerSeason] = useState(null)
   const [seasonList, setSeasonList] = useState(null)
   const [showArchived, setShowArchived] = useState(false)
 
   const allSeasons = seasonList ?? (data?.results || data || [])
-
-  function handleSaved(saved) {
-    if (editSeason) {
-      setSeasonList(prev => (prev ?? allSeasons).map(s => s.id === saved.id ? saved : s))
-      if (drawerSeason?.id === saved.id) setDrawerSeason(saved)
-    } else {
-      setSeasonList(prev => [...(prev ?? allSeasons), saved])
-    }
-  }
 
   async function handleStatusChange(seasonId, newStatus) {
     const res = await seasons.update(seasonId, { status: newStatus })
@@ -902,7 +894,7 @@ export default function AdminSeasons() {
           <div className="page-title">Seasons</div>
           <div className="page-sub">Manage season schedules and enrolment windows</div>
         </div>
-        <button className="btn btn-lime btn-sm" onClick={() => { setEditSeason(null); setShowModal(true) }}>+ New Season</button>
+        <button className="btn btn-lime btn-sm" onClick={() => navigate('/admin/seasons/new')}>+ New Season</button>
       </div>
 
       {loading ? (
@@ -941,7 +933,6 @@ export default function AdminSeasons() {
         <SeasonDrawer
           season={drawerSeason}
           onClose={() => setDrawerSeason(null)}
-          onEdit={() => { setEditSeason(drawerSeason); setShowModal(true) }}
           onStatusChange={(status) => handleStatusChange(drawerSeason.id, status)}
           onSeasonUpdated={updated => {
             setDrawerSeason(updated)
@@ -980,14 +971,6 @@ export default function AdminSeasons() {
         />
       )}
 
-      {showModal && (
-        <SeasonModal
-          season={editSeason}
-          onClose={() => { setShowModal(false); setEditSeason(null) }}
-          onSaved={handleSaved}
-          allSeasons={allSeasons}
-        />
-      )}
     </div>
   )
 }
