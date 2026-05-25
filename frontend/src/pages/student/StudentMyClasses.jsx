@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { enrolments as enrolmentsApi, attendance, classes as classesApi, helpdesk as helpdeskApi, settings as settingsApi, payments as paymentsApi } from '../../api'
+import MarkAwayModal from '../../components/MarkAwayModal'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -44,57 +45,6 @@ function ClassRoster({ sessionId }) {
 }
 
 
-// ─── InlineMarkAway ───────────────────────────────────────────────────────────
-
-function InlineMarkAway({ occ, isLate, windowHours, noShowFee, onCancel, onDone }) {
-  const [confirming, setConfirming] = useState(false)
-  const [error, setError] = useState('')
-
-  async function confirm() {
-    setConfirming(true)
-    setError('')
-    try {
-      await attendance.markAway(occ.id)
-      onDone()
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Could not mark away — please try again.')
-      setConfirming(false)
-    }
-  }
-
-  return (
-    <div style={{ marginBottom: 10, borderRadius: 10, overflow: 'hidden' }}>
-      {isLate ? (
-        <div style={{ background: 'rgba(180,80,0,0.2)', border: '1px solid var(--amber)', borderRadius: 10, padding: '14px 16px', marginBottom: 8 }}>
-          <div style={{ fontWeight: 800, color: 'var(--amber)', marginBottom: 6, fontSize: 14 }}>No catch-up credit for this one</div>
-          <div style={{ fontSize: 13, color: 'var(--white)', lineHeight: 1.6 }}>
-            Within <strong>{windowHours} hours</strong> of class — the credit window has passed. You can still mark away so we know you're not coming, but no credit will be issued. If you don't show and don't mark away, a <strong style={{ color: 'var(--amber)' }}>{noShowFee} no-show fee</strong> will apply.
-          </div>
-        </div>
-      ) : (
-        <div style={{ background: 'rgba(204,255,0,0.06)', border: '1px solid var(--lime)', borderRadius: 10, padding: '14px 16px', marginBottom: 8 }}>
-          <div style={{ fontWeight: 800, color: 'var(--lime)', marginBottom: 6, fontSize: 14 }}>You'll receive a catch-up credit</div>
-          <div style={{ fontSize: 13, color: 'var(--white)', lineHeight: 1.6 }}>
-            More than <strong>{windowHours} hours</strong> before class — a catch-up credit will be added to your account to use within this season.
-          </div>
-        </div>
-      )}
-      {error && <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 8 }}>{error}</div>}
-      <div style={{ display: 'flex', gap: 8 }}>
-        {isLate ? (
-          <button className="btn btn-ghost btn-sm" onClick={confirm} disabled={confirming} style={{ flex: 1, fontWeight: 700, fontSize: 11 }}>
-            {confirming ? 'Saving…' : 'MARK AWAY ANYWAY'}
-          </button>
-        ) : (
-          <button className="btn btn-lime btn-sm" onClick={confirm} disabled={confirming} style={{ flex: 1, fontWeight: 700, fontSize: 11 }}>
-            {confirming ? 'Saving…' : 'CONFIRM — MARK ME AWAY'}
-          </button>
-        )}
-        <button className="btn btn-ghost btn-sm" onClick={onCancel} style={{ fontSize: 11 }}>CANCEL</button>
-      </div>
-    </div>
-  )
-}
 
 // ─── CancelAwayDialog ─────────────────────────────────────────────────────────
 
@@ -714,7 +664,7 @@ export default function StudentMyClasses() {
   const [cancelPolicyEnrol, setCancelPolicyEnrol] = useState(null)
   const [classWaitlistLeaveEnrol, setClassWaitlistLeaveEnrol] = useState(null)
   const [displacementPopup, setDisplacementPopup] = useState(null)
-  const [markAwayInlineId, setMarkAwayInlineId] = useState(null)
+  const [markAwayOcc, setMarkAwayOcc] = useState(null)
   const [cancelCasualBooking, setCancelCasualBooking] = useState(null)
 
   useEffect(() => {
@@ -868,30 +818,20 @@ export default function StudentMyClasses() {
               const hoursUntil = classDateTime ? (classDateTime - new Date()) / (1000 * 60 * 60) : null
               const isLate = hoursUntil !== null && hoursUntil > 0 && hoursUntil < windowHours
               return (
-                <div key={occ.id} style={{ borderBottom: isLast && !isInlineOpen ? 'none' : '1px solid rgba(255,255,255,0.04)' }}>
+                <div key={occ.id} style={{ borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.04)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0' }}>
                     <span style={{ fontSize: 12, color: 'var(--grey)' }}>{occDateLabel}{occTimeLabel ? ` · ${occTimeLabel}` : ''}</span>
                     {occ.marked_away ? (
                       <span style={{ fontSize: 11, color: 'var(--amber)', fontWeight: 600 }}>Away</span>
                     ) : (
                       <button
-                        onClick={() => isBlocked ? setShowBlockedBanner(true) : setMarkAwayInlineId(isInlineOpen ? null : occ.id)}
-                        style={{ background: isInlineOpen ? 'rgba(255,170,0,0.1)' : 'none', border: `1px solid ${isBlocked ? 'rgba(255,68,68,0.35)' : 'rgba(255,170,0,0.35)'}`, borderRadius: 6, padding: '3px 9px', cursor: 'pointer', fontSize: 10, fontWeight: 700, color: isBlocked ? 'var(--red)' : 'var(--amber)', letterSpacing: '0.3px' }}
+                        onClick={() => isBlocked ? setShowBlockedBanner(true) : setMarkAwayOcc({ ...occ, session_detail: { name: enr.class_session_detail?.name, start_time: occ.start_time } })}
+                        style={{ background: 'none', border: `1px solid ${isBlocked ? 'rgba(255,68,68,0.35)' : 'rgba(255,170,0,0.35)'}`, borderRadius: 6, padding: '3px 9px', cursor: 'pointer', fontSize: 10, fontWeight: 700, color: isBlocked ? 'var(--red)' : 'var(--amber)', letterSpacing: '0.3px' }}
                       >
-                        {isInlineOpen ? '✕ CLOSE' : 'MARK AWAY'}
+                        MARK AWAY
                       </button>
                     )}
                   </div>
-                  {isInlineOpen && (
-                    <InlineMarkAway
-                      occ={occ}
-                      isLate={isLate}
-                      windowHours={windowHours}
-                      noShowFee={noShowFee}
-                      onCancel={() => setMarkAwayInlineId(null)}
-                      onDone={() => { setMarkAwayInlineId(null); refetchEnrol() }}
-                    />
-                  )}
                 </div>
               )
             })}
@@ -1367,6 +1307,16 @@ export default function StudentMyClasses() {
       )}
 
       {/* Modals */}
+      {markAwayOcc && (
+        <MarkAwayModal
+          occurrence={markAwayOcc}
+          cancellationWindowHours={studioSettings?.cancellation_window_hours || 4}
+          noShowFee={studioSettings?.no_show_fee}
+          onClose={() => setMarkAwayOcc(null)}
+          onDone={() => { setMarkAwayOcc(null); refetchEnrol() }}
+        />
+      )}
+
       {cancelPolicyEnrol && (
         <CancelPolicyModal
           enrolment={cancelPolicyEnrol}

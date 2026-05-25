@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { enrolments, seasons, attendance as attendanceApi, classes as classesApi, skills as skillsApi, announcements as announcementsApi, payments, settings as settingsApi } from '../../api'
 import CancellationOfferPopup from '../../components/CancellationOfferPopup'
 import PostTrialPopup from '../../components/PostTrialPopup'
+import MarkAwayModal from '../../components/MarkAwayModal'
 
 import { Link } from 'react-router-dom'
 
@@ -27,86 +28,38 @@ function formatDayDate(dayOfWeek) {
   return d.getDate()
 }
 
-function DashboardInlineMarkAway({ enrolment, cancellationWindowHours, noShowFee, onCancel, onDone }) {
+function DashboardMarkAwayModal({ enrolment, cancellationWindowHours, noShowFee, onClose, onDone }) {
   const s = enrolment.class_session_detail
-  const [confirming, setConfirming] = useState(false)
-  const [done, setDone] = useState(false)
-  const [error, setError] = useState('')
-
   const { data: occData } = useApi(
     () => s?.id ? classesApi.occurrences({ session: s.id, upcoming: 'true' }) : null,
     [s?.id]
   )
   const nextOcc = occData?.results?.[0] || occData?.[0] || null
 
-  const windowHours = cancellationWindowHours ?? 4
-  const feeAmount = noShowFee ? `$${parseFloat(noShowFee).toFixed(0)}` : '$20'
-  const withinCutoff = useMemo(() => {
-    if (!nextOcc?.date || !s?.start_time) return false
-    const classDateTime = new Date(`${nextOcc.date}T${s.start_time}`)
-    return (classDateTime - new Date()) < windowHours * 60 * 60 * 1000
-  }, [nextOcc, s, windowHours])
+  if (!occData) return null
 
-  const nextDateLabel = nextOcc?.date
-    ? new Date(nextOcc.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
-    : null
-
-  async function handleConfirm() {
-    if (!nextOcc) { setError('No upcoming class found'); return }
-    setConfirming(true)
-    setError('')
-    try {
-      await attendanceApi.markAway(nextOcc.id)
-      setDone(true)
-      setTimeout(onDone, 1200)
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Could not mark away')
-      setConfirming(false)
-    }
-  }
-
-  if (done) {
+  if (!nextOcc) {
     return (
-      <div style={{ padding: '10px 0 4px', textAlign: 'center', color: 'var(--lime)', fontWeight: 600, fontSize: 13 }}>✓ Marked as away</div>
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
+        onClick={onClose}>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, maxWidth: 400, width: '100%', padding: '28px 24px', textAlign: 'center' }}
+          onClick={e => e.stopPropagation()}>
+          <div style={{ fontSize: 14, color: 'var(--grey)', marginBottom: 16 }}>No upcoming class found to mark away.</div>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>CLOSE</button>
+        </div>
+      </div>
     )
   }
 
+  const occurrence = { ...nextOcc, session_detail: { name: s?.name, start_time: s?.start_time } }
   return (
-    <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
-      {nextDateLabel && <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 10 }}>Next class: {nextDateLabel}</div>}
-      {!nextOcc && !occData ? (
-        <div style={{ fontSize: 12, color: 'var(--grey)' }}>Loading…</div>
-      ) : !nextOcc ? (
-        <div style={{ fontSize: 12, color: 'var(--grey)' }}>No upcoming class found.</div>
-      ) : withinCutoff ? (
-        <div style={{ background: 'rgba(180,80,0,0.2)', border: '1px solid var(--amber)', borderRadius: 10, padding: '12px 14px', marginBottom: 10 }}>
-          <div style={{ fontWeight: 800, color: 'var(--amber)', marginBottom: 6, fontSize: 13 }}>No catch-up credit for this one</div>
-          <div style={{ fontSize: 12, color: 'var(--white)', lineHeight: 1.6 }}>
-            Within <strong>{windowHours} hours</strong> of class — you can still mark away but no credit will be issued. Not marking away may result in a <strong style={{ color: 'var(--amber)' }}>{feeAmount} no-show fee</strong>.
-          </div>
-        </div>
-      ) : (
-        <div style={{ background: 'rgba(204,255,0,0.06)', border: '1px solid var(--lime)', borderRadius: 10, padding: '12px 14px', marginBottom: 10 }}>
-          <div style={{ fontWeight: 800, color: 'var(--lime)', marginBottom: 6, fontSize: 13 }}>You'll receive a catch-up credit</div>
-          <div style={{ fontSize: 12, color: 'var(--white)', lineHeight: 1.6 }}>
-            More than <strong>{windowHours} hours</strong> before class — a catch-up credit will be added to your account to use this season.
-          </div>
-        </div>
-      )}
-      {error && <div style={{ color: 'var(--red)', fontSize: 12, marginBottom: 8 }}>{error}</div>}
-      <div style={{ display: 'flex', gap: 8 }}>
-        {withinCutoff ? (
-          <button className="btn btn-ghost btn-sm" onClick={handleConfirm} disabled={confirming || !nextOcc} style={{ flex: 1, fontWeight: 700, fontSize: 11 }}>
-            {confirming ? 'Saving…' : 'MARK AWAY ANYWAY'}
-          </button>
-        ) : (
-          <button className="btn btn-lime btn-sm" onClick={handleConfirm} disabled={confirming || !nextOcc} style={{ flex: 1, fontWeight: 700, fontSize: 11 }}>
-            {confirming ? 'Saving…' : 'CONFIRM — MARK ME AWAY'}
-          </button>
-        )}
-        <button className="btn btn-ghost btn-sm" onClick={onCancel} style={{ fontSize: 11 }}>CANCEL</button>
-      </div>
-    </div>
+    <MarkAwayModal
+      occurrence={occurrence}
+      cancellationWindowHours={cancellationWindowHours}
+      noShowFee={noShowFee}
+      onClose={onClose}
+      onDone={onDone}
+    />
   )
 }
 
@@ -172,6 +125,15 @@ export default function StudentDashboard() {
 
   return (
     <div>
+      {markAwayEnrol && (
+        <DashboardMarkAwayModal
+          enrolment={markAwayEnrol}
+          cancellationWindowHours={studioSettings?.cancellation_window_hours}
+          noShowFee={studioSettings?.no_show_fee}
+          onClose={() => setMarkAwayEnrol(null)}
+          onDone={() => setMarkAwayEnrol(null)}
+        />
+      )}
       {pendingTrialFeedback.length > 0 && (
         <PostTrialPopup
           pending={pendingTrialFeedback}
@@ -291,12 +253,11 @@ export default function StudentDashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {enrolments_.map(e => {
               const s = e.class_session_detail
-              const isExpanded = markAwayEnrol?.id === e.id
               const instructorName = s?.instructor_detail
                 ? `${s.instructor_detail.first_name || ''} ${s.instructor_detail.last_name || ''}`.trim()
                 : (s?.instructor_name || '—')
               return (
-                <div key={e.id} style={{ background: 'var(--card)', border: `1px solid ${isExpanded ? 'rgba(204,255,0,0.2)' : 'var(--border)'}`, borderRadius: 12, padding: '14px 16px' }}>
+                <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                     <div style={{ textAlign: 'center', flexShrink: 0, width: 44 }}>
                       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', color: 'var(--grey)', textTransform: 'uppercase' }}>{DAYS_SHORT[s?.day_of_week]}</div>
@@ -308,21 +269,12 @@ export default function StudentDashboard() {
                     </div>
                     <button
                       className="btn btn-ghost btn-sm"
-                      style={{ flexShrink: 0, color: isBlocked ? 'var(--red)' : isExpanded ? 'var(--grey)' : undefined, borderColor: isBlocked ? 'rgba(255,68,68,0.4)' : undefined }}
-                      onClick={() => { if (isBlocked) { setShowBlockedBanner(true) } else { setMarkAwayEnrol(isExpanded ? null : e) } }}
+                      style={{ flexShrink: 0, color: isBlocked ? 'var(--red)' : undefined, borderColor: isBlocked ? 'rgba(255,68,68,0.4)' : undefined }}
+                      onClick={() => { if (isBlocked) { setShowBlockedBanner(true) } else { setMarkAwayEnrol(e) } }}
                     >
-                      {isExpanded ? '✕ Close' : 'Mark Away'}
+                      Mark Away
                     </button>
                   </div>
-                  {isExpanded && (
-                    <DashboardInlineMarkAway
-                      enrolment={e}
-                      cancellationWindowHours={studioSettings?.cancellation_window_hours}
-                      noShowFee={studioSettings?.no_show_fee}
-                      onCancel={() => setMarkAwayEnrol(null)}
-                      onDone={() => setMarkAwayEnrol(null)}
-                    />
-                  )}
                 </div>
               )
             })}
