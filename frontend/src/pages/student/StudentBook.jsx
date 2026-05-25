@@ -1213,7 +1213,7 @@ function SeasonLevelHeadsUpModal({ session, onConfirm, onCancel }) {
           {session?.name} · {dayLabel} {timeLabel}
         </div>
         <div style={{ fontSize: 15, color: '#ccc', lineHeight: 1.7, textAlign: 'center', marginBottom: 32 }}>
-          Your current level doesn't match this class. Please make sure you've checked with your instructor before enrolling — they'll be able to confirm if you're ready to step up.
+          This class is above your current level. Please check with your instructor before enrolling — they'll confirm if you're ready to step up.
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <button
@@ -1447,10 +1447,30 @@ function SeasonClassRow({ session, userLevel, selected, onToggle, onJoinWaitlist
   )
 }
 
-function SeasonSidebar({ selectedSessions, seasonName, totalPrice, incrementalPrice, activeSeasonCount, onProceed, onRemove }) {
+const ORDINALS = ['1st', '2nd', '3rd', '4th', '5th', '6th']
+const PERK_TAGLINES = {
+  3: "that's 3 oat lattes ☕",
+  4: "cheaper than a cocktail 🍸",
+}
+
+function SeasonSidebar({ selectedSessions, seasonName, totalPrice, incrementalPrice, activeSeasonCount, onProceed, onRemove, nextClassIncPrice }) {
   const count = selectedSessions.length
   const existingCount = activeSeasonCount || 0
+  const totalCount = existingCount + count
   const perSessionWeekly = count > 0 ? (incrementalPrice / (8 * count)).toFixed(2) : null
+
+  // Perk thresholds
+  const PERKS = [
+    { at: 3, icon: '🧘', label: '1 free practice session per week' },
+    { at: 4, icon: '🔓', label: 'Unlimited free practice + free locker' },
+  ]
+
+  // Which perks are newly unlocked by this selection
+  const unlockedPerks = PERKS.filter(p => totalCount >= p.at && (existingCount < p.at))
+  // Which perks are already active (from existing + new)
+  const activePerks = PERKS.filter(p => totalCount >= p.at)
+  // Next perk to unlock
+  const nextPerk = PERKS.find(p => totalCount < p.at)
 
   return (
     <div style={{
@@ -1494,7 +1514,7 @@ function SeasonSidebar({ selectedSessions, seasonName, totalPrice, incrementalPr
         border: '1px solid rgba(204,255,0,0.2)',
         borderRadius: 10,
         padding: '14px 14px',
-        marginBottom: 16,
+        marginBottom: activePerks.length > 0 || nextPerk ? 10 : 16,
       }}>
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '1px', color: '#666', textTransform: 'uppercase', marginBottom: 6 }}>Season Pricing</div>
         {count > 0 ? (
@@ -1519,6 +1539,40 @@ function SeasonSidebar({ selectedSessions, seasonName, totalPrice, incrementalPr
           <div style={{ fontSize: 13, color: '#444' }}>Select classes above to start building your season.</div>
         )}
       </div>
+
+      {/* Perks unlocked */}
+      {activePerks.length > 0 && (
+        <div style={{ marginBottom: nextPerk ? 10 : 16 }}>
+          {activePerks.map(p => (
+            <div key={p.at} style={{ display: 'flex', alignItems: 'center', gap: 8, background: unlockedPerks.includes(p) ? 'rgba(204,255,0,0.1)' : 'rgba(255,255,255,0.03)', border: `1px solid ${unlockedPerks.includes(p) ? 'rgba(204,255,0,0.35)' : '#222'}`, borderRadius: 8, padding: '8px 10px', marginBottom: 6 }}>
+              <span style={{ fontSize: 15 }}>{p.icon}</span>
+              <div>
+                {unlockedPerks.includes(p) && <div style={{ fontSize: 9, color: '#ccff00', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>Just unlocked!</div>}
+                <div style={{ fontSize: 12, color: unlockedPerks.includes(p) ? '#ccff00' : '#aaa', lineHeight: 1.3 }}>{p.label}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Next perk nudge */}
+      {nextPerk && totalCount > 0 && (() => {
+        const perWeek = nextClassIncPrice ? (nextClassIncPrice / 8).toFixed(2) : null
+        const ordinal = ORDINALS[nextPerk.at - 1] || `${nextPerk.at}th`
+        const tagline = PERK_TAGLINES[nextPerk.at]
+        return (
+          <div style={{ fontSize: 12, marginBottom: 16, background: 'rgba(204,255,0,0.03)', border: '1px solid rgba(204,255,0,0.12)', borderRadius: 8, padding: '10px 12px', lineHeight: 1.5 }}>
+            <div style={{ color: '#aaa', marginBottom: 3 }}>
+              Add a <strong style={{ color: '#ccff00' }}>{ordinal} class</strong> to unlock {nextPerk.icon} {nextPerk.label}
+            </div>
+            {perWeek && (
+              <div style={{ color: '#555', fontSize: 11 }}>
+                just ${perWeek}/session extra{tagline ? ` — ${tagline}` : ''}
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {count > 0 && (
         <>
@@ -1583,8 +1637,7 @@ function SeasonTab({
   const [selectedSessions, setSelectedSessions] = useState([])
   const [filterDay, setFilterDay] = useState('all')
   const [filterInstructor, setFilterInstructor] = useState('all')
-  const [filterType, setFilterType] = useState('all')
-  const [filterLevel, setFilterLevel] = useState('all')
+  const [filterTag, setFilterTag] = useState('all')
   const [showEligibleOnly, setShowEligibleOnly] = useState(false)
   const [demoNoLevel, setDemoNoLevel] = useState(false)
   const [levelOverrideSession, setLevelOverrideSession] = useState(null)
@@ -1643,16 +1696,23 @@ function SeasonTab({
     ).entries()
   )
 
-  const classTypeOptions = Array.from(new Set(seasonSessions.map(s => {
-    // Derive a broad type from name
-    if (/level/i.test(s.name)) return 'Level Classes'
-    if (/virgin/i.test(s.name)) return 'Beginner'
-    if (/practice/i.test(s.name)) return 'Practice'
-    if (/dance/i.test(s.name)) return 'Dance'
-    return 'Conditioning'
-  })))
+  // Tag chip definitions
+  const TAG_CHIPS = [
+    { id: 'first-timer', label: '🌟 First Timer Friendly', test: s => /virgin|level\s*1/i.test(s.name) },
+    { id: 'pole', label: '🎀 Pole Levels', test: s => /level\s*[2-6]/i.test(s.name) },
+    { id: 'dance', label: '💃 Dance', test: s => /dance/i.test(s.name) },
+    { id: 'conditioning', label: '💪 Conditioning', test: s => /invert|trick|kiki|unravel|conditioning/i.test(s.name) },
+    { id: 'practice', label: '🧘 Practice Time', test: s => /practice/i.test(s.name) },
+  ]
+  const availableTags = TAG_CHIPS.filter(tag => seasonSessions.some(tag.test))
 
-  const levelOptions = ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5', 'Level 6']
+  // Perk nudge: next class incremental price
+  const PERKS_COUNT = [3, 4]
+  const sidebarTotal = (activeSeasonCount || 0) + selectedSessions.length
+  const nextPerkAt = PERKS_COUNT.find(n => sidebarTotal < n) || null
+  const nextClassIncPrice = nextPerkAt
+    ? Math.max(0, parseFloat(priceSeason || 270) - parseFloat((discountTiers || {})[nextPerkAt] ?? (discountTiers || {})[String(nextPerkAt)] ?? 0))
+    : null
 
   // Apply filters
   const effectiveUserLevel = demoNoLevel ? null : parseLevel(userLevel)
@@ -1667,19 +1727,9 @@ function SeasonTab({
     filtered = filtered.filter(s => String(s.instructor_detail?.id) === filterInstructor)
   }
 
-  if (filterType !== 'all') {
-    filtered = filtered.filter(s => {
-      if (filterType === 'Level Classes') return /level/i.test(s.name)
-      if (filterType === 'Beginner') return /virgin/i.test(s.name)
-      if (filterType === 'Practice') return /practice/i.test(s.name)
-      if (filterType === 'Dance') return /dance/i.test(s.name)
-      return true
-    })
-  }
-
-  if (filterLevel !== 'all') {
-    const lvlNum = parseInt(filterLevel.match(/(\d+)/)?.[1] || '0')
-    if (lvlNum > 0) filtered = filtered.filter(s => getClassLevel(s.name) === lvlNum)
+  if (filterTag !== 'all') {
+    const tagDef = TAG_CHIPS.find(t => t.id === filterTag)
+    if (tagDef) filtered = filtered.filter(tagDef.test)
   }
 
   if (showEligibleOnly) {
@@ -1845,24 +1895,35 @@ function SeasonTab({
                 {instructorOptions.map(([id, name]) => <option key={id} value={String(id)}>{name}</option>)}
               </select>
 
-              <select
-                value={filterType}
-                onChange={e => setFilterType(e.target.value)}
-                style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 8, color: '#fff', padding: '7px 10px', fontSize: 12, outline: 'none' }}
-              >
-                <option value="all">All class types</option>
-                {classTypeOptions.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-
-              <select
-                value={filterLevel}
-                onChange={e => setFilterLevel(e.target.value)}
-                style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 8, color: '#fff', padding: '7px 10px', fontSize: 12, outline: 'none' }}
-              >
-                <option value="all">All experience levels</option>
-                {levelOptions.map(l => <option key={l} value={l}>{l}</option>)}
-              </select>
             </div>
+
+            {/* Tag chips */}
+            {availableTags.length > 0 && (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+                <button
+                  onClick={() => setFilterTag('all')}
+                  style={{
+                    padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: 'none',
+                    background: filterTag === 'all' ? '#ccff00' : '#1a1a1a',
+                    color: filterTag === 'all' ? '#000' : '#888',
+                    transition: 'background 0.15s, color 0.15s',
+                  }}
+                >All</button>
+                {availableTags.map(tag => (
+                  <button
+                    key={tag.id}
+                    onClick={() => setFilterTag(filterTag === tag.id ? 'all' : tag.id)}
+                    style={{
+                      padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                      border: `1px solid ${filterTag === tag.id ? '#ccff00' : '#333'}`,
+                      background: filterTag === tag.id ? 'rgba(204,255,0,0.12)' : '#111',
+                      color: filterTag === tag.id ? '#ccff00' : '#888',
+                      transition: 'all 0.15s',
+                    }}
+                  >{tag.label}</button>
+                ))}
+              </div>
+            )}
 
             {/* Eligible toggle */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
@@ -1937,6 +1998,7 @@ function SeasonTab({
           activeSeasonCount={activeSeasonCount}
           onProceed={handleProceed}
           onRemove={removeSession}
+          nextClassIncPrice={nextClassIncPrice}
         />
       )}
     </div>
