@@ -21,6 +21,7 @@ class User(AbstractUser):
     default_payment_method_id = models.CharField(max_length=100, blank=True)
     auto_charge_saved_card = models.BooleanField(default=False)
     booking_blocked = models.BooleanField(default=False)
+    blocked_at = models.DateTimeField(null=True, blank=True, help_text='When booking_blocked was last set to True')
 
     bio = models.TextField(blank=True, help_text='Public bio shown on the Team page')
     instructor_tagline = models.CharField(max_length=200, blank=True, help_text='Short subtitle shown under the name on the Team page')

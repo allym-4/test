@@ -2305,16 +2305,28 @@ export default function StudentBook() {
   if (isBlocked) {
     return (
       <div style={{ maxWidth: 480, margin: '40px auto', padding: '0 16px' }}>
-        <div style={{ background: 'rgba(255,68,68,0.08)', border: '1px solid rgba(255,68,68,0.25)', borderRadius: 14, padding: '28px 24px', textAlign: 'center' }}>
-          <div style={{ fontSize: 28, marginBottom: 12 }}>🔒</div>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, marginBottom: 8 }}>Account on hold</div>
-          <div style={{ fontSize: 14, color: 'var(--grey)', marginBottom: 20, lineHeight: 1.6 }}>
-            Your account has an outstanding balance{balance !== null && balance < 0 ? <> of <span style={{ color: 'var(--red)', fontWeight: 600 }}>${Math.abs(balance).toFixed(2)}</span></> : ''}.
-            Please settle your account to resume booking.
+        <div style={{ background: 'rgba(255,68,68,0.06)', border: '1px solid rgba(255,68,68,0.25)', borderRadius: 14, padding: '32px 24px', textAlign: 'center' }}>
+          <div style={{ fontSize: 32, marginBottom: 14 }}>🔒</div>
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, marginBottom: 10 }}>Account on hold</div>
+          <div style={{ fontSize: 14, color: 'var(--grey)', marginBottom: 8, lineHeight: 1.7 }}>
+            You have a pending charge on your account that needs to be paid.
           </div>
-          <a href="/portal/billing" style={{ display: 'inline-block', background: 'var(--lime)', color: '#000', fontWeight: 700, borderRadius: 8, padding: '11px 24px', textDecoration: 'none', fontSize: 14 }}>
-            View billing
-          </a>
+          {balance !== null && balance < 0 && (
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: 'var(--red)', marginBottom: 8 }}>
+              ${Math.abs(balance).toFixed(2)} owing
+            </div>
+          )}
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 24, lineHeight: 1.6 }}>
+            Please pay the amount to be able to enrol, mark absent, and book catch-ups.
+          </div>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <a href="/portal/billing" style={{ display: 'inline-block', background: 'var(--lime)', color: '#000', fontWeight: 700, borderRadius: 8, padding: '11px 24px', textDecoration: 'none', fontSize: 14 }}>
+              Pay balance now
+            </a>
+            <a href="/portal/chat" style={{ display: 'inline-block', background: 'transparent', color: 'var(--white)', fontWeight: 600, borderRadius: 8, padding: '11px 24px', textDecoration: 'none', fontSize: 14, border: '1px solid var(--border)' }}>
+              Contact us
+            </a>
+          </div>
         </div>
       </div>
     )

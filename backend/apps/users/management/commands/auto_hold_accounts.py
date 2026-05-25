@@ -40,10 +40,12 @@ class Command(BaseCommand):
             if not old_debt:
                 continue
 
+            now = timezone.now()
             student.booking_blocked = True
+            student.blocked_at = now
             if not student.block_reason:
-                student.block_reason = f'Account automatically held due to outstanding balance (auto-hold {timezone.now().date()})'
-            student.save(update_fields=['booking_blocked', 'block_reason'])
+                student.block_reason = f'Account automatically held due to outstanding balance (auto-hold {now.date()})'
+            student.save(update_fields=['booking_blocked', 'blocked_at', 'block_reason'])
 
             Notification.objects.create(
                 recipient=student,

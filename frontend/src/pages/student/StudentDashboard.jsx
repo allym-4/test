@@ -131,8 +131,10 @@ export default function StudentDashboard() {
 
   const { data: balanceData } = useApi(() => user?.id ? payments.balance(user.id) : null, [user?.id])
   const isBlocked = balanceData?.booking_blocked === true
+  const owingAmount = balanceData && parseFloat(balanceData.balance) < 0 ? Math.abs(parseFloat(balanceData.balance)) : null
 
   const [markAwayEnrol, setMarkAwayEnrol] = useState(null)
+  const [showBlockedBanner, setShowBlockedBanner] = useState(false)
   const [acknowledging, setAcknowledging] = useState({})
 
   const allAnnouncements = annData?.results || annData || []
@@ -312,9 +314,8 @@ export default function StudentDashboard() {
                   </div>
                   <button
                     className="btn btn-ghost btn-sm"
-                    style={{ flexShrink: 0 }}
-                    onClick={() => isBlocked ? alert('Your account is on hold. Please come in and settle your balance before marking away.') : setMarkAwayEnrol(e)}
-                    title={isBlocked ? 'Account on hold' : undefined}
+                    style={{ flexShrink: 0, color: isBlocked ? 'var(--red)' : undefined, borderColor: isBlocked ? 'rgba(255,68,68,0.4)' : undefined }}
+                    onClick={() => { if (isBlocked) { setShowBlockedBanner(true) } else { setMarkAwayEnrol(e) } }}
                   >
                     Mark Away
                   </button>
@@ -426,6 +427,36 @@ export default function StudentDashboard() {
           onClose={() => setMarkAwayEnrol(null)}
           onDone={() => setMarkAwayEnrol(null)}
         />
+      )}
+
+      {showBlockedBanner && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+          onClick={() => setShowBlockedBanner(false)}>
+          <div style={{ background: 'var(--card)', border: '1px solid rgba(255,68,68,0.35)', borderRadius: 14, padding: '32px 24px', maxWidth: 400, width: '100%', textAlign: 'center' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 32, marginBottom: 14 }}>🔒</div>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, marginBottom: 10 }}>Account on hold</div>
+            <div style={{ fontSize: 14, color: 'var(--grey)', marginBottom: 8, lineHeight: 1.7 }}>
+              You have a pending charge on your account that needs to be paid.
+            </div>
+            {owingAmount && (
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: 'var(--red)', marginBottom: 8 }}>
+                ${owingAmount.toFixed(2)} owing
+              </div>
+            )}
+            <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 24, lineHeight: 1.6 }}>
+              Please pay the amount to be able to enrol, mark absent, and book catch-ups.
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <a href="/portal/billing" style={{ display: 'inline-block', background: 'var(--lime)', color: '#000', fontWeight: 700, borderRadius: 8, padding: '11px 24px', textDecoration: 'none', fontSize: 14 }}>
+                Pay balance now
+              </a>
+              <a href="/portal/chat" style={{ display: 'inline-block', background: 'transparent', color: 'var(--white)', fontWeight: 600, borderRadius: 8, padding: '11px 24px', textDecoration: 'none', fontSize: 14, border: '1px solid var(--border)' }}>
+                Contact us
+              </a>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

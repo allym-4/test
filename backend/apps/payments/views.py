@@ -739,8 +739,10 @@ class PaymentChaseListCreateView(generics.ListCreateAPIView):
         )
 
         if lock_account:
+            from django.utils import timezone as tz
             student.booking_blocked = True
-            student.save(update_fields=['booking_blocked'])
+            student.blocked_at = tz.now()
+            student.save(update_fields=['booking_blocked', 'blocked_at'])
 
         # Send in-app notification
         try:

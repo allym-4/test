@@ -104,6 +104,66 @@ def credit_referrer_on_full_payment(sender, instance, created, **kwargs):
     )
 
 
+@receiver(post_save, sender='payments.Payment')
+def auto_unblock_on_payment(sender, instance, created, **kwargs):
+    """When a payment/credit/refund brings a student's balance to zero or above, auto-unblock them and log a note."""
+    if instance.payment_type not in ('payment', 'credit', 'refund'):
+        return
+    if not instance.student_id:
+        return
+
+    student = instance.student
+    if not student.booking_blocked:
+        return
+
+    from django.db.models import Sum
+    credit_types = ('payment', 'refund', 'credit')
+    debit_types = ('charge', 'no_show_fee')
+    total_paid = Payment.objects.filter(student=student, payment_type__in=credit_types).aggregate(t=Sum('amount'))['t'] or 0
+    total_charged = Payment.objects.filter(student=student, payment_type__in=debit_types).aggregate(t=Sum('amount'))['t'] or 0
+    balance = float(total_paid) - float(total_charged)
+
+    if balance < 0:
+        return
+
+    from django.utils import timezone
+    now = timezone.now()
+
+    # Calculate days blocked
+    days_blocked = None
+    if student.blocked_at:
+        delta = now - student.blocked_at
+        days_blocked = delta.days
+
+    student.booking_blocked = False
+    student.block_reason = ''
+    student.blocked_at = None
+    student.save(update_fields=['booking_blocked', 'block_reason', 'blocked_at'])
+
+    # Create a staff note recording the block duration
+    from apps.users.models import StaffNote, Notification
+    duration_str = f'{days_blocked} day{"s" if days_blocked != 1 else ""}' if days_blocked is not None else 'an unknown period'
+    StaffNote.objects.create(
+        student=student,
+        created_by=None,
+        tag='billing',
+        body=(
+            f'Account automatically unblocked after balance was cleared. '
+            f'Account was on hold for {duration_str}. '
+            f'Payment of ${float(instance.amount):.2f} received ({instance.description or "no description"}).'
+        ),
+    )
+
+    Notification.objects.create(
+        recipient=student,
+        title='Account unblocked',
+        body='Your outstanding balance has been cleared and your account is now active again. You can book classes as normal.',
+        notification_type='success',
+        action_label='Book a class',
+        action_url='/portal/book',
+    )
+
+
 @receiver(post_save, sender='payments.PaymentPlanInstalment')
 def check_plan_completion(sender, instance, **kwargs):
     """When an instalment is marked paid, auto-complete the plan if all instalments are now paid."""
