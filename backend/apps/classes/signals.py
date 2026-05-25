@@ -273,3 +273,32 @@ def handle_season_status_change(sender, instance, created, **kwargs):
                 recipient_list=[credit.student.email],
                 fail_silently=True,
             )
+
+
+@receiver(post_save, sender='classes.ClassOccurrence')
+def auto_credit_instructor(sender, instance, created, **kwargs):
+    """Credit instructor when register is saved for the first time."""
+    if not instance.register_saved:
+        return
+    if created:
+        return  # only trigger on update (register being saved)
+
+    instructor = instance.session.instructor
+    if not instructor or instructor.role not in ('instructor', 'admin'):
+        return
+
+    from apps.payments.models import Payment
+    occ_ref = f'class-occ-{instance.pk}'
+    if Payment.objects.filter(reference=occ_ref, payment_type='credit').exists():
+        return  # already credited
+
+    rate = float(instructor.pay_rate or (30 if instructor.is_shadow_instructor else 40))
+    session_name = instance.session.name
+    date_str = instance.date.strftime('%-d %b %Y') if instance.date else ''
+    Payment.objects.create(
+        student=instructor,
+        payment_type='credit',
+        amount=rate,
+        description=f'Class pay — {session_name} {date_str}',
+        reference=occ_ref,
+    )

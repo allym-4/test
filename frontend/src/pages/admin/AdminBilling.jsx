@@ -238,6 +238,8 @@ export default function AdminBilling() {
   const [chargePickStudent, setChargePickStudent] = useState('')
   const [gcModal, setGcModal] = useState(false)
   const [drawerStudent, setDrawerStudent] = useState(null)
+  const [noShowSelected, setNoShowSelected] = useState(new Set())
+  const [chargingNoShows, setChargingNoShows] = useState(false)
 
   const allPayments = paymentsData?.results || []
   const plans = plansData?.results || []
@@ -255,6 +257,22 @@ export default function AdminBilling() {
       } catch { map[s.id] = { balance: '0', name: s.display_name, id: s.id, first_name: s.first_name } }
     })).then(() => { setBalances(map); setLoadingBal(false) })
   }, [students.length])
+
+  async function chargeNoShowNow(p) {
+    try {
+      await payments.create({ student: p.student, payment_type: 'payment', amount: p.amount, description: `No-show fee paid — ${p.description || ''}`.trim() })
+      refetchPayments()
+      setNoShowSelected(prev => { const next = new Set(prev); next.delete(p.id); return next })
+    } catch { /* non-critical */ }
+  }
+
+  async function chargeAllSelectedNoShows() {
+    setChargingNoShows(true)
+    const toCharge = allPayments.filter(p => p.payment_type === 'no_show_fee' && noShowSelected.has(p.id))
+    await Promise.allSettled(toCharge.map(p => chargeNoShowNow(p)))
+    setNoShowSelected(new Set())
+    setChargingNoShows(false)
+  }
 
   const owing = Object.values(balances).filter(b => parseFloat(b.balance) < 0)
   owing.sort((a, b) => parseFloat(a.balance) - parseFloat(b.balance))
@@ -558,59 +576,85 @@ export default function AdminBilling() {
         </div>
       )}
 
-      {tab === 'noshows' && (
-        <div>
-          <div className="tbl-section">
-            <table>
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Student</th>
-                  <th>Description</th>
-                  <th>Amount</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allPayments.filter(p => p.payment_type === 'no_show_fee').map(p => (
-                  <tr key={p.id}>
-                    <td style={{ color: 'var(--grey)', whiteSpace: 'nowrap' }}>
-                      {new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
-                    </td>
-                    <td><b>{p.student_name || '—'}</b></td>
-                    <td style={{ color: 'var(--grey)' }}>{p.description || 'No-show fee'}</td>
-                    <td className="bal-neg">${parseFloat(p.amount || 0).toFixed(2)}</td>
-                    <td><span className="tag tag-red" style={{ fontSize: 10 }}>Charged</span></td>
-                    <td style={{ whiteSpace: 'nowrap' }}>
-                      <button
-                        className="btn btn-ghost btn-xs"
-                        style={{ marginRight: 4 }}
-                        onClick={() => {
-                          const s = { id: p.student, name: p.student_name, balance: `-${p.amount}` }
-                          setModalStudent(s)
-                          setActiveModal('waive')
-                        }}
-                      >Waive</button>
-                      <button
-                        className="btn btn-lime btn-xs"
-                        onClick={() => {
-                          const s = { id: p.student, name: p.student_name, balance: `-${p.amount}` }
-                          setModalStudent(s)
-                          setActiveModal('payment')
-                        }}
-                      >Charge Now</button>
-                    </td>
-                  </tr>
-                ))}
-                {allPayments.filter(p => p.payment_type === 'no_show_fee').length === 0 && (
-                  <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--grey)', padding: '24px 0' }}>No no-show fees</td></tr>
+      {tab === 'noshows' && (() => {
+        const noShows = allPayments.filter(p => p.payment_type === 'no_show_fee')
+        const allIds = noShows.map(p => p.id)
+        const allSelected = allIds.length > 0 && allIds.every(id => noShowSelected.has(id))
+        return (
+          <div>
+            {noShows.length > 0 && (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
+                <button className="btn btn-ghost btn-xs" onClick={() => setNoShowSelected(allSelected ? new Set() : new Set(allIds))}>
+                  {allSelected ? 'Deselect All' : 'Select All'}
+                </button>
+                {noShowSelected.size > 0 && (
+                  <button className="btn btn-lime btn-xs" onClick={chargeAllSelectedNoShows} disabled={chargingNoShows}>
+                    {chargingNoShows ? 'Charging…' : `Charge All (${noShowSelected.size})`}
+                  </button>
                 )}
-              </tbody>
-            </table>
+                {noShowSelected.size > 0 && (
+                  <span style={{ fontSize: 12, color: 'var(--grey)' }}>{noShowSelected.size} selected</span>
+                )}
+              </div>
+            )}
+            <div className="tbl-section">
+              <table>
+                <thead>
+                  <tr>
+                    <th style={{ width: 32 }}></th>
+                    <th>Date</th>
+                    <th>Student</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {noShows.map(p => (
+                    <tr key={p.id}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={noShowSelected.has(p.id)}
+                          onChange={() => setNoShowSelected(prev => {
+                            const next = new Set(prev)
+                            next.has(p.id) ? next.delete(p.id) : next.add(p.id)
+                            return next
+                          })}
+                          style={{ accentColor: 'var(--lime)' }}
+                        />
+                      </td>
+                      <td style={{ color: 'var(--grey)', whiteSpace: 'nowrap' }}>
+                        {new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                      </td>
+                      <td><b>{p.student_name || '—'}</b></td>
+                      <td style={{ color: 'var(--grey)' }}>{p.description || 'No-show fee'}</td>
+                      <td className="bal-neg">${parseFloat(p.amount || 0).toFixed(2)}</td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        <button
+                          className="btn btn-ghost btn-xs"
+                          style={{ marginRight: 4 }}
+                          onClick={() => {
+                            const s = { id: p.student, name: p.student_name, balance: `-${p.amount}` }
+                            setModalStudent(s)
+                            setActiveModal('waive')
+                          }}
+                        >Waive</button>
+                        <button className="btn btn-lime btn-xs" onClick={() => chargeNoShowNow(p)}>
+                          Charge Now
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {noShows.length === 0 && (
+                    <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--grey)', padding: '24px 0' }}>No no-show fees</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {tab === 'giftcards' && (
         <div>

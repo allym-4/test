@@ -31,7 +31,8 @@ class UserSerializer(serializers.ModelSerializer):
             'perm_billing', 'perm_edit_profiles', 'perm_approve_plans', 'perm_bulk_email', 'perm_reports',
             'notification_preferences',
             'show_in_roster', 'roster_name', 'nickname', 'level',
-            'booking_blocked',
+            'booking_blocked', 'block_reason',
+            'is_shadow_instructor',
             'bio', 'instructor_tagline', 'instructor_instagram',
         )
         read_only_fields = ('id',)

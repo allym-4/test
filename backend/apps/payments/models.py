@@ -11,11 +11,20 @@ class Payment(models.Model):
         CREDIT = 'credit', 'Credit'
         NO_SHOW_FEE = 'no_show_fee', 'No-show Fee'
 
+    class PaymentMethod(models.TextChoices):
+        CARD = 'card', 'Credit / Debit Card'
+        CASH = 'cash', 'Cash'
+        BANK = 'bank_transfer', 'Bank Transfer'
+        ACCOUNT = 'account_credit', 'Account Credit'
+        OTHER = 'other', 'Other'
+
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments')
     payment_type = models.CharField(max_length=15, choices=PaymentType.choices)
     amount = models.DecimalField(max_digits=8, decimal_places=2)
     description = models.CharField(max_length=200)
     reference = models.CharField(max_length=100, blank=True)
+    payment_method = models.CharField(max_length=20, choices=PaymentMethod.choices, blank=True, default='')
+    stripe_payment_intent_id = models.CharField(max_length=100, blank=True, default='')
     created_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name='payments_recorded'
     )

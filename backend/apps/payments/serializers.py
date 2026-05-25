@@ -17,7 +17,8 @@ class PaymentSerializer(serializers.ModelSerializer):
         model = Payment
         fields = (
             'id', 'student', 'student_name', 'payment_type', 'amount', 'description',
-            'reference', 'created_by', 'created_by_name', 'created_at',
+            'reference', 'payment_method', 'stripe_payment_intent_id',
+            'created_by', 'created_by_name', 'created_at',
             'cash_promised_date', 'cash_received', 'cash_reminder_sent_at', 'cash_auto_charge_at',
         )
         read_only_fields = ('id', 'created_by', 'created_at', 'cash_reminder_sent_at', 'cash_auto_charge_at')

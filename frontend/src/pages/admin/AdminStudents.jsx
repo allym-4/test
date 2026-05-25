@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi, classes as classesApi, tags as tagsApi, settings as settingsApi, membershipTypes as membershipTypesApi, studentMemberships as studentMembershipsApi } from '../../api'
+import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi, classes as classesApi, tags as tagsApi, settings as settingsApi, membershipTypes as membershipTypesApi, studentMemberships as studentMembershipsApi, seasons as seasonsApi } from '../../api'
 import client from '../../api/client'
 import '../StudentsPage.css'
 import AddStudentModal from '../../components/AddStudentModal'
@@ -1023,8 +1023,10 @@ export default function AdminStudents() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const studentPath = (id) => user?.role === 'admin' ? `/admin/students/${id}` : `/students/${id}`
-  const { data, loading } = useApi(() => users.list({ include_staff_students: 'true' }))
-  const { data: sessionsData } = useApi(() => classesApi.list({ active: 'true' }))
+  const { data: seasonsData } = useApi(() => seasonsApi.list())
+  const activeSeason = seasonsData?.results?.find(s => s.status === 'active')
+  const { data: sessionsData } = useApi(() => activeSeason ? classesApi.list({ active: 'true', season: activeSeason.id }) : null, [activeSeason?.id])
+  const { data, loading, refetch: refetchStudents } = useApi(() => users.list({ include_staff_students: 'true' }))
   const [search, setSearch] = useState('')
   const [classFilter, setClassFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -1037,6 +1039,14 @@ export default function AdminStudents() {
   const [showImport, setShowImport] = useState(false)
   const [showBulkTag, setShowBulkTag] = useState(false)
   const [showBulkMembership, setShowBulkMembership] = useState(false)
+  const [sessionEnrolledIds, setSessionEnrolledIds] = useState(null)
+
+  useEffect(() => {
+    if (!classFilter) { setSessionEnrolledIds(null); return }
+    users.list({ session: classFilter, include_staff_students: 'true' })
+      .then(r => setSessionEnrolledIds(new Set((r.data?.results || r.data || []).map(u => u.id))))
+      .catch(() => setSessionEnrolledIds(null))
+  }, [classFilter])
 
   const allStudents = studentList ?? (data?.results || data || [])
 
@@ -1056,10 +1066,16 @@ export default function AdminStudents() {
       s.display_name?.toLowerCase().includes(search.toLowerCase()) ||
       s.email?.toLowerCase().includes(search.toLowerCase())
     const matchStatus = !statusFilter || (s.status || '').toLowerCase() === statusFilter.toLowerCase()
-    const matchChip = activeChip === 'All' || (s.tags || []).some(t =>
-      (typeof t === 'string' ? t : t.name || '').toLowerCase() === activeChip.toLowerCase()
-    )
-    return matchSearch && matchStatus && matchChip
+    const matchClass = !classFilter || !sessionEnrolledIds || sessionEnrolledIds.has(s.id)
+    const balance = balances[s.id] ?? null
+    const matchChip = activeChip === 'All'
+      || (activeChip === 'Owing' && balance !== null && balance < 0)
+      || (activeChip === 'Frozen' && s.booking_blocked)
+      || (activeChip === 'Blocked' && s.booking_blocked)
+      || (activeChip !== 'Owing' && activeChip !== 'Frozen' && activeChip !== 'Blocked' && (s.tags || []).some(t =>
+          (typeof t === 'string' ? t : t.name || '').toLowerCase() === activeChip.toLowerCase()
+        ))
+    return matchSearch && matchStatus && matchClass && matchChip
   }).sort((a, b) => {
     let av, bv
     if (sortKey === 'name') { av = a.display_name || ''; bv = b.display_name || '' }

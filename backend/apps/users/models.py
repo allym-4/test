@@ -27,6 +27,12 @@ class User(AbstractUser):
     instructor_instagram = models.CharField(max_length=100, blank=True, help_text='Instagram handle (without @)')
 
     pay_rate = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text='Per-class pay rate for instructors')
+    is_shadow_instructor = models.BooleanField(default=False, help_text='Shadow instructors earn $30/class instead of $40')
+    cleared_to_teach = models.ManyToManyField(
+        'classes.ClassSession', blank=True, related_name='cleared_instructors',
+        help_text='Sessions this instructor is cleared to teach (admin-assigned)'
+    )
+    block_reason = models.TextField(blank=True, help_text='Reason for booking block (admin notes)')
 
     notification_preferences = models.JSONField(default=dict, blank=True)
 

@@ -95,6 +95,24 @@ class UserListView(generics.ListCreateAPIView):
                 Q(last_name__icontains=search) |
                 Q(email__icontains=search)
             )
+        session_id = self.request.query_params.get('session')
+        if session_id:
+            from apps.enrolments.models import Enrolment
+            enrolled_ids = Enrolment.objects.filter(
+                class_session_id=session_id, status__in=['active', 'waitlisted']
+            ).values_list('student_id', flat=True)
+            qs = qs.filter(id__in=enrolled_ids)
+        if self.request.query_params.get('owing') == 'true':
+            from apps.payments.models import Payment
+            from django.db.models import Sum, Value, DecimalField
+            from django.db.models.functions import Coalesce
+            paid = Payment.objects.filter(student=models.OuterRef('pk'), payment_type='payment').values('student').annotate(t=Sum('amount')).values('t')
+            charged = Payment.objects.filter(student=models.OuterRef('pk'), payment_type__in=['charge', 'no_show_fee']).values('student').annotate(t=Sum('amount')).values('t')
+            from django.db.models import Subquery
+            qs = qs.annotate(
+                total_paid=Coalesce(Subquery(paid), Value(0, output_field=DecimalField())),
+                total_charged=Coalesce(Subquery(charged), Value(0, output_field=DecimalField())),
+            ).filter(total_charged__gt=models.F('total_paid'))
         return qs
 
 

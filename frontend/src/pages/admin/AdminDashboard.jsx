@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
 import { useAuth } from '../../contexts/AuthContext'
-import { classes, payments, enrolments, orders, notifications, settings as settingsApi, users, seasons } from '../../api'
+import { classes, payments, enrolments, orders, notifications, settings as settingsApi, users, seasons, actionItems as actionItemsApi } from '../../api'
 import client from '../../api/client'
 import '../StudentsPage.css'
 
@@ -281,6 +281,12 @@ export default function AdminDashboard() {
   const [confirmCancelId, setConfirmCancelId] = useState(null)
   const [convertTrialEnrol, setConvertTrialEnrol] = useState(null)
   const [chaseStudent, setChaseStudent] = useState(null)
+  const [showAddAction, setShowAddAction] = useState(false)
+  const [newActionTitle, setNewActionTitle] = useState('')
+  const [newActionUrgent, setNewActionUrgent] = useState(false)
+  const [savingAction, setSavingAction] = useState(false)
+  const [customActionItems, setCustomActionItems] = useState([])
+  const [coverDoneId, setCoverDoneId] = useState(null)
 
   const { data: seasonsData } = useApi(() => seasons.list())
   const activeSeason = seasonsData?.results?.find(s => s.status === 'active')
@@ -364,11 +370,34 @@ export default function AdminDashboard() {
 
   async function coverSession(session) {
     await upsertOccurrence(session, { cover_needed: true })
+    setCoverDoneId(session.id)
+    setTimeout(() => setCoverDoneId(null), 3000)
   }
 
   async function cancelSession(session) {
     await upsertOccurrence(session, { status: 'cancelled' })
     setConfirmCancelId(null)
+  }
+
+  async function saveNewAction() {
+    if (!newActionTitle.trim()) return
+    setSavingAction(true)
+    try {
+      const res = await actionItemsApi.create({ title: newActionTitle.trim(), is_urgent: newActionUrgent, body: '' })
+      setCustomActionItems(prev => [...prev, {
+        id: `custom-${res.data.id}`,
+        dot: newActionUrgent ? 'var(--red)' : 'var(--lime)',
+        title: res.data.title,
+        sub: 'Custom action item',
+        time: 'Just now',
+        urgent: newActionUrgent,
+      }])
+      setNewActionTitle('')
+      setNewActionUrgent(false)
+      setShowAddAction(false)
+    } finally {
+      setSavingAction(false)
+    }
   }
 
   async function sendWelcome(studentId) {
@@ -431,6 +460,7 @@ export default function AdminDashboard() {
       urgent: n.tag === 'injury',
       link: `/admin/students/${n.student_id}`,
     })),
+    ...customActionItems,
   ]
 
   const activePlans = plans.filter(p => p.status === 'active')
@@ -459,12 +489,31 @@ export default function AdminDashboard() {
             <Link to="/admin/activity-log">
               <button className="btn btn-ghost btn-xs">VIEW LOG</button>
             </Link>
-            <Link to="/admin/activity-log"><button className="btn btn-ghost btn-xs">+ ADD</button></Link>
+            <button className="btn btn-ghost btn-xs" onClick={() => setShowAddAction(v => !v)}>+ ADD</button>
             <button className="btn btn-ghost btn-xs" onClick={() => setActionItemsVisible(v => !v)}>
               {actionItemsVisible ? 'HIDE' : 'SHOW'}
             </button>
           </div>
         </div>
+
+        {showAddAction && (
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border)', marginBottom: 8 }}>
+            <input
+              autoFocus
+              value={newActionTitle}
+              onChange={e => setNewActionTitle(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') saveNewAction(); if (e.key === 'Escape') setShowAddAction(false) }}
+              placeholder="Action item…"
+              style={{ flex: 1, background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, color: '#fff', padding: '6px 10px', fontSize: 13, outline: 'none' }}
+            />
+            <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--grey)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              <input type="checkbox" checked={newActionUrgent} onChange={e => setNewActionUrgent(e.target.checked)} style={{ accentColor: 'var(--red)' }} />
+              Urgent
+            </label>
+            <button className="btn btn-lime btn-xs" onClick={saveNewAction} disabled={savingAction || !newActionTitle.trim()}>Add</button>
+            <button className="btn btn-ghost btn-xs" onClick={() => setShowAddAction(false)}>✕</button>
+          </div>
+        )}
 
         {actionItemsVisible && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -630,11 +679,13 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
-                      <button className="btn btn-ghost btn-xs" onClick={() => navigate(`/admin/timetable`)}>
+                      <button className="btn btn-ghost btn-xs" onClick={() => navigate(`/admin/classes/${s.id}/attendance`)}>
                         Attendance →
                       </button>
                       <div style={{ display: 'flex', gap: 4 }}>
-                        <button className="btn btn-ghost btn-xs" onClick={() => coverSession(s)}>COVER</button>
+                        <button className="btn btn-ghost btn-xs" style={coverDoneId === s.id ? { color: 'var(--lime)' } : {}} onClick={() => coverSession(s)}>
+                          {coverDoneId === s.id ? '✓ COVER FLAGGED' : 'COVER'}
+                        </button>
                         {confirmCancelId === s.id ? (
                           <>
                             <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => cancelSession(s)}>Confirm</button>
