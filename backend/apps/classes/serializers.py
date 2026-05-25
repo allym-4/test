@@ -203,7 +203,7 @@ class LockerSerializer(serializers.ModelSerializer):
             'id', 'number', 'assigned_to', 'assigned_to_detail', 'notes',
             'expires_at', 'assigned_at',
             'key_issued', 'key_returned', 'key_lost', 'locker_type', 'payment_type',
-            'payment_status', 'key_lost_fee_paid',
+            'payment_status', 'key_lost_fee_paid', 'status',
         )
         read_only_fields = ('id',)
 

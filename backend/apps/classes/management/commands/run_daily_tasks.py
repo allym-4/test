@@ -8,6 +8,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         tasks = [
             'open_live_seasons',
+            'check_locker_capacity',
             'send_locker_renewal_reminders',
             'send_season_reminders',
             'send_class_reminders',

@@ -185,6 +185,11 @@ class Locker(models.Model):
         ('invoiced', 'Invoiced'),
     ]
 
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('pending_return', 'Pending Return'),
+    ]
+
     number = models.PositiveIntegerField(unique=True)
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='lockers')
     notes = models.TextField(blank=True)
@@ -197,6 +202,7 @@ class Locker(models.Model):
     payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPE_CHOICES, blank=True)
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='unpaid')
     key_lost_fee_paid = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
 
     class Meta:
         ordering = ['number']

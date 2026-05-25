@@ -471,6 +471,86 @@ class LockerInvoiceView(APIView):
         return Response(LockerSerializer(locker).data)
 
 
+class LockerMarkPendingReturnView(APIView):
+    """Mark a locker as 'pending return' — key not yet back, season has ended."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        try:
+            locker = Locker.objects.select_related('assigned_to').get(pk=pk)
+        except Locker.DoesNotExist:
+            return Response({'detail': 'Locker not found.'}, status=status.HTTP_404_NOT_FOUND)
+        locker.status = 'pending_return'
+        locker.save(update_fields=['status'])
+        return Response(LockerSerializer(locker).data)
+
+
+class LockerCapacityCheckView(APIView):
+    """Returns locker capacity forecast for next season."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def get(self, request):
+        from apps.users.models import StudioSettings
+        from apps.enrolments.models import Enrolment
+        from django.db.models import Count
+
+        settings_obj = StudioSettings.get()
+        active_season = Season.objects.filter(status='active').first()
+        next_season = Season.objects.filter(status='upcoming').order_by('start_date').first()
+
+        if not active_season or not next_season:
+            return Response({'error': 'Need active and upcoming season'}, status=400)
+
+        season_end = active_season.end_date
+        total = 36  # total lockers
+
+        free_eligible_ids = set()
+        qualifying = (
+            Enrolment.objects
+            .filter(class_session__season=next_season, status='active')
+            .values('student_id')
+            .annotate(count=Count('id'))
+            .filter(count__gte=4)
+        )
+        free_eligible_ids = {q['student_id'] for q in qualifying}
+
+        paying_lockers = Locker.objects.filter(
+            assigned_to__isnull=False, locker_type='paid',
+            expires_at=season_end, status='active',
+        )
+        free_lockers = Locker.objects.filter(
+            assigned_to__isnull=False, locker_type='complimentary',
+            expires_at=season_end, status='active',
+        )
+
+        paying_count = paying_lockers.count()
+        free_count = len(free_eligible_ids)
+        total_demand = free_count + paying_count
+        has_issue = total_demand > total
+
+        return Response({
+            'total_lockers': total,
+            'free_eligible_next_season': free_count,
+            'paying_locker_holders': paying_count,
+            'total_demand': total_demand,
+            'has_capacity_issue': has_issue,
+            'shortfall': max(0, total_demand - total),
+            'carry_over_paused': settings_obj.locker_carry_over_paused,
+            'active_season': active_season.name,
+            'next_season': next_season.name,
+        })
+
+    def post(self, request):
+        """Admin: manually toggle carry-over pause."""
+        from apps.users.models import StudioSettings
+        settings_obj = StudioSettings.get()
+        paused = request.data.get('carry_over_paused')
+        if paused is not None:
+            settings_obj.locker_carry_over_paused = bool(paused)
+            settings_obj.save(update_fields=['locker_carry_over_paused'])
+        return Response({'carry_over_paused': settings_obj.locker_carry_over_paused})
+
+
 class KisiGrantListView(APIView):
     permission_classes = [IsAdminUser]
 

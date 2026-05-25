@@ -177,6 +177,10 @@ class StudioSettings(models.Model):
         blank=True,
         help_text='List of {days, send_email} dicts. days=0 means first reminder; for N>0, days since prev reminder.',
     )
+    locker_carry_over_paused = models.BooleanField(
+        default=False,
+        help_text='When True, the automatic locker carry-over reminder is paused (e.g. capacity issue detected).',
+    )
 
     class Meta:
         verbose_name = 'Studio Settings'

@@ -158,6 +158,13 @@ export default function AdminLockers() {
   const [modal, setModal] = useState(null)
   const [busy, setBusy] = useState(null)
   const [toast, setToast] = useState(null)
+  const [capacity, setCapacity] = useState(null)
+
+  useEffect(() => {
+    if (nextSeason) {
+      lockers.capacity().then(r => setCapacity(r.data)).catch(() => {})
+    }
+  }, [nextSeason?.id])
 
   function showToast(msg, type = 'ok') {
     setToast({ msg, type })
@@ -172,10 +179,35 @@ export default function AdminLockers() {
   const seasonName = eligibleData?.season?.name || activeSeason?.name || 'Current Season'
 
   // Stats
-  const freeLockers = lockerList.filter(l => l.locker_type === 'complimentary').length
-  const paidLockers = lockerList.filter(l => l.locker_type === 'paid').length
-  const overdue = lockerList.filter(l => l.locker_type === 'paid' && l.payment_status === 'unpaid').length
-  const available = TOTAL_LOCKERS - lockerList.length
+  const activeLockers = lockerList.filter(l => l.status !== 'pending_return')
+  const pendingReturnLockers = lockerList.filter(l => l.status === 'pending_return')
+  const freeLockers = activeLockers.filter(l => l.locker_type === 'complimentary').length
+  const paidLockers = activeLockers.filter(l => l.locker_type === 'paid').length
+  const overdue = activeLockers.filter(l => l.locker_type === 'paid' && l.payment_status === 'unpaid').length
+  const available = TOTAL_LOCKERS - activeLockers.length
+
+  async function markPendingReturn(l) {
+    setBusy(l.id + '-pr')
+    try {
+      await lockers.pendingReturn(l.id)
+      refetch()
+      showToast(`Locker #${l.number} marked as awaiting key return.`)
+    } catch (e) {
+      showToast(e.response?.data?.detail || 'Failed.', 'err')
+    }
+    setBusy(null)
+  }
+
+  async function toggleCarryOverPause(paused) {
+    try {
+      await lockers.setCarryOverPaused(paused)
+      const r = await lockers.capacity()
+      setCapacity(r.data)
+      showToast(paused ? 'Carry-over paused.' : 'Carry-over resumed.')
+    } catch {
+      showToast('Failed to update.', 'err')
+    }
+  }
 
   // Grid color per locker
   function gridStyle(num) {
@@ -311,10 +343,16 @@ export default function AdminLockers() {
 
       {activeTab === 'next' ? (
         <div>
-          <div style={{ background: 'rgba(100,220,100,0.08)', border: '1px solid rgba(100,220,100,0.2)', borderRadius: 10, padding: '14px 18px', marginBottom: 20 }}>
-            <div style={{ fontWeight: 700, color: 'var(--lime)', marginBottom: 4 }}>{nextSeason?.name} starts in {daysUntilNextSeason} day{daysUntilNextSeason !== 1 ? 's' : ''}</div>
+          <div style={{ background: capacity?.has_capacity_issue ? 'rgba(255,68,68,0.08)' : 'rgba(100,220,100,0.08)', border: `1px solid ${capacity?.has_capacity_issue ? 'rgba(255,68,68,0.3)' : 'rgba(100,220,100,0.2)'}`, borderRadius: 10, padding: '14px 18px', marginBottom: 20 }}>
+            <div style={{ fontWeight: 700, color: capacity?.has_capacity_issue ? 'var(--red)' : 'var(--lime)', marginBottom: 4 }}>
+              {nextSeason?.name} starts in {daysUntilNextSeason} day{daysUntilNextSeason !== 1 ? 's' : ''}
+              {capacity?.carry_over_paused && <span style={{ marginLeft: 8, fontSize: 11, background: 'rgba(255,165,0,0.2)', color: 'var(--amber)', borderRadius: 4, padding: '2px 6px' }}>Carry-over PAUSED</span>}
+            </div>
             <div style={{ fontSize: 12, color: 'var(--grey)' }}>
-              Review current locker holders and carry over to the next season. Unpaid locker fees will be reset.
+              {capacity?.has_capacity_issue
+                ? `Capacity issue: ${capacity.total_demand} demand vs ${capacity.total_lockers} lockers. Carry-over emails paused until resolved.`
+                : `${capacity?.free_eligible_next_season ?? '?'} students get free lockers (4+ classes) · ${capacity?.paying_locker_holders ?? '?'} paying holders · ${capacity?.total_lockers ?? 36} total capacity`
+              }
             </div>
           </div>
           <div style={{ overflowX: 'auto' }}>
@@ -393,6 +431,62 @@ export default function AdminLockers() {
           </div>
         ))}
       </div>
+
+      {/* Capacity warning banner */}
+      {capacity?.has_capacity_issue && (
+        <div style={{ background: 'rgba(255,68,68,0.08)', border: '1px solid rgba(255,68,68,0.4)', borderRadius: 10, padding: '14px 18px', marginBottom: 20 }}>
+          <div style={{ fontWeight: 700, color: 'var(--red)', marginBottom: 6, fontSize: 14 }}>
+            Locker capacity issue for {capacity.next_season}
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 10, lineHeight: 1.6 }}>
+            {capacity.free_eligible_next_season} students are enrolled in 4+ classes (free locker) + {capacity.paying_locker_holders} paying holders = <strong style={{ color: 'var(--white)' }}>{capacity.total_demand} total demand</strong> vs {capacity.total_lockers} lockers available. Shortfall: <strong style={{ color: 'var(--red)' }}>{capacity.shortfall}</strong>.
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, color: capacity.carry_over_paused ? 'var(--amber)' : 'var(--grey)' }}>
+              Carry-over emails: <strong>{capacity.carry_over_paused ? 'PAUSED' : 'Active'}</strong>
+            </span>
+            <button
+              className="btn btn-sm"
+              style={{ background: capacity.carry_over_paused ? 'var(--lime)' : 'var(--amber)', color: '#000', fontWeight: 700, fontSize: 12 }}
+              onClick={() => toggleCarryOverPause(!capacity.carry_over_paused)}
+            >
+              {capacity.carry_over_paused ? 'Resume carry-over' : 'Pause carry-over'}
+            </button>
+          </div>
+        </div>
+      )}
+      {capacity && !capacity.has_capacity_issue && capacity.carry_over_paused && (
+        <div style={{ background: 'rgba(255,165,0,0.08)', border: '1px solid rgba(255,165,0,0.4)', borderRadius: 10, padding: '12px 18px', marginBottom: 20 }}>
+          <div style={{ fontSize: 13, color: 'var(--amber)', fontWeight: 600, marginBottom: 6 }}>Carry-over is currently paused</div>
+          <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 8 }}>Capacity looks fine now ({capacity.total_demand}/{capacity.total_lockers}). You can resume carry-over emails.</div>
+          <button className="btn btn-lime btn-sm" onClick={() => toggleCarryOverPause(false)}>Resume carry-over</button>
+        </div>
+      )}
+
+      {/* Pending return lockers */}
+      {pendingReturnLockers.length > 0 && (
+        <div style={{ background: 'rgba(255,165,0,0.06)', border: '1px solid rgba(255,165,0,0.3)', borderRadius: 10, padding: '14px 18px', marginBottom: 20 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--amber)', marginBottom: 12 }}>
+            Awaiting key return ({pendingReturnLockers.length})
+          </div>
+          {pendingReturnLockers.map(l => (
+            <div key={l.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 10, marginBottom: 10, borderBottom: '1px solid rgba(255,165,0,0.15)' }}>
+              <div>
+                <span style={{ fontFamily: "'Archivo Black', sans-serif", color: 'var(--lav)', marginRight: 10 }}>#{String(l.number).padStart(2, '0')}</span>
+                <span style={{ fontSize: 13, color: 'var(--grey)' }}>awaiting key return from </span>
+                <button onClick={() => navigate(`/admin/students/${l.assigned_to_detail?.id}`)}
+                  style={{ fontSize: 13, fontWeight: 600, background: 'none', border: 'none', color: 'var(--white)', cursor: 'pointer', padding: 0, textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.2)' }}>
+                  {l.assigned_to_detail?.display_name}
+                </button>
+              </div>
+              <button className="btn btn-ghost btn-xs" style={{ color: 'var(--lime)' }}
+                onClick={() => toggleKeyReturned(l)}>
+                Mark returned
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Auto-Assign Required banner */}
       {eligibleWithoutLocker.length > 0 && (
@@ -556,6 +650,12 @@ export default function AdminLockers() {
                             <button className="btn btn-ghost btn-xs" style={{ color: 'var(--lime)', fontSize: 10 }}
                               onClick={() => resetLostKey(l)} disabled={busy === l.id + '-reset'}>
                               {busy === l.id + '-reset' ? '…' : 'Reset Key'}
+                            </button>
+                          )}
+                          {l.status !== 'pending_return' && l.expires_at && new Date(l.expires_at) < new Date() && !l.key_returned && (
+                            <button className="btn btn-ghost btn-xs" style={{ color: 'var(--amber)' }}
+                              onClick={() => markPendingReturn(l)} disabled={busy === l.id + '-pr'}>
+                              {busy === l.id + '-pr' ? '…' : 'Pending Return'}
                             </button>
                           )}
                           <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => unassign(l)}>Unassign</button>

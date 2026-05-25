@@ -197,6 +197,9 @@ export const lockers = {
   carryOver: (id) => client.post(`/api/classes/lockers/${id}/carry-over/`),
   invoice: (id, data) => client.post(`/api/classes/lockers/${id}/invoice/`, data || {}),
   markKeyIssued: (id, issued) => client.patch(`/api/classes/lockers/${id}/`, { key_issued: issued }),
+  pendingReturn: (id) => client.post(`/api/classes/lockers/${id}/pending-return/`),
+  capacity: () => client.get('/api/classes/lockers/capacity/'),
+  setCarryOverPaused: (paused) => client.post('/api/classes/lockers/capacity/', { carry_over_paused: paused }),
 }
 
 export const helpdesk = {
