@@ -10,6 +10,8 @@ const SUGGESTIONS = [
   'Issue a makeup credit to Jake — he was sick',
   'Add a $20 no-show fee to Emma',
   "What's on the waitlist for Level 3?",
+  'Show me all automations',
+  'Create an automation: when a trial is booked, send a confirmation email',
 ]
 
 function renderText(text) {

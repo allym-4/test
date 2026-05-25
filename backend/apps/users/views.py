@@ -1567,6 +1567,68 @@ ADMIN_TOOLS = [
             "required": ["student_name", "title", "body"],
         },
     },
+    {
+        "name": "list_automations",
+        "description": "List all automation rules (both built-in and custom), showing their name, description, trigger type, and whether they are enabled.",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+    },
+    {
+        "name": "create_automation",
+        "description": (
+            "Create a new custom automation rule. Use this when the admin asks to set up an automation, reminder, or triggered action. "
+            "You must determine the trigger_type from context — common values: 'trial_booked', 'trial_completed', 'enrolment_created', "
+            "'student_registered', 'payment_received', 'attendance_no_show', 'daily'. "
+            "The actions list describes what should happen — each action is a dict with 'type' (one of: 'send_email', 'send_notification', "
+            "'add_charge', 'issue_credit', 'create_task', 'wait_hours') and relevant fields like 'subject', 'body', 'hours', 'title'. "
+            "For multi-step sequences (e.g. send email, wait 24h, send another email), include multiple action dicts in order. "
+            "Always confirm the details with the admin before creating if anything is ambiguous."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "Short human-readable name for this automation"},
+                "description": {"type": "string", "description": "What this automation does"},
+                "trigger_type": {"type": "string", "description": "Event that fires this automation"},
+                "actions": {
+                    "type": "array",
+                    "description": "Ordered list of actions to perform",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "type": {"type": "string"},
+                            "subject": {"type": "string"},
+                            "body": {"type": "string"},
+                            "title": {"type": "string"},
+                            "hours": {"type": "number"},
+                            "amount": {"type": "number"},
+                        },
+                    },
+                },
+                "conditions": {
+                    "type": "array",
+                    "description": "Optional conditions that must be met for this automation to fire",
+                    "items": {"type": "object"},
+                },
+            },
+            "required": ["name", "trigger_type", "actions"],
+        },
+    },
+    {
+        "name": "toggle_automation",
+        "description": "Enable or disable an automation rule by its slug or name.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "slug_or_name": {"type": "string", "description": "Automation slug or name (partial match ok)"},
+                "enabled": {"type": "boolean", "description": "True to enable, False to disable"},
+            },
+            "required": ["slug_or_name", "enabled"],
+        },
+    },
 ]
 
 STUDENT_TOOLS = [
@@ -2047,6 +2109,66 @@ def execute_tool(tool_name, tool_input, acting_user=None):
             "If you have any other enquiries, please contact us below and we'll get back to you ASAP."
         )
 
+    elif tool_name == 'list_automations':
+        from apps.users.models import AutomationRule
+        rules = AutomationRule.objects.all()
+        db_map = {r.slug: r for r in rules}
+        lines = ["Current automations:"]
+        for defn in BUILT_IN_AUTOMATIONS:
+            rule = db_map.get(defn['slug'])
+            enabled = rule.enabled if rule else True
+            name = (rule.name if rule and rule.name else None) or defn['name']
+            lines.append(f"  {'✅' if enabled else '❌'} {name} (slug: {defn['slug']}) — {defn['trigger_type']}")
+        custom = [r for r in rules if r.slug not in BUILT_IN_SLUGS]
+        if custom:
+            lines.append("Custom:")
+            for r in custom:
+                lines.append(f"  {'✅' if r.enabled else '❌'} {r.name or r.slug} (slug: {r.slug}) — {r.trigger_type or 'n/a'}")
+        return '\n'.join(lines)
+
+    elif tool_name == 'create_automation':
+        from apps.users.models import AutomationRule
+        import uuid
+        name = tool_input.get('name', '').strip()
+        trigger_type = tool_input.get('trigger_type', '').strip()
+        actions = tool_input.get('actions', [])
+        description = tool_input.get('description', '')
+        conditions = tool_input.get('conditions', [])
+        if not name or not trigger_type:
+            return "name and trigger_type are required to create an automation."
+        slug = f"custom_{uuid.uuid4().hex[:8]}"
+        rule = AutomationRule.objects.create(
+            slug=slug,
+            name=name,
+            description=description,
+            trigger_type=trigger_type,
+            actions=actions,
+            conditions=conditions,
+            is_custom=True,
+            enabled=True,
+        )
+        action_summary = ', '.join(a.get('type', '?') for a in actions) if actions else 'none'
+        return f"Created automation '{name}' (slug: {slug}). Trigger: {trigger_type}. Actions: {action_summary}. It is now enabled."
+
+    elif tool_name == 'toggle_automation':
+        from apps.users.models import AutomationRule
+        slug_or_name = tool_input.get('slug_or_name', '')
+        enabled = tool_input.get('enabled', True)
+        rule = AutomationRule.objects.filter(slug=slug_or_name).first()
+        if not rule:
+            rule = AutomationRule.objects.filter(name__icontains=slug_or_name).first()
+        if not rule:
+            # Check built-in definitions
+            matched = next((d for d in BUILT_IN_AUTOMATIONS if slug_or_name.lower() in d['slug'] or slug_or_name.lower() in d['name'].lower()), None)
+            if matched:
+                rule, _ = AutomationRule.objects.get_or_create(slug=matched['slug'], defaults={'name': matched['name'], 'trigger_type': matched['trigger_type']})
+            else:
+                return f"No automation found matching '{slug_or_name}'."
+        rule.enabled = enabled
+        rule.save(update_fields=['enabled'])
+        state = 'enabled' if enabled else 'disabled'
+        return f"Automation '{rule.name or rule.slug}' is now {state}."
+
     return f"Unknown tool: {tool_name}"
 
 
@@ -2079,7 +2201,13 @@ class AssistantView(APIView):
                 f"Studio: {studio.studio_name} · Level 1, 88 Kippax St, Surry Hills NSW 2010 · (02) 9160 0223\n"
                 f"Studios: Rhapsody (14 poles), The Box (11 poles), Janitor's Closet (3 poles, private lessons)\n\n"
                 f"You have tools to: look up students, view/update attendance, enrol/cancel students, move between classes, "
-                f"take payments, add charges, issue makeup credits, book practice time, check waitlists, send notifications, and more.\n\n"
+                f"take payments, add charges, issue makeup credits, book practice time, check waitlists, send notifications, "
+                f"list/create/toggle automations, and more.\n\n"
+                f"AUTOMATION CREATION: When asked to create an automation or workflow, use the create_automation tool. "
+                f"Build the actions list as a sequence of steps — e.g. send_email, wait_hours, send_email. "
+                f"Ask the admin for email subject/body content before creating, unless they've provided it. "
+                f"Common trigger types: trial_booked, trial_completed, enrolment_created, student_registered, "
+                f"payment_received, attendance_no_show, daily.\n\n"
                 f"Always use tools to get live data rather than guessing. Be concise — reception is busy.\n"
                 f"Confirm what you've done after taking an action. If something is ambiguous, ask one clarifying question.\n"
                 f"Today is {dt.date.today()}."
