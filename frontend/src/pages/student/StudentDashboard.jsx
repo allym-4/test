@@ -1,12 +1,40 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, seasons, attendance as attendanceApi, classes as classesApi, skills as skillsApi, announcements as announcementsApi, payments, settings as settingsApi } from '../../api'
+import { enrolments, seasons, attendance as attendanceApi, classes as classesApi, skills as skillsApi, announcements as announcementsApi, payments, settings as settingsApi, notifications as notificationsApi } from '../../api'
 import CancellationOfferPopup from '../../components/CancellationOfferPopup'
 import PostTrialPopup from '../../components/PostTrialPopup'
 import MarkAwayModal from '../../components/MarkAwayModal'
 
 import { Link } from 'react-router-dom'
+
+function NotifyInstructorButton({ instructorId, studentName }) {
+  const [state, setState] = useState('idle') // idle | sending | done | error
+
+  async function notify() {
+    if (!instructorId) { setState('error'); return }
+    setState('sending')
+    try {
+      await notificationsApi.send(
+        instructorId,
+        'Student ready for level check-off',
+        `${studentName} has marked all their skills as complete and is ready for a formal check-off at their next class.`,
+        'info'
+      )
+      setState('done')
+    } catch {
+      setState('error')
+    }
+  }
+
+  if (state === 'done') return <div style={{ fontSize: 13, color: 'var(--lime)', fontWeight: 600 }}>✓ Instructor notified — they'll check you off at your next class.</div>
+  if (state === 'error') return <div style={{ fontSize: 12, color: 'var(--red)' }}>Couldn't send notification — please contact the studio directly.</div>
+  return (
+    <button className="btn btn-lime btn-sm" onClick={notify} disabled={state === 'sending'}>
+      {state === 'sending' ? 'Notifying…' : 'Notify instructor'}
+    </button>
+  )
+}
 
 const DAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 const DAYS_SHORT = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
@@ -310,12 +338,15 @@ export default function StudentDashboard() {
                 </div>
               ))}
             </div>
-            {allDone && (
-              <div style={{ marginTop: 12, padding: '14px 16px', background: 'rgba(204,255,0,0.05)', border: '1px solid var(--lime)', borderRadius: 8 }}>
-                <div style={{ fontSize: 13, color: 'var(--lime)', marginBottom: 10 }}>🎉 Looking good! Your instructor will do a formal check-off when they're happy you're ready — tap below to flag it to them.</div>
-                <button className="btn btn-lime btn-sm" onClick={() => alert('Your instructor has been notified! They\'ll do a formal check-off at your next class.')}>Notify instructor</button>
-              </div>
-            )}
+            {allDone && (() => {
+              const instructorId = enrolments_.find(e => e.class_session_detail?.instructor_detail?.id)?.class_session_detail?.instructor_detail?.id
+              return (
+                <div style={{ marginTop: 12, padding: '14px 16px', background: 'rgba(204,255,0,0.05)', border: '1px solid var(--lime)', borderRadius: 8 }}>
+                  <div style={{ fontSize: 13, color: 'var(--lime)', marginBottom: 10 }}>🎉 Looking good! Your instructor will do a formal check-off when they're happy you're ready — tap below to flag it to them.</div>
+                  <NotifyInstructorButton instructorId={instructorId} studentName={user?.first_name || user?.display_name || 'A student'} />
+                </div>
+              )
+            })()}
           </div>
         )
       })()}

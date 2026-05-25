@@ -371,7 +371,11 @@ export default function AdminMessages() {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-ghost btn-sm" onClick={() => navigate('/admin/settings')}>⚙ Manage Connection</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => alert('All messages marked as read')}>Mark all read</button>
+          <button className="btn btn-ghost btn-sm" onClick={async () => {
+            const unread = conversations.filter(c => c.admin_unread)
+            await Promise.all(unread.map(c => helpdesk.updateConversation(c.id, { admin_unread: false })))
+            refetch()
+          }}>Mark all read</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setShowBroadcast(true)}>📣 Broadcast</button>
           <button className="btn btn-lime btn-sm" onClick={() => setShowNew(true)}>+ New Message</button>
         </div>

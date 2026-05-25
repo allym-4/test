@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
-import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi, settings as settingsApi, classes, seasons as seasonsApi } from '../../api'
+import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi, settings as settingsApi, classes, seasons as seasonsApi, tags as tagsApi } from '../../api'
 import client from '../../api/client'
 import { useAuth } from '../../contexts/AuthContext'
 import '../StudentsPage.css'
@@ -510,6 +510,63 @@ function AddPracticeCreditsModal({ student, onClose, onSuccess }) {
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  )
+}
+
+function StudentTagsRow({ student, setStudent }) {
+  const { data: allTagsData } = useApi(() => tagsApi.list())
+  const allTags = allTagsData?.results || allTagsData || []
+  const [open, setOpen] = useState(false)
+  const studentTags = student.tags || []
+
+  async function addTag(tag) {
+    try {
+      await tagsApi.addToStudent(student.id, tag.id)
+      setStudent(s => ({ ...s, tags: [...(s.tags || []), tag] }))
+    } catch {}
+    setOpen(false)
+  }
+
+  async function removeTag(tag) {
+    try {
+      await tagsApi.removeFromStudent(student.id, typeof tag === 'object' ? tag.id : tag)
+      setStudent(s => ({ ...s, tags: (s.tags || []).filter(t => (typeof t === 'object' ? t.id : t) !== (typeof tag === 'object' ? tag.id : tag)) }))
+    } catch {}
+  }
+
+  const assignedIds = new Set(studentTags.map(t => typeof t === 'object' ? t.id : t))
+  const available = allTags.filter(t => !assignedIds.has(t.id))
+
+  return (
+    <div className="info-val" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', position: 'relative' }}>
+      {studentTags.map((t, i) => {
+        const name = typeof t === 'string' ? t : t.name
+        const colour = typeof t === 'object' && t.colour ? t.colour : null
+        return (
+          <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: colour ? colour + '33' : 'rgba(255,170,0,0.15)', color: colour || 'var(--amber)', border: `1px solid ${colour ? colour + '55' : 'rgba(255,170,0,0.3)'}` }}>
+            {name}
+            <button onClick={() => removeTag(t)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'inherit', fontSize: 10, lineHeight: 1, opacity: 0.7 }}>✕</button>
+          </span>
+        )
+      })}
+      <div style={{ position: 'relative' }}>
+        <button className="btn btn-ghost btn-xs" onClick={() => setOpen(v => !v)}>+ Tag</button>
+        {open && (
+          <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 4, background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, zIndex: 10, minWidth: 160, boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}>
+            {available.length === 0 ? (
+              <div style={{ padding: '10px 14px', fontSize: 12, color: 'var(--grey)' }}>All tags assigned</div>
+            ) : available.map(tag => (
+              <button key={tag.id} onClick={() => addTag(tag)} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: '8px 14px', cursor: 'pointer', fontSize: 12, color: 'var(--white)' }}
+                onMouseEnter={e => e.currentTarget.style.background = '#222'}
+                onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: tag.colour || '#888', marginRight: 8 }} />
+                {tag.name}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -1051,12 +1108,7 @@ export default function AdminStudentDetail() {
                     <BlockedSessionsRow student={student} setStudent={setStudent} />
                     <div className="info-row" style={{ borderBottom: 'none' }}>
                       <div className="info-label">Tags</div>
-                      <div className="info-val" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-                        {(student.tags || []).map((t, i) => (
-                          <span key={i} className="tag tag-amber" style={{ fontSize: 10 }}>{typeof t === 'string' ? t : t.name}</span>
-                        ))}
-                        <button className="btn btn-ghost btn-xs" onClick={() => alert('Add tag')}>+ Tag</button>
-                      </div>
+                      <StudentTagsRow student={student} setStudent={setStudent} />
                     </div>
                   </div>
                 </div>

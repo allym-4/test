@@ -425,7 +425,6 @@ export default function AdminHelpdesk() {
           <div className="page-sub">Student support requests &amp; enquiries</div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <button className="btn btn-ghost btn-sm" onClick={() => alert('Export CSV downloaded')}>Export</button>
           <button className="btn btn-lime btn-sm" onClick={() => setShowNew(true)}>+ New Ticket</button>
         </div>
       </div>

@@ -314,6 +314,65 @@ function ViewModal({ enrolment: e, onClose, onCancelled, onConverted }) {
   )
 }
 
+function TransferModal({ enrolment: e, onClose, onSaved }) {
+  const { data: sessData } = useApi(() => classes.list({ page_size: 300 }))
+  const sessions = (sessData?.results || sessData || []).filter(s => s.id !== e.class_session)
+  const [toSession, setToSession] = useState('')
+  const [reason, setReason] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+
+  async function submit(ev) {
+    ev.preventDefault()
+    setSaving(true)
+    setError(null)
+    try {
+      await enrolments.changeRequests.create({
+        enrolment: e.id,
+        request_type: 'transfer',
+        to_session: parseInt(toSession),
+        reason: reason || 'Admin-initiated transfer',
+      })
+      onSaved()
+    } catch (err) {
+      setError(err.response?.data ? JSON.stringify(err.response.data) : 'Failed to create transfer request')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={ev => ev.target === ev.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 480 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>Transfer Booking</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <form className="sd-body" onSubmit={submit}>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 16 }}>
+            Transferring <strong style={{ color: 'var(--white)' }}>{e.student_detail?.display_name}</strong> from <strong style={{ color: 'var(--white)' }}>{e.class_session_detail?.name}</strong>
+          </div>
+          {error && <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>{error}</div>}
+          <div className="field">
+            <label>Transfer to *</label>
+            <select value={toSession} onChange={ev => setToSession(ev.target.value)} required>
+              <option value="">Select class…</option>
+              {sessions.map(s => <option key={s.id} value={s.id}>{s.name} — {DAYS[s.day_of_week]} {s.start_time?.slice(0, 5)}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label>Reason (optional)</label>
+            <textarea rows={2} value={reason} onChange={ev => setReason(ev.target.value)} placeholder="e.g. Schedule conflict, level change…" />
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-lime btn-sm" disabled={saving || !toSession}>{saving ? 'Saving…' : 'Create Transfer Request'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminBookings() {
   const { data, loading, refetch } = useApi(() => enrolments.list())
   const [search, setSearch] = useState('')
@@ -324,6 +383,7 @@ export default function AdminBookings() {
   const [showAdd, setShowAdd] = useState(false)
   const [viewing, setViewing] = useState(null)
   const [confirmCancel, setConfirmCancel] = useState(null)
+  const [transferEnrol, setTransferEnrol] = useState(null)
 
   const all = data?.results || []
 
@@ -466,7 +526,7 @@ export default function AdminBookings() {
                         <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => setViewing(e)}>Convert to Season</button>
                       )}
                       {e.status === 'active' && e.enrolment_type !== 'trial' && (
-                        <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => alert('Transfer booking')}>Transfer</button>
+                        <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => setTransferEnrol(e)}>Transfer</button>
                       )}
                       {e.status === 'cancelled' && (
                         <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={async () => {
@@ -505,6 +565,9 @@ export default function AdminBookings() {
       )}
       {viewing && (
         <ViewModal enrolment={viewing} onClose={() => setViewing(null)} onCancelled={() => { setViewing(null); refetch() }} onConverted={() => { setViewing(null); refetch() }} />
+      )}
+      {transferEnrol && (
+        <TransferModal enrolment={transferEnrol} onClose={() => setTransferEnrol(null)} onSaved={() => { setTransferEnrol(null); refetch() }} />
       )}
     </div>
   )
