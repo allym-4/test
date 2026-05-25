@@ -264,6 +264,28 @@ class EnrolmentListView(generics.ListCreateAPIView):
                 'Your account is currently on hold due to an outstanding balance. '
                 'Please settle your account before booking.'
             )
+
+        # Level cap and session-specific booking restrictions
+        if user.role == 'student' and session:
+            def _level_num(s):
+                if s and s.startswith('Level ') and s.split()[-1].isdigit():
+                    return int(s.split()[-1])
+                return 0
+
+            session_level_num = _level_num(getattr(session, 'level', ''))
+            max_level_num = _level_num(getattr(user, 'max_booking_level', ''))
+            if max_level_num and session_level_num and session_level_num > max_level_num:
+                raise ValidationError(
+                    f'The team have noted that {session.level} is outside your current skill level. '
+                    'Please contact the studio for more information.'
+                )
+            if user.blocked_sessions.filter(pk=session.pk).exists():
+                raise ValidationError(
+                    f'The team have noted that {session.name} is outside your current skill level. '
+                    'Please contact the studio for more information.'
+                )
+
+        if user.role == 'student':
             enrolment = serializer.save(student=user)
         else:
             enrolment = serializer.save()

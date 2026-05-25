@@ -45,4 +45,7 @@ class Command(BaseCommand):
         self.stdout.write('-- Auto-holding accounts with 14+ day overdue balances --')
         call_command('auto_hold_accounts')
 
+        self.stdout.write('-- Week-4 level restriction review reminder --')
+        call_command('send_level_restriction_review')
+
         self.stdout.write('=== Done ===')

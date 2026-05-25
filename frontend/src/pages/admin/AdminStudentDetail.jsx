@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useApi } from '../../hooks/useApi'
 import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi, settings as settingsApi, classes, seasons as seasonsApi } from '../../api'
 import client from '../../api/client'
 import { useAuth } from '../../contexts/AuthContext'
@@ -514,6 +515,79 @@ function AddPracticeCreditsModal({ student, onClose, onSuccess }) {
   )
 }
 
+function BlockedSessionsRow({ student, setStudent }) {
+  const { data: sessData } = useApi(() => classes.list({ page_size: 300 }))
+  const allSessions = sessData?.results || sessData || []
+  const blocked = student.blocked_sessions || []
+  const [adding, setAdding] = useState(false)
+  const [search, setSearch] = useState('')
+
+  const available = allSessions.filter(s =>
+    !blocked.includes(s.id) &&
+    (s.name?.toLowerCase().includes(search.toLowerCase()) || !search)
+  )
+
+  async function addBlock(sessionId) {
+    const updated = [...blocked, sessionId]
+    await users.update(student.id, { blocked_sessions: updated })
+    setStudent(s => ({ ...s, blocked_sessions: updated }))
+    setAdding(false)
+    setSearch('')
+  }
+
+  async function removeBlock(sessionId) {
+    const updated = blocked.filter(id => id !== sessionId)
+    await users.update(student.id, { blocked_sessions: updated })
+    setStudent(s => ({ ...s, blocked_sessions: updated }))
+  }
+
+  const blockedNames = blocked.map(id => allSessions.find(s => s.id === id)?.name || `Session #${id}`)
+
+  return (
+    <div className="info-row" style={{ alignItems: 'flex-start' }}>
+      <div className="info-label" style={{ paddingTop: 4 }}>Blocked Classes</div>
+      <div className="info-val">
+        {blockedNames.length === 0 && !adding && (
+          <span style={{ fontSize: 12, color: 'var(--grey)' }}>None</span>
+        )}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: blockedNames.length > 0 ? 8 : 0 }}>
+          {blockedNames.map((name, i) => (
+            <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 20, padding: '2px 10px', fontSize: 11, color: 'var(--red)' }}>
+              {name}
+              <button onClick={() => removeBlock(blocked[i])} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red)', fontSize: 13, lineHeight: 1, padding: 0 }}>✕</button>
+            </span>
+          ))}
+        </div>
+        {adding ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <input
+              autoFocus
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search classes…"
+              style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, color: '#fff', fontSize: 12, padding: '5px 10px', width: 200 }}
+            />
+            <div style={{ maxHeight: 160, overflowY: 'auto', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8 }}>
+              {available.slice(0, 20).map(s => (
+                <div key={s.id} onClick={() => addBlock(s.id)} style={{ padding: '7px 12px', fontSize: 12, cursor: 'pointer', borderBottom: '1px solid var(--border)' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#222'}
+                  onMouseLeave={e => e.currentTarget.style.background = ''}
+                >
+                  {s.name}
+                </div>
+              ))}
+              {available.length === 0 && <div style={{ padding: '10px 12px', fontSize: 12, color: 'var(--grey)' }}>No classes found</div>}
+            </div>
+            <button className="btn btn-ghost btn-xs" onClick={() => { setAdding(false); setSearch('') }}>Cancel</button>
+          </div>
+        ) : (
+          <button className="btn btn-ghost btn-xs" style={{ fontSize: 10 }} onClick={() => setAdding(true)}>+ Block a class</button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function AdminStudentDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -954,6 +1028,27 @@ export default function AdminStudentDetail() {
                         <span style={{ fontSize: 10, color: 'var(--grey)' }}>Admin override</span>
                       </div>
                     </div>
+                    <div className="info-row">
+                      <div className="info-label">Max Booking Level</div>
+                      <div className="info-val" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <select
+                          value={student.max_booking_level || ''}
+                          onChange={async e => {
+                            const lvl = e.target.value
+                            await users.update(student.id, { max_booking_level: lvl })
+                            setStudent(s => ({ ...s, max_booking_level: lvl }))
+                          }}
+                          style={{ background: student.max_booking_level ? 'rgba(255,68,68,0.08)' : '#111', color: student.max_booking_level ? 'var(--red)' : '#fff', border: `1px solid ${student.max_booking_level ? 'rgba(255,68,68,0.35)' : 'var(--border)'}`, borderRadius: 6, padding: '3px 8px', fontSize: 12 }}
+                        >
+                          <option value="">No restriction</option>
+                          {['Level 1','Level 2','Level 3','Level 4','Level 5','Level 6'].map(l => <option key={l} value={l}>{l}</option>)}
+                        </select>
+                        {student.max_booking_level && (
+                          <span style={{ fontSize: 10, color: 'var(--red)' }}>Hard cap active</span>
+                        )}
+                      </div>
+                    </div>
+                    <BlockedSessionsRow student={student} setStudent={setStudent} />
                     <div className="info-row" style={{ borderBottom: 'none' }}>
                       <div className="info-label">Tags</div>
                       <div className="info-val" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>

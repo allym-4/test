@@ -47,6 +47,11 @@ class User(AbstractUser):
     nickname = models.CharField(max_length=50, blank=True)
     level = models.CharField(max_length=50, blank=True)
     cleared_for_level = models.CharField(max_length=50, blank=True, help_text='Level student is cleared to attend (may differ from current level)')
+    max_booking_level = models.CharField(max_length=50, blank=True, help_text='Hard cap — student cannot book above this level (admin-set, stays until removed)')
+    blocked_sessions = models.ManyToManyField(
+        'classes.ClassSession', blank=True, related_name='level_blocked_students',
+        help_text='Specific sessions this student cannot book (admin-set)'
+    )
 
     # Staff permission flags (only meaningful for instructor/admin/staff roles)
     perm_billing = models.BooleanField(default=False)
