@@ -1189,6 +1189,20 @@ class CasualBookView(APIView):
         if occurrence.status == 'cancelled':
             return Response({'detail': 'This class has been cancelled.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Upcoming-season casuals only open in week 8 of the active season
+        occ_season = getattr(getattr(occurrence, 'session', None), 'season', None)
+        if occ_season and getattr(occ_season, 'status', None) == 'upcoming':
+            from apps.classes.models import Season as _Season
+            from django.utils import timezone as _tz
+            active_season = _Season.objects.filter(status='active').order_by('-start_date').first()
+            if active_season and active_season.start_date:
+                active_week = (_tz.localdate() - active_season.start_date).days // 7 + 1
+                if active_week < 8:
+                    return Response(
+                        {'detail': 'Casual bookings for the upcoming season open in week 8 of the current season.'},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
         enrolment_type = request.data.get('enrolment_type', 'casual')
         if enrolment_type not in ('casual', 'catchup', 'classpass'):
             return Response({'detail': 'Invalid enrolment_type.'}, status=status.HTTP_400_BAD_REQUEST)

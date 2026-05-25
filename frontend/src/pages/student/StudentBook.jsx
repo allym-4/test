@@ -994,8 +994,9 @@ function PlanCardForm({ needsDeposit, frequency, timing, depositAmount, notes, o
         setSubmitting(false)
         return
       }
+      const pmId = result.paymentIntent?.payment_method || result.setupIntent?.payment_method || null
       const planNotes = `Frequency: ${frequency} | Timing: ${timing === 'commences' ? 'When season commences' : 'Start today'}${depositAmount > 0 && timing === 'commences' ? ` | Deposit paid: $${depositAmount.toFixed(2)}` : ''}${notes ? ` | ${notes}` : ''}`
-      await onConfirm(frequency, planNotes)
+      await onConfirm(frequency, planNotes, pmId)
       onClose()
     } catch (e) {
       setError(e.response?.data?.detail || 'Failed to submit — please try again')
@@ -1678,9 +1679,9 @@ function SeasonTab({
   onAdminBlock,
 }) {
   const isMobile = useIsMobile()
-  // Bookable seasons: active OR upcoming with bookings_open
+  // Bookable seasons: active, OR upcoming once go_live_at has passed or bookings_open is true
   const bookableSeasons = allSeasons
-    .filter(s => s.status === 'active' || (s.status === 'upcoming' && s.bookings_open))
+    .filter(s => s.status === 'active' || (s.status === 'upcoming' && (s.bookings_open || (s.go_live_at && new Date(s.go_live_at) <= new Date()))))
     .sort((a, b) => {
       // newest first: compare start_date descending
       if (a.start_date && b.start_date) return new Date(b.start_date) - new Date(a.start_date)
@@ -2331,16 +2332,15 @@ export default function StudentBook() {
     setCheckout(null)
   }
 
-  async function confirmPaymentPlan(frequency, notes) {
+  async function confirmPaymentPlan(frequency, notes, stripePaymentMethodId) {
     const co = pendingPlanCheckout
     if (!co) return
-    const ids = co.sessionIds || (co.session ? [co.session.id] : [])
     try {
       await paymentsApi.plans.create({
         description: co.description,
         total_amount: co.amount,
-        session_ids: ids,
         notes: `Frequency: ${frequency}${notes ? ` | ${notes}` : ''}`,
+        ...(stripePaymentMethodId ? { stripe_payment_method_id: stripePaymentMethodId } : {}),
       })
     } catch {}
     setPendingPlanCheckout(null)

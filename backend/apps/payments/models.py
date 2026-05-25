@@ -64,6 +64,7 @@ class PaymentPlan(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(blank=True)
+    stripe_payment_method_id = models.CharField(max_length=100, blank=True, default='')
 
     class Meta:
         ordering = ['-created_at']

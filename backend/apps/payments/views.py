@@ -61,9 +61,23 @@ class PaymentPlanListView(generics.ListCreateAPIView):
         return qs
 
     def perform_create(self, serializer):
-        if self.request.user.role not in ('admin', 'instructor'):
-            raise permissions.PermissionDenied
-        serializer.save(created_by=self.request.user)
+        user = self.request.user
+        if user.role in ('admin', 'instructor'):
+            serializer.save(created_by=user)
+        else:
+            # Students request a plan for themselves; admin must activate it.
+            # Use the PM ID passed from the frontend (captured after Stripe confirmation),
+            # falling back to whatever card is on file.
+            pm_id = (
+                self.request.data.get('stripe_payment_method_id')
+                or user.default_payment_method_id
+                or ''
+            )
+            serializer.save(
+                student=user,
+                status='pending_approval',
+                stripe_payment_method_id=pm_id,
+            )
 
 
 class PaymentPlanDetailView(generics.RetrieveUpdateAPIView):

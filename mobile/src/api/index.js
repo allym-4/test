@@ -123,6 +123,7 @@ export const payments = {
   plans: {
     list: (params) => client.get('/api/payments/plans/', { params }),
     get: (id) => client.get(`/api/payments/plans/${id}/`),
+    create: (data) => client.post('/api/payments/plans/', data),
   },
   cancellationOffers: {
     mine: () => client.get('/api/payments/cancellation-offers/mine/'),

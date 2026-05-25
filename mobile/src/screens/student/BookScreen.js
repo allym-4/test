@@ -1221,12 +1221,15 @@ export default function BookScreen({ navigation }) {
   }
 
   const activeSeason = allSeasons.find(s => s.status === 'active')
-  // Seasons available to book into — prefer upcoming with open bookings, then active
-  const bookableSeasons = allSeasons.filter(s =>
-    (s.status === 'upcoming' || s.status === 'active')
-  )
+  const _now = new Date()
+  // Seasons available to book into: active, or upcoming once go_live_at has passed or bookings_open=true
+  const bookableSeasons = allSeasons.filter(s => {
+    if (s.status === 'active') return true
+    if (s.status === 'upcoming') return s.bookings_open || (s.go_live_at && new Date(s.go_live_at) <= _now)
+    return false
+  })
   const defaultBookingSeason =
-    allSeasons.find(s => s.status === 'upcoming' && s.bookings_open !== false) ??
+    allSeasons.find(s => s.status === 'upcoming' && (s.bookings_open || (s.go_live_at && new Date(s.go_live_at) <= _now))) ??
     allSeasons.find(s => s.status === 'active') ??
     allSeasons.find(s => s.status === 'upcoming')
   const bookingSeason = (selectedSeasonId ? allSeasons.find(s => s.id === selectedSeasonId) : null) ?? defaultBookingSeason
@@ -1255,10 +1258,9 @@ export default function BookScreen({ navigation }) {
   const currentSeasonWeek = seasonStartDate ? Math.ceil((new Date() - seasonStartDate) / (7 * 86400000)) : 0
   const isPastWeek3 = currentSeasonWeek > 3 // legacy alias kept for safety
 
-  // Casual tab: sessions from active season + upcoming if it starts within 7 days
+  // Casual tab: sessions from active season + upcoming if active season is in week 8+
   const nextSeason = allSeasons.find(s => s.status === 'upcoming')
-  const nextSeasonStart = nextSeason?.start_date ? new Date(nextSeason.start_date + 'T00:00') : null
-  const nextSeasonStartsSoon = nextSeasonStart && nextSeasonStart <= new Date(Date.now() + 7 * 86400000)
+  const nextSeasonStartsSoon = currentSeasonWeek >= 8
   const casualSessions = allSessions.filter(s => {
     if (!s.is_active) return false
     if (!activeSeason?.id && !nextSeason?.id) return true
@@ -1344,6 +1346,19 @@ export default function BookScreen({ navigation }) {
       } else if (payOption === 'deposit') {
         Alert.alert('You\'re booked!', `Deposit of $${amount} confirmed. Your spot is reserved — the balance will be charged automatically when the season commences.`)
       } else if (payOption === 'plan') {
+        const { frequency, startSeason, schedule, depositPaid } = extraData || {}
+        const scheduleNote = schedule ? schedule.map(i => `${i.label}: $${i.amount}`).join(', ') : ''
+        const planNotes = [
+          frequency ? `Frequency: ${frequency}` : '',
+          startSeason ? 'Timing: When season commences' : 'Timing: Start today',
+          depositPaid > 0 ? `Deposit paid: $${depositPaid}` : '',
+          scheduleNote ? `Schedule: ${scheduleNote}` : '',
+        ].filter(Boolean).join(' | ')
+        await payments.plans.create({
+          description: selectedSessions.map(s => s.name).join(', ') || 'Season enrolment',
+          total_amount: amount,
+          notes: planNotes,
+        }).catch(() => {})
         Alert.alert('You\'re booked!', "Your spot is held for 24 hours while we review your payment plan request. You'll receive a confirmation once approved — no payment is taken until then.")
       } else if (payOption === 'cash') {
         const dateLabel = extraData?.cashDate
