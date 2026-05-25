@@ -42,4 +42,7 @@ class Command(BaseCommand):
         self.stdout.write('-- Auto-charging overdue cash promises --')
         call_command('auto_charge_cash')
 
+        self.stdout.write('-- Auto-holding accounts with 14+ day overdue balances --')
+        call_command('auto_hold_accounts')
+
         self.stdout.write('=== Done ===')

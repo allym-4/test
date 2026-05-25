@@ -59,6 +59,51 @@ def auto_charge_saved_card(sender, instance, created, **kwargs):
         logger.error('Auto-charge failed for payment %s: %s', instance.id, str(e))
 
 
+@receiver(post_save, sender='payments.Payment')
+def credit_referrer_on_full_payment(sender, instance, created, **kwargs):
+    """Credit the referrer $50 when the referred student makes their first full payment."""
+    if not created:
+        return
+    if instance.payment_type != 'payment':
+        return
+    if not instance.student_id:
+        return
+    if float(instance.amount or 0) < 100:
+        return
+
+    from apps.users.models import Referral, Notification
+    referral = Referral.objects.filter(
+        referee=instance.student,
+        status__in=('pending', 'active'),
+    ).first()
+    if not referral:
+        return
+
+    referral.status = 'credited'
+    referral.save(update_fields=['status'])
+
+    credit_amount = float(referral.credit_amount or 50)
+    Payment.objects.create(
+        student=referral.referrer,
+        payment_type='credit',
+        amount=credit_amount,
+        description=f'Referral credit — {instance.student.display_name} completed their first payment',
+        reference=f'referral-{referral.id}',
+    )
+
+    Notification.objects.create(
+        recipient=referral.referrer,
+        title=f'${credit_amount:.0f} referral credit added!',
+        body=(
+            f'{instance.student.display_name} made their first full payment. '
+            f'Your ${credit_amount:.0f} referral credit has been added to your account.'
+        ),
+        notification_type='success',
+        action_label='View Account',
+        action_url='/portal/profile',
+    )
+
+
 @receiver(post_save, sender='payments.PaymentPlanInstalment')
 def check_plan_completion(sender, instance, **kwargs):
     """When an instalment is marked paid, auto-complete the plan if all instalments are now paid."""

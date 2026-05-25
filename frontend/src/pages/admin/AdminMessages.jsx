@@ -254,27 +254,31 @@ function BroadcastModal({ onClose }) {
             </div>
 
             {/* CTA button toggle */}
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', marginBottom: showCta ? 12 : 18 }}>
-              <input type="checkbox" checked={showCta} onChange={e => setShowCta(e.target.checked)} style={{ accentColor: 'var(--lime)' }} />
-              Add a call-to-action button
-            </label>
+            <div className="field" style={{ marginBottom: showCta ? 0 : 18 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 0 }}>
+                <input type="checkbox" checked={showCta} onChange={e => setShowCta(e.target.checked)} style={{ accentColor: 'var(--lime)', width: 14, height: 14 }} />
+                <span>Add a call-to-action button</span>
+              </label>
+            </div>
             {showCta && (
               <div style={{ background: 'rgba(204,255,0,0.04)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 8, padding: '12px 14px', marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div className="field" style={{ marginBottom: 0 }}>
-                  <label style={{ fontSize: 12 }}>Button label</label>
+                  <label>Button label</label>
                   <input value={actionLabel} onChange={e => setActionLabel(e.target.value)} placeholder="e.g. Add to enrolment, View schedule" />
                 </div>
                 <div className="field" style={{ marginBottom: 0 }}>
-                  <label style={{ fontSize: 12 }}>Button link</label>
+                  <label>Button link</label>
                   <input value={actionUrl} onChange={e => setActionUrl(e.target.value)} placeholder="e.g. /portal/book" />
                 </div>
               </div>
             )}
 
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', marginBottom: 18 }}>
-              <input type="checkbox" checked={sendEmail} onChange={e => setSendEmail(e.target.checked)} />
-              Also send by email
-            </label>
+            <div className="field" style={{ marginBottom: 18 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 0 }}>
+                <input type="checkbox" checked={sendEmail} onChange={e => setSendEmail(e.target.checked)} style={{ accentColor: 'var(--lime)', width: 14, height: 14 }} />
+                <span>Also send by email</span>
+              </label>
+            </div>
 
             {error && <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 12 }}>{error}</div>}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>

@@ -45,6 +45,7 @@ class User(AbstractUser):
     )
     nickname = models.CharField(max_length=50, blank=True)
     level = models.CharField(max_length=50, blank=True)
+    cleared_for_level = models.CharField(max_length=50, blank=True, help_text='Level student is cleared to attend (may differ from current level)')
 
     # Staff permission flags (only meaningful for instructor/admin/staff roles)
     perm_billing = models.BooleanField(default=False)

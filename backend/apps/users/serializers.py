@@ -30,7 +30,7 @@ class UserSerializer(serializers.ModelSerializer):
             'last_login', 'stripe_customer_id', 'enrolled_seasons_summary', 'pay_rate',
             'perm_billing', 'perm_edit_profiles', 'perm_approve_plans', 'perm_bulk_email', 'perm_reports',
             'notification_preferences',
-            'show_in_roster', 'roster_name', 'nickname', 'level',
+            'show_in_roster', 'roster_name', 'nickname', 'level', 'cleared_for_level',
             'booking_blocked', 'block_reason',
             'is_shadow_instructor',
             'bio', 'instructor_tagline', 'instructor_instagram',

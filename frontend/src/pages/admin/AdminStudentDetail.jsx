@@ -753,6 +753,41 @@ export default function AdminStudentDetail() {
                         <div className="info-val" style={{ fontSize: 13 }}>{val}</div>
                       </div>
                     ))}
+                    <div className="info-row">
+                      <div className="info-label">Current Level</div>
+                      <div className="info-val" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <select
+                          value={student.level || ''}
+                          onChange={async e => {
+                            const lvl = e.target.value
+                            await users.update(student.id, { level: lvl })
+                            setStudent(s => ({ ...s, level: lvl }))
+                          }}
+                          style={{ background: '#111', color: '#fff', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 8px', fontSize: 12 }}
+                        >
+                          <option value="">Not set</option>
+                          {['Level 1','Level 2','Level 3','Level 4','Level 5','Level 6'].map(l => <option key={l} value={l}>{l}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="info-row">
+                      <div className="info-label">Cleared For</div>
+                      <div className="info-val" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <select
+                          value={student.cleared_for_level || ''}
+                          onChange={async e => {
+                            const lvl = e.target.value
+                            await users.update(student.id, { cleared_for_level: lvl })
+                            setStudent(s => ({ ...s, cleared_for_level: lvl }))
+                          }}
+                          style={{ background: '#111', color: '#fff', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 8px', fontSize: 12 }}
+                        >
+                          <option value="">Same as level</option>
+                          {['Level 1','Level 2','Level 3','Level 4','Level 5','Level 6'].map(l => <option key={l} value={l}>{l}</option>)}
+                        </select>
+                        <span style={{ fontSize: 10, color: 'var(--grey)' }}>Admin override</span>
+                      </div>
+                    </div>
                     <div className="info-row" style={{ borderBottom: 'none' }}>
                       <div className="info-label">Tags</div>
                       <div className="info-val" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
