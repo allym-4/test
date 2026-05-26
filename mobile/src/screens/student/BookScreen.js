@@ -1161,8 +1161,11 @@ export default function BookScreen({ navigation }) {
   // Filter state
   const [classLevelPillFilter, setClassLevelPillFilter] = useState(null)
   const [instructorFilter, setInstructorFilter] = useState(null)
-  const [dayFilter, setDayFilter] = useState(null)           // 0–6 (Mon–Sun)
+  const [dayFilter, setDayFilter] = useState(null)           // 0–6 (Mon–Sun) — season tab only
   const [classTypeFilter, setClassTypeFilter] = useState(null) // 'level'|'conditioning'|'dance'|'routine'|'practice'
+  const [levelFilter2, setLevelFilter2] = useState(null)     // 'Level 1'|'Level 2'|'Level 3+'
+  const [availableOnly, setAvailableOnly] = useState(false)  // casual tab only
+  const [weekFilter, setWeekFilter] = useState(null)         // null|'this'|'next' — casual tab only
   const [eligibleOnly, setEligibleOnly] = useState(false)
   const [firstTimerNudge, setFirstTimerNudge] = useState(null) // session to confirm
 
@@ -1362,17 +1365,30 @@ export default function BookScreen({ navigation }) {
     return ['Level 1', 'Level 2', 'Level 3+'].filter(l => labels.has(l))
   }, [bookingSeasonSessions])
 
+  // Week range helpers (Sydney time, Mon–Sun)
+  const { thisWeekStart, thisWeekEnd, nextWeekStart, nextWeekEnd } = useMemo(() => {
+    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Australia/Sydney' }))
+    const day = now.getDay() // 0=Sun
+    const diffToMon = (day === 0 ? -6 : 1 - day)
+    const mon = new Date(now); mon.setDate(now.getDate() + diffToMon); mon.setHours(0,0,0,0)
+    const sun = new Date(mon); sun.setDate(mon.getDate() + 6)
+    const nextMon = new Date(mon); nextMon.setDate(mon.getDate() + 7)
+    const nextSun = new Date(nextMon); nextSun.setDate(nextMon.getDate() + 6)
+    const fmt = d => d.toISOString().slice(0, 10)
+    return { thisWeekStart: fmt(mon), thisWeekEnd: fmt(sun), nextWeekStart: fmt(nextMon), nextWeekEnd: fmt(nextSun) }
+  }, [])
+
   function matchesFilters(session) {
-    if (classLevelPillFilter) {
-      const badge = getLevelBadge(session.name)
-      if (badge?.label !== classLevelPillFilter) return false
-    }
     if (instructorFilter) {
       const name = session.instructor_detail?.display_name ?? session.instructor_detail?.first_name
       if (name !== instructorFilter) return false
     }
-    if (dayFilter !== null && session.day_of_week !== dayFilter) return false
     if (classTypeFilter && getClassType(session.name) !== classTypeFilter) return false
+    if (levelFilter2) {
+      const badge = getLevelBadge(session.name)
+      if (badge?.label !== levelFilter2) return false
+    }
+    if (dayFilter !== null && session.day_of_week !== dayFilter) return false
     if (eligibleOnly && levelFilter) {
       const sessLevel = session.level ?? session.level_name
       if (sessLevel && String(sessLevel) !== String(levelFilter)) return false
@@ -1471,11 +1487,22 @@ export default function BookScreen({ navigation }) {
     return () => { cancelled = true }
   }, [casualSessionKey])
 
-  // Filter casual occurrences based on current filters
+  // Filter casual occurrences based on current filters + week + available-only
   const casualFilteredIds = new Set(casualFiltered.map(s => s.id))
   const casualAllOccsFiltered = (casualAllOccs ?? []).filter(occ => {
     const sessId = occ.session ?? occ.session_detail?.id
-    return casualFilteredIds.has(sessId)
+    if (!casualFilteredIds.has(sessId)) return false
+    if (availableOnly) {
+      const cap = occ.session_detail?.capacity ?? occ.capacity ?? 12
+      const enrolled = occ.enrolled_count ?? 0
+      if (cap - enrolled <= 0) return false
+    }
+    if (weekFilter) {
+      const start = weekFilter === 'this' ? thisWeekStart : nextWeekStart
+      const end = weekFilter === 'this' ? thisWeekEnd : nextWeekEnd
+      if (occ.date < start || occ.date > end) return false
+    }
+    return true
   })
 
   async function bookCasualOcc(occ, enrolmentType) {
@@ -1634,7 +1661,15 @@ export default function BookScreen({ navigation }) {
           <TouchableOpacity
             key={key}
             style={[s.tab, tab === key && s.tabActive]}
-            onPress={() => setTab(key)}
+            onPress={() => {
+              setTab(key)
+              setClassTypeFilter(null)
+              setLevelFilter2(null)
+              setInstructorFilter(null)
+              setDayFilter(null)
+              setWeekFilter(null)
+              setAvailableOnly(false)
+            }}
           >
             <Text style={[s.tabText, tab === key && s.tabTextActive]}>{label}</Text>
           </TouchableOpacity>
@@ -1757,7 +1792,7 @@ export default function BookScreen({ navigation }) {
               )}
             </View>
 
-            {/* Day filter */}
+            {/* Season: day of week */}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
               <TouchableOpacity onPress={() => setDayFilter(null)} style={[s.filterPill, dayFilter === null && s.filterPillActive]}>
                 <Text style={[s.filterPillText, dayFilter === null && s.filterPillTextActive]}>Any day</Text>
@@ -1769,7 +1804,7 @@ export default function BookScreen({ navigation }) {
               ))}
             </ScrollView>
 
-            {/* Class type filter */}
+            {/* Season: class type */}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
               {[['All types', null], ['Level classes', 'level'], ['Conditioning', 'conditioning'], ['Dance', 'dance'], ['Routine / Style', 'routine'], ['Practice', 'practice']].map(([label, val]) => (
                 <TouchableOpacity key={label} onPress={() => setClassTypeFilter(classTypeFilter === val ? null : val)} style={[s.filterPill, classTypeFilter === val && s.filterPillActive]}>
@@ -1778,7 +1813,16 @@ export default function BookScreen({ navigation }) {
               ))}
             </ScrollView>
 
-            {/* Instructor filter */}
+            {/* Season: level */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
+              {[['All levels', null], ['Level 1', 'Level 1'], ['Level 2', 'Level 2'], ['Level 3+', 'Level 3+']].map(([label, val]) => (
+                <TouchableOpacity key={label} onPress={() => setLevelFilter2(levelFilter2 === val ? null : val)} style={[s.filterPill, levelFilter2 === val && s.filterPillActive]}>
+                  <Text style={[s.filterPillText, levelFilter2 === val && s.filterPillTextActive]}>{label}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* Season: instructor */}
             {uniqueInstructors.length > 1 && (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
                 <TouchableOpacity onPress={() => setInstructorFilter(null)} style={[s.filterPill, !instructorFilter && s.filterPillActive]}>
@@ -1968,18 +2012,20 @@ export default function BookScreen({ navigation }) {
                 </TouchableOpacity>
               )}
 
-              {/* ── Filters ── */}
+              {/* ── Casual filters ── */}
+              {/* Week */}
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
-                <TouchableOpacity onPress={() => setDayFilter(null)} style={[s.filterPill, dayFilter === null && s.filterPillActive]}>
-                  <Text style={[s.filterPillText, dayFilter === null && s.filterPillTextActive]}>Any day</Text>
-                </TouchableOpacity>
-                {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((d, i) => (
-                  <TouchableOpacity key={d} onPress={() => setDayFilter(dayFilter === i ? null : i)} style={[s.filterPill, dayFilter === i && s.filterPillActive]}>
-                    <Text style={[s.filterPillText, dayFilter === i && s.filterPillTextActive]}>{d}</Text>
+                {[['All dates', null], ['This week', 'this'], ['Next week', 'next']].map(([label, val]) => (
+                  <TouchableOpacity key={label} onPress={() => setWeekFilter(weekFilter === val ? null : val)} style={[s.filterPill, weekFilter === val && s.filterPillActive]}>
+                    <Text style={[s.filterPillText, weekFilter === val && s.filterPillTextActive]}>{label}</Text>
                   </TouchableOpacity>
                 ))}
+                <TouchableOpacity onPress={() => setAvailableOnly(!availableOnly)} style={[s.filterPill, availableOnly && s.filterPillActive]}>
+                  <Text style={[s.filterPillText, availableOnly && s.filterPillTextActive]}>Available only</Text>
+                </TouchableOpacity>
               </ScrollView>
 
+              {/* Class type */}
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
                 {[['All types', null], ['Level classes', 'level'], ['Conditioning', 'conditioning'], ['Dance', 'dance'], ['Routine / Style', 'routine'], ['Practice', 'practice']].map(([label, val]) => (
                   <TouchableOpacity key={label} onPress={() => setClassTypeFilter(classTypeFilter === val ? null : val)} style={[s.filterPill, classTypeFilter === val && s.filterPillActive]}>
@@ -1988,6 +2034,16 @@ export default function BookScreen({ navigation }) {
                 ))}
               </ScrollView>
 
+              {/* Level */}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
+                {[['All levels', null], ['Level 1', 'Level 1'], ['Level 2', 'Level 2'], ['Level 3+', 'Level 3+']].map(([label, val]) => (
+                  <TouchableOpacity key={label} onPress={() => setLevelFilter2(levelFilter2 === val ? null : val)} style={[s.filterPill, levelFilter2 === val && s.filterPillActive]}>
+                    <Text style={[s.filterPillText, levelFilter2 === val && s.filterPillTextActive]}>{label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              {/* Instructor */}
               {uniqueInstructors.length > 1 && (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
                   <TouchableOpacity onPress={() => setInstructorFilter(null)} style={[s.filterPill, !instructorFilter && s.filterPillActive]}>
