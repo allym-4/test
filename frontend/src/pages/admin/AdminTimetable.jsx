@@ -3,6 +3,7 @@ import { useApi } from '../../hooks/useApi'
 import { classes, seasons as seasonsApi } from '../../api'
 import { Link } from 'react-router-dom'
 import AddEditClassModal from '../../components/AddEditClassModal'
+import { fmt12 } from '../../utils/time'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -11,7 +12,7 @@ const DAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satu
 
 const SLOT_START_HOUR = 6        // 6:00 am
 const SLOT_END_HOUR   = 22       // 10:00 pm (last label)
-const SLOT_HEIGHT     = 40       // px per 30-min slot
+const SLOT_HEIGHT     = 52       // px per 30-min slot
 const TOTAL_SLOTS     = (SLOT_END_HOUR - SLOT_START_HOUR) * 2  // 32 slots
 
 const FALLBACK_SEASON_LABEL = 'Current Season'
@@ -58,16 +59,22 @@ function slotLabel(slotIndex) {
   return `${h12}:${String(m).padStart(2, '0')}${ampm}`
 }
 
-/** Colour theme based on class name */
-function cardTheme(name = '') {
+/** Solid card colours keyed by class type — matches website aesthetic */
+function cardColors(name = '', conflicting = false) {
+  if (conflicting) return { bg: '#ff4444', text: '#fff', subText: 'rgba(255,255,255,0.75)' }
   const n = name.toLowerCase()
-  if (n.includes('level'))
-    return { bg: '#ccff0033', border: 'var(--lime)',  label: 'lime'  }
-  if (n.includes('dance'))
-    return { bg: '#b0a0ff33', border: 'var(--lav)',   label: 'lav'   }
-  if (n.includes('workshop') || n.includes('intensive'))
-    return { bg: '#ffaa0033', border: 'var(--amber)', label: 'amber' }
-  return   { bg: 'rgba(255,255,255,0.06)', border: 'var(--grey)', label: 'grey' }
+  if (n.includes('practice'))
+    return { bg: '#2a2a2a', text: '#888', subText: '#555' }
+  // Level classes + most dance/floor/strip styles → lime
+  if (
+    n.includes('level') || n.includes('dance') || n.includes('strip') ||
+    n.includes('floor') || n.includes('chair') || n.includes('kiki') ||
+    n.includes('unravel') || n.includes('virgin') || n.includes('workshop') ||
+    n.includes('intensive') || n.includes('bootcamp')
+  )
+    return { bg: '#ccff00', text: '#000', subText: 'rgba(0,0,0,0.55)' }
+  // Conditioning / tricks → lavender
+  return { bg: '#b0a0ff', text: '#000', subText: 'rgba(0,0,0,0.55)' }
 }
 
 /**
@@ -131,7 +138,8 @@ function assignSubColumns(sessions) {
 /** Modal shown when a calendar card is clicked */
 function SessionDetailModal({ session, onClose }) {
   if (!session) return null
-  const theme = cardTheme(session.name)
+  const colors = cardColors(session.name)
+  const theme = { border: colors.bg }
   return (
     <div
       style={{
@@ -173,7 +181,7 @@ function SessionDetailModal({ session, onClose }) {
         {/* Details */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13, color: 'var(--grey)' }}>
           <div><b style={{ color: 'var(--white, #fff)' }}>Day:</b> {DAYS_FULL[session.day_of_week]}</div>
-          <div><b style={{ color: 'var(--white, #fff)' }}>Time:</b> {session.start_time?.slice(0, 5)}</div>
+          <div><b style={{ color: 'var(--white, #fff)' }}>Time:</b> {fmt12(session.start_time)}</div>
           <div>
             <b style={{ color: 'var(--white, #fff)' }}>Duration:</b>{' '}
             {session.duration_minutes ?? 60} min
@@ -214,13 +222,17 @@ function SessionDetailModal({ session, onClose }) {
  * Must be rendered as a direct child of a grid container that uses
  * gridTemplateRows: `repeat(${TOTAL_SLOTS}, ${SLOT_HEIGHT}px)`.
  */
-function CalendarCard({ session, conflicting, onClick, col = 0, totalCols = 1 }) {
-  const theme      = cardTheme(session.name)
-  const instructor = session.instructor_detail?.display_name || '—'
-  const studio     = session.studio_detail?.name || '—'
+/**
+ * dataMode: 'season' → show season enrolments from session
+ *           'week'   → show this week's actual bookings from occurrence
+ */
+function CalendarCard({ session, occurrence, dataMode = 'season', conflicting, onClick, col = 0, totalCols = 1 }) {
+  const colors     = cardColors(session.name, conflicting)
+  const instructor = session.instructor_detail?.display_name || ''
+  const firstName  = instructor.split(' ')[0]
 
   const startMins  = timeToMinutes(session.start_time)
-  const duration   = session.duration_minutes ?? 60
+  const duration   = session.duration_minutes ?? 55
   const rowStart   = minutesToRow(startMins)
   const rowSpan    = Math.max(1, duration / 30)
 
@@ -228,53 +240,103 @@ function CalendarCard({ session, conflicting, onClick, col = 0, totalCols = 1 })
   const clampedEnd   = Math.min(TOTAL_SLOTS, rowStart + rowSpan)
   if (clampedEnd <= clampedStart) return null
 
-  const pct   = 100 / totalCols
-  const left  = `calc(${col * pct}% + 2px)`
-  const width = `calc(${pct}% - 4px)`
-  const top   = clampedStart * SLOT_HEIGHT + 1
-  const height = Math.max(20, (clampedEnd - clampedStart) * SLOT_HEIGHT - 2)
+  const pct    = 100 / totalCols
+  const left   = `calc(${col * pct}% + 2px)`
+  const width  = `calc(${pct}% - 4px)`
+  const top    = clampedStart * SLOT_HEIGHT + 1
+  const height = Math.max(26, (clampedEnd - clampedStart) * SLOT_HEIGHT - 3)
+  const showInstructor = height >= 46 && firstName
+  const showStats      = height >= 56
+
+  // Season mode: enrolled / capacity + session waitlist
+  // Week mode: (enrolled + casual) / capacity + trial star + occurrence waitlist
+  const capacity = session.capacity || 0
+  let bookedCount, waitlistCount, hasTrial
+  if (dataMode === 'week' && occurrence) {
+    bookedCount   = (occurrence.enrolled_count ?? 0) + (occurrence.casual_booked_count ?? 0)
+    waitlistCount = occurrence.waitlist_count ?? 0
+    hasTrial      = (occurrence.trial_count ?? 0) > 0
+  } else {
+    bookedCount   = session.enrolled_count ?? 0
+    waitlistCount = session.waitlist_count ?? 0
+    hasTrial      = false
+  }
+
+  const isFull = bookedCount >= capacity
 
   return (
     <div
       onClick={onClick}
-      title={`${session.name} — ${session.start_time?.slice(0, 5)}`}
+      title={`${session.name}${firstName ? ` · ${firstName}` : ''} — ${fmt12(session.start_time)} · ${bookedCount}/${capacity}${waitlistCount > 0 ? ` · ${waitlistCount} waiting` : ''}${hasTrial ? ' · ★ first timer' : ''}`}
       style={{
-        position:     'absolute',
+        position:      'absolute',
         top,
         height,
         left,
         width,
-        background:   theme.bg,
-        borderLeft:   conflicting
-          ? '3px solid var(--red, #ff4444)'
-          : `3px solid ${theme.border}`,
-        outline:      conflicting ? '1px solid rgba(255,68,68,0.4)' : 'none',
-        borderRadius: 4,
-        padding:      '3px 5px',
-        cursor:       'pointer',
-        overflow:     'hidden',
-        display:      'flex',
-        flexDirection:'column',
-        gap:          1,
-        boxSizing:    'border-box',
-        zIndex:       2,
-        transition:   'filter 0.15s',
+        background:    colors.bg,
+        borderRadius:  3,
+        padding:       '3px 5px',
+        cursor:        'pointer',
+        overflow:      'hidden',
+        display:       'flex',
+        flexDirection: 'column',
+        justifyContent:'center',
+        boxSizing:     'border-box',
+        zIndex:        2,
+        transition:    'filter 0.12s',
       }}
-      onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.3)' }}
+      onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(0.88)' }}
       onMouseLeave={e => { e.currentTarget.style.filter = '' }}
     >
-      <div style={{ fontWeight: 700, fontSize: 11, lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-        {session.name}
+      {/* Class name row — with first-timer star */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 2, overflow: 'hidden' }}>
+        <div style={{
+          fontWeight:   800,
+          fontSize:     10,
+          lineHeight:   1.25,
+          color:        colors.text,
+          textTransform:'uppercase',
+          letterSpacing:'0.04em',
+          overflow:     'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace:   'nowrap',
+          flex:         1,
+        }}>
+          {session.name}
+        </div>
+        {hasTrial && (
+          <span style={{ fontSize: 9, color: colors.text, flexShrink: 0, lineHeight: 1 }}>★</span>
+        )}
       </div>
-      <div style={{ fontSize: 10, color: 'var(--grey)', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-        {instructor}
-      </div>
-      <div style={{ fontSize: 10, color: 'var(--grey)', lineHeight: 1.3 }}>
-        {session.enrolled_count}/{session.capacity}
-      </div>
-      <div style={{ fontSize: 10, color: 'var(--grey)', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-        {studio}
-      </div>
+
+      {showInstructor && (
+        <div style={{
+          fontSize:     9,
+          lineHeight:   1.2,
+          color:        colors.subText,
+          fontWeight:   600,
+          overflow:     'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace:   'nowrap',
+          marginTop:    1,
+        }}>
+          {firstName.toUpperCase()}
+        </div>
+      )}
+
+      {showStats && (
+        <div style={{ fontSize: 9, lineHeight: 1.2, color: isFull ? colors.text : colors.subText, marginTop: 1, display: 'flex', alignItems: 'center', gap: 3 }}>
+          <span style={{ fontWeight: isFull ? 700 : 400 }}>
+            {bookedCount}/{capacity}{isFull ? ' FULL' : ''}
+          </span>
+          {waitlistCount > 0 && (
+            <span style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 2, padding: '0 3px', fontSize: 8, fontWeight: 700 }}>
+              +{waitlistCount}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -283,7 +345,8 @@ function CalendarCard({ session, conflicting, onClick, col = 0, totalCols = 1 })
  * The 7-column calendar grid. Accepts pre-computed conflictIds so the parent
  * can also display the conflict count in the page header.
  */
-function CalendarGrid({ sessions, weekStart, conflictIds, onDismissConflicts, conflictsDismissed }) {
+// occurrencesBySession: Map<sessionId, occurrence> for the current week
+function CalendarGrid({ sessions, weekStart, conflictIds = new Set(), showConflicts = false, onDismissConflicts, conflictsDismissed, occurrencesBySession = new Map(), dataMode = 'season' }) {
   const [selectedSession, setSelectedSession] = useState(null)
 
   // Build time labels once
@@ -302,7 +365,7 @@ function CalendarGrid({ sessions, weekStart, conflictIds, onDismissConflicts, co
     return map
   }, [sessions])
 
-  const showConflictBanner = conflictIds.size > 0 && !conflictsDismissed
+  const showConflictBanner = showConflicts && conflictIds.size > 0 && !conflictsDismissed
   const conflictPairCount  = Math.ceil(conflictIds.size / 2)
 
   return (
@@ -343,7 +406,7 @@ function CalendarGrid({ sessions, weekStart, conflictIds, onDismissConflicts, co
         {/* Sticky day-header row */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '60px repeat(7, minmax(100px, 1fr))',
+          gridTemplateColumns: '52px repeat(7, minmax(110px, 1fr))',
           position: 'sticky',
           top: 0,
           zIndex: 10,
@@ -383,30 +446,34 @@ function CalendarGrid({ sessions, weekStart, conflictIds, onDismissConflicts, co
         {/* ── Grid body: time labels + day columns ── */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '60px repeat(7, minmax(100px, 1fr))',
+          gridTemplateColumns: '52px repeat(7, minmax(110px, 1fr))',
           // Each column handles its own rows internally; outer grid just places columns
         }}>
-          {/* Time label column */}
+          {/* Time label column — only show on-the-hour labels */}
           <div style={{
             display: 'grid',
             gridTemplateRows: `repeat(${TOTAL_SLOTS}, ${SLOT_HEIGHT}px)`,
           }}>
-            {timeLabels.map((label, i) => (
-              <div
-                key={label}
-                style={{
-                  fontSize: 10,
-                  color: 'var(--grey)',
-                  padding: '2px 6px 0',
-                  borderTop: i === 0 ? 'none' : '1px solid var(--border, #222)',
-                  lineHeight: 1,
-                  userSelect: 'none',
-                  boxSizing: 'border-box',
-                }}
-              >
-                {label}
-              </div>
-            ))}
+            {timeLabels.map((label, i) => {
+              const isHour = i % 2 === 0
+              return (
+                <div
+                  key={label}
+                  style={{
+                    fontSize: 9,
+                    color: isHour ? 'var(--grey)' : 'transparent',
+                    padding: '2px 6px 0',
+                    borderTop: isHour ? '1px solid var(--border, #2a2a2a)' : 'none',
+                    lineHeight: 1,
+                    userSelect: 'none',
+                    boxSizing: 'border-box',
+                    fontWeight: 600,
+                  }}
+                >
+                  {isHour ? label : ''}
+                </div>
+              )
+            })}
           </div>
 
           {/* Seven day columns */}
@@ -417,35 +484,36 @@ function CalendarGrid({ sessions, weekStart, conflictIds, onDismissConflicts, co
               <div
                 key={dayIdx}
                 style={{
-                  borderLeft: '1px solid var(--border, #222)',
+                  borderLeft: '1px solid var(--border, #2a2a2a)',
                   position:   'relative',
                   height:     colHeight,
                 }}
               >
-                {/* Alternating slot background stripes — plain divs stacked */}
-                {Array.from({ length: TOTAL_SLOTS }, (_, si) => (
+                {/* Hour grid lines only — every 2 slots (60 min) */}
+                {Array.from({ length: TOTAL_SLOTS }, (_, si) => si % 2 === 0 ? (
                   <div
                     key={si}
                     style={{
-                      position:   'absolute',
-                      top:        si * SLOT_HEIGHT,
-                      left:       0,
-                      right:      0,
-                      height:     SLOT_HEIGHT,
-                      background: si % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'transparent',
-                      borderTop:  si === 0 ? 'none' : '1px solid var(--border, #1e1e2e)',
+                      position:      'absolute',
+                      top:           si * SLOT_HEIGHT,
+                      left:          0,
+                      right:         0,
+                      height:        1,
+                      background:    'var(--border, #2a2a2a)',
                       pointerEvents: 'none',
-                      zIndex:     1,
+                      zIndex:        1,
                     }}
                   />
-                ))}
+                ) : null)}
 
                 {/* Class cards — absolutely positioned with sub-column layout */}
                 {positioned.map(({ session: s, col, totalCols }) => (
                   <CalendarCard
                     key={s.id}
                     session={s}
-                    conflicting={conflictIds.has(s.id)}
+                    occurrence={occurrencesBySession.get(s.id)}
+                    dataMode={dataMode}
+                    conflicting={showConflicts && conflictIds.has(s.id)}
                     col={col}
                     totalCols={totalCols}
                     onClick={() => setSelectedSession(s)}
@@ -472,12 +540,13 @@ function CalendarGrid({ sessions, weekStart, conflictIds, onDismissConflicts, co
 
 export default function AdminTimetable() {
   const [weekOffset, setWeekOffset]       = useState(0)
-  const [view, setView]                   = useState('calendar')  // 'calendar' | 'list'
+  const [view, setView]                   = useState('list')  // 'calendar' | 'list'
+  const [dataMode, setDataMode]           = useState('season') // 'season' | 'week'
   const [mode, setMode]                   = useState('attend')    // 'attend' | 'setup'
   const [showAddClass, setShowAddClass]   = useState(false)
   const [editSession, setEditSession]     = useState(null)
   const [sessionList, setSessionList]     = useState(null)
-  const [conflictsDismissed, setConflictsDismissed] = useState(false)
+  const [conflictsDismissed, setConflictsDismissed] = useState(true)
   const [conflictCheckTick, setConflictCheckTick]   = useState(0)
   const [selectedSeasonId, setSelectedSeasonId]     = useState(null)
   // Term Setup filters
@@ -518,6 +587,31 @@ export default function AdminTimetable() {
 
   const weekStart     = getWeekStart(weekOffset)
   const weekLabel     = 'Week of ' + weekStart.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })
+
+  // For "week" data mode: fetch occurrences for this specific week
+  const weekEnd = useMemo(() => {
+    const d = new Date(weekStart)
+    d.setDate(d.getDate() + 6)
+    return d
+  }, [weekStart])
+  const weekStartStr = weekStart.toISOString().slice(0, 10)
+  const weekEndStr   = weekEnd.toISOString().slice(0, 10)
+  const shouldFetchOccurrences = view === 'calendar' && dataMode === 'week'
+  const { data: occData } = useApi(
+    () => shouldFetchOccurrences
+      ? classes.occurrences({ date_from: weekStartStr, date_to: weekEndStr, page_size: 200 })
+      : null,
+    [shouldFetchOccurrences, weekStartStr, weekEndStr]
+  )
+  // Build a Map<sessionId, occurrence> for quick lookup
+  const occurrencesBySession = useMemo(() => {
+    const map = new Map()
+    const list = occData?.results ?? (Array.isArray(occData) ? occData : [])
+    list.forEach(occ => {
+      if (occ.session) map.set(occ.session, occ)
+    })
+    return map
+  }, [occData])
   const seasonWeek    = getSeasonWeek(weekStart, seasonStart, seasonWeeks)
   const seasonWeekLabel = seasonWeek
     ? `${seasonLabel} — Week ${seasonWeek} of ${seasonWeeks}`
@@ -531,7 +625,7 @@ export default function AdminTimetable() {
   )
 
   const handleRecheck = useCallback(() => {
-    setConflictsDismissed(false)
+    setConflictsDismissed(prev => !prev)
     setConflictCheckTick(t => t + 1)
   }, [])
 
@@ -594,6 +688,24 @@ export default function AdminTimetable() {
             ))}
           </div>
 
+          {mode === 'attend' && view === 'calendar' && (
+            <div style={{ display: 'flex', border: '1px solid var(--border, #333)', borderRadius: 6, overflow: 'hidden' }}>
+              {[['season', 'Season'], ['week', 'This Week']].map(([dm, label]) => (
+                <button
+                  key={dm}
+                  onClick={() => setDataMode(dm)}
+                  style={{
+                    padding: '5px 12px', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer',
+                    background: dataMode === dm ? '#333' : 'transparent',
+                    color:      dataMode === dm ? '#fff' : 'var(--grey)',
+                    transition: 'background 0.15s, color 0.15s',
+                  }}
+                >{label}</button>
+              ))}
+            </div>
+          )}
+
+
           {mode === 'attend' && (
             <div style={{ display: 'flex', border: '1px solid var(--border, #333)', borderRadius: 6, overflow: 'hidden' }}>
               {['calendar', 'list'].map(v => (
@@ -620,19 +732,34 @@ export default function AdminTimetable() {
         </div>
       </div>
 
-      {/* ── Row 2: week nav + optional conflict check ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-        <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w - 1)}>← Prev</button>
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--white)' }}>
-          {view === 'calendar' ? seasonWeekLabel : weekLabel}
-        </span>
-        <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w + 1)}>Next →</button>
-        {view === 'calendar' && (
-          <button className="btn btn-ghost btn-sm" style={{ marginLeft: 8 }} onClick={handleRecheck}>
-            Check Conflicts
-          </button>
-        )}
-      </div>
+      {/* ── Row 2: week nav — hidden in setup mode ── */}
+      {mode !== 'setup' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w - 1)}>← Prev</button>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--white)' }}>
+            {view === 'calendar' ? seasonWeekLabel : weekLabel}
+          </span>
+          <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w + 1)}>Next →</button>
+          {view === 'calendar' && (
+            <button
+              className="btn btn-ghost btn-sm"
+              style={{ marginLeft: 8, ...((!conflictsDismissed && conflictIds.size > 0) ? { color: 'var(--red)', borderColor: 'var(--red)' } : {}) }}
+              onClick={handleRecheck}
+            >
+              {conflictsDismissed ? 'Check Conflicts' : `Hide Conflicts (${Math.ceil(conflictIds.size / 2)})`}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── Week data mode legend ── */}
+      {view === 'calendar' && dataMode === 'week' && (
+        <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 10, display: 'flex', gap: 14, alignItems: 'center' }}>
+          <span>This week: enrolled + casuals + catch-ups</span>
+          <span style={{ color: '#ccff00' }}>★ = first timer booked</span>
+          <span>+N = waitlisted</span>
+        </div>
+      )}
 
       {/* ── Term Setup banner ── */}
       {mode === 'setup' && (
@@ -702,7 +829,7 @@ export default function AdminTimetable() {
                         onClick={() => { setEditSession(s); setShowAddClass(true) }}>
                         <div>
                           <div style={{ fontWeight: 600, fontSize: 14 }}>{s.name}</div>
-                          <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{DAYS[s.day_of_week]} {s.start_time?.slice(0, 5)}</div>
+                          <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{DAYS[s.day_of_week]} {fmt12(s.start_time)}</div>
                         </div>
                         <div style={{ fontSize: 13 }}>
                           {s.instructor_detail?.display_name || '—'}
@@ -739,8 +866,11 @@ export default function AdminTimetable() {
           sessions={sessions}
           weekStart={weekStart}
           conflictIds={conflictIds}
+          showConflicts={!conflictsDismissed}
           conflictsDismissed={conflictsDismissed}
           onDismissConflicts={() => setConflictsDismissed(true)}
+          occurrencesBySession={occurrencesBySession}
+          dataMode={dataMode}
         />
       ) : (
         /* ── List view (unchanged) ── */
@@ -779,7 +909,7 @@ export default function AdminTimetable() {
                       fontFamily: "'Archivo Black', sans-serif",
                       fontSize: 14,
                     }}>
-                      {s.start_time?.slice(0, 5)}
+                      {fmt12(s.start_time)}
                     </td>
                     <td>
                       <b>{s.name}</b>

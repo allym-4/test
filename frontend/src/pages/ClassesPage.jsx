@@ -561,7 +561,7 @@ function SeasonEnrolmentsTab({ currentUserId }) {
                     {isOwn && <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--lime)', background: 'rgba(204,255,0,0.1)', borderRadius: 4, padding: '1px 6px' }}>MINE</span>}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 8 }}>
-                    {DAYS[s.day_of_week]} · {s.start_time?.slice(0, 5)}
+                    {DAYS[s.day_of_week]} · {fmt12(s.start_time)}
                     {s.instructor_detail?.display_name && <span> · {s.instructor_detail.display_name}</span>}
                     {s.studio_detail?.name && <span> · {s.studio_detail.name}</span>}
                   </div>

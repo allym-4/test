@@ -3,6 +3,7 @@ import { useApi } from '../hooks/useApi'
 import { classes, homework, attendance, actionItems } from '../api'
 import { Link } from 'react-router-dom'
 import client from '../api/client'
+import { fmt12 } from '../utils/time'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -151,7 +152,7 @@ export default function DashboardPage() {
               return (
                 <Link key={s.id} to={`/classes/${s.id}/attendance`} className="dashboard-class-row" style={{ textDecoration: 'none', background: '#111', border: '1px solid #222', borderRadius: 14, padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 16 }}>
                   <div style={{ textAlign: 'center', width: 56, flexShrink: 0 }}>
-                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: 'var(--lime)', lineHeight: 1 }}>{s.start_time?.slice(0, 5)}</div>
+                    <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: 'var(--lime)', lineHeight: 1 }}>{fmt12(s.start_time)}</div>
                     <div style={{ fontSize: 10, color: 'var(--grey)', marginTop: 2, textTransform: 'uppercase' }}>{DAYS[s.day_of_week]}</div>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -192,7 +193,7 @@ export default function DashboardPage() {
                   style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 20px', borderBottom: i < allSessionsToday.length - 1 ? '1px solid #1a1a1a' : 'none', opacity: isOwn ? 1 : 0.6 }}
                 >
                   <div style={{ minWidth: 52, flexShrink: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: isOwn ? 'var(--lime)' : '#fff' }}>{s.start_time?.slice(0, 5)}</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: isOwn ? 'var(--lime)' : '#fff' }}>{fmt12(s.start_time)}</div>
                     <div style={{ fontSize: 10, color: 'var(--grey)', textTransform: 'uppercase' }}>PM</div>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -227,7 +228,7 @@ export default function DashboardPage() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 3 }}>{a.title}</div>
                       <div style={{ fontSize: 12, color: 'var(--grey)' }}>
-                        {s?.name} — {DAYS[s?.day_of_week]} {s?.start_time?.slice(0, 5)} · {s?.studio_detail?.name}
+                        {s?.name} — {DAYS[s?.day_of_week]} {fmt12(s?.start_time)} · {s?.studio_detail?.name}
                       </div>
                     </div>
                     <span style={{ fontSize: 10, fontWeight: 700, background: 'rgba(204,255,0,0.1)', color: 'var(--lime)', border: '1px solid rgba(204,255,0,0.3)', borderRadius: 20, padding: '3px 10px', flexShrink: 0 }}>ACTIVE</span>

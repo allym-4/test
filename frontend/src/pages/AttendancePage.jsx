@@ -4,6 +4,7 @@ import { classes, enrolments, attendance, payments, settings as settingsApi } fr
 import { useApi } from '../hooks/useApi'
 import client from '../api/client'
 import './AttendancePage.css'
+import { fmt12 } from '../utils/time'
 
 const AVATAR_COLORS = ['#b0a0ff', '#ccff00', '#ffaa00', '#ff88aa', '#44ffcc', '#ffcc88', '#b0f0b0', '#9ac4ff', '#ffb3de', '#44ff99']
 function avatarColor(name) {
@@ -75,7 +76,7 @@ function enrollLabel(e, session) {
   if (e.enrolment_type === 'casual') return 'Casual class'
   if (e.enrolment_type === 'makeup') {
     const from = e.makeup_from_detail || e.original_session_detail
-    if (from) return `Makeup — ${from.name} ${DAYS[from.day_of_week] || ''} ${from.start_time?.slice(0, 5) || ''}`
+    if (from) return `Makeup — ${from.name} ${DAYS[from.day_of_week] || ''} ${fmt12(from.start_time)}`
     return 'Makeup session'
   }
   return 'Course enrolment'
@@ -294,7 +295,7 @@ export default function AttendancePage() {
         <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, lineHeight: 1.2, marginBottom: 6 }}>{session?.name}</div>
         <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 14 }}>
           {occurrence ? new Date(occurrence.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : 'No occurrence today'}
-          {session?.start_time && <span> · {session.start_time.slice(0, 5)}</span>}
+          {session?.start_time && <span> · {fmt12(session.start_time)}</span>}
           {session?.studio_detail?.name && <span> · {session.studio_detail.name}</span>}
         </div>
         <div style={{ display: 'flex', gap: 8 }}>

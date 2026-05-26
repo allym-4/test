@@ -6,6 +6,7 @@ import {
 import { useApi } from '../../hooks/useApi'
 import { attendance, enrolments, payments as paymentsApi } from '../../api'
 import client from '../../api/client'
+import { fmt12 } from '../../utils/time'
 
 const STATUS_OPTS = [
   { key: 'pending',        label: 'Pending',         color: '#888' },
@@ -40,7 +41,7 @@ function enrollLabel(e) {
   if (e.enrolment_type === 'casual') return 'Casual'
   if (e.enrolment_type === 'makeup') {
     const from = e.makeup_from_detail || e.original_session_detail
-    if (from) return `Makeup — ${from.name} ${DAYS[from.day_of_week] ?? ''} ${from.start_time?.slice(0, 5) ?? ''}`
+    if (from) return `Makeup — ${from.name} ${DAYS[from.day_of_week] ?? ''} ${fmt12(from.start_time)}`
     return 'Makeup'
   }
   return 'Enrolled'

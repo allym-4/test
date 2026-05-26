@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useApi } from '../hooks/useApi'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { users, payments, enrolments, attendance, helpdesk } from '../api'
+import { fmt12 } from '../utils/time'
 
 const AVATAR_COLORS = ['#b0a0ff', '#ccff00', '#ffaa00', '#ff88aa', '#44ffcc', '#ffcc88', '#b0f0b0', '#9ac4ff', '#ffb3de', '#44ff99']
 function avatarColor(name) {
@@ -279,7 +280,7 @@ export default function StudentsPage() {
                         {(enrolData || []).filter(e => e.status === 'active').map(e => (
                           <div key={e.id} className="list-row">
                             <div className="list-body">
-                              <div className="list-title">{e.class_session_detail?.name} · {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][e.class_session_detail?.day_of_week]} {e.class_session_detail?.start_time?.slice(0,5)}</div>
+                              <div className="list-title">{e.class_session_detail?.name} · {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][e.class_session_detail?.day_of_week]} {fmt12(e.class_session_detail?.start_time)}</div>
                               <div className="list-sub">{e.class_session_detail?.studio_detail?.name}</div>
                             </div>
                             <span className={`tag tag-lav`} style={{ fontSize: 10 }}>{e.enrolment_type}</span>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useApi } from '../hooks/useApi'
 import { homework, classes } from '../api'
 import client from '../api/client'
+import { fmt12 } from '../utils/time'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -64,7 +65,7 @@ function NewAssignmentModal({ onClose, onSaved }) {
               <select value={sessionId} onChange={e => setSessionId(e.target.value)} required>
                 <option value="">Select class…</option>
                 {sessions.map(s => (
-                  <option key={s.id} value={s.id}>{s.name} — {DAYS[s.day_of_week]} {s.start_time?.slice(0, 5)}</option>
+                  <option key={s.id} value={s.id}>{s.name} — {DAYS[s.day_of_week]} {fmt12(s.start_time)}</option>
                 ))}
               </select>
             </div>
@@ -285,7 +286,7 @@ function HwCard({ a, onToggle, onDetail }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15 }}>{a.title}</div>
           <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 3 }}>
-            {s?.name} — {DAYS[s?.day_of_week]} {s?.start_time?.slice(0, 5)} · {s?.studio_detail?.name}
+            {s?.name} — {DAYS[s?.day_of_week]} {fmt12(s?.start_time)} · {s?.studio_detail?.name}
             {a.assigned_date && ' · Assigned ' + new Date(a.assigned_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
             {a.due_date && ' · Due ' + new Date(a.due_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
           </div>

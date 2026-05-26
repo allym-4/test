@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { enrolments, seasons, attendance as attendanceApi, skills as skillsApi, announcements as announcementsApi, payments, notifications as notificationsApi, forms as formsApi, surveys as surveysApi, settings as settingsApi } from '../../api'
 import { useStripePayment } from '../../hooks/useStripePayment'
+import { fmt12 } from '../../utils/time'
 
 function ModalBody({ text, style, linkStyle }) {
   const parts = text.split(/(\[[^\]]+\]\([^)]+\))/g)
@@ -660,7 +661,7 @@ export default function DashboardScreen({ navigation }) {
                 <View style={{ flex: 1 }}>
                   {sess?.day_of_week != null && (
                     <Text style={s.classDay}>
-                      {DAYS_FULL[sess.day_of_week]} · {sess.start_time?.slice(0, 5)}
+                      {DAYS_FULL[sess.day_of_week]} · {fmt12(sess.start_time)}
                     </Text>
                   )}
                   <Text style={s.className}>{sess?.name} · {sess?.studio_detail?.name}</Text>

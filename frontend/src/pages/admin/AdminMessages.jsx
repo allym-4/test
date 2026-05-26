@@ -3,6 +3,7 @@ import { useApi } from '../../hooks/useApi'
 import { helpdesk, users, settings, notifications as notificationsApi, classes as classesApi, tags as tagsApi, assistant as assistantApi } from '../../api'
 import { useAuth } from '../../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import { fmt12 } from '../../utils/time'
 
 const QUICK_REPLIES = [
   'Trial is $25 — just wear active wear and bring grippy socks!',
@@ -238,7 +239,7 @@ function BroadcastModal({ onClose }) {
                 <select value={sessionId} onChange={e => setSessionId(e.target.value)} required>
                   <option value="">Select class…</option>
                   {sessions.map(s => (
-                    <option key={s.id} value={s.id}>{s.name} — {DAYS[s.day_of_week]} {s.start_time?.slice(0, 5)}</option>
+                    <option key={s.id} value={s.id}>{s.name} — {DAYS[s.day_of_week]} {fmt12(s.start_time)}</option>
                   ))}
                 </select>
               </div>

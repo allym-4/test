@@ -6,6 +6,7 @@ import {
 import { useApi } from '../../hooks/useApi'
 import { classes, attendance, enrolments, payments as paymentsApi } from '../../api'
 import client from '../../api/client'
+import { fmt12 } from '../../utils/time'
 
 const STATUS_OPTS = [
   { key: 'pending',        label: 'Pending',        color: '#555' },
@@ -64,7 +65,7 @@ function enrollLabel(e) {
   if (e.enrolment_type === 'casual') return 'Casual'
   if (e.enrolment_type === 'makeup') {
     const from = e.makeup_from_detail || e.original_session_detail
-    if (from) return `Makeup — ${from.name} ${DAYS[from.day_of_week] ?? ''} ${from.start_time?.slice(0, 5) ?? ''}`
+    if (from) return `Makeup — ${from.name} ${DAYS[from.day_of_week] ?? ''} ${fmt12(from.start_time)}`
     return 'Makeup'
   }
   return 'Enrolled'
@@ -338,7 +339,7 @@ export default function AttendanceScreen({ navigation, route }) {
               <View style={s.occBody}>
                 <Text style={s.occName}>{item.session_name || item.session_detail?.name || 'Class'}</Text>
                 <Text style={s.occMeta}>
-                  {item.start_time ? String(item.start_time).slice(0, 5) : ''}
+                  {item.start_time ? fmt12(item.start_time) : ''}
                   {item.studio_name ? `  ·  ${item.studio_name}` : item.session_detail?.studio_detail?.name ? `  ·  ${item.session_detail.studio_detail.name}` : ''}
                   {item.enrolled_count != null ? `  ·  ${item.enrolled_count} enrolled` : ''}
                 </Text>

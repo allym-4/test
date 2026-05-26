@@ -6,6 +6,7 @@ import {
 import { useApi } from '../../hooks/useApi'
 import { useAuth } from '../../contexts/AuthContext'
 import { classes, seasons as seasonsApi } from '../../api'
+import { fmt12 } from '../../utils/time'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -545,7 +546,7 @@ function SeasonEnrolmentsTab({ currentUserId }) {
                     </View>
                   </View>
                   <Text style={s.seasonMeta}>
-                    {DAYS[sess.day_of_week]} · {sess.start_time?.slice(0, 5)}
+                    {DAYS[sess.day_of_week]} · {fmt12(sess.start_time)}
                     {sess.instructor_detail?.display_name ? ` · ${sess.instructor_detail.display_name}` : ''}
                     {sess.studio_detail?.name ? ` · ${sess.studio_detail.name}` : ''}
                   </Text>

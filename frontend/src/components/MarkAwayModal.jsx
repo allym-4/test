@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { attendance } from '../api'
+import { fmt12 } from '../utils/time'
 
 export default function MarkAwayModal({ occurrence, cancellationWindowHours, noShowFee, onClose, onDone }) {
   const [confirming, setConfirming] = useState(false)
@@ -13,7 +14,7 @@ export default function MarkAwayModal({ occurrence, cancellationWindowHours, noS
 
   const sessionName = occurrence.session_detail?.name || occurrence.session_name
   const dateLabel = new Date(occurrence.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
-  const timeLabel = startTime !== '00:00' ? startTime.slice(0, 5) : ''
+  const timeLabel = startTime !== '00:00' ? fmt12(startTime) : ''
 
   async function confirm() {
     setConfirming(true)

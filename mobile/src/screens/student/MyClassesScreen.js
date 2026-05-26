@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { enrolments, attendance, roster, settings as settingsApi, helpdesk as helpdeskApi, classes as classesApi } from '../../api'
 import { TextInput } from 'react-native'
+import { fmt12 } from '../../utils/time'
 
 function WhoComing({ sessionId }) {
   const [open, setOpen] = useState(false)
@@ -128,7 +129,7 @@ function MarkAwayModal({ occurrence, session, cancellationWindowHours, noShowFee
   const dateLabel = new Date(occurrence.date + 'T00:00').toLocaleDateString('en-AU', {
     weekday: 'short', day: 'numeric', month: 'short',
   })
-  const timeLabel = (occurrence.start_time || session?.start_time || '').slice(0, 5)
+  const timeLabel = fmt12(occurrence.start_time || session?.start_time)
   const feeAmount = noShowFee ? `$${parseFloat(noShowFee).toFixed(0)}` : '$20'
 
   return (
@@ -558,7 +559,7 @@ function DisplacementModal({ booking, onClose, onAction }) {
 
           <Text style={dm.sessName}>{d?.session_name ?? 'Class'}</Text>
           <Text style={dm.dateMeta}>
-            {[dateLabel, d?.start_time ? d.start_time.slice(0, 5) : null, d?.studio_name].filter(Boolean).join('  ·  ')}
+            {[dateLabel, d?.start_time ? fmt12(d.start_time) : null, d?.studio_name].filter(Boolean).join('  ·  ')}
           </Text>
 
           <View style={dm.infoBox}>
@@ -790,7 +791,7 @@ function CurrentTab({
               <TouchableOpacity key={b.id} style={ct.displacedCard} onPress={() => onDisplacementAction(b)}>
                 <Text style={ct.displacedTitle}>{d?.session_name ?? 'Class'}</Text>
                 <Text style={ct.displacedMeta}>
-                  {[dateLabel, d?.start_time?.slice(0, 5), d?.studio_name].filter(Boolean).join('  ·  ')}
+                  {[dateLabel, fmt12(d?.start_time), d?.studio_name].filter(Boolean).join('  ·  ')}
                 </Text>
                 <Text style={ct.displacedBody}>
                   Season enrolment offer — {hoursLeft !== null ? `respond within ${hoursLeft}h` : 'respond now'}
@@ -847,7 +848,7 @@ function CurrentTab({
                 <View style={{ flex: 1 }}>
                   <Text style={ct.waitlistName}>{d?.session_name ?? 'Class'}</Text>
                   <Text style={ct.waitlistMeta}>
-                    {[dateLabel, d?.start_time?.slice(0, 5), d?.studio_name].filter(Boolean).join('  ·  ')}
+                    {[dateLabel, fmt12(d?.start_time), d?.studio_name].filter(Boolean).join('  ·  ')}
                   </Text>
                 </View>
                 <View style={{ alignItems: 'flex-end', gap: 4 }}>
@@ -872,7 +873,7 @@ function CurrentTab({
 }
 
 function ClassItem({ item, cancellationWindowHours, noShowFee, cancellingAway, markingAway, onMarkAway, onCancelAway, onCancelEnrolment, onCancelCasual }) {
-  const timeStr = item.time ? item.time.slice(0, 5) : null
+  const timeStr = item.time ? fmt12(item.time) : null
   const isEnrolled = item.type === 'enrolled'
   const isCatchup = item.type === 'catchup'
   const isCasual = item.type === 'casual'
@@ -1035,7 +1036,7 @@ function FutureTab({ upcomingEnrolments, waitlistedEnrolments, onCancelEnrolment
             const DAY = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
             const meta = [
               sess?.day_of_week != null ? DAY[sess.day_of_week] : null,
-              sess?.start_time ? sess.start_time.slice(0, 5) : null,
+              sess?.start_time ? fmt12(sess.start_time) : null,
               sess?.studio_detail?.name ?? null,
             ].filter(Boolean).join(' · ')
             return (
@@ -1158,7 +1159,7 @@ function PastTab({ history, pastEnrolments, loading, refetchHistory }) {
             const DAY = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
             const meta = [
               sess?.day_of_week != null ? DAY[sess.day_of_week] : null,
-              sess?.start_time ? sess.start_time.slice(0, 5) : null,
+              sess?.start_time ? fmt12(sess.start_time) : null,
               sess?.studio_detail?.name ?? null,
             ].filter(Boolean).join(' · ')
             return (

@@ -60,7 +60,7 @@ class ClassSession(models.Model):
     studio = models.ForeignKey(Studio, on_delete=models.SET_NULL, null=True)
     day_of_week = models.IntegerField(choices=DayOfWeek.choices)
     start_time = models.TimeField()
-    duration_minutes = models.PositiveIntegerField(default=90)
+    duration_minutes = models.PositiveIntegerField(default=55)
     capacity = models.PositiveIntegerField(default=12)
     session_type = models.CharField(max_length=10, choices=SessionType.choices, default=SessionType.COURSE)
     is_active = models.BooleanField(default=True)

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
 import { classes, categories as categoriesApi } from '../../api'
+import { fmt12 } from '../../utils/time'
 
 const inputStyle = {
   width: '100%',
@@ -111,7 +112,7 @@ function UpsellsPanel({ sessionId, allSessions }) {
             <label style={labelStyle}>Suggest this class</label>
             <select style={inputStyle} value={newForm.suggested_session} onChange={e => setNewForm(f => ({ ...f, suggested_session: e.target.value }))} required>
               <option value="">— Select class —</option>
-              {otherSessions.map(s => <option key={s.id} value={s.id}>{s.name} ({s.day_of_week_display} {s.start_time?.slice(0,5)})</option>)}
+              {otherSessions.map(s => <option key={s.id} value={s.id}>{s.name} ({s.day_of_week_display} {fmt12(s.start_time)})</option>)}
             </select>
           </div>
           <div style={{ marginBottom: 10 }}>

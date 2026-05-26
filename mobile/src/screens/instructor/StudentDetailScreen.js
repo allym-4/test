@@ -5,6 +5,7 @@ import {
 } from 'react-native'
 import { users, enrolments, attendance, payments as paymentsApi, skills as skillsApi, forms as formsApi, helpdesk, seasons as seasonsApi } from '../../api'
 import client from '../../api/client'
+import { fmt12 } from '../../utils/time'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -589,7 +590,7 @@ export default function StudentDetailScreen({ navigation, route }) {
                 {activeEnrols.map(e => (
                   <View key={e.id} style={s.enrRow}>
                     <Text style={s.enrRowName} numberOfLines={1}>{e.class_session_detail?.name ?? e.class_name ?? 'Class'}</Text>
-                    <Text style={s.enrRowMeta}>{DAYS[e.class_session_detail?.day_of_week] ?? ''} {e.class_session_detail?.start_time?.slice(0,5) ?? ''} · {e.class_session_detail?.studio_detail?.name ?? ''}</Text>
+                    <Text style={s.enrRowMeta}>{DAYS[e.class_session_detail?.day_of_week] ?? ''} {fmt12(e.class_session_detail?.start_time)} · {e.class_session_detail?.studio_detail?.name ?? ''}</Text>
                   </View>
                 ))}
               </SectionCard>
@@ -718,7 +719,7 @@ export default function StudentDetailScreen({ navigation, route }) {
                             </Text>
                           </View>
                           <Text style={s.enrCardMeta}>
-                            {DAYS[e.class_session_detail?.day_of_week] ?? ''} {e.class_session_detail?.start_time?.slice(0,5) ?? ''} · {e.class_session_detail?.studio_detail?.name ?? ''}
+                            {DAYS[e.class_session_detail?.day_of_week] ?? ''} {fmt12(e.class_session_detail?.start_time)} · {e.class_session_detail?.studio_detail?.name ?? ''}
                           </Text>
                           {e.class_session_detail?.instructor_name ? (
                             <Text style={s.enrCardInstructor}>{e.class_session_detail.instructor_name}</Text>
@@ -811,7 +812,7 @@ export default function StudentDetailScreen({ navigation, route }) {
                                 <Text style={s.pillAmber}>{e.waitlist_type === 'single' ? 'Single class' : 'Full season'}</Text>
                               </View>
                               <Text style={s.enrCardMeta}>
-                                {DAYS[e.class_session_detail?.day_of_week] ?? ''} {e.class_session_detail?.start_time?.slice(0,5) ?? ''}
+                                {DAYS[e.class_session_detail?.day_of_week] ?? ''} {fmt12(e.class_session_detail?.start_time)}
                               </Text>
                             </View>
                           ))}
@@ -855,7 +856,7 @@ export default function StudentDetailScreen({ navigation, route }) {
                             </Text>
                           </View>
                           <Text style={s.enrCardMeta}>
-                            {DAYS[e.class_session_detail?.day_of_week] ?? ''} {e.class_session_detail?.start_time?.slice(0,5) ?? ''}
+                            {DAYS[e.class_session_detail?.day_of_week] ?? ''} {fmt12(e.class_session_detail?.start_time)}
                           </Text>
                         </View>
                       ))}
@@ -1171,7 +1172,7 @@ export default function StudentDetailScreen({ navigation, route }) {
                   ) : activeEnrols.map(e => (
                     <View key={e.id} style={[s.enrCard, { marginBottom: 10 }]}>
                       <Text style={s.enrCardName} numberOfLines={1}>{e.class_session_detail?.name ?? 'Class'}</Text>
-                      <Text style={s.enrCardMeta}>{DAYS[e.class_session_detail?.day_of_week] ?? ''} {e.class_session_detail?.start_time?.slice(0,5) ?? ''}</Text>
+                      <Text style={s.enrCardMeta}>{DAYS[e.class_session_detail?.day_of_week] ?? ''} {fmt12(e.class_session_detail?.start_time)}</Text>
                       <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
                         <TouchableOpacity style={[s.tcBtnTransfer, { flex: 1 }]} onPress={() => { setTcEnrolment(e); setTcNewSession(''); setTcTransferClass(''); setTcNotes(''); setTcError(null); setTcStep('transfer'); loadSeasonSessions(e) }}>
                           <Text style={s.tcBtnTransferText}>Transfer</Text>
@@ -1248,7 +1249,7 @@ export default function StudentDetailScreen({ navigation, route }) {
                         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                           <View style={{ flex: 1 }}>
                             <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff', marginBottom: 2 }}>
-                              {DAYS[sess.day_of_week]} {sess.start_time?.slice(0,5)}
+                              {DAYS[sess.day_of_week]} {fmt12(sess.start_time)}
                             </Text>
                             <Text style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>
                               {[sess.instructor_detail?.display_name, sess.studio_detail?.name].filter(Boolean).join(' · ')}
