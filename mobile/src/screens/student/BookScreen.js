@@ -83,6 +83,17 @@ function isEligible(occ, userLevel) {
   return String(sessLevel) === String(userLevel)
 }
 
+function getClassType(name) {
+  if (!name) return 'other'
+  const n = name.toLowerCase()
+  if (/practice/i.test(n)) return 'practice'
+  if (/level\s*\d/i.test(n)) return 'level'
+  if (/invert|trick|kiki|unravel|conditioning/i.test(n)) return 'conditioning'
+  if (/dance|dirty dance/i.test(n)) return 'dance'
+  if (/virgin|strip|floor/i.test(n)) return 'routine'
+  return 'other'
+}
+
 function getLevelBadge(name) {
   if (!name) return null
   if (/level\s*1/i.test(name)) return { label: 'Level 1', color: '#ccff00', bg: 'rgba(204,255,0,0.12)' }
@@ -1150,7 +1161,10 @@ export default function BookScreen({ navigation }) {
   // Filter state
   const [classLevelPillFilter, setClassLevelPillFilter] = useState(null)
   const [instructorFilter, setInstructorFilter] = useState(null)
+  const [dayFilter, setDayFilter] = useState(null)           // 0–6 (Mon–Sun)
+  const [classTypeFilter, setClassTypeFilter] = useState(null) // 'level'|'conditioning'|'dance'|'routine'|'practice'
   const [eligibleOnly, setEligibleOnly] = useState(false)
+  const [firstTimerNudge, setFirstTimerNudge] = useState(null) // session to confirm
 
   // Casual tab state
   const [exemptionSession, setExemptionSession] = useState(null)
@@ -1357,6 +1371,8 @@ export default function BookScreen({ navigation }) {
       const name = session.instructor_detail?.display_name ?? session.instructor_detail?.first_name
       if (name !== instructorFilter) return false
     }
+    if (dayFilter !== null && session.day_of_week !== dayFilter) return false
+    if (classTypeFilter && getClassType(session.name) !== classTypeFilter) return false
     if (eligibleOnly && levelFilter) {
       const sessLevel = session.level ?? session.level_name
       if (sessLevel && String(sessLevel) !== String(levelFilter)) return false
@@ -1741,40 +1757,35 @@ export default function BookScreen({ navigation }) {
               )}
             </View>
 
-            {uniqueLevelPills.length > 0 && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
-                <TouchableOpacity
-                  onPress={() => setClassLevelPillFilter(null)}
-                  style={[s.filterPill, classLevelPillFilter === null && s.filterPillActive]}
-                >
-                  <Text style={[s.filterPillText, classLevelPillFilter === null && s.filterPillTextActive]}>All levels</Text>
+            {/* Day filter */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
+              <TouchableOpacity onPress={() => setDayFilter(null)} style={[s.filterPill, dayFilter === null && s.filterPillActive]}>
+                <Text style={[s.filterPillText, dayFilter === null && s.filterPillTextActive]}>Any day</Text>
+              </TouchableOpacity>
+              {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((d, i) => (
+                <TouchableOpacity key={d} onPress={() => setDayFilter(dayFilter === i ? null : i)} style={[s.filterPill, dayFilter === i && s.filterPillActive]}>
+                  <Text style={[s.filterPillText, dayFilter === i && s.filterPillTextActive]}>{d}</Text>
                 </TouchableOpacity>
-                {uniqueLevelPills.map(label => (
-                  <TouchableOpacity
-                    key={label}
-                    onPress={() => setClassLevelPillFilter(classLevelPillFilter === label ? null : label)}
-                    style={[s.filterPill, classLevelPillFilter === label && s.filterPillActive]}
-                  >
-                    <Text style={[s.filterPillText, classLevelPillFilter === label && s.filterPillTextActive]}>{label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
+              ))}
+            </ScrollView>
 
+            {/* Class type filter */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
+              {[['All types', null], ['Level classes', 'level'], ['Conditioning', 'conditioning'], ['Dance', 'dance'], ['Routine / Style', 'routine'], ['Practice', 'practice']].map(([label, val]) => (
+                <TouchableOpacity key={label} onPress={() => setClassTypeFilter(classTypeFilter === val ? null : val)} style={[s.filterPill, classTypeFilter === val && s.filterPillActive]}>
+                  <Text style={[s.filterPillText, classTypeFilter === val && s.filterPillTextActive]}>{label}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* Instructor filter */}
             {uniqueInstructors.length > 1 && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
-                <TouchableOpacity
-                  onPress={() => setInstructorFilter(null)}
-                  style={[s.filterPill, !instructorFilter && s.filterPillActive]}
-                >
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
+                <TouchableOpacity onPress={() => setInstructorFilter(null)} style={[s.filterPill, !instructorFilter && s.filterPillActive]}>
                   <Text style={[s.filterPillText, !instructorFilter && s.filterPillTextActive]}>All instructors</Text>
                 </TouchableOpacity>
                 {uniqueInstructors.map(name => (
-                  <TouchableOpacity
-                    key={name}
-                    onPress={() => setInstructorFilter(instructorFilter === name ? null : name)}
-                    style={[s.filterPill, instructorFilter === name && s.filterPillActive]}
-                  >
+                  <TouchableOpacity key={name} onPress={() => setInstructorFilter(instructorFilter === name ? null : name)} style={[s.filterPill, instructorFilter === name && s.filterPillActive]}>
                     <Text style={[s.filterPillText, instructorFilter === name && s.filterPillTextActive]}>{name}</Text>
                   </TouchableOpacity>
                 ))}
@@ -1805,7 +1816,14 @@ export default function BookScreen({ navigation }) {
                 <TouchableOpacity
                   key={session.id}
                   style={[s.card, isBooked && s.cardBooked, isOutOfLevel && !isSelected && s.cardOutOfLevel, isSelected && s.cardSelected]}
-                  onPress={() => !isBooked && !isFull && toggleSession(session)}
+                  onPress={() => {
+                    if (isBooked || isFull) return
+                    if (isNewStudent && !session.first_timer_appropriate && !firstTimerNudge) {
+                      setFirstTimerNudge(session)
+                      return
+                    }
+                    toggleSession(session)
+                  }}
                   activeOpacity={isBooked || isFull ? 1 : 0.75}
                 >
                   <View style={s.sessionRow}>
@@ -1815,6 +1833,11 @@ export default function BookScreen({ navigation }) {
                         {levelBadge && (
                           <View style={{ backgroundColor: levelBadge.bg, borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2 }}>
                             <Text style={{ fontSize: 10, fontWeight: '700', color: levelBadge.color }}>{levelBadge.label}</Text>
+                          </View>
+                        )}
+                        {session.first_timer_appropriate && (
+                          <View style={{ backgroundColor: 'rgba(204,255,0,0.1)', borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2 }}>
+                            <Text style={{ fontSize: 10, fontWeight: '700', color: '#ccff00' }}>First timer ✓</Text>
                           </View>
                         )}
                       </View>
@@ -2463,6 +2486,39 @@ export default function BookScreen({ navigation }) {
       )}
 
       {/* First-timer info modal */}
+      {firstTimerNudge && (
+        <Modal visible transparent animationType="fade" onRequestClose={() => setFirstTimerNudge(null)}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+            <View style={{ backgroundColor: '#111', borderRadius: 20, width: '100%', borderWidth: 1, borderColor: '#333', padding: 24 }}>
+              <Text style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17, color: '#fff', marginBottom: 10 }}>Just checking in</Text>
+              <Text style={{ fontSize: 14, color: '#ccc', lineHeight: 22, marginBottom: 20 }}>
+                <Text style={{ color: '#ccff00', fontWeight: '700' }}>{firstTimerNudge.name}</Text>
+                {' '}isn't marked as a first-timer class. If you've never done pole before, we'd recommend starting with a class tagged{' '}
+                <Text style={{ color: '#ccff00', fontWeight: '700' }}>First timer ✓</Text>
+                {'.'}
+              </Text>
+              <Text style={{ fontSize: 13, color: '#888', marginBottom: 24 }}>
+                If you're confident this is the right class for you, go ahead!
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <TouchableOpacity
+                  style={{ flex: 1, borderWidth: 1, borderColor: '#333', borderRadius: 10, padding: 14, alignItems: 'center' }}
+                  onPress={() => setFirstTimerNudge(null)}
+                >
+                  <Text style={{ color: '#ccc', fontWeight: '700', fontSize: 13 }}>Go back</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ flex: 1, backgroundColor: '#ccff00', borderRadius: 10, padding: 14, alignItems: 'center' }}
+                  onPress={() => { const s = firstTimerNudge; setFirstTimerNudge(null); toggleSession(s) }}
+                >
+                  <Text style={{ color: '#000', fontWeight: '700', fontSize: 13 }}>Add anyway</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
+
       {firstTimerModal && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setFirstTimerModal(null)}>
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>

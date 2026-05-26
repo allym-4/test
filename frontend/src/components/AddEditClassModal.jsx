@@ -61,6 +61,7 @@ export default function AddEditClassModal({ session, onClose, onSaved }) {
     instructor: session?.instructor || '',
     studio: session?.studio || '',
     is_active: session?.is_active ?? true,
+    first_timer_appropriate: session?.first_timer_appropriate ?? false,
   })
 
   const [classTypes, setClassTypes] = useState([])   // deduplicated class names
@@ -148,6 +149,7 @@ export default function AddEditClassModal({ session, onClose, onSaved }) {
         instructor: form.instructor || null,
         studio: form.studio || null,
         is_active: form.is_active,
+        first_timer_appropriate: form.first_timer_appropriate,
       }
       const res = isEdit
         ? await client.patch(`/api/classes/sessions/${session.id}/`, payload)
@@ -339,11 +341,15 @@ export default function AddEditClassModal({ session, onClose, onSaved }) {
             </div>
           </div>
 
-          {/* Active toggle */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          {/* Toggles */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 16, flexWrap: 'wrap' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: form.is_active ? 'var(--lime)' : 'var(--grey)' }}>
               <input type="checkbox" checked={form.is_active} onChange={e => set('is_active', e.target.checked)} />
               Active
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: form.first_timer_appropriate ? 'var(--lime)' : 'var(--grey)' }}>
+              <input type="checkbox" checked={form.first_timer_appropriate} onChange={e => set('first_timer_appropriate', e.target.checked)} />
+              First timer appropriate
             </label>
           </div>
 

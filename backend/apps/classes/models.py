@@ -90,6 +90,10 @@ class ClassSession(models.Model):
         default=False,
         help_text='When enabled, the next waitlisted student is automatically enrolled when a spot opens instead of receiving an offer to claim.'
     )
+    first_timer_appropriate = models.BooleanField(
+        default=False,
+        help_text='Mark this class as suitable for absolute first timers — no prior pole experience needed.'
+    )
     created_at = models.DateTimeField(auto_now_add=True, null=True)
 
     class Meta:
