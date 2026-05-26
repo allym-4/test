@@ -30,6 +30,8 @@ class Payment(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
+    admin_notes = models.TextField(blank=True)
+
     # Cash promise tracking
     cash_promised_date = models.DateField(null=True, blank=True)
     cash_received = models.BooleanField(default=False)

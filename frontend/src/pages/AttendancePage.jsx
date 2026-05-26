@@ -38,7 +38,11 @@ function getMilestones(st, today) {
   // Birthday
   if (st.date_of_birth) {
     const dob = new Date(st.date_of_birth)
-    const thisYear = new Date(today.getFullYear(), dob.getMonth(), dob.getDate())
+    let thisYear = new Date(today.getFullYear(), dob.getMonth(), dob.getDate())
+    // If birthday already passed this year, check next year's occurrence
+    if (thisYear < today && !(thisYear.toDateString() === today.toDateString())) {
+      thisYear = new Date(today.getFullYear() + 1, dob.getMonth(), dob.getDate())
+    }
     const diff = Math.round((thisYear - today) / 86400000)
     if (diff === 0) badges.push({ label: 'Birthday today 🎂', color: '#ffaa00', bg: 'rgba(255,170,0,0.1)', border: 'rgba(255,170,0,0.35)' })
     else if (diff === 1) badges.push({ label: 'Birthday tomorrow 🎂', color: '#ffaa00', bg: 'rgba(255,170,0,0.08)', border: 'rgba(255,170,0,0.25)' })

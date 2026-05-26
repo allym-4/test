@@ -82,6 +82,48 @@ import TakePaymentModal from '../../components/TakePaymentModal'
 import AddChargeModal from '../../components/AddChargeModal'
 import AddToClassModal from '../../components/AddToClassModal'
 
+function DmThread({ convId, studentFirstName }) {
+  const [msgs, setMsgs] = useState(null)
+  const [open, setOpen] = useState(false)
+
+  async function load() {
+    if (msgs) { setOpen(o => !o); return }
+    const res = await helpdesk.dms(convId).catch(() => ({ data: [] }))
+    setMsgs(res.data || [])
+    setOpen(true)
+  }
+
+  return (
+    <div>
+      <button onClick={load} className="btn btn-ghost btn-xs" style={{ fontSize: 10, marginBottom: 6 }}>
+        {open ? 'Hide messages' : 'Show messages'}
+      </button>
+      {open && msgs && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto', padding: 2 }}>
+          {msgs.length === 0 && <div style={{ fontSize: 12, color: 'var(--grey)' }}>No messages</div>}
+          {msgs.map(m => {
+            const isStudent = m.sender_detail?.role === 'student' || m.sender_detail?.id === m.sender
+            return (
+              <div key={m.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexDirection: isStudent ? 'row-reverse' : 'row' }}>
+                <div style={{ width: 26, height: 26, borderRadius: '50%', background: isStudent ? 'var(--lav)' : 'var(--lime)', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
+                  {isStudent ? (studentFirstName?.[0] || '?') : (m.sender_detail?.first_name?.[0] || '?')}
+                </div>
+                <div style={{ maxWidth: '75%', background: isStudent ? 'rgba(176,160,255,0.12)' : '#1a1a1a', border: `1px solid ${isStudent ? 'rgba(176,160,255,0.2)' : 'var(--border)'}`, borderRadius: 8, padding: '8px 12px' }}>
+                  <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 3 }}>{m.sender_detail?.display_name || 'Unknown'}</div>
+                  <div style={{ fontSize: 12, color: 'var(--white)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{m.body}</div>
+                  <div style={{ fontSize: 10, color: 'var(--grey)', marginTop: 4 }}>
+                    {new Date(m.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} {new Date(m.created_at).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const AVATAR_COLORS = ['#b0a0ff', '#ccff00', '#ffaa00', '#ff88aa', '#44ffcc', '#ffcc88', '#b0f0b0', '#9ac4ff', '#ffb3de', '#44ff99']
 function avatarColor(name) {
   let h = 0
@@ -515,6 +557,72 @@ function AddPracticeCreditsModal({ student, onClose, onSuccess }) {
   )
 }
 
+function AddCatchupCreditsModal({ student, onClose, onSuccess }) {
+  const [count, setCount] = useState(1)
+  const [adminNotes, setAdminNotes] = useState('')
+  const [expiresAt, setExpiresAt] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setSaving(true)
+    setError(null)
+    try {
+      const created = []
+      for (let i = 0; i < parseInt(count); i++) {
+        const payload = { student: student.id, reason: 'Manually added by admin', status: 'available', ...(adminNotes ? { admin_notes: adminNotes } : {}), ...(expiresAt ? { expires_at: expiresAt } : {}) }
+        const res = await attendance.makeupCredits.create(payload)
+        created.push(res.data)
+      }
+      onSuccess(created)
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to add catch-up credits.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 400 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>Add Catch-up Credits</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <form className="sd-body" onSubmit={handleSubmit}>
+          {error && (
+            <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>{error}</div>
+          )}
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 16 }}>
+            Adding catch-up credits to <strong style={{ color: 'var(--white)' }}>{student.first_name} {student.last_name}</strong>. Each credit lets the student book one catch-up class.
+          </div>
+          <div className="field">
+            <label>Number of credits</label>
+            <select value={count} onChange={e => setCount(e.target.value)}>
+              {[1,2,3,4,5,6,8,10].map(n => <option key={n} value={n}>{n} credit{n !== 1 ? 's' : ''}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label>Expiry date <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(optional — leave blank for no expiry)</span></label>
+            <input type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} />
+          </div>
+          <div className="field">
+            <label>Admin notes <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(internal only, not visible to student)</span></label>
+            <textarea value={adminNotes} onChange={e => setAdminNotes(e.target.value)} placeholder="e.g. Goodwill credit for cancelled class" rows={2} style={{ resize: 'vertical' }} />
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>
+              {saving ? 'Adding…' : `Add ${count} Credit${count != 1 ? 's' : ''}`}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 function StudentTagsRow({ student, setStudent }) {
   const { data: allTagsData } = useApi(() => tagsApi.list())
   const allTags = allTagsData?.results || allTagsData || []
@@ -573,11 +681,25 @@ function StudentTagsRow({ student, setStudent }) {
 }
 
 function BlockedSessionsRow({ student, setStudent }) {
-  const { data: sessData } = useApi(() => classes.list({ page_size: 300 }))
-  const allSessions = sessData?.results || sessData || []
   const blocked = student.blocked_sessions || []
   const [adding, setAdding] = useState(false)
   const [search, setSearch] = useState('')
+  const [allSessions, setAllSessions] = useState([])
+  const [sessLoading, setSessLoading] = useState(false)
+
+  async function openAdding() {
+    setAdding(true)
+    if (allSessions.length > 0) return
+    setSessLoading(true)
+    try {
+      const res = await classes.list({ page_size: 300 })
+      setAllSessions(res.data?.results || res.data || [])
+    } catch {
+      setAllSessions([])
+    } finally {
+      setSessLoading(false)
+    }
+  }
 
   const available = allSessions.filter(s =>
     !blocked.includes(s.id) &&
@@ -625,6 +747,7 @@ function BlockedSessionsRow({ student, setStudent }) {
               style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, color: '#fff', fontSize: 12, padding: '5px 10px', width: 200 }}
             />
             <div style={{ maxHeight: 160, overflowY: 'auto', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8 }}>
+              {sessLoading && <div style={{ padding: '10px 12px', fontSize: 12, color: 'var(--grey)' }}>Loading…</div>}
               {available.slice(0, 20).map(s => (
                 <div key={s.id} onClick={() => addBlock(s.id)} style={{ padding: '7px 12px', fontSize: 12, cursor: 'pointer', borderBottom: '1px solid var(--border)' }}
                   onMouseEnter={e => e.currentTarget.style.background = '#222'}
@@ -638,7 +761,7 @@ function BlockedSessionsRow({ student, setStudent }) {
             <button className="btn btn-ghost btn-xs" onClick={() => { setAdding(false); setSearch('') }}>Cancel</button>
           </div>
         ) : (
-          <button className="btn btn-ghost btn-xs" style={{ fontSize: 10 }} onClick={() => setAdding(true)}>+ Block a class</button>
+          <button className="btn btn-ghost btn-xs" style={{ fontSize: 10 }} onClick={openAdding}>+ Block a class</button>
         )}
       </div>
     </div>
@@ -685,6 +808,9 @@ export default function AdminStudentDetail() {
   const [refundType, setRefundType] = useState('refund')
   const [creditAmount, setCreditAmount] = useState('')
   const [creditDesc, setCreditDesc] = useState('')
+  const [creditExpiry, setCreditExpiry] = useState('')
+  const [creditAdminNotes, setCreditAdminNotes] = useState('')
+  const [showAddCatchupCredits, setShowAddCatchupCredits] = useState(false)
   const [savingRefund, setSavingRefund] = useState(false)
   const [savingCredit, setSavingCredit] = useState(false)
   const [noteText, setNoteText] = useState('')
@@ -704,6 +830,7 @@ export default function AdminStudentDetail() {
   const [commsData, setCommsData] = useState(null)
   const [chatHistory, setChatHistory] = useState(null)
   const [loadingChat, setLoadingChat] = useState(false)
+  const [dmConversations, setDmConversations] = useState(null)
   const [notificationsData, setNotificationsData] = useState(null)
   const [commsFilter, setCommsFilter] = useState('all')
   const [loadingComms, setLoadingComms] = useState(false)
@@ -766,12 +893,17 @@ export default function AdminStudentDetail() {
       setCommsData(tickets)
       setNotificationsData(notifs)
     }).finally(() => setLoadingComms(false))
-    // Load assistant chat history
+    // Load assistant chat history + DM conversations
     setLoadingChat(true)
-    client.get('/api/users/assistant/chats/', { params: { user_id: student.id } })
-      .then(res => setChatHistory(res.data || []))
-      .catch(() => setChatHistory([]))
-      .finally(() => setLoadingChat(false))
+    Promise.all([
+      client.get('/api/users/assistant/chats/', { params: { user_id: student.id } })
+        .then(res => res.data || []).catch(() => []),
+      helpdesk.conversations({ student: student.id })
+        .then(res => res.data?.results || res.data || []).catch(() => []),
+    ]).then(([botMsgs, convos]) => {
+      setChatHistory(botMsgs)
+      setDmConversations(convos)
+    }).finally(() => setLoadingChat(false))
   }, [tab, student?.id])
 
   useEffect(() => {
@@ -1021,7 +1153,7 @@ export default function AdminStudentDetail() {
                   </div>
                 )}
 
-                <div className="sd-overview-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+                <div className="sd-overview-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20, alignItems: 'start' }}>
                   <div className="card" style={{ padding: '16px 18px' }}>
                     <div style={{ fontSize: 11, marginBottom: 12, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px' }}>Contact Info</div>
                     {[
@@ -1442,7 +1574,10 @@ export default function AdminStudentDetail() {
 
                       {/* Casual / Catch-up */}
                       <div style={{ marginBottom: 24 }}>
-                        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 13, marginBottom: 12 }}>Casual & Catch-up</div>
+                        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 13, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          Casual & Catch-up
+                          <button className="btn btn-ghost btn-xs" onClick={() => setShowAddCatchupCredits(true)}>+ Add Catch-up Credits</button>
+                        </div>
                         <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
                           <div className="card" style={{ flex: 1, padding: '12px 14px' }}>
                             <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', marginBottom: 4 }}>Catch-up Credits</div>
@@ -2131,27 +2266,51 @@ export default function AdminStudentDetail() {
                     )}
                     {(commsFilter === 'all' || commsFilter === 'chat') && (
                       <div style={{ marginBottom: commsFilter === 'all' ? 24 : 0 }}>
-                        {commsFilter === 'all' && <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 10 }}>AI Assistant Chat</div>}
+                        {commsFilter === 'all' && <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 10 }}>Chat History</div>}
                         {loadingChat ? (
                           <div style={{ display: 'flex', justifyContent: 'center', padding: 24 }}><div className="spinner" /></div>
-                        ) : !chatHistory || chatHistory.length === 0 ? (
-                          <div className="empty-state">No assistant conversations</div>
                         ) : (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 480, overflowY: 'auto', padding: 2 }}>
-                            {chatHistory.map(m => (
-                              <div key={m.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexDirection: m.role === 'user' ? 'row-reverse' : 'row' }}>
-                                <div style={{ width: 26, height: 26, borderRadius: '50%', background: m.role === 'user' ? 'var(--lav)' : '#333', color: m.role === 'user' ? '#000' : 'var(--grey)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
-                                  {m.role === 'user' ? (student?.first_name?.[0] || '?') : 'AI'}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                            {/* AI Bot */}
+                            {chatHistory && chatHistory.length > 0 && (
+                              <div>
+                                <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <span style={{ background: '#333', borderRadius: 4, padding: '1px 6px', fontSize: 10 }}>🤖 AI Assistant</span>
                                 </div>
-                                <div style={{ maxWidth: '75%', background: m.role === 'user' ? 'rgba(176,160,255,0.12)' : '#1a1a1a', border: `1px solid ${m.role === 'user' ? 'rgba(176,160,255,0.2)' : 'var(--border)'}`, borderRadius: 8, padding: '8px 12px' }}>
-                                  <div style={{ fontSize: 12, color: 'var(--white)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{m.content}</div>
-                                  <div style={{ fontSize: 10, color: 'var(--grey)', marginTop: 4, textAlign: m.role === 'user' ? 'right' : 'left' }}>
-                                    {new Date(m.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} {new Date(m.created_at).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}
-                                    {m.escalated && <span style={{ marginLeft: 6, color: 'var(--amber)' }}>↑ escalated</span>}
-                                  </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 360, overflowY: 'auto', padding: 2 }}>
+                                  {chatHistory.map(m => (
+                                    <div key={m.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexDirection: m.role === 'user' ? 'row-reverse' : 'row' }}>
+                                      <div style={{ width: 26, height: 26, borderRadius: '50%', background: m.role === 'user' ? 'var(--lav)' : '#333', color: m.role === 'user' ? '#000' : 'var(--grey)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
+                                        {m.role === 'user' ? (student?.first_name?.[0] || '?') : 'AI'}
+                                      </div>
+                                      <div style={{ maxWidth: '75%', background: m.role === 'user' ? 'rgba(176,160,255,0.12)' : '#1a1a1a', border: `1px solid ${m.role === 'user' ? 'rgba(176,160,255,0.2)' : 'var(--border)'}`, borderRadius: 8, padding: '8px 12px' }}>
+                                        <div style={{ fontSize: 12, color: 'var(--white)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{m.content}</div>
+                                        <div style={{ fontSize: 10, color: 'var(--grey)', marginTop: 4, textAlign: m.role === 'user' ? 'right' : 'left' }}>
+                                          {new Date(m.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} {new Date(m.created_at).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}
+                                          {m.escalated && <span style={{ marginLeft: 6, color: 'var(--amber)' }}>↑ escalated</span>}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
+                            )}
+                            {/* DM Conversations (instructor / admin) */}
+                            {(dmConversations || []).map(conv => (
+                              <div key={conv.id}>
+                                <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 8 }}>
+                                  <span style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 6px', fontSize: 10 }}>
+                                    💬 {conv.instructor ? `${conv.instructor_detail?.display_name || 'Instructor'} · DM` : 'Admin · DM'}
+                                    {conv.source === 'instagram' && ' · Instagram'}
+                                  </span>
+                                  <span style={{ marginLeft: 8, color: '#555', fontSize: 10 }}>{new Date(conv.updated_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                </div>
+                                <DmThread convId={conv.id} studentFirstName={student?.first_name} />
+                              </div>
                             ))}
+                            {(!chatHistory || chatHistory.length === 0) && (dmConversations || []).length === 0 && (
+                              <div className="empty-state">No chat history</div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -2384,6 +2543,14 @@ export default function AdminStudentDetail() {
                 <label>Description</label>
                 <input value={creditDesc} onChange={e => setCreditDesc(e.target.value)} placeholder="Reason for credit" />
               </div>
+              <div className="field">
+                <label>Expiry date <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(optional — leave blank for no expiry)</span></label>
+                <input type="date" value={creditExpiry} onChange={e => setCreditExpiry(e.target.value)} />
+              </div>
+              <div className="field">
+                <label>Admin notes <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(internal only, not visible to student)</span></label>
+                <textarea value={creditAdminNotes} onChange={e => setCreditAdminNotes(e.target.value)} placeholder="Internal notes…" rows={2} style={{ resize: 'vertical' }} />
+              </div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
                 <button className="btn btn-ghost btn-sm" onClick={() => setShowAccountCredit(false)}>Cancel</button>
                 <button
@@ -2392,12 +2559,14 @@ export default function AdminStudentDetail() {
                   onClick={async () => {
                     setSavingCredit(true)
                     try {
-                      await payments.create({ student: student.id, payment_type: 'credit', amount: parseFloat(creditAmount), description: creditDesc || 'Account credit added' })
+                      await payments.create({ student: student.id, payment_type: 'credit', amount: parseFloat(creditAmount), description: creditDesc || 'Account credit added', ...(creditAdminNotes ? { admin_notes: creditAdminNotes } : {}), ...(creditExpiry ? { expires_at: creditExpiry } : {}) })
                       const [balRes, payRes] = await Promise.all([payments.balance(student.id), payments.list({ student: student.id })])
                       setBalanceData(balRes.data)
                       setPayData(payRes.data.results || [])
                       setCreditAmount('')
                       setCreditDesc('')
+                      setCreditExpiry('')
+                      setCreditAdminNotes('')
                       setShowAccountCredit(false)
                     } finally { setSavingCredit(false) }
                   }}
@@ -2984,6 +3153,17 @@ export default function AdminStudentDetail() {
           onSuccess={(newCredits) => {
             setPracticeCreditsData(prev => [...(prev || []), ...newCredits])
             setShowAddPracticeCredits(false)
+          }}
+        />
+      )}
+
+      {showAddCatchupCredits && (
+        <AddCatchupCreditsModal
+          student={student}
+          onClose={() => setShowAddCatchupCredits(false)}
+          onSuccess={(newCredits) => {
+            setMakeupCreditsData(prev => [...(prev || []), ...newCredits])
+            setShowAddCatchupCredits(false)
           }}
         />
       )}

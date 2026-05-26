@@ -37,10 +37,10 @@ export default function TrialPage() {
         <div style={{ marginBottom: 40 }}>
           <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 'clamp(28px, 6vw, 42px)', lineHeight: 1.15, marginBottom: 16 }}>
             Try your first class.<br />
-            <span style={{ color: '#ccff00' }}>No experience needed.</span>
+            <span style={{ color: '#ccff00' }}>Any level. Any style.</span>
           </div>
           <div style={{ fontSize: 16, color: '#888', lineHeight: 1.7, maxWidth: 500 }}>
-            Pick a class below and come as you are. Just bring comfortable activewear and water — we'll take care of the rest.
+            Pick any class below and come as you are. Just bring comfortable activewear and water — we'll take care of the rest. This offer is available once per person.
           </div>
         </div>
 

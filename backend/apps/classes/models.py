@@ -86,6 +86,14 @@ class ClassSession(models.Model):
     skill_level = models.ForeignKey(
         'users.SkillLevel', on_delete=models.SET_NULL, null=True, blank=True, related_name='class_sessions'
     )
+    auto_promote_waitlist = models.BooleanField(
+        default=False,
+        help_text='When enabled, the next waitlisted student is automatically enrolled when a spot opens instead of receiving an offer to claim.'
+    )
+    first_timer_appropriate = models.BooleanField(
+        default=False,
+        help_text='Mark this class as suitable for absolute first timers — no prior pole experience needed.'
+    )
     created_at = models.DateTimeField(auto_now_add=True, null=True)
 
     class Meta:
@@ -319,6 +327,7 @@ class CasualBooking(models.Model):
     is_free = models.BooleanField(default=False)
     waitlist_offered_at = models.DateTimeField(null=True, blank=True)
     waitlist_expires_at = models.DateTimeField(null=True, blank=True)
+    waitlist_offer_rejected = models.BooleanField(default=False)  # student explicitly rejected the offer
     displacement_offered_at = models.DateTimeField(null=True, blank=True)
     displacement_expires_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

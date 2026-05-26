@@ -17,6 +17,7 @@ class Command(BaseCommand):
             'send_unmarked_attendance_alerts',
             'complete_past_seasons',
             'auto_charge_cash',
+            'remind_unenrolled',
             'charge_due_instalments',
             'notify_upcoming_casual_open',
         ]

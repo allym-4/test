@@ -56,6 +56,8 @@ class MakeupCredit(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     used_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateField(null=True, blank=True)
+    admin_notes = models.TextField(blank=True)
 
     class Meta:
         ordering = ['-created_at']

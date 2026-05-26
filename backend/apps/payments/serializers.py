@@ -13,12 +13,19 @@ class PaymentSerializer(serializers.ModelSerializer):
             return None
         return obj.student.get_full_name() or obj.student.username
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        if request and getattr(request.user, 'role', None) not in ('admin', 'instructor'):
+            data.pop('admin_notes', None)
+        return data
+
     class Meta:
         model = Payment
         fields = (
             'id', 'student', 'student_name', 'payment_type', 'amount', 'description',
             'reference', 'payment_method', 'stripe_payment_intent_id',
-            'created_by', 'created_by_name', 'created_at',
+            'created_by', 'created_by_name', 'created_at', 'admin_notes',
             'cash_promised_date', 'cash_received', 'cash_reminder_sent_at', 'cash_auto_charge_at',
         )
         read_only_fields = ('id', 'created_by', 'created_at', 'cash_reminder_sent_at', 'cash_auto_charge_at')

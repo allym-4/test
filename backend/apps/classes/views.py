@@ -1,5 +1,7 @@
 from datetime import date
 from django.db import models
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.db.models import Count
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
@@ -7,6 +9,154 @@ from rest_framework.response import Response
 from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, ClassChatMessage, Workshop, WorkshopBooking, PracticeSlot, PracticeBooking, PracticeCredit, CasualBooking, ClassUpsell
 from .serializers import StudioSerializer, ClassCategorySerializer, ClassSessionSerializer, ClassOccurrenceSerializer, SeasonSerializer, LockerSerializer, KisiGrantSerializer, WorkshopSerializer, WorkshopBookingSerializer, PracticeSlotSerializer, PracticeBookingSerializer, PracticeCreditSerializer, CasualBookingSerializer, ClassUpsellSerializer
 from apps.users.permissions import IsAdminOrInstructor, IsAdminUser
+
+
+def _send_casual_waitlist_notifications(bookings, occurrence, expires_at, urgent, now):
+    """
+    Send waitlist offer notifications to a list of CasualBooking objects.
+    Shared by _offer_casual_waitlist_spot and _cascade_casual_waitlist_offer.
+    """
+    from django.core.mail import send_mail
+    from django.conf import settings as django_settings
+    from apps.users.models import Notification
+
+    sydney_tz = timezone.get_current_timezone()
+    expires_str = expires_at.astimezone(sydney_tz).strftime('%I:%M %p')
+    session_name = occurrence.session.name
+    date_str = occurrence.date.strftime('%d %b')
+
+    for booking in bookings:
+        student = booking.student
+        prefs = student.notification_preferences or {}
+
+        booking.waitlist_offered_at = now
+        booking.waitlist_expires_at = expires_at
+        booking.save(update_fields=['waitlist_offered_at', 'waitlist_expires_at'])
+
+        if prefs.get('waitlist_app', True):
+            Notification.objects.create(
+                recipient=student,
+                title=f"Spot available — {session_name} {date_str}",
+                body=f"A spot opened up! You have until {expires_str} to claim it. Tap to confirm.",
+                notification_type='waitlist',
+                action_label='Claim My Spot',
+                action_url='/portal/classes',
+            )
+
+        if prefs.get('waitlist_email', True) and student.email:
+            if urgent:
+                body = (
+                    f"Hi {student.first_name},\n\n"
+                    f"A spot has just opened in {session_name} on {date_str} — the class is within 4 hours!\n\n"
+                    "This offer is open to all waitlisted students — first to confirm gets the spot.\n\n"
+                    f"You have until {expires_str} to claim it. Log in now.\n\n"
+                    "Duality Pole Studio"
+                )
+            else:
+                hours = int((expires_at - now).total_seconds() / 3600)
+                body = (
+                    f"Hi {student.first_name},\n\n"
+                    f"A spot has opened in {session_name} on {date_str}!\n\n"
+                    f"You have {hours} hours to claim your spot (until {expires_str}). "
+                    "If you don't confirm by then, the spot will be offered to the next person.\n\n"
+                    "Log in to confirm your booking.\n\n"
+                    "Duality Pole Studio"
+                )
+            send_mail(
+                subject=f"Spot available — {session_name} {date_str}!",
+                message=body,
+                from_email=django_settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[student.email],
+                fail_silently=True,
+            )
+
+
+def _get_casual_offer_params(occurrence, now):
+    """
+    Determine offer parameters (expires_at, to_offer subset, urgent, cascade) based
+    on how far away the class is.
+
+    Returns: (expires_at, slice_or_all, urgent, should_cascade)
+    - within 4h:   2h window, all waitlisted, urgent=True,  cascade=False
+    - same day >4h: 2h window, #1 only,        urgent=False, cascade=True
+    - future:       4h window, #1 only,         urgent=False, cascade=True
+    """
+    from datetime import timedelta
+    sydney_tz = timezone.get_current_timezone()
+    import datetime as _dt
+    occ_dt = timezone.make_aware(
+        _dt.datetime.combine(occurrence.date, occurrence.session.start_time),
+        sydney_tz,
+    )
+    hours_until = (occ_dt - now).total_seconds() / 3600
+    same_day = occ_dt.astimezone(sydney_tz).date() == now.astimezone(sydney_tz).date()
+
+    if hours_until <= 4:
+        # Within 4 hours — notify everyone, no cascade
+        return now + timedelta(hours=2), 'all', True, False
+    elif same_day:
+        # Same day but more than 4h away — 2h to #1, cascade
+        return now + timedelta(hours=2), 'one', False, True
+    else:
+        # Future date — 4h to #1, cascade
+        return now + timedelta(hours=4), 'one', False, True
+
+
+def _offer_casual_waitlist_spot(occurrence):
+    """
+    When a confirmed casual spot opens on an occurrence:
+    - Within 4h of class: notify ALL waitlisted simultaneously, 2h window, no cascade
+      (first to claim wins; if nobody claims the spot just opens)
+    - Same day but >4h away: 2h offer to #1 only, cascade on reject/expire
+    - Future date: 4h offer to #1 only, cascade on reject/expire
+    """
+    waitlisted = list(
+        CasualBooking.objects.filter(
+            occurrence=occurrence,
+            status='waitlisted',
+            waitlist_offered_at__isnull=True,
+            waitlist_offer_rejected=False,
+        ).order_by('waitlist_position', 'id').select_related('student')
+    )
+    if not waitlisted:
+        return
+
+    now = timezone.now()
+    expires_at, scope, urgent, _ = _get_casual_offer_params(occurrence, now)
+
+    to_offer = waitlisted if scope == 'all' else waitlisted[:1]
+    _send_casual_waitlist_notifications(to_offer, occurrence, expires_at, urgent, now)
+
+
+def _cascade_casual_waitlist_offer(occurrence, skip_booking_id=None):
+    """
+    Find the next eligible waitlisted CasualBooking and send a timed offer.
+    Called after a student rejects or a management command expires a casual waitlist offer.
+
+    Re-applies the same timing logic:
+    - Within 4h: notify all remaining simultaneously (no further cascade)
+    - Same day >4h: 2h to #1, cascade
+    - Future: 4h to #1, cascade
+    """
+    qs = CasualBooking.objects.filter(
+        occurrence=occurrence,
+        status='waitlisted',
+        waitlist_offered_at__isnull=True,
+        waitlist_offer_rejected=False,
+    ).order_by('waitlist_position', 'id').select_related('student')
+
+    if skip_booking_id:
+        qs = qs.exclude(pk=skip_booking_id)
+
+    remaining = list(qs)
+    if not remaining:
+        return
+
+    now = timezone.now()
+    expires_at, scope, urgent, _ = _get_casual_offer_params(occurrence, now)
+
+    to_offer = remaining if scope == 'all' else remaining[:1]
+    _send_casual_waitlist_notifications(to_offer, occurrence, expires_at, urgent, now)
 
 
 class StudioListView(generics.ListCreateAPIView):
@@ -1360,12 +1510,14 @@ class CasualBookCancelView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        was_catchup = booking.enrolment_type == 'catchup' and booking.status == 'confirmed'
+        was_confirmed = booking.status == 'confirmed'
+        was_catchup = booking.enrolment_type == 'catchup' and was_confirmed
+        occurrence = booking.occurrence
         booking.status = 'cancelled'
         booking.save(update_fields=['status'])
 
         # Restore makeup credit if cancelling a confirmed catch-up before the class
-        if was_catchup and booking.occurrence.date >= date.today():
+        if was_catchup and occurrence.date >= date.today():
             from apps.attendance.models import MakeupCredit
             from django.utils import timezone
             MakeupCredit.objects.create(
@@ -1374,7 +1526,35 @@ class CasualBookCancelView(APIView):
                 notes='Restored: casual catch-up booking cancelled',
             )
 
+        # Offer freed spot to next waitlisted student
+        if was_confirmed:
+            _offer_casual_waitlist_spot(occurrence)
+
         return Response({'status': 'cancelled'})
+
+
+class RejectCasualWaitlistOfferView(APIView):
+    """Student explicitly rejects a casual/catchup/trial waitlist offer — cascades to next person."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        booking = get_object_or_404(CasualBooking, pk=pk, student=request.user, status='waitlisted')
+
+        if not booking.waitlist_offered_at:
+            return Response({'detail': 'No active offer to reject.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if booking.waitlist_expires_at and timezone.now() > booking.waitlist_expires_at:
+            return Response({'detail': 'Offer has already expired.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        occurrence = booking.occurrence
+        booking.waitlist_offer_rejected = True
+        booking.waitlist_offered_at = None
+        booking.waitlist_expires_at = None
+        booking.save(update_fields=['waitlist_offer_rejected', 'waitlist_offered_at', 'waitlist_expires_at'])
+
+        _cascade_casual_waitlist_offer(occurrence, skip_booking_id=booking.id)
+
+        return Response({'status': 'rejected'})
 
 
 class MyCasualBookingsView(generics.ListAPIView):
@@ -1850,6 +2030,126 @@ class AdminPromoteCasualWaitlistView(APIView):
         return Response({'status': 'ok', 'id': booking.id})
 
 
+class AdminSendCasualWaitlistOfferView(APIView):
+    """Admin: manually send (or resend) a waitlist offer to a casual/catchup/trial booking."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        from datetime import timedelta
+        from apps.users.models import Notification
+        from django.core.mail import send_mail
+        from django.conf import settings
+
+        booking = get_object_or_404(CasualBooking, pk=pk, status='waitlisted')
+        occ = booking.occurrence
+        session = occ.session
+        student = booking.student
+
+        try:
+            expires_hours = max(1, int(request.data.get('expires_hours', 4)))
+        except (ValueError, TypeError):
+            expires_hours = 4
+
+        now = timezone.now()
+        expires_at = now + timedelta(hours=expires_hours)
+        expires_str = expires_at.strftime('%I:%M %p')
+
+        booking.waitlist_offered_at = now
+        booking.waitlist_expires_at = expires_at
+        booking.save(update_fields=['waitlist_offered_at', 'waitlist_expires_at'])
+
+        prefs = student.notification_preferences or {}
+        if prefs.get('waitlist_app', True):
+            Notification.objects.create(
+                recipient=student,
+                title=f"Spot available — {session.name}",
+                body=f"A spot is available for you on {occ.date.strftime('%d %b')}! You have {expires_hours} hour{'s' if expires_hours != 1 else ''} to claim it (until {expires_str}).",
+                notification_type='waitlist',
+                action_label='Claim My Spot',
+                action_url='/portal/classes',
+            )
+
+        if prefs.get('waitlist_email', True) and student.email:
+            send_mail(
+                subject=f"A spot has opened up — {session.name}!",
+                message=(
+                    f"Hi {student.first_name},\n\n"
+                    f"A spot has opened up in {session.name} on {occ.date.strftime('%d %B')}!\n\n"
+                    f"You have {expires_hours} hour{'s' if expires_hours != 1 else ''} to claim your spot (until {expires_str}). "
+                    "If you don't confirm by then, your spot will be offered to the next person.\n\n"
+                    "Log in to confirm your booking.\n\n"
+                    "Duality Pole Studio"
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[student.email],
+                fail_silently=True,
+            )
+
+        return Response({
+            'waitlist_offered_at': booking.waitlist_offered_at.isoformat(),
+            'waitlist_expires_at': booking.waitlist_expires_at.isoformat(),
+        })
+
+
+class ToggleAutoPromoteWaitlistView(APIView):
+    """Admin: toggle auto_promote_waitlist on a class session."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        session = get_object_or_404(ClassSession, pk=pk)
+        session.auto_promote_waitlist = not session.auto_promote_waitlist
+        session.save(update_fields=['auto_promote_waitlist'])
+        return Response({'auto_promote_waitlist': session.auto_promote_waitlist})
+
+
+class AdminBulkCasualWaitlistView(APIView):
+    """Admin: bulk promote or remove waitlisted casual/catchup/trial bookings."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request):
+        from apps.users.models import Notification
+
+        action = request.data.get('action')
+        ids = request.data.get('ids', [])
+        override = request.data.get('override_capacity', False)
+
+        if action not in ('promote', 'remove'):
+            return Response({'detail': 'action must be promote or remove'}, status=status.HTTP_400_BAD_REQUEST)
+        if not ids:
+            return Response({'detail': 'ids required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        bookings = CasualBooking.objects.filter(pk__in=ids, status='waitlisted').select_related(
+            'occurrence__session', 'student'
+        )
+        results = {'succeeded': [], 'failed': []}
+
+        for booking in bookings:
+            if action == 'remove':
+                bid = booking.id
+                booking.delete()
+                results['succeeded'].append(bid)
+            else:
+                occ = booking.occurrence
+                confirmed_count = occ.casual_bookings.filter(status='confirmed').count()
+                capacity = occ.session.capacity
+                if not override and confirmed_count >= capacity:
+                    results['failed'].append({'id': booking.id, 'reason': 'at_capacity'})
+                    continue
+                booking.status = 'confirmed'
+                booking.waitlist_offered_at = None
+                booking.waitlist_expires_at = None
+                booking.save(update_fields=['status', 'waitlist_offered_at', 'waitlist_expires_at'])
+                Notification.objects.create(
+                    recipient=booking.student,
+                    title=f"Spot confirmed — {occ.session.name}",
+                    body=f"You've been moved from the waitlist to confirmed for {occ.session.name} on {occ.date.strftime('%d %b')}.",
+                    notification_type='success',
+                )
+                results['succeeded'].append(booking.id)
+
+        return Response(results)
+
+
 class PracticeCreditListView(generics.ListCreateAPIView):
     """Admin: list and create practice credits for a student."""
     serializer_class = PracticeCreditSerializer
@@ -2006,11 +2306,10 @@ class SeasonNotifyMeView(APIView):
 
 
 class TrialSessionsView(APIView):
-    """Public endpoint — returns beginner-friendly sessions for the active season."""
+    """Public endpoint — returns all active sessions for the active season (any class is triallable)."""
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        import re
         from .models import Season, ClassSession
         from .serializers import ClassSessionSerializer
 
@@ -2020,12 +2319,7 @@ class TrialSessionsView(APIView):
 
         sessions = ClassSession.objects.filter(
             season=active_season, is_active=True
-        ).select_related('instructor', 'studio')
+        ).select_related('instructor', 'studio').order_by('day_of_week', 'start_time')
 
-        def is_trial_eligible(name):
-            n = name.lower()
-            return bool(re.search(r'level\s*1|virgin|practice', n))
-
-        eligible = [s for s in sessions if is_trial_eligible(s.name)]
-        serializer = ClassSessionSerializer(eligible, many=True, context={'request': request})
+        serializer = ClassSessionSerializer(sessions, many=True, context={'request': request})
         return Response({'results': serializer.data, 'season': active_season.name, 'season_id': active_season.id})

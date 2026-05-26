@@ -459,6 +459,7 @@ class StudentSkill(models.Model):
     instructor_status = models.CharField(
         max_length=20, choices=InstructorStatus.choices, default=InstructorStatus.PENDING
     )
+    instructor_notes = models.TextField(blank=True)
     is_focus = models.BooleanField(default=False)  # skill added outside student's enrolled level
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -37,6 +37,9 @@ class Enrolment(models.Model):
     waitlist_expires_at = models.DateTimeField(null=True, blank=True)
     waitlist_urgent = models.BooleanField(default=False)  # True = everyone notified simultaneously
     waitlist_position = models.PositiveIntegerField(null=True, blank=True)
+    waitlist_skip_auto_promote = models.BooleanField(default=False)  # exclude from auto-promote; still gets manual offers
+    student_auto_promote = models.BooleanField(default=False)  # student opted in: auto-enrol me if spot opens
+    waitlist_offer_rejected = models.BooleanField(default=False)  # student explicitly rejected the offer
 
     # Displacement tracking
     displacement_casual_booking = models.ForeignKey(
@@ -83,6 +86,7 @@ class ClassChangeRequest(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     admin_notes = models.TextField(blank=True)
     admin_initiated = models.BooleanField(default=False)
+    spot_held = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
     ticket = models.ForeignKey(

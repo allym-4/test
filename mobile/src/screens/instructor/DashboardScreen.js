@@ -160,7 +160,12 @@ function greeting() {
 }
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10)
+  // Before 5am Sydney time, return yesterday so late-night classes remain visible
+  const now = new Date()
+  const sydHour = new Date(now.toLocaleString('en-US', { timeZone: 'Australia/Sydney' })).getHours()
+  const d = new Date(now)
+  if (sydHour < 5) d.setDate(d.getDate() - 1)
+  return d.toISOString().slice(0, 10)
 }
 
 function formatTime(t) {

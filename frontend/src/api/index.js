@@ -120,8 +120,14 @@ export const enrolments = {
   waitlist: {
     reorder: (data) => client.post('/api/enrolments/waitlist-reorder/', data),
     promote: (id, data) => client.post(`/api/enrolments/${id}/promote-waitlist/`, data),
+    sendOffer: (id, data) => client.post(`/api/enrolments/${id}/send-waitlist-offer/`, data),
+    bulkAction: (data) => client.post('/api/enrolments/bulk-waitlist/', data),
     casualList: () => client.get('/api/classes/casual-bookings/admin-waitlist/'),
     casualPromote: (id, data) => client.post(`/api/classes/casual-bookings/${id}/admin-promote/`, data),
+    casualSendOffer: (id, data) => client.post(`/api/classes/casual-bookings/${id}/send-waitlist-offer/`, data),
+    casualBulkAction: (data) => client.post('/api/classes/casual-bookings/bulk-waitlist/', data),
+    toggleAutoPromote: (sessionId) => client.post(`/api/classes/sessions/${sessionId}/toggle-auto-promote/`),
+    toggleSkipAutoPromote: (enrolmentId) => client.post(`/api/enrolments/${enrolmentId}/toggle-skip-auto-promote/`),
   },
 }
 
