@@ -82,6 +82,48 @@ import TakePaymentModal from '../../components/TakePaymentModal'
 import AddChargeModal from '../../components/AddChargeModal'
 import AddToClassModal from '../../components/AddToClassModal'
 
+function DmThread({ convId, studentFirstName }) {
+  const [msgs, setMsgs] = useState(null)
+  const [open, setOpen] = useState(false)
+
+  async function load() {
+    if (msgs) { setOpen(o => !o); return }
+    const res = await helpdesk.dms(convId).catch(() => ({ data: [] }))
+    setMsgs(res.data || [])
+    setOpen(true)
+  }
+
+  return (
+    <div>
+      <button onClick={load} className="btn btn-ghost btn-xs" style={{ fontSize: 10, marginBottom: 6 }}>
+        {open ? 'Hide messages' : 'Show messages'}
+      </button>
+      {open && msgs && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto', padding: 2 }}>
+          {msgs.length === 0 && <div style={{ fontSize: 12, color: 'var(--grey)' }}>No messages</div>}
+          {msgs.map(m => {
+            const isStudent = m.sender_detail?.role === 'student' || m.sender_detail?.id === m.sender
+            return (
+              <div key={m.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexDirection: isStudent ? 'row-reverse' : 'row' }}>
+                <div style={{ width: 26, height: 26, borderRadius: '50%', background: isStudent ? 'var(--lav)' : 'var(--lime)', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
+                  {isStudent ? (studentFirstName?.[0] || '?') : (m.sender_detail?.first_name?.[0] || '?')}
+                </div>
+                <div style={{ maxWidth: '75%', background: isStudent ? 'rgba(176,160,255,0.12)' : '#1a1a1a', border: `1px solid ${isStudent ? 'rgba(176,160,255,0.2)' : 'var(--border)'}`, borderRadius: 8, padding: '8px 12px' }}>
+                  <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 3 }}>{m.sender_detail?.display_name || 'Unknown'}</div>
+                  <div style={{ fontSize: 12, color: 'var(--white)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{m.body}</div>
+                  <div style={{ fontSize: 10, color: 'var(--grey)', marginTop: 4 }}>
+                    {new Date(m.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} {new Date(m.created_at).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const AVATAR_COLORS = ['#b0a0ff', '#ccff00', '#ffaa00', '#ff88aa', '#44ffcc', '#ffcc88', '#b0f0b0', '#9ac4ff', '#ffb3de', '#44ff99']
 function avatarColor(name) {
   let h = 0
@@ -719,6 +761,7 @@ export default function AdminStudentDetail() {
   const [commsData, setCommsData] = useState(null)
   const [chatHistory, setChatHistory] = useState(null)
   const [loadingChat, setLoadingChat] = useState(false)
+  const [dmConversations, setDmConversations] = useState(null)
   const [notificationsData, setNotificationsData] = useState(null)
   const [commsFilter, setCommsFilter] = useState('all')
   const [loadingComms, setLoadingComms] = useState(false)
@@ -781,12 +824,17 @@ export default function AdminStudentDetail() {
       setCommsData(tickets)
       setNotificationsData(notifs)
     }).finally(() => setLoadingComms(false))
-    // Load assistant chat history
+    // Load assistant chat history + DM conversations
     setLoadingChat(true)
-    client.get('/api/users/assistant/chats/', { params: { user_id: student.id } })
-      .then(res => setChatHistory(res.data || []))
-      .catch(() => setChatHistory([]))
-      .finally(() => setLoadingChat(false))
+    Promise.all([
+      client.get('/api/users/assistant/chats/', { params: { user_id: student.id } })
+        .then(res => res.data || []).catch(() => []),
+      helpdesk.conversations({ student: student.id })
+        .then(res => res.data?.results || res.data || []).catch(() => []),
+    ]).then(([botMsgs, convos]) => {
+      setChatHistory(botMsgs)
+      setDmConversations(convos)
+    }).finally(() => setLoadingChat(false))
   }, [tab, student?.id])
 
   useEffect(() => {
@@ -2146,27 +2194,51 @@ export default function AdminStudentDetail() {
                     )}
                     {(commsFilter === 'all' || commsFilter === 'chat') && (
                       <div style={{ marginBottom: commsFilter === 'all' ? 24 : 0 }}>
-                        {commsFilter === 'all' && <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 10 }}>AI Assistant Chat</div>}
+                        {commsFilter === 'all' && <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 10 }}>Chat History</div>}
                         {loadingChat ? (
                           <div style={{ display: 'flex', justifyContent: 'center', padding: 24 }}><div className="spinner" /></div>
-                        ) : !chatHistory || chatHistory.length === 0 ? (
-                          <div className="empty-state">No assistant conversations</div>
                         ) : (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 480, overflowY: 'auto', padding: 2 }}>
-                            {chatHistory.map(m => (
-                              <div key={m.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexDirection: m.role === 'user' ? 'row-reverse' : 'row' }}>
-                                <div style={{ width: 26, height: 26, borderRadius: '50%', background: m.role === 'user' ? 'var(--lav)' : '#333', color: m.role === 'user' ? '#000' : 'var(--grey)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
-                                  {m.role === 'user' ? (student?.first_name?.[0] || '?') : 'AI'}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                            {/* AI Bot */}
+                            {chatHistory && chatHistory.length > 0 && (
+                              <div>
+                                <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <span style={{ background: '#333', borderRadius: 4, padding: '1px 6px', fontSize: 10 }}>🤖 AI Assistant</span>
                                 </div>
-                                <div style={{ maxWidth: '75%', background: m.role === 'user' ? 'rgba(176,160,255,0.12)' : '#1a1a1a', border: `1px solid ${m.role === 'user' ? 'rgba(176,160,255,0.2)' : 'var(--border)'}`, borderRadius: 8, padding: '8px 12px' }}>
-                                  <div style={{ fontSize: 12, color: 'var(--white)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{m.content}</div>
-                                  <div style={{ fontSize: 10, color: 'var(--grey)', marginTop: 4, textAlign: m.role === 'user' ? 'right' : 'left' }}>
-                                    {new Date(m.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} {new Date(m.created_at).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}
-                                    {m.escalated && <span style={{ marginLeft: 6, color: 'var(--amber)' }}>↑ escalated</span>}
-                                  </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 360, overflowY: 'auto', padding: 2 }}>
+                                  {chatHistory.map(m => (
+                                    <div key={m.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexDirection: m.role === 'user' ? 'row-reverse' : 'row' }}>
+                                      <div style={{ width: 26, height: 26, borderRadius: '50%', background: m.role === 'user' ? 'var(--lav)' : '#333', color: m.role === 'user' ? '#000' : 'var(--grey)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
+                                        {m.role === 'user' ? (student?.first_name?.[0] || '?') : 'AI'}
+                                      </div>
+                                      <div style={{ maxWidth: '75%', background: m.role === 'user' ? 'rgba(176,160,255,0.12)' : '#1a1a1a', border: `1px solid ${m.role === 'user' ? 'rgba(176,160,255,0.2)' : 'var(--border)'}`, borderRadius: 8, padding: '8px 12px' }}>
+                                        <div style={{ fontSize: 12, color: 'var(--white)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{m.content}</div>
+                                        <div style={{ fontSize: 10, color: 'var(--grey)', marginTop: 4, textAlign: m.role === 'user' ? 'right' : 'left' }}>
+                                          {new Date(m.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} {new Date(m.created_at).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}
+                                          {m.escalated && <span style={{ marginLeft: 6, color: 'var(--amber)' }}>↑ escalated</span>}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
+                            )}
+                            {/* DM Conversations (instructor / admin) */}
+                            {(dmConversations || []).map(conv => (
+                              <div key={conv.id}>
+                                <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 8 }}>
+                                  <span style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 6px', fontSize: 10 }}>
+                                    💬 {conv.instructor ? `${conv.instructor_detail?.display_name || 'Instructor'} · DM` : 'Admin · DM'}
+                                    {conv.source === 'instagram' && ' · Instagram'}
+                                  </span>
+                                  <span style={{ marginLeft: 8, color: '#555', fontSize: 10 }}>{new Date(conv.updated_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                </div>
+                                <DmThread convId={conv.id} studentFirstName={student?.first_name} />
+                              </div>
                             ))}
+                            {(!chatHistory || chatHistory.length === 0) && (dmConversations || []).length === 0 && (
+                              <div className="empty-state">No chat history</div>
+                            )}
                           </div>
                         )}
                       </div>
