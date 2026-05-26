@@ -1969,21 +1969,27 @@ export default function BookScreen({ navigation }) {
               )}
 
               {/* ── Filters ── */}
-              {uniqueLevelPills.length > 0 && (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
-                  <TouchableOpacity onPress={() => setClassLevelPillFilter(null)} style={[s.filterPill, classLevelPillFilter === null && s.filterPillActive]}>
-                    <Text style={[s.filterPillText, classLevelPillFilter === null && s.filterPillTextActive]}>All levels</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
+                <TouchableOpacity onPress={() => setDayFilter(null)} style={[s.filterPill, dayFilter === null && s.filterPillActive]}>
+                  <Text style={[s.filterPillText, dayFilter === null && s.filterPillTextActive]}>Any day</Text>
+                </TouchableOpacity>
+                {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((d, i) => (
+                  <TouchableOpacity key={d} onPress={() => setDayFilter(dayFilter === i ? null : i)} style={[s.filterPill, dayFilter === i && s.filterPillActive]}>
+                    <Text style={[s.filterPillText, dayFilter === i && s.filterPillTextActive]}>{d}</Text>
                   </TouchableOpacity>
-                  {uniqueLevelPills.map(label => (
-                    <TouchableOpacity key={label} onPress={() => setClassLevelPillFilter(classLevelPillFilter === label ? null : label)} style={[s.filterPill, classLevelPillFilter === label && s.filterPillActive]}>
-                      <Text style={[s.filterPillText, classLevelPillFilter === label && s.filterPillTextActive]}>{label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              )}
+                ))}
+              </ScrollView>
+
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
+                {[['All types', null], ['Level classes', 'level'], ['Conditioning', 'conditioning'], ['Dance', 'dance'], ['Routine / Style', 'routine'], ['Practice', 'practice']].map(([label, val]) => (
+                  <TouchableOpacity key={label} onPress={() => setClassTypeFilter(classTypeFilter === val ? null : val)} style={[s.filterPill, classTypeFilter === val && s.filterPillActive]}>
+                    <Text style={[s.filterPillText, classTypeFilter === val && s.filterPillTextActive]}>{label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
 
               {uniqueInstructors.length > 1 && (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 2 }}>
                   <TouchableOpacity onPress={() => setInstructorFilter(null)} style={[s.filterPill, !instructorFilter && s.filterPillActive]}>
                     <Text style={[s.filterPillText, !instructorFilter && s.filterPillTextActive]}>All instructors</Text>
                   </TouchableOpacity>
