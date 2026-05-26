@@ -125,6 +125,12 @@ class ClassOccurrenceListView(generics.ListCreateAPIView):
         date_param = self.request.query_params.get('date')
         if date_param:
             qs = qs.filter(date=date_param)
+        date_from = self.request.query_params.get('date_from')
+        if date_from:
+            qs = qs.filter(date__gte=date_from)
+        date_to = self.request.query_params.get('date_to')
+        if date_to:
+            qs = qs.filter(date__lte=date_to)
         if self.request.query_params.get('cover_needed') == 'true':
             qs = qs.filter(cover_needed=True)
         elif self.request.user.role == 'instructor' and not self.request.query_params.get('substitute_instructor'):

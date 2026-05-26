@@ -222,7 +222,11 @@ function SessionDetailModal({ session, onClose }) {
  * Must be rendered as a direct child of a grid container that uses
  * gridTemplateRows: `repeat(${TOTAL_SLOTS}, ${SLOT_HEIGHT}px)`.
  */
-function CalendarCard({ session, conflicting, onClick, col = 0, totalCols = 1 }) {
+/**
+ * dataMode: 'season' → show season enrolments from session
+ *           'week'   → show this week's actual bookings from occurrence
+ */
+function CalendarCard({ session, occurrence, dataMode = 'season', conflicting, onClick, col = 0, totalCols = 1 }) {
   const colors     = cardColors(session.name, conflicting)
   const instructor = session.instructor_detail?.display_name || ''
   const firstName  = instructor.split(' ')[0]
@@ -242,12 +246,28 @@ function CalendarCard({ session, conflicting, onClick, col = 0, totalCols = 1 })
   const top    = clampedStart * SLOT_HEIGHT + 1
   const height = Math.max(26, (clampedEnd - clampedStart) * SLOT_HEIGHT - 3)
   const showInstructor = height >= 46 && firstName
-  const showEnrolment  = height >= 60
+  const showStats      = height >= 56
+
+  // Season mode: enrolled / capacity + session waitlist
+  // Week mode: (enrolled + casual) / capacity + trial star + occurrence waitlist
+  const capacity = session.capacity || 0
+  let bookedCount, waitlistCount, hasTrial
+  if (dataMode === 'week' && occurrence) {
+    bookedCount   = (occurrence.enrolled_count ?? 0) + (occurrence.casual_booked_count ?? 0)
+    waitlistCount = occurrence.waitlist_count ?? 0
+    hasTrial      = (occurrence.trial_count ?? 0) > 0
+  } else {
+    bookedCount   = session.enrolled_count ?? 0
+    waitlistCount = session.waitlist_count ?? 0
+    hasTrial      = false
+  }
+
+  const isFull = bookedCount >= capacity
 
   return (
     <div
       onClick={onClick}
-      title={`${session.name}${firstName ? ` · ${firstName}` : ''} — ${fmt12(session.start_time)} · ${session.enrolled_count}/${session.capacity}`}
+      title={`${session.name}${firstName ? ` · ${firstName}` : ''} — ${fmt12(session.start_time)} · ${bookedCount}/${capacity}${waitlistCount > 0 ? ` · ${waitlistCount} waiting` : ''}${hasTrial ? ' · ★ first timer' : ''}`}
       style={{
         position:      'absolute',
         top,
@@ -269,19 +289,27 @@ function CalendarCard({ session, conflicting, onClick, col = 0, totalCols = 1 })
       onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(0.88)' }}
       onMouseLeave={e => { e.currentTarget.style.filter = '' }}
     >
-      <div style={{
-        fontWeight:   800,
-        fontSize:     10,
-        lineHeight:   1.25,
-        color:        colors.text,
-        textTransform:'uppercase',
-        letterSpacing:'0.04em',
-        overflow:     'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace:   'nowrap',
-      }}>
-        {session.name}
+      {/* Class name row — with first-timer star */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 2, overflow: 'hidden' }}>
+        <div style={{
+          fontWeight:   800,
+          fontSize:     10,
+          lineHeight:   1.25,
+          color:        colors.text,
+          textTransform:'uppercase',
+          letterSpacing:'0.04em',
+          overflow:     'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace:   'nowrap',
+          flex:         1,
+        }}>
+          {session.name}
+        </div>
+        {hasTrial && (
+          <span style={{ fontSize: 9, color: colors.text, flexShrink: 0, lineHeight: 1 }}>★</span>
+        )}
       </div>
+
       {showInstructor && (
         <div style={{
           fontSize:     9,
@@ -296,9 +324,17 @@ function CalendarCard({ session, conflicting, onClick, col = 0, totalCols = 1 })
           {firstName.toUpperCase()}
         </div>
       )}
-      {showEnrolment && (
-        <div style={{ fontSize: 9, lineHeight: 1.2, color: colors.subText, marginTop: 1 }}>
-          {session.enrolled_count}/{session.capacity}
+
+      {showStats && (
+        <div style={{ fontSize: 9, lineHeight: 1.2, color: isFull ? colors.text : colors.subText, marginTop: 1, display: 'flex', alignItems: 'center', gap: 3 }}>
+          <span style={{ fontWeight: isFull ? 700 : 400 }}>
+            {bookedCount}/{capacity}{isFull ? ' FULL' : ''}
+          </span>
+          {waitlistCount > 0 && (
+            <span style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 2, padding: '0 3px', fontSize: 8, fontWeight: 700 }}>
+              +{waitlistCount}
+            </span>
+          )}
         </div>
       )}
     </div>
@@ -309,7 +345,8 @@ function CalendarCard({ session, conflicting, onClick, col = 0, totalCols = 1 })
  * The 7-column calendar grid. Accepts pre-computed conflictIds so the parent
  * can also display the conflict count in the page header.
  */
-function CalendarGrid({ sessions, weekStart, conflictIds = new Set(), showConflicts = false, onDismissConflicts, conflictsDismissed }) {
+// occurrencesBySession: Map<sessionId, occurrence> for the current week
+function CalendarGrid({ sessions, weekStart, conflictIds = new Set(), showConflicts = false, onDismissConflicts, conflictsDismissed, occurrencesBySession = new Map(), dataMode = 'season' }) {
   const [selectedSession, setSelectedSession] = useState(null)
 
   // Build time labels once
@@ -474,6 +511,8 @@ function CalendarGrid({ sessions, weekStart, conflictIds = new Set(), showConfli
                   <CalendarCard
                     key={s.id}
                     session={s}
+                    occurrence={occurrencesBySession.get(s.id)}
+                    dataMode={dataMode}
                     conflicting={showConflicts && conflictIds.has(s.id)}
                     col={col}
                     totalCols={totalCols}
@@ -502,6 +541,7 @@ function CalendarGrid({ sessions, weekStart, conflictIds = new Set(), showConfli
 export default function AdminTimetable() {
   const [weekOffset, setWeekOffset]       = useState(0)
   const [view, setView]                   = useState('list')  // 'calendar' | 'list'
+  const [dataMode, setDataMode]           = useState('season') // 'season' | 'week'
   const [mode, setMode]                   = useState('attend')    // 'attend' | 'setup'
   const [showAddClass, setShowAddClass]   = useState(false)
   const [editSession, setEditSession]     = useState(null)
@@ -547,6 +587,31 @@ export default function AdminTimetable() {
 
   const weekStart     = getWeekStart(weekOffset)
   const weekLabel     = 'Week of ' + weekStart.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })
+
+  // For "week" data mode: fetch occurrences for this specific week
+  const weekEnd = useMemo(() => {
+    const d = new Date(weekStart)
+    d.setDate(d.getDate() + 6)
+    return d
+  }, [weekStart])
+  const weekStartStr = weekStart.toISOString().slice(0, 10)
+  const weekEndStr   = weekEnd.toISOString().slice(0, 10)
+  const shouldFetchOccurrences = view === 'calendar' && dataMode === 'week'
+  const { data: occData } = useApi(
+    () => shouldFetchOccurrences
+      ? classes.occurrences({ date_from: weekStartStr, date_to: weekEndStr, page_size: 200 })
+      : null,
+    [shouldFetchOccurrences, weekStartStr, weekEndStr]
+  )
+  // Build a Map<sessionId, occurrence> for quick lookup
+  const occurrencesBySession = useMemo(() => {
+    const map = new Map()
+    const list = occData?.results ?? (Array.isArray(occData) ? occData : [])
+    list.forEach(occ => {
+      if (occ.session) map.set(occ.session, occ)
+    })
+    return map
+  }, [occData])
   const seasonWeek    = getSeasonWeek(weekStart, seasonStart, seasonWeeks)
   const seasonWeekLabel = seasonWeek
     ? `${seasonLabel} — Week ${seasonWeek} of ${seasonWeeks}`
@@ -623,6 +688,23 @@ export default function AdminTimetable() {
             ))}
           </div>
 
+          {mode === 'attend' && view === 'calendar' && (
+            <div style={{ display: 'flex', border: '1px solid var(--border, #333)', borderRadius: 6, overflow: 'hidden' }}>
+              {[['season', 'Season'], ['week', 'This Week']].map(([dm, label]) => (
+                <button
+                  key={dm}
+                  onClick={() => setDataMode(dm)}
+                  style={{
+                    padding: '5px 12px', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer',
+                    background: dataMode === dm ? '#333' : 'transparent',
+                    color:      dataMode === dm ? '#fff' : 'var(--grey)',
+                    transition: 'background 0.15s, color 0.15s',
+                  }}
+                >{label}</button>
+              ))}
+            </div>
+          )}
+
           {mode === 'attend' && (
             <div style={{ display: 'flex', border: '1px solid var(--border, #333)', borderRadius: 6, overflow: 'hidden' }}>
               {['calendar', 'list'].map(v => (
@@ -666,6 +748,15 @@ export default function AdminTimetable() {
           </button>
         )}
       </div>
+
+      {/* ── Week data mode legend ── */}
+      {view === 'calendar' && dataMode === 'week' && (
+        <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 10, display: 'flex', gap: 14, alignItems: 'center' }}>
+          <span>This week: enrolled + casuals + catch-ups</span>
+          <span style={{ color: '#ccff00' }}>★ = first timer booked</span>
+          <span>+N = waitlisted</span>
+        </div>
+      )}
 
       {/* ── Term Setup banner ── */}
       {mode === 'setup' && (
@@ -775,6 +866,8 @@ export default function AdminTimetable() {
           showConflicts={!conflictsDismissed}
           conflictsDismissed={conflictsDismissed}
           onDismissConflicts={() => setConflictsDismissed(true)}
+          occurrencesBySession={occurrencesBySession}
+          dataMode={dataMode}
         />
       ) : (
         /* ── List view (unchanged) ── */

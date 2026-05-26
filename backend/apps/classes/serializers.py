@@ -86,6 +86,8 @@ class ClassOccurrenceSerializer(serializers.ModelSerializer):
     studio_detail = StudioSerializer(source='session.studio', read_only=True)
     spots_left = serializers.SerializerMethodField()
     casual_booked_count = serializers.SerializerMethodField()
+    trial_count = serializers.SerializerMethodField()
+    waitlist_count = serializers.SerializerMethodField()
     my_booking = serializers.SerializerMethodField()
     session_name = serializers.SerializerMethodField()
     start_time = serializers.SerializerMethodField()
@@ -99,8 +101,8 @@ class ClassOccurrenceSerializer(serializers.ModelSerializer):
             'substitute_instructor', 'substitute_instructor_detail',
             'instructor_detail', 'studio_detail',
             'notes', 'register_saved', 'cover_needed',
-            'spots_left', 'casual_booked_count', 'my_booking',
-            'session_name', 'start_time', 'studio_name', 'enrolled_count',
+            'spots_left', 'casual_booked_count', 'trial_count', 'waitlist_count',
+            'my_booking', 'session_name', 'start_time', 'studio_name', 'enrolled_count',
         )
 
     def get_session_name(self, obj):
@@ -122,6 +124,12 @@ class ClassOccurrenceSerializer(serializers.ModelSerializer):
 
     def get_casual_booked_count(self, obj):
         return obj.casual_bookings.filter(status='confirmed').count()
+
+    def get_trial_count(self, obj):
+        return obj.casual_bookings.filter(enrolment_type='trial', status='confirmed').count()
+
+    def get_waitlist_count(self, obj):
+        return obj.casual_bookings.filter(status='waitlisted').count()
 
     def get_spots_left(self, obj):
         from apps.enrolments.models import Enrolment
