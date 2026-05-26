@@ -549,7 +549,7 @@ export default function AdminPaymentPlans() {
   const { data, loading, refetch } = useApi(() => payments.plans.list(), [])
   const allPlans = data?.results || data || []
 
-  const pending = allPlans.filter(p => p.status === 'pending')
+  const pending = allPlans.filter(p => p.status === 'pending' || p.status === 'pending_approval')
   const active = allPlans.filter(p => p.status === 'active')
   const overduePlans = active.filter(p => p.instalments?.some(i => i.status === 'overdue'))
   const healthyActive = active.filter(p => !p.instalments?.some(i => i.status === 'overdue'))

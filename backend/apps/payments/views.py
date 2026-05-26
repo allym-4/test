@@ -73,11 +73,22 @@ class PaymentPlanListView(generics.ListCreateAPIView):
                 or user.default_payment_method_id
                 or ''
             )
-            serializer.save(
+            plan = serializer.save(
                 student=user,
                 status='pending_approval',
                 stripe_payment_method_id=pm_id,
             )
+            # Notify all admins so they know a plan request needs review
+            from apps.users.models import Notification, User as _User
+            for admin in _User.objects.filter(role='admin', is_active=True):
+                Notification.objects.create(
+                    recipient=admin,
+                    title='New payment plan request',
+                    body=f'{user.display_name} has requested a payment plan for "{plan.description}" (${plan.total_amount}).',
+                    notification_type='info',
+                    action_url='/admin/payment-plans',
+                    action_label='Review plans',
+                )
 
 
 class PaymentPlanDetailView(generics.RetrieveUpdateAPIView):

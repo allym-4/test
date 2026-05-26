@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import './LoginPage.css'
 
 export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const from = location.state?.from || null
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -17,7 +19,8 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const me = await login(username, password)
-      if (me.role === 'admin') navigate('/admin')
+      if (from && me.role === 'student') navigate(from)
+      else if (me.role === 'admin') navigate('/admin')
       else if (me.role === 'student') navigate('/portal')
       else navigate('/')
     } catch {

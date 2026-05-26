@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { useApi } from '../../hooks/useApi'
@@ -2142,7 +2143,12 @@ function SeasonTab({
 
 export default function StudentBook() {
   const { user } = useAuth()
-  const [tab, setTab] = useState('season')
+  const [searchParams] = useSearchParams()
+  const deepLinkSessionId = searchParams.get('session') ? parseInt(searchParams.get('session')) : null
+  const deepLinkTab = searchParams.get('tab') || null
+  const deepLinkHandled = useRef(false)
+
+  const [tab, setTab] = useState(deepLinkTab || 'season')
   const [booked, setBooked] = useState([])
   const [cart, setCart] = useState(null) // { session, type, price, label }
   const [checkout, setCheckout] = useState(null) // { sessionIds, type, amount, description }
@@ -2209,6 +2215,37 @@ export default function StudentBook() {
 
   const sessions = sessionsData?.results || sessionsData || []
   const workshops = workshopsData?.results || workshopsData || []
+
+  // Deep-link: ?session=ID[&tab=trial|season|casual] — open checkout immediately once data loads
+  useEffect(() => {
+    if (!deepLinkSessionId || deepLinkHandled.current || !sessions.length || !studioSettings) return
+    const target = sessions.find(s => s.id === deepLinkSessionId)
+    if (!target) return
+    deepLinkHandled.current = true
+    const targetTab = deepLinkTab || 'season'
+    setTab(targetTab)
+    if (targetTab === 'trial') {
+      const price = parseFloat(studioSettings?.price_trial || 25)
+      setCart({ session: target, type: 'trial', price })
+    } else {
+      // Season enrolment — open checkout directly
+      const allEnrolled = (activeEnrolData?.results || activeEnrolData || []).filter(e => e.enrolment_type === 'course').length
+      const tiers = studioSettings?.season_pricing_config || []
+      const getPrice = n => {
+        const tier = tiers.find(r => parseInt((r.label || '').match(/(\d+)/)?.[1] || '0') === n)
+        return tier ? parseFloat(tier.price) : parseFloat(studioSettings?.price_season || 270)
+      }
+      const incremental = getPrice(allEnrolled + 1) - (allEnrolled > 0 ? getPrice(allEnrolled) : 0)
+      setCheckout({
+        type: 'season',
+        sessionIds: [target.id],
+        amount: incremental,
+        description: target.name,
+        sessions: [target],
+      })
+    }
+  }, [deepLinkSessionId, sessions, studioSettings, activeEnrolData])
+
   const [bookingWorkshopId, setBookingWorkshopId] = useState(null)
   const [cancellingWorkshopId, setCancellingWorkshopId] = useState(null)
   const [workshopBooked, setWorkshopBooked] = useState({})

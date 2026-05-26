@@ -15,6 +15,7 @@ export const auth = {
 
 export const classes = {
   list: (params) => client.get('/api/classes/sessions/', { params }),
+  trialSessions: () => client.get('/api/classes/sessions/trial/'),
   get: (id) => client.get(`/api/classes/sessions/${id}/`),
   create: (data) => client.post('/api/classes/sessions/', data),
   update: (id, data) => client.patch(`/api/classes/sessions/${id}/`, data),

@@ -88,6 +88,7 @@ export default function AdminClasses() {
   const [search, setSearch] = useState('')
   const [deleting, setDeleting] = useState(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
+  const [copiedId, setCopiedId] = useState(null)
 
   const { data: sessData, loading, refetch } = useApi(() => classes.list(), [])
   const { data: workshopsData, loading: loadingWorkshops } = useApi(() => classes.workshops.list(), [])
@@ -198,6 +199,16 @@ export default function AdminClasses() {
                       <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
                         <div style={{ display: 'flex', gap: 4 }}>
                           <button className="btn btn-ghost btn-xs" title="Edit" onClick={() => navigate(`/admin/classes/${s.id}`)}>✏</button>
+                          <button
+                            className="btn btn-ghost btn-xs"
+                            title="Copy enrolment link"
+                            onClick={() => {
+                              const url = `${window.location.origin}/portal/book?session=${s.id}`
+                              navigator.clipboard.writeText(url).then(() => setCopiedId(s.id))
+                              setTimeout(() => setCopiedId(null), 2000)
+                            }}
+                            style={{ color: copiedId === s.id ? 'var(--lime)' : undefined }}
+                          >{copiedId === s.id ? '✓' : '🔗'}</button>
                           {confirmDeleteId === s.id ? (
                             <>
                               <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} onClick={() => handleDelete(s.id)} disabled={deleting === s.id}>{deleting === s.id ? '…' : '✓'}</button>

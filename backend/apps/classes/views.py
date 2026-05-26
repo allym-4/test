@@ -1997,3 +1997,29 @@ class SeasonNotifyMeView(APIView):
             obj.save(update_fields=['first_name'])
 
         return Response({'registered': True, 'season': season.name})
+
+
+class TrialSessionsView(APIView):
+    """Public endpoint — returns beginner-friendly sessions for the active season."""
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        import re
+        from .models import Season, ClassSession
+        from .serializers import ClassSessionSerializer
+
+        active_season = Season.objects.filter(status='active').order_by('-start_date').first()
+        if not active_season:
+            return Response({'results': []})
+
+        sessions = ClassSession.objects.filter(
+            season=active_season, is_active=True
+        ).select_related('instructor', 'studio')
+
+        def is_trial_eligible(name):
+            n = name.lower()
+            return bool(re.search(r'level\s*1|virgin|practice', n))
+
+        eligible = [s for s in sessions if is_trial_eligible(s.name)]
+        serializer = ClassSessionSerializer(eligible, many=True, context={'request': request})
+        return Response({'results': serializer.data, 'season': active_season.name, 'season_id': active_season.id})
