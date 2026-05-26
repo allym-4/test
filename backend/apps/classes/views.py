@@ -2300,11 +2300,10 @@ class SeasonNotifyMeView(APIView):
 
 
 class TrialSessionsView(APIView):
-    """Public endpoint — returns beginner-friendly sessions for the active season."""
+    """Public endpoint — returns all active sessions for the active season (any class is triallable)."""
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        import re
         from .models import Season, ClassSession
         from .serializers import ClassSessionSerializer
 
@@ -2314,12 +2313,7 @@ class TrialSessionsView(APIView):
 
         sessions = ClassSession.objects.filter(
             season=active_season, is_active=True
-        ).select_related('instructor', 'studio')
+        ).select_related('instructor', 'studio').order_by('day_of_week', 'start_time')
 
-        def is_trial_eligible(name):
-            n = name.lower()
-            return bool(re.search(r'level\s*1|virgin|practice', n))
-
-        eligible = [s for s in sessions if is_trial_eligible(s.name)]
-        serializer = ClassSessionSerializer(eligible, many=True, context={'request': request})
+        serializer = ClassSessionSerializer(sessions, many=True, context={'request': request})
         return Response({'results': serializer.data, 'season': active_season.name, 'season_id': active_season.id})

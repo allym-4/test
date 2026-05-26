@@ -211,6 +211,11 @@ class EnrolmentListView(generics.ListCreateAPIView):
         enrolment_type = serializer.validated_data.get('enrolment_type', 'course')
         session = serializer.validated_data.get('class_session')
 
+        # One trial per lifetime — students cannot book a second trial
+        if user.role == 'student' and enrolment_type == 'trial':
+            if Enrolment.objects.filter(student=user, enrolment_type='trial').exists():
+                raise ValidationError('You have already used your one trial class.')
+
         # Season booking gate — course/catchup enrolments only (not casual/trial)
         if user.role == 'student' and session and enrolment_type in ('course', 'catchup', 'catch_up'):
             season = getattr(session, 'season', None)

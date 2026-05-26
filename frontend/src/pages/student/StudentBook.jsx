@@ -3225,10 +3225,10 @@ export default function StudentBook() {
               <div>
                 <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 6, color: 'var(--amber)' }}>Try Your First Class</div>
                 <div style={{ fontSize: 13, color: 'var(--white)', lineHeight: 1.7, marginBottom: 4 }}>
-                  Your first class, no experience needed.
+                  Your first class at Duality — any level, any style.
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--grey)', lineHeight: 1.6 }}>
-                  Pick any class below and come as you are. Just wear comfortable activewear and bring water. We'll take care of the rest.
+                  Pick any class below. Wear comfortable activewear and bring water. We'll take care of the rest. This offer is available once.
                 </div>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
