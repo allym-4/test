@@ -731,23 +731,25 @@ export default function AdminTimetable() {
         </div>
       </div>
 
-      {/* ── Row 2: week nav + optional conflict check ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-        <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w - 1)}>← Prev</button>
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--white)' }}>
-          {view === 'calendar' ? seasonWeekLabel : weekLabel}
-        </span>
-        <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w + 1)}>Next →</button>
-        {view === 'calendar' && (
-          <button
-            className="btn btn-ghost btn-sm"
-            style={{ marginLeft: 8, ...((!conflictsDismissed && conflictIds.size > 0) ? { color: 'var(--red)', borderColor: 'var(--red)' } : {}) }}
-            onClick={handleRecheck}
-          >
-            {conflictsDismissed ? 'Check Conflicts' : `Hide Conflicts (${Math.ceil(conflictIds.size / 2)})`}
-          </button>
-        )}
-      </div>
+      {/* ── Row 2: week nav — hidden in setup mode ── */}
+      {mode !== 'setup' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w - 1)}>← Prev</button>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--white)' }}>
+            {view === 'calendar' ? seasonWeekLabel : weekLabel}
+          </span>
+          <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w + 1)}>Next →</button>
+          {view === 'calendar' && (
+            <button
+              className="btn btn-ghost btn-sm"
+              style={{ marginLeft: 8, ...((!conflictsDismissed && conflictIds.size > 0) ? { color: 'var(--red)', borderColor: 'var(--red)' } : {}) }}
+              onClick={handleRecheck}
+            >
+              {conflictsDismissed ? 'Check Conflicts' : `Hide Conflicts (${Math.ceil(conflictIds.size / 2)})`}
+            </button>
+          )}
+        </div>
+      )}
 
       {/* ── Week data mode legend ── */}
       {view === 'calendar' && dataMode === 'week' && (
