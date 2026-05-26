@@ -46,7 +46,7 @@ class ClassSessionSerializer(serializers.ModelSerializer):
             'season', 'season_name', 'season_start_date', 'season_end_date', 'season_bookings_open',
             'catchup_cutoff_weeks',
             'first_timer_headline', 'first_timer_body', 'first_timer_appropriate',
-            'description', 'created_at',
+            'description', 'prerequisites', 'created_at',
             'season_base_price',
             'skill_level', 'skill_level_name',
             'auto_promote_waitlist',

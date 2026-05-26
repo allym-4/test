@@ -2323,3 +2323,56 @@ class TrialSessionsView(APIView):
 
         serializer = ClassSessionSerializer(sessions, many=True, context={'request': request})
         return Response({'results': serializer.data, 'season': active_season.name, 'season_id': active_season.id})
+
+
+class GenerateClassDescriptionView(APIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request):
+        import os
+        try:
+            import anthropic as _anthropic
+        except ImportError:
+            return Response({'error': 'AI not available'}, status=503)
+
+        api_key = os.environ.get('ANTHROPIC_API_KEY', '')
+        if not api_key:
+            return Response({'error': 'AI not configured'}, status=503)
+
+        name = request.data.get('name', '').strip()
+        level = request.data.get('level', '').strip()
+        field = request.data.get('field', 'description')  # 'description' or 'first_timer_body'
+
+        if not name:
+            return Response({'error': 'Class name is required'}, status=400)
+
+        if field == 'first_timer_body':
+            user_prompt = (
+                f'Write the "first-timer info" body for the class "{name}" at Duality Pole Studio.\n'
+                f'Cover: what to wear, what to bring, and what to expect on the day.\n'
+                f'Keep it practical, warm, and encouraging. Use short punchy sentences or a brief list. Max 5 points.'
+            )
+        else:
+            user_prompt = (
+                f'Write a short class description for "{name}" at Duality Pole Studio.\n'
+                + (f'Level: {level}\n' if level else '')
+                + 'Max 2–3 sentences. Capture what the class is about and what students can expect to work on.'
+            )
+
+        try:
+            ai = _anthropic.Anthropic(api_key=api_key)
+            resp = ai.messages.create(
+                model='claude-haiku-4-5-20251001',
+                max_tokens=300,
+                system=(
+                    "You write copy for Duality Pole Studio — a boutique pole dancing studio in Surry Hills, Sydney. "
+                    "Brand voice: confident, empowering, playful, inclusive. Not corporate. Not over-explained. "
+                    "Write as if talking directly to a student who loves movement and wants to feel good in their body. "
+                    "Be concise. No hashtags, no emojis unless asked."
+                ),
+                messages=[{'role': 'user', 'content': user_prompt}],
+            )
+            text = resp.content[0].text.strip() if resp.content else ''
+            return Response({'result': text})
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)

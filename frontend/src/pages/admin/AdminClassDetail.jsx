@@ -43,11 +43,21 @@ const sectionTitle = {
   marginBottom: 16,
 }
 
-function UpsellsPanel({ sessionId, allSessions }) {
-  const [upsells, setUpsells] = useState([])
-  const [adding, setAdding] = useState(false)
-  const [newForm, setNewForm] = useState({ suggested_session: '', headline: '', body: '' })
-  const [saving, setSaving] = useState(false)
+// Default what-to-bring text auto-filled for Week 1 first-timer info
+const DEFAULT_WHAT_TO_BRING = `What to wear: fitted shorts and a crop top — skin contact with the pole is important, so less is more!
+
+What to bring: grip aid (Dry Hands or Tite Grip are great), a sweat towel, and a water bottle.
+
+What to expect: we'll start with a warm-up, then work through the class content at your own pace. Don't stress if you can't get something straight away — that's what the season is for.
+
+Shoes are optional. Bare feet or heels both work. Any questions before you arrive, just drop us a message.`
+
+function UpsellsPanel({ sessionId, allSessions, sessionName }) {
+  const [upsells, setUpsells]   = useState([])
+  const [adding, setAdding]     = useState(false)
+  const [newForm, setNewForm]   = useState({ suggested_session: '', headline: '', body: '' })
+  const [saving, setSaving]     = useState(false)
+  const [suggesting, setSuggesting] = useState(false)
 
   useEffect(() => {
     classes.upsells.list({ source_session: sessionId }).then(r => setUpsells(r.data?.results || r.data || []))
@@ -76,6 +86,34 @@ function UpsellsPanel({ sessionId, allSessions }) {
   async function toggle(u) {
     const r = await classes.upsells.update(u.id, { is_active: !u.is_active })
     setUpsells(us => us.map(x => x.id === u.id ? r.data : x))
+  }
+
+  async function autoSuggest() {
+    setSuggesting(true)
+    try {
+      const r = await classes.upsells.suggest([sessionId])
+      const suggestions = r.data || []
+      const filtered = suggestions.filter(s => s.from_category && s.suggested_session)
+      if (filtered.length === 0) {
+        alert('No category-level upsell suggestions found. Set up upsell targets on the Categories page, or add one manually.')
+        return
+      }
+      for (const s of filtered) {
+        const alreadyExists = upsells.some(u => u.suggested_session === s.suggested_session)
+        if (!alreadyExists) {
+          await classes.upsells.create({
+            source_session: sessionId,
+            suggested_session: s.suggested_session,
+            headline: s.headline,
+            body: s.body || '',
+          })
+        }
+      }
+      const updated = await classes.upsells.list({ source_session: sessionId })
+      setUpsells(updated.data?.results || updated.data || [])
+    } finally {
+      setSuggesting(false)
+    }
   }
 
   const otherSessions = allSessions.filter(s => s.id !== sessionId)
@@ -129,7 +167,12 @@ function UpsellsPanel({ sessionId, allSessions }) {
           </div>
         </form>
       ) : (
-        <button className="btn btn-ghost btn-sm" onClick={() => setAdding(true)} style={{ marginTop: 4 }}>+ Add upsell</button>
+        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => setAdding(true)}>+ Add upsell</button>
+          <button className="btn btn-ghost btn-sm" onClick={autoSuggest} disabled={suggesting} title="Auto-populate from category upsell settings">
+            {suggesting ? 'Suggesting…' : '✦ Auto-populate'}
+          </button>
+        </div>
       )}
     </div>
   )
@@ -140,7 +183,7 @@ export default function AdminClassDetail() {
   const navigate = useNavigate()
   const isNew = !id || id === 'new'
 
-  const [cls, setCls] = useState(null)
+  const [cls, setCls]         = useState(null)
   const [loading, setLoading] = useState(!isNew)
 
   useEffect(() => {
@@ -149,11 +192,11 @@ export default function AdminClassDetail() {
     }
   }, [id, isNew])
 
-  const { data: categoriesData } = useApi(() => categoriesApi.list(), [])
-  const { data: allSessionsData } = useApi(() => classes.list(), [])
+  const { data: categoriesData }   = useApi(() => categoriesApi.list(), [])
+  const { data: allSessionsData }  = useApi(() => classes.list(), [])
 
   const categoryList = categoriesData?.results || categoriesData || []
-  const allSessions = allSessionsData?.results || allSessionsData || []
+  const allSessions  = allSessionsData?.results || allSessionsData || []
 
   const [form, setForm] = useState({
     name: '',
@@ -164,28 +207,47 @@ export default function AdminClassDetail() {
     description: '',
     first_timer_headline: '',
     first_timer_body: '',
+    prerequisites: '',
+    skill_level: '',
     is_active: true,
   })
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState(null)
+  const [saving, setSaving]           = useState(false)
+  const [error, setError]             = useState(null)
+  const [aiLoading, setAiLoading]     = useState(null) // 'description' | 'first_timer_body' | null
+  const [aiError, setAiError]         = useState(null)
 
   useEffect(() => {
     if (cls) {
       setForm({
-        name: cls.name || '',
-        session_type: cls.session_type || 'course',
-        level: cls.level || '',
-        category: cls.category || '',
+        name:                 cls.name || '',
+        session_type:         cls.session_type || 'course',
+        level:                cls.level || '',
+        category:             cls.category || '',
         catchup_cutoff_weeks: cls.catchup_cutoff_weeks ?? '',
-        description: cls.description || '',
+        description:          cls.description || '',
         first_timer_headline: cls.first_timer_headline || '',
-        first_timer_body: cls.first_timer_body || '',
-        is_active: cls.is_active ?? true,
+        first_timer_body:     cls.first_timer_body || '',
+        prerequisites:        cls.prerequisites || '',
+        skill_level:          cls.skill_level || '',
+        is_active:            cls.is_active ?? true,
       })
     }
   }, [cls])
 
   function set(k, v) { setForm(f => ({ ...f, [k]: v })) }
+
+  async function generateWithAI(field) {
+    setAiLoading(field)
+    setAiError(null)
+    try {
+      const r = await classes.generateDescription({ name: form.name, level: form.level, field })
+      if (r.data?.result) set(field, r.data.result)
+    } catch {
+      setAiError('AI generation failed — check your API key or try again.')
+    } finally {
+      setAiLoading(null)
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -194,7 +256,8 @@ export default function AdminClassDetail() {
     try {
       const payload = {
         ...form,
-        category: form.category || null,
+        category:             form.category || null,
+        skill_level:          form.skill_level || null,
         catchup_cutoff_weeks: form.catchup_cutoff_weeks !== '' ? parseInt(form.catchup_cutoff_weeks) : null,
       }
       if (isNew) {
@@ -236,21 +299,12 @@ export default function AdminClassDetail() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {/* Active toggle */}
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: form.is_active ? 'var(--lime)' : 'var(--grey)' }}>
             <div
               onClick={() => set('is_active', !form.is_active)}
-              style={{
-                width: 40, height: 22, borderRadius: 11,
-                background: form.is_active ? 'var(--lime, #ccff00)' : 'var(--border, #333)',
-                position: 'relative', cursor: 'pointer', transition: 'background 0.2s',
-              }}
+              style={{ width: 40, height: 22, borderRadius: 11, background: form.is_active ? 'var(--lime, #ccff00)' : 'var(--border, #333)', position: 'relative', cursor: 'pointer', transition: 'background 0.2s' }}
             >
-              <div style={{
-                position: 'absolute', top: 3, left: form.is_active ? 21 : 3,
-                width: 16, height: 16, borderRadius: '50%', background: form.is_active ? '#000' : '#666',
-                transition: 'left 0.2s',
-              }} />
+              <div style={{ position: 'absolute', top: 3, left: form.is_active ? 21 : 3, width: 16, height: 16, borderRadius: '50%', background: form.is_active ? '#000' : '#666', transition: 'left 0.2s' }} />
             </div>
             {form.is_active ? 'Active' : 'Inactive'}
           </label>
@@ -264,6 +318,12 @@ export default function AdminClassDetail() {
       {error && (
         <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red, #e05555)', marginBottom: 20 }}>
           {error}
+        </div>
+      )}
+
+      {aiError && (
+        <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red, #e05555)', marginBottom: 20 }}>
+          {aiError}
         </div>
       )}
 
@@ -294,25 +354,68 @@ export default function AdminClassDetail() {
             {categoryList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+          <div>
+            <label style={labelStyle}>Catch-up Cutoff (weeks)</label>
+            <input
+              style={inputStyle}
+              type="number"
+              min="1"
+              value={form.catchup_cutoff_weeks}
+              onChange={e => set('catchup_cutoff_weeks', e.target.value)}
+              placeholder="Leave blank to allow drop-ins any week"
+            />
+            <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 5 }}>
+              Leave blank for conditioning/dance classes that allow drop-ins any week.
+            </div>
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <label style={{ ...labelStyle, marginBottom: 0 }}>Skill Level</label>
+              <Link to="/admin/skills" style={{ fontSize: 11, color: 'var(--lime)', textDecoration: 'none' }}>Manage skill lists →</Link>
+            </div>
+            <input
+              style={inputStyle}
+              value={form.skill_level}
+              onChange={e => set('skill_level', e.target.value)}
+              placeholder="e.g. Level 2 (links to skill list)"
+            />
+            <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 5 }}>
+              Associates this class with a skill progression list.
+            </div>
+          </div>
+        </div>
+        {/* Prerequisites */}
         <div>
-          <label style={labelStyle}>Catch-up Cutoff (weeks)</label>
-          <input
-            style={inputStyle}
-            type="number"
-            min="1"
-            value={form.catchup_cutoff_weeks}
-            onChange={e => set('catchup_cutoff_weeks', e.target.value)}
-            placeholder="Leave blank to allow drop-ins any week"
+          <label style={labelStyle}>Prerequisites</label>
+          <textarea
+            style={{ ...inputStyle, resize: 'vertical', minHeight: 80 }}
+            value={form.prerequisites}
+            onChange={e => set('prerequisites', e.target.value)}
+            placeholder="What students need to know or be able to do before joining this class…"
+            rows={3}
           />
           <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 5 }}>
-            No catch-up bookings accepted after this many weeks into the season. Leave blank for conditioning/dance classes that allow drop-ins any week.
+            Shown to students during booking. Leave blank if there are no prerequisites.
           </div>
         </div>
       </div>
 
       {/* Description */}
       <div style={sectionCard}>
-        <div style={sectionTitle}>Description</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div style={sectionTitle} style={{ marginBottom: 0 }}>Description</div>
+          <button
+            type="button"
+            className="btn btn-ghost btn-xs"
+            disabled={!form.name || aiLoading === 'description'}
+            onClick={() => generateWithAI('description')}
+            title="Generate a description using AI based on the class name and level"
+            style={{ fontSize: 11, color: 'var(--lime)', borderColor: 'var(--lime)' }}
+          >
+            {aiLoading === 'description' ? '✦ Generating…' : '✦ Write with AI'}
+          </button>
+        </div>
         <textarea
           style={{ ...inputStyle, resize: 'vertical', minHeight: 100 }}
           value={form.description}
@@ -338,7 +441,30 @@ export default function AdminClassDetail() {
           />
         </div>
         <div>
-          <label style={labelStyle}>Body</label>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+            <label style={{ ...labelStyle, marginBottom: 0 }}>Body</label>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {!form.first_timer_body && (
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-xs"
+                  onClick={() => set('first_timer_body', DEFAULT_WHAT_TO_BRING)}
+                  style={{ fontSize: 11 }}
+                >
+                  Fill default
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn btn-ghost btn-xs"
+                disabled={!form.name || aiLoading === 'first_timer_body'}
+                onClick={() => generateWithAI('first_timer_body')}
+                style={{ fontSize: 11, color: 'var(--lime)', borderColor: 'var(--lime)' }}
+              >
+                {aiLoading === 'first_timer_body' ? '✦ Generating…' : '✦ Write with AI'}
+              </button>
+            </div>
+          </div>
           <textarea
             style={{ ...inputStyle, resize: 'vertical', minHeight: 120 }}
             value={form.first_timer_body}
@@ -354,13 +480,13 @@ export default function AdminClassDetail() {
         <div style={sectionCard}>
           <div style={sectionTitle}>Upsells</div>
           <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 16 }}>
-            Suggest other classes to students when they book this one.
+            Suggest other classes to students when they book this one. Use <b style={{ color: 'var(--white)' }}>✦ Auto-populate</b> to pull suggestions from the category upsell settings.
           </div>
-          <UpsellsPanel sessionId={cls.id} allSessions={allSessions} />
+          <UpsellsPanel sessionId={cls.id} allSessions={allSessions} sessionName={cls.name} />
         </div>
       )}
 
-      {/* Bottom save button */}
+      {/* Bottom save */}
       <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', paddingBottom: 40 }}>
         <button type="button" className="btn btn-ghost" onClick={() => navigate('/admin/classes')}>Cancel</button>
         <button type="submit" className="btn btn-lime" disabled={saving}>

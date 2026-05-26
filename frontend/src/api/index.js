@@ -74,6 +74,7 @@ export const classes = {
   },
   myUpcoming: () => client.get('/api/classes/my-upcoming/'),
   emailClass: (sessionId, data) => client.post(`/api/classes/sessions/${sessionId}/email/`, data),
+  generateDescription: (data) => client.post('/api/classes/sessions/generate-description/', data),
 }
 
 export const studios = {
