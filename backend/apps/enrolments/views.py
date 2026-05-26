@@ -1309,9 +1309,9 @@ class AdminSendSeasonWaitlistOfferView(APIView):
         student = enrolment.student
 
         try:
-            expires_hours = max(1, int(request.data.get('expires_hours', 4)))
+            expires_hours = max(1, int(request.data.get('expires_hours', 12)))
         except (ValueError, TypeError):
-            expires_hours = 4
+            expires_hours = 12
 
         now = timezone.now()
         expires_at = now + timedelta(hours=expires_hours)

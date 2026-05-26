@@ -99,35 +99,36 @@ def _offer_waitlist_spot(session):
     except Exception:
         pass
 
-    hours_until_class = None
-    if next_occurrence:
-        hours_until_class = (next_occurrence - now).total_seconds() / 3600
-
-    urgent = (
-        hours_until_class is not None
-        and hours_until_class <= 4
+    # Urgent = class is today (regardless of exact hours left), outside silent hours
+    class_is_today = (
+        next_occurrence is not None
+        and next_occurrence.date() == now.date()
         and not _is_silent_hours()
     )
 
-    expires_at = now + timedelta(hours=4)
+    if class_is_today:
+        expires_at = now + timedelta(hours=2)
+    else:
+        expires_at = now + timedelta(hours=12)
 
-    # Get the custom email body if configured
+    urgent = class_is_today
+
     email_subject = f"A spot has opened up — {session.name}!"
     if urgent:
         email_body_template = (
             "Hi {first_name},\n\n"
-            "A spot has just opened in {class_name} which starts very soon!\n\n"
-            "Because the class is starting within 4 hours, this offer is open to all waitlisted students — "
+            "A spot has just opened in {class_name} which is on today!\n\n"
+            "Because the class is today, this offer is open to all waitlisted students — "
             "the first person to confirm their spot gets it.\n\n"
             "You have until {expires} to claim your spot. Log in now to confirm.\n\n"
             "Duality Pole Studio"
         )
-        to_offer = waitlisted  # notify all
+        to_offer = waitlisted  # notify all simultaneously
     else:
         email_body_template = (
             "Hi {first_name},\n\n"
             "Great news — a spot has opened up in {class_name}!\n\n"
-            "You have 4 hours to claim your spot (until {expires}). "
+            "You have 12 hours to claim your spot (until {expires}). "
             "If you don't confirm by then, your spot will be offered to the next person on the waitlist.\n\n"
             "Log in to confirm your enrolment.\n\n"
             "Duality Pole Studio"

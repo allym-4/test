@@ -45,8 +45,8 @@ function CapacityOverrideDialog({ msg, current, capacity, onConfirm, onCancel })
   )
 }
 
-function SendOfferDialog({ name, onConfirm, onCancel }) {
-  const [hours, setHours] = useState(4)
+function SendOfferDialog({ name, onConfirm, onCancel, defaultHours = 12 }) {
+  const [hours, setHours] = useState(defaultHours)
   return (
     <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onCancel()}>
       <div className="sd-modal" style={{ maxWidth: 380 }}>
@@ -577,6 +577,7 @@ function CasualWaitlist() {
           name={sendOfferDialog.booking.student_name}
           onConfirm={hours => sendOffer(sendOfferDialog.booking, hours)}
           onCancel={() => setSendOfferDialog(null)}
+          defaultHours={4}
         />
       )}
 
