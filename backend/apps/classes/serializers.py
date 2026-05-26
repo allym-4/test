@@ -27,6 +27,7 @@ class ClassSessionSerializer(serializers.ModelSerializer):
     studio_detail = StudioSerializer(source='studio', read_only=True)
     day_of_week_display = serializers.CharField(source='get_day_of_week_display', read_only=True)
     enrolled_count = serializers.ReadOnlyField()
+    waitlist_count = serializers.SerializerMethodField()
     category_name = serializers.StringRelatedField(source='category', read_only=True)
     season_name = serializers.CharField(source='season.name', read_only=True, allow_null=True)
     season_start_date = serializers.DateField(source='season.start_date', read_only=True, allow_null=True)
@@ -40,17 +41,21 @@ class ClassSessionSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'name', 'level', 'instructor', 'instructor_detail',
             'studio', 'studio_detail', 'day_of_week', 'day_of_week_display',
-            'start_time', 'end_time', 'duration_minutes', 'capacity', 'enrolled_count',
+            'start_time', 'end_time', 'duration_minutes', 'capacity', 'enrolled_count', 'waitlist_count',
             'session_type', 'is_active', 'category', 'category_name',
             'season', 'season_name', 'season_start_date', 'season_end_date', 'season_bookings_open',
             'catchup_cutoff_weeks',
-            'first_timer_headline', 'first_timer_body',
+            'first_timer_headline', 'first_timer_body', 'first_timer_appropriate',
             'description', 'created_at',
             'season_base_price',
             'skill_level', 'skill_level_name',
             'auto_promote_waitlist',
         )
-        read_only_fields = ('id', 'enrolled_count', 'instructor_detail', 'studio_detail', 'day_of_week_display', 'category_name', 'season_name', 'season_start_date', 'season_end_date', 'season_bookings_open', 'season_base_price', 'created_at', 'skill_level_name', 'end_time')
+        read_only_fields = ('id', 'enrolled_count', 'waitlist_count', 'instructor_detail', 'studio_detail', 'day_of_week_display', 'category_name', 'season_name', 'season_start_date', 'season_end_date', 'season_bookings_open', 'season_base_price', 'created_at', 'skill_level_name', 'end_time')
+
+    def get_waitlist_count(self, obj):
+        from apps.enrolments.models import Enrolment
+        return Enrolment.objects.filter(class_session=obj, status='waitlisted').count()
 
     def get_season_base_price(self, obj):
         if obj.category and obj.category.standalone_price is not None:
