@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useApi } from '../hooks/useApi'
-import { classes } from '../api'
+import { classes, seasons as seasonsApi } from '../api'
 import { Link } from 'react-router-dom'
 import client from '../api/client'
+import { useAuth } from '../contexts/AuthContext'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -443,9 +444,156 @@ function AllClassesTab() {
   )
 }
 
+// ── Season Enrolments tab ──────────────────────────────────────────────────────
+
+function SeasonEnrolmentsTab({ currentUserId }) {
+  const { data: seasonsData } = useApi(() => seasonsApi.list())
+  const allSeasons = seasonsData?.results ?? (Array.isArray(seasonsData) ? seasonsData : [])
+  const relevantSeasons = allSeasons.filter(s => s.status === 'active' || s.status === 'upcoming')
+  const [selectedSeasonId, setSelectedSeasonId] = useState(null)
+
+  const activeSeason = relevantSeasons.find(s => s.id === selectedSeasonId)
+    ?? relevantSeasons.find(s => s.status === 'active')
+    ?? relevantSeasons[0]
+    ?? null
+
+  const { data: sessionsData, loading } = useApi(
+    () => activeSeason ? classes.list({ season: activeSeason.id, page_size: 200 }) : null,
+    [activeSeason?.id]
+  )
+  const allSessions = sessionsData?.results ?? sessionsData ?? []
+  const mySessions = allSessions.filter(s =>
+    s.instructor === currentUserId || s.instructor_detail?.id === currentUserId
+  )
+  const [showAll, setShowAll] = useState(false)
+  const sessions = showAll ? allSessions : mySessions
+
+  const sorted = [...sessions].sort((a, b) => {
+    if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week
+    return (a.start_time || '').localeCompare(b.start_time || '')
+  })
+
+  const totalEnrolled = sessions.reduce((sum, s) => sum + (s.enrolled_count ?? 0), 0)
+  const totalCapacity = sessions.reduce((sum, s) => sum + (s.capacity ?? 0), 0)
+
+  return (
+    <div>
+      {/* Season picker */}
+      {relevantSeasons.length > 1 && (
+        <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
+          {relevantSeasons.map(s => (
+            <button
+              key={s.id}
+              onClick={() => setSelectedSeasonId(s.id)}
+              style={{
+                padding: '5px 14px', borderRadius: 8, border: '1px solid',
+                fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                background: activeSeason?.id === s.id ? 'rgba(204,255,0,0.12)' : 'transparent',
+                borderColor: activeSeason?.id === s.id ? 'rgba(204,255,0,0.35)' : 'var(--border)',
+                color: activeSeason?.id === s.id ? 'var(--lime)' : 'var(--grey)',
+              }}
+            >
+              {s.name}
+              <span style={{ marginLeft: 6, fontSize: 10, opacity: 0.7 }}>
+                {s.status === 'active' ? '● Active' : '○ Upcoming'}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* My / All toggle */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ fontSize: 13, color: 'var(--grey)' }}>
+          {activeSeason
+            ? `${activeSeason.name} · ${allSessions.length} classes · ${totalEnrolled}/${totalCapacity} enrolled`
+            : 'No active or upcoming season'}
+        </div>
+        <div style={{ display: 'flex', background: '#0a0a0a', border: '1px solid #1e1e1e', borderRadius: 8, padding: 2, gap: 2 }}>
+          {[['mine', 'My Classes'], ['all', 'All Classes']].map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setShowAll(key === 'all')}
+              style={{
+                padding: '4px 14px', borderRadius: 6, border: 'none', fontSize: 12, fontWeight: 600,
+                cursor: 'pointer',
+                background: showAll === (key === 'all') ? '#222' : 'transparent',
+                color: showAll === (key === 'all') ? '#fff' : 'var(--grey)',
+              }}
+            >{label}</button>
+          ))}
+        </div>
+      </div>
+
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}><div className="spinner" /></div>
+      ) : !activeSeason ? (
+        <div style={{ color: 'var(--grey)', fontSize: 13, textAlign: 'center', padding: '48px 0' }}>No active or upcoming seasons.</div>
+      ) : sorted.length === 0 ? (
+        <div style={{ color: 'var(--grey)', fontSize: 13, textAlign: 'center', padding: '48px 0' }}>
+          {showAll ? 'No classes in this season.' : 'You have no classes assigned in this season.'}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {sorted.map(s => {
+            const isOwn = s.instructor === currentUserId || s.instructor_detail?.id === currentUserId
+            const isFull = s.enrolled_count >= s.capacity
+            const pct = s.capacity > 0 ? Math.min(100, (s.enrolled_count / s.capacity) * 100) : 0
+            const barColor = isFull ? 'var(--red)' : pct > 75 ? 'var(--amber)' : 'var(--lime)'
+            const hasWaitlist = (s.waitlist_count ?? 0) > 0
+            return (
+              <div
+                key={s.id}
+                style={{
+                  background: '#111',
+                  border: `1px solid ${isOwn ? 'rgba(204,255,0,0.2)' : 'var(--border)'}`,
+                  borderRadius: 12,
+                  padding: '14px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 16,
+                }}
+              >
+                {isOwn && <div style={{ width: 3, alignSelf: 'stretch', background: 'var(--lime)', borderRadius: 2, flexShrink: 0 }} />}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{s.name}</div>
+                    {isOwn && <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--lime)', background: 'rgba(204,255,0,0.1)', borderRadius: 4, padding: '1px 6px' }}>MINE</span>}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 8 }}>
+                    {DAYS[s.day_of_week]} · {s.start_time?.slice(0, 5)}
+                    {s.instructor_detail?.display_name && <span> · {s.instructor_detail.display_name}</span>}
+                    {s.studio_detail?.name && <span> · {s.studio_detail.name}</span>}
+                  </div>
+                  <div style={{ height: 3, background: '#1e1e1e', borderRadius: 2, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: 2 }} />
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: isFull ? 'var(--red)' : 'var(--white)' }}>
+                    {s.enrolled_count ?? 0}<span style={{ fontSize: 13, color: 'var(--grey)', fontWeight: 400 }}>/{s.capacity}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--grey)' }}>enrolled</div>
+                  {hasWaitlist && (
+                    <div style={{ fontSize: 11, color: 'var(--amber)', marginTop: 2 }}>+{s.waitlist_count} waitlist</div>
+                  )}
+                </div>
+                <Link to={`/classes/${s.id}/attendance`}>
+                  <button className="btn btn-ghost btn-xs">Roster</button>
+                </Link>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function ClassesPage() {
+  const { user } = useAuth()
   const [activeTab, setActiveTab] = useState('mine')
 
   return (
@@ -457,15 +605,15 @@ export default function ClassesPage() {
 
       {/* Tab strip */}
       <div style={{ display: 'flex', background: '#0a0a0a', border: '1px solid #1e1e1e', borderRadius: 10, padding: 3, gap: 2, marginBottom: 24, width: 'fit-content', maxWidth: '100%' }}>
-        {[['mine', 'My Classes'], ['all', 'All Classes']].map(([key, label]) => (
+        {[['mine', 'My Classes'], ['all', 'All Classes'], ['season', 'Season Enrolments']].map(([key, label]) => (
           <button
             key={key}
             onClick={() => setActiveTab(key)}
             style={{
               padding: '7px 22px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 600,
               cursor: 'pointer', transition: 'all 0.15s',
-              background: activeTab === key ? '#222' : 'transparent',
-              color: activeTab === key ? '#fff' : 'var(--grey)',
+              background: activeTab === key ? (key === 'season' ? 'rgba(204,255,0,0.15)' : '#222') : 'transparent',
+              color: activeTab === key ? (key === 'season' ? 'var(--lime)' : '#fff') : 'var(--grey)',
             }}
           >
             {label}
@@ -473,7 +621,7 @@ export default function ClassesPage() {
         ))}
       </div>
 
-      {activeTab === 'mine' ? <MyClassesTab /> : <AllClassesTab />}
+      {activeTab === 'mine' ? <MyClassesTab /> : activeTab === 'all' ? <AllClassesTab /> : <SeasonEnrolmentsTab currentUserId={user?.id} />}
     </div>
   )
 }
