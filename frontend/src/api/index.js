@@ -127,6 +127,7 @@ export const enrolments = {
     casualSendOffer: (id, data) => client.post(`/api/classes/casual-bookings/${id}/send-waitlist-offer/`, data),
     casualBulkAction: (data) => client.post('/api/classes/casual-bookings/bulk-waitlist/', data),
     toggleAutoPromote: (sessionId) => client.post(`/api/classes/sessions/${sessionId}/toggle-auto-promote/`),
+    toggleSkipAutoPromote: (enrolmentId) => client.post(`/api/enrolments/${enrolmentId}/toggle-skip-auto-promote/`),
   },
 }
 

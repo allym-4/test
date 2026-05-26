@@ -95,6 +95,7 @@ function SeasonWaitlist({ seasons }) {
   const [bulkActing, setBulkActing] = useState(false)
   const [autoPromoteToggling, setAutoPromoteToggling] = useState({})
   const [sessionAutoPromote, setSessionAutoPromote] = useState({})
+  const [skipToggling, setSkipToggling] = useState({})
 
   const activeSeason = seasons.find(s => s.status === 'active' && !s.archived)
   const upcomingSeasons = seasons.filter(s => s.status === 'upcoming' && !s.archived)
@@ -217,6 +218,16 @@ function SeasonWaitlist({ seasons }) {
       setSelected(prev => { const n = new Set(prev); n.delete(e.id); return n })
     } finally {
       setActing(a => ({ ...a, [e.id]: null }))
+    }
+  }
+
+  async function toggleSkip(e) {
+    setSkipToggling(s => ({ ...s, [e.id]: true }))
+    try {
+      const res = await enrolments.waitlist.toggleSkipAutoPromote(e.id)
+      setWaitlistData(prev => prev.map(x => x.id === e.id ? { ...x, waitlist_skip_auto_promote: res.data.waitlist_skip_auto_promote } : x))
+    } finally {
+      setSkipToggling(s => ({ ...s, [e.id]: false }))
     }
   }
 
@@ -407,12 +418,21 @@ function SeasonWaitlist({ seasons }) {
                               <span style={{ fontSize: 11, color: 'var(--grey)' }}>No offer sent</span>
                             )}
                           </div>
-                          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
                             <button className="btn btn-lime btn-xs" disabled={!!busy} onClick={() => promote(e)}>
                               {busy === 'promoting' ? '…' : 'Promote'}
                             </button>
                             <button className="btn btn-ghost btn-xs" disabled={!!busy} onClick={() => setSendOfferDialog({ enrolment: e })}>
                               {busy === 'offering' ? '…' : 'Send offer'}
+                            </button>
+                            <button
+                              className="btn btn-ghost btn-xs"
+                              disabled={skipToggling[e.id]}
+                              title={e.waitlist_skip_auto_promote ? 'Auto-promote skipped — click to re-enable' : 'Click to exclude from auto-promote'}
+                              onClick={() => toggleSkip(e)}
+                              style={{ color: e.waitlist_skip_auto_promote ? 'var(--amber)' : 'var(--grey)' }}
+                            >
+                              {e.waitlist_skip_auto_promote ? 'Skip: ON' : 'Skip'}
                             </button>
                             <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)' }} disabled={!!busy} onClick={() => remove(e)}>
                               {busy === 'removing' ? '…' : 'Remove'}

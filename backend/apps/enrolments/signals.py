@@ -43,9 +43,12 @@ def _offer_waitlist_spot(session):
     if not waitlisted:
         return
 
-    # Auto-promote: skip the offer/claim step and directly enrol the next student
+    # Auto-promote: skip the offer/claim step and directly enrol the next eligible student
     if getattr(session, 'auto_promote_waitlist', False):
-        enrolment = waitlisted[0]
+        eligible = [e for e in waitlisted if not e.waitlist_skip_auto_promote]
+        if not eligible:
+            return
+        enrolment = eligible[0]
         enrolment.status = 'active'
         enrolment.waitlist_offered_at = None
         enrolment.waitlist_expires_at = None

@@ -15,6 +15,7 @@ urlpatterns = [
     path('bulk-waitlist/', views.AdminBulkSeasonWaitlistView.as_view(), name='bulk-waitlist'),
     path('<int:pk>/promote-waitlist/', views.AdminPromoteSeasonWaitlistView.as_view(), name='promote-waitlist'),
     path('<int:pk>/send-waitlist-offer/', views.AdminSendSeasonWaitlistOfferView.as_view(), name='send-waitlist-offer'),
+    path('<int:pk>/toggle-skip-auto-promote/', views.AdminToggleWaitlistSkipView.as_view(), name='toggle-skip-auto-promote'),
     path('', views.EnrolmentListView.as_view(), name='enrolment-list'),
     path('<int:pk>/', views.EnrolmentDetailView.as_view(), name='enrolment-detail'),
     path('<int:pk>/convert-trial/', views.ConvertTrialView.as_view(), name='enrolment-convert-trial'),

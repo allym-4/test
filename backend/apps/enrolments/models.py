@@ -37,6 +37,7 @@ class Enrolment(models.Model):
     waitlist_expires_at = models.DateTimeField(null=True, blank=True)
     waitlist_urgent = models.BooleanField(default=False)  # True = everyone notified simultaneously
     waitlist_position = models.PositiveIntegerField(null=True, blank=True)
+    waitlist_skip_auto_promote = models.BooleanField(default=False)  # exclude from auto-promote; still gets manual offers
 
     # Displacement tracking
     displacement_casual_booking = models.ForeignKey(

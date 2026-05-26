@@ -1403,6 +1403,17 @@ class AdminBulkSeasonWaitlistView(APIView):
         return Response(results)
 
 
+class AdminToggleWaitlistSkipView(APIView):
+    """Admin: toggle skip-auto-promote flag on a waitlisted enrolment."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        enrolment = get_object_or_404(Enrolment, pk=pk, status='waitlisted')
+        enrolment.waitlist_skip_auto_promote = not enrolment.waitlist_skip_auto_promote
+        enrolment.save(update_fields=['waitlist_skip_auto_promote'])
+        return Response({'waitlist_skip_auto_promote': enrolment.waitlist_skip_auto_promote})
+
+
 class RetentionStatsView(APIView):
     """Admin-only endpoint returning season-over-season retention stats."""
     permission_classes = [IsAdminOrInstructor]
