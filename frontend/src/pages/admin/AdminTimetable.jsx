@@ -12,7 +12,7 @@ const DAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satu
 
 const SLOT_START_HOUR = 6        // 6:00 am
 const SLOT_END_HOUR   = 22       // 10:00 pm (last label)
-const SLOT_HEIGHT     = 48       // px per 30-min slot
+const SLOT_HEIGHT     = 52       // px per 30-min slot
 const TOTAL_SLOTS     = (SLOT_END_HOUR - SLOT_START_HOUR) * 2  // 32 slots
 
 const FALLBACK_SEASON_LABEL = 'Current Season'
@@ -59,16 +59,22 @@ function slotLabel(slotIndex) {
   return `${h12}:${String(m).padStart(2, '0')}${ampm}`
 }
 
-/** Colour theme based on class name */
-function cardTheme(name = '') {
+/** Solid card colours keyed by class type — matches website aesthetic */
+function cardColors(name = '', conflicting = false) {
+  if (conflicting) return { bg: '#ff4444', text: '#fff', subText: 'rgba(255,255,255,0.75)' }
   const n = name.toLowerCase()
-  if (n.includes('level'))
-    return { bg: '#ccff0033', border: 'var(--lime)',  label: 'lime'  }
-  if (n.includes('dance'))
-    return { bg: '#b0a0ff33', border: 'var(--lav)',   label: 'lav'   }
-  if (n.includes('workshop') || n.includes('intensive'))
-    return { bg: '#ffaa0033', border: 'var(--amber)', label: 'amber' }
-  return   { bg: 'rgba(255,255,255,0.06)', border: 'var(--grey)', label: 'grey' }
+  if (n.includes('practice'))
+    return { bg: '#2a2a2a', text: '#888', subText: '#555' }
+  // Level classes + most dance/floor/strip styles → lime
+  if (
+    n.includes('level') || n.includes('dance') || n.includes('strip') ||
+    n.includes('floor') || n.includes('chair') || n.includes('kiki') ||
+    n.includes('unravel') || n.includes('virgin') || n.includes('workshop') ||
+    n.includes('intensive') || n.includes('bootcamp')
+  )
+    return { bg: '#ccff00', text: '#000', subText: 'rgba(0,0,0,0.55)' }
+  // Conditioning / tricks → lavender
+  return { bg: '#b0a0ff', text: '#000', subText: 'rgba(0,0,0,0.55)' }
 }
 
 /**
@@ -132,7 +138,8 @@ function assignSubColumns(sessions) {
 /** Modal shown when a calendar card is clicked */
 function SessionDetailModal({ session, onClose }) {
   if (!session) return null
-  const theme = cardTheme(session.name)
+  const colors = cardColors(session.name)
+  const theme = { border: colors.bg }
   return (
     <div
       style={{
@@ -216,8 +223,9 @@ function SessionDetailModal({ session, onClose }) {
  * gridTemplateRows: `repeat(${TOTAL_SLOTS}, ${SLOT_HEIGHT}px)`.
  */
 function CalendarCard({ session, conflicting, onClick, col = 0, totalCols = 1 }) {
-  const theme      = cardTheme(session.name)
+  const colors     = cardColors(session.name, conflicting)
   const instructor = session.instructor_detail?.display_name || ''
+  const firstName  = instructor.split(' ')[0]
 
   const startMins  = timeToMinutes(session.start_time)
   const duration   = session.duration_minutes ?? 55
@@ -232,48 +240,65 @@ function CalendarCard({ session, conflicting, onClick, col = 0, totalCols = 1 })
   const left   = `calc(${col * pct}% + 2px)`
   const width  = `calc(${pct}% - 4px)`
   const top    = clampedStart * SLOT_HEIGHT + 1
-  const height = Math.max(24, (clampedEnd - clampedStart) * SLOT_HEIGHT - 3)
-  const tall   = height >= 56
+  const height = Math.max(26, (clampedEnd - clampedStart) * SLOT_HEIGHT - 3)
+  const showInstructor = height >= 46 && firstName
+  const showEnrolment  = height >= 60
 
   return (
     <div
       onClick={onClick}
-      title={`${session.name} — ${fmt12(session.start_time)}${instructor ? ` · ${instructor}` : ''}`}
+      title={`${session.name}${firstName ? ` · ${firstName}` : ''} — ${fmt12(session.start_time)} · ${session.enrolled_count}/${session.capacity}`}
       style={{
-        position:     'absolute',
+        position:      'absolute',
         top,
         height,
         left,
         width,
-        background:   conflicting ? 'rgba(255,68,68,0.12)' : theme.bg,
-        borderLeft:   conflicting
-          ? '3px solid var(--red, #ff4444)'
-          : `3px solid ${theme.border}`,
-        borderRadius: 4,
-        padding:      '3px 6px',
-        cursor:       'pointer',
-        overflow:     'hidden',
-        display:      'flex',
-        flexDirection:'column',
-        gap:          1,
-        boxSizing:    'border-box',
-        zIndex:       2,
-        transition:   'filter 0.15s',
+        background:    colors.bg,
+        borderRadius:  3,
+        padding:       '3px 5px',
+        cursor:        'pointer',
+        overflow:      'hidden',
+        display:       'flex',
+        flexDirection: 'column',
+        justifyContent:'center',
+        boxSizing:     'border-box',
+        zIndex:        2,
+        transition:    'filter 0.12s',
       }}
-      onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.25)' }}
+      onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(0.88)' }}
       onMouseLeave={e => { e.currentTarget.style.filter = '' }}
     >
-      <div style={{ fontWeight: 700, fontSize: 11, lineHeight: 1.35, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      <div style={{
+        fontWeight:   800,
+        fontSize:     10,
+        lineHeight:   1.25,
+        color:        colors.text,
+        textTransform:'uppercase',
+        letterSpacing:'0.04em',
+        overflow:     'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace:   'nowrap',
+      }}>
         {session.name}
       </div>
-      {tall && instructor && (
-        <div style={{ fontSize: 10, color: 'var(--grey)', lineHeight: 1.25, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {instructor}
+      {showInstructor && (
+        <div style={{
+          fontSize:     9,
+          lineHeight:   1.2,
+          color:        colors.subText,
+          fontWeight:   600,
+          overflow:     'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace:   'nowrap',
+          marginTop:    1,
+        }}>
+          {firstName.toUpperCase()}
         </div>
       )}
-      {tall && (
-        <div style={{ fontSize: 10, color: 'var(--grey)', lineHeight: 1.25 }}>
-          {fmt12(session.start_time)} · {session.enrolled_count}/{session.capacity}
+      {showEnrolment && (
+        <div style={{ fontSize: 9, lineHeight: 1.2, color: colors.subText, marginTop: 1 }}>
+          {session.enrolled_count}/{session.capacity}
         </div>
       )}
     </div>
@@ -344,7 +369,7 @@ function CalendarGrid({ sessions, weekStart, conflictIds = new Set(), showConfli
         {/* Sticky day-header row */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '60px repeat(7, minmax(100px, 1fr))',
+          gridTemplateColumns: '52px repeat(7, minmax(110px, 1fr))',
           position: 'sticky',
           top: 0,
           zIndex: 10,
@@ -384,30 +409,34 @@ function CalendarGrid({ sessions, weekStart, conflictIds = new Set(), showConfli
         {/* ── Grid body: time labels + day columns ── */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '60px repeat(7, minmax(100px, 1fr))',
+          gridTemplateColumns: '52px repeat(7, minmax(110px, 1fr))',
           // Each column handles its own rows internally; outer grid just places columns
         }}>
-          {/* Time label column */}
+          {/* Time label column — only show on-the-hour labels */}
           <div style={{
             display: 'grid',
             gridTemplateRows: `repeat(${TOTAL_SLOTS}, ${SLOT_HEIGHT}px)`,
           }}>
-            {timeLabels.map((label, i) => (
-              <div
-                key={label}
-                style={{
-                  fontSize: 10,
-                  color: 'var(--grey)',
-                  padding: '2px 6px 0',
-                  borderTop: i === 0 ? 'none' : '1px solid var(--border, #222)',
-                  lineHeight: 1,
-                  userSelect: 'none',
-                  boxSizing: 'border-box',
-                }}
-              >
-                {label}
-              </div>
-            ))}
+            {timeLabels.map((label, i) => {
+              const isHour = i % 2 === 0
+              return (
+                <div
+                  key={label}
+                  style={{
+                    fontSize: 9,
+                    color: isHour ? 'var(--grey)' : 'transparent',
+                    padding: '2px 6px 0',
+                    borderTop: isHour ? '1px solid var(--border, #2a2a2a)' : 'none',
+                    lineHeight: 1,
+                    userSelect: 'none',
+                    boxSizing: 'border-box',
+                    fontWeight: 600,
+                  }}
+                >
+                  {isHour ? label : ''}
+                </div>
+              )
+            })}
           </div>
 
           {/* Seven day columns */}
@@ -418,28 +447,27 @@ function CalendarGrid({ sessions, weekStart, conflictIds = new Set(), showConfli
               <div
                 key={dayIdx}
                 style={{
-                  borderLeft: '1px solid var(--border, #222)',
+                  borderLeft: '1px solid var(--border, #2a2a2a)',
                   position:   'relative',
                   height:     colHeight,
                 }}
               >
-                {/* Alternating slot background stripes — plain divs stacked */}
-                {Array.from({ length: TOTAL_SLOTS }, (_, si) => (
+                {/* Hour grid lines only — every 2 slots (60 min) */}
+                {Array.from({ length: TOTAL_SLOTS }, (_, si) => si % 2 === 0 ? (
                   <div
                     key={si}
                     style={{
-                      position:   'absolute',
-                      top:        si * SLOT_HEIGHT,
-                      left:       0,
-                      right:      0,
-                      height:     SLOT_HEIGHT,
-                      background: si % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'transparent',
-                      borderTop:  si === 0 ? 'none' : '1px solid var(--border, #1e1e2e)',
+                      position:      'absolute',
+                      top:           si * SLOT_HEIGHT,
+                      left:          0,
+                      right:         0,
+                      height:        1,
+                      background:    'var(--border, #2a2a2a)',
                       pointerEvents: 'none',
-                      zIndex:     1,
+                      zIndex:        1,
                     }}
                   />
-                ))}
+                ) : null)}
 
                 {/* Class cards — absolutely positioned with sub-column layout */}
                 {positioned.map(({ session: s, col, totalCols }) => (
