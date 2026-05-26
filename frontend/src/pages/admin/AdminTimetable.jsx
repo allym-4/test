@@ -488,7 +488,7 @@ export default function AdminTimetable() {
 
   // Load seasons first so we know which season to fetch sessions for
   const { data: seasonsData } = useApi(() => seasonsApi.list())
-  const seasonOptions = seasonsData?.results ?? []
+  const seasonOptions = seasonsData?.results ?? (Array.isArray(seasonsData) ? seasonsData : [])
 
   // Derive current season from live data
   const activeSeason = selectedSeasonId

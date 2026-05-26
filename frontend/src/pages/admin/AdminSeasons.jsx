@@ -641,6 +641,7 @@ function SeasonDrawer({ season, onClose, onStatusChange, onBookingsToggle, onTog
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <button className="btn btn-ghost btn-xs" onClick={onDuplicate}>Duplicate</button>
+            <button className="btn btn-ghost btn-xs" onClick={() => navigate(`/admin/seasons/${season.id}/overview`)}>Overview</button>
             <button className="btn btn-ghost btn-xs" onClick={() => navigate(`/admin/seasons/${season.id}`)}>Edit</button>
             <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>✕</button>
           </div>
@@ -917,7 +918,7 @@ export default function AdminSeasons() {
     return (
       <div
         key={season.id}
-        onClick={() => setDrawerSeason(season)}
+        onClick={() => navigate(`/admin/seasons/${season.id}/overview`)}
         style={{
           background: 'var(--card)',
           border: `1px solid ${isActive ? 'rgba(204,255,0,0.4)' : 'var(--border)'}`,
@@ -990,7 +991,7 @@ export default function AdminSeasons() {
           <div style={{ fontSize: 12, color: 'var(--grey)', fontStyle: 'italic' }}>{season.notes}</div>
         )}
 
-        <div style={{ fontSize: 11, color: 'var(--grey)' }}>Click to view details →</div>
+        <div style={{ fontSize: 11, color: 'var(--grey)' }}>Click to view enrolments →</div>
       </div>
     )
   }
