@@ -323,6 +323,7 @@ class CasualBooking(models.Model):
     is_free = models.BooleanField(default=False)
     waitlist_offered_at = models.DateTimeField(null=True, blank=True)
     waitlist_expires_at = models.DateTimeField(null=True, blank=True)
+    waitlist_offer_rejected = models.BooleanField(default=False)  # student explicitly rejected the offer
     displacement_offered_at = models.DateTimeField(null=True, blank=True)
     displacement_expires_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

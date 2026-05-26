@@ -18,13 +18,178 @@ def _is_silent_hours():
         return False
 
 
+def _try_stripe_hold(enrolment):
+    """
+    Attempt to place a Stripe hold ($270) on the student's saved card for an
+    auto-promoted season enrolment. Logs but never raises — enrolment proceeds
+    regardless of Stripe outcome.
+    """
+    import os
+    try:
+        import stripe
+        student = enrolment.student
+        if not getattr(student, 'stripe_customer_id', '') or not getattr(student, 'default_payment_method_id', ''):
+            # No saved card — add a staff note and continue
+            from apps.users.models import StaffNote
+            StaffNote.objects.create(
+                student=student,
+                created_by=None,
+                tag='waitlist',
+                body=(
+                    f'Auto-promoted from waitlist for {enrolment.class_session.name}. '
+                    'No saved card on file for Stripe hold.'
+                ),
+            )
+            return
+
+        stripe.api_key = os.environ.get('STRIPE_SECRET_KEY', '')
+        intent = stripe.PaymentIntent.create(
+            amount=27000,  # $270 hold — base 1-class price
+            currency='aud',
+            customer=student.stripe_customer_id,
+            payment_method=student.default_payment_method_id,
+            capture_method='manual',
+            confirm=True,
+            off_session=True,
+            description=f'Waitlist auto-promote hold — {enrolment.class_session.name}',
+            metadata={'enrolment_id': enrolment.id, 'student_id': student.id},
+        )
+        # Log the PaymentIntent ID as a staff note (no dedicated field on Enrolment)
+        from apps.users.models import StaffNote
+        StaffNote.objects.create(
+            student=student,
+            created_by=None,
+            tag='waitlist',
+            body=(
+                f'Auto-promoted from waitlist for {enrolment.class_session.name}. '
+                f'Stripe hold created: {intent.id}'
+            ),
+        )
+    except Exception as exc:
+        # Stripe failure must never block enrolment
+        try:
+            from apps.users.models import StaffNote
+            StaffNote.objects.create(
+                student=enrolment.student,
+                created_by=None,
+                tag='waitlist',
+                body=(
+                    f'Auto-promoted from waitlist for {enrolment.class_session.name}. '
+                    f'Stripe hold failed: {exc}'
+                ),
+            )
+        except Exception:
+            pass
+
+
+def _cascade_season_waitlist_offer(session, skip_enrolment_id=None):
+    """
+    Find the next eligible waitlisted season enrolment and either auto-enrol
+    (if student_auto_promote=True) or send a 12h offer.
+
+    Called after:
+    - A student explicitly rejects an offer (skip_enrolment_id=rejected id)
+    - A management command expires an offer (skip_enrolment_id=expired id)
+    """
+    from apps.users.models import AutomationRule, Notification
+    from .models import Enrolment
+
+    rule = AutomationRule.objects.filter(slug='waitlist_notify').first()
+    if rule and not rule.enabled:
+        return
+
+    qs = Enrolment.objects.filter(
+        class_session=session,
+        status='waitlisted',
+        waitlist_offered_at__isnull=True,
+        waitlist_offer_rejected=False,
+    ).order_by('waitlist_position', 'id').select_related('student')
+
+    if skip_enrolment_id:
+        qs = qs.exclude(pk=skip_enrolment_id)
+
+    next_enrolment = qs.first()
+    if not next_enrolment:
+        return
+
+    now = timezone.now()
+    student = next_enrolment.student
+
+    # Student opted in to auto-promote
+    if next_enrolment.student_auto_promote and not next_enrolment.waitlist_skip_auto_promote:
+        next_enrolment.status = 'active'
+        next_enrolment.waitlist_offered_at = None
+        next_enrolment.waitlist_expires_at = None
+        next_enrolment.waitlist_urgent = False
+        next_enrolment.waitlist_position = None
+        next_enrolment.save(update_fields=['status', 'waitlist_offered_at', 'waitlist_expires_at', 'waitlist_urgent', 'waitlist_position'])
+        Notification.objects.create(
+            recipient=student,
+            title=f"You're in! — {session.name}",
+            body=f"A spot opened up in {session.name} and you've been automatically enrolled as you opted in to auto-enrol!",
+            notification_type='success',
+            action_label='View My Classes',
+            action_url='/portal/classes',
+        )
+        prefs = student.notification_preferences or {}
+        if prefs.get('waitlist_email', True) and student.email:
+            send_mail(
+                subject=f"You're enrolled — {session.name}!",
+                message=(
+                    f"Hi {student.first_name},\n\n"
+                    f"A spot opened up in {session.name} and you've been automatically enrolled from the waitlist.\n\n"
+                    "Log in to view your updated schedule.\n\n"
+                    "Duality Pole Studio"
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[student.email],
+                fail_silently=True,
+            )
+        _try_stripe_hold(next_enrolment)
+        return
+
+    # Standard 12h offer to this student only
+    expires_at = now + timedelta(hours=12)
+    expires_str = expires_at.strftime('%I:%M %p')
+
+    next_enrolment.waitlist_offered_at = now
+    next_enrolment.waitlist_expires_at = expires_at
+    next_enrolment.waitlist_urgent = False
+    next_enrolment.save(update_fields=['waitlist_offered_at', 'waitlist_expires_at', 'waitlist_urgent'])
+
+    prefs = student.notification_preferences or {}
+    if prefs.get('waitlist_app', True):
+        Notification.objects.create(
+            recipient=student,
+            title=f"Spot available — {session.name}",
+            body=f"A spot opened up! You have until {expires_str} to claim it. Tap to confirm.",
+            notification_type='waitlist',
+            action_label='Claim My Spot',
+            action_url='/portal/classes',
+        )
+
+    if prefs.get('waitlist_email', True) and student.email:
+        send_mail(
+            subject=f"A spot has opened up — {session.name}!",
+            message=(
+                f"Hi {student.first_name},\n\n"
+                f"Great news — a spot has opened up in {session.name}!\n\n"
+                f"You have 12 hours to claim your spot (until {expires_str}). "
+                "If you don't confirm by then, your spot will be offered to the next person on the waitlist.\n\n"
+                "Log in to confirm your enrolment.\n\n"
+                "Duality Pole Studio"
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[student.email],
+            fail_silently=True,
+        )
+
+
 def _offer_waitlist_spot(session):
     """
     When a spot opens in a session:
-    - If auto_promote_waitlist is enabled: directly enrol #1 waitlisted student.
-    - If the next class occurrence is within 4 hours AND it's not silent hours:
-      notify ALL waitlisted students simultaneously (first to claim wins).
-    - Otherwise: notify only the #1 student, give them 4 hours to claim.
+    - If auto_promote_waitlist (admin toggle) is enabled: directly enrol #1 eligible waitlisted student.
+    - Otherwise: 12h offer to #1 only (no urgent/today logic for season enrolments).
     """
     from apps.users.models import AutomationRule, Notification
     from .models import Enrolment
@@ -37,13 +202,14 @@ def _offer_waitlist_spot(session):
         Enrolment.objects.filter(
             class_session=session,
             status='waitlisted',
-            waitlist_offered_at__isnull=True,  # not already offered
+            waitlist_offered_at__isnull=True,
+            waitlist_offer_rejected=False,
         ).order_by('waitlist_position', 'id').select_related('student')
     )
     if not waitlisted:
         return
 
-    # Auto-promote: skip the offer/claim step and directly enrol the next eligible student
+    # Admin auto-promote toggle: skip the offer/claim step and directly enrol the next eligible student
     if getattr(session, 'auto_promote_waitlist', False):
         eligible = [e for e in waitlisted if not e.waitlist_skip_auto_promote]
         if not eligible:
@@ -80,69 +246,29 @@ def _offer_waitlist_spot(session):
             )
         return
 
-    # Determine how far away the next class occurrence is
-    import datetime
+    # Always 12h, #1 only — no urgent/today check for season enrolments
     now = timezone.now()
-    next_occurrence = None
-    try:
-        # Try to find the next ClassOccurrence
-        from apps.classes.models import ClassOccurrence
-        occ = ClassOccurrence.objects.filter(
-            session=session, date__gte=now.date()
-        ).order_by('date').first()
-        if occ:
-            occ_dt = timezone.make_aware(
-                datetime.datetime.combine(occ.date, occ.start_time),
-                timezone.get_current_timezone()
-            )
-            next_occurrence = occ_dt
-    except Exception:
-        pass
-
-    # Urgent = class is today (regardless of exact hours left), outside silent hours
-    class_is_today = (
-        next_occurrence is not None
-        and next_occurrence.date() == now.date()
-        and not _is_silent_hours()
-    )
-
-    if class_is_today:
-        expires_at = now + timedelta(hours=2)
-    else:
-        expires_at = now + timedelta(hours=12)
-
-    urgent = class_is_today
+    expires_at = now + timedelta(hours=12)
+    expires_str = expires_at.strftime('%I:%M %p')
+    to_offer = waitlisted[:1]
 
     email_subject = f"A spot has opened up — {session.name}!"
-    if urgent:
-        email_body_template = (
-            "Hi {first_name},\n\n"
-            "A spot has just opened in {class_name} which is on today!\n\n"
-            "Because the class is today, this offer is open to all waitlisted students — "
-            "the first person to confirm their spot gets it.\n\n"
-            "You have until {expires} to claim your spot. Log in now to confirm.\n\n"
-            "Duality Pole Studio"
-        )
-        to_offer = waitlisted  # notify all simultaneously
-    else:
-        email_body_template = (
-            "Hi {first_name},\n\n"
-            "Great news — a spot has opened up in {class_name}!\n\n"
-            "You have 12 hours to claim your spot (until {expires}). "
-            "If you don't confirm by then, your spot will be offered to the next person on the waitlist.\n\n"
-            "Log in to confirm your enrolment.\n\n"
-            "Duality Pole Studio"
-        )
-        to_offer = waitlisted[:1]  # notify only #1
+    email_body_template = (
+        "Hi {first_name},\n\n"
+        "Great news — a spot has opened up in {class_name}!\n\n"
+        "You have 12 hours to claim your spot (until {expires}). "
+        "If you don't confirm by then, your spot will be offered to the next person on the waitlist.\n\n"
+        "Log in to confirm your enrolment.\n\n"
+        "Duality Pole Studio"
+    )
 
-    expires_str = expires_at.strftime('%I:%M %p')
     for enrolment in to_offer:
         student = enrolment.student
         prefs = student.notification_preferences or {}
 
         enrolment.waitlist_offered_at = now
         enrolment.waitlist_expires_at = expires_at
-        enrolment.waitlist_urgent = urgent
+        enrolment.waitlist_urgent = False
         enrolment.save(update_fields=['waitlist_offered_at', 'waitlist_expires_at', 'waitlist_urgent'])
 
         if prefs.get('waitlist_app', True):

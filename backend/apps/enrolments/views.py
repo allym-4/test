@@ -321,6 +321,29 @@ class EnrolmentListView(generics.ListCreateAPIView):
 
         _trigger_displacement_if_needed(enrolment)
 
+        # Handle waitlisted enrolments from student-facing booking flow
+        if enrolment.status == 'waitlisted' and user.role == 'student':
+            # Set auto_promote if student opted in
+            auto_promote = self.request.data.get('auto_promote', False)
+            if auto_promote:
+                enrolment.student_auto_promote = True
+                enrolment.save(update_fields=['student_auto_promote'])
+
+            # Notify the student of their waitlist position
+            from apps.users.models import Notification
+            session = enrolment.class_session
+            position = Enrolment.objects.filter(
+                class_session=session,
+                status='waitlisted',
+            ).count()
+            Notification.objects.create(
+                recipient=user,
+                title=f"You're on the waitlist — {session.name}",
+                body=f"We'll notify you if a spot opens up. You're #{position} on the waitlist.",
+                notification_type='info',
+                action_url='/portal/classes',
+            )
+
 
 class EnrolmentDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = EnrolmentSerializer
@@ -468,6 +491,35 @@ class ClaimWaitlistSpotView(APIView):
         )
 
         return Response(EnrolmentSerializer(enrolment).data, status=200)
+
+
+class RejectWaitlistOfferView(APIView):
+    """Student explicitly rejects their waitlist offer — cascades to next person."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            enrolment = Enrolment.objects.select_related('class_session').get(
+                pk=pk, student=request.user, status='waitlisted'
+            )
+        except Enrolment.DoesNotExist:
+            return Response({'detail': 'Waitlist enrolment not found.'}, status=404)
+
+        if not enrolment.waitlist_offered_at:
+            return Response({'detail': 'No active offer to reject.'}, status=400)
+
+        if enrolment.waitlist_expires_at and timezone.now() > enrolment.waitlist_expires_at:
+            return Response({'detail': 'Offer has already expired.'}, status=400)
+
+        enrolment.waitlist_offer_rejected = True
+        enrolment.waitlist_offered_at = None
+        enrolment.waitlist_expires_at = None
+        enrolment.save(update_fields=['waitlist_offer_rejected', 'waitlist_offered_at', 'waitlist_expires_at'])
+
+        from .signals import _cascade_season_waitlist_offer
+        _cascade_season_waitlist_offer(enrolment.class_session, skip_enrolment_id=enrolment.id)
+
+        return Response({'status': 'rejected'})
 
 
 class CalendarIcsView(APIView):

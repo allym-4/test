@@ -55,6 +55,7 @@ urlpatterns = [
     path('casual-bookings/<int:pk>/release/', views.CasualReleaseView.as_view(), name='casual-release'),
     path('casual-bookings/<int:pk>/admin-displace/', views.CasualAdminDisplaceView.as_view(), name='casual-admin-displace'),
     path('casual-bookings/admin-waitlist/', views.AdminCasualWaitlistView.as_view(), name='casual-admin-waitlist'),
+    path('casual-bookings/<int:pk>/reject-waitlist-offer/', views.RejectCasualWaitlistOfferView.as_view(), name='casual-reject-waitlist-offer'),
     path('casual-bookings/<int:pk>/admin-promote/', views.AdminPromoteCasualWaitlistView.as_view(), name='casual-admin-promote'),
     path('casual-bookings/<int:pk>/send-waitlist-offer/', views.AdminSendCasualWaitlistOfferView.as_view(), name='casual-send-waitlist-offer'),
     path('casual-bookings/bulk-waitlist/', views.AdminBulkCasualWaitlistView.as_view(), name='casual-bulk-waitlist'),

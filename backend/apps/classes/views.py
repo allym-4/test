@@ -11,56 +11,27 @@ from .serializers import StudioSerializer, ClassCategorySerializer, ClassSession
 from apps.users.permissions import IsAdminOrInstructor, IsAdminUser
 
 
-def _offer_casual_waitlist_spot(occurrence):
+def _send_casual_waitlist_notifications(bookings, occurrence, expires_at, urgent, now):
     """
-    When a confirmed casual spot opens on an occurrence, offer it to the next
-    waitlisted CasualBooking. Class is today → 2h window, all notified
-    simultaneously. Otherwise → 4h window, #1 only.
+    Send waitlist offer notifications to a list of CasualBooking objects.
+    Shared by _offer_casual_waitlist_spot and _cascade_casual_waitlist_offer.
     """
-    from datetime import timedelta
     from django.core.mail import send_mail
     from django.conf import settings as django_settings
     from apps.users.models import Notification
 
-    waitlisted = list(
-        CasualBooking.objects.filter(
-            occurrence=occurrence,
-            status='waitlisted',
-            waitlist_offered_at__isnull=True,
-        ).order_by('waitlist_position', 'id').select_related('student')
-    )
-    if not waitlisted:
-        return
-
-    now = timezone.now()
     sydney_tz = timezone.get_current_timezone()
-    occ_dt = timezone.make_aware(
-        __import__('datetime').datetime.combine(occurrence.date, occurrence.session.start_time),
-        sydney_tz,
-    )
-    class_is_today = occ_dt.date() == now.astimezone(sydney_tz).date()
-
-    if class_is_today:
-        expires_at = now + timedelta(hours=2)
-        to_offer = waitlisted
-        urgent = True
-    else:
-        expires_at = now + timedelta(hours=4)
-        to_offer = waitlisted[:1]
-        urgent = False
-
     expires_str = expires_at.astimezone(sydney_tz).strftime('%I:%M %p')
     session_name = occurrence.session.name
     date_str = occurrence.date.strftime('%d %b')
 
-    for booking in to_offer:
+    for booking in bookings:
         student = booking.student
         prefs = student.notification_preferences or {}
 
         booking.waitlist_offered_at = now
         booking.waitlist_expires_at = expires_at
-        booking.waitlist_urgent = urgent
-        booking.save(update_fields=['waitlist_offered_at', 'waitlist_expires_at', 'waitlist_urgent'])
+        booking.save(update_fields=['waitlist_offered_at', 'waitlist_expires_at'])
 
         if prefs.get('waitlist_app', True):
             Notification.objects.create(
@@ -76,17 +47,17 @@ def _offer_casual_waitlist_spot(occurrence):
             if urgent:
                 body = (
                     f"Hi {student.first_name},\n\n"
-                    f"A spot has just opened in {session_name} on {date_str} — today!\n\n"
-                    "Because the class is today, this offer is open to all waitlisted students — "
-                    "first to confirm gets the spot.\n\n"
+                    f"A spot has just opened in {session_name} on {date_str} — the class is within 4 hours!\n\n"
+                    "This offer is open to all waitlisted students — first to confirm gets the spot.\n\n"
                     f"You have until {expires_str} to claim it. Log in now.\n\n"
                     "Duality Pole Studio"
                 )
             else:
+                hours = int((expires_at - now).total_seconds() / 3600)
                 body = (
                     f"Hi {student.first_name},\n\n"
                     f"A spot has opened in {session_name} on {date_str}!\n\n"
-                    f"You have 4 hours to claim your spot (until {expires_str}). "
+                    f"You have {hours} hours to claim your spot (until {expires_str}). "
                     "If you don't confirm by then, the spot will be offered to the next person.\n\n"
                     "Log in to confirm your booking.\n\n"
                     "Duality Pole Studio"
@@ -98,6 +69,94 @@ def _offer_casual_waitlist_spot(occurrence):
                 recipient_list=[student.email],
                 fail_silently=True,
             )
+
+
+def _get_casual_offer_params(occurrence, now):
+    """
+    Determine offer parameters (expires_at, to_offer subset, urgent, cascade) based
+    on how far away the class is.
+
+    Returns: (expires_at, slice_or_all, urgent, should_cascade)
+    - within 4h:   2h window, all waitlisted, urgent=True,  cascade=False
+    - same day >4h: 2h window, #1 only,        urgent=False, cascade=True
+    - future:       4h window, #1 only,         urgent=False, cascade=True
+    """
+    from datetime import timedelta
+    sydney_tz = timezone.get_current_timezone()
+    import datetime as _dt
+    occ_dt = timezone.make_aware(
+        _dt.datetime.combine(occurrence.date, occurrence.session.start_time),
+        sydney_tz,
+    )
+    hours_until = (occ_dt - now).total_seconds() / 3600
+    same_day = occ_dt.astimezone(sydney_tz).date() == now.astimezone(sydney_tz).date()
+
+    if hours_until <= 4:
+        # Within 4 hours — notify everyone, no cascade
+        return now + timedelta(hours=2), 'all', True, False
+    elif same_day:
+        # Same day but more than 4h away — 2h to #1, cascade
+        return now + timedelta(hours=2), 'one', False, True
+    else:
+        # Future date — 4h to #1, cascade
+        return now + timedelta(hours=4), 'one', False, True
+
+
+def _offer_casual_waitlist_spot(occurrence):
+    """
+    When a confirmed casual spot opens on an occurrence:
+    - Within 4h of class: notify ALL waitlisted simultaneously, 2h window, no cascade
+      (first to claim wins; if nobody claims the spot just opens)
+    - Same day but >4h away: 2h offer to #1 only, cascade on reject/expire
+    - Future date: 4h offer to #1 only, cascade on reject/expire
+    """
+    waitlisted = list(
+        CasualBooking.objects.filter(
+            occurrence=occurrence,
+            status='waitlisted',
+            waitlist_offered_at__isnull=True,
+            waitlist_offer_rejected=False,
+        ).order_by('waitlist_position', 'id').select_related('student')
+    )
+    if not waitlisted:
+        return
+
+    now = timezone.now()
+    expires_at, scope, urgent, _ = _get_casual_offer_params(occurrence, now)
+
+    to_offer = waitlisted if scope == 'all' else waitlisted[:1]
+    _send_casual_waitlist_notifications(to_offer, occurrence, expires_at, urgent, now)
+
+
+def _cascade_casual_waitlist_offer(occurrence, skip_booking_id=None):
+    """
+    Find the next eligible waitlisted CasualBooking and send a timed offer.
+    Called after a student rejects or a management command expires a casual waitlist offer.
+
+    Re-applies the same timing logic:
+    - Within 4h: notify all remaining simultaneously (no further cascade)
+    - Same day >4h: 2h to #1, cascade
+    - Future: 4h to #1, cascade
+    """
+    qs = CasualBooking.objects.filter(
+        occurrence=occurrence,
+        status='waitlisted',
+        waitlist_offered_at__isnull=True,
+        waitlist_offer_rejected=False,
+    ).order_by('waitlist_position', 'id').select_related('student')
+
+    if skip_booking_id:
+        qs = qs.exclude(pk=skip_booking_id)
+
+    remaining = list(qs)
+    if not remaining:
+        return
+
+    now = timezone.now()
+    expires_at, scope, urgent, _ = _get_casual_offer_params(occurrence, now)
+
+    to_offer = remaining if scope == 'all' else remaining[:1]
+    _send_casual_waitlist_notifications(to_offer, occurrence, expires_at, urgent, now)
 
 
 class StudioListView(generics.ListCreateAPIView):
@@ -1466,6 +1525,30 @@ class CasualBookCancelView(APIView):
             _offer_casual_waitlist_spot(occurrence)
 
         return Response({'status': 'cancelled'})
+
+
+class RejectCasualWaitlistOfferView(APIView):
+    """Student explicitly rejects a casual/catchup/trial waitlist offer — cascades to next person."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        booking = get_object_or_404(CasualBooking, pk=pk, student=request.user, status='waitlisted')
+
+        if not booking.waitlist_offered_at:
+            return Response({'detail': 'No active offer to reject.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if booking.waitlist_expires_at and timezone.now() > booking.waitlist_expires_at:
+            return Response({'detail': 'Offer has already expired.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        occurrence = booking.occurrence
+        booking.waitlist_offer_rejected = True
+        booking.waitlist_offered_at = None
+        booking.waitlist_expires_at = None
+        booking.save(update_fields=['waitlist_offer_rejected', 'waitlist_offered_at', 'waitlist_expires_at'])
+
+        _cascade_casual_waitlist_offer(occurrence, skip_booking_id=booking.id)
+
+        return Response({'status': 'rejected'})
 
 
 class MyCasualBookingsView(generics.ListAPIView):
