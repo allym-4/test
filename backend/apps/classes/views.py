@@ -11,6 +11,95 @@ from .serializers import StudioSerializer, ClassCategorySerializer, ClassSession
 from apps.users.permissions import IsAdminOrInstructor, IsAdminUser
 
 
+def _offer_casual_waitlist_spot(occurrence):
+    """
+    When a confirmed casual spot opens on an occurrence, offer it to the next
+    waitlisted CasualBooking. Class is today → 2h window, all notified
+    simultaneously. Otherwise → 4h window, #1 only.
+    """
+    from datetime import timedelta
+    from django.core.mail import send_mail
+    from django.conf import settings as django_settings
+    from apps.users.models import Notification
+
+    waitlisted = list(
+        CasualBooking.objects.filter(
+            occurrence=occurrence,
+            status='waitlisted',
+            waitlist_offered_at__isnull=True,
+        ).order_by('waitlist_position', 'id').select_related('student')
+    )
+    if not waitlisted:
+        return
+
+    now = timezone.now()
+    sydney_tz = timezone.get_current_timezone()
+    occ_dt = timezone.make_aware(
+        __import__('datetime').datetime.combine(occurrence.date, occurrence.session.start_time),
+        sydney_tz,
+    )
+    class_is_today = occ_dt.date() == now.astimezone(sydney_tz).date()
+
+    if class_is_today:
+        expires_at = now + timedelta(hours=2)
+        to_offer = waitlisted
+        urgent = True
+    else:
+        expires_at = now + timedelta(hours=4)
+        to_offer = waitlisted[:1]
+        urgent = False
+
+    expires_str = expires_at.astimezone(sydney_tz).strftime('%I:%M %p')
+    session_name = occurrence.session.name
+    date_str = occurrence.date.strftime('%d %b')
+
+    for booking in to_offer:
+        student = booking.student
+        prefs = student.notification_preferences or {}
+
+        booking.waitlist_offered_at = now
+        booking.waitlist_expires_at = expires_at
+        booking.waitlist_urgent = urgent
+        booking.save(update_fields=['waitlist_offered_at', 'waitlist_expires_at', 'waitlist_urgent'])
+
+        if prefs.get('waitlist_app', True):
+            Notification.objects.create(
+                recipient=student,
+                title=f"Spot available — {session_name} {date_str}",
+                body=f"A spot opened up! You have until {expires_str} to claim it. Tap to confirm.",
+                notification_type='waitlist',
+                action_label='Claim My Spot',
+                action_url='/portal/classes',
+            )
+
+        if prefs.get('waitlist_email', True) and student.email:
+            if urgent:
+                body = (
+                    f"Hi {student.first_name},\n\n"
+                    f"A spot has just opened in {session_name} on {date_str} — today!\n\n"
+                    "Because the class is today, this offer is open to all waitlisted students — "
+                    "first to confirm gets the spot.\n\n"
+                    f"You have until {expires_str} to claim it. Log in now.\n\n"
+                    "Duality Pole Studio"
+                )
+            else:
+                body = (
+                    f"Hi {student.first_name},\n\n"
+                    f"A spot has opened in {session_name} on {date_str}!\n\n"
+                    f"You have 4 hours to claim your spot (until {expires_str}). "
+                    "If you don't confirm by then, the spot will be offered to the next person.\n\n"
+                    "Log in to confirm your booking.\n\n"
+                    "Duality Pole Studio"
+                )
+            send_mail(
+                subject=f"Spot available — {session_name} {date_str}!",
+                message=body,
+                from_email=django_settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[student.email],
+                fail_silently=True,
+            )
+
+
 class StudioListView(generics.ListCreateAPIView):
     queryset = Studio.objects.all()
     serializer_class = StudioSerializer
@@ -1356,12 +1445,14 @@ class CasualBookCancelView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        was_catchup = booking.enrolment_type == 'catchup' and booking.status == 'confirmed'
+        was_confirmed = booking.status == 'confirmed'
+        was_catchup = booking.enrolment_type == 'catchup' and was_confirmed
+        occurrence = booking.occurrence
         booking.status = 'cancelled'
         booking.save(update_fields=['status'])
 
         # Restore makeup credit if cancelling a confirmed catch-up before the class
-        if was_catchup and booking.occurrence.date >= date.today():
+        if was_catchup and occurrence.date >= date.today():
             from apps.attendance.models import MakeupCredit
             from django.utils import timezone
             MakeupCredit.objects.create(
@@ -1369,6 +1460,10 @@ class CasualBookCancelView(APIView):
                 status='available',
                 notes='Restored: casual catch-up booking cancelled',
             )
+
+        # Offer freed spot to next waitlisted student
+        if was_confirmed:
+            _offer_casual_waitlist_spot(occurrence)
 
         return Response({'status': 'cancelled'})
 
