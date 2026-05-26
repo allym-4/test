@@ -557,6 +557,72 @@ function AddPracticeCreditsModal({ student, onClose, onSuccess }) {
   )
 }
 
+function AddCatchupCreditsModal({ student, onClose, onSuccess }) {
+  const [count, setCount] = useState(1)
+  const [adminNotes, setAdminNotes] = useState('')
+  const [expiresAt, setExpiresAt] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setSaving(true)
+    setError(null)
+    try {
+      const created = []
+      for (let i = 0; i < parseInt(count); i++) {
+        const payload = { student: student.id, reason: 'Manually added by admin', status: 'available', ...(adminNotes ? { admin_notes: adminNotes } : {}), ...(expiresAt ? { expires_at: expiresAt } : {}) }
+        const res = await attendance.makeupCredits.create(payload)
+        created.push(res.data)
+      }
+      onSuccess(created)
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to add catch-up credits.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="sd-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sd-modal" style={{ maxWidth: 400 }}>
+        <div className="sd-header">
+          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>Add Catch-up Credits</div>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <form className="sd-body" onSubmit={handleSubmit}>
+          {error && (
+            <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red)', marginBottom: 14 }}>{error}</div>
+          )}
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 16 }}>
+            Adding catch-up credits to <strong style={{ color: 'var(--white)' }}>{student.first_name} {student.last_name}</strong>. Each credit lets the student book one catch-up class.
+          </div>
+          <div className="field">
+            <label>Number of credits</label>
+            <select value={count} onChange={e => setCount(e.target.value)}>
+              {[1,2,3,4,5,6,8,10].map(n => <option key={n} value={n}>{n} credit{n !== 1 ? 's' : ''}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label>Expiry date <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(optional — leave blank for no expiry)</span></label>
+            <input type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} />
+          </div>
+          <div className="field">
+            <label>Admin notes <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(internal only, not visible to student)</span></label>
+            <textarea value={adminNotes} onChange={e => setAdminNotes(e.target.value)} placeholder="e.g. Goodwill credit for cancelled class" rows={2} style={{ resize: 'vertical' }} />
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>
+              {saving ? 'Adding…' : `Add ${count} Credit${count != 1 ? 's' : ''}`}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 function StudentTagsRow({ student, setStudent }) {
   const { data: allTagsData } = useApi(() => tagsApi.list())
   const allTags = allTagsData?.results || allTagsData || []
@@ -742,6 +808,9 @@ export default function AdminStudentDetail() {
   const [refundType, setRefundType] = useState('refund')
   const [creditAmount, setCreditAmount] = useState('')
   const [creditDesc, setCreditDesc] = useState('')
+  const [creditExpiry, setCreditExpiry] = useState('')
+  const [creditAdminNotes, setCreditAdminNotes] = useState('')
+  const [showAddCatchupCredits, setShowAddCatchupCredits] = useState(false)
   const [savingRefund, setSavingRefund] = useState(false)
   const [savingCredit, setSavingCredit] = useState(false)
   const [noteText, setNoteText] = useState('')
@@ -1505,7 +1574,10 @@ export default function AdminStudentDetail() {
 
                       {/* Casual / Catch-up */}
                       <div style={{ marginBottom: 24 }}>
-                        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 13, marginBottom: 12 }}>Casual & Catch-up</div>
+                        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 13, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          Casual & Catch-up
+                          <button className="btn btn-ghost btn-xs" onClick={() => setShowAddCatchupCredits(true)}>+ Add Catch-up Credits</button>
+                        </div>
                         <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
                           <div className="card" style={{ flex: 1, padding: '12px 14px' }}>
                             <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', marginBottom: 4 }}>Catch-up Credits</div>
@@ -2471,6 +2543,14 @@ export default function AdminStudentDetail() {
                 <label>Description</label>
                 <input value={creditDesc} onChange={e => setCreditDesc(e.target.value)} placeholder="Reason for credit" />
               </div>
+              <div className="field">
+                <label>Expiry date <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(optional — leave blank for no expiry)</span></label>
+                <input type="date" value={creditExpiry} onChange={e => setCreditExpiry(e.target.value)} />
+              </div>
+              <div className="field">
+                <label>Admin notes <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(internal only, not visible to student)</span></label>
+                <textarea value={creditAdminNotes} onChange={e => setCreditAdminNotes(e.target.value)} placeholder="Internal notes…" rows={2} style={{ resize: 'vertical' }} />
+              </div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
                 <button className="btn btn-ghost btn-sm" onClick={() => setShowAccountCredit(false)}>Cancel</button>
                 <button
@@ -2479,12 +2559,14 @@ export default function AdminStudentDetail() {
                   onClick={async () => {
                     setSavingCredit(true)
                     try {
-                      await payments.create({ student: student.id, payment_type: 'credit', amount: parseFloat(creditAmount), description: creditDesc || 'Account credit added' })
+                      await payments.create({ student: student.id, payment_type: 'credit', amount: parseFloat(creditAmount), description: creditDesc || 'Account credit added', ...(creditAdminNotes ? { admin_notes: creditAdminNotes } : {}), ...(creditExpiry ? { expires_at: creditExpiry } : {}) })
                       const [balRes, payRes] = await Promise.all([payments.balance(student.id), payments.list({ student: student.id })])
                       setBalanceData(balRes.data)
                       setPayData(payRes.data.results || [])
                       setCreditAmount('')
                       setCreditDesc('')
+                      setCreditExpiry('')
+                      setCreditAdminNotes('')
                       setShowAccountCredit(false)
                     } finally { setSavingCredit(false) }
                   }}
@@ -3071,6 +3153,17 @@ export default function AdminStudentDetail() {
           onSuccess={(newCredits) => {
             setPracticeCreditsData(prev => [...(prev || []), ...newCredits])
             setShowAddPracticeCredits(false)
+          }}
+        />
+      )}
+
+      {showAddCatchupCredits && (
+        <AddCatchupCreditsModal
+          student={student}
+          onClose={() => setShowAddCatchupCredits(false)}
+          onSuccess={(newCredits) => {
+            setMakeupCreditsData(prev => [...(prev || []), ...newCredits])
+            setShowAddCatchupCredits(false)
           }}
         />
       )}

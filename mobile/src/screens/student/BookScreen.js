@@ -25,7 +25,7 @@ const T = {
 // ─── tabs ────────────────────────────────────────────────────────────────────
 const TABS = [
   { key: 'season',    label: 'Book a Season' },
-  { key: 'casual',    label: 'Casual / Drop-in' },
+  { key: 'casual',    label: 'Casual / Catch-up' },
   { key: 'trial',     label: 'Trial Class' },
   { key: 'workshops', label: 'Workshops & Events' },
 ]

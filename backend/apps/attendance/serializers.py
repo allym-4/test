@@ -45,12 +45,19 @@ class MakeupCreditSerializer(serializers.ModelSerializer):
         session = getattr(obj.source_occurrence, 'session', None)
         return session.name if session else None
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        if request and getattr(request.user, 'role', None) not in ('admin', 'instructor'):
+            data.pop('admin_notes', None)
+        return data
+
     class Meta:
         model = MakeupCredit
         fields = (
             'id', 'student', 'student_name', 'season', 'reason', 'status',
             'issued_by', 'issued_by_name', 'created_at', 'used_at', 'expires_at',
-            'season_end_date', 'source_occurrence', 'source_class_name', 'is_addon_restricted',
+            'admin_notes', 'season_end_date', 'source_occurrence', 'source_class_name', 'is_addon_restricted',
         )
         read_only_fields = ('id', 'issued_by', 'created_at')
 

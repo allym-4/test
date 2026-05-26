@@ -75,7 +75,8 @@ function SkillRow({ studentId, skill, onReviewed }) {
       >
         <KeyboardAvoidingView style={s.noteOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={s.noteSheet}>
-            <Text style={s.noteTitle}>Add a note for the student (optional)</Text>
+            <Text style={s.noteTitle}>Add a note for the student</Text>
+            <Text style={s.noteWarning}>⚠ This note will be visible to the student</Text>
             <TextInput
               style={s.noteInput}
               value={noteText}
@@ -104,33 +105,33 @@ function SkillRow({ studentId, skill, onReviewed }) {
       {status === 'saving' ? (
         <ActivityIndicator color="#ccff00" size="small" style={{ marginLeft: 12 }} />
       ) : status === 'approved' ? (
-        <Text style={s.doneApproved}>Approved ✓</Text>
+        <Text style={s.doneApproved}>Yes ✓</Text>
       ) : status === 'not_quite' ? (
-        <Text style={s.doneNotQuite}>Not Quite</Text>
+        <Text style={s.doneNotQuite}>Not Quite ✓</Text>
       ) : status === 'not_approved' ? (
-        <Text style={s.doneNo}>Not Approved</Text>
+        <Text style={s.doneNo}>Not Yet ✓</Text>
       ) : (
         <View style={s.btnRow}>
           <TouchableOpacity
             style={s.approveBtn}
             onPress={() => handleReview('approved')}
-            accessibilityLabel={`Approve ${skill.skill_name}`}
+            accessibilityLabel={`Yes — approve ${skill.skill_name}`}
           >
-            <Text style={s.approveBtnText}>✓</Text>
+            <Text style={s.approveBtnText}>Yes</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={s.notQuiteBtn}
             onPress={() => openNoteModal('not_quite')}
             accessibilityLabel={`Not quite ${skill.skill_name}`}
           >
-            <Text style={s.notQuiteBtnText}>~</Text>
+            <Text style={s.notQuiteBtnText}>Not Quite</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={s.noBtn}
             onPress={() => openNoteModal('not_approved')}
-            accessibilityLabel={`Not approved ${skill.skill_name}`}
+            accessibilityLabel={`Not yet — ${skill.skill_name}`}
           >
-            <Text style={s.noBtnText}>✕</Text>
+            <Text style={s.noBtnText}>Not Yet</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -309,33 +310,33 @@ const s = StyleSheet.create({
 
   approveBtn: {
     backgroundColor: '#ccff00',
-    borderRadius: 18,
-    width: 32,
-    height: 32,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    height: 30,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  approveBtnText: { color: '#000', fontWeight: '700', fontSize: 15 },
+  approveBtnText: { color: '#000', fontWeight: '700', fontSize: 12 },
 
   notQuiteBtn: {
     backgroundColor: 'rgba(245,158,11,0.15)',
-    borderRadius: 18,
-    width: 32,
-    height: 32,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    height: 30,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  notQuiteBtnText: { color: '#f59e0b', fontWeight: '700', fontSize: 16 },
+  notQuiteBtnText: { color: '#f59e0b', fontWeight: '700', fontSize: 12 },
 
   noBtn: {
     backgroundColor: 'rgba(239,68,68,0.12)',
-    borderRadius: 18,
-    width: 32,
-    height: 32,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    height: 30,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  noBtnText: { color: '#ef4444', fontWeight: '700', fontSize: 13 },
+  noBtnText: { color: '#ef4444', fontWeight: '700', fontSize: 12 },
 
   doneApproved: { fontSize: 11, color: '#ccff00', fontWeight: '600', marginLeft: 12 },
   doneNotQuite: { fontSize: 11, color: '#f59e0b', fontWeight: '600', marginLeft: 12 },
@@ -363,7 +364,8 @@ const s = StyleSheet.create({
     backgroundColor: '#111', borderRadius: 16,
     padding: 20, width: '100%',
   },
-  noteTitle: { fontSize: 15, fontWeight: '600', color: '#fff', marginBottom: 14 },
+  noteTitle: { fontSize: 15, fontWeight: '600', color: '#fff', marginBottom: 6 },
+  noteWarning: { fontSize: 11, color: '#f59e0b', marginBottom: 14 },
   noteInput: {
     backgroundColor: '#000', borderWidth: 1, borderColor: '#333',
     borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10,

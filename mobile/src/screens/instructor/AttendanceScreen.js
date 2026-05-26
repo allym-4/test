@@ -197,7 +197,14 @@ export default function AttendanceScreen({ navigation, route }) {
   function goToStudent(studentId, studentName) {
     navigation.navigate('StudentDetail', { studentId, studentName })
   }
-  const today = new Date().toISOString().slice(0, 10)
+  // Before 5am Sydney time, show the previous day's classes so instructors can mark attendance after late-night classes
+  const today = (() => {
+    const now = new Date()
+    const sydHour = new Date(now.toLocaleString('en-US', { timeZone: 'Australia/Sydney' })).getHours()
+    const d = new Date(now)
+    if (sydHour < 5) d.setDate(d.getDate() - 1)
+    return d.toISOString().slice(0, 10)
+  })()
   const [selectedOcc, setSelectedOcc] = useState(route.params?.occurrence ?? null)
   const [tab, setTab] = useState('attending')
   const [register, setRegister] = useState({})
