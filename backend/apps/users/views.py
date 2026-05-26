@@ -1036,6 +1036,8 @@ class StudentSkillView(APIView):
                 defaults['teacher_confirmed'] = request.data['teacher_confirmed']
             if 'instructor_status' in request.data:
                 defaults['instructor_status'] = request.data['instructor_status']
+            if 'instructor_notes' in request.data:
+                defaults['instructor_notes'] = request.data['instructor_notes']
                 # Keep teacher_confirmed in sync
                 if request.data['instructor_status'] == 'approved':
                     defaults['teacher_confirmed'] = True

@@ -84,6 +84,7 @@ class ClassChangeRequest(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     admin_notes = models.TextField(blank=True)
     admin_initiated = models.BooleanField(default=False)
+    spot_held = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
     ticket = models.ForeignKey(

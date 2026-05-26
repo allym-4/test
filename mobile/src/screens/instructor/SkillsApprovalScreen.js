@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   View, Text, TouchableOpacity, StyleSheet, FlatList,
-  ActivityIndicator, Alert,
+  ActivityIndicator, Alert, Modal, TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native'
 import { useApi } from '../../hooks/useApi'
 import { skills } from '../../api'
@@ -28,8 +28,11 @@ function LevelBadge({ level }) {
 
 function SkillRow({ studentId, skill, onReviewed }) {
   const [status, setStatus] = useState(null)
+  const [noteModalVisible, setNoteModalVisible] = useState(false)
+  const [pendingStatus, setPendingStatus] = useState(null)
+  const [noteText, setNoteText] = useState('')
 
-  async function handleReview(instructorStatus) {
+  async function handleReview(instructorStatus, notes) {
     setStatus('saving')
     try {
       await skills.save(studentId, {
@@ -38,6 +41,7 @@ function SkillRow({ studentId, skill, onReviewed }) {
         self_assessed: skill.self_assessed,
         teacher_confirmed: instructorStatus === 'approved',
         instructor_status: instructorStatus,
+        ...(notes ? { instructor_notes: notes } : {}),
       })
       setStatus(instructorStatus)
       if (instructorStatus === 'approved') onReviewed()
@@ -50,8 +54,49 @@ function SkillRow({ studentId, skill, onReviewed }) {
     }
   }
 
+  function openNoteModal(instructorStatus) {
+    setPendingStatus(instructorStatus)
+    setNoteText('')
+    setNoteModalVisible(true)
+  }
+
+  function confirmNote() {
+    setNoteModalVisible(false)
+    handleReview(pendingStatus, noteText.trim())
+  }
+
   return (
     <View style={s.skillRow}>
+      <Modal
+        visible={noteModalVisible}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setNoteModalVisible(false)}
+      >
+        <KeyboardAvoidingView style={s.noteOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={s.noteSheet}>
+            <Text style={s.noteTitle}>Add a note for the student (optional)</Text>
+            <TextInput
+              style={s.noteInput}
+              value={noteText}
+              onChangeText={setNoteText}
+              placeholder="Type a note..."
+              placeholderTextColor="#555"
+              multiline
+              autoFocus
+            />
+            <View style={s.noteBtnRow}>
+              <TouchableOpacity style={s.noteCancelBtn} onPress={() => setNoteModalVisible(false)}>
+                <Text style={s.noteCancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={s.noteConfirmBtn} onPress={confirmNote}>
+                <Text style={s.noteConfirmBtnText}>Confirm</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
       <View style={s.skillInfo}>
         <Text style={s.skillName}>{skill.skill_name}</Text>
         <LevelBadge level={skill.level} />
@@ -75,14 +120,14 @@ function SkillRow({ studentId, skill, onReviewed }) {
           </TouchableOpacity>
           <TouchableOpacity
             style={s.notQuiteBtn}
-            onPress={() => handleReview('not_quite')}
+            onPress={() => openNoteModal('not_quite')}
             accessibilityLabel={`Not quite ${skill.skill_name}`}
           >
             <Text style={s.notQuiteBtnText}>~</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={s.noBtn}
-            onPress={() => handleReview('not_approved')}
+            onPress={() => openNoteModal('not_approved')}
             accessibilityLabel={`Not approved ${skill.skill_name}`}
           >
             <Text style={s.noBtnText}>✕</Text>
@@ -309,4 +354,30 @@ const s = StyleSheet.create({
   emptyIcon: { fontSize: 40, marginBottom: 12 },
   emptyTitle: { fontSize: 16, fontWeight: '700', color: '#ccc', marginBottom: 6 },
   emptyBody: { fontSize: 13, color: '#555', textAlign: 'center', lineHeight: 19 },
+
+  noteOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.75)',
+    justifyContent: 'center', alignItems: 'center', padding: 24,
+  },
+  noteSheet: {
+    backgroundColor: '#111', borderRadius: 16,
+    padding: 20, width: '100%',
+  },
+  noteTitle: { fontSize: 15, fontWeight: '600', color: '#fff', marginBottom: 14 },
+  noteInput: {
+    backgroundColor: '#000', borderWidth: 1, borderColor: '#333',
+    borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10,
+    fontSize: 14, color: '#fff', minHeight: 80, textAlignVertical: 'top',
+  },
+  noteBtnRow: { flexDirection: 'row', gap: 10, marginTop: 16, justifyContent: 'flex-end' },
+  noteCancelBtn: {
+    borderWidth: 1, borderColor: '#333', borderRadius: 8,
+    paddingHorizontal: 16, paddingVertical: 9,
+  },
+  noteCancelBtnText: { color: '#888', fontWeight: '600', fontSize: 14 },
+  noteConfirmBtn: {
+    backgroundColor: '#ccff00', borderRadius: 8,
+    paddingHorizontal: 16, paddingVertical: 9,
+  },
+  noteConfirmBtnText: { color: '#000', fontWeight: '700', fontSize: 14 },
 })

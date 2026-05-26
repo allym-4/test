@@ -854,6 +854,17 @@ class ClassChangeRequestListCreateView(generics.ListCreateAPIView):
         change_request.ticket = ticket
         change_request.save(update_fields=['ticket'])
 
+        # Auto-hold the spot if this is a transfer request and only 1 spot remains
+        if request_type == 'transfer' and change_request.requested_session_id:
+            target_session = change_request.requested_session
+            if target_session and target_session.capacity:
+                active_count = Enrolment.objects.filter(
+                    class_session=target_session, status='active'
+                ).count()
+                if active_count == target_session.capacity - 1:
+                    change_request.spot_held = True
+                    change_request.save(update_fields=['spot_held'])
+
         from apps.users.models import Notification
         Notification.objects.create(
             recipient=student,
@@ -953,7 +964,8 @@ class ClassChangeRequestApproveView(APIView):
             change_request.status = ClassChangeRequest.Status.APPROVED
             change_request.admin_notes = admin_notes
             change_request.resolved_at = timezone.now()
-            change_request.save(update_fields=['status', 'admin_notes', 'resolved_at'])
+            change_request.spot_held = False
+            change_request.save(update_fields=['status', 'admin_notes', 'resolved_at', 'spot_held'])
 
             if change_request.ticket:
                 change_request.ticket.status = 'resolved'
@@ -1002,7 +1014,10 @@ class ClassChangeRequestApproveView(APIView):
 
         # Check capacity on target session (skip for force override or waitlist)
         active_count = Enrolment.objects.filter(class_session=new_session, status='active').count()
-        if active_count >= new_session.capacity and not force_override and action != 'waitlist':
+        held_count = ClassChangeRequest.objects.filter(
+            requested_session=new_session, spot_held=True, status__in=('pending', 'awaiting_response')
+        ).exclude(pk=change_request.pk).count()
+        if active_count + held_count >= new_session.capacity and not force_override and action != 'waitlist':
             return Response({'detail': f'{new_session.name} is at capacity ({new_session.capacity} students).'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Check target session is not already enrolled/waitlisted
@@ -1026,7 +1041,8 @@ class ClassChangeRequestApproveView(APIView):
             change_request.status = ClassChangeRequest.Status.APPROVED
             change_request.admin_notes = (admin_notes + ' [Waitlisted]').strip()
             change_request.resolved_at = timezone.now()
-            change_request.save(update_fields=['status', 'admin_notes', 'resolved_at'])
+            change_request.spot_held = False
+            change_request.save(update_fields=['status', 'admin_notes', 'resolved_at', 'spot_held'])
             if change_request.ticket:
                 change_request.ticket.status = 'resolved'
                 change_request.ticket.save(update_fields=['status'])
@@ -1121,7 +1137,8 @@ class ClassChangeRequestApproveView(APIView):
         change_request.status = ClassChangeRequest.Status.APPROVED
         change_request.admin_notes = admin_notes
         change_request.resolved_at = timezone.now()
-        change_request.save(update_fields=['status', 'admin_notes', 'resolved_at'])
+        change_request.spot_held = False
+        change_request.save(update_fields=['status', 'admin_notes', 'resolved_at', 'spot_held'])
 
         # Close the linked helpdesk ticket if present
         if change_request.ticket:
@@ -1198,7 +1215,8 @@ class ClassChangeRequestRejectView(APIView):
         change_request.status = ClassChangeRequest.Status.REJECTED
         change_request.admin_notes = admin_notes
         change_request.resolved_at = timezone.now()
-        change_request.save(update_fields=['status', 'admin_notes', 'resolved_at'])
+        change_request.spot_held = False
+        change_request.save(update_fields=['status', 'admin_notes', 'resolved_at', 'spot_held'])
 
         # Send DM to student if message provided
         if message_body:
