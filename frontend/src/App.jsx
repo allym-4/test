@@ -87,6 +87,7 @@ import InstructorNotifications from './pages/InstructorNotifications'
 
 // Login
 import LoginPage from './pages/LoginPage'
+import SignupPage from './pages/SignupPage'
 import EnquirePage from './pages/EnquirePage'
 import TrialPage from './pages/TrialPage'
 
@@ -145,6 +146,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
           <Route path="/enquire" element={<EnquirePage />} />
           <Route path="/try" element={<TrialPage />} />
 

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import './LoginPage.css'
 
@@ -69,6 +69,12 @@ export default function LoginPage() {
           </button>
         </form>
 
+        <p className="login-help" style={{ marginTop: 16 }}>
+          New to Duality?{' '}
+          <Link to="/signup" state={from ? { from } : undefined} style={{ color: '#ccff00' }}>
+            Create an account
+          </Link>
+        </p>
         <p className="login-help">
           Need help? <a href="mailto:intrigued@dualitypole.com">intrigued@dualitypole.com</a>
         </p>
