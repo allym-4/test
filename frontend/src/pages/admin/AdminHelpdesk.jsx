@@ -321,7 +321,8 @@ export default function AdminHelpdesk() {
   const { data, loading } = useApi(() => helpdesk.list())
   const { data: studentsData } = useApi(() => users.list({ role: 'student' }))
   const { data: changeReqData, loading: changeReqLoading, refetch: refetchChangeReqs } = useApi(() => enrolments.changeRequests.list())
-  const [mainTab, setMainTab] = useState('tickets') // 'tickets' | 'change-requests'
+  const { data: exemptionData, refetch: refetchExemptions } = useApi(() => enrolments.list({ status: 'exemption_requested' }))
+  const [mainTab, setMainTab] = useState('tickets') // 'tickets' | 'change-requests' | 'exemptions'
   const [filter, setFilter] = useState('all')
   const [activeTicket, setActiveTicket] = useState(null)
   const [thread, setThread] = useState([])
@@ -345,6 +346,22 @@ export default function AdminHelpdesk() {
   const [approveModal, setApproveModal] = useState(null)
   const [contactModal, setContactModal] = useState(null)
   const [rejectModal, setRejectModal] = useState(null)
+
+  const exemptions = exemptionData?.results || exemptionData || []
+  const [allExemptions, setAllExemptions] = useState(null)
+  const displayExemptions = allExemptions ?? exemptions
+
+  async function approveExemption(e) {
+    await enrolments.update(e.id, { status: 'active' })
+    setAllExemptions(prev => (prev ?? exemptions).filter(x => x.id !== e.id))
+    refetchExemptions()
+  }
+
+  async function declineExemption(e) {
+    await enrolments.update(e.id, { status: 'cancelled' })
+    setAllExemptions(prev => (prev ?? exemptions).filter(x => x.id !== e.id))
+    refetchExemptions()
+  }
 
   function updateChangeReq(updated) {
     setAllChangeReqs(prev => (prev ?? (changeReqData?.results || changeReqData || [])).map(r => r.id === updated.id ? updated : r))
@@ -408,7 +425,6 @@ export default function AdminHelpdesk() {
           <div className="page-sub">Student support requests &amp; enquiries</div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <button className="btn btn-ghost btn-sm" onClick={() => alert('Export CSV downloaded')}>Export</button>
           <button className="btn btn-lime btn-sm" onClick={() => setShowNew(true)}>+ New Ticket</button>
         </div>
       </div>
@@ -452,6 +468,12 @@ export default function AdminHelpdesk() {
           style={{ padding: '6px 16px', borderRadius: 7, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13, background: mainTab === 'change-requests' ? 'var(--lime)' : 'transparent', color: mainTab === 'change-requests' ? '#000' : 'var(--grey)' }}
         >
           Change Requests {pendingChangeReqs.length > 0 && <span style={{ marginLeft: 4, background: mainTab === 'change-requests' ? 'rgba(0,0,0,0.2)' : '#222', color: mainTab === 'change-requests' ? '#000' : 'var(--amber)', borderRadius: 10, padding: '1px 6px', fontSize: 10 }}>{pendingChangeReqs.length}</span>}
+        </button>
+        <button
+          onClick={() => setMainTab('exemptions')}
+          style={{ padding: '6px 16px', borderRadius: 7, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13, background: mainTab === 'exemptions' ? 'var(--lime)' : 'transparent', color: mainTab === 'exemptions' ? '#000' : 'var(--grey)' }}
+        >
+          Exemptions {displayExemptions.length > 0 && <span style={{ marginLeft: 4, background: mainTab === 'exemptions' ? 'rgba(0,0,0,0.2)' : '#222', color: mainTab === 'exemptions' ? '#000' : 'var(--amber)', borderRadius: 10, padding: '1px 6px', fontSize: 10 }}>{displayExemptions.length}</span>}
         </button>
       </div>
 
@@ -581,6 +603,39 @@ export default function AdminHelpdesk() {
               </div>
             )
           })()}
+        </div>
+      ) : mainTab === 'exemptions' ? (
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
+            <span style={{ fontSize: 12, color: 'var(--grey)' }}>{displayExemptions.length} pending exemption{displayExemptions.length !== 1 ? 's' : ''}</span>
+            <button className="btn btn-ghost btn-sm" style={{ marginLeft: 'auto' }} onClick={refetchExemptions}>Refresh</button>
+          </div>
+          {displayExemptions.length === 0 ? (
+            <div style={{ textAlign: 'center', color: 'var(--grey)', fontSize: 13, padding: '48px 0' }}>No pending exemption requests</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {displayExemptions.map(e => (
+                <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 18px', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{e.student_name || e.student_detail?.display_name || 'Student'}</div>
+                    <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: e.notes ? 8 : 0 }}>
+                      {e.class_name || e.session_name || e.class_session_detail?.name || 'Class'} — catch-up exemption request
+                    </div>
+                    {e.notes && (
+                      <div style={{ fontSize: 13, color: '#aaa', background: '#1a1a1a', borderRadius: 7, padding: '8px 12px', borderLeft: '3px solid var(--border)', lineHeight: 1.5 }}>
+                        {e.notes}
+                      </div>
+                    )}
+                    <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 8 }}>Requested {e.created_at ? new Date(e.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : ''}</div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+                    <button className="btn btn-lime btn-xs" onClick={() => approveExemption(e)} style={{ whiteSpace: 'nowrap' }}>Approve</button>
+                    <button className="btn btn-ghost btn-xs" onClick={() => declineExemption(e)} style={{ whiteSpace: 'nowrap', color: 'var(--red)' }}>Decline</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ) : loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}><div className="spinner" /></div>

@@ -38,6 +38,7 @@ class UserSerializer(serializers.ModelSerializer):
             'perm_billing', 'perm_edit_profiles', 'perm_approve_plans', 'perm_bulk_email', 'perm_reports',
             'notification_preferences',
             'show_in_roster', 'roster_name', 'nickname', 'level', 'cleared_for_level',
+            'max_booking_level', 'blocked_sessions',
             'booking_blocked', 'block_reason',
             'is_shadow_instructor',
             'bio', 'instructor_tagline', 'instructor_instagram',

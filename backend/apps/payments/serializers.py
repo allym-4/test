@@ -49,9 +49,9 @@ class PaymentPlanSerializer(serializers.ModelSerializer):
             'id', 'student', 'student_name', 'description', 'total_amount', 'status',
             'amount_paid', 'amount_remaining',
             'created_by', 'created_by_name', 'created_at', 'notes',
-            'instalments',
+            'stripe_payment_method_id', 'instalments',
         )
-        read_only_fields = ('id', 'created_by', 'created_at')
+        read_only_fields = ('id', 'student', 'created_by', 'created_at')
 
 
 class StudentBalanceSerializer(serializers.Serializer):

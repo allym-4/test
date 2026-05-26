@@ -1,5 +1,5 @@
 import { Component } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 
 // Shells
@@ -87,7 +87,9 @@ import InstructorNotifications from './pages/InstructorNotifications'
 
 // Login
 import LoginPage from './pages/LoginPage'
+import SignupPage from './pages/SignupPage'
 import EnquirePage from './pages/EnquirePage'
+import TrialPage from './pages/TrialPage'
 
 function Spinner() {
   return (
@@ -122,8 +124,9 @@ class ErrorBoundary extends Component {
 
 function RequireAuth({ children, role }) {
   const { user, loading } = useAuth()
+  const location = useLocation()
   if (loading) return <Spinner />
-  if (!user) return <Navigate to="/login" replace />
+  if (!user) return <Navigate to="/login" state={{ from: location.pathname + location.search }} replace />
   if (role && user.role !== role) {
     // Instructors and admins may preview the student portal
     if (role === 'student' && (user.role === 'instructor' || user.role === 'admin')) {
@@ -143,7 +146,9 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
           <Route path="/enquire" element={<EnquirePage />} />
+          <Route path="/try" element={<TrialPage />} />
 
           {/* Instructor routes */}
           <Route path="/" element={<RequireAuth role="instructor"><Shell /></RequireAuth>}>

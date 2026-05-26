@@ -22,6 +22,13 @@ class ClassCategory(models.Model):
     is_visible = models.BooleanField(default=True)
     is_addon_type = models.BooleanField(default=False)  # True for Kiki, Unravel, etc.
     standalone_price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)  # e.g. 250 for Kiki/Unravel
+    # Default upsell shown to students booking any class in this category
+    upsell_headline = models.CharField(max_length=200, blank=True)
+    upsell_body = models.TextField(blank=True)
+    upsell_target_category = models.ForeignKey(
+        'self', on_delete=models.SET_NULL, null=True, blank=True, related_name='upsell_sources',
+        help_text='Category to suggest when a student books a class in this category.'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -399,3 +406,19 @@ class WorkshopBooking(models.Model):
 
     def __str__(self):
         return f'{self.student} → {self.workshop}'
+
+
+class SeasonNotificationInterest(models.Model):
+    """Records interest in being notified when casual/trial bookings open for an upcoming season."""
+    season = models.ForeignKey(Season, on_delete=models.CASCADE, related_name='notification_interests')
+    email = models.EmailField()
+    first_name = models.CharField(max_length=100, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    notified_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = [('season', 'email')]
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.email} → {self.season}'

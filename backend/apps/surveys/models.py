@@ -2,6 +2,22 @@ from django.db import models
 from apps.users.models import User
 
 
+class SeasonFeedback(models.Model):
+    student = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='season_feedbacks')
+    season = models.ForeignKey('classes.Season', on_delete=models.CASCADE, related_name='feedbacks')
+    sent_at = models.DateTimeField(auto_now_add=True)
+    rating = models.IntegerField(null=True, blank=True)  # 1–5
+    message = models.TextField(blank=True)
+    responded_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = [('student', 'season')]
+        ordering = ['-sent_at']
+
+    def __str__(self):
+        return f'{self.student} — feedback for {self.season}'
+
+
 class Survey(models.Model):
     class Status(models.TextChoices):
         DRAFT = 'draft', 'Draft'

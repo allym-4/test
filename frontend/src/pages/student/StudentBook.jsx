@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { useApi } from '../../hooks/useApi'
 import { useAuth } from '../../contexts/AuthContext'
-import { classes, enrolments, settings as settingsApi, seasons as seasonsApi, payments as paymentsApi, attendance as attendanceApi } from '../../api'
+import { classes, enrolments, settings as settingsApi, seasons as seasonsApi, payments as paymentsApi, attendance as attendanceApi, helpdesk as helpdeskApi } from '../../api'
 import CheckoutModal from '../../components/CheckoutModal'
 
 let _stripePromise = null
@@ -623,6 +624,71 @@ function getCurrentSeasonWeek(startDate) {
   return Math.max(0, Math.floor(diffDays / 7) + 1)
 }
 
+function SeasonNotifyCard({ season, defaultEmail = '' }) {
+  const [email, setEmail] = useState(defaultEmail)
+  const [submitted, setSubmitted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      await seasonsApi.notifyMe(season.id, { email: email.trim() })
+      setSubmitted(true)
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Could not register — please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const weeksUntilOpen = (() => {
+    // Casuals open in week 8 of the active season — give a rough "X weeks away" hint
+    return null
+  })()
+
+  if (submitted) {
+    return (
+      <div style={{ background: 'rgba(204,255,0,0.06)', border: '1px solid rgba(204,255,0,0.25)', borderRadius: 14, padding: '16px 20px', marginBottom: 16 }}>
+        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: '#ccff00', marginBottom: 6 }}>You're on the list!</div>
+        <div style={{ fontSize: 13, color: '#ccc', lineHeight: 1.6 }}>
+          We'll email <strong>{email}</strong> as soon as casuals and trials open for {season.name}. Stay tuned.
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #222', borderRadius: 14, padding: '16px 20px', marginBottom: 16 }}>
+      <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, marginBottom: 6 }}>Looking for a future date?</div>
+      <div style={{ fontSize: 13, color: '#888', lineHeight: 1.6, marginBottom: 14 }}>
+        Casual and trial bookings for <strong style={{ color: '#ccc' }}>{season.name}</strong> open the week before the season starts.
+        Drop your email and we'll ping you the moment they're live — with a direct link to book.
+      </div>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          placeholder="your@email.com"
+          style={{ flex: 1, minWidth: 180, background: '#0d0d0d', border: '1px solid #333', borderRadius: 8, color: '#fff', fontSize: 14, padding: '10px 14px', outline: 'none', boxSizing: 'border-box' }}
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          style={{ background: '#ccff00', color: '#000', border: 'none', borderRadius: 8, padding: '10px 20px', fontWeight: 900, fontSize: 13, cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.6 : 1, whiteSpace: 'nowrap' }}
+        >
+          {loading ? 'Saving…' : 'Notify me'}
+        </button>
+      </form>
+      {error && <div style={{ color: '#ff6666', fontSize: 12, marginTop: 8 }}>{error}</div>}
+    </div>
+  )
+}
+
 // ─── Cash payment modal ───────────────────────────────────────────────────────
 
 function CashPaymentModal({ checkout, onClose, onConfirm }) {
@@ -891,22 +957,24 @@ function PaymentPlanModal({ checkout, onClose, onConfirm }) {
 
             {/* Deposit field (only when season commences) */}
             {timing === 'commences' && (
-              <div style={{ background: 'rgba(204,255,0,0.04)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 10, padding: '12px 14px', marginTop: 4, marginBottom: 8 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#ccff00', marginBottom: 8 }}>Deposit due today</div>
+              <div style={{ background: 'rgba(204,255,0,0.04)', border: `1px solid ${depositAmount <= 0 ? 'rgba(255,68,68,0.4)' : 'rgba(204,255,0,0.15)'}`, borderRadius: 10, padding: '12px 14px', marginTop: 4, marginBottom: 8 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#ccff00', marginBottom: 8 }}>Deposit due today <span style={{ color: '#ff4444' }}>*</span></div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontSize: 14, color: '#888' }}>$</span>
                   <input
                     type="number"
-                    min="0"
+                    min="1"
                     max={checkout.amount}
                     step="10"
                     value={depositAmount}
                     onChange={e => setDepositAmount(parseFloat(e.target.value) || 0)}
-                    style={{ background: '#0d0d0d', border: '1px solid #333', borderRadius: 8, color: '#fff', fontSize: 16, fontWeight: 700, padding: '8px 12px', width: 100 }}
+                    style={{ background: '#0d0d0d', border: `1px solid ${depositAmount <= 0 ? '#ff4444' : '#333'}`, borderRadius: 8, color: '#fff', fontSize: 16, fontWeight: 700, padding: '8px 12px', width: 100 }}
                   />
                   <span style={{ fontSize: 12, color: '#555' }}>of ${(checkout.amount || 0).toFixed(0)} total</span>
                 </div>
-                <div style={{ fontSize: 11, color: '#555', marginTop: 6 }}>50% suggested · your card will be charged this amount now</div>
+                <div style={{ fontSize: 11, color: depositAmount <= 0 ? '#ff6666' : '#555', marginTop: 6 }}>
+                  {depositAmount <= 0 ? 'A deposit is required when selecting this option.' : '50% suggested · your card will be charged this amount now'}
+                </div>
               </div>
             )}
 
@@ -922,9 +990,9 @@ function PaymentPlanModal({ checkout, onClose, onConfirm }) {
               <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
               <button
                 className="btn btn-sm"
-                style={{ flex: 2, background: '#b0a0ff', color: '#000', fontWeight: 700, border: 'none', opacity: loadingStripe ? 0.6 : 1 }}
+                style={{ flex: 2, background: '#b0a0ff', color: '#000', fontWeight: 700, border: 'none', opacity: (loadingStripe || (timing === 'commences' && depositAmount <= 0)) ? 0.5 : 1 }}
                 onClick={goToCardStep}
-                disabled={loadingStripe}
+                disabled={loadingStripe || (timing === 'commences' && depositAmount <= 0)}
               >{loadingStripe ? 'Loading…' : needsDeposit ? `Continue — pay $${depositAmount.toFixed(0)} deposit` : 'Continue — add card'}</button>
             </div>
           </>
@@ -992,8 +1060,9 @@ function PlanCardForm({ needsDeposit, frequency, timing, depositAmount, notes, o
         setSubmitting(false)
         return
       }
+      const pmId = result.paymentIntent?.payment_method || result.setupIntent?.payment_method || null
       const planNotes = `Frequency: ${frequency} | Timing: ${timing === 'commences' ? 'When season commences' : 'Start today'}${depositAmount > 0 && timing === 'commences' ? ` | Deposit paid: $${depositAmount.toFixed(2)}` : ''}${notes ? ` | ${notes}` : ''}`
-      await onConfirm(frequency, planNotes)
+      await onConfirm(frequency, planNotes, pmId)
       onClose()
     } catch (e) {
       setError(e.response?.data?.detail || 'Failed to submit — please try again')
@@ -1247,6 +1316,45 @@ function getClassLevel(name) {
   return 0
 }
 
+function parseLevelNum(s) {
+  if (!s) return 0
+  const m = s.match(/level\s*(\d)/i)
+  return m ? parseInt(m[1]) : 0
+}
+
+function isAdminLevelRestricted(session, user) {
+  if (!user) return null
+  const sessionId = session?.id
+  const blockedIds = user.blocked_sessions || []
+  if (sessionId && blockedIds.includes(sessionId)) {
+    return { className: session.name }
+  }
+  const maxNum = parseLevelNum(user.max_booking_level)
+  const sessionLevelNum = getClassLevel(session?.name || '')
+  if (maxNum && sessionLevelNum && sessionLevelNum > maxNum) {
+    return { className: session?.name, levelName: session?.level || `Level ${sessionLevelNum}` }
+  }
+  return null
+}
+
+function AdminLevelBlock({ restriction, onTicket }) {
+  return (
+    <div style={{ background: 'rgba(255,107,53,0.06)', border: '1px solid rgba(255,107,53,0.25)', borderRadius: 12, padding: '14px 16px' }}>
+      <div style={{ fontSize: 13, color: '#ccc', lineHeight: 1.7, marginBottom: 12 }}>
+        The team have flagged that{' '}
+        <strong style={{ color: '#ff8c5a' }}>{restriction.levelName || restriction.className}</strong>{' '}
+        is outside of your current skill level. Contact the studio for more information.
+      </div>
+      <button
+        onClick={onTicket}
+        style={{ background: 'none', border: '1px solid rgba(255,107,53,0.4)', borderRadius: 8, color: '#ff8c5a', cursor: 'pointer', fontSize: 11, fontWeight: 700, letterSpacing: '0.5px', padding: '6px 14px' }}
+      >
+        GET IN TOUCH →
+      </button>
+    </div>
+  )
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return ''
   return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
@@ -1266,13 +1374,24 @@ function parseLevel(v) {
   return isNaN(n) ? null : n
 }
 
-function SeasonClassRow({ session, userLevel, selected, onToggle, onJoinWaitlist, onLevelOverride, demoNoLevel }) {
+function SeasonClassRow({ session, userLevel, selected, onToggle, onJoinWaitlist, onLevelOverride, demoNoLevel, user, onAdminBlock }) {
   const [infoOpen, setInfoOpen] = useState(false)
+
+  const adminRestriction = isAdminLevelRestricted(session, user)
 
   const classLevel = getClassLevel(session.name)
   const effectiveUserLevel = demoNoLevel ? null : parseLevel(userLevel)
   const spotsLeft = (session.capacity || 14) - (session.enrolled_count || 0)
   const isFull = spotsLeft <= 0
+
+  // Admin-set restriction — show block card, no booking path
+  if (adminRestriction) {
+    return (
+      <div style={{ marginBottom: 4 }}>
+        <AdminLevelBlock restriction={adminRestriction} onTicket={() => onAdminBlock && onAdminBlock(session, adminRestriction)} />
+      </div>
+    )
+  }
 
   // Determine lock/badge
   let locked = false
@@ -1622,11 +1741,13 @@ function SeasonTab({
   userLevel,
   onProceedToCheckout,
   onJoinSeasonWaitlist,
+  user,
+  onAdminBlock,
 }) {
   const isMobile = useIsMobile()
-  // Bookable seasons: active OR upcoming with bookings_open
+  // Bookable seasons: active, OR upcoming once go_live_at has passed or bookings_open is true
   const bookableSeasons = allSeasons
-    .filter(s => s.status === 'active' || (s.status === 'upcoming' && s.bookings_open))
+    .filter(s => s.status === 'active' || (s.status === 'upcoming' && (s.bookings_open || (s.go_live_at && new Date(s.go_live_at) <= new Date()))))
     .sort((a, b) => {
       // newest first: compare start_date descending
       if (a.start_date && b.start_date) return new Date(b.start_date) - new Date(a.start_date)
@@ -1979,6 +2100,8 @@ function SeasonTab({
                       onJoinWaitlist={onJoinSeasonWaitlist}
                       onLevelOverride={setLevelOverrideSession}
                       demoNoLevel={demoNoLevel}
+                      user={user}
+                      onAdminBlock={onAdminBlock}
                     />
                   ))}
                 </div>
@@ -2020,7 +2143,12 @@ function SeasonTab({
 
 export default function StudentBook() {
   const { user } = useAuth()
-  const [tab, setTab] = useState('season')
+  const [searchParams] = useSearchParams()
+  const deepLinkSessionId = searchParams.get('session') ? parseInt(searchParams.get('session')) : null
+  const deepLinkTab = searchParams.get('tab') || null
+  const deepLinkHandled = useRef(false)
+
+  const [tab, setTab] = useState(deepLinkTab || 'season')
   const [booked, setBooked] = useState([])
   const [cart, setCart] = useState(null) // { session, type, price, label }
   const [checkout, setCheckout] = useState(null) // { sessionIds, type, amount, description }
@@ -2081,9 +2209,43 @@ export default function StudentBook() {
   const upcomingSeason = allSeasons.find(s => s.status === 'upcoming') ||
     allSeasons.find(s => s.start_date && new Date(s.start_date) > now) ||
     allSeasons.find(s => s.status === 'active')
+  const casualActiveSeason = allSeasons.find(s => s.status === 'active')
+  const casualActiveSeasonWeek = getCurrentSeasonWeek(casualActiveSeason?.start_date)
+  const nextSeasonCasualsNotYetOpen = upcomingSeason && upcomingSeason.status === 'upcoming' && casualActiveSeasonWeek < 8
 
   const sessions = sessionsData?.results || sessionsData || []
   const workshops = workshopsData?.results || workshopsData || []
+
+  // Deep-link: ?session=ID[&tab=trial|season|casual] — open checkout immediately once data loads
+  useEffect(() => {
+    if (!deepLinkSessionId || deepLinkHandled.current || !sessions.length || !studioSettings) return
+    const target = sessions.find(s => s.id === deepLinkSessionId)
+    if (!target) return
+    deepLinkHandled.current = true
+    const targetTab = deepLinkTab || 'season'
+    setTab(targetTab)
+    if (targetTab === 'trial') {
+      const price = parseFloat(studioSettings?.price_trial || 25)
+      setCart({ session: target, type: 'trial', price })
+    } else {
+      // Season enrolment — open checkout directly
+      const allEnrolled = (activeEnrolData?.results || activeEnrolData || []).filter(e => e.enrolment_type === 'course').length
+      const tiers = studioSettings?.season_pricing_config || []
+      const getPrice = n => {
+        const tier = tiers.find(r => parseInt((r.label || '').match(/(\d+)/)?.[1] || '0') === n)
+        return tier ? parseFloat(tier.price) : parseFloat(studioSettings?.price_season || 270)
+      }
+      const incremental = getPrice(allEnrolled + 1) - (allEnrolled > 0 ? getPrice(allEnrolled) : 0)
+      setCheckout({
+        type: 'season',
+        sessionIds: [target.id],
+        amount: incremental,
+        description: target.name,
+        sessions: [target],
+      })
+    }
+  }, [deepLinkSessionId, sessions, studioSettings, activeEnrolData])
+
   const [bookingWorkshopId, setBookingWorkshopId] = useState(null)
   const [cancellingWorkshopId, setCancellingWorkshopId] = useState(null)
   const [workshopBooked, setWorkshopBooked] = useState({})
@@ -2275,16 +2437,15 @@ export default function StudentBook() {
     setCheckout(null)
   }
 
-  async function confirmPaymentPlan(frequency, notes) {
+  async function confirmPaymentPlan(frequency, notes, stripePaymentMethodId) {
     const co = pendingPlanCheckout
     if (!co) return
-    const ids = co.sessionIds || (co.session ? [co.session.id] : [])
     try {
       await paymentsApi.plans.create({
         description: co.description,
         total_amount: co.amount,
-        session_ids: ids,
         notes: `Frequency: ${frequency}${notes ? ` | ${notes}` : ''}`,
+        ...(stripePaymentMethodId ? { stripe_payment_method_id: stripePaymentMethodId } : {}),
       })
     } catch {}
     setPendingPlanCheckout(null)
@@ -2556,6 +2717,13 @@ export default function StudentBook() {
           userLevel={user?.level || null}
           onProceedToCheckout={handleSeasonProceed}
           onJoinSeasonWaitlist={joinSeasonWaitlist}
+          user={user}
+          onAdminBlock={async (session, restriction) => {
+            const nm = restriction.levelName || restriction.className || session.name
+            try {
+              await helpdeskApi.create({ subject: `Class enquiry — ${nm}`, body: `Hi, I'd like to find out more about booking ${nm}. Could you let me know what's needed?`, category: 'General' })
+            } catch {}
+          }}
         />
       )}
 
@@ -2586,6 +2754,11 @@ export default function StudentBook() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Upcoming season notify card */}
+          {nextSeasonCasualsNotYetOpen && (
+            <SeasonNotifyCard season={upcomingSeason} defaultEmail={user?.email || ''} />
           )}
 
           {/* Level info bar */}
@@ -2735,8 +2908,30 @@ export default function StudentBook() {
                       const isFull = (occ.spots_left ?? 0) <= 0
                       const cl = getClassLevel(nm)
                       const alreadyEnrolled = activeEnrols.some(e => e.class_session === occ.session && e.enrolment_type === 'course')
-                      const levelLocked = cl > 0 && userLevelNum && cl > userLevelNum
-                      const requiresExemption = isRoutineClass(nm) && seasonWeek > 3 && !alreadyEnrolled
+                      const calAdminRestriction = isAdminLevelRestricted(sDetail, user)
+                      const levelLocked = !calAdminRestriction && cl > 0 && userLevelNum && cl > userLevelNum
+                      const requiresExemption = !calAdminRestriction && isRoutineClass(nm) && seasonWeek > 3 && !alreadyEnrolled
+
+                      if (calAdminRestriction) {
+                        return (
+                          <div key={occ.id} style={{ borderRadius: 10, border: '1px solid rgba(255,107,53,0.2)', overflow: 'hidden', marginBottom: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: 'rgba(255,255,255,0.02)' }}>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>{nm}</div>
+                                <div style={{ fontSize: 12, color: '#555', marginTop: 2 }}>{time}{instructor ? ` · ${instructor}` : ''}</div>
+                              </div>
+                            </div>
+                            <div style={{ padding: '10px 14px' }}>
+                              <AdminLevelBlock restriction={calAdminRestriction} onTicket={async () => {
+                                try {
+                                  await helpdeskApi.create({ subject: `Class enquiry — ${nm}`, body: `Hi, I'd like to find out more about booking ${nm}. Could you let me know what's needed?`, category: 'General' })
+                                  alert("Your message has been sent. The team will be in touch soon.")
+                                } catch { alert("Couldn't send message — please contact the studio directly.") }
+                              }} />
+                            </div>
+                          </div>
+                        )
+                      }
 
                       let rightBadge = null
                       if (isBooked) rightBadge = <span style={{ fontSize: 10, fontWeight: 700, color: '#ccff00', background: 'rgba(204,255,0,0.1)', border: '1px solid rgba(204,255,0,0.25)', borderRadius: 4, padding: '2px 8px' }}>BOOKED</span>
@@ -2842,18 +3037,44 @@ export default function StudentBook() {
                         const isFull = spotsLeft <= 0
                         const cl = getClassLevel(nm)
                         const alreadyEnrolled = activeEnrols.some(e => e.class_session === occ.session && e.enrolment_type === 'course')
-                        const levelLocked = cl > 0 && userLevelNum && cl > userLevelNum
-                        const hasCatchUpCredit = availableCredits > 0 && !alreadyEnrolled && !levelLocked
-                        const isCatchUpEligible = !(isRoutineClass(nm) && seasonWeek > 3) && !levelLocked && !alreadyEnrolled
-                        const requiresExemption = isRoutineClass(nm) && seasonWeek > 3 && !alreadyEnrolled
+                        const adminRestriction = isAdminLevelRestricted(sDetail, user)
+                        const levelLocked = !adminRestriction && cl > 0 && userLevelNum && cl > userLevelNum
+                        const hasCatchUpCredit = availableCredits > 0 && !alreadyEnrolled && !levelLocked && !adminRestriction
+                        const isCatchUpEligible = !(isRoutineClass(nm) && seasonWeek > 3) && !levelLocked && !adminRestriction && !alreadyEnrolled
+                        const requiresExemption = !adminRestriction && isRoutineClass(nm) && seasonWeek > 3 && !alreadyEnrolled
 
-                        const accentColor = isBooked ? '#ccff00' : isWaitlisted ? '#ffaa00' : levelLocked ? '#ff6b35' : requiresExemption ? '#ff6b35' : '#7c5cbf'
+                        const accentColor = isBooked ? '#ccff00' : isWaitlisted ? '#ffaa00' : adminRestriction ? '#ff6b35' : levelLocked ? '#ff6b35' : requiresExemption ? '#ff6b35' : '#7c5cbf'
+
+                        async function createRestrictedTicket() {
+                          try {
+                            await helpdeskApi.create({ subject: `Class enquiry — ${nm}`, body: `Hi, I'd like to find out more about booking ${nm}. Could you let me know what's needed?`, category: 'General' })
+                            alert("Your message has been sent. The team will be in touch soon.")
+                          } catch {
+                            alert("Couldn't send message — please contact the studio directly.")
+                          }
+                        }
 
                         function handleOccClick() {
-                          if (isBooked || isWaitlisted) return
+                          if (adminRestriction || isBooked || isWaitlisted) return
                           if (requiresExemption) { setCasualExemptionOcc({ occ, type: 'cutoff' }); return }
                           if (levelLocked) { setCasualExemptionOcc({ occ, type: 'level', requiredLevel: cl }); return }
                           setSelectedCasualOcc(occ)
+                        }
+
+                        if (adminRestriction) {
+                          return (
+                            <div key={occ.id} style={{ borderRadius: 12, background: '#111', border: '1px solid rgba(255,107,53,0.2)', overflow: 'hidden' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', borderBottom: '1px solid rgba(255,107,53,0.1)' }}>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontWeight: 700, fontSize: 14, color: '#fff' }}>{nm}</div>
+                                  <div style={{ fontSize: 12, color: '#555', marginTop: 2 }}>{time}{instructor ? ` · ${instructor}` : ''}</div>
+                                </div>
+                              </div>
+                              <div style={{ padding: '12px 16px' }}>
+                                <AdminLevelBlock restriction={adminRestriction} onTicket={createRestrictedTicket} />
+                              </div>
+                            </div>
+                          )
                         }
 
                         return (

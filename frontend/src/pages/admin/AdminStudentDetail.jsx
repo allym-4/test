@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi, settings as settingsApi, classes, seasons as seasonsApi } from '../../api'
+import { useApi } from '../../hooks/useApi'
+import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi, settings as settingsApi, classes, seasons as seasonsApi, tags as tagsApi } from '../../api'
 import client from '../../api/client'
 import { useAuth } from '../../contexts/AuthContext'
 import '../StudentsPage.css'
@@ -514,6 +515,136 @@ function AddPracticeCreditsModal({ student, onClose, onSuccess }) {
   )
 }
 
+function StudentTagsRow({ student, setStudent }) {
+  const { data: allTagsData } = useApi(() => tagsApi.list())
+  const allTags = allTagsData?.results || allTagsData || []
+  const [open, setOpen] = useState(false)
+  const studentTags = student.tags || []
+
+  async function addTag(tag) {
+    try {
+      await tagsApi.addToStudent(student.id, tag.id)
+      setStudent(s => ({ ...s, tags: [...(s.tags || []), tag] }))
+    } catch {}
+    setOpen(false)
+  }
+
+  async function removeTag(tag) {
+    try {
+      await tagsApi.removeFromStudent(student.id, typeof tag === 'object' ? tag.id : tag)
+      setStudent(s => ({ ...s, tags: (s.tags || []).filter(t => (typeof t === 'object' ? t.id : t) !== (typeof tag === 'object' ? tag.id : tag)) }))
+    } catch {}
+  }
+
+  const assignedIds = new Set(studentTags.map(t => typeof t === 'object' ? t.id : t))
+  const available = allTags.filter(t => !assignedIds.has(t.id))
+
+  return (
+    <div className="info-val" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', position: 'relative' }}>
+      {studentTags.map((t, i) => {
+        const name = typeof t === 'string' ? t : t.name
+        const colour = typeof t === 'object' && t.colour ? t.colour : null
+        return (
+          <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: colour ? colour + '33' : 'rgba(255,170,0,0.15)', color: colour || 'var(--amber)', border: `1px solid ${colour ? colour + '55' : 'rgba(255,170,0,0.3)'}` }}>
+            {name}
+            <button onClick={() => removeTag(t)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'inherit', fontSize: 10, lineHeight: 1, opacity: 0.7 }}>✕</button>
+          </span>
+        )
+      })}
+      <div style={{ position: 'relative' }}>
+        <button className="btn btn-ghost btn-xs" onClick={() => setOpen(v => !v)}>+ Tag</button>
+        {open && (
+          <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 4, background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, zIndex: 10, minWidth: 160, boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}>
+            {available.length === 0 ? (
+              <div style={{ padding: '10px 14px', fontSize: 12, color: 'var(--grey)' }}>All tags assigned</div>
+            ) : available.map(tag => (
+              <button key={tag.id} onClick={() => addTag(tag)} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: '8px 14px', cursor: 'pointer', fontSize: 12, color: 'var(--white)' }}
+                onMouseEnter={e => e.currentTarget.style.background = '#222'}
+                onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: tag.colour || '#888', marginRight: 8 }} />
+                {tag.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function BlockedSessionsRow({ student, setStudent }) {
+  const { data: sessData } = useApi(() => classes.list({ page_size: 300 }))
+  const allSessions = sessData?.results || sessData || []
+  const blocked = student.blocked_sessions || []
+  const [adding, setAdding] = useState(false)
+  const [search, setSearch] = useState('')
+
+  const available = allSessions.filter(s =>
+    !blocked.includes(s.id) &&
+    (s.name?.toLowerCase().includes(search.toLowerCase()) || !search)
+  )
+
+  async function addBlock(sessionId) {
+    const updated = [...blocked, sessionId]
+    await users.update(student.id, { blocked_sessions: updated })
+    setStudent(s => ({ ...s, blocked_sessions: updated }))
+    setAdding(false)
+    setSearch('')
+  }
+
+  async function removeBlock(sessionId) {
+    const updated = blocked.filter(id => id !== sessionId)
+    await users.update(student.id, { blocked_sessions: updated })
+    setStudent(s => ({ ...s, blocked_sessions: updated }))
+  }
+
+  const blockedNames = blocked.map(id => allSessions.find(s => s.id === id)?.name || `Session #${id}`)
+
+  return (
+    <div className="info-row" style={{ alignItems: 'flex-start' }}>
+      <div className="info-label" style={{ paddingTop: 4 }}>Blocked Classes</div>
+      <div className="info-val">
+        {blockedNames.length === 0 && !adding && (
+          <span style={{ fontSize: 12, color: 'var(--grey)' }}>None</span>
+        )}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: blockedNames.length > 0 ? 8 : 0 }}>
+          {blockedNames.map((name, i) => (
+            <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 20, padding: '2px 10px', fontSize: 11, color: 'var(--red)' }}>
+              {name}
+              <button onClick={() => removeBlock(blocked[i])} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red)', fontSize: 13, lineHeight: 1, padding: 0 }}>✕</button>
+            </span>
+          ))}
+        </div>
+        {adding ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <input
+              autoFocus
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search classes…"
+              style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, color: '#fff', fontSize: 12, padding: '5px 10px', width: 200 }}
+            />
+            <div style={{ maxHeight: 160, overflowY: 'auto', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8 }}>
+              {available.slice(0, 20).map(s => (
+                <div key={s.id} onClick={() => addBlock(s.id)} style={{ padding: '7px 12px', fontSize: 12, cursor: 'pointer', borderBottom: '1px solid var(--border)' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#222'}
+                  onMouseLeave={e => e.currentTarget.style.background = ''}
+                >
+                  {s.name}
+                </div>
+              ))}
+              {available.length === 0 && <div style={{ padding: '10px 12px', fontSize: 12, color: 'var(--grey)' }}>No classes found</div>}
+            </div>
+            <button className="btn btn-ghost btn-xs" onClick={() => { setAdding(false); setSearch('') }}>Cancel</button>
+          </div>
+        ) : (
+          <button className="btn btn-ghost btn-xs" style={{ fontSize: 10 }} onClick={() => setAdding(true)}>+ Block a class</button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function AdminStudentDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -571,6 +702,8 @@ export default function AdminStudentDetail() {
   const [formsData, setFormsData] = useState(null)
   const [lockerData, setLockerData] = useState(null)
   const [commsData, setCommsData] = useState(null)
+  const [chatHistory, setChatHistory] = useState(null)
+  const [loadingChat, setLoadingChat] = useState(false)
   const [notificationsData, setNotificationsData] = useState(null)
   const [commsFilter, setCommsFilter] = useState('all')
   const [loadingComms, setLoadingComms] = useState(false)
@@ -633,6 +766,12 @@ export default function AdminStudentDetail() {
       setCommsData(tickets)
       setNotificationsData(notifs)
     }).finally(() => setLoadingComms(false))
+    // Load assistant chat history
+    setLoadingChat(true)
+    client.get('/api/users/assistant/chats/', { params: { user_id: student.id } })
+      .then(res => setChatHistory(res.data || []))
+      .catch(() => setChatHistory([]))
+      .finally(() => setLoadingChat(false))
   }, [tab, student?.id])
 
   useEffect(() => {
@@ -954,14 +1093,30 @@ export default function AdminStudentDetail() {
                         <span style={{ fontSize: 10, color: 'var(--grey)' }}>Admin override</span>
                       </div>
                     </div>
+                    <div className="info-row">
+                      <div className="info-label">Max Booking Level</div>
+                      <div className="info-val" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <select
+                          value={student.max_booking_level || ''}
+                          onChange={async e => {
+                            const lvl = e.target.value
+                            await users.update(student.id, { max_booking_level: lvl })
+                            setStudent(s => ({ ...s, max_booking_level: lvl }))
+                          }}
+                          style={{ background: student.max_booking_level ? 'rgba(255,68,68,0.08)' : '#111', color: student.max_booking_level ? 'var(--red)' : '#fff', border: `1px solid ${student.max_booking_level ? 'rgba(255,68,68,0.35)' : 'var(--border)'}`, borderRadius: 6, padding: '3px 8px', fontSize: 12 }}
+                        >
+                          <option value="">No restriction</option>
+                          {['Level 1','Level 2','Level 3','Level 4','Level 5','Level 6'].map(l => <option key={l} value={l}>{l}</option>)}
+                        </select>
+                        {student.max_booking_level && (
+                          <span style={{ fontSize: 10, color: 'var(--red)' }}>Hard cap active</span>
+                        )}
+                      </div>
+                    </div>
+                    <BlockedSessionsRow student={student} setStudent={setStudent} />
                     <div className="info-row" style={{ borderBottom: 'none' }}>
                       <div className="info-label">Tags</div>
-                      <div className="info-val" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-                        {(student.tags || []).map((t, i) => (
-                          <span key={i} className="tag tag-amber" style={{ fontSize: 10 }}>{typeof t === 'string' ? t : t.name}</span>
-                        ))}
-                        <button className="btn btn-ghost btn-xs" onClick={() => alert('Add tag')}>+ Tag</button>
-                      </div>
+                      <StudentTagsRow student={student} setStudent={setStudent} />
                     </div>
                   </div>
                 </div>
@@ -1938,7 +2093,7 @@ export default function AdminStudentDetail() {
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                   <div style={{ display: 'flex', gap: 6 }}>
-                    {[['all', 'All'], ['emails', 'Emails & Notifications'], ['tickets', 'Tickets']].map(([key, label]) => (
+                    {[['all', 'All'], ['emails', 'Emails & Notifications'], ['tickets', 'Tickets'], ['chat', 'Chat History']].map(([key, label]) => (
                       <button key={key} onClick={() => setCommsFilter(key)} className={`btn btn-xs ${commsFilter === key ? 'btn-lime' : 'btn-ghost'}`}>{label}</button>
                     ))}
                   </div>
@@ -1974,6 +2129,34 @@ export default function AdminStudentDetail() {
                         )}
                       </div>
                     )}
+                    {(commsFilter === 'all' || commsFilter === 'chat') && (
+                      <div style={{ marginBottom: commsFilter === 'all' ? 24 : 0 }}>
+                        {commsFilter === 'all' && <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 10 }}>AI Assistant Chat</div>}
+                        {loadingChat ? (
+                          <div style={{ display: 'flex', justifyContent: 'center', padding: 24 }}><div className="spinner" /></div>
+                        ) : !chatHistory || chatHistory.length === 0 ? (
+                          <div className="empty-state">No assistant conversations</div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 480, overflowY: 'auto', padding: 2 }}>
+                            {chatHistory.map(m => (
+                              <div key={m.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexDirection: m.role === 'user' ? 'row-reverse' : 'row' }}>
+                                <div style={{ width: 26, height: 26, borderRadius: '50%', background: m.role === 'user' ? 'var(--lav)' : '#333', color: m.role === 'user' ? '#000' : 'var(--grey)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
+                                  {m.role === 'user' ? (student?.first_name?.[0] || '?') : 'AI'}
+                                </div>
+                                <div style={{ maxWidth: '75%', background: m.role === 'user' ? 'rgba(176,160,255,0.12)' : '#1a1a1a', border: `1px solid ${m.role === 'user' ? 'rgba(176,160,255,0.2)' : 'var(--border)'}`, borderRadius: 8, padding: '8px 12px' }}>
+                                  <div style={{ fontSize: 12, color: 'var(--white)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{m.content}</div>
+                                  <div style={{ fontSize: 10, color: 'var(--grey)', marginTop: 4, textAlign: m.role === 'user' ? 'right' : 'left' }}>
+                                    {new Date(m.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} {new Date(m.created_at).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}
+                                    {m.escalated && <span style={{ marginLeft: 6, color: 'var(--amber)' }}>↑ escalated</span>}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {(commsFilter === 'all' || commsFilter === 'tickets') && (
                       <div>
                         {commsFilter === 'all' && <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 10 }}>Support Tickets</div>}

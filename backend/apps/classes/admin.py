@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Studio, ClassSession, ClassOccurrence
+from .models import Studio, ClassSession, ClassOccurrence, SeasonNotificationInterest
 
 
 @admin.register(Studio)
@@ -21,3 +21,11 @@ class ClassOccurrenceAdmin(admin.ModelAdmin):
     list_filter = ('status', 'register_saved', 'session__studio')
     search_fields = ('session__name',)
     date_hierarchy = 'date'
+
+
+@admin.register(SeasonNotificationInterest)
+class SeasonNotificationInterestAdmin(admin.ModelAdmin):
+    list_display = ('email', 'season', 'created_at', 'notified_at')
+    list_filter = ('season', 'notified_at')
+    search_fields = ('email', 'first_name')
+    readonly_fields = ('created_at',)

@@ -14,6 +14,15 @@ class Command(BaseCommand):
         self._birthday()
         self._parq_reminder()
         self._custom_rules()
+        self._seasonal_checkin()
+
+    def _seasonal_checkin(self):
+        from django.core import management
+        try:
+            management.call_command('send_seasonal_checkin', verbosity=0)
+            self.stdout.write('seasonal_checkin: done')
+        except Exception as exc:
+            self.stdout.write(f'seasonal_checkin: error — {exc}')
 
     # ── 1. Re-engagement ────────────────────────────────────────────────────
     def _reengagement(self):

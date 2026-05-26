@@ -18,6 +18,8 @@ urlpatterns = [
     path('seasons/<int:pk>/duplicate/', views.SeasonDuplicateView.as_view(), name='season-duplicate'),
     path('seasons/<int:pk>/archive/', views.SeasonArchiveView.as_view(), name='season-archive'),
     path('seasons/<int:pk>/close/', views.SeasonCloseView.as_view(), name='season-close'),
+    path('seasons/<int:pk>/notify-me/', views.SeasonNotifyMeView.as_view(), name='season-notify-me'),
+    path('sessions/trial/', views.TrialSessionsView.as_view(), name='trial-sessions'),
     path('lockers/', views.LockerListView.as_view(), name='locker-list'),
     path('lockers/mine/', views.MyLockerView.as_view(), name='locker-mine'),
     path('lockers/eligible/', views.LockerEligibleStudentsView.as_view(), name='locker-eligible'),
@@ -62,4 +64,5 @@ urlpatterns = [
     path('upsells/suggest/', views.UpsellSuggestView.as_view(), name='upsell-suggest'),
     path('my-upcoming/', views.MyUpcomingClassesView.as_view(), name='my-upcoming-classes'),
     path('session-names/', views.SessionNamesView.as_view(), name='session-names'),
+    path('revenue-stats/', views.RevenueStatsView.as_view(), name='revenue-stats'),
 ]

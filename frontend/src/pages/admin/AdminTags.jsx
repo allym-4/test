@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import '../StudentsPage.css'
 import { useApi } from '../../hooks/useApi'
 import { tags as tagsApi } from '../../api'
@@ -62,6 +63,7 @@ function TagModal({ existing, onClose, onSaved }) {
 }
 
 export default function AdminTags() {
+  const navigate = useNavigate()
   const { data, loading, refetch } = useApi(() => tagsApi.list())
   const tags = data?.results || data || []
   const [modal, setModal] = useState(null)
@@ -109,7 +111,7 @@ export default function AdminTags() {
                   <td style={{ fontSize: 12, color: tag.is_manual ? 'var(--grey)' : 'inherit' }}>{tag.is_manual ? 'Manual only' : tag.auto_rule}</td>
                   <td style={{ whiteSpace: 'nowrap' }}>
                     <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => setModal({ existing: tag })}>Edit</button>
-                    <button className="btn btn-ghost btn-xs">View Students</button>
+                    <button className="btn btn-ghost btn-xs" onClick={() => navigate(`/admin/students?tag=${tag.id}`)}>View Students</button>
                   </td>
                 </tr>
               ))}

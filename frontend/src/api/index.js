@@ -3,6 +3,7 @@ import client from './client'
 export const auth = {
   login: (username, password) =>
     client.post('/api/auth/token/', { username, password }),
+  register: (data) => client.post('/api/auth/register/', data),
   me: () => client.get('/api/users/me/'),
   updateMe: (data) => client.patch('/api/users/me/', data),
   uploadPhoto: (file) => {
@@ -15,6 +16,7 @@ export const auth = {
 
 export const classes = {
   list: (params) => client.get('/api/classes/sessions/', { params }),
+  trialSessions: () => client.get('/api/classes/sessions/trial/'),
   get: (id) => client.get(`/api/classes/sessions/${id}/`),
   create: (data) => client.post('/api/classes/sessions/', data),
   update: (id, data) => client.patch(`/api/classes/sessions/${id}/`, data),
@@ -22,6 +24,7 @@ export const classes = {
   occurrences: (params) => client.get('/api/classes/occurrences/', { params }),
   getOccurrence: (id) => client.get(`/api/classes/occurrences/${id}/`),
   stats: () => client.get('/api/classes/stats/'),
+  revenueStats: () => client.get('/api/classes/revenue-stats/'),
   roster: (sessionId) => client.get(`/api/classes/sessions/${sessionId}/roster/`),
   chat: {
     list: (sessionId) => client.get(`/api/classes/sessions/${sessionId}/chat/`),
@@ -101,6 +104,7 @@ export const enrolments = {
   claimSpot: (id) => client.post(`/api/enrolments/${id}/claim-spot/`),
   pricing: (student, session) => client.get('/api/enrolments/pricing/', { params: { student, session } }),
   flagged: () => client.get('/api/enrolments/flagged/'),
+  retentionStats: () => client.get('/api/enrolments/retention-stats/'),
   dismissFlag: (id) => client.patch(`/api/enrolments/flagged/${id}/dismiss/`, {}),
   trialFeedback: {
     pending: () => client.get('/api/enrolments/trial-feedback/pending/'),
@@ -188,6 +192,7 @@ export const seasons = {
   archive: (id) => client.post(`/api/classes/seasons/${id}/archive/`),
   close: (id) => client.post(`/api/classes/seasons/${id}/close/`),
   duplicate: (id, data) => client.post(`/api/classes/seasons/${id}/duplicate/`, data),
+  notifyMe: (id, data) => client.post(`/api/classes/seasons/${id}/notify-me/`, data),
 }
 
 export const lockers = {
@@ -458,6 +463,11 @@ export const surveys = {
   respond: (data) => client.post('/api/surveys/responses/', data),
   responses: (surveyId) => client.get('/api/surveys/responses/', { params: { survey: surveyId } }),
   exportCsv: (surveyId) => client.get(`/api/surveys/${surveyId}/export-csv/`, { responseType: 'blob' }),
+  seasonalCheckin: {
+    pending: () => client.get('/api/surveys/seasonal-checkin/'),
+    respond: (id, data) => client.post(`/api/surveys/seasonal-checkin/${id}/respond/`, data),
+    adminList: () => client.get('/api/surveys/seasonal-checkin/admin/'),
+  },
 }
 
 export const media = {

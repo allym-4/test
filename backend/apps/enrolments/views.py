@@ -214,11 +214,14 @@ class EnrolmentListView(generics.ListCreateAPIView):
         # Season booking gate — course/catchup enrolments only (not casual/trial)
         if user.role == 'student' and session and enrolment_type in ('course', 'catchup', 'catch_up'):
             season = getattr(session, 'season', None)
-            if season and not season.bookings_open:
-                raise ValidationError(
-                    f'Bookings for {season.name} are not open yet. '
-                    'Keep an eye on your email for when they open!'
-                )
+            if season:
+                now = timezone.now()
+                season_open = season.bookings_open or (season.go_live_at and season.go_live_at <= now)
+                if not season_open:
+                    raise ValidationError(
+                        f'Bookings for {season.name} are not open yet. '
+                        'Keep an eye on your email for when they open!'
+                    )
 
         # Catch-up cutoff week gate
         if session and enrolment_type in ('catchup', 'catch_up'):
@@ -261,6 +264,28 @@ class EnrolmentListView(generics.ListCreateAPIView):
                 'Your account is currently on hold due to an outstanding balance. '
                 'Please settle your account before booking.'
             )
+
+        # Level cap and session-specific booking restrictions
+        if user.role == 'student' and session:
+            def _level_num(s):
+                if s and s.startswith('Level ') and s.split()[-1].isdigit():
+                    return int(s.split()[-1])
+                return 0
+
+            session_level_num = _level_num(getattr(session, 'level', ''))
+            max_level_num = _level_num(getattr(user, 'max_booking_level', ''))
+            if max_level_num and session_level_num and session_level_num > max_level_num:
+                raise ValidationError(
+                    f'The team have noted that {session.level} is outside your current skill level. '
+                    'Please contact the studio for more information.'
+                )
+            if user.blocked_sessions.filter(pk=session.pk).exists():
+                raise ValidationError(
+                    f'The team have noted that {session.name} is outside your current skill level. '
+                    'Please contact the studio for more information.'
+                )
+
+        if user.role == 'student':
             enrolment = serializer.save(student=user)
         else:
             enrolment = serializer.save()
@@ -307,6 +332,15 @@ class EnrolmentDetailView(generics.RetrieveUpdateDestroyAPIView):
         if user.role == 'student':
             return qs.filter(student=user)
         return qs
+
+    def destroy(self, request, *args, **kwargs):
+        if request.user.role == 'student':
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied(
+                'Season enrolments cannot be cancelled. If you need to make changes, '
+                'please use the transfer request option in your classes.'
+            )
+        return super().destroy(request, *args, **kwargs)
 
 
 class ConvertTrialView(APIView):
@@ -1367,3 +1401,125 @@ class AdminBulkSeasonWaitlistView(APIView):
                 results['succeeded'].append(enrolment.id)
 
         return Response(results)
+
+
+class RetentionStatsView(APIView):
+    """Admin-only endpoint returning season-over-season retention stats."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def get(self, request):
+        from apps.classes.models import Season
+        from apps.attendance.models import AttendanceRecord
+        from django.db.models import Count
+
+        # Get current active season
+        try:
+            current_season = Season.objects.get(status='active')
+        except Season.DoesNotExist:
+            return Response({'detail': 'No active season found.'}, status=404)
+        except Season.MultipleObjectsReturned:
+            current_season = Season.objects.filter(status='active').order_by('-start_date').first()
+
+        # Get next season (upcoming, most recent by start_date)
+        next_season = Season.objects.filter(status='upcoming').order_by('start_date').first()
+
+        # Students actively enrolled in current season
+        current_enrolments = Enrolment.objects.filter(
+            class_session__season=current_season,
+            status='active',
+            enrolment_type__in=['course', 'season'],
+        ).select_related('student', 'class_session')
+
+        current_student_ids = set(current_enrolments.values_list('student_id', flat=True))
+
+        # Students enrolled in next season
+        next_student_ids = set()
+        if next_season:
+            next_student_ids = set(
+                Enrolment.objects.filter(
+                    class_session__season=next_season,
+                    status='active',
+                    enrolment_type__in=['course', 'season'],
+                ).values_list('student_id', flat=True)
+            )
+
+        total_enrolled_current = len(current_student_ids)
+        total_enrolled_next = len(next_student_ids)
+        retention_rate = (
+            round(len(current_student_ids & next_student_ids) / total_enrolled_current * 100)
+            if total_enrolled_current > 0 else 0
+        )
+
+        # Not re-enrolled: in current season but not in next season
+        not_re_enrolled = []
+        if next_season:
+            not_re_enrolled_ids = current_student_ids - next_student_ids
+            from apps.users.models import User
+            for student_id in not_re_enrolled_ids:
+                student_enrolments = [e for e in current_enrolments if e.student_id == student_id]
+                classes = [e.class_session.name for e in student_enrolments]
+                # Last attended occurrence
+                last_record = AttendanceRecord.objects.filter(
+                    student_id=student_id,
+                    occurrence__session__season=current_season,
+                    status='present',
+                ).order_by('-occurrence__date').first()
+                student = student_enrolments[0].student if student_enrolments else None
+                not_re_enrolled.append({
+                    'id': student_id,
+                    'name': student.display_name if student else '',
+                    'classes': classes,
+                    'last_attended': last_record.occurrence.date if last_record else None,
+                })
+
+        # Zero attendance: enrolled in current season with 0 present records
+        zero_attendance = []
+        for student_id in current_student_ids:
+            present_count = AttendanceRecord.objects.filter(
+                student_id=student_id,
+                occurrence__session__season=current_season,
+                status='present',
+            ).count()
+            if present_count == 0:
+                student_enrolments = [e for e in current_enrolments if e.student_id == student_id]
+                student = student_enrolments[0].student if student_enrolments else None
+                zero_attendance.append({
+                    'id': student_id,
+                    'name': student.display_name if student else '',
+                    'enrolled_classes': len(student_enrolments),
+                    'classes_attended': 0,
+                })
+
+        # At risk: <60% attendance rate
+        at_risk = []
+        for student_id in current_student_ids:
+            records = AttendanceRecord.objects.filter(
+                student_id=student_id,
+                occurrence__session__season=current_season,
+            ).exclude(status='pending')
+            total_records = records.count()
+            if total_records == 0:
+                continue
+            present_count = records.filter(status='present').count()
+            attendance_rate = round(present_count / total_records * 100)
+            if attendance_rate < 60:
+                classes_missed = total_records - present_count
+                student_enrolments = [e for e in current_enrolments if e.student_id == student_id]
+                student = student_enrolments[0].student if student_enrolments else None
+                at_risk.append({
+                    'id': student_id,
+                    'name': student.display_name if student else '',
+                    'attendance_rate': attendance_rate,
+                    'classes_missed': classes_missed,
+                })
+
+        return Response({
+            'current_season': {'id': current_season.id, 'name': current_season.name},
+            'next_season': {'id': next_season.id, 'name': next_season.name} if next_season else None,
+            'total_enrolled_current': total_enrolled_current,
+            'total_enrolled_next': total_enrolled_next,
+            'retention_rate': retention_rate,
+            'not_re_enrolled': not_re_enrolled,
+            'zero_attendance': zero_attendance,
+            'at_risk': at_risk,
+        })

@@ -1,11 +1,125 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { enrolments, seasons, attendance as attendanceApi, classes as classesApi, skills as skillsApi, announcements as announcementsApi, payments, settings as settingsApi } from '../../api'
+import { enrolments, seasons, attendance as attendanceApi, classes as classesApi, skills as skillsApi, announcements as announcementsApi, payments, settings as settingsApi, notifications as notificationsApi, surveys as surveysApi } from '../../api'
 import CancellationOfferPopup from '../../components/CancellationOfferPopup'
 import PostTrialPopup from '../../components/PostTrialPopup'
+import MarkAwayModal from '../../components/MarkAwayModal'
 
 import { Link } from 'react-router-dom'
+
+function SeasonalCheckinCard({ checkin, onDone }) {
+  const [rating, setRating] = useState(null)
+  const [message, setMessage] = useState('')
+  const [step, setStep] = useState('rate') // 'rate' | 'message' | 'done'
+  const [saving, setSaving] = useState(false)
+
+  async function submit() {
+    setSaving(true)
+    try {
+      await surveysApi.seasonalCheckin.respond(checkin.id, { rating, message })
+      setStep('done')
+      setTimeout(onDone, 2000)
+    } catch {
+      setSaving(false)
+    }
+  }
+
+  if (step === 'done') {
+    return (
+      <div style={{ background: 'rgba(204,255,0,0.06)', border: '1px solid rgba(204,255,0,0.3)', borderRadius: 12, padding: '18px 20px', marginBottom: 20 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--lime)', marginBottom: 4 }}>Thanks for the feedback! 🌶️</div>
+        <div style={{ fontSize: 13, color: 'var(--grey)' }}>We really appreciate it — it helps us make the studio better for everyone.</div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ background: 'rgba(176,160,255,0.06)', border: '1px solid rgba(176,160,255,0.25)', borderRadius: 12, padding: '18px 20px', marginBottom: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+        <div>
+          <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--lav)', marginBottom: 4 }}>Quick check-in</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--white)' }}>How's your season going?</div>
+        </div>
+        <button onClick={onDone} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 16, padding: 0 }}>✕</button>
+      </div>
+
+      {step === 'rate' && (
+        <>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 14 }}>Be spicy, we love it. 🌶️</div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
+            {[1, 2, 3, 4, 5].map(n => (
+              <button
+                key={n}
+                onClick={() => { setRating(n); setStep('message') }}
+                style={{
+                  flex: 1,
+                  padding: '10px 0',
+                  borderRadius: 8,
+                  border: `1px solid ${rating === n ? 'var(--lav)' : 'var(--border)'}`,
+                  background: rating === n ? 'rgba(176,160,255,0.15)' : '#1a1a1a',
+                  color: 'var(--white)',
+                  fontSize: 20,
+                  cursor: 'pointer',
+                }}
+              >
+                {['😩', '😕', '😐', '😊', '🔥'][n - 1]}
+              </button>
+            ))}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--grey)', padding: '0 2px' }}>
+            <span>Not great</span><span>On fire</span>
+          </div>
+        </>
+      )}
+
+      {step === 'message' && (
+        <>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 12 }}>Anything you'd like us to know? (totally optional)</div>
+          <textarea
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+            placeholder="Any feedback, suggestions, or things we should know…"
+            rows={3}
+            style={{ width: '100%', background: '#111', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', padding: '10px 12px', fontSize: 13, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box', outline: 'none', marginBottom: 12 }}
+          />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-lav btn-sm" onClick={submit} disabled={saving}>{saving ? 'Sending…' : 'Send feedback'}</button>
+            <button className="btn btn-ghost btn-sm" onClick={submit} disabled={saving}>Skip</button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function NotifyInstructorButton({ instructorId, studentName }) {
+  const [state, setState] = useState('idle') // idle | sending | done | error
+
+  async function notify() {
+    if (!instructorId) { setState('error'); return }
+    setState('sending')
+    try {
+      await notificationsApi.send(
+        instructorId,
+        'Student ready for level check-off',
+        `${studentName} has marked all their skills as complete and is ready for a formal check-off at their next class.`,
+        'info'
+      )
+      setState('done')
+    } catch {
+      setState('error')
+    }
+  }
+
+  if (state === 'done') return <div style={{ fontSize: 13, color: 'var(--lime)', fontWeight: 600 }}>✓ Instructor notified — they'll check you off at your next class.</div>
+  if (state === 'error') return <div style={{ fontSize: 12, color: 'var(--red)' }}>Couldn't send notification — please contact the studio directly.</div>
+  return (
+    <button className="btn btn-lime btn-sm" onClick={notify} disabled={state === 'sending'}>
+      {state === 'sending' ? 'Notifying…' : 'Notify instructor'}
+    </button>
+  )
+}
 
 const DAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 const DAYS_SHORT = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
@@ -27,94 +141,38 @@ function formatDayDate(dayOfWeek) {
   return d.getDate()
 }
 
-function MarkAwayModal({ enrolment, cancellationWindowHours, onClose, onDone }) {
+function DashboardMarkAwayModal({ enrolment, cancellationWindowHours, noShowFee, onClose, onDone }) {
   const s = enrolment.class_session_detail
-  const [confirming, setConfirming] = useState(false)
-  const [done, setDone] = useState(false)
-  const [error, setError] = useState('')
-
   const { data: occData } = useApi(
     () => s?.id ? classesApi.occurrences({ session: s.id, upcoming: 'true' }) : null,
     [s?.id]
   )
   const nextOcc = occData?.results?.[0] || occData?.[0] || null
 
-  const windowHours = cancellationWindowHours ?? 4
-  const withinCutoff = useMemo(() => {
-    if (!nextOcc?.date || !s?.start_time) return false
-    const classDateTime = new Date(`${nextOcc.date}T${s.start_time}`)
-    return (classDateTime - new Date()) < windowHours * 60 * 60 * 1000
-  }, [nextOcc, s, windowHours])
+  if (!occData) return null
 
-  async function handleConfirm() {
-    if (!nextOcc) { setError('No upcoming class found'); return }
-    setConfirming(true)
-    setError('')
-    try {
-      await attendanceApi.markAway(nextOcc.id)
-      setDone(true)
-      setTimeout(onDone, 1200)
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Could not mark away')
-    } finally {
-      setConfirming(false)
-    }
-  }
-
-  const nextDateLabel = nextOcc?.date
-    ? new Date(nextOcc.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
-    : null
-
-  return (
-    <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
-      onClick={e => e.target === e.currentTarget && onClose()}
-    >
-      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, maxWidth: 420, width: '100%' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', borderBottom: '1px solid var(--border)' }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>Mark Away</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 18 }}>✕</button>
-        </div>
-        <div style={{ padding: '18px 20px' }}>
-          <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>{s?.name}</div>
-          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: nextDateLabel ? 4 : 16 }}>
-            {DAYS_FULL[s?.day_of_week]} · {s?.start_time?.slice(0, 5)}
-          </div>
-          {nextDateLabel && (
-            <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16 }}>{nextDateLabel}</div>
-          )}
-
-          {!withinCutoff ? (
-            <div style={{ background: '#0f1600', border: '1px solid var(--lime)', borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
-              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: 'var(--lime)', marginBottom: 6 }}>You'll receive a catch-up credit</div>
-              <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
-                You're outside the cancellation window — a catch-up credit will be added to your account to use within this season.
-              </div>
-            </div>
-          ) : (
-            <div style={{ background: '#1a0900', border: '1px solid #ffaa44', borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
-              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: '#ffaa44', marginBottom: 6 }}>No catch-up credit for this one</div>
-              <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.6 }}>
-                You're within the cancellation window — no credit will be issued. You can still mark away so we know you're not coming, but no credit will be issued.{' '}
-                If you don't mark away and don't attend, a <strong style={{ color: '#ffaa44' }}>$20 no-show fee</strong> will be charged.
-              </div>
-            </div>
-          )}
-
-          {error && <div style={{ color: 'var(--red)', fontSize: 12, marginBottom: 12 }}>{error}</div>}
-          {done ? (
-            <div style={{ textAlign: 'center', color: 'var(--lime)', fontWeight: 600, padding: '8px 0' }}>✓ Marked as away</div>
-          ) : (
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
-              <button className="btn btn-lime btn-sm" style={{ flex: 1 }} onClick={handleConfirm} disabled={confirming || !nextOcc}>
-                {confirming ? 'Saving…' : withinCutoff ? 'Mark away anyway' : 'Confirm — mark me away'}
-              </button>
-            </div>
-          )}
+  if (!nextOcc) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
+        onClick={onClose}>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, maxWidth: 400, width: '100%', padding: '28px 24px', textAlign: 'center' }}
+          onClick={e => e.stopPropagation()}>
+          <div style={{ fontSize: 14, color: 'var(--grey)', marginBottom: 16 }}>No upcoming class found to mark away.</div>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>CLOSE</button>
         </div>
       </div>
-    </div>
+    )
+  }
+
+  const occurrence = { ...nextOcc, session_detail: { name: s?.name, start_time: s?.start_time } }
+  return (
+    <MarkAwayModal
+      occurrence={occurrence}
+      cancellationWindowHours={cancellationWindowHours}
+      noShowFee={noShowFee}
+      onClose={onClose}
+      onDone={onDone}
+    />
   )
 }
 
@@ -132,6 +190,10 @@ export default function StudentDashboard() {
   const { data: balanceData } = useApi(() => user?.id ? payments.balance(user.id) : null, [user?.id])
   const isBlocked = balanceData?.booking_blocked === true
   const owingAmount = balanceData && parseFloat(balanceData.balance) < 0 ? Math.abs(parseFloat(balanceData.balance)) : null
+
+  const { data: checkinData, refetch: refetchCheckin } = useApi(() => surveysApi.seasonalCheckin.pending(), [])
+  const pendingCheckin = checkinData?.id ? checkinData : null
+  const [checkinDismissed, setCheckinDismissed] = useState(false)
 
   const [markAwayEnrol, setMarkAwayEnrol] = useState(null)
   const [showBlockedBanner, setShowBlockedBanner] = useState(false)
@@ -180,6 +242,15 @@ export default function StudentDashboard() {
 
   return (
     <div>
+      {markAwayEnrol && (
+        <DashboardMarkAwayModal
+          enrolment={markAwayEnrol}
+          cancellationWindowHours={studioSettings?.cancellation_window_hours}
+          noShowFee={studioSettings?.no_show_fee}
+          onClose={() => setMarkAwayEnrol(null)}
+          onDone={() => setMarkAwayEnrol(null)}
+        />
+      )}
       {pendingTrialFeedback.length > 0 && (
         <PostTrialPopup
           pending={pendingTrialFeedback}
@@ -192,6 +263,14 @@ export default function StudentDashboard() {
           onResolved={() => refetchOffers()}
         />
       )}
+      {/* Seasonal check-in nudge */}
+      {pendingCheckin && !checkinDismissed && (
+        <SeasonalCheckinCard
+          checkin={pendingCheckin}
+          onDone={() => { setCheckinDismissed(true); refetchCheckin() }}
+        />
+      )}
+
       {/* Season open banner — shown when no active enrolments */}
       {!loadingEnrol && !hasEnrolments && (
         <div style={{ background: 'var(--lime)', borderRadius: 12, padding: '14px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
@@ -303,22 +382,24 @@ export default function StudentDashboard() {
                 ? `${s.instructor_detail.first_name || ''} ${s.instructor_detail.last_name || ''}`.trim()
                 : (s?.instructor_name || '—')
               return (
-                <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <div style={{ textAlign: 'center', flexShrink: 0, width: 44 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', color: 'var(--grey)', textTransform: 'uppercase' }}>{DAYS_SHORT[s?.day_of_week]}</div>
-                    <div style={{ fontSize: 'clamp(17px, 5vw, 24px)', fontWeight: 800, fontFamily: "'Archivo Black', sans-serif", color: 'var(--lime)', lineHeight: 1.1 }}>{formatDayDate(s?.day_of_week)}</div>
+                <div key={e.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{ textAlign: 'center', flexShrink: 0, width: 44 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', color: 'var(--grey)', textTransform: 'uppercase' }}>{DAYS_SHORT[s?.day_of_week]}</div>
+                      <div style={{ fontSize: 'clamp(17px, 5vw, 24px)', fontWeight: 800, fontFamily: "'Archivo Black', sans-serif", color: 'var(--lime)', lineHeight: 1.1 }}>{formatDayDate(s?.day_of_week)}</div>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s?.name} · {s?.studio_detail?.name}</div>
+                      <div style={{ fontSize: 12, color: 'var(--grey)' }}>{s?.start_time?.slice(0, 5)} · {instructorName}</div>
+                    </div>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ flexShrink: 0, color: isBlocked ? 'var(--red)' : undefined, borderColor: isBlocked ? 'rgba(255,68,68,0.4)' : undefined }}
+                      onClick={() => { if (isBlocked) { setShowBlockedBanner(true) } else { setMarkAwayEnrol(e) } }}
+                    >
+                      Mark Away
+                    </button>
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s?.name} · {s?.studio_detail?.name}</div>
-                    <div style={{ fontSize: 12, color: 'var(--grey)' }}>{s?.start_time?.slice(0, 5)} · {instructorName}</div>
-                  </div>
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    style={{ flexShrink: 0, color: isBlocked ? 'var(--red)' : undefined, borderColor: isBlocked ? 'rgba(255,68,68,0.4)' : undefined }}
-                    onClick={() => { if (isBlocked) { setShowBlockedBanner(true) } else { setMarkAwayEnrol(e) } }}
-                  >
-                    Mark Away
-                  </button>
                 </div>
               )
             })}
@@ -354,12 +435,15 @@ export default function StudentDashboard() {
                 </div>
               ))}
             </div>
-            {allDone && (
-              <div style={{ marginTop: 12, padding: '14px 16px', background: 'rgba(204,255,0,0.05)', border: '1px solid var(--lime)', borderRadius: 8 }}>
-                <div style={{ fontSize: 13, color: 'var(--lime)', marginBottom: 10 }}>🎉 Looking good! Your instructor will do a formal check-off when they're happy you're ready — tap below to flag it to them.</div>
-                <button className="btn btn-lime btn-sm" onClick={() => alert('Your instructor has been notified! They\'ll do a formal check-off at your next class.')}>Notify instructor</button>
-              </div>
-            )}
+            {allDone && (() => {
+              const instructorId = enrolments_.find(e => e.class_session_detail?.instructor_detail?.id)?.class_session_detail?.instructor_detail?.id
+              return (
+                <div style={{ marginTop: 12, padding: '14px 16px', background: 'rgba(204,255,0,0.05)', border: '1px solid var(--lime)', borderRadius: 8 }}>
+                  <div style={{ fontSize: 13, color: 'var(--lime)', marginBottom: 10 }}>🎉 Looking good! Your instructor will do a formal check-off when they're happy you're ready — tap below to flag it to them.</div>
+                  <NotifyInstructorButton instructorId={instructorId} studentName={user?.first_name || user?.display_name || 'A student'} />
+                </div>
+              )
+            })()}
           </div>
         )
       })()}
@@ -419,15 +503,6 @@ export default function StudentDashboard() {
           </div>
         )
       })()}
-
-      {markAwayEnrol && (
-        <MarkAwayModal
-          enrolment={markAwayEnrol}
-          cancellationWindowHours={studioSettings?.cancellation_window_hours ?? 4}
-          onClose={() => setMarkAwayEnrol(null)}
-          onDone={() => setMarkAwayEnrol(null)}
-        />
-      )}
 
       {showBlockedBanner && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}

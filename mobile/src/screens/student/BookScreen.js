@@ -233,6 +233,65 @@ function CashCalendar({ selected, onSelect }) {
   )
 }
 
+function SeasonNotifyCard({ season, defaultEmail = '' }) {
+  const [email, setEmail] = useState(defaultEmail)
+  const [submitted, setSubmitted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleSubmit() {
+    if (!email.trim() || !email.includes('@')) { setError('Enter a valid email.'); return }
+    setError('')
+    setLoading(true)
+    try {
+      await seasons.notifyMe(season.id, { email: email.trim() })
+      setSubmitted(true)
+    } catch (e) {
+      setError(e?.response?.data?.detail || 'Could not register — please try again.')
+    } finally { setLoading(false) }
+  }
+
+  if (submitted) {
+    return (
+      <View style={{ backgroundColor: 'rgba(204,255,0,0.06)', borderWidth: 1, borderColor: 'rgba(204,255,0,0.25)', borderRadius: 14, padding: 16, marginBottom: 14 }}>
+        <Text style={{ fontWeight: '700', fontSize: 15, color: '#ccff00', marginBottom: 6 }}>You're on the list!</Text>
+        <Text style={{ fontSize: 13, color: '#ccc', lineHeight: 20 }}>
+          We'll email {email} the moment casuals and trials open for {season.name}.
+        </Text>
+      </View>
+    )
+  }
+
+  return (
+    <View style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: '#222', borderRadius: 14, padding: 16, marginBottom: 14 }}>
+      <Text style={{ fontWeight: '700', fontSize: 15, color: '#fff', marginBottom: 6 }}>Looking for a future date?</Text>
+      <Text style={{ fontSize: 13, color: '#888', lineHeight: 20, marginBottom: 14 }}>
+        Casual and trial bookings for <Text style={{ color: '#ccc', fontWeight: '600' }}>{season.name}</Text> open the week before the season starts. Drop your email and we'll ping you the moment they're live.
+      </Text>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <TextInput
+          value={email}
+          onChangeText={setEmail}
+          placeholder="your@email.com"
+          placeholderTextColor="#555"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          style={{ flex: 1, backgroundColor: '#0d0d0d', borderWidth: 1, borderColor: '#333', borderRadius: 8, color: '#fff', fontSize: 14, paddingHorizontal: 12, paddingVertical: 10 }}
+        />
+        <TouchableOpacity
+          onPress={handleSubmit}
+          disabled={loading}
+          style={{ backgroundColor: '#ccff00', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10, justifyContent: 'center', opacity: loading ? 0.6 : 1 }}
+        >
+          <Text style={{ color: '#000', fontWeight: '900', fontSize: 13 }}>{loading ? '…' : 'Notify me'}</Text>
+        </TouchableOpacity>
+      </View>
+      {!!error && <Text style={{ color: '#ff6666', fontSize: 12, marginTop: 8 }}>{error}</Text>}
+    </View>
+  )
+}
+
+
 function SeasonCheckoutModal({ visible, sessions, totalPrice, seasonName, upcomingSeason, onClose, onConfirm }) {
   const { initPaymentSheet, presentPaymentSheet } = useStripe()
 
@@ -1221,12 +1280,15 @@ export default function BookScreen({ navigation }) {
   }
 
   const activeSeason = allSeasons.find(s => s.status === 'active')
-  // Seasons available to book into — prefer upcoming with open bookings, then active
-  const bookableSeasons = allSeasons.filter(s =>
-    (s.status === 'upcoming' || s.status === 'active')
-  )
+  const _now = new Date()
+  // Seasons available to book into: active, or upcoming once go_live_at has passed or bookings_open=true
+  const bookableSeasons = allSeasons.filter(s => {
+    if (s.status === 'active') return true
+    if (s.status === 'upcoming') return s.bookings_open || (s.go_live_at && new Date(s.go_live_at) <= _now)
+    return false
+  })
   const defaultBookingSeason =
-    allSeasons.find(s => s.status === 'upcoming' && s.bookings_open !== false) ??
+    allSeasons.find(s => s.status === 'upcoming' && (s.bookings_open || (s.go_live_at && new Date(s.go_live_at) <= _now))) ??
     allSeasons.find(s => s.status === 'active') ??
     allSeasons.find(s => s.status === 'upcoming')
   const bookingSeason = (selectedSeasonId ? allSeasons.find(s => s.id === selectedSeasonId) : null) ?? defaultBookingSeason
@@ -1255,10 +1317,9 @@ export default function BookScreen({ navigation }) {
   const currentSeasonWeek = seasonStartDate ? Math.ceil((new Date() - seasonStartDate) / (7 * 86400000)) : 0
   const isPastWeek3 = currentSeasonWeek > 3 // legacy alias kept for safety
 
-  // Casual tab: sessions from active season + upcoming if it starts within 7 days
+  // Casual tab: sessions from active season + upcoming if active season is in week 8+
   const nextSeason = allSeasons.find(s => s.status === 'upcoming')
-  const nextSeasonStart = nextSeason?.start_date ? new Date(nextSeason.start_date + 'T00:00') : null
-  const nextSeasonStartsSoon = nextSeasonStart && nextSeasonStart <= new Date(Date.now() + 7 * 86400000)
+  const nextSeasonStartsSoon = currentSeasonWeek >= 8
   const casualSessions = allSessions.filter(s => {
     if (!s.is_active) return false
     if (!activeSeason?.id && !nextSeason?.id) return true
@@ -1344,6 +1405,19 @@ export default function BookScreen({ navigation }) {
       } else if (payOption === 'deposit') {
         Alert.alert('You\'re booked!', `Deposit of $${amount} confirmed. Your spot is reserved — the balance will be charged automatically when the season commences.`)
       } else if (payOption === 'plan') {
+        const { frequency, startSeason, schedule, depositPaid } = extraData || {}
+        const scheduleNote = schedule ? schedule.map(i => `${i.label}: $${i.amount}`).join(', ') : ''
+        const planNotes = [
+          frequency ? `Frequency: ${frequency}` : '',
+          startSeason ? 'Timing: When season commences' : 'Timing: Start today',
+          depositPaid > 0 ? `Deposit paid: $${depositPaid}` : '',
+          scheduleNote ? `Schedule: ${scheduleNote}` : '',
+        ].filter(Boolean).join(' | ')
+        await payments.plans.create({
+          description: selectedSessions.map(s => s.name).join(', ') || 'Season enrolment',
+          total_amount: amount,
+          notes: planNotes,
+        }).catch(() => {})
         Alert.alert('You\'re booked!', "Your spot is held for 24 hours while we review your payment plan request. You'll receive a confirmation once approved — no payment is taken until then.")
       } else if (payOption === 'cash') {
         const dateLabel = extraData?.cashDate
@@ -1835,6 +1909,11 @@ export default function BookScreen({ navigation }) {
                     </Text>
                   )}
                 </View>
+              )}
+
+              {/* Upcoming season notify card — shown when casuals aren't open yet */}
+              {currentSeasonWeek < 8 && nextSeason && nextSeason.status === 'upcoming' && (
+                <SeasonNotifyCard season={nextSeason} defaultEmail={user?.email || ''} />
               )}
 
               {/* Trial banner */}

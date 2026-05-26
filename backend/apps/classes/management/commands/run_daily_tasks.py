@@ -18,6 +18,8 @@ class Command(BaseCommand):
             'complete_past_seasons',
             'auto_charge_cash',
             'remind_unenrolled',
+            'charge_due_instalments',
+            'notify_upcoming_casual_open',
         ]
         for task in tasks:
             self.stdout.write(f'→ {task}')

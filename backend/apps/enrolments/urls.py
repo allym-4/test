@@ -22,4 +22,5 @@ urlpatterns = [
     path('<int:pk>/trial-feedback/', views.SubmitTrialFeedbackView.as_view(), name='trial-feedback-submit'),
     path('<int:pk>/enrol-after-trial/', views.StudentTrialEnrolView.as_view(), name='student-trial-enrol'),
     path('calendar.ics', views.CalendarIcsView.as_view(), name='enrolment-calendar-ics'),
+    path('retention-stats/', views.RetentionStatsView.as_view(), name='retention-stats'),
 ]

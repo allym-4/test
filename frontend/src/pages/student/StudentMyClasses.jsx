@@ -45,6 +45,7 @@ function ClassRoster({ sessionId }) {
 }
 
 
+
 // ─── CancelAwayDialog ─────────────────────────────────────────────────────────
 
 function CancelAwayDialog({ occurrence, onClose, onDone }) {
@@ -810,19 +811,27 @@ export default function StudentMyClasses() {
               const occDateLabel = new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
               const occTimeLabel = occ.start_time ? fmtTime(occ.start_time) : ''
               const isLast = idx === enr.upcoming_occurrences.length - 1
+              const isInlineOpen = markAwayInlineId === occ.id
+              const windowHours = studioSettings?.cancellation_window_hours || 4
+              const noShowFee = studioSettings?.no_show_fee ? `$${parseFloat(studioSettings.no_show_fee).toFixed(0)}` : '$20'
+              const classDateTime = occ.start_time ? new Date(`${occ.date}T${occ.start_time}`) : null
+              const hoursUntil = classDateTime ? (classDateTime - new Date()) / (1000 * 60 * 60) : null
+              const isLate = hoursUntil !== null && hoursUntil > 0 && hoursUntil < windowHours
               return (
-                <div key={occ.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.04)' }}>
-                  <span style={{ fontSize: 12, color: 'var(--grey)' }}>{occDateLabel}{occTimeLabel ? ` · ${occTimeLabel}` : ''}</span>
-                  {occ.marked_away ? (
-                    <span style={{ fontSize: 11, color: 'var(--amber)', fontWeight: 600 }}>Away</span>
-                  ) : (
-                    <button
-                      onClick={() => isBlocked ? setShowBlockedBanner(true) : setMarkAwayOcc({ id: occ.id, date: occ.date, session_detail: { name: s?.name, start_time: occ.start_time } })}
-                      style={{ background: 'none', border: `1px solid ${isBlocked ? 'rgba(255,68,68,0.35)' : 'rgba(255,170,0,0.35)'}`, borderRadius: 6, padding: '3px 9px', cursor: 'pointer', fontSize: 10, fontWeight: 700, color: isBlocked ? 'var(--red)' : 'var(--amber)', letterSpacing: '0.3px' }}
-                    >
-                      MARK AWAY
-                    </button>
-                  )}
+                <div key={occ.id} style={{ borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.04)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0' }}>
+                    <span style={{ fontSize: 12, color: 'var(--grey)' }}>{occDateLabel}{occTimeLabel ? ` · ${occTimeLabel}` : ''}</span>
+                    {occ.marked_away ? (
+                      <span style={{ fontSize: 11, color: 'var(--amber)', fontWeight: 600 }}>Away</span>
+                    ) : (
+                      <button
+                        onClick={() => isBlocked ? setShowBlockedBanner(true) : setMarkAwayOcc({ ...occ, session_detail: { name: enr.class_session_detail?.name, start_time: occ.start_time } })}
+                        style={{ background: 'none', border: `1px solid ${isBlocked ? 'rgba(255,68,68,0.35)' : 'rgba(255,170,0,0.35)'}`, borderRadius: 6, padding: '3px 9px', cursor: 'pointer', fontSize: 10, fontWeight: 700, color: isBlocked ? 'var(--red)' : 'var(--amber)', letterSpacing: '0.3px' }}
+                      >
+                        MARK AWAY
+                      </button>
+                    )}
+                  </div>
                 </div>
               )
             })}
@@ -1298,6 +1307,16 @@ export default function StudentMyClasses() {
       )}
 
       {/* Modals */}
+      {markAwayOcc && (
+        <MarkAwayModal
+          occurrence={markAwayOcc}
+          cancellationWindowHours={studioSettings?.cancellation_window_hours || 4}
+          noShowFee={studioSettings?.no_show_fee}
+          onClose={() => setMarkAwayOcc(null)}
+          onDone={() => { setMarkAwayOcc(null); refetchEnrol() }}
+        />
+      )}
+
       {cancelPolicyEnrol && (
         <CancelPolicyModal
           enrolment={cancelPolicyEnrol}
@@ -1320,16 +1339,6 @@ export default function StudentMyClasses() {
           booking={displacementPopup}
           onClose={() => setDisplacementPopup(null)}
           onAction={() => { setDisplacementPopup(null); refetchCasual(); refetchEnrol() }}
-        />
-      )}
-
-      {markAwayOcc && (
-        <MarkAwayModal
-          occurrence={markAwayOcc}
-          cancellationWindowHours={studioSettings?.cancellation_window_hours}
-          noShowFee={studioSettings?.no_show_fee}
-          onClose={() => setMarkAwayOcc(null)}
-          onDone={() => { setMarkAwayOcc(null); refetchEnrol() }}
         />
       )}
 

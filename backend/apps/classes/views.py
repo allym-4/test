@@ -942,7 +942,12 @@ class ClassUpsellDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class UpsellSuggestView(APIView):
-    """Given a list of session IDs, return active upsells for any of them."""
+    """Given a list of session IDs, return active upsells for any of them.
+
+    Priority:
+    1. Session-level ClassUpsell (manually configured per session)
+    2. Category-level upsell (default on the session's ClassCategory)
+    """
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
@@ -950,15 +955,49 @@ class UpsellSuggestView(APIView):
         session_ids = [int(i) for i in ids_param.split(',') if i.strip().isdigit()]
         if not session_ids:
             return Response([])
+
+        # 1. Session-level upsells
         upsells = ClassUpsell.objects.filter(
             source_session_id__in=session_ids, is_active=True
         ).select_related('source_session', 'suggested_session', 'suggested_session__category')
-        seen = set()
+        seen_source = set()
+        seen_suggested = set()
         results = []
         for u in upsells:
-            if u.suggested_session_id not in seen:
-                seen.add(u.suggested_session_id)
+            if u.suggested_session_id not in seen_suggested:
+                seen_source.add(u.source_session_id)
+                seen_suggested.add(u.suggested_session_id)
                 results.append(ClassUpsellSerializer(u).data)
+
+        # 2. Category-level fallback for sessions that have no session-level upsell
+        sessions_without_upsell = ClassSession.objects.filter(
+            id__in=session_ids
+        ).exclude(id__in=seen_source).select_related(
+            'category', 'category__upsell_target_category'
+        )
+        for session in sessions_without_upsell:
+            cat = session.category
+            if not cat or not cat.upsell_target_category_id or not cat.upsell_headline:
+                continue
+            target_cat = cat.upsell_target_category
+            # Find the first active session in the target category (same season preferred)
+            suggested = ClassSession.objects.filter(
+                category=target_cat, is_active=True
+            ).exclude(id__in=seen_suggested).order_by('day_of_week', 'start_time').first()
+            if suggested and suggested.id not in seen_suggested:
+                seen_suggested.add(suggested.id)
+                results.append({
+                    'id': None,
+                    'source_session': session.id,
+                    'source_session_name': session.name,
+                    'suggested_session': suggested.id,
+                    'suggested_session_name': suggested.name,
+                    'headline': cat.upsell_headline,
+                    'body': cat.upsell_body,
+                    'is_active': True,
+                    'from_category': True,
+                })
+
         return Response(results)
 
 
@@ -1151,6 +1190,20 @@ class CasualBookView(APIView):
 
         if occurrence.status == 'cancelled':
             return Response({'detail': 'This class has been cancelled.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Upcoming-season casuals only open in week 8 of the active season
+        occ_season = getattr(getattr(occurrence, 'session', None), 'season', None)
+        if occ_season and getattr(occ_season, 'status', None) == 'upcoming':
+            from apps.classes.models import Season as _Season
+            from django.utils import timezone as _tz
+            active_season = _Season.objects.filter(status='active').order_by('-start_date').first()
+            if active_season and active_season.start_date:
+                active_week = (_tz.localdate() - active_season.start_date).days // 7 + 1
+                if active_week < 8:
+                    return Response(
+                        {'detail': 'Casual bookings for the upcoming season open in week 8 of the current season.'},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
 
         enrolment_type = request.data.get('enrolment_type', 'casual')
         if enrolment_type not in ('casual', 'catchup', 'classpass'):
@@ -1970,3 +2023,125 @@ class SessionNamesView(APIView):
                 seen.add(key)
                 result.append(n.strip())
         return Response(result)
+
+
+class RevenueStatsView(APIView):
+    """Admin-only endpoint returning revenue and fill stats per class session."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def get(self, request):
+        from django.db.models import Sum
+        from apps.payments.models import Payment
+        from apps.enrolments.models import Enrolment
+
+        # Filter sessions to the current active season if one exists
+        try:
+            active_season = Season.objects.get(status='active')
+            sessions = ClassSession.objects.filter(
+                season=active_season, is_active=True
+            ).select_related('instructor', 'studio')
+        except Season.DoesNotExist:
+            sessions = ClassSession.objects.filter(is_active=True).select_related(
+                'instructor', 'studio'
+            )
+        except Season.MultipleObjectsReturned:
+            active_season = Season.objects.filter(status='active').order_by('-start_date').first()
+            sessions = ClassSession.objects.filter(
+                season=active_season, is_active=True
+            ).select_related('instructor', 'studio')
+
+        day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        result = []
+
+        for session in sessions:
+            enrolled = Enrolment.objects.filter(
+                class_session=session, status='active'
+            ).count()
+            capacity = session.capacity or 0
+            fill_rate = round(enrolled / capacity * 100) if capacity > 0 else 0
+
+            # Revenue: sum payments from students enrolled in this session
+            enrolled_student_ids = Enrolment.objects.filter(
+                class_session=session,
+                status='active',
+            ).values_list('student_id', flat=True)
+
+            revenue_agg = Payment.objects.filter(
+                student_id__in=enrolled_student_ids,
+                payment_type='payment',
+                description__icontains=session.name,
+            ).aggregate(total=Sum('amount'))
+            revenue = float(revenue_agg['total'] or 0)
+
+            avg_per_student = round(revenue / enrolled, 2) if enrolled > 0 else 0.0
+
+            instructor_name = ''
+            if session.instructor:
+                instructor_name = session.instructor.first_name or session.instructor.display_name
+
+            result.append({
+                'id': session.id,
+                'name': session.name,
+                'day': day_names[session.day_of_week] if session.day_of_week is not None else '',
+                'instructor': instructor_name,
+                'enrolled': enrolled,
+                'capacity': capacity,
+                'fill_rate': fill_rate,
+                'revenue': revenue,
+                'avg_per_student': avg_per_student,
+            })
+
+        return Response({'sessions': result})
+
+
+class SeasonNotifyMeView(APIView):
+    """Register interest in being notified when casual/trial bookings open for an upcoming season."""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, pk):
+        from apps.classes.models import Season, SeasonNotificationInterest
+        try:
+            season = Season.objects.get(pk=pk, status='upcoming')
+        except Season.DoesNotExist:
+            return Response({'detail': 'Season not found or not upcoming.'}, status=404)
+
+        email = (request.data.get('email') or '').strip().lower()
+        first_name = (request.data.get('first_name') or '').strip()
+        if not email or '@' not in email:
+            return Response({'detail': 'A valid email is required.'}, status=400)
+
+        obj, created = SeasonNotificationInterest.objects.get_or_create(
+            season=season, email=email,
+            defaults={'first_name': first_name},
+        )
+        if not created and first_name and not obj.first_name:
+            obj.first_name = first_name
+            obj.save(update_fields=['first_name'])
+
+        return Response({'registered': True, 'season': season.name})
+
+
+class TrialSessionsView(APIView):
+    """Public endpoint — returns beginner-friendly sessions for the active season."""
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        import re
+        from .models import Season, ClassSession
+        from .serializers import ClassSessionSerializer
+
+        active_season = Season.objects.filter(status='active').order_by('-start_date').first()
+        if not active_season:
+            return Response({'results': []})
+
+        sessions = ClassSession.objects.filter(
+            season=active_season, is_active=True
+        ).select_related('instructor', 'studio')
+
+        def is_trial_eligible(name):
+            n = name.lower()
+            return bool(re.search(r'level\s*1|virgin|practice', n))
+
+        eligible = [s for s in sessions if is_trial_eligible(s.name)]
+        serializer = ClassSessionSerializer(eligible, many=True, context={'request': request})
+        return Response({'results': serializer.data, 'season': active_season.name, 'season_id': active_season.id})
