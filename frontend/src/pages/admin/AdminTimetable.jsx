@@ -550,57 +550,35 @@ export default function AdminTimetable() {
 
   return (
     <div>
-      {/* ── Page header ── */}
-      <div className="page-header" style={{ flexWrap: 'wrap', gap: 12, alignItems: 'flex-start' }}>
-
-        {/* Left: title + season selector + week nav */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <div className="page-title">Timetable</div>
-
-            {/* Season selector */}
-            <select
-              value={selectedSeasonId ?? activeSeason?.id ?? ''}
-              onChange={e => setSelectedSeasonId(Number(e.target.value) || null)}
-              style={{
-                background: '#1a1a1a',
-                border: '1px solid var(--border, #333)',
-                color: 'var(--grey)',
-                borderRadius: 4,
-                padding: '4px 8px',
-                fontSize: 12,
-                cursor: 'pointer',
-              }}
-            >
-              {seasonOptions && seasonOptions.length > 0
-                ? seasonOptions.map(s => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))
-                : <option>{FALLBACK_SEASON_LABEL}</option>
-              }
-            </select>
-
-            {/* Check for Conflicts button — visible in calendar view */}
-            {view === 'calendar' && (
-              <button className="btn btn-ghost btn-sm" onClick={handleRecheck}>
-                Check for Conflicts
-              </button>
-            )}
-          </div>
-
-          {/* Week navigation */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
-            <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w - 1)}>← Prev</button>
-            <span style={{ fontSize: 13, fontWeight: 500 }}>
-              {view === 'calendar' ? seasonWeekLabel : weekLabel}
-            </span>
-            <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w + 1)}>Next →</button>
-          </div>
+      {/* ── Page header: row 1 — title + controls ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+        {/* Left: title + season picker */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="page-title" style={{ marginBottom: 0 }}>Timetable</div>
+          <select
+            value={selectedSeasonId ?? activeSeason?.id ?? ''}
+            onChange={e => setSelectedSeasonId(Number(e.target.value) || null)}
+            style={{
+              background: '#1a1a1a',
+              border: '1px solid var(--border, #333)',
+              color: 'var(--white)',
+              borderRadius: 6,
+              padding: '5px 10px',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              maxWidth: 180,
+            }}
+          >
+            {seasonOptions.length > 0
+              ? seasonOptions.map(s => <option key={s.id} value={s.id}>{s.name}</option>)
+              : <option>{FALLBACK_SEASON_LABEL}</option>
+            }
+          </select>
         </div>
 
-        {/* Right: mode toggle + Calendar/List toggle + Add Class */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
-          {/* Attendance / Term Setup mode toggle */}
+        {/* Right: mode + view toggles + add class */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', border: '1px solid var(--border, #333)', borderRadius: 6, overflow: 'hidden' }}>
             {[['attend', 'Attendance Mode'], ['setup', 'Term Setup']].map(([m, label]) => (
               <button
@@ -616,7 +594,6 @@ export default function AdminTimetable() {
             ))}
           </div>
 
-          {/* Calendar/List view toggle — only shown in Attendance Mode */}
           {mode === 'attend' && (
             <div style={{ display: 'flex', border: '1px solid var(--border, #333)', borderRadius: 6, overflow: 'hidden' }}>
               {['calendar', 'list'].map(v => (
@@ -641,6 +618,20 @@ export default function AdminTimetable() {
             onClick={() => { setEditSession(null); setShowAddClass(true) }}
           >+ Add Class</button>
         </div>
+      </div>
+
+      {/* ── Row 2: week nav + optional conflict check ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+        <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w - 1)}>← Prev</button>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--white)' }}>
+          {view === 'calendar' ? seasonWeekLabel : weekLabel}
+        </span>
+        <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w + 1)}>Next →</button>
+        {view === 'calendar' && (
+          <button className="btn btn-ghost btn-sm" style={{ marginLeft: 8 }} onClick={handleRecheck}>
+            Check Conflicts
+          </button>
+        )}
       </div>
 
       {/* ── Term Setup banner ── */}
