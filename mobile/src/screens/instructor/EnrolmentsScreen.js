@@ -417,11 +417,158 @@ function AllClassesTab({ currentUserId, navigation }) {
   )
 }
 
+// ── Season Enrolments tab ──────────────────────────────────────────────────────
+
+function SeasonEnrolmentsTab({ currentUserId }) {
+  const { data: seasonsData, loading: loadingSeasons } = useApi(() => seasonsApi.list(), [])
+  const allSeasons = seasonsData?.results ?? (Array.isArray(seasonsData) ? seasonsData : [])
+  const relevantSeasons = allSeasons.filter(s => s.status === 'active' || s.status === 'upcoming')
+  const [selectedSeasonId, setSelectedSeasonId] = useState(null)
+  const [showAll, setShowAll] = useState(false)
+
+  const activeSeason = relevantSeasons.find(s => s.id === selectedSeasonId)
+    ?? relevantSeasons.find(s => s.status === 'active')
+    ?? relevantSeasons[0]
+    ?? null
+
+  const { data: sessionsData, loading: loadingSessions, refetch } = useApi(
+    () => activeSeason ? classes.list({ season: activeSeason.id, page_size: 200 }) : null,
+    [activeSeason?.id]
+  )
+  const allSessions = sessionsData?.results ?? (Array.isArray(sessionsData) ? sessionsData : [])
+  const mySessions = allSessions.filter(s =>
+    s.instructor === currentUserId || s.instructor_detail?.id === currentUserId
+  )
+  const sessions = showAll ? allSessions : mySessions
+
+  const sorted = [...sessions].sort((a, b) => {
+    if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week
+    return (a.start_time || '').localeCompare(b.start_time || '')
+  })
+
+  const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  const totalEnrolled = sessions.reduce((sum, s) => sum + (s.enrolled_count ?? 0), 0)
+  const totalCapacity = sessions.reduce((sum, s) => sum + (s.capacity ?? 0), 0)
+  const loading = loadingSeasons || loadingSessions
+
+  return (
+    <View style={{ flex: 1 }}>
+      {/* Season picker */}
+      {relevantSeasons.length > 1 && (
+        <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 10, gap: 8 }}>
+          {relevantSeasons.map(season => {
+            const isActive = activeSeason?.id === season.id
+            return (
+              <TouchableOpacity
+                key={season.id}
+                onPress={() => setSelectedSeasonId(season.id)}
+                style={{
+                  paddingHorizontal: 14, paddingVertical: 6, borderRadius: 8, borderWidth: 1,
+                  backgroundColor: isActive ? 'rgba(204,255,0,0.1)' : 'transparent',
+                  borderColor: isActive ? 'rgba(204,255,0,0.35)' : '#333',
+                }}
+              >
+                <Text style={{ fontSize: 13, fontWeight: '600', color: isActive ? '#ccff00' : '#888' }}>
+                  {season.name}
+                </Text>
+              </TouchableOpacity>
+            )
+          })}
+        </View>
+      )}
+
+      {/* My/All toggle + summary */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 12 }}>
+        <Text style={{ fontSize: 12, color: '#666' }}>
+          {activeSeason ? `${totalEnrolled}/${totalCapacity} enrolled` : 'No active season'}
+        </Text>
+        <View style={{ flexDirection: 'row', backgroundColor: '#111', borderRadius: 8, borderWidth: 1, borderColor: '#222', overflow: 'hidden' }}>
+          {[['mine', 'My Classes'], ['all', 'All']].map(([key, label]) => (
+            <TouchableOpacity
+              key={key}
+              onPress={() => setShowAll(key === 'all')}
+              style={{
+                paddingHorizontal: 12, paddingVertical: 5,
+                backgroundColor: showAll === (key === 'all') ? '#222' : 'transparent',
+              }}
+            >
+              <Text style={{ fontSize: 12, fontWeight: '600', color: showAll === (key === 'all') ? '#fff' : '#666' }}>
+                {label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {loading ? (
+        <ActivityIndicator style={{ marginTop: 40 }} color="#ccff00" />
+      ) : !activeSeason ? (
+        <Text style={[s.empty, { paddingHorizontal: 16 }]}>No active or upcoming seasons.</Text>
+      ) : sorted.length === 0 ? (
+        <Text style={[s.empty, { paddingHorizontal: 16 }]}>
+          {showAll ? 'No classes in this season.' : 'You have no classes in this season.'}
+        </Text>
+      ) : (
+        <FlatList
+          data={sorted}
+          keyExtractor={item => String(item.id)}
+          contentContainerStyle={s.list}
+          refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} tintColor="#ccff00" />}
+          renderItem={({ item: sess }) => {
+            const isOwn = sess.instructor === currentUserId || sess.instructor_detail?.id === currentUserId
+            const isFull = sess.enrolled_count >= sess.capacity
+            const pct = sess.capacity > 0 ? Math.min(1, (sess.enrolled_count ?? 0) / sess.capacity) : 0
+            const barColor = isFull ? '#ff4444' : pct > 0.75 ? '#ffaa00' : '#ccff00'
+            const hasWaitlist = (sess.waitlist_count ?? 0) > 0
+            return (
+              <View style={[
+                s.seasonCard,
+                isOwn && s.seasonCardOwn,
+                isFull && s.seasonCardFull,
+              ]}>
+                {isOwn && <View style={s.seasonOwnAccent} />}
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+                      <Text style={s.seasonClassName} numberOfLines={1}>{sess.name}</Text>
+                      {isOwn && (
+                        <View style={s.ownBadge}><Text style={s.ownBadgeText}>MINE</Text></View>
+                      )}
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={[s.seasonEnrolCount, isFull && { color: '#ff4444' }]}>
+                        {sess.enrolled_count ?? 0}<Text style={s.seasonCapacity}>/{sess.capacity}</Text>
+                      </Text>
+                      {hasWaitlist && (
+                        <Text style={s.waitlistText}>+{sess.waitlist_count} waitlist</Text>
+                      )}
+                    </View>
+                  </View>
+                  <Text style={s.seasonMeta}>
+                    {DAYS[sess.day_of_week]} · {sess.start_time?.slice(0, 5)}
+                    {sess.instructor_detail?.display_name ? ` · ${sess.instructor_detail.display_name}` : ''}
+                    {sess.studio_detail?.name ? ` · ${sess.studio_detail.name}` : ''}
+                  </Text>
+                  {/* Progress bar */}
+                  <View style={s.barTrack}>
+                    <View style={[s.barFill, { width: `${Math.round(pct * 100)}%`, backgroundColor: barColor }]} />
+                  </View>
+                </View>
+              </View>
+            )
+          }}
+        />
+      )}
+    </View>
+  )
+}
+
 // ── Main screen ───────────────────────────────────────────────────────────────
 
 const MAIN_TABS = [
-  { id: 'mine', label: 'My Classes' },
-  { id: 'all',  label: 'All Classes' },
+  { id: 'mine',   label: 'My Classes' },
+  { id: 'all',    label: 'All Classes' },
+  { id: 'season', label: 'Season' },
 ]
 
 export default function EnrolmentsScreen({ navigation }) {
@@ -450,7 +597,9 @@ export default function EnrolmentsScreen({ navigation }) {
 
       {activeTab === 'mine'
         ? <MyClassesTab navigation={navigation} currentUserId={currentUserId} />
-        : <AllClassesTab navigation={navigation} currentUserId={currentUserId} />
+        : activeTab === 'all'
+          ? <AllClassesTab navigation={navigation} currentUserId={currentUserId} />
+          : <SeasonEnrolmentsTab currentUserId={currentUserId} />
       }
     </View>
   )
@@ -508,4 +657,17 @@ const s = StyleSheet.create({
   // Group headers
   groupHeader: { paddingTop: 20, paddingBottom: 8, paddingHorizontal: 2 },
   groupHeaderText: { fontSize: 12, fontWeight: '700', color: '#555', textTransform: 'uppercase', letterSpacing: 0.7 },
+
+  // Season enrolments cards
+  seasonCard: { flexDirection: 'row', backgroundColor: '#111', borderRadius: 12, marginBottom: 8, borderWidth: 1, borderColor: '#222', padding: 14, overflow: 'hidden' },
+  seasonCardOwn: { borderColor: 'rgba(204,255,0,0.2)' },
+  seasonCardFull: { borderColor: 'rgba(255,68,68,0.3)' },
+  seasonOwnAccent: { width: 3, backgroundColor: '#ccff00', marginRight: 12, borderRadius: 2, alignSelf: 'stretch' },
+  seasonClassName: { fontSize: 15, fontWeight: '700', color: '#fff', flex: 1 },
+  seasonEnrolCount: { fontSize: 18, fontWeight: '700', color: '#fff' },
+  seasonCapacity: { fontSize: 13, fontWeight: '400', color: '#666' },
+  seasonMeta: { fontSize: 12, color: '#666', marginBottom: 8 },
+  waitlistText: { fontSize: 11, color: '#ffaa00', marginTop: 2 },
+  barTrack: { height: 3, backgroundColor: '#1e1e1e', borderRadius: 2, overflow: 'hidden' },
+  barFill: { height: 3, borderRadius: 2 },
 })
