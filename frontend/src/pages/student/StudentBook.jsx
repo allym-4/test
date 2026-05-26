@@ -1956,8 +1956,8 @@ function SeasonTab({
               {' '}Bookings close end of Week 3.
             </div>
 
-            {/* Demo toggle */}
-            <div style={{ background: '#111', border: '1px solid #222', borderRadius: 10, padding: '10px 14px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            {/* Demo toggle — only visible for demo accounts */}
+            {user?.username?.startsWith('demo_') && <div style={{ background: '#111', border: '1px solid #222', borderRadius: 10, padding: '10px 14px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 11, color: '#666', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Demo:</span>
               <button
                 onClick={() => setDemoNoLevel(false)}
@@ -1989,7 +1989,7 @@ function SeasonTab({
               >
                 No level assigned
               </button>
-            </div>
+            </div>}
 
             {/* Instruction */}
             <div style={{ fontSize: 13, color: '#666', marginBottom: 18, lineHeight: 1.6 }}>
