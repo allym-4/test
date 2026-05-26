@@ -1036,7 +1036,7 @@ export default function AdminStudentDetail() {
                   </div>
                 )}
 
-                <div className="sd-overview-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+                <div className="sd-overview-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20, alignItems: 'start' }}>
                   <div className="card" style={{ padding: '16px 18px' }}>
                     <div style={{ fontSize: 11, marginBottom: 12, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px' }}>Contact Info</div>
                     {[
