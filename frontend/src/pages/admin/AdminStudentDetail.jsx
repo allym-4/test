@@ -573,11 +573,25 @@ function StudentTagsRow({ student, setStudent }) {
 }
 
 function BlockedSessionsRow({ student, setStudent }) {
-  const { data: sessData } = useApi(() => classes.list({ page_size: 300 }))
-  const allSessions = sessData?.results || sessData || []
   const blocked = student.blocked_sessions || []
   const [adding, setAdding] = useState(false)
   const [search, setSearch] = useState('')
+  const [allSessions, setAllSessions] = useState([])
+  const [sessLoading, setSessLoading] = useState(false)
+
+  async function openAdding() {
+    setAdding(true)
+    if (allSessions.length > 0) return
+    setSessLoading(true)
+    try {
+      const res = await classes.list({ page_size: 300 })
+      setAllSessions(res.data?.results || res.data || [])
+    } catch {
+      setAllSessions([])
+    } finally {
+      setSessLoading(false)
+    }
+  }
 
   const available = allSessions.filter(s =>
     !blocked.includes(s.id) &&
@@ -625,6 +639,7 @@ function BlockedSessionsRow({ student, setStudent }) {
               style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, color: '#fff', fontSize: 12, padding: '5px 10px', width: 200 }}
             />
             <div style={{ maxHeight: 160, overflowY: 'auto', background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8 }}>
+              {sessLoading && <div style={{ padding: '10px 12px', fontSize: 12, color: 'var(--grey)' }}>Loading…</div>}
               {available.slice(0, 20).map(s => (
                 <div key={s.id} onClick={() => addBlock(s.id)} style={{ padding: '7px 12px', fontSize: 12, cursor: 'pointer', borderBottom: '1px solid var(--border)' }}
                   onMouseEnter={e => e.currentTarget.style.background = '#222'}
@@ -638,7 +653,7 @@ function BlockedSessionsRow({ student, setStudent }) {
             <button className="btn btn-ghost btn-xs" onClick={() => { setAdding(false); setSearch('') }}>Cancel</button>
           </div>
         ) : (
-          <button className="btn btn-ghost btn-xs" style={{ fontSize: 10 }} onClick={() => setAdding(true)}>+ Block a class</button>
+          <button className="btn btn-ghost btn-xs" style={{ fontSize: 10 }} onClick={openAdding}>+ Block a class</button>
         )}
       </div>
     </div>
