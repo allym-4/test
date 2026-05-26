@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import client from '../api/client'
 import { classes, seasons as seasonsApi } from '../api'
 import '../pages/StudentsPage.css'
+import { fmt12 } from '../utils/time'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -127,7 +128,7 @@ export default function AddToClassModal({ student, onClose, onSuccess }) {
               <select value={selectedSession?.id || ''} onChange={e => setSelectedSession(sessions.find(s => String(s.id) === e.target.value))}>
                 {sessions.map(s => (
                   <option key={s.id} value={s.id}>
-                    {s.name} — {DAYS[s.day_of_week]} {s.start_time?.slice(0, 5)}
+                    {s.name} — {DAYS[s.day_of_week]} {fmt12(s.start_time)}
                     {s.instructor_detail?.display_name ? ` · ${s.instructor_detail.display_name}` : ''}
                   </option>
                 ))}

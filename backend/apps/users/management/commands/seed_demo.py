@@ -209,8 +209,8 @@ class Command(BaseCommand):
 
         today = date.today()
 
-        rhapsody = self._get_room('RHAPSODY', fallback_name='Rhapsody', poles='14')
-        box      = self._get_room('THE BOX',  fallback_name='The Box',  poles='11')
+        rhapsody = self._get_room('RHAPSODY', fallback_name='Rhapsody', poles='13')
+        box      = self._get_room('THE BOX',  fallback_name='The Box',  poles='10')
         closet   = self._get_room("JANITOR'S CLOSET", fallback_name="Janitor's Closet", poles='3')
         room_map = {'rhapsody': rhapsody, 'box': box, 'closet': closet}
         self.stdout.write(f'  Rooms: {rhapsody.name}, {box.name}, {closet.name}')

@@ -3,6 +3,7 @@ import { useApi } from '../hooks/useApi'
 import { useAuth } from '../contexts/AuthContext'
 import { availability } from '../api'
 import client from '../api/client'
+import { fmt12 } from '../utils/time'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 const SLOTS = [
@@ -239,7 +240,7 @@ export default function InstructorAvailability() {
                       <td style={{ padding: '12px 14px', fontSize: 13 }}>{occ.instructor_detail?.display_name || occ.instructor_name || '—'}</td>
                       <td style={{ padding: '12px 14px', fontSize: 13 }}>{occ.session_detail?.name || occ.class_name || '—'}</td>
                       <td style={{ padding: '12px 14px', fontSize: 13 }}>{occ.date ? new Date(occ.date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</td>
-                      <td style={{ padding: '12px 14px', fontSize: 13 }}>{occ.start_time?.slice(0, 5) || occ.session_detail?.start_time?.slice(0, 5) || '—'}</td>
+                      <td style={{ padding: '12px 14px', fontSize: 13 }}>{fmt12(occ.start_time || occ.session_detail?.start_time) || '—'}</td>
                       <td style={{ padding: '12px 14px', fontSize: 13 }}>{occ.studio_detail?.name || occ.studio_name || '—'}</td>
                       <td style={{ padding: '12px 14px' }}>
                         <div style={{ display: 'flex', gap: 6 }}>

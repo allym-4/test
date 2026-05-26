@@ -56,7 +56,7 @@ export default function AddEditClassModal({ session, onClose, onSaved }) {
     season: session?.season || '',
     day_of_week: session?.day_of_week ?? 0,
     start_time: session?.start_time?.slice(0, 5) || '18:00',
-    duration_minutes: session?.duration_minutes || 90,
+    duration_minutes: session?.duration_minutes || 55,
     capacity: session?.capacity || 12,
     instructor: session?.instructor || '',
     studio: session?.studio || '',

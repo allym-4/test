@@ -3,6 +3,7 @@ import { useApi } from '../../hooks/useApi'
 import { classes, seasons as seasonsApi } from '../../api'
 import { Link } from 'react-router-dom'
 import AddEditClassModal from '../../components/AddEditClassModal'
+import { fmt12 } from '../../utils/time'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -11,7 +12,7 @@ const DAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satu
 
 const SLOT_START_HOUR = 6        // 6:00 am
 const SLOT_END_HOUR   = 22       // 10:00 pm (last label)
-const SLOT_HEIGHT     = 40       // px per 30-min slot
+const SLOT_HEIGHT     = 48       // px per 30-min slot
 const TOTAL_SLOTS     = (SLOT_END_HOUR - SLOT_START_HOUR) * 2  // 32 slots
 
 const FALLBACK_SEASON_LABEL = 'Current Season'
@@ -173,7 +174,7 @@ function SessionDetailModal({ session, onClose }) {
         {/* Details */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13, color: 'var(--grey)' }}>
           <div><b style={{ color: 'var(--white, #fff)' }}>Day:</b> {DAYS_FULL[session.day_of_week]}</div>
-          <div><b style={{ color: 'var(--white, #fff)' }}>Time:</b> {session.start_time?.slice(0, 5)}</div>
+          <div><b style={{ color: 'var(--white, #fff)' }}>Time:</b> {fmt12(session.start_time)}</div>
           <div>
             <b style={{ color: 'var(--white, #fff)' }}>Duration:</b>{' '}
             {session.duration_minutes ?? 60} min
@@ -216,11 +217,10 @@ function SessionDetailModal({ session, onClose }) {
  */
 function CalendarCard({ session, conflicting, onClick, col = 0, totalCols = 1 }) {
   const theme      = cardTheme(session.name)
-  const instructor = session.instructor_detail?.display_name || '—'
-  const studio     = session.studio_detail?.name || '—'
+  const instructor = session.instructor_detail?.display_name || ''
 
   const startMins  = timeToMinutes(session.start_time)
-  const duration   = session.duration_minutes ?? 60
+  const duration   = session.duration_minutes ?? 55
   const rowStart   = minutesToRow(startMins)
   const rowSpan    = Math.max(1, duration / 30)
 
@@ -228,29 +228,29 @@ function CalendarCard({ session, conflicting, onClick, col = 0, totalCols = 1 })
   const clampedEnd   = Math.min(TOTAL_SLOTS, rowStart + rowSpan)
   if (clampedEnd <= clampedStart) return null
 
-  const pct   = 100 / totalCols
-  const left  = `calc(${col * pct}% + 2px)`
-  const width = `calc(${pct}% - 4px)`
-  const top   = clampedStart * SLOT_HEIGHT + 1
-  const height = Math.max(20, (clampedEnd - clampedStart) * SLOT_HEIGHT - 2)
+  const pct    = 100 / totalCols
+  const left   = `calc(${col * pct}% + 2px)`
+  const width  = `calc(${pct}% - 4px)`
+  const top    = clampedStart * SLOT_HEIGHT + 1
+  const height = Math.max(24, (clampedEnd - clampedStart) * SLOT_HEIGHT - 3)
+  const tall   = height >= 56
 
   return (
     <div
       onClick={onClick}
-      title={`${session.name} — ${session.start_time?.slice(0, 5)}`}
+      title={`${session.name} — ${fmt12(session.start_time)}${instructor ? ` · ${instructor}` : ''}`}
       style={{
         position:     'absolute',
         top,
         height,
         left,
         width,
-        background:   theme.bg,
+        background:   conflicting ? 'rgba(255,68,68,0.12)' : theme.bg,
         borderLeft:   conflicting
           ? '3px solid var(--red, #ff4444)'
           : `3px solid ${theme.border}`,
-        outline:      conflicting ? '1px solid rgba(255,68,68,0.4)' : 'none',
         borderRadius: 4,
-        padding:      '3px 5px',
+        padding:      '3px 6px',
         cursor:       'pointer',
         overflow:     'hidden',
         display:      'flex',
@@ -260,21 +260,22 @@ function CalendarCard({ session, conflicting, onClick, col = 0, totalCols = 1 })
         zIndex:       2,
         transition:   'filter 0.15s',
       }}
-      onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.3)' }}
+      onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.25)' }}
       onMouseLeave={e => { e.currentTarget.style.filter = '' }}
     >
-      <div style={{ fontWeight: 700, fontSize: 11, lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      <div style={{ fontWeight: 700, fontSize: 11, lineHeight: 1.35, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {session.name}
       </div>
-      <div style={{ fontSize: 10, color: 'var(--grey)', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-        {instructor}
-      </div>
-      <div style={{ fontSize: 10, color: 'var(--grey)', lineHeight: 1.3 }}>
-        {session.enrolled_count}/{session.capacity}
-      </div>
-      <div style={{ fontSize: 10, color: 'var(--grey)', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-        {studio}
-      </div>
+      {tall && instructor && (
+        <div style={{ fontSize: 10, color: 'var(--grey)', lineHeight: 1.25, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {instructor}
+        </div>
+      )}
+      {tall && (
+        <div style={{ fontSize: 10, color: 'var(--grey)', lineHeight: 1.25 }}>
+          {fmt12(session.start_time)} · {session.enrolled_count}/{session.capacity}
+        </div>
+      )}
     </div>
   )
 }
@@ -283,7 +284,7 @@ function CalendarCard({ session, conflicting, onClick, col = 0, totalCols = 1 })
  * The 7-column calendar grid. Accepts pre-computed conflictIds so the parent
  * can also display the conflict count in the page header.
  */
-function CalendarGrid({ sessions, weekStart, conflictIds, onDismissConflicts, conflictsDismissed }) {
+function CalendarGrid({ sessions, weekStart, conflictIds = new Set(), showConflicts = false, onDismissConflicts, conflictsDismissed }) {
   const [selectedSession, setSelectedSession] = useState(null)
 
   // Build time labels once
@@ -302,7 +303,7 @@ function CalendarGrid({ sessions, weekStart, conflictIds, onDismissConflicts, co
     return map
   }, [sessions])
 
-  const showConflictBanner = conflictIds.size > 0 && !conflictsDismissed
+  const showConflictBanner = showConflicts && conflictIds.size > 0 && !conflictsDismissed
   const conflictPairCount  = Math.ceil(conflictIds.size / 2)
 
   return (
@@ -445,7 +446,7 @@ function CalendarGrid({ sessions, weekStart, conflictIds, onDismissConflicts, co
                   <CalendarCard
                     key={s.id}
                     session={s}
-                    conflicting={conflictIds.has(s.id)}
+                    conflicting={showConflicts && conflictIds.has(s.id)}
                     col={col}
                     totalCols={totalCols}
                     onClick={() => setSelectedSession(s)}
@@ -472,12 +473,12 @@ function CalendarGrid({ sessions, weekStart, conflictIds, onDismissConflicts, co
 
 export default function AdminTimetable() {
   const [weekOffset, setWeekOffset]       = useState(0)
-  const [view, setView]                   = useState('calendar')  // 'calendar' | 'list'
+  const [view, setView]                   = useState('list')  // 'calendar' | 'list'
   const [mode, setMode]                   = useState('attend')    // 'attend' | 'setup'
   const [showAddClass, setShowAddClass]   = useState(false)
   const [editSession, setEditSession]     = useState(null)
   const [sessionList, setSessionList]     = useState(null)
-  const [conflictsDismissed, setConflictsDismissed] = useState(false)
+  const [conflictsDismissed, setConflictsDismissed] = useState(true)
   const [conflictCheckTick, setConflictCheckTick]   = useState(0)
   const [selectedSeasonId, setSelectedSeasonId]     = useState(null)
   // Term Setup filters
@@ -531,7 +532,7 @@ export default function AdminTimetable() {
   )
 
   const handleRecheck = useCallback(() => {
-    setConflictsDismissed(false)
+    setConflictsDismissed(prev => !prev)
     setConflictCheckTick(t => t + 1)
   }, [])
 
@@ -628,8 +629,12 @@ export default function AdminTimetable() {
         </span>
         <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w + 1)}>Next →</button>
         {view === 'calendar' && (
-          <button className="btn btn-ghost btn-sm" style={{ marginLeft: 8 }} onClick={handleRecheck}>
-            Check Conflicts
+          <button
+            className="btn btn-ghost btn-sm"
+            style={{ marginLeft: 8, ...((!conflictsDismissed && conflictIds.size > 0) ? { color: 'var(--red)', borderColor: 'var(--red)' } : {}) }}
+            onClick={handleRecheck}
+          >
+            {conflictsDismissed ? 'Check Conflicts' : `Hide Conflicts (${Math.ceil(conflictIds.size / 2)})`}
           </button>
         )}
       </div>
@@ -702,7 +707,7 @@ export default function AdminTimetable() {
                         onClick={() => { setEditSession(s); setShowAddClass(true) }}>
                         <div>
                           <div style={{ fontWeight: 600, fontSize: 14 }}>{s.name}</div>
-                          <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{DAYS[s.day_of_week]} {s.start_time?.slice(0, 5)}</div>
+                          <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{DAYS[s.day_of_week]} {fmt12(s.start_time)}</div>
                         </div>
                         <div style={{ fontSize: 13 }}>
                           {s.instructor_detail?.display_name || '—'}
@@ -739,6 +744,7 @@ export default function AdminTimetable() {
           sessions={sessions}
           weekStart={weekStart}
           conflictIds={conflictIds}
+          showConflicts={!conflictsDismissed}
           conflictsDismissed={conflictsDismissed}
           onDismissConflicts={() => setConflictsDismissed(true)}
         />
@@ -779,7 +785,7 @@ export default function AdminTimetable() {
                       fontFamily: "'Archivo Black', sans-serif",
                       fontSize: 14,
                     }}>
-                      {s.start_time?.slice(0, 5)}
+                      {fmt12(s.start_time)}
                     </td>
                     <td>
                       <b>{s.name}</b>

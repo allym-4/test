@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useApi } from '../hooks/useApi'
 import { classes } from '../api'
+import { fmt12 } from '../utils/time'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -35,7 +36,7 @@ export default function InstructorAttendance() {
         <div>
           <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 3 }}>{s.name || 'Class'}</div>
           <div style={{ fontSize: 12, color: 'var(--grey)' }}>
-            {formatDate(occ.date)} · {s.start_time?.slice(0, 5)} – {s.end_time?.slice(0, 5)}
+            {formatDate(occ.date)} · {fmt12(s.start_time)} – {fmt12(s.end_time)}
           </div>
         </div>
         <span className="tag tag-lav" style={{ fontSize: 11 }}>{s.level || 'All levels'}</span>

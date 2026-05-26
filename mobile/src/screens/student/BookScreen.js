@@ -9,6 +9,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
 import { classes, enrolments, seasons, attendance, settings as settingsApi, payments, forms as formsApi } from '../../api'
 import client from '../../api/client'
+import { fmt12 } from '../../utils/time'
 
 // ─── theme ───────────────────────────────────────────────────────────────────
 const T = {
@@ -41,8 +42,7 @@ function fmtDateHeader(dateStr) {
 }
 
 function fmtTime(t) {
-  if (!t) return ''
-  return t.slice(0, 5)
+  return fmt12(t)
 }
 
 function groupByDate(occurrences) {

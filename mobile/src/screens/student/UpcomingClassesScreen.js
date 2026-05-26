@@ -5,6 +5,7 @@ import {
 } from 'react-native'
 import { useApi } from '../../hooks/useApi'
 import { classes as classesApi, attendance as attendanceApi, enrolments as enrolmentsApi, settings as settingsApi, helpdesk as helpdeskApi, roster } from '../../api'
+import { fmt12 } from '../../utils/time'
 
 const TYPE_LABELS = {
   enrolled: 'Enrolled',
@@ -694,7 +695,7 @@ export default function UpcomingClassesScreen({ navigation }) {
                             {e.class_session_detail?.name || e.class_name}
                           </Text>
                           <Text style={{ fontSize: 12, color: '#555', marginTop: 2 }}>
-                            {e.class_session_detail?.day_of_week_display || ''}{e.class_session_detail?.start_time ? ` · ${e.class_session_detail.start_time.slice(0, 5)}` : ''}
+                            {e.class_session_detail?.day_of_week_display || ''}{e.class_session_detail?.start_time ? ` · ${fmt12(e.class_session_detail.start_time)}` : ''}
                           </Text>
                           {pendingCR && (
                             <View style={{ marginTop: 5 }}>
