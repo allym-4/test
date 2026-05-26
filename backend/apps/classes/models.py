@@ -94,6 +94,10 @@ class ClassSession(models.Model):
         default=False,
         help_text='Mark this class as suitable for absolute first timers — no prior pole experience needed.'
     )
+    prerequisites = models.TextField(
+        blank=True,
+        help_text='What students need to know or be able to do before joining this class.'
+    )
     created_at = models.DateTimeField(auto_now_add=True, null=True)
 
     class Meta:
