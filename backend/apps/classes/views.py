@@ -2242,52 +2242,36 @@ class AdminPracticeAttendanceView(APIView):
     permission_classes = [IsAdminOrInstructor]
 
     def get(self, request, slot_pk):
-        from apps.attendance.models import AttendanceRecord
-        from apps.attendance.serializers import AttendanceRecordSerializer as AttRec
-
         slot = get_object_or_404(PracticeSlot, pk=slot_pk)
         bookings = PracticeBooking.objects.filter(
             slot=slot, status='confirmed'
         ).select_related('student')
 
-        # Build per-student attendance info
-        from apps.classes.models import ClassOccurrence as _Occ
-        results = []
-        for b in bookings:
-            entry = PracticeBookingSerializer(b, context={'request': request}).data
-            # Check for an ad-hoc attendance record keyed to this slot (stored by slot id in note)
-            att = _get_practice_attendance(slot.id, b.student_id)
-            entry['attendance_status'] = att.get('status', 'pending')
-            entry['kisi_access_granted'] = att.get('kisi_access_granted', False)
-            entry['attendance_id'] = att.get('id')
-            results.append(entry)
-
+        results = [PracticeBookingSerializer(b, context={'request': request}).data for b in bookings]
         slot_data = PracticeSlotSerializer(slot, context={'request': request}).data
         return Response({'slot': slot_data, 'bookings': results})
 
     def post(self, request, slot_pk):
-        """Update/create attendance record for one student in this practice slot.
-        Accepts: { student_id, status, kisi_access_granted }
+        """Update attendance status and/or kisi flag for one student in this practice slot.
+        Accepts: { student_id, attendance_status, kisi_access_granted }
         """
         slot = get_object_or_404(PracticeSlot, pk=slot_pk)
         student_id = request.data.get('student_id')
-        att_status = request.data.get('status', 'pending')
+        att_status = request.data.get('attendance_status', 'pending')
         kisi = request.data.get('kisi_access_granted', False)
 
         if not student_id:
             return Response({'detail': 'student_id required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        from apps.attendance.models import AttendanceRecord
-        from apps.attendance.serializers import AttendanceRecordSerializer as AttRec
+        try:
+            booking = PracticeBooking.objects.get(slot=slot, student_id=student_id)
+        except PracticeBooking.DoesNotExist:
+            return Response({'detail': 'Booking not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        record = _upsert_practice_attendance(
-            slot_id=slot_pk,
-            student_id=student_id,
-            att_status=att_status,
-            kisi_access_granted=kisi,
-            recorded_by=request.user,
-        )
-        return Response(record, status=status.HTTP_200_OK)
+        booking.attendance_status = att_status
+        booking.kisi_access_granted = bool(kisi)
+        booking.save(update_fields=['attendance_status', 'kisi_access_granted'])
+        return Response(PracticeBookingSerializer(booking, context={'request': request}).data, status=status.HTTP_200_OK)
 
 
 class AdminPracticeAddStudentView(APIView):

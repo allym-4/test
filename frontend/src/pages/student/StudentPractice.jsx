@@ -20,6 +20,7 @@ function fmtDate(d) {
 export default function StudentPractice() {
   const [booking, setBooking] = useState(null)
   const [cancelling, setCancelling] = useState(null)
+  const [cancelResult, setCancelResult] = useState(null)
   const [result, setResult] = useState(null)
   const [busy, setBusy] = useState(false)
   const [savedCard, setSavedCard] = useState(null)
@@ -65,15 +66,22 @@ export default function StudentPractice() {
     setBusy(false)
   }
 
+  function hoursUntilSlot(b) {
+    if (!b?.slot?.date || !b?.slot?.start_time) return 99
+    const slotDt = new Date(`${b.slot.date}T${b.slot.start_time}`)
+    return (slotDt - new Date()) / 1000 / 3600
+  }
+
   async function handleCancel(b) {
     setBusy(true)
     try {
-      await classesApi.practice.cancel(b.slot.id)
+      const res = await classesApi.practice.cancel(b.slot.id)
       setCancelling(null)
+      setCancelResult(res.data)
       refetch()
       refetchMy()
     } catch {
-      // ignore
+      setCancelling(null)
     }
     setBusy(false)
   }

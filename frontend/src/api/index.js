@@ -59,6 +59,10 @@ export const classes = {
     cancel: (id) => client.post(`/api/classes/practice/${id}/cancel/`),
     myBookings: () => client.get('/api/classes/practice/my-bookings/'),
     allBookings: (params) => client.get('/api/classes/practice/all-bookings/', { params }),
+    attendance: (id) => client.get(`/api/classes/practice/${id}/attendance/`),
+    updateAttendance: (id, data) => client.post(`/api/classes/practice/${id}/attendance/`, data),
+    addStudent: (id, student_id) => client.post(`/api/classes/practice/${id}/add-student/`, { student_id }),
+    removeStudent: (id, student_id) => client.post(`/api/classes/practice/${id}/remove-student/`, { student_id }),
     credits: {
       list: (params) => client.get('/api/classes/practice/credits/', { params }),
       create: (data) => client.post('/api/classes/practice/credits/', data),

@@ -402,7 +402,8 @@ class PracticeBookingSerializer(serializers.ModelSerializer):
         model = PracticeBooking
         fields = (
             'id', 'slot', 'slot_detail', 'student', 'student_detail',
-            'status', 'price_charged', 'is_free', 'payment_type', 'created_at',
+            'status', 'price_charged', 'is_free', 'payment_type',
+            'attendance_status', 'kisi_access_granted', 'created_at',
         )
         read_only_fields = ('id', 'created_at')
 
