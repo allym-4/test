@@ -11,6 +11,7 @@ urlpatterns = [
     path('occurrences/', views.ClassOccurrenceListView.as_view(), name='occurrence-list'),
     path('occurrences/<int:pk>/', views.ClassOccurrenceDetailView.as_view(), name='occurrence-detail'),
     path('occurrences/<int:pk>/request-cover/', views.RequestCoverView.as_view(), name='occurrence-request-cover'),
+    path('occurrences/<int:pk>/assign-cover/', views.AssignCoverView.as_view(), name='occurrence-assign-cover'),
     path('seasons/', views.SeasonListView.as_view(), name='season-list'),
     path('seasons/<int:pk>/', views.SeasonDetailView.as_view(), name='season-detail'),
     path('seasons/<int:pk>/toggle-bookings/', views.SeasonToggleBookingsView.as_view(), name='season-toggle-bookings'),

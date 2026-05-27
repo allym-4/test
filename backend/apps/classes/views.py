@@ -241,6 +241,21 @@ class ClassSessionListView(generics.ListCreateAPIView):
             qs = qs.filter(is_active=True)
         if season_id:
             qs = qs.filter(season_id=season_id)
+        # season_status=active restricts to sessions from the currently running season,
+        # preventing duplicates when an upcoming season also has active sessions.
+        season_status = self.request.query_params.get('season_status')
+        if season_status:
+            if season_status == 'active':
+                active_season = Season.objects.filter(status='active').first()
+                if active_season:
+                    qs = qs.filter(season=active_season)
+                else:
+                    # No active season — fall back to most recent upcoming
+                    upcoming = Season.objects.filter(status='upcoming').order_by('start_date').first()
+                    if upcoming:
+                        qs = qs.filter(season=upcoming)
+            else:
+                qs = qs.filter(season__status=season_status)
         # Students only see sessions whose category is visible (or has no category)
         if getattr(self.request.user, 'role', None) == 'student':
             qs = qs.filter(
@@ -375,6 +390,78 @@ class RequestCoverView(APIView):
                 )
 
         return Response({'detail': 'Cover request sent.'}, status=status.HTTP_200_OK)
+
+
+class AssignCoverView(APIView):
+    """Admin assigns a specific substitute instructor to cover an occurrence."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        from django.core.mail import send_mail
+        from django.conf import settings
+        from apps.users.models import Notification, User
+
+        try:
+            occ = ClassOccurrence.objects.select_related(
+                'session__studio', 'session__instructor', 'session__season'
+            ).get(pk=pk)
+        except ClassOccurrence.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        sub_id = request.data.get('substitute_instructor_id')
+        if not sub_id:
+            return Response({'detail': 'substitute_instructor_id required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            sub = User.objects.get(pk=sub_id)
+        except User.DoesNotExist:
+            return Response({'detail': 'Instructor not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        occ.substitute_instructor = sub
+        occ.cover_needed = False
+        occ.save(update_fields=['substitute_instructor', 'cover_needed'])
+
+        session_name = occ.session.name
+        day_str = occ.date.strftime('%-d %B')
+        time_str = occ.session.start_time.strftime('%I:%M %p').lstrip('0') if occ.session.start_time else ''
+        studio_str = f' at {occ.session.studio.name}' if occ.session.studio else ''
+        duration = occ.session.duration or ''
+        assigned_by = request.user.get_full_name() or request.user.first_name or request.user.username
+
+        # In-app notification for the covering instructor
+        Notification.objects.create(
+            recipient=sub,
+            title=f'You\'re covering: {session_name} on {day_str}',
+            body=(
+                f'You have been assigned to cover {session_name} on {day_str}'
+                f'{f" at {time_str}" if time_str else ""}{studio_str}.'
+                f' Assigned by {assigned_by}.'
+            ),
+            notification_type='info',
+            action_label='View My Classes',
+            action_url='/classes',
+        )
+
+        # Email to covering instructor
+        if sub.email:
+            send_mail(
+                subject=f'Cover assigned: {session_name} on {day_str}',
+                message=(
+                    f'Hi {sub.first_name},\n\n'
+                    f'You have been assigned to cover {session_name} on {day_str}'
+                    f'{f" at {time_str}" if time_str else ""}{studio_str}.\n\n'
+                    f'{f"Duration: {duration} minutes" if duration else ""}\n\n'
+                    f'Assigned by: {assigned_by}\n\n'
+                    f'Please log into the app to view the class register and notes.\n\n'
+                    f'Duality Pole Studio'
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[sub.email],
+                fail_silently=True,
+            )
+
+        from .serializers import ClassOccurrenceSerializer
+        return Response(ClassOccurrenceSerializer(occ).data)
 
 
 class SeasonListView(generics.ListCreateAPIView):
