@@ -4,9 +4,10 @@ import {
   ActivityIndicator, Alert, ScrollView, TextInput,
 } from 'react-native'
 import { useApi } from '../../hooks/useApi'
-import { classes, attendance, enrolments, payments as paymentsApi } from '../../api'
+import { classes, attendance, enrolments, payments as paymentsApi, homework } from '../../api'
 import client from '../../api/client'
 import { fmt12 } from '../../utils/time'
+import { useAuth } from '../../contexts/AuthContext'
 
 const STATUS_OPTS = [
   { key: 'pending',        label: 'Pending',        color: '#555' },
@@ -195,6 +196,7 @@ function WaitlistRow({ item, position }) {
 // ── Main screen ───────────────────────────────────────────────────────────────
 
 export default function AttendanceScreen({ navigation, route }) {
+  const { user } = useAuth()
   function goToStudent(studentId, studentName) {
     navigation.navigate('StudentDetail', { studentId, studentName })
   }
@@ -216,6 +218,16 @@ export default function AttendanceScreen({ navigation, route }) {
   const [saving, setSaving] = useState(false)
   const [noteModal, setNoteModal] = useState(null)  // studentId
   const [noteText, setNoteText] = useState('')
+  const [appendNoteText, setAppendNoteText] = useState('')
+  const [savingNoteAppend, setSavingNoteAppend] = useState(false)
+  const [localInstructorNotes, setLocalInstructorNotes] = useState(null)
+  const [hwList, setHwList] = useState([])
+  const [hwLoading, setHwLoading] = useState(false)
+  const [showAddHw, setShowAddHw] = useState(false)
+  const [newHwTitle, setNewHwTitle] = useState('')
+  const [newHwDesc, setNewHwDesc] = useState('')
+  const [newHwDue, setNewHwDue] = useState('')
+  const [savingHw, setSavingHw] = useState(false)
 
   const { data: occData, loading } = useApi(
     () => classes.occurrences({ date: today, instructor: 'me' }), []
@@ -272,6 +284,21 @@ export default function AttendanceScreen({ navigation, route }) {
     setNoteTags(initNoteTags)
   }, [attRecords]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Sync localInstructorNotes when occurrence changes
+  useEffect(() => {
+    setLocalInstructorNotes(selectedOcc?.session_detail?.instructor_notes ?? null)
+  }, [selectedOcc?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load homework when session is known
+  useEffect(() => {
+    if (!sessionId) return
+    setHwLoading(true)
+    homework.list({ session: sessionId })
+      .then(r => setHwList(r.data?.results ?? r.data ?? []))
+      .catch(() => setHwList([]))
+      .finally(() => setHwLoading(false))
+  }, [sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Load balances + waitlist when occurrence selected
   useEffect(() => {
     if (!selectedOcc) return
@@ -297,6 +324,57 @@ export default function AttendanceScreen({ navigation, route }) {
 
   function setStatus(sid, status) {
     setRegister(prev => ({ ...prev, [sid]: status }))
+  }
+
+  async function appendNote() {
+    if (!appendNoteText.trim() || !sessionId) return
+    setSavingNoteAppend(true)
+    try {
+      const now = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
+      const byLine = user?.display_name || user?.first_name || 'Instructor'
+      const entry = `[${now} — ${byLine}] ${appendNoteText.trim()}`
+      const current = localInstructorNotes ?? selectedOcc?.session_detail?.instructor_notes ?? ''
+      const updated = current ? `${current}\n\n${entry}` : entry
+      await classes.update(sessionId, { instructor_notes: updated })
+      setLocalInstructorNotes(updated)
+      setAppendNoteText('')
+    } catch {
+      Alert.alert('Error', 'Could not save note.')
+    } finally {
+      setSavingNoteAppend(false)
+    }
+  }
+
+  async function createHomework() {
+    if (!newHwTitle.trim() || !sessionId) return
+    setSavingHw(true)
+    try {
+      const res = await homework.create({
+        class_session: sessionId,
+        title: newHwTitle.trim(),
+        description: newHwDesc.trim(),
+        due_date: newHwDue || null,
+      })
+      setHwList(prev => [res.data, ...prev])
+      setNewHwTitle('')
+      setNewHwDesc('')
+      setNewHwDue('')
+      setShowAddHw(false)
+    } catch {
+      Alert.alert('Error', 'Could not create homework.')
+    } finally {
+      setSavingHw(false)
+    }
+  }
+
+  async function toggleHomeworkStatus(hw) {
+    const newStatus = hw.status === 'active' ? 'closed' : 'active'
+    try {
+      await homework.update(hw.id, { status: newStatus })
+      setHwList(prev => prev.map(h => h.id === hw.id ? { ...h, status: newStatus } : h))
+    } catch {
+      Alert.alert('Error', 'Could not update homework.')
+    }
   }
 
   async function saveRegister() {
@@ -381,8 +459,8 @@ export default function AttendanceScreen({ navigation, route }) {
     ? sessionSyllabus.find(e => e.week === currentWeekNum)
     : null
   const hasSyllabusEntry = syllabusEntry && (syllabusEntry.title || syllabusEntry.content || syllabusEntry.moves)
-  const instructorNotes = selectedOcc.session_detail?.instructor_notes?.trim()
-  const showWeekPlan = hasSyllabusEntry || !!instructorNotes
+  const instructorNotes = (localInstructorNotes ?? selectedOcc.session_detail?.instructor_notes ?? '').trim() || ''
+  const showWeekPlan = hasSyllabusEntry || !!instructorNotes || true  // always show for append input
 
   return (
     <View style={s.root}>
@@ -427,12 +505,33 @@ export default function AttendanceScreen({ navigation, route }) {
               ) : null}
             </View>
           )}
-          {instructorNotes ? (
-            <View style={[s.notesBox, hasSyllabusEntry && { marginTop: 12 }]}>
-              <Text style={s.notesLabel}>Instructor Notes</Text>
+          <View style={[s.notesBox, hasSyllabusEntry && { marginTop: 12 }]}>
+            <Text style={s.notesLabel}>Instructor Notes</Text>
+            {instructorNotes ? (
               <Text style={s.notesText}>{instructorNotes}</Text>
+            ) : (
+              <Text style={[s.notesText, { color: '#555' }]}>No notes yet.</Text>
+            )}
+            <View style={{ marginTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(255,170,0,0.15)', paddingTop: 10 }}>
+              <TextInput
+                style={s.appendInput}
+                value={appendNoteText}
+                onChangeText={setAppendNoteText}
+                placeholder="Add a note…"
+                placeholderTextColor="#555"
+                multiline
+              />
+              <TouchableOpacity
+                style={[s.appendBtn, (!appendNoteText.trim() || savingNoteAppend) && { opacity: 0.4 }]}
+                onPress={appendNote}
+                disabled={!appendNoteText.trim() || savingNoteAppend}
+              >
+                {savingNoteAppend
+                  ? <ActivityIndicator color="#000" size="small" />
+                  : <Text style={s.appendBtnText}>Add Note</Text>}
+              </TouchableOpacity>
             </View>
-          ) : null}
+          </View>
         </View>
       )}
 
@@ -442,15 +541,86 @@ export default function AttendanceScreen({ navigation, route }) {
           ['attending', `Attending (${attending.length})`],
           ['away', `Away (${away.length})`],
           ['waitlist', `Waitlist (${waitlist.length})`],
+          ['homework', `Homework${hwList.filter(h => h.status === 'active').length > 0 ? ` (${hwList.filter(h => h.status === 'active').length})` : ''}`],
         ].map(([key, label]) => (
           <TouchableOpacity key={key} style={[s.tabBtn, tab === key && s.tabBtnActive]} onPress={() => setTab(key)}>
-            <Text style={[s.tabBtnText, tab === key && s.tabBtnTextActive]}>{label}</Text>
+            <Text style={[s.tabBtnText, tab === key && s.tabBtnTextActive]} numberOfLines={1}>{label}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
       {/* Content */}
-      {enrLoading ? (
+      {tab === 'homework' ? (
+        <ScrollView contentContainerStyle={[s.list, { paddingBottom: 100 }]}>
+          {/* Add homework form */}
+          {showAddHw ? (
+            <View style={s.hwForm}>
+              <Text style={s.hwFormTitle}>New Homework</Text>
+              <TextInput
+                style={s.hwInput}
+                value={newHwTitle}
+                onChangeText={setNewHwTitle}
+                placeholder="Title *"
+                placeholderTextColor="#555"
+              />
+              <TextInput
+                style={[s.hwInput, { minHeight: 60, textAlignVertical: 'top' }]}
+                value={newHwDesc}
+                onChangeText={setNewHwDesc}
+                placeholder="Description (optional)"
+                placeholderTextColor="#555"
+                multiline
+              />
+              <TextInput
+                style={s.hwInput}
+                value={newHwDue}
+                onChangeText={setNewHwDue}
+                placeholder="Due date YYYY-MM-DD (optional)"
+                placeholderTextColor="#555"
+              />
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+                <TouchableOpacity style={s.hwCancelBtn} onPress={() => { setShowAddHw(false); setNewHwTitle(''); setNewHwDesc(''); setNewHwDue('') }}>
+                  <Text style={s.hwCancelBtnText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.hwSaveBtn, (!newHwTitle.trim() || savingHw) && { opacity: 0.4 }]}
+                  onPress={createHomework}
+                  disabled={!newHwTitle.trim() || savingHw}
+                >
+                  {savingHw ? <ActivityIndicator color="#000" size="small" /> : <Text style={s.hwSaveBtnText}>Add</Text>}
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity style={s.hwAddBtn} onPress={() => setShowAddHw(true)}>
+              <Text style={s.hwAddBtnText}>+ Assign Homework</Text>
+            </TouchableOpacity>
+          )}
+          {/* Homework list */}
+          {hwLoading && <ActivityIndicator color="#ccff00" style={{ marginTop: 20 }} />}
+          {!hwLoading && hwList.length === 0 && (
+            <Text style={s.empty}>No homework assigned yet.</Text>
+          )}
+          {hwList.map(hw => (
+            <View key={hw.id} style={[s.hwCard, hw.status === 'closed' && { opacity: 0.5 }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={s.hwCardTitle}>{hw.title}</Text>
+                {hw.description ? <Text style={s.hwCardDesc}>{hw.description}</Text> : null}
+                {hw.due_date ? <Text style={s.hwCardMeta}>Due: {hw.due_date}</Text> : null}
+                <Text style={[s.hwCardStatus, { color: hw.status === 'active' ? '#ccff00' : '#555' }]}>
+                  {hw.status === 'active' ? 'Active' : 'Closed'}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={s.hwToggleBtn}
+                onPress={() => toggleHomeworkStatus(hw)}
+              >
+                <Text style={s.hwToggleBtnText}>{hw.status === 'active' ? 'Close' : 'Reopen'}</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </ScrollView>
+      ) : enrLoading ? (
         <ActivityIndicator style={{ marginTop: 40 }} color="#ccff00" />
       ) : (
         <FlatList
@@ -486,7 +656,7 @@ export default function AttendanceScreen({ navigation, route }) {
       )}
 
       {/* Save button */}
-      {students.length > 0 && tab !== 'waitlist' && (
+      {students.length > 0 && tab !== 'waitlist' && tab !== 'homework' && (
         <TouchableOpacity
           style={[s.saveBtn, saving && { opacity: 0.5 }]}
           onPress={saveRegister}
@@ -613,6 +783,29 @@ const s = StyleSheet.create({
   notesBox: { backgroundColor: 'rgba(255,170,0,0.06)', borderWidth: 1, borderColor: 'rgba(255,170,0,0.25)', borderRadius: 8, padding: 10 },
   notesLabel: { fontSize: 10, fontWeight: '700', color: '#ffaa00', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 },
   notesText: { fontSize: 13, color: '#ccc', lineHeight: 19 },
+
+  // Append note
+  appendInput: { backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: 'rgba(255,170,0,0.2)', borderRadius: 8, padding: 10, color: '#fff', fontSize: 13, minHeight: 56, textAlignVertical: 'top', marginBottom: 8 },
+  appendBtn: { alignSelf: 'flex-end', backgroundColor: '#ccff00', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 8 },
+  appendBtnText: { color: '#000', fontWeight: '700', fontSize: 13 },
+
+  // Homework tab
+  hwAddBtn: { backgroundColor: '#111', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: '#333', marginBottom: 12, alignItems: 'center' },
+  hwAddBtnText: { color: '#ccff00', fontWeight: '600', fontSize: 14 },
+  hwForm: { backgroundColor: '#111', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#333', marginBottom: 12, gap: 10 },
+  hwFormTitle: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 4 },
+  hwInput: { backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333', borderRadius: 8, padding: 10, color: '#fff', fontSize: 14 },
+  hwCancelBtn: { flex: 1, padding: 10, alignItems: 'center' },
+  hwCancelBtnText: { color: '#888', fontWeight: '600', fontSize: 14 },
+  hwSaveBtn: { flex: 1, backgroundColor: '#ccff00', borderRadius: 8, padding: 10, alignItems: 'center' },
+  hwSaveBtnText: { color: '#000', fontWeight: '700', fontSize: 14 },
+  hwCard: { backgroundColor: '#111', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: '#222', marginBottom: 8, flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  hwCardTitle: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 2 },
+  hwCardDesc: { fontSize: 13, color: '#aaa', marginBottom: 4 },
+  hwCardMeta: { fontSize: 12, color: '#888', marginBottom: 2 },
+  hwCardStatus: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  hwToggleBtn: { backgroundColor: '#1a1a1a', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: '#333', flexShrink: 0 },
+  hwToggleBtnText: { color: '#888', fontWeight: '600', fontSize: 12 },
 
   // Save button
   saveBtn: { position: 'absolute', bottom: 24, left: 16, right: 16, backgroundColor: '#ccff00', borderRadius: 14, padding: 16, alignItems: 'center' },

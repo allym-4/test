@@ -40,6 +40,7 @@ export const classes = {
   },
   myUpcoming: () => client.get('/api/classes/my-upcoming/'),
   requestCover: (occurrenceId) => client.post(`/api/classes/occurrences/${occurrenceId}/request-cover/`),
+  update: (id, data) => client.patch(`/api/classes/sessions/${id}/`, data),
 }
 
 export const media = {
@@ -159,6 +160,8 @@ export const skills = {
 
 export const homework = {
   list: (params) => client.get('/api/homework/', { params }),
+  create: (data) => client.post('/api/homework/', data),
+  update: (id, data) => client.patch(`/api/homework/${id}/`, data),
   submissions: (params) => client.get('/api/homework/submissions/', { params }),
   submitHomework: (data) => client.post('/api/homework/submissions/', data),
   submissionItems: (submissionId) => client.get(`/api/homework/submissions/${submissionId}/items/`),
