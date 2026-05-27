@@ -81,8 +81,27 @@ def bulk_save_register(request, occurrence_pk):
             )
 
         saved.append(obj)
+    # Credit instructor fee if the session has one and it hasn't been credited yet
+    session = occurrence.session
+    if (
+        not occurrence.instructor_credited
+        and session.instructor_fee
+        and session.instructor
+    ):
+        attending_count = sum(1 for r in saved if r.status in ('present', 'late'))
+        if attending_count > 0:
+            from apps.payments.models import Payment
+            Payment.objects.create(
+                student=session.instructor,
+                amount=session.instructor_fee,
+                payment_type='credit',
+                description=f'Instructor fee — {session.name} {occurrence.date}',
+                recorded_by=request.user,
+            )
+            occurrence.instructor_credited = True
+
     occurrence.register_saved = True
-    occurrence.save(update_fields=['register_saved'])
+    occurrence.save(update_fields=['register_saved', 'instructor_credited'])
     return Response(AttendanceRecordSerializer(saved, many=True).data, status=status.HTTP_200_OK)
 
 

@@ -126,20 +126,30 @@ DEFAULT_DISCOUNT_TIERS = {"2": 100, "3": 130, "4": 150, "5": 170, "6": 170}
 
 
 def _get_class_incremental_price(session, position):
-    """Return price for adding a class at the given enrolment position (1-indexed)."""
+    """Return price for adding a class at the given enrolment position (1-indexed).
+
+    Standalone-priced classes (e.g. Kiki at $250) are $20 cheaper than regular
+    at position 1, but the incremental amounts for positions 2+ are identical to
+    regular — so the full discount structure shifts uniformly.
+    """
     from apps.users.models import StudioSettings
-    settings = StudioSettings.objects.first()
-    base_price = (
+    settings_obj = StudioSettings.objects.first()
+    regular_base = Decimal(str(settings_obj.price_season if settings_obj else 270))
+    standalone = (
         Decimal(str(session.category.standalone_price))
         if session.category and session.category.standalone_price is not None
-        else Decimal(str(settings.price_season if settings else 270))
+        else None
     )
-    # Season-level tiers take priority over studio-level tiers
     season_tiers = (session.season.discount_tiers or {}) if session.season_id else {}
-    studio_tiers = (settings.season_discount_tiers or {}) if settings else {}
+    studio_tiers = (settings_obj.season_discount_tiers or {}) if settings_obj else {}
     tiers = season_tiers or studio_tiers or DEFAULT_DISCOUNT_TIERS
+
+    if position == 1:
+        return standalone if standalone is not None else regular_base
+
+    # Positions 2+: same incremental amounts regardless of standalone pricing
     discount = Decimal(str(tiers.get(str(position), 0)))
-    return max(Decimal('0'), base_price - discount)
+    return max(Decimal('0'), regular_base - discount)
 
 
 @api_view(['GET'])

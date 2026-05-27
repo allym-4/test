@@ -2866,3 +2866,81 @@ class ClassSeasonEnrolmentsView(APIView):
             'transfers': transfers_data,
             'cancelled': cancelled_data,
         })
+
+
+class MyScheduleIcalView(APIView):
+    """Generate an .ics calendar file of the student's upcoming enrolled classes."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        import datetime
+        from django.http import HttpResponse
+        from apps.enrolments.models import Enrolment
+
+        student = request.user
+        today = datetime.date.today()
+
+        active_enrolments = Enrolment.objects.filter(
+            student=student, status='active'
+        ).select_related('class_session')
+        session_ids = [e.class_session_id for e in active_enrolments if e.class_session_id]
+
+        occurrences = []
+        if session_ids:
+            occurrences = (
+                ClassOccurrence.objects
+                .filter(session_id__in=session_ids, date__gte=today, status='scheduled')
+                .select_related('session__studio', 'session__instructor', 'substitute_instructor')
+                .order_by('date', 'session__start_time')
+            )
+
+        lines = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//Duality Pole Studio//EN',
+            'CALSCALE:GREGORIAN',
+            'METHOD:PUBLISH',
+            'X-WR-CALNAME:Duality Pole Studio',
+            'X-WR-TIMEZONE:Australia/Sydney',
+        ]
+
+        for occ in occurrences:
+            sess = occ.session
+            start_time = sess.start_time
+            if not start_time:
+                continue
+
+            # Build datetime strings
+            dt_start = datetime.datetime.combine(occ.date, start_time)
+            duration_mins = sess.duration_minutes or 55
+            dt_end = dt_start + datetime.timedelta(minutes=duration_mins)
+
+            def fmt_dt(dt):
+                return dt.strftime('%Y%m%dT%H%M%S')
+
+            instructor = occ.substitute_instructor or sess.instructor
+            instructor_name = instructor.display_name if instructor else 'Instructor TBC'
+            studio = sess.studio
+            location = studio.name if studio else 'Duality Pole Studio'
+            if studio and studio.address:
+                location += f', {studio.address}'
+
+            uid = f'duality-occ-{occ.id}@dualitypole.com'
+            lines += [
+                'BEGIN:VEVENT',
+                f'UID:{uid}',
+                f'DTSTART;TZID=Australia/Sydney:{fmt_dt(dt_start)}',
+                f'DTEND;TZID=Australia/Sydney:{fmt_dt(dt_end)}',
+                f'SUMMARY:{sess.name}',
+                f'LOCATION:{location}',
+                f'DESCRIPTION:with {instructor_name}',
+                'STATUS:CONFIRMED',
+                'END:VEVENT',
+            ]
+
+        lines.append('END:VCALENDAR')
+        ics_content = '\r\n'.join(lines) + '\r\n'
+
+        response = HttpResponse(ics_content, content_type='text/calendar; charset=utf-8')
+        response['Content-Disposition'] = 'attachment; filename="duality-schedule.ics"'
+        return response

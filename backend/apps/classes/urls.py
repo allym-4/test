@@ -74,4 +74,5 @@ urlpatterns = [
     path('sessions/<int:pk>/season-enrolments/', views.ClassSeasonEnrolmentsView.as_view(), name='session-season-enrolments'),
     path('tags/', views.TagListCreateView.as_view(), name='class-tag-list'),
     path('tags/<int:pk>/', views.TagDetailView.as_view(), name='class-tag-detail'),
+    path('my-schedule/ical/', views.MyScheduleIcalView.as_view(), name='my-schedule-ical'),
 ]

@@ -77,6 +77,7 @@ export const classes = {
     suggest: (sessionIds) => client.get('/api/classes/upsells/suggest/', { params: { session_ids: sessionIds.join(',') } }),
   },
   myUpcoming: () => client.get('/api/classes/my-upcoming/'),
+  downloadIcal: () => client.get('/api/classes/my-schedule/ical/', { responseType: 'blob' }),
   emailClass: (sessionId, data) => client.post(`/api/classes/sessions/${sessionId}/email/`, data),
   generateDescription: (data) => client.post('/api/classes/sessions/generate-description/', data),
   seasonEnrolments: (sessionId) => client.get(`/api/classes/sessions/${sessionId}/season-enrolments/`),

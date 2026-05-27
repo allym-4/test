@@ -932,13 +932,10 @@ export default function StudentMyClasses() {
               style={{ fontSize: 12 }}
               onClick={async () => {
                 try {
-                  const token = localStorage.getItem('access_token')
-                  const baseUrl = import.meta.env.VITE_API_URL || ''
-                  const res = await fetch(`${baseUrl}/api/enrolments/calendar.ics`, { headers: { Authorization: `Bearer ${token}` } })
-                  const blob = await res.blob()
-                  const url = URL.createObjectURL(blob)
+                  const res = await classesApi.downloadIcal()
+                  const url = URL.createObjectURL(new Blob([res.data], { type: 'text/calendar' }))
                   const a = document.createElement('a')
-                  a.href = url; a.download = 'duality-pole-classes.ics'; a.click()
+                  a.href = url; a.download = 'duality-schedule.ics'; a.click()
                   URL.revokeObjectURL(url)
                 } catch { alert('Failed to download calendar file.') }
               }}

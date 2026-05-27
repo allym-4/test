@@ -156,6 +156,7 @@ class ClassOccurrence(models.Model):
     notes = models.TextField(blank=True)
     register_saved = models.BooleanField(default=False)
     cover_needed = models.BooleanField(default=False)
+    instructor_credited = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['-date']
