@@ -490,111 +490,66 @@ export default function AdminClassDetail() {
         </div>
       )}
 
-      {/* Scheduling */}
-      <div style={sectionCard}>
-        <div style={sectionTitle}>Scheduling</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-          <div>
-            <label style={labelStyle}>Season</label>
-            <select style={inputStyle} value={form.season} onChange={e => set('season', e.target.value)}>
-              <option value="">— No season —</option>
-              {seasonList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={labelStyle}>Day</label>
-            <select style={inputStyle} value={form.day_of_week} onChange={e => set('day_of_week', parseInt(e.target.value))}>
-              {['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map((d,i) => (
-                <option key={i} value={i}>{d}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
-          <div>
-            <label style={labelStyle}>Start Time</label>
-            <input style={inputStyle} type="time" value={form.start_time} onChange={e => set('start_time', e.target.value)} />
-          </div>
-          <div>
-            <label style={labelStyle}>Duration (min)</label>
-            <input style={inputStyle} type="number" min="15" max="180" value={form.duration_minutes} onChange={e => set('duration_minutes', e.target.value)} />
-          </div>
-          <div>
-            <label style={labelStyle}>Capacity</label>
-            <input style={inputStyle} type="number" min="1" value={form.capacity} onChange={e => set('capacity', e.target.value)} />
-          </div>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <div>
-            <label style={labelStyle}>Instructor</label>
-            <select style={inputStyle} value={form.instructor} onChange={e => set('instructor', e.target.value)}>
-              <option value="">— None —</option>
-              {instructors.map(i => <option key={i.id} value={i.id}>{i.display_name || i.first_name + ' ' + i.last_name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={labelStyle}>Studio</label>
-            <select style={inputStyle} value={form.studio} onChange={e => {
-              set('studio', e.target.value)
-              const studio = studioList.find(s => String(s.id) === String(e.target.value))
-              if (studio) {
-                const poles = parseInt(studio.poles) || parseInt(studio.capacity) || null
-                if (poles) set('capacity', poles)
-              }
-            }}>
-              <option value="">— None —</option>
-              {studioList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-          </div>
-        </div>
-
-        {/* Pricing & Instructor Fee */}
-        <div style={{ marginTop: 16 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 12 }}>
+      {/* Scheduling — only shown when editing an existing class */}
+      {!isNew && (
+        <div style={sectionCard}>
+          <div style={sectionTitle}>Scheduling</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
             <div>
-              <label style={labelStyle}>Season Price Override</label>
-              <input
-                style={inputStyle}
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.price_override}
-                onChange={e => set('price_override', e.target.value)}
-                placeholder="Leave blank for standard ($270)"
-              />
-              <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 5 }}>
-                Standard season price: $270. Override only if different.
-              </div>
+              <label style={labelStyle}>Season</label>
+              <select style={inputStyle} value={form.season} onChange={e => set('season', e.target.value)}>
+                <option value="">— No season —</option>
+                {seasonList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
             </div>
             <div>
-              <label style={labelStyle}>Instructor Fee (per class)</label>
-              <input
-                style={inputStyle}
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.instructor_fee}
-                onChange={e => set('instructor_fee', e.target.value)}
-                placeholder="e.g. 50.00"
-              />
-              <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 5 }}>
-                Amount credited to instructor per class attended.
-              </div>
+              <label style={labelStyle}>Day</label>
+              <select style={inputStyle} value={form.day_of_week} onChange={e => set('day_of_week', parseInt(e.target.value))}>
+                {['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map((d,i) => (
+                  <option key={i} value={i}>{d}</option>
+                ))}
+              </select>
             </div>
           </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={form.requires_full_payment}
-              onChange={e => set('requires_full_payment', e.target.checked)}
-              style={{ accentColor: 'var(--lime)' }}
-            />
-            <span style={{ fontSize: 13, color: form.requires_full_payment ? 'var(--white)' : 'var(--grey)' }}>
-              Require full upfront payment (no payment plans)
-            </span>
-          </label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
+            <div>
+              <label style={labelStyle}>Start Time</label>
+              <input style={inputStyle} type="time" value={form.start_time} onChange={e => set('start_time', e.target.value)} />
+            </div>
+            <div>
+              <label style={labelStyle}>Duration (min)</label>
+              <input style={inputStyle} type="number" min="15" max="180" value={form.duration_minutes} onChange={e => set('duration_minutes', e.target.value)} />
+            </div>
+            <div>
+              <label style={labelStyle}>Capacity</label>
+              <input style={inputStyle} type="number" min="1" value={form.capacity} onChange={e => set('capacity', e.target.value)} />
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div>
+              <label style={labelStyle}>Instructor</label>
+              <select style={inputStyle} value={form.instructor} onChange={e => set('instructor', e.target.value)}>
+                <option value="">— None —</option>
+                {instructors.map(i => <option key={i.id} value={i.id}>{i.display_name || i.first_name + ' ' + i.last_name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Studio</label>
+              <select style={inputStyle} value={form.studio} onChange={e => {
+                set('studio', e.target.value)
+                const studio = studioList.find(s => String(s.id) === String(e.target.value))
+                if (studio) {
+                  const poles = parseInt(studio.poles) || parseInt(studio.capacity) || null
+                  if (poles) set('capacity', poles)
+                }
+              }}>
+                <option value="">— None —</option>
+                {studioList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Class Details */}
       <div style={sectionCard}>
@@ -672,18 +627,19 @@ export default function AdminClassDetail() {
           </div>
         </div>
 
-        {/* Auto-exempt checkbox */}
+        {/* Auto-exempt toggle */}
         <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={form.auto_exempt_same_name}
-              onChange={e => set('auto_exempt_same_name', e.target.checked)}
-              style={{ accentColor: 'var(--lime)' }}
-            />
-            <span style={{ fontSize: 13, color: form.auto_exempt_same_name ? 'var(--white)' : 'var(--grey)' }}>
-              Auto-exempt students enrolled in same class name from catch-up cutoff
-            </span>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+            <div
+              onClick={() => set('auto_exempt_same_name', !form.auto_exempt_same_name)}
+              style={{ width: 36, height: 20, borderRadius: 10, flexShrink: 0, background: form.auto_exempt_same_name ? 'var(--lime)' : '#333', position: 'relative', cursor: 'pointer', transition: 'background 0.2s' }}
+            >
+              <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: form.auto_exempt_same_name ? 19 : 3, transition: 'left 0.2s' }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: form.auto_exempt_same_name ? 'var(--white)' : 'var(--grey)' }}>Auto-exempt enrolled students</div>
+              <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>Students already enrolled in a class with the same name bypass the catch-up cutoff.</div>
+            </div>
           </label>
         </div>
 
@@ -712,6 +668,55 @@ export default function AdminClassDetail() {
             onChange={ids => set('tags', ids)}
           />
         </div>
+      </div>
+
+      {/* Pricing & Payment */}
+      <div style={sectionCard}>
+        <div style={sectionTitle}>Pricing &amp; Payment</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+          <div>
+            <label style={labelStyle}>Season Price Override ($)</label>
+            <input
+              style={inputStyle}
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.price_override}
+              onChange={e => set('price_override', e.target.value)}
+              placeholder="Leave blank for standard ($270)"
+            />
+            <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 5 }}>
+              Overrides the standard season price for this class.
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>Instructor Fee (per class, $)</label>
+            <input
+              style={inputStyle}
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.instructor_fee}
+              onChange={e => set('instructor_fee', e.target.value)}
+              placeholder="e.g. 50.00"
+            />
+            <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 5 }}>
+              Amount credited to instructor's account each time this class runs.
+            </div>
+          </div>
+        </div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+          <div
+            onClick={() => set('requires_full_payment', !form.requires_full_payment)}
+            style={{ width: 36, height: 20, borderRadius: 10, flexShrink: 0, background: form.requires_full_payment ? 'var(--lime)' : '#333', position: 'relative', cursor: 'pointer', transition: 'background 0.2s' }}
+          >
+            <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: form.requires_full_payment ? 19 : 3, transition: 'left 0.2s' }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: form.requires_full_payment ? 'var(--white)' : 'var(--grey)' }}>Require full upfront payment</div>
+            <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>Students cannot use a payment plan for this class.</div>
+          </div>
+        </label>
       </div>
 
       {/* Description */}
