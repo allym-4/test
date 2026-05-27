@@ -2402,7 +2402,7 @@ RULES:
 - Class descriptions: 2–3 sentences max. What it is, what you do, who it's for.
 - First-timer body: short practical points. What to wear, what to bring, what to expect. Warm and real, not corporate safety briefing.
 - Never write "journey". Never write "transform". Never write "amazing community" or "safe space". Show it, don't say it.
-- Never mention body shapes, body goals, weight, toning, burning calories, or fitness outcomes. Pole is not a workout. It is an art form and a skill.
+- Never mention weight loss, toning, or burning calories as reasons to do pole. Strength, fitness, and sweating are fine — "will have you sweating more than hot yoga" is perfect. The goal is skill, artistry, and feeling good, not changing how your body looks.
 - Never say anything that implies a student should want to change how their body looks.
 - Write as if you're talking directly to someone who's a bit nervous but excited."""
 
