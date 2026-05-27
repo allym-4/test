@@ -2198,6 +2198,7 @@ export default function StudentBook() {
   const [promoApplying, setPromoApplying] = useState(false)
   const [promoError, setPromoError] = useState('')
   const [appliedPromoCode, setAppliedPromoCode] = useState('')
+  const [upsellBanner, setUpsellBanner] = useState(null)
   const { data: balanceData } = useApi(() => user?.id ? paymentsApi.balance(user.id) : null, [user?.id])
   const { data: sessionsData, loading } = useApi(() => classes.list())
   const { data: categoriesData } = useApi(() => categoriesApi.list())
@@ -2549,6 +2550,17 @@ export default function StudentBook() {
     }
     if (type === 'catchup') refetchCredits()
     setBooked(b => [...b, ...ids])
+    // Check for category upsell after season booking
+    if (type === 'season') {
+      const allCats = categoriesData?.results || categoriesData || []
+      const bookedSession = checkout?.sessions?.[0]
+      if (bookedSession) {
+        const cat = allCats.find(c => String(c.id) === String(bookedSession.category))
+        if (cat?.upsell_headline && cat?.upsell_target_category) {
+          setUpsellBanner({ headline: cat.upsell_headline, body: cat.upsell_body, categoryName: cat.name })
+        }
+      }
+    }
   }
 
   const hasEverEnrolled = (enrolHistoryData?.count ?? (enrolHistoryData?.results || enrolHistoryData || []).length) > 0
@@ -2610,7 +2622,12 @@ export default function StudentBook() {
           onSuccess={handlePaymentSuccess}
           onClose={() => setCheckout(null)}
           onCash={handleCashPayment}
-          onPaymentPlan={checkout.type !== 'casual_occ' ? handlePaymentPlan : null}
+          onPaymentPlan={
+            checkout.type !== 'casual_occ' &&
+            !(checkout.sessions || []).some(s => s.requires_full_payment)
+              ? handlePaymentPlan
+              : null
+          }
         />
       )}
 
@@ -2742,9 +2759,17 @@ export default function StudentBook() {
 
       <div className="tab-strip" style={{ marginBottom: 20 }}>
         {TABS.map(([key, label]) => (
-          <button key={key} className={`tab-btn ${tab === key ? 'active' : ''}`} onClick={() => setTab(key)}>{label}</button>
+          <button key={key} className={`tab-btn ${tab === key ? 'active' : ''}`} onClick={() => { setTab(key); setUpsellBanner(null) }}>{label}</button>
         ))}
       </div>
+
+      {upsellBanner && (
+        <div style={{ background: 'rgba(204,255,0,0.08)', border: '1px solid rgba(204,255,0,0.25)', borderRadius: 12, padding: '16px 20px', marginBottom: 16, position: 'relative' }}>
+          <button onClick={() => setUpsellBanner(null)} style={{ position: 'absolute', top: 10, right: 12, background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: 16 }}>✕</button>
+          <div style={{ fontWeight: 700, color: '#ccff00', marginBottom: 6 }}>{upsellBanner.headline}</div>
+          {upsellBanner.body && <div style={{ fontSize: 13, color: '#aaa', lineHeight: 1.6 }}>{upsellBanner.body}</div>}
+        </div>
+      )}
 
       {tab === 'season' && (
         <SeasonTab
