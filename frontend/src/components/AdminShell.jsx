@@ -24,14 +24,20 @@ const NAV_GROUPS = [
   },
   {
     divider: true,
-    label: 'Classes',
+    label: 'Timetable',
     items: [
-      { to: '/admin/timetable',  label: 'Timetable',    icon: '📅' },
-      { to: '/admin/classes',    label: 'Classes',      icon: '📚' },
-      { to: '/admin/waitlist',   label: 'Waitlist',     icon: '⏳' },
-      { to: '/admin/trials',    label: 'Trials',       icon: '🎯' },
+      { to: '/admin/timetable',  label: 'Upcoming Classes', icon: '📅' },
+      { to: '/admin/waitlist',   label: 'Waitlist',         icon: '⏳' },
+      { to: '/admin/trials',     label: 'Trials',           icon: '🎯' },
+      { to: '/admin/practice',   label: 'Practice Time',    icon: '🏋️' },
+    ]
+  },
+  {
+    divider: true,
+    label: 'Seasons',
+    items: [
       { to: '/admin/seasons',    label: 'Seasons',      icon: '🌀' },
-      { to: '/admin/practice',   label: 'Practice Time',icon: '🏋️' },
+      { to: '/admin/classes',    label: 'Class Styles', icon: '📚' },
       { to: '/admin/categories', label: 'Categories',   icon: '🗂' },
       { to: '/admin/skills',     label: 'Skill Lists',  icon: '✅' },
       { to: '/admin/rooms',      label: 'Rooms',        icon: '🏢' },
