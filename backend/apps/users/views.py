@@ -3028,3 +3028,12 @@ class AdminSetPasswordView(APIView):
         user.set_password(password)
         user.save(update_fields=['password'])
         return Response({'detail': 'Password updated.'})
+
+
+class WaiverTextView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        from .models import StudioSettings
+        s = StudioSettings.get()
+        return Response({'text': s.waiver_text or ''})

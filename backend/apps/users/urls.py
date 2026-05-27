@@ -74,6 +74,7 @@ urlpatterns = [
     path('assistant/', views.AssistantView.as_view()),
     path('assistant/chats/', views.AssistantChatHistoryView.as_view()),
     path('change-password/', views.ChangePasswordView.as_view()),
+    path('waiver/', views.WaiverTextView.as_view(), name='waiver-text'),
     path('instructors/public/', views.PublicInstructorListView.as_view(), name='instructor-public-list'),
     path('', views.UserListView.as_view(), name='user-list'),
     path('<int:pk>/', views.UserDetailView.as_view(), name='user-detail'),
