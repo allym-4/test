@@ -644,20 +644,24 @@ function ContactClassModal({ sessionId, enrolled, onClose }) {
     setPopupSending(true)
     setPopupError(null)
     try {
-      const ctas = popupCtas.filter(c => c.label || c.url)
-      await client.post(`/api/classes/sessions/${sessionId}/notify/`, {
+      const allCtas = popupCtas.filter(c => c.label || c.url)
+      const firstCta = allCtas[0] || {}
+      const extraCtas = allCtas.slice(1)
+      const studentIds = (enrolled || []).map(e => e.student_id).filter(Boolean)
+      await client.post('/api/users/announcements/', {
         title: popupTitle,
-        message: popupMsg,
-        ctas: ctas.length > 0 ? ctas : undefined,
-        type: 'popup',
+        body: popupMsg,
+        show_as_modal: true,
+        requires_acknowledgement: true,
+        audience: 'specific',
+        audience_students: studentIds,
+        cta_label: firstCta.label || '',
+        cta_url: firstCta.url || '',
+        extra_ctas: extraCtas,
       })
       setPopupSent(true)
     } catch (err) {
-      if (err.response?.status === 404) {
-        setPopupError("Push notifications aren't enabled yet on this server.")
-      } else {
-        setPopupError(err.response?.data?.detail || 'Failed to send pop-up alert.')
-      }
+      setPopupError(err.response?.data?.detail || err.response?.data?.non_field_errors?.[0] || 'Failed to send pop-up alert.')
     } finally { setPopupSending(false) }
   }
 
@@ -737,14 +741,15 @@ function ContactClassModal({ sessionId, enrolled, onClose }) {
         {tab === 'popup' && (
           popupSent ? (
             <div>
-              <div style={{ fontSize: 14, color: 'var(--lime)', marginBottom: 16 }}>✓ Pop-up alert sent.</div>
+              <div style={{ fontSize: 14, color: 'var(--lime)', marginBottom: 16 }}>
+                ✓ Pop-up alert queued for {(enrolled || []).length} students. They'll see it on their next app open.
+              </div>
               <div className="modal-footer"><button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button></div>
             </div>
           ) : (
             <form onSubmit={handleSendPopup}>
-              <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 12 }}>Display a pop-up alert in the student app.</div>
+              <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 12 }}>Display a pop-up alert to {(enrolled || []).length} enrolled students.</div>
               {popupError && <div style={{ fontSize: 13, color: 'var(--red)', marginBottom: 10, background: 'rgba(255,80,80,0.08)', border: '1px solid rgba(255,80,80,0.2)', borderRadius: 8, padding: '8px 12px' }}>{popupError}</div>}
-              <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 4 }}>⚠ Pop-up alerts are not yet wired to the mobile app — this will be implemented in a future release.</div>
               <div className="field"><label>Title</label><input required value={popupTitle} onChange={e => setPopupTitle(e.target.value)} placeholder="e.g. Class update" /></div>
               <div className="field"><label>Message</label><textarea required rows={3} value={popupMsg} onChange={e => setPopupMsg(e.target.value)} placeholder="Your message…" /></div>
               <div style={{ marginBottom: 12 }}>

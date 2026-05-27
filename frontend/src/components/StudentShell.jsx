@@ -70,6 +70,22 @@ function AnnouncementModalQueue({ modals, onDismissed }) {
               {ann.cta_label}
             </a>
           )}
+          {(ann.extra_ctas || []).map((cta, i) => (
+            cta.label && cta.url ? (
+              <a
+                key={i}
+                href={cta.url}
+                style={{
+                  display: 'block', background: 'rgba(204,255,0,0.12)', color: '#ccff00',
+                  fontWeight: 700, fontSize: 15, borderRadius: 10,
+                  padding: '13px 20px', textAlign: 'center', textDecoration: 'none',
+                  border: '1px solid rgba(204,255,0,0.3)',
+                }}
+              >
+                {cta.label}
+              </a>
+            ) : null
+          ))}
           <button
             onClick={dismiss}
             disabled={dismissing}

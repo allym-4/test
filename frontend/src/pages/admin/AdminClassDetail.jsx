@@ -5,6 +5,50 @@ import { classes, categories as categoriesApi, studios as studiosApi, seasons as
 import { fmt12 } from '../../utils/time'
 import client from '../../api/client'
 
+function TagChipSelector({ selectedIds, onChange }) {
+  const [allTags, setAllTags] = useState([])
+  useEffect(() => {
+    classes.classTags.list().then(r => setAllTags(r.data?.results || r.data || []))
+  }, [])
+
+  function toggle(id) {
+    if (selectedIds.includes(id)) onChange(selectedIds.filter(x => x !== id))
+    else onChange([...selectedIds, id])
+  }
+
+  if (allTags.length === 0) {
+    return (
+      <div style={{ fontSize: 12, color: 'var(--grey)' }}>
+        No class tags yet. <Link to="/admin/class-tags" style={{ color: 'var(--lime)' }}>Create tags →</Link>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+      {allTags.map(tag => {
+        const active = selectedIds.includes(tag.id)
+        return (
+          <div
+            key={tag.id}
+            onClick={() => toggle(tag.id)}
+            style={{
+              padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700,
+              cursor: 'pointer', userSelect: 'none',
+              background: active ? (tag.colour + '33') : 'transparent',
+              color: active ? tag.colour : 'var(--grey)',
+              border: `1px solid ${active ? tag.colour : 'var(--border)'}`,
+              transition: 'all 0.15s',
+            }}
+          >
+            {tag.name}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 const inputStyle = {
   width: '100%',
   background: 'var(--input, #1a1a1a)',
@@ -238,6 +282,12 @@ export default function AdminClassDetail() {
     capacity: 12,
     instructor: '',
     studio: '',
+    price_override: '',
+    instructor_fee: '',
+    requires_full_payment: false,
+    auto_exempt_same_name: true,
+    catchup_eligible_names: '',
+    tags: [],
   })
   const [saving, setSaving]           = useState(false)
   const [error, setError]             = useState(null)
@@ -266,6 +316,12 @@ export default function AdminClassDetail() {
         capacity:             cls.capacity || 12,
         instructor:           cls.instructor || '',
         studio:               cls.studio || '',
+        price_override:       cls.price_override || '',
+        instructor_fee:       cls.instructor_fee || '',
+        requires_full_payment: cls.requires_full_payment || false,
+        auto_exempt_same_name: cls.auto_exempt_same_name ?? true,
+        catchup_eligible_names: cls.catchup_eligible_names || '',
+        tags:                 cls.tags || [],
       })
     }
   }, [cls])
@@ -325,6 +381,12 @@ export default function AdminClassDetail() {
         day_of_week:          form.day_of_week,
         duration_minutes:     form.duration_minutes ? parseInt(form.duration_minutes) : null,
         capacity:             form.capacity ? parseInt(form.capacity) : null,
+        price_override:       form.price_override !== '' ? parseFloat(form.price_override) : null,
+        instructor_fee:       form.instructor_fee !== '' ? parseFloat(form.instructor_fee) : null,
+        requires_full_payment: form.requires_full_payment,
+        auto_exempt_same_name: form.auto_exempt_same_name,
+        catchup_eligible_names: form.catchup_eligible_names,
+        tags:                 form.tags,
       }
       if (isNew) {
         await classes.create(payload)
@@ -485,6 +547,53 @@ export default function AdminClassDetail() {
             </select>
           </div>
         </div>
+
+        {/* Pricing & Instructor Fee */}
+        <div style={{ marginTop: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 12 }}>
+            <div>
+              <label style={labelStyle}>Season Price Override</label>
+              <input
+                style={inputStyle}
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.price_override}
+                onChange={e => set('price_override', e.target.value)}
+                placeholder="Leave blank for standard ($270)"
+              />
+              <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 5 }}>
+                Standard season price: $270. Override only if different.
+              </div>
+            </div>
+            <div>
+              <label style={labelStyle}>Instructor Fee (per class)</label>
+              <input
+                style={inputStyle}
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.instructor_fee}
+                onChange={e => set('instructor_fee', e.target.value)}
+                placeholder="e.g. 50.00"
+              />
+              <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 5 }}>
+                Amount credited to instructor per class attended.
+              </div>
+            </div>
+          </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={form.requires_full_payment}
+              onChange={e => set('requires_full_payment', e.target.checked)}
+              style={{ accentColor: 'var(--lime)' }}
+            />
+            <span style={{ fontSize: 13, color: form.requires_full_payment ? 'var(--white)' : 'var(--grey)' }}>
+              Require full upfront payment (no payment plans)
+            </span>
+          </label>
+        </div>
       </div>
 
       {/* Class Details */}
@@ -549,7 +658,7 @@ export default function AdminClassDetail() {
           </div>
         </div>
         {/* Prerequisites */}
-        <div>
+        <div style={{ marginBottom: 16 }}>
           <label style={labelStyle}>Prerequisites</label>
           <textarea
             style={{ ...inputStyle, resize: 'vertical', minHeight: 80 }}
@@ -561,6 +670,47 @@ export default function AdminClassDetail() {
           <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 5 }}>
             Shown to students during booking. Leave blank if there are no prerequisites.
           </div>
+        </div>
+
+        {/* Auto-exempt checkbox */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={form.auto_exempt_same_name}
+              onChange={e => set('auto_exempt_same_name', e.target.checked)}
+              style={{ accentColor: 'var(--lime)' }}
+            />
+            <span style={{ fontSize: 13, color: form.auto_exempt_same_name ? 'var(--white)' : 'var(--grey)' }}>
+              Auto-exempt students enrolled in same class name from catch-up cutoff
+            </span>
+          </label>
+        </div>
+
+        {/* Catch-up eligible names */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={labelStyle}>Catch-up Eligible Classes</label>
+          <input
+            style={inputStyle}
+            value={form.catchup_eligible_names}
+            onChange={e => set('catchup_eligible_names', e.target.value)}
+            placeholder="e.g. Strip Thursday, Strip Saturday"
+          />
+          <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 5 }}>
+            Students enrolled in this class can catch up in these classes. If enrolled in 2+ classes, eligibility covers all enrolled classes.
+          </div>
+        </div>
+
+        {/* Tags */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <label style={{ ...labelStyle, marginBottom: 0 }}>Tags</label>
+            <Link to="/admin/class-tags" style={{ fontSize: 11, color: 'var(--lime)', textDecoration: 'none' }}>Manage tags →</Link>
+          </div>
+          <TagChipSelector
+            selectedIds={form.tags}
+            onChange={ids => set('tags', ids)}
+          />
         </div>
       </div>
 

@@ -38,6 +38,17 @@ class ClassCategory(models.Model):
         return self.name
 
 
+class Tag(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    colour = models.CharField(max_length=20, blank=True, default='#666')
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
 class ClassSession(models.Model):
     """A recurring class slot — e.g. Level 2 Mon 6:30pm at The Box."""
 
@@ -74,6 +85,12 @@ class ClassSession(models.Model):
         null=True, blank=True,
         help_text='No catch-up bookings accepted after this many weeks into the season. Leave blank to allow catch-ups any time.'
     )
+    price_override = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Custom price for this class. Overrides standard tier pricing.")
+    instructor_fee = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Amount to credit instructor's account per class attended.")
+    requires_full_payment = models.BooleanField(default=False, help_text="If True, student must pay the full season fee upfront (no payment plan).")
+    auto_exempt_same_name = models.BooleanField(default=True, help_text="Students enrolled in a same-name session are auto-exempt from catch-up cutoff.")
+    catchup_eligible_names = models.TextField(blank=True, help_text="Comma-separated class names eligible as catch-up destinations for this class.")
+    tags = models.ManyToManyField('Tag', blank=True, related_name='sessions')
     first_timer_headline = models.CharField(
         max_length=200, blank=True,
         help_text='Short headline shown to students booking this class for the first time.'

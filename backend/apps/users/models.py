@@ -232,6 +232,7 @@ class Announcement(models.Model):
     show_as_modal = models.BooleanField(default=False)
     cta_label = models.CharField(max_length=80, blank=True)
     cta_url = models.CharField(max_length=500, blank=True)
+    extra_ctas = models.JSONField(default=list, blank=True, help_text="Additional CTA buttons: [{label, url}]")
 
     # Audience targeting
     audience = models.CharField(max_length=20, choices=AUDIENCE_CHOICES, default='all')

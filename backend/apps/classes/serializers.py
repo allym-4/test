@@ -1,6 +1,12 @@
 from rest_framework import serializers
-from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, Workshop, WorkshopBooking, PracticeSlot, PracticeBooking, PracticeCredit, CasualBooking, ClassUpsell
+from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, Workshop, WorkshopBooking, PracticeSlot, PracticeBooking, PracticeCredit, CasualBooking, ClassUpsell, Tag
 from apps.users.serializers import UserMinimalSerializer
+
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ('id', 'name', 'colour')
 
 
 class StudioSerializer(serializers.ModelSerializer):
@@ -35,6 +41,7 @@ class ClassSessionSerializer(serializers.ModelSerializer):
     season_base_price = serializers.SerializerMethodField()
     skill_level_name = serializers.CharField(source='skill_level.name', read_only=True, allow_null=True)
     end_time = serializers.SerializerMethodField()
+    tags = serializers.PrimaryKeyRelatedField(many=True, queryset=Tag.objects.all(), required=False)
 
     class Meta:
         model = ClassSession
@@ -45,11 +52,14 @@ class ClassSessionSerializer(serializers.ModelSerializer):
             'session_type', 'is_active', 'category', 'category_name',
             'season', 'season_name', 'season_start_date', 'season_end_date', 'season_bookings_open',
             'catchup_cutoff_weeks',
+            'price_override', 'instructor_fee', 'requires_full_payment',
+            'auto_exempt_same_name', 'catchup_eligible_names',
             'first_timer_headline', 'first_timer_body', 'first_timer_appropriate',
             'description', 'prerequisites', 'created_at',
             'season_base_price',
             'skill_level', 'skill_level_name',
             'auto_promote_waitlist',
+            'tags',
         )
         read_only_fields = ('id', 'enrolled_count', 'waitlist_count', 'instructor_detail', 'studio_detail', 'day_of_week_display', 'category_name', 'season_name', 'season_start_date', 'season_end_date', 'season_bookings_open', 'season_base_price', 'created_at', 'skill_level_name', 'end_time')
 

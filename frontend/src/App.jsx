@@ -50,6 +50,7 @@ import AdminOffers from './pages/admin/AdminOffers'
 import AdminMemberships from './pages/admin/AdminMemberships'
 import AdminPackages from './pages/admin/AdminPackages'
 import AdminTags from './pages/admin/AdminTags'
+import AdminClassTags from './pages/admin/AdminClassTags'
 import AdminMarketing from './pages/admin/AdminMarketing'
 import AdminMediaLibrary from './pages/admin/AdminMediaLibrary'
 import AdminRooms from './pages/admin/AdminRooms'
@@ -209,6 +210,7 @@ export default function App() {
             <Route path="memberships" element={<AdminMemberships />} />
             <Route path="packages" element={<AdminPackages />} />
             <Route path="tags" element={<AdminTags />} />
+            <Route path="class-tags" element={<AdminClassTags />} />
             <Route path="marketing" element={<AdminMarketing />} />
             <Route path="media" element={<AdminMediaLibrary />} />
             <Route path="rooms" element={<AdminRooms />} />

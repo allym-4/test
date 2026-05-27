@@ -76,6 +76,12 @@ export const classes = {
   emailClass: (sessionId, data) => client.post(`/api/classes/sessions/${sessionId}/email/`, data),
   generateDescription: (data) => client.post('/api/classes/sessions/generate-description/', data),
   seasonEnrolments: (sessionId) => client.get(`/api/classes/sessions/${sessionId}/season-enrolments/`),
+  classTags: {
+    list: () => client.get('/api/classes/tags/'),
+    create: (data) => client.post('/api/classes/tags/', data),
+    update: (id, data) => client.patch(`/api/classes/tags/${id}/`, data),
+    delete: (id) => client.delete(`/api/classes/tags/${id}/`),
+  },
 }
 
 export const studios = {

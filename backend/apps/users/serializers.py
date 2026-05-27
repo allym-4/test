@@ -82,7 +82,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             'username', 'email', 'password', 'first_name', 'last_name',
-            'role', 'pronouns', 'phone', 'date_of_birth',
+            'role', 'pronouns', 'phone', 'date_of_birth', 'address',
             'emergency_contact_name', 'emergency_contact_phone',
         )
 
