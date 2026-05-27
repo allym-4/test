@@ -478,11 +478,28 @@ class StudentSkill(models.Model):
         return f'{self.student.display_name} — {self.skill_name}'
 
 
+TAG_RULE_TYPES = [
+    ('enrolled_in_class',    'Enrolled in class'),
+    ('first_timer',          'First timer this season'),
+    ('active_enrolment',     'Has active enrolment this season'),
+    ('three_plus_classes',   '3+ classes this season'),
+    ('lapsed_1',             'Lapsed — missed 1 season'),
+    ('lapsed_2',             'Lapsed — missed 2 seasons'),
+    ('lapsed_3_plus',        'Lapsed — missed 3+ seasons'),
+    ('casual_only',          'Casual bookings only this season'),
+    ('trial_not_converted',  'Trial, never converted'),
+    ('has_locker',           'Has active locker'),
+    ('level',                'Level'),
+]
+
+
 class Tag(models.Model):
     name = models.CharField(max_length=50)
     colour = models.CharField(max_length=20, default='#ccff00')
     auto_rule = models.CharField(max_length=100, blank=True)
     is_manual = models.BooleanField(default=True)
+    rule_type = models.CharField(max_length=50, blank=True, choices=TAG_RULE_TYPES)
+    rule_params = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

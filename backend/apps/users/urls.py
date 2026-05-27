@@ -37,6 +37,7 @@ urlpatterns = [
     path('<int:user_pk>/calculate-pay/', views.CalculatePayView.as_view(), name='calculate-pay'),
     path('pending-skills/', views.PendingSkillsView.as_view(), name='pending-skills'),
     path('tags/', views.TagListView.as_view()),
+    path('tags/apply-rules/', views.ApplyTagRulesView.as_view(), name='apply-tag-rules'),
     path('tags/<int:pk>/', views.TagDetailView.as_view()),
     path('<int:user_pk>/tags/', views.StudentTagView.as_view()),
     path('skill-levels/', views.SkillLevelListView.as_view()),

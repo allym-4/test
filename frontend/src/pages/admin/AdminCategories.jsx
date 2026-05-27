@@ -8,7 +8,6 @@ function CategoryModal({ existing, onClose, onSaved, allCategories = [] }) {
   const [colour, setColour] = useState(existing?.colour || '#ccff00')
   const [visible, setVisible] = useState(existing?.is_visible ?? true)
   const [isAddonType, setIsAddonType] = useState(existing?.is_addon_type ?? false)
-  const [standalonePrice, setStandalonePrice] = useState(existing?.standalone_price ?? '')
   const [upsellHeadline, setUpsellHeadline] = useState(existing?.upsell_headline || '')
   const [upsellBody, setUpsellBody] = useState(existing?.upsell_body || '')
   const [upsellTargetCategory, setUpsellTargetCategory] = useState(existing?.upsell_target_category || '')
@@ -39,7 +38,6 @@ function CategoryModal({ existing, onClose, onSaved, allCategories = [] }) {
         colour,
         is_visible: visible,
         is_addon_type: isAddonType,
-        standalone_price: standalonePrice !== '' ? standalonePrice : null,
         upsell_headline: upsellHeadline,
         upsell_body: upsellBody,
         upsell_target_category: upsellTargetCategory || null,
@@ -88,17 +86,6 @@ function CategoryModal({ existing, onClose, onSaved, allCategories = [] }) {
               <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#000', position: 'absolute', top: 3, left: visible ? 19 : 3, transition: 'left 0.2s' }} />
             </div>
             <span style={{ fontSize: 13, color: 'var(--grey)' }}>Visible to students</span>
-          </div>
-          <div className="field">
-            <label>Season base price ($) <span style={{ fontSize: 11, color: 'var(--grey)', fontWeight: 400 }}>— leave blank to use studio default</span></label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="e.g. 240 for Kiki/Unravel"
-              value={standalonePrice}
-              onChange={e => setStandalonePrice(e.target.value)}
-            />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
             <input

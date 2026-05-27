@@ -48,4 +48,7 @@ class Command(BaseCommand):
         self.stdout.write('-- Week-4 level restriction review reminder --')
         call_command('send_level_restriction_review')
 
+        self.stdout.write('-- Applying auto-rule tags --')
+        call_command('apply_tag_rules')
+
         self.stdout.write('=== Done ===')
