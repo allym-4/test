@@ -489,6 +489,8 @@ class SeasonDuplicateView(APIView):
                 first_timer_body=session.first_timer_body,
                 skill_level=session.skill_level,
                 is_active=True,
+                syllabus=session.syllabus,
+                instructor_notes=session.instructor_notes,
             )
 
         from apps.classes.serializers import SeasonSerializer

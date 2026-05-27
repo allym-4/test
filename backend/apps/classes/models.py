@@ -118,6 +118,14 @@ class ClassSession(models.Model):
     )
     start_week = models.PositiveSmallIntegerField(default=1, help_text='Week number (1–8) this class starts running within the season.')
     end_week = models.PositiveSmallIntegerField(default=8, help_text='Week number (1–8) this class stops running within the season.')
+    syllabus = models.JSONField(
+        default=list, blank=True,
+        help_text='Week-by-week plan. Array of {week, title, content, moves} objects.'
+    )
+    instructor_notes = models.TextField(
+        blank=True,
+        help_text='Persistent notes for instructors (e.g. class quirks, injuries to watch). Copied when duplicating sessions between seasons.'
+    )
     created_at = models.DateTimeField(auto_now_add=True, null=True)
 
     class Meta:
