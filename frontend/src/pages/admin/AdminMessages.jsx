@@ -122,6 +122,7 @@ function BroadcastModal({ onClose }) {
   const [actionUrl, setActionUrl] = useState('')
   const [showCta, setShowCta] = useState(false)
   const [sendEmail, setSendEmail] = useState(false)
+  const [showAsModal, setShowAsModal] = useState(false)
   const [sending, setSending] = useState(false)
   const [done, setDone] = useState(null)
   const [error, setError] = useState(null)
@@ -142,6 +143,7 @@ function BroadcastModal({ onClose }) {
         title,
         body,
         send_email: sendEmail,
+        show_as_modal: showAsModal,
         action_label: showCta ? actionLabel : '',
         action_url: showCta ? actionUrl : '',
       }
@@ -274,6 +276,13 @@ function BroadcastModal({ onClose }) {
               </div>
             )}
 
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: 'var(--white)', textTransform: 'none', letterSpacing: 0 }}>
+                <input type="checkbox" checked={showAsModal} onChange={e => setShowAsModal(e.target.checked)} style={{ accentColor: 'var(--lime)', width: 14, height: 14 }} />
+                <span>Require dismissal — show as pop-up students must acknowledge before continuing</span>
+              </label>
+              {showAsModal && <div style={{ fontSize: 11, color: 'var(--amber)', marginTop: 4, marginLeft: 22 }}>Students will see a full-screen pop-up and must tap "Got it" before using the app.</div>}
+            </div>
             <div style={{ marginBottom: 18 }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: 'var(--white)', textTransform: 'none', letterSpacing: 0 }}>
                 <input type="checkbox" checked={sendEmail} onChange={e => setSendEmail(e.target.checked)} style={{ accentColor: 'var(--lime)', width: 14, height: 14 }} />

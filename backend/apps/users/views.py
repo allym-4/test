@@ -745,6 +745,27 @@ class BulkNotificationView(APIView):
 
         action_label = request.data.get('action_label', '')
         action_url = request.data.get('action_url', '')
+        show_as_modal = bool(request.data.get('show_as_modal', False))
+        extra_ctas = request.data.get('extra_ctas', [])
+
+        # If show_as_modal, create an Announcement (which supports modal dismiss tracking)
+        # alongside the regular notification.
+        if show_as_modal:
+            audience = 'all' if target == 'all' else 'specific'
+            ann = Announcement.objects.create(
+                title=title,
+                body=body,
+                note_type='announcement',
+                created_by=request.user,
+                cta_label=action_label,
+                cta_url=action_url,
+                show_as_modal=True,
+                extra_ctas=extra_ctas,
+                audience=audience,
+            )
+            if audience == 'specific':
+                ann.audience_students.set([u.id for u in recipients])
+
         notifications = [
             Notification(
                 recipient=u,
