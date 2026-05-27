@@ -68,4 +68,6 @@ urlpatterns = [
     path('revenue-stats/', views.RevenueStatsView.as_view(), name='revenue-stats'),
     path('sessions/generate-description/', views.GenerateClassDescriptionView.as_view(), name='generate-description'),
     path('sessions/<int:pk>/season-enrolments/', views.ClassSeasonEnrolmentsView.as_view(), name='session-season-enrolments'),
+    path('tags/', views.TagListCreateView.as_view(), name='class-tag-list'),
+    path('tags/<int:pk>/', views.TagDetailView.as_view(), name='class-tag-detail'),
 ]

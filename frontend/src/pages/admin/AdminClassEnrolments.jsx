@@ -145,6 +145,7 @@ function PaymentModal({ enrolment, session, defaultAmount, onClose, onSuccess })
 function CancelEnrolmentModal({ enrolment, onClose, onSuccess }) {
   const [creditOption, setCreditOption] = useState('none')
   const [creditAmount, setCreditAmount] = useState(enrolment?.incremental_price ? String(enrolment.incremental_price) : '')
+  const [creditExpiry, setCreditExpiry] = useState('')
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -154,9 +155,10 @@ function CancelEnrolmentModal({ enrolment, onClose, onSuccess }) {
     setSaving(true)
     setError(null)
     try {
+      const expiryNote = creditExpiry ? ` Expires: ${creditExpiry}.` : ''
       await client.patch(`/api/enrolments/${enrolment.id}/`, {
         status: 'cancelled',
-        notes: [notes, creditOption !== 'none' ? `Credit: ${creditOption} $${creditAmount}` : ''].filter(Boolean).join('\n'),
+        notes: [notes, creditOption !== 'none' ? `Credit: ${creditOption} $${creditAmount}${expiryNote}` : ''].filter(Boolean).join('\n'),
       })
       if (creditOption === 'credit' && parseFloat(creditAmount) > 0) {
         await client.post('/api/payments/', {
@@ -165,7 +167,7 @@ function CancelEnrolmentModal({ enrolment, onClose, onSuccess }) {
           payment_type: 'credit',
           payment_method: 'account_credit',
           description: `Cancellation credit — ${enrolment.session_name || 'class'}`,
-          admin_notes: notes,
+          admin_notes: [notes, expiryNote].filter(Boolean).join(' ').trim(),
         }).catch(() => {})
       }
       onSuccess()
@@ -185,30 +187,36 @@ function CancelEnrolmentModal({ enrolment, onClose, onSuccess }) {
         <form onSubmit={handleSubmit}>
           {error && <div style={{ fontSize: 13, color: 'var(--red)', marginBottom: 12 }}>{error}</div>}
 
-          <div className="field">
-            <label>Credit / Refund</label>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 10 }}>Credit / Refund</label>
             {[
               { value: 'none',   label: 'No credit or refund' },
               { value: 'credit', label: 'Issue account credit' },
-              { value: 'stripe', label: 'Refund to card (via Stripe dashboard)' },
+              { value: 'stripe', label: 'Refund to card (Stripe dashboard)' },
             ].map(opt => (
-              <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 8, fontSize: 13 }}>
-                <input type="radio" name="creditOption" value={opt.value} checked={creditOption === opt.value} onChange={() => setCreditOption(opt.value)} style={{ accentColor: 'var(--lime)' }} />
-                {opt.label}
+              <label key={opt.value} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: 10, fontSize: 13 }}>
+                <input type="radio" name="creditOption" value={opt.value} checked={creditOption === opt.value} onChange={() => setCreditOption(opt.value)} style={{ accentColor: 'var(--lime)', flexShrink: 0, width: 16, height: 16, margin: 0 }} />
+                <span>{opt.label}</span>
               </label>
             ))}
           </div>
 
           {creditOption === 'credit' && (
-            <div className="field">
-              <label>Credit Amount ($)</label>
-              <input type="number" step="0.01" min="0" value={creditAmount} onChange={e => setCreditAmount(e.target.value)} placeholder="270.00" />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label>Credit Amount ($)</label>
+                <input type="number" step="0.01" min="0" value={creditAmount} onChange={e => setCreditAmount(e.target.value)} placeholder="270.00" />
+              </div>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label>Expiry date <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(optional)</span></label>
+                <input type="date" value={creditExpiry} onChange={e => setCreditExpiry(e.target.value)} />
+              </div>
             </div>
           )}
 
           {creditOption === 'stripe' && (
-            <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 12, background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px' }}>
-              Process the Stripe refund manually from the <a href="https://dashboard.stripe.com" target="_blank" rel="noreferrer" style={{ color: 'var(--lime)' }}>Stripe dashboard</a> after cancelling here.
+            <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16, background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px' }}>
+              Stripe refunds are processed manually from the <a href="https://dashboard.stripe.com" target="_blank" rel="noreferrer" style={{ color: 'var(--lime)' }}>Stripe dashboard</a>. The student's original payment intent ID is in their billing history.
             </div>
           )}
 
@@ -298,29 +306,32 @@ function AddFromWaitlistModal({ enrolment, session, onClose, onSuccess }) {
 
 // ── Transfer modal ──────────────────────────────────────────────────────────────
 function TransferModal({ enrolment, onClose, onSuccess }) {
-  const [search, setSearch] = useState('')
-  const [sessions, setSessions] = useState([])
-  const [searching, setSearching] = useState(false)
+  const [allSessions, setAllSessions] = useState([])
+  const [loadingSessions, setLoadingSessions] = useState(true)
+  const [selectedName, setSelectedName] = useState('')
   const [selected, setSelected] = useState(null)
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (!search.trim()) { setSessions([]); return }
-    const t = setTimeout(async () => {
-      setSearching(true)
-      try {
-        const r = await client.get('/api/classes/sessions/', { params: { search, page_size: 20 } })
-        setSessions(r.data?.results || r.data || [])
-      } finally { setSearching(false) }
-    }, 300)
-    return () => clearTimeout(t)
-  }, [search])
+    client.get('/api/classes/sessions/', { params: { page_size: 300, is_active: true } })
+      .then(r => setAllSessions(r.data?.results || r.data || []))
+      .catch(() => {})
+      .finally(() => setLoadingSessions(false))
+  }, [])
+
+  // Unique class names sorted
+  const classNames = [...new Set(allSessions.map(s => s.name))].sort()
+
+  // Sessions matching the selected name
+  const matchingSessions = selectedName
+    ? allSessions.filter(s => s.name === selectedName)
+    : []
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!selected) { setError('Select a class to transfer to.'); return }
+    if (!selected) { setError('Select a time slot to transfer to.'); return }
     setSaving(true)
     setError(null)
     try {
@@ -343,21 +354,46 @@ function TransferModal({ enrolment, onClose, onSuccess }) {
         <div className="modal-title">Transfer — {enrolment?.student_name}<button className="modal-close" onClick={onClose}>✕</button></div>
         <form onSubmit={handleSubmit}>
           {error && <div style={{ fontSize: 13, color: 'var(--red)', marginBottom: 10 }}>{error}</div>}
+
           <div className="field">
-            <label>Search target class</label>
-            <input autoFocus placeholder="Class name…" value={search} onChange={e => setSearch(e.target.value)} />
+            <label>Class Style</label>
+            {loadingSessions ? (
+              <div style={{ fontSize: 12, color: 'var(--grey)' }}>Loading…</div>
+            ) : (
+              <select autoFocus value={selectedName} onChange={e => { setSelectedName(e.target.value); setSelected(null) }}>
+                <option value="">— Select class —</option>
+                {classNames.map(n => <option key={n} value={n}>{n}</option>)}
+              </select>
+            )}
           </div>
-          {searching && <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 8 }}>Searching…</div>}
-          {sessions.map(s => (
-            <div key={s.id} onClick={() => setSelected(s)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: 8, border: `1px solid ${selected?.id === s.id ? 'var(--lime)' : 'var(--border)'}`, background: selected?.id === s.id ? 'rgba(204,255,0,0.05)' : '#0a0a0a', cursor: 'pointer', marginBottom: 6 }}>
-              <div>
-                <div style={{ fontWeight: 600, fontSize: 13 }}>{s.name}</div>
-                <div style={{ fontSize: 12, color: 'var(--grey)' }}>{DAYS[s.day_of_week]} · {s.start_time?.slice(0,5)} · {s.season_detail?.name || s.season_name || ''}</div>
-              </div>
-              <div style={{ fontSize: 12, color: s.enrolled_count >= s.capacity ? 'var(--red)' : 'var(--lime)' }}>{s.enrolled_count}/{s.capacity}</div>
+
+          {selectedName && matchingSessions.length > 0 && (
+            <div className="field">
+              <label>Available Times</label>
+              {matchingSessions.map(s => {
+                const isFull = s.enrolled_count >= s.capacity
+                const isActive = selected?.id === s.id
+                return (
+                  <div key={s.id} onClick={() => setSelected(s)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: 8, border: `1px solid ${isActive ? 'var(--lime)' : 'var(--border)'}`, background: isActive ? 'rgba(204,255,0,0.05)' : '#0a0a0a', cursor: 'pointer', marginBottom: 6 }}>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>{DAYS[s.day_of_week]} · {s.start_time?.slice(0,5)}</div>
+                      <div style={{ fontSize: 12, color: 'var(--grey)' }}>{s.season_name || s.season_detail?.name || ''} · {s.instructor_detail?.display_name || ''}</div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: isFull ? 'var(--red)' : 'var(--lime)' }}>{s.enrolled_count}/{s.capacity}</div>
+                      {isFull && <div style={{ fontSize: 10, color: 'var(--red)' }}>FULL</div>}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
-          ))}
-          <div className="field" style={{ marginTop: 12 }}>
+          )}
+
+          {selectedName && matchingSessions.length === 0 && !loadingSessions && (
+            <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 12 }}>No active sessions found for "{selectedName}".</div>
+          )}
+
+          <div className="field">
             <label>Notes</label>
             <textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Reason for transfer…" />
           </div>
@@ -371,8 +407,10 @@ function TransferModal({ enrolment, onClose, onSuccess }) {
   )
 }
 
+const PRICE_TIERS_ARR = [0, 270, 440, 580, 700, 800, 900]
+
 // ── Add student modal ──────────────────────────────────────────────────────────
-function AddStudentModal({ sessionId, session, onClose, onAdded }) {
+function AddStudentModal({ sessionId, session, seasonId, onClose, onAdded }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [searching, setSearching] = useState(false)
@@ -382,6 +420,7 @@ function AddStudentModal({ sessionId, session, onClose, onAdded }) {
   const [amountReason, setAmountReason] = useState('')
   const [payMethod, setPayMethod] = useState('cash')
   const [balance, setBalance] = useState(null)
+  const [seasonEnrolCount, setSeasonEnrolCount] = useState(null)
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -401,11 +440,24 @@ function AddStudentModal({ sessionId, session, onClose, onAdded }) {
   }, [query])
 
   useEffect(() => {
-    if (selected) {
-      client.get(`/api/payments/balance/${selected.id}/`).then(r => setBalance(r.data?.balance ?? r.data?.available_credit ?? 0)).catch(() => {})
+    if (!selected) return
+    client.get(`/api/payments/balance/${selected.id}/`).then(r => setBalance(r.data?.balance ?? r.data?.available_credit ?? 0)).catch(() => {})
+
+    if (enrolType === 'course' && seasonId) {
+      client.get('/api/enrolments/', { params: { student: selected.id, season: seasonId, status: 'active', enrolment_type: 'course', page_size: 10 } })
+        .then(r => {
+          const count = (r.data?.results || r.data || []).length
+          setSeasonEnrolCount(count)
+          const nextIdx = Math.min(count + 1, PRICE_TIERS_ARR.length - 1)
+          const prevIdx = Math.min(count, PRICE_TIERS_ARR.length - 1)
+          const incremental = PRICE_TIERS_ARR[nextIdx] - PRICE_TIERS_ARR[prevIdx]
+          setCustomAmount(String(incremental))
+        }).catch(() => { setCustomAmount('') })
+    } else {
+      setSeasonEnrolCount(null)
       setCustomAmount(String(baseAmount ?? ''))
     }
-  }, [selected, enrolType])
+  }, [selected?.id, enrolType, seasonId])
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -489,7 +541,9 @@ function AddStudentModal({ sessionId, session, onClose, onAdded }) {
               <label>Amount ($)</label>
               <input type="number" step="0.01" min="0" value={customAmount} onChange={e => setCustomAmount(e.target.value)} placeholder="270.00" />
               <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>
-                {baseAmount ? `Standard rate: $${baseAmount}` : 'Enter the incremental season price for this student.'}
+                {enrolType === 'course' && seasonEnrolCount != null
+                  ? `This is their ${ordinal(seasonEnrolCount + 1)} class this season — incremental price auto-filled.`
+                  : baseAmount ? `Standard rate: $${baseAmount}` : 'Enter the incremental season price for this student.'}
               </div>
             </div>
 
@@ -545,11 +599,16 @@ function ContactClassModal({ sessionId, enrolled, onClose }) {
   // Popup tab state
   const [popupTitle, setPopupTitle] = useState('')
   const [popupMsg, setPopupMsg] = useState('')
-  const [popupCtaLabel, setPopupCtaLabel] = useState('')
-  const [popupCtaUrl, setPopupCtaUrl] = useState('')
+  const [popupCtas, setPopupCtas] = useState([{ label: '', url: '' }])
   const [popupSending, setPopupSending] = useState(false)
   const [popupSent, setPopupSent] = useState(false)
   const [popupError, setPopupError] = useState(null)
+
+  function updateCta(i, field, val) {
+    setPopupCtas(prev => prev.map((c, idx) => idx === i ? { ...c, [field]: val } : c))
+  }
+  function addCta() { setPopupCtas(prev => [...prev, { label: '', url: '' }]) }
+  function removeCta(i) { setPopupCtas(prev => prev.filter((_, idx) => idx !== i)) }
 
   async function handleSendEmail(e) {
     e.preventDefault()
@@ -585,20 +644,24 @@ function ContactClassModal({ sessionId, enrolled, onClose }) {
     setPopupSending(true)
     setPopupError(null)
     try {
-      await client.post(`/api/classes/sessions/${sessionId}/notify/`, {
+      const allCtas = popupCtas.filter(c => c.label || c.url)
+      const firstCta = allCtas[0] || {}
+      const extraCtas = allCtas.slice(1)
+      const studentIds = (enrolled || []).map(e => e.student_id).filter(Boolean)
+      await client.post('/api/users/announcements/', {
         title: popupTitle,
-        message: popupMsg,
-        cta_label: popupCtaLabel || undefined,
-        cta_url: popupCtaUrl || undefined,
-        type: 'popup',
+        body: popupMsg,
+        show_as_modal: true,
+        requires_acknowledgement: true,
+        audience: 'specific',
+        audience_students: studentIds,
+        cta_label: firstCta.label || '',
+        cta_url: firstCta.url || '',
+        extra_ctas: extraCtas,
       })
       setPopupSent(true)
     } catch (err) {
-      if (err.response?.status === 404) {
-        setPopupError("Push notifications aren't enabled yet on this server.")
-      } else {
-        setPopupError(err.response?.data?.detail || 'Failed to send pop-up alert.')
-      }
+      setPopupError(err.response?.data?.detail || err.response?.data?.non_field_errors?.[0] || 'Failed to send pop-up alert.')
     } finally { setPopupSending(false) }
   }
 
@@ -678,17 +741,32 @@ function ContactClassModal({ sessionId, enrolled, onClose }) {
         {tab === 'popup' && (
           popupSent ? (
             <div>
-              <div style={{ fontSize: 14, color: 'var(--lime)', marginBottom: 16 }}>✓ Pop-up alert sent.</div>
+              <div style={{ fontSize: 14, color: 'var(--lime)', marginBottom: 16 }}>
+                ✓ Pop-up alert queued for {(enrolled || []).length} students. They'll see it on their next app open.
+              </div>
               <div className="modal-footer"><button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button></div>
             </div>
           ) : (
             <form onSubmit={handleSendPopup}>
-              <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 12 }}>Display a pop-up alert in the student app.</div>
+              <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 12 }}>Display a pop-up alert to {(enrolled || []).length} enrolled students.</div>
               {popupError && <div style={{ fontSize: 13, color: 'var(--red)', marginBottom: 10, background: 'rgba(255,80,80,0.08)', border: '1px solid rgba(255,80,80,0.2)', borderRadius: 8, padding: '8px 12px' }}>{popupError}</div>}
               <div className="field"><label>Title</label><input required value={popupTitle} onChange={e => setPopupTitle(e.target.value)} placeholder="e.g. Class update" /></div>
               <div className="field"><label>Message</label><textarea required rows={3} value={popupMsg} onChange={e => setPopupMsg(e.target.value)} placeholder="Your message…" /></div>
-              <div className="field"><label>CTA Button Label <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(optional)</span></label><input value={popupCtaLabel} onChange={e => setPopupCtaLabel(e.target.value)} placeholder="e.g. Learn more" /></div>
-              <div className="field"><label>CTA URL <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(optional)</span></label><input value={popupCtaUrl} onChange={e => setPopupCtaUrl(e.target.value)} placeholder="https://…" /></div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 8 }}>CTA Buttons <span style={{ color: 'var(--grey)', fontWeight: 400, textTransform: 'none' }}>(optional)</span></label>
+                {popupCtas.map((cta, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                    <input value={cta.label} onChange={e => updateCta(i, 'label', e.target.value)} placeholder="Button label" style={{ flex: 1 }} />
+                    <input value={cta.url} onChange={e => updateCta(i, 'url', e.target.value)} placeholder="URL (optional)" style={{ flex: 2 }} />
+                    {popupCtas.length > 1 && (
+                      <button type="button" onClick={() => removeCta(i)} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 16, padding: '0 4px' }}>✕</button>
+                    )}
+                  </div>
+                ))}
+                {popupCtas.length < 4 && (
+                  <button type="button" onClick={addCta} style={{ background: 'none', border: '1px dashed var(--border)', borderRadius: 8, color: 'var(--grey)', cursor: 'pointer', fontSize: 12, padding: '6px 12px', width: '100%' }}>+ Add another CTA</button>
+                )}
+              </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
                 <button type="submit" className="btn btn-lime btn-sm" disabled={popupSending}>{popupSending ? 'Sending…' : 'Send Alert'}</button>
@@ -707,6 +785,7 @@ function CancelClassModal({ sessionId, session, enrolled, onClose, onCancelled }
   const [reason, setReason] = useState('')
   const [creditOption, setCreditOption] = useState('none')
   const [defaultCreditAmount, setDefaultCreditAmount] = useState('')
+  const [creditExpiry, setCreditExpiry] = useState('')
   const [perStudentCredits, setPerStudentCredits] = useState({})
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -750,6 +829,7 @@ function CancelClassModal({ sessionId, session, enrolled, onClose, onCancelled }
       }
 
       // Issue credits
+      const expiryNote = creditExpiry ? ` Expires: ${creditExpiry}.` : ''
       if (creditOption === 'all' && parseFloat(defaultCreditAmount) > 0) {
         await Promise.all((enrolled || []).map(e =>
           client.post('/api/payments/', {
@@ -758,6 +838,7 @@ function CancelClassModal({ sessionId, session, enrolled, onClose, onCancelled }
             payment_type: 'credit',
             payment_method: 'account_credit',
             description: `Cancelled class credit — ${session?.name || 'class'}`,
+            admin_notes: expiryNote.trim(),
           }).catch(() => {})
         ))
       } else if (creditOption === 'per_student') {
@@ -770,6 +851,7 @@ function CancelClassModal({ sessionId, session, enrolled, onClose, onCancelled }
             payment_type: 'credit',
             payment_method: 'account_credit',
             description: `Cancelled class credit — ${session?.name || 'class'}`,
+            admin_notes: expiryNote.trim(),
           }).catch(() => {})
         }))
       }
@@ -807,32 +889,38 @@ function CancelClassModal({ sessionId, session, enrolled, onClose, onCancelled }
 
           {/* Credit section */}
           <div style={{ background: '#111', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--grey)', marginBottom: 10 }}>Refund / Credit</div>
+            <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--grey)', marginBottom: 12 }}>Refund / Credit</div>
             {[
               { value: 'none', label: 'No credit or refund' },
               { value: 'all', label: 'Issue account credit to all students' },
               { value: 'per_student', label: 'Review per-student' },
             ].map(opt => (
-              <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 8, fontSize: 13 }}>
-                <input type="radio" name="creditOption" value={opt.value} checked={creditOption === opt.value} onChange={() => setCreditOption(opt.value)} style={{ accentColor: 'var(--lime)' }} />
-                {opt.label}
+              <label key={opt.value} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: 10, fontSize: 13, lineHeight: 1.4 }}>
+                <input type="radio" name="creditOption" value={opt.value} checked={creditOption === opt.value} onChange={() => setCreditOption(opt.value)} style={{ accentColor: 'var(--lime)', flexShrink: 0, width: 16, height: 16, margin: 0 }} />
+                <span>{opt.label}</span>
               </label>
             ))}
-            {creditOption === 'all' && (
-              <div className="field" style={{ marginTop: 10, marginBottom: 0 }}>
-                <label>Credit Amount per Student ($)</label>
-                <input type="number" step="0.01" min="0" value={defaultCreditAmount} onChange={e => setDefaultCreditAmount(e.target.value)} placeholder="e.g. 33.75" />
+            {(creditOption === 'all' || creditOption === 'per_student') && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 8 }}>
+                {creditOption === 'all' && (
+                  <div className="field" style={{ marginBottom: 0 }}>
+                    <label>Amount per student ($)</label>
+                    <input type="number" step="0.01" min="0" value={defaultCreditAmount} onChange={e => setDefaultCreditAmount(e.target.value)} placeholder="e.g. 33.75" />
+                  </div>
+                )}
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label>Expiry date <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(optional)</span></label>
+                  <input type="date" value={creditExpiry} onChange={e => setCreditExpiry(e.target.value)} />
+                </div>
               </div>
             )}
             {creditOption === 'per_student' && enrolled && enrolled.length > 0 && (
-              <div style={{ marginTop: 10 }}>
+              <div style={{ marginTop: 12 }}>
                 {enrolled.map(e => (
                   <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
                     <span style={{ flex: 1, fontSize: 13 }}>{e.student_name}</span>
                     <input
-                      type="number"
-                      step="0.01"
-                      min="0"
+                      type="number" step="0.01" min="0"
                       value={perStudentCredits[e.id] ?? ''}
                       onChange={ev => setPerStudentCredits(m => ({ ...m, [e.id]: ev.target.value }))}
                       placeholder="0.00"
@@ -992,7 +1080,7 @@ export default function AdminClassEnrolments() {
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                         <button className="btn btn-ghost btn-xs" style={{ color: 'var(--lime)' }} onClick={() => setPayModal({ ...e, session_name: session.name, defaultAmount: e.incremental_price })}>Pay</button>
                         <button className="btn btn-ghost btn-xs" onClick={() => setTransferModal(e)}>Transfer</button>
-                        <Link to={`/admin/students/${e.student_id}?tab=messages`}><button className="btn btn-ghost btn-xs">Chat</button></Link>
+                        <Link to={`/admin/messages?student=${e.student_id}`}><button className="btn btn-ghost btn-xs">Chat</button></Link>
                         <button className="btn btn-ghost btn-xs" style={{ color: '#ff8888' }} onClick={() => setCancelModal({ ...e, session_name: session.name })}>Cancel</button>
                       </div>
                     </td>
@@ -1154,6 +1242,7 @@ export default function AdminClassEnrolments() {
         <AddStudentModal
           sessionId={id}
           session={session}
+          seasonId={session.season_id}
           onClose={() => setAddStudentModal(false)}
           onAdded={() => { setAddStudentModal(false); load() }}
         />

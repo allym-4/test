@@ -39,7 +39,7 @@ class UserSerializer(serializers.ModelSerializer):
             'notification_preferences',
             'show_in_roster', 'roster_name', 'nickname', 'level', 'cleared_for_level',
             'max_booking_level', 'blocked_sessions',
-            'booking_blocked', 'block_reason',
+            'booking_blocked', 'block_reason', 'id_check_required',
             'is_shadow_instructor',
             'bio', 'instructor_tagline', 'instructor_instagram',
         )
@@ -82,14 +82,22 @@ class UserCreateSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             'username', 'email', 'password', 'first_name', 'last_name',
-            'role', 'pronouns', 'phone', 'date_of_birth',
+            'role', 'pronouns', 'phone', 'date_of_birth', 'address',
             'emergency_contact_name', 'emergency_contact_phone',
         )
 
     def create(self, validated_data):
+        from datetime import date
         password = validated_data.pop('password')
         user = User(**validated_data)
         user.set_password(password)
+        # Flag for ID check if age is within 1 year of 18th birthday (18–19)
+        dob = validated_data.get('date_of_birth')
+        if dob:
+            today = date.today()
+            age_days = (today - dob).days
+            if 18 * 365 <= age_days < 19 * 365:
+                user.id_check_required = True
         user.save()
         return user
 

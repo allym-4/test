@@ -37,8 +37,9 @@ const NAV_GROUPS = [
     label: 'Seasons',
     items: [
       { to: '/admin/seasons',    label: 'Seasons',      icon: '🌀' },
-      { to: '/admin/classes',    label: 'Class Styles', icon: '📚' },
+      { to: '/admin/classes',     label: 'Class Styles', icon: '📚' },
       { to: '/admin/categories', label: 'Categories',   icon: '🗂' },
+      { to: '/admin/class-tags', label: 'Class Tags',   icon: '🏷' },
       { to: '/admin/skills',     label: 'Skill Lists',  icon: '✅' },
       { to: '/admin/rooms',      label: 'Rooms',        icon: '🏢' },
     ]

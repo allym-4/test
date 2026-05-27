@@ -356,6 +356,7 @@ function StudentDetail({ student, onClose, onRefreshList, onViewForm }) {
                       <span className="tag tag-lav" style={{ fontSize: 10 }}>Student</span>
                       {isOwing && <span className="tag tag-red" style={{ fontSize: 10 }}>Owing</span>}
                       {!isOwing && <span className="tag tag-lime" style={{ fontSize: 10 }}>Active</span>}
+                      {student.id_check_required && <span className="tag" style={{ fontSize: 10, background: 'rgba(255,170,0,0.12)', color: 'var(--amber)', border: '1px solid rgba(255,170,0,0.3)' }}>⚠ ID check</span>}
                       {student.created_at && (
                         <span style={{ fontSize: 11, color: 'var(--grey)' }}>
                           Member since {new Date(student.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -903,7 +904,7 @@ function StudentDetail({ student, onClose, onRefreshList, onViewForm }) {
 
 const AVATAR_COLORS2 = AVATAR_COLORS
 
-const TAG_CHIPS = ['All', 'VIP', 'At Risk', 'Trial', 'Blocked', 'Owing', 'Frozen']
+const TAG_CHIPS = ['All', 'VIP', 'At Risk', 'Trial', 'Blocked', 'Owing', 'Frozen', 'ID Check']
 
 function BulkTagModal({ studentIds, onClose }) {
   const { data: tagsData } = useApi(() => tagsApi.list())
@@ -1072,7 +1073,8 @@ export default function AdminStudents() {
       || (activeChip === 'Owing' && balance !== null && balance < 0)
       || (activeChip === 'Frozen' && s.booking_blocked)
       || (activeChip === 'Blocked' && s.booking_blocked)
-      || (activeChip !== 'Owing' && activeChip !== 'Frozen' && activeChip !== 'Blocked' && (s.tags || []).some(t =>
+      || (activeChip === 'ID Check' && s.id_check_required)
+      || (activeChip !== 'Owing' && activeChip !== 'Frozen' && activeChip !== 'Blocked' && activeChip !== 'ID Check' && (s.tags || []).some(t =>
           (typeof t === 'string' ? t : t.name || '').toLowerCase() === activeChip.toLowerCase()
         ))
     return matchSearch && matchStatus && matchClass && matchChip

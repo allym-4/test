@@ -6,9 +6,21 @@ from django.db.models import Count
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, ClassChatMessage, Workshop, WorkshopBooking, PracticeSlot, PracticeBooking, PracticeCredit, CasualBooking, ClassUpsell
-from .serializers import StudioSerializer, ClassCategorySerializer, ClassSessionSerializer, ClassOccurrenceSerializer, SeasonSerializer, LockerSerializer, KisiGrantSerializer, WorkshopSerializer, WorkshopBookingSerializer, PracticeSlotSerializer, PracticeBookingSerializer, PracticeCreditSerializer, CasualBookingSerializer, ClassUpsellSerializer
+from .models import Studio, ClassCategory, ClassSession, ClassOccurrence, Season, Locker, KisiGrant, ClassChatMessage, Workshop, WorkshopBooking, PracticeSlot, PracticeBooking, PracticeCredit, CasualBooking, ClassUpsell, Tag
+from .serializers import StudioSerializer, ClassCategorySerializer, ClassSessionSerializer, ClassOccurrenceSerializer, SeasonSerializer, LockerSerializer, KisiGrantSerializer, WorkshopSerializer, WorkshopBookingSerializer, PracticeSlotSerializer, PracticeBookingSerializer, PracticeCreditSerializer, CasualBookingSerializer, ClassUpsellSerializer, TagSerializer
 from apps.users.permissions import IsAdminOrInstructor, IsAdminUser
+
+
+class TagListCreateView(generics.ListCreateAPIView):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+
+class TagDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = [IsAdminOrInstructor]
 
 
 def _send_casual_waitlist_notifications(bookings, occurrence, expires_at, urgent, now):
@@ -2575,6 +2587,7 @@ class ClassSeasonEnrolmentsView(APIView):
                 'instructor': session.instructor.display_name if session.instructor else None,
                 'studio': session.studio.name if session.studio else None,
                 'season': season.name if season else None,
+                'season_id': season.id if season else None,
                 'capacity': session.capacity,
                 'enrolled_count': session.enrolled_count,
             },

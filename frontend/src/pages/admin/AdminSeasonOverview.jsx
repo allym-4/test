@@ -271,32 +271,64 @@ export default function AdminSeasonOverview() {
 
       {/* Booking controls */}
       <div style={{ background: '#111', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px', marginBottom: 28, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-        <button
-          onClick={handleToggleBookings}
-          disabled={toggling}
-          style={{
-            background: season.bookings_open ? 'rgba(255,68,68,0.12)' : 'var(--lime)',
-            color: season.bookings_open ? 'var(--red)' : '#000',
-            border: season.bookings_open ? '1px solid rgba(255,68,68,0.3)' : 'none',
-            borderRadius: 8, padding: '8px 16px', fontWeight: 700, fontSize: 13,
-            cursor: toggling ? 'default' : 'pointer', opacity: toggling ? 0.6 : 1,
-          }}
-        >
-          {toggling ? '…' : season.bookings_open ? 'Close bookings' : 'Open bookings'}
-        </button>
-        <button
-          onClick={handleToggleBookingsEnabled}
-          disabled={togglingEnabled}
-          style={{
-            background: season.bookings_enabled ? 'rgba(255,68,68,0.06)' : 'rgba(204,255,0,0.08)',
-            color: season.bookings_enabled ? 'var(--red)' : 'var(--lime)',
-            border: `1px solid ${season.bookings_enabled ? 'rgba(255,68,68,0.3)' : 'rgba(204,255,0,0.3)'}`,
-            borderRadius: 8, padding: '8px 16px', fontWeight: 700, fontSize: 13,
-            cursor: togglingEnabled ? 'default' : 'pointer', opacity: togglingEnabled ? 0.6 : 1,
-          }}
-        >
-          {togglingEnabled ? '…' : season.bookings_enabled ? 'Disable enrolments' : 'Enable enrolments'}
-        </button>
+        {/* Status display */}
+        {season.bookings_enabled === false ? (
+          <>
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: 'rgba(255,170,0,0.12)', color: 'var(--amber)', border: '1px solid rgba(255,170,0,0.25)' }}>
+              Enrolments disabled
+            </span>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={handleToggleBookingsEnabled}
+              disabled={togglingEnabled}
+            >
+              {togglingEnabled ? '…' : 'Re-enable'}
+            </button>
+          </>
+        ) : season.bookings_open ? (
+          <>
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: 'rgba(204,255,0,0.12)', color: 'var(--lime)', border: '1px solid rgba(204,255,0,0.25)' }}>
+              Enrolments open
+            </span>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={handleToggleBookings}
+              disabled={toggling}
+              style={{ color: 'var(--red)', borderColor: 'rgba(255,68,68,0.3)' }}
+            >
+              {toggling ? '…' : 'Close bookings'}
+            </button>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={handleToggleBookingsEnabled}
+              disabled={togglingEnabled}
+              style={{ color: 'var(--grey)' }}
+            >
+              {togglingEnabled ? '…' : 'Disable enrolments'}
+            </button>
+          </>
+        ) : season.go_live_at ? (
+          <>
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', color: 'var(--grey)', border: '1px solid var(--border)' }}>
+              Opening {new Date(season.go_live_at).toLocaleString('en-AU', { timeZone: 'Australia/Sydney', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} Sydney
+            </span>
+            <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/admin/seasons/${id}`)}>Edit</button>
+          </>
+        ) : (
+          <>
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', color: 'var(--grey)', border: '1px solid var(--border)' }}>
+              Enrolments closed
+            </span>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={handleToggleBookings}
+              disabled={toggling}
+              style={{ color: 'var(--lime)', borderColor: 'rgba(204,255,0,0.3)' }}
+            >
+              {toggling ? '…' : 'Open bookings'}
+            </button>
+          </>
+        )}
         {season.status !== 'completed' && (
           confirmClose ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
