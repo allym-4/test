@@ -359,7 +359,7 @@ export default function AdminSeasonOverview() {
         <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)' }}>
           Classes — Full Season Enrolments
         </div>
-        <Link to={`/admin/timetable?newClass=1&season=${id}`}>
+        <Link to={`/admin/seasons/${id}/add-class`}>
           <button className="btn btn-ghost btn-sm" style={{ color: 'var(--lime)' }}>+ Add Class</button>
         </Link>
       </div>
@@ -372,7 +372,7 @@ export default function AdminSeasonOverview() {
       ) : sorted.length === 0 ? (
         <div style={{ color: 'var(--grey)', fontSize: 13, padding: '24px 0', textAlign: 'center' }}>
           No classes assigned to this season yet.{' '}
-          <Link to="/admin/timetable" style={{ color: 'var(--lime)' }}>Go to Timetable</Link> to add classes.
+          <Link to={`/admin/seasons/${id}/add-class`} style={{ color: 'var(--lime)' }}>Add a class →</Link>
         </div>
       ) : (
         /* Group by day of week */

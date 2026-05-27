@@ -605,8 +605,9 @@ export default function AdminTimetable() {
             if (setupFilterLow     && !(s.enrolled_count < 4)) return false
             return true
           })
+          const fmtDate = d => d ? new Date(d + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
           const seasonInfo = activeSeason
-            ? `${activeSeason.name} · ${activeSeason.start_date} to ${activeSeason.end_date} · ${seasonWeeks} weeks`
+            ? `${activeSeason.name} · ${fmtDate(activeSeason.start_date)} to ${fmtDate(activeSeason.end_date)} · ${seasonWeeks} weeks`
             : 'No active season'
 
           return (

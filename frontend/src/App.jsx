@@ -26,6 +26,7 @@ import AdminBookings from './pages/admin/AdminBookings'
 import AdminSeasons from './pages/admin/AdminSeasons'
 import AdminSeasonDetail from './pages/admin/AdminSeasonDetail'
 import AdminSeasonOverview from './pages/admin/AdminSeasonOverview'
+import AdminAddClassToSeason from './pages/admin/AdminAddClassToSeason'
 import AdminWaitlist from './pages/admin/AdminWaitlist'
 import AdminLeads from './pages/admin/AdminLeads'
 import AdminRecommendations from './pages/admin/AdminRecommendations'
@@ -181,6 +182,7 @@ export default function App() {
             <Route path="reporting" element={<AdminReporting />} />
             <Route path="bookings" element={<AdminBookings />} />
             <Route path="seasons/new" element={<AdminSeasonDetail />} />
+            <Route path="seasons/:id/add-class" element={<AdminAddClassToSeason />} />
             <Route path="seasons/:id/overview" element={<AdminSeasonOverview />} />
             <Route path="seasons/:id" element={<AdminSeasonDetail />} />
             <Route path="seasons" element={<AdminSeasons />} />
