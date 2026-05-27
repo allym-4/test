@@ -830,6 +830,62 @@ export default function AttendancePage() {
           </div>
         )}
 
+        {/* This Week's Plan — instructor view only */}
+        {!isAdminPath && currentWeekNum && (() => {
+          const syllabusEntry = Array.isArray(session?.syllabus)
+            ? session.syllabus.find(e => e.week === currentWeekNum)
+            : null
+          const hasEntry = syllabusEntry && (syllabusEntry.title || syllabusEntry.content || syllabusEntry.moves)
+          const hasNotes = session?.instructor_notes?.trim()
+          if (!hasEntry && !hasNotes) return null
+          return (
+            <div style={{
+              background: '#111', border: '1px solid var(--border, #222)', borderRadius: 12,
+              padding: '16px 20px', marginBottom: 16,
+            }}>
+              <div style={{
+                fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em',
+                color: 'var(--lime)', marginBottom: hasEntry ? 10 : 0,
+              }}>
+                Week {currentWeekNum} Plan
+              </div>
+              {hasEntry && (
+                <div>
+                  {syllabusEntry.title && (
+                    <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 6 }}>{syllabusEntry.title}</div>
+                  )}
+                  {syllabusEntry.content && (
+                    <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.5, marginBottom: syllabusEntry.moves ? 8 : 0, whiteSpace: 'pre-wrap' }}>
+                      {syllabusEntry.content}
+                    </div>
+                  )}
+                  {syllabusEntry.moves && (
+                    <div style={{ fontSize: 12, color: '#aaa', marginTop: 4 }}>
+                      <span style={{ color: 'var(--grey)', fontWeight: 600 }}>Moves: </span>
+                      {syllabusEntry.moves}
+                    </div>
+                  )}
+                </div>
+              )}
+              {hasNotes && (
+                <div style={{
+                  marginTop: hasEntry ? 14 : 0,
+                  background: 'rgba(255,170,0,0.06)',
+                  border: '1px solid rgba(255,170,0,0.25)',
+                  borderRadius: 8, padding: '10px 14px',
+                }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#ffaa00', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
+                    Instructor Notes
+                  </div>
+                  <div style={{ fontSize: 13, color: '#ccc', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                    {session.instructor_notes}
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })()}
+
         {/* Action bar */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
           <button className="btn btn-lime btn-sm" onClick={markAllPresent}>Mark All Present</button>

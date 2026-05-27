@@ -365,6 +365,25 @@ export default function AttendanceScreen({ navigation, route }) {
   const sessionName = selectedOcc.session_name || selectedOcc.session_detail?.name || 'Class'
   const dateLabel = new Date(selectedOcc.date).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
 
+  // Calculate current week number from season start date
+  const currentWeekNum = (() => {
+    const seasonStart = selectedOcc.session_detail?.season_start_date
+    if (!seasonStart || !selectedOcc.date) return null
+    const start = new Date(seasonStart + 'T00:00')
+    const occ = new Date(selectedOcc.date + 'T00:00')
+    const diff = Math.floor((occ - start) / (7 * 24 * 60 * 60 * 1000))
+    return diff >= 0 ? diff + 1 : null
+  })()
+
+  // Syllabus entry for this week
+  const sessionSyllabus = selectedOcc.session_detail?.syllabus
+  const syllabusEntry = Array.isArray(sessionSyllabus) && currentWeekNum
+    ? sessionSyllabus.find(e => e.week === currentWeekNum)
+    : null
+  const hasSyllabusEntry = syllabusEntry && (syllabusEntry.title || syllabusEntry.content || syllabusEntry.moves)
+  const instructorNotes = selectedOcc.session_detail?.instructor_notes?.trim()
+  const showWeekPlan = hasSyllabusEntry || !!instructorNotes
+
   return (
     <View style={s.root}>
       {/* Header */}
@@ -388,6 +407,34 @@ export default function AttendanceScreen({ navigation, route }) {
           </View>
         ))}
       </View>
+
+      {/* Week plan card */}
+      {showWeekPlan && (
+        <View style={s.weekPlanCard}>
+          {currentWeekNum && (
+            <Text style={s.weekPlanLabel}>Week {currentWeekNum} Plan</Text>
+          )}
+          {hasSyllabusEntry && (
+            <View>
+              {syllabusEntry.title ? (
+                <Text style={s.weekPlanTitle}>{syllabusEntry.title}</Text>
+              ) : null}
+              {syllabusEntry.content ? (
+                <Text style={s.weekPlanContent}>{syllabusEntry.content}</Text>
+              ) : null}
+              {syllabusEntry.moves ? (
+                <Text style={s.weekPlanMoves}>Moves: {syllabusEntry.moves}</Text>
+              ) : null}
+            </View>
+          )}
+          {instructorNotes ? (
+            <View style={[s.notesBox, hasSyllabusEntry && { marginTop: 12 }]}>
+              <Text style={s.notesLabel}>Instructor Notes</Text>
+              <Text style={s.notesText}>{instructorNotes}</Text>
+            </View>
+          ) : null}
+        </View>
+      )}
 
       {/* Tabs */}
       <View style={s.tabBar}>
@@ -556,6 +603,16 @@ const s = StyleSheet.create({
   wlPos: { width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(176,160,255,0.15)', alignItems: 'center', justifyContent: 'center' },
   wlPosText: { color: '#b0a0ff', fontWeight: '700', fontSize: 13 },
   wlName: { fontSize: 14, color: '#fff', fontWeight: '500', flex: 1 },
+
+  // Week plan card
+  weekPlanCard: { marginHorizontal: 12, marginBottom: 10, backgroundColor: '#111', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#222' },
+  weekPlanLabel: { fontSize: 10, fontWeight: '700', color: '#ccff00', textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 8 },
+  weekPlanTitle: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 4 },
+  weekPlanContent: { fontSize: 13, color: '#aaa', lineHeight: 19, marginBottom: 4 },
+  weekPlanMoves: { fontSize: 12, color: '#888' },
+  notesBox: { backgroundColor: 'rgba(255,170,0,0.06)', borderWidth: 1, borderColor: 'rgba(255,170,0,0.25)', borderRadius: 8, padding: 10 },
+  notesLabel: { fontSize: 10, fontWeight: '700', color: '#ffaa00', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 },
+  notesText: { fontSize: 13, color: '#ccc', lineHeight: 19 },
 
   // Save button
   saveBtn: { position: 'absolute', bottom: 24, left: 16, right: 16, backgroundColor: '#ccff00', borderRadius: 14, padding: 16, alignItems: 'center' },
