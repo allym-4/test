@@ -5,6 +5,7 @@ from . import instagram as instagram_views
 urlpatterns = [
     path('me/', views.MeView.as_view(), name='user-me'),
     path('import/', views.BulkImportView.as_view(), name='user-bulk-import'),
+    path('import-students/', views.ImportStudentsView.as_view(), name='import-students'),
     path('settings/', views.StudioSettingsView.as_view(), name='studio-settings'),
     path('announcements/', views.AnnouncementListView.as_view(), name='announcement-list'),
     path('announcements/<int:pk>/', views.AnnouncementDetailView.as_view(), name='announcement-detail'),

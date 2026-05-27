@@ -256,6 +256,193 @@ class BulkImportView(APIView):
         }, status=status.HTTP_200_OK)
 
 
+class ImportStudentsView(APIView):
+    """
+    POST /api/users/import-students/
+    Accept a CSV upload and validate / create student accounts.
+
+    Query params:
+      dry_run=true  -- validate and return preview without writing to DB
+      dry_run=false -- (default) actually create the users
+    """
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request):
+        from datetime import datetime
+        import re as _re
+
+        dry_run = request.query_params.get('dry_run', 'false').lower() in ('true', '1', 'yes')
+
+        file = request.FILES.get('file')
+        if not file:
+            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            content = file.read().decode('utf-8-sig')
+            reader = csv.DictReader(io.StringIO(content))
+            raw_rows = list(reader)
+        except Exception as e:
+            return Response({'error': f'Could not parse CSV: {e}'}, status=status.HTTP_400_BAD_REQUEST)
+
+        def norm(row):
+            return {k.strip().lower().replace(' ', '_'): (v or '').strip() for k, v in row.items()}
+
+        def parse_dob(dob_str):
+            for fmt in ('%d/%m/%Y', '%Y-%m-%d', '%m/%d/%Y', '%d-%m-%Y'):
+                try:
+                    return datetime.strptime(dob_str, fmt).date()
+                except ValueError:
+                    continue
+            return None
+
+        EMAIL_RE = _re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+
+        rows_out = []
+        summary = {'create': 0, 'skip': 0, 'error': 0}
+
+        normalised_rows = [norm(r) for r in raw_rows]
+        all_emails_in_file = [
+            (r.get('email') or '').lower()
+            for r in normalised_rows
+            if (r.get('email') or '').strip()
+        ]
+        existing_emails = set(
+            User.objects.filter(email__in=all_emails_in_file).values_list('email', flat=True)
+        )
+
+        seen_emails = set()
+        users_to_create = []
+
+        for i, row in enumerate(normalised_rows):
+            row_num = i + 2  # row 1 = header
+
+            first = row.get('first_name', '') or row.get('first', '')
+            last = row.get('last_name', '') or row.get('last', '')
+            email = (row.get('email', '') or '').lower()
+
+            if not first or not last:
+                rows_out.append({'row': row_num, 'status': 'error', 'reason': 'Missing first or last name', 'name': (f'{first} {last}'.strip() or '(unknown)'), 'email': email})
+                summary['error'] += 1
+                continue
+
+            if not email or not EMAIL_RE.match(email):
+                rows_out.append({'row': row_num, 'status': 'error', 'reason': 'Missing or invalid email', 'name': f'{first} {last}', 'email': email})
+                summary['error'] += 1
+                continue
+
+            if email in existing_emails:
+                existing_user = User.objects.filter(email=email).first()
+                existing_name = existing_user.display_name if existing_user else email
+                rows_out.append({'row': row_num, 'status': 'skip', 'reason': f'Already exists — {existing_name}', 'name': f'{first} {last}', 'email': email})
+                summary['skip'] += 1
+                continue
+
+            if email in seen_emails:
+                rows_out.append({'row': row_num, 'status': 'error', 'reason': 'Duplicate email in this file', 'name': f'{first} {last}', 'email': email})
+                summary['error'] += 1
+                continue
+
+            seen_emails.add(email)
+
+            dob = None
+            dob_str = row.get('date_of_birth', '') or row.get('dob', '')
+            if dob_str:
+                dob = parse_dob(dob_str)
+                if not dob:
+                    rows_out.append({'row': row_num, 'status': 'error', 'reason': f'Invalid date_of_birth: {dob_str}', 'name': f'{first} {last}', 'email': email})
+                    summary['error'] += 1
+                    continue
+
+            level_val = row.get('level', '')
+            if level_val:
+                if level_val.lower().startswith('level '):
+                    level_val = level_val.split()[-1]
+                if level_val not in ('1', '2', '3', '4', '5', '6'):
+                    level_val = ''
+
+            classes_attended = None
+            classes_attended_raw = row.get('classes_attended', '')
+            if classes_attended_raw:
+                try:
+                    classes_attended = int(classes_attended_raw)
+                except ValueError:
+                    pass
+
+            rows_out.append({'row': row_num, 'status': 'create', 'name': f'{first} {last}', 'email': email})
+            summary['create'] += 1
+
+            if not dry_run:
+                users_to_create.append({
+                    'first': first, 'last': last, 'email': email,
+                    'phone': row.get('phone', ''),
+                    'pronouns': row.get('pronouns', ''),
+                    'date_of_birth': dob,
+                    'emergency_contact_name': row.get('emergency_contact_name', '') or row.get('emergency_contact', ''),
+                    'emergency_contact_phone': row.get('emergency_contact_phone', '') or row.get('emergency_phone', ''),
+                    'level': level_val,
+                    'internal_notes': row.get('notes', '') or row.get('internal_notes', ''),
+                    'classes_attended': classes_attended,
+                    'row': row_num,
+                })
+
+        if not dry_run and users_to_create:
+            import string as _string
+            used_usernames = set(User.objects.values_list('username', flat=True))
+
+            with transaction.atomic():
+                for u_data in users_to_create:
+                    try:
+                        base_username = u_data['email'].split('@')[0][:30]
+                        username = base_username
+                        counter = 1
+                        while username in used_usernames:
+                            username = f'{base_username}{counter}'
+                            counter += 1
+                        used_usernames.add(username)
+
+                        user_kwargs = dict(
+                            username=username,
+                            email=u_data['email'],
+                            first_name=u_data['first'],
+                            last_name=u_data['last'],
+                            role='student',
+                            is_active=True,
+                            phone=u_data['phone'],
+                            pronouns=u_data['pronouns'],
+                            emergency_contact_name=u_data['emergency_contact_name'],
+                            emergency_contact_phone=u_data['emergency_contact_phone'],
+                        )
+                        if u_data['date_of_birth']:
+                            user_kwargs['date_of_birth'] = u_data['date_of_birth']
+                        if u_data['level']:
+                            user_kwargs['level'] = u_data['level']
+                        if u_data['internal_notes']:
+                            user_kwargs['internal_notes'] = u_data['internal_notes']
+
+                        user = User(**user_kwargs)
+                        rand_pw = ''.join(random.choices(_string.ascii_letters + _string.digits, k=12))
+                        user.set_password(rand_pw)
+                        if hasattr(user, 'must_reset_password'):
+                            user.must_reset_password = True
+                        user.save()
+
+                        for r in rows_out:
+                            if r.get('row') == u_data['row'] and r.get('status') == 'create':
+                                r['id'] = user.id
+                                break
+
+                    except Exception as exc:
+                        for r in rows_out:
+                            if r.get('row') == u_data['row'] and r.get('status') == 'create':
+                                r['status'] = 'error'
+                                r['reason'] = str(exc)
+                                summary['create'] -= 1
+                                summary['error'] += 1
+                                break
+
+        return Response({'rows': rows_out, 'summary': summary}, status=status.HTTP_200_OK)
+
+
 class LeadListView(generics.ListCreateAPIView):
     serializer_class = LeadSerializer
     permission_classes = [IsAdminOrInstructor]
