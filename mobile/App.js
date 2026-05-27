@@ -92,8 +92,8 @@ function RootNavigator() {
 
   if (loading || (user && (onboardingDone === null || viewMode === null))) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f9fafb' }}>
-        <ActivityIndicator size="large" color="#6366f1" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
+        <ActivityIndicator size="large" color="#ccff00" />
       </View>
     )
   }
