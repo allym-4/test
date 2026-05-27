@@ -6,7 +6,7 @@ class Command(BaseCommand):
     help = 'Mark seasons completed when end_date passes, complete enrolments, and expire season makeup credits'
 
     def handle(self, *args, **options):
-        from apps.classes.models import Season
+        from apps.classes.models import Season, ClassChatMessage
         from apps.enrolments.models import Enrolment
         from apps.attendance.models import MakeupCredit
         from apps.users.models import Notification
@@ -90,7 +90,12 @@ class Command(BaseCommand):
                         fail_silently=True,
                     )
 
+        # Delete class chat messages for all completed seasons
+        deleted_msgs, _ = ClassChatMessage.objects.filter(
+            session__season__status='completed'
+        ).delete()
+
         self.stdout.write(
             f'Completed {completed_seasons} season(s), {completed_enrolments} enrolment(s), '
-            f'expired {expired_credits} makeup credit(s).'
+            f'expired {expired_credits} makeup credit(s), deleted {deleted_msgs} chat message(s).'
         )

@@ -2013,7 +2013,7 @@ class MyUpcomingClassesView(APIView):
         if session_ids:
             occurrences = (ClassOccurrence.objects
                 .filter(session_id__in=session_ids, date__gte=today, status='scheduled')
-                .select_related('session__studio', 'session__instructor')
+                .select_related('session__studio', 'session__instructor', 'substitute_instructor')
                 .order_by('date', 'session__start_time'))
 
             # Get absence records for these occurrences
@@ -2056,6 +2056,10 @@ class MyUpcomingClassesView(APIView):
                     'instructor_name': (
                         f"{sess.instructor.first_name} {sess.instructor.last_name}".strip()
                         if sess.instructor else None
+                    ),
+                    'substitute_instructor_name': (
+                        occ.substitute_instructor.display_name or occ.substitute_instructor.first_name
+                        if occ.substitute_instructor else None
                     ),
                     'status': 'away' if absence else 'attending',
                     'occurrence_id': occ.id,

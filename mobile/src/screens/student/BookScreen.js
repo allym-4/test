@@ -1894,8 +1894,11 @@ export default function BookScreen({ navigation }) {
             {seasonFiltered.map(session => {
               const isSelected = selectedSessions.some(s => s.id === session.id)
               const isBooked = booked[session.id + '-season'] || enrolledSessionIds.has(session.id)
-              const spotsLeft = (session.capacity ?? 12) - (session.enrolled_count ?? 0)
+              const spotsLeft = (session.capacity ?? 12) - (session.enrolled_count ?? 0) - (session.held_count ?? 0)
               const isFull = spotsLeft <= 0
+              const casualHoldsSpot = !isFull && spotsLeft === 1 && session.has_upcoming_casual
+              const transferHoldsSpot = isFull && (session.held_count ?? 0) > 0
+              const isPending = casualHoldsSpot || transferHoldsSpot
               const levelBadge = getLevelBadge(session.name)
               const sessLevel = session.level ?? session.level_name
               const isOutOfLevel = !isBooked && levelFilter && sessLevel && String(sessLevel) !== String(levelFilter)
@@ -1904,14 +1907,14 @@ export default function BookScreen({ navigation }) {
                   key={session.id}
                   style={[s.card, isBooked && s.cardBooked, isOutOfLevel && !isSelected && s.cardOutOfLevel, isSelected && s.cardSelected]}
                   onPress={() => {
-                    if (isBooked || isFull) return
+                    if (isBooked || (isFull && !isPending)) return
                     if (isNewStudent && !session.first_timer_appropriate && !firstTimerNudge) {
                       setFirstTimerNudge(session)
                       return
                     }
                     toggleSession(session)
                   }}
-                  activeOpacity={isBooked || isFull ? 1 : 0.75}
+                  activeOpacity={isBooked || (isFull && !isPending) ? 1 : 0.75}
                 >
                   <View style={s.sessionRow}>
                     <View style={{ flex: 1 }}>
@@ -1936,10 +1939,19 @@ export default function BookScreen({ navigation }) {
                           session.instructor_detail?.display_name ?? session.instructor_detail?.first_name,
                         ].filter(Boolean).join('  ·  ')}
                       </Text>
-                      {spotsLeft > 0 && spotsLeft <= 2 && !isOutOfLevel && (
+                      {isPending && (
+                        <Text style={{ fontSize: 11, color: '#ffaa00', marginTop: 3, fontWeight: '600' }}>⏳ Spot Pending</Text>
+                      )}
+                      {isPending && transferHoldsSpot && (
+                        <Text style={{ fontSize: 11, color: '#888', marginTop: 2, lineHeight: 16 }}>A spot is pending a transfer — join the waitlist to be next in line.</Text>
+                      )}
+                      {isPending && casualHoldsSpot && (
+                        <Text style={{ fontSize: 11, color: '#888', marginTop: 2, lineHeight: 16 }}>A casual is taking the last spot in one of the weeks — if they don't take the season, the spot is yours!</Text>
+                      )}
+                      {!isPending && spotsLeft > 0 && spotsLeft <= 2 && !isOutOfLevel && (
                         <Text style={s.spotsWarning}>{spotsLeft} spot{spotsLeft !== 1 ? 's' : ''} left</Text>
                       )}
-                      {isFull && <Text style={s.spotsFull}>Full</Text>}
+                      {isFull && !isPending && <Text style={s.spotsFull}>Full</Text>}
                     </View>
                     {isBooked ? (
                       <Text style={s.bookedBadge}>✓ Booked</Text>
@@ -1952,7 +1964,7 @@ export default function BookScreen({ navigation }) {
                           {isSelected && <Text style={s.checkMark}>✓</Text>}
                         </View>
                       </View>
-                    ) : isFull ? (
+                    ) : (isFull || isPending) ? (
                       <TouchableOpacity
                         style={s.waitlistBtn}
                         onPress={async () => {
@@ -1962,7 +1974,7 @@ export default function BookScreen({ navigation }) {
                           } catch { }
                         }}
                       >
-                        <Text style={s.waitlistBtnText}>JOIN WAITLIST</Text>
+                        <Text style={s.waitlistBtnText}>{isPending ? 'WAITLIST ME' : 'JOIN WAITLIST'}</Text>
                       </TouchableOpacity>
                     ) : (
                       <View style={[s.checkCircle, isSelected && s.checkCircleSelected]}>

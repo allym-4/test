@@ -55,7 +55,7 @@ class EnrolmentSerializer(serializers.ModelSerializer):
         occs = (
             ClassOccurrence.objects
             .filter(session_id=obj.class_session_id, date__gte=today)
-            .select_related('session')
+            .select_related('session', 'substitute_instructor')
             .order_by('date')
         )
         absent_ids = set(
@@ -69,6 +69,10 @@ class EnrolmentSerializer(serializers.ModelSerializer):
                 'date': occ.date.isoformat(),
                 'start_time': str(occ.session.start_time)[:5] if occ.session.start_time else None,
                 'marked_away': occ.id in absent_ids,
+                'substitute_instructor_name': (
+                    occ.substitute_instructor.display_name or occ.substitute_instructor.first_name
+                    if occ.substitute_instructor else None
+                ),
             }
             for occ in occs
         ]
