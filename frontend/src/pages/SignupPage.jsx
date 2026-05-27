@@ -153,6 +153,10 @@ export default function SignupPage() {
         waiver_agreed: true,
       })
       const me = await login(email, password)
+      // Submit waiver form after login
+      try {
+        await forms.submit('waiver', { agreed: true, signed_at: new Date().toISOString() })
+      } catch { /* best effort */ }
       if (from && me.role === 'student') navigate(from)
       else navigate('/portal')
     } catch (err) {
