@@ -232,8 +232,16 @@ function ItemRow({ item, onMarkAway, onUndoAway, onCancel }) {
         </View>
         <Text style={s.itemName}>{item.session_name}</Text>
         <Text style={s.itemSub}>
-          {[item.studio_name, item.instructor_name ? `with ${item.instructor_name}` : null].filter(Boolean).join(' · ')}
+          {[item.studio_name].filter(Boolean).join(' · ')}
         </Text>
+        {item.substitute_instructor_name ? (
+          <Text style={{ fontSize: 12, marginTop: 2 }}>
+            <Text style={{ color: '#ffaa00', fontWeight: '700' }}>COVER</Text>
+            <Text style={{ color: '#666' }}> — {item.substitute_instructor_name}</Text>
+          </Text>
+        ) : item.instructor_name ? (
+          <Text style={{ fontSize: 12, color: '#666', marginTop: 2 }}>with {item.instructor_name}</Text>
+        ) : null}
         <View style={{ marginTop: 6 }}>
           <StatusBadge item={item} />
         </View>

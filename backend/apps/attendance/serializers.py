@@ -14,7 +14,8 @@ class AttendanceRecordSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'occurrence', 'occurrence_detail', 'student', 'student_detail',
             'status', 'no_show_fee_charged', 'no_show_fee_waived',
-            'note', 'note_tag', 'recorded_by', 'recorded_by_name', 'recorded_at', 'updated_at',
+            'note', 'note_tag', 'kisi_access_granted',
+            'recorded_by', 'recorded_by_name', 'recorded_at', 'updated_at',
         )
         read_only_fields = ('id', 'recorded_by', 'recorded_at', 'updated_at')
 

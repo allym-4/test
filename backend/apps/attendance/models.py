@@ -24,6 +24,7 @@ class AttendanceRecord(models.Model):
 
     note = models.TextField(blank=True)
     note_tag = models.CharField(max_length=20, choices=NoteTag.choices, blank=True, default='')
+    kisi_access_granted = models.BooleanField(default=False)
     recorded_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name='attendance_recorded'
     )

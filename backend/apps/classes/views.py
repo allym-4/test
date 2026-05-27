@@ -241,6 +241,21 @@ class ClassSessionListView(generics.ListCreateAPIView):
             qs = qs.filter(is_active=True)
         if season_id:
             qs = qs.filter(season_id=season_id)
+        # season_status=active restricts to sessions from the currently running season,
+        # preventing duplicates when an upcoming season also has active sessions.
+        season_status = self.request.query_params.get('season_status')
+        if season_status:
+            if season_status == 'active':
+                active_season = Season.objects.filter(status='active').first()
+                if active_season:
+                    qs = qs.filter(season=active_season)
+                else:
+                    # No active season — fall back to most recent upcoming
+                    upcoming = Season.objects.filter(status='upcoming').order_by('start_date').first()
+                    if upcoming:
+                        qs = qs.filter(season=upcoming)
+            else:
+                qs = qs.filter(season__status=season_status)
         # Students only see sessions whose category is visible (or has no category)
         if getattr(self.request.user, 'role', None) == 'student':
             qs = qs.filter(
@@ -377,6 +392,78 @@ class RequestCoverView(APIView):
         return Response({'detail': 'Cover request sent.'}, status=status.HTTP_200_OK)
 
 
+class AssignCoverView(APIView):
+    """Admin assigns a specific substitute instructor to cover an occurrence."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, pk):
+        from django.core.mail import send_mail
+        from django.conf import settings
+        from apps.users.models import Notification, User
+
+        try:
+            occ = ClassOccurrence.objects.select_related(
+                'session__studio', 'session__instructor', 'session__season'
+            ).get(pk=pk)
+        except ClassOccurrence.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        sub_id = request.data.get('substitute_instructor_id')
+        if not sub_id:
+            return Response({'detail': 'substitute_instructor_id required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            sub = User.objects.get(pk=sub_id)
+        except User.DoesNotExist:
+            return Response({'detail': 'Instructor not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        occ.substitute_instructor = sub
+        occ.cover_needed = False
+        occ.save(update_fields=['substitute_instructor', 'cover_needed'])
+
+        session_name = occ.session.name
+        day_str = occ.date.strftime('%-d %B')
+        time_str = occ.session.start_time.strftime('%I:%M %p').lstrip('0') if occ.session.start_time else ''
+        studio_str = f' at {occ.session.studio.name}' if occ.session.studio else ''
+        duration = occ.session.duration or ''
+        assigned_by = request.user.get_full_name() or request.user.first_name or request.user.username
+
+        # In-app notification for the covering instructor
+        Notification.objects.create(
+            recipient=sub,
+            title=f'You\'re covering: {session_name} on {day_str}',
+            body=(
+                f'You have been assigned to cover {session_name} on {day_str}'
+                f'{f" at {time_str}" if time_str else ""}{studio_str}.'
+                f' Assigned by {assigned_by}.'
+            ),
+            notification_type='info',
+            action_label='View My Classes',
+            action_url='/classes',
+        )
+
+        # Email to covering instructor
+        if sub.email:
+            send_mail(
+                subject=f'Cover assigned: {session_name} on {day_str}',
+                message=(
+                    f'Hi {sub.first_name},\n\n'
+                    f'You have been assigned to cover {session_name} on {day_str}'
+                    f'{f" at {time_str}" if time_str else ""}{studio_str}.\n\n'
+                    f'{f"Duration: {duration} minutes" if duration else ""}\n\n'
+                    f'Assigned by: {assigned_by}\n\n'
+                    f'Please log into the app to view the class register and notes.\n\n'
+                    f'Duality Pole Studio'
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[sub.email],
+                fail_silently=True,
+            )
+
+        from .serializers import ClassOccurrenceSerializer
+        return Response(ClassOccurrenceSerializer(occ).data)
+
+
 class SeasonListView(generics.ListCreateAPIView):
     serializer_class = SeasonSerializer
 
@@ -489,6 +576,8 @@ class SeasonDuplicateView(APIView):
                 first_timer_body=session.first_timer_body,
                 skill_level=session.skill_level,
                 is_active=True,
+                syllabus=session.syllabus,
+                instructor_notes=session.instructor_notes,
             )
 
         from apps.classes.serializers import SeasonSerializer
@@ -1315,13 +1404,52 @@ class PracticeSlotCancelView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
+        from datetime import datetime
+        from django.utils import timezone
+        from apps.enrolments.models import Enrolment
+        from apps.classes.models import Season
+
         try:
-            booking = PracticeBooking.objects.get(slot_id=pk, student=request.user, status='confirmed')
+            booking = PracticeBooking.objects.select_related('slot').get(
+                slot_id=pk, student=request.user, status='confirmed'
+            )
         except PracticeBooking.DoesNotExist:
             return Response({'detail': 'Booking not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        slot = booking.slot
+
+        # Determine hours until the slot starts
+        slot_dt = datetime.combine(slot.date, slot.start_time)
+        if timezone.is_naive(slot_dt):
+            slot_dt = timezone.make_aware(slot_dt)
+        hours_until = (slot_dt - timezone.now()).total_seconds() / 3600
+
         booking.status = 'cancelled'
         booking.save(update_fields=['status'])
-        return Response({'status': 'cancelled'})
+
+        credit_issued = False
+        late_cancel = hours_until < 4
+
+        if not late_cancel:
+            # Early cancel: issue a practice credit back
+            PracticeCredit.objects.create(
+                student=request.user,
+                status='available',
+                notes=f'Returned: practice cancelled on {slot.date} {slot.start_time:%H:%M}',
+                created_by=request.user,
+            )
+            credit_issued = True
+        else:
+            # Late cancel: if the booking was free via the "3 classes = 1 free/week" rule,
+            # that weekly free slot is consumed — do not issue a credit.
+            # (If they paid cash/card, no refund is issued either.)
+            pass
+
+        return Response({
+            'status': 'cancelled',
+            'credit_issued': credit_issued,
+            'late_cancel': late_cancel,
+        })
 
 
 class MyPracticeBookingsView(generics.ListAPIView):
@@ -1885,7 +2013,7 @@ class MyUpcomingClassesView(APIView):
         if session_ids:
             occurrences = (ClassOccurrence.objects
                 .filter(session_id__in=session_ids, date__gte=today, status='scheduled')
-                .select_related('session__studio', 'session__instructor')
+                .select_related('session__studio', 'session__instructor', 'substitute_instructor')
                 .order_by('date', 'session__start_time'))
 
             # Get absence records for these occurrences
@@ -1928,6 +2056,10 @@ class MyUpcomingClassesView(APIView):
                     'instructor_name': (
                         f"{sess.instructor.first_name} {sess.instructor.last_name}".strip()
                         if sess.instructor else None
+                    ),
+                    'substitute_instructor_name': (
+                        occ.substitute_instructor.display_name or occ.substitute_instructor.first_name
+                        if occ.substitute_instructor else None
                     ),
                     'status': 'away' if absence else 'attending',
                     'occurrence_id': occ.id,
@@ -2192,6 +2324,112 @@ class AdminBulkCasualWaitlistView(APIView):
                 results['succeeded'].append(booking.id)
 
         return Response(results)
+
+
+class AdminPracticeAttendanceView(APIView):
+    """Admin: view and update attendance records for a practice slot.
+
+    GET  /api/classes/practice/<slot_pk>/attendance/
+    POST /api/classes/practice/<slot_pk>/attendance/  { student, status, kisi_access_granted }
+    """
+    permission_classes = [IsAdminOrInstructor]
+
+    def get(self, request, slot_pk):
+        slot = get_object_or_404(PracticeSlot, pk=slot_pk)
+        bookings = PracticeBooking.objects.filter(
+            slot=slot, status='confirmed'
+        ).select_related('student')
+
+        results = [PracticeBookingSerializer(b, context={'request': request}).data for b in bookings]
+        slot_data = PracticeSlotSerializer(slot, context={'request': request}).data
+        return Response({'slot': slot_data, 'bookings': results})
+
+    def post(self, request, slot_pk):
+        """Update attendance status and/or kisi flag for one student in this practice slot.
+        Accepts: { student_id, attendance_status, kisi_access_granted }
+        """
+        slot = get_object_or_404(PracticeSlot, pk=slot_pk)
+        student_id = request.data.get('student_id')
+        att_status = request.data.get('attendance_status', 'pending')
+        kisi = request.data.get('kisi_access_granted', False)
+
+        if not student_id:
+            return Response({'detail': 'student_id required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            booking = PracticeBooking.objects.get(slot=slot, student_id=student_id)
+        except PracticeBooking.DoesNotExist:
+            return Response({'detail': 'Booking not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        booking.attendance_status = att_status
+        booking.kisi_access_granted = bool(kisi)
+        booking.save(update_fields=['attendance_status', 'kisi_access_granted'])
+        return Response(PracticeBookingSerializer(booking, context={'request': request}).data, status=status.HTTP_200_OK)
+
+
+class AdminPracticeAddStudentView(APIView):
+    """Admin: add a student to a practice slot (creates a booking)."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, slot_pk):
+        slot = get_object_or_404(PracticeSlot, pk=slot_pk)
+        student_id = request.data.get('student_id')
+        if not student_id:
+            return Response({'detail': 'student_id required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if PracticeBooking.objects.filter(slot=slot, student_id=student_id, status='confirmed').exists():
+            return Response({'detail': 'Student already booked into this slot.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        booking = PracticeBooking.objects.create(
+            slot=slot,
+            student_id=student_id,
+            price_charged=0,
+            is_free=True,
+            payment_type='admin',
+        )
+        return Response(PracticeBookingSerializer(booking, context={'request': request}).data, status=status.HTTP_201_CREATED)
+
+
+class AdminPracticeRemoveStudentView(APIView):
+    """Admin: remove a student from a practice slot (cancels their booking)."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, slot_pk):
+        student_id = request.data.get('student_id')
+        if not student_id:
+            return Response({'detail': 'student_id required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            booking = PracticeBooking.objects.get(slot_id=slot_pk, student_id=student_id, status='confirmed')
+        except PracticeBooking.DoesNotExist:
+            return Response({'detail': 'Booking not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        booking.status = 'cancelled'
+        booking.save(update_fields=['status'])
+        return Response({'status': 'removed'})
+
+
+# ── Practice attendance helpers (used by older code paths; attendance now stored on PracticeBooking) ──
+
+def _get_practice_attendance(slot_id, student_id):
+    try:
+        b = PracticeBooking.objects.get(slot_id=slot_id, student_id=student_id, status='confirmed')
+        return {'status': b.attendance_status, 'kisi_access_granted': b.kisi_access_granted}
+    except PracticeBooking.DoesNotExist:
+        return {}
+
+
+def _upsert_practice_attendance(slot_id, student_id, att_status, kisi_access_granted, recorded_by):
+    try:
+        b = PracticeBooking.objects.get(slot_id=slot_id, student_id=student_id)
+    except PracticeBooking.DoesNotExist:
+        return {'detail': 'Booking not found.'}
+
+    if att_status:
+        b.attendance_status = att_status
+    b.kisi_access_granted = bool(kisi_access_granted)
+    b.save(update_fields=['attendance_status', 'kisi_access_granted'])
+    return {'status': b.attendance_status, 'kisi_access_granted': b.kisi_access_granted}
 
 
 class PracticeCreditListView(generics.ListCreateAPIView):

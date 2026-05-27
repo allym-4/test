@@ -240,6 +240,7 @@ export default function AdminBilling() {
   const [drawerStudent, setDrawerStudent] = useState(null)
   const [noShowSelected, setNoShowSelected] = useState(new Set())
   const [chargingNoShows, setChargingNoShows] = useState(false)
+  const [chaseCounts, setChaseCounts] = useState({})
 
   const allPayments = paymentsData?.results || []
   const plans = plansData?.results || []
@@ -257,6 +258,22 @@ export default function AdminBilling() {
       } catch { map[s.id] = { balance: '0', name: s.display_name, id: s.id, first_name: s.first_name } }
     })).then(() => { setBalances(map); setLoadingBal(false) })
   }, [students.length])
+
+  useEffect(() => {
+    const owingList = Object.values(balances).filter(b => parseFloat(b.balance) < 0)
+    if (!owingList.length) return
+    const fetchCounts = async () => {
+      const counts = {}
+      await Promise.all(owingList.map(async b => {
+        try {
+          const r = await payments.chases({ student_id: b.id })
+          counts[b.id] = (r.data || []).length
+        } catch { counts[b.id] = 0 }
+      }))
+      setChaseCounts(counts)
+    }
+    fetchCounts()
+  }, [Object.keys(balances).length])
 
   async function chargeNoShowNow(p) {
     try {
@@ -356,7 +373,9 @@ export default function AdminBilling() {
                       <td style={{ color: 'var(--grey)' }}>${parseFloat(b.total_charged || 0).toFixed(2)}</td>
                       <td className="bal-pos">${parseFloat(b.total_paid || 0).toFixed(2)}</td>
                       <td style={{ whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
-                        <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => { setModalStudent(b); setActiveModal('chase') }}>Chase</button>
+                        <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => { setModalStudent(b); setActiveModal('chase') }}>
+                          Chase{chaseCounts[b.id] > 0 ? ` (${chaseCounts[b.id]})` : ''}
+                        </button>
                         <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => { setModalStudent(b); setActiveModal('waive') }}>Waive</button>
                         <button className="btn btn-lime btn-xs" onClick={() => { setModalStudent(b); setActiveModal('payment') }}>Take Payment</button>
                       </td>
@@ -500,17 +519,37 @@ export default function AdminBilling() {
                               {nextDueDate ? new Date(nextDueDate + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : '—'}
                             </td>
                             <td>
-                              <span className={`tag ${plan.status === 'active' ? 'tag-lime' : plan.status === 'completed' ? 'tag-grey' : 'tag-amber'}`} style={{ fontSize: 10 }}>
-                                {plan.status}
-                              </span>
+                              {(() => {
+                                const isOverdue = (plan.instalments || []).some(i => i.status === 'overdue')
+                                const label = plan.status === 'completed' ? (remaining > 0.01 ? 'completed?' : 'completed') : isOverdue ? 'overdue' : plan.status
+                                const cls = plan.status === 'completed' ? (remaining > 0.01 ? 'tag-amber' : 'tag-grey') : isOverdue ? 'tag-red' : plan.status === 'active' ? 'tag-lime' : 'tag-amber'
+                                return <span className={`tag ${cls}`} style={{ fontSize: 10 }}>{label}</span>
+                              })()}
                             </td>
                             <td style={{ whiteSpace: 'nowrap' }}>
-                              {plan.status === 'active' && (
+                              {plan.status === 'active' && pendingInstalments.length > 0 && (
                                 <button
                                   className="btn btn-ghost btn-xs"
-                                  onClick={() => payments.plans.update(plan.id, { status: 'completed' }).then(refetchPlans)}
+                                  style={{ color: 'var(--lime)', fontSize: 11 }}
+                                  onClick={async () => {
+                                    const next = [...pendingInstalments].sort((a, b) => a.due_date.localeCompare(b.due_date))[0]
+                                    if (!next) return
+                                    if (!window.confirm(`Mark $${parseFloat(next.amount).toFixed(2)} instalment as paid?`)) return
+                                    await payments.plans.updateInstalment(next.id, { status: 'paid', paid_date: new Date().toISOString().slice(0, 10) })
+                                    refetchPlans()
+                                  }}
                                 >
-                                  Record Payment
+                                  Mark Next Paid
+                                </button>
+                              )}
+                              {plan.status === 'completed' && remaining > 0.01 && (
+                                <button
+                                  className="btn btn-ghost btn-xs"
+                                  style={{ color: 'var(--amber)', fontSize: 11 }}
+                                  title="Plan was marked completed but still has an outstanding balance"
+                                  onClick={() => payments.plans.update(plan.id, { status: 'active' }).then(refetchPlans)}
+                                >
+                                  Reopen
                                 </button>
                               )}
                             </td>

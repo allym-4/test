@@ -397,6 +397,13 @@ export default function DashboardScreen({ navigation }) {
         <Text style={s.viewAllLinkText}>View all my classes →</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity
+        style={s.viewAllLink}
+        onPress={() => navigation.navigate('Leads')}
+      >
+        <Text style={s.viewAllLinkText}>View leads & enquiries →</Text>
+      </TouchableOpacity>
+
       <Text style={s.sectionTitle}>Notes for Mimi & Chloe</Text>
       <StaffNotePanel />
 

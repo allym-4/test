@@ -88,6 +88,7 @@ class ClassSession(models.Model):
     price_override = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Custom price for this class. Overrides standard tier pricing.")
     instructor_fee = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Amount to credit instructor's account per class attended.")
     requires_full_payment = models.BooleanField(default=False, help_text="If True, student must pay the full season fee upfront (no payment plan).")
+    exempt_from_season_discount = models.BooleanField(default=False, help_text="If True, this class is not counted in the incremental season discount structure.")
     auto_exempt_same_name = models.BooleanField(default=True, help_text="Students enrolled in a same-name session are auto-exempt from catch-up cutoff.")
     catchup_eligible_names = models.TextField(blank=True, help_text="Comma-separated class names eligible as catch-up destinations for this class.")
     tags = models.ManyToManyField('Tag', blank=True, related_name='sessions')
@@ -117,6 +118,14 @@ class ClassSession(models.Model):
     )
     start_week = models.PositiveSmallIntegerField(default=1, help_text='Week number (1–8) this class starts running within the season.')
     end_week = models.PositiveSmallIntegerField(default=8, help_text='Week number (1–8) this class stops running within the season.')
+    syllabus = models.JSONField(
+        default=list, blank=True,
+        help_text='Week-by-week plan. Array of {week, title, content, moves} objects.'
+    )
+    instructor_notes = models.TextField(
+        blank=True,
+        help_text='Persistent notes for instructors (e.g. class quirks, injuries to watch). Copied when duplicating sessions between seasons.'
+    )
     created_at = models.DateTimeField(auto_now_add=True, null=True)
 
     class Meta:
@@ -292,12 +301,22 @@ class PracticeBooking(models.Model):
         CONFIRMED = 'confirmed', 'Confirmed'
         CANCELLED = 'cancelled', 'Cancelled'
 
+    class AttendanceStatus(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        PRESENT = 'present', 'Present'
+        NO_SHOW = 'no_show', 'No-show (fee)'
+        NO_SHOW_WAIVED = 'no_show_waived', 'No-show (no fee)'
+
     slot = models.ForeignKey(PracticeSlot, on_delete=models.CASCADE, related_name='bookings')
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='practice_bookings')
     status = models.CharField(max_length=15, choices=Status.choices, default=Status.CONFIRMED)
     price_charged = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     is_free = models.BooleanField(default=False)
     payment_type = models.CharField(max_length=20, blank=True)
+    attendance_status = models.CharField(
+        max_length=15, choices=AttendanceStatus.choices, default=AttendanceStatus.PENDING
+    )
+    kisi_access_granted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

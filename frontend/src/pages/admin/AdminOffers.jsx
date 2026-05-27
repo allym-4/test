@@ -430,14 +430,14 @@ export default function AdminOffers() {
       </div>
 
       <div className="subtabs" style={{ marginBottom: 24 }}>
-        {[['pricing', 'Season Pricing'], ['promo', 'Promo Codes'], ['vouchers', 'Gift Vouchers'], ['referrals', 'Referrals']].map(([key, label]) => (
+        {[['pricing', 'Default Season Discount Structure'], ['promo', 'Promo Codes'], ['vouchers', 'Gift Vouchers'], ['referrals', 'Referrals']].map(([key, label]) => (
           <div key={key} className={`subtab ${tab === key ? 'active' : ''}`} onClick={() => setTab(key)}>
             {label}
           </div>
         ))}
       </div>
 
-      {/* ── Season Pricing ── */}
+      {/* ── Default Season Discount Structure ── */}
       {tab === 'pricing' && (
         <div style={{ display: 'grid', gap: 32 }}>
           {/* Season Classes */}

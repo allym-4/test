@@ -108,7 +108,7 @@ class StaffNoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = StaffNote
         fields = ('id', 'student', 'created_by', 'created_by_name', 'tag', 'body', 'archived', 'recheck_date', 'is_permanent', 'created_at', 'updated_at')
-        read_only_fields = ('id', 'created_by', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'student', 'created_by', 'created_at', 'updated_at')
 
 
 class LeadSerializer(serializers.ModelSerializer):
@@ -231,7 +231,7 @@ class ProductSerializer(serializers.ModelSerializer):
 class AutomationRuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = AutomationRule
-        fields = ('id', 'slug', 'enabled', 'name', 'description', 'trigger_type', 'conditions', 'actions', 'is_custom', 'created_at')
+        fields = ('id', 'slug', 'enabled', 'name', 'description', 'trigger_type', 'conditions', 'actions', 'timing', 'is_custom', 'created_at')
         read_only_fields = ('id', 'created_at')
 
 
@@ -292,7 +292,7 @@ class InstructorPayRecordSerializer(serializers.ModelSerializer):
 class StudentSkillSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentSkill
-        fields = ('id', 'skill_name', 'level', 'self_assessed', 'teacher_confirmed', 'instructor_status', 'instructor_notes', 'is_focus', 'updated_at')
+        fields = ('id', 'skill_name', 'level', 'self_assessed', 'self_rating', 'teacher_confirmed', 'instructor_status', 'instructor_notes', 'is_focus', 'updated_at')
         read_only_fields = ('id', 'updated_at')
 
 

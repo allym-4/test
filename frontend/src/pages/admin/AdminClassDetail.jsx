@@ -295,6 +295,13 @@ export default function AdminClassDetail() {
   const [aiError, setAiError]         = useState(null)
   const [copyFromId, setCopyFromId]   = useState('')
 
+  // Syllabus state (separate from main form — saved independently via PATCH)
+  const [syllabus, setSyllabus]               = useState([]) // [{week, title, content, moves}]
+  const [instructorNotes, setInstructorNotes] = useState('')
+  const [syllabusSaving, setSyllabusSaving]   = useState(false)
+  const [syllabusSaved, setSyllabusSaved]     = useState(false)
+  const [expandedWeeks, setExpandedWeeks]     = useState({})
+
   useEffect(() => {
     if (cls) {
       setForm({
@@ -323,10 +330,46 @@ export default function AdminClassDetail() {
         catchup_eligible_names: cls.catchup_eligible_names || '',
         tags:                 cls.tags || [],
       })
+      // Init syllabus: pre-populate all weeks 1..end_week with existing entries
+      const endWeek = cls.end_week || 8
+      const existing = Array.isArray(cls.syllabus) ? cls.syllabus : []
+      const weeks = Array.from({ length: endWeek }, (_, i) => {
+        const weekNum = i + 1
+        const found = existing.find(e => e.week === weekNum)
+        return found || { week: weekNum, title: '', content: '', moves: '' }
+      })
+      setSyllabus(weeks)
+      setInstructorNotes(cls.instructor_notes || '')
     }
   }, [cls])
 
   function set(k, v) { setForm(f => ({ ...f, [k]: v })) }
+
+  function setSyllabusWeek(weekNum, field, value) {
+    setSyllabus(prev => prev.map(w => w.week === weekNum ? { ...w, [field]: value } : w))
+    setSyllabusSaved(false)
+  }
+
+  function toggleWeekExpanded(weekNum) {
+    setExpandedWeeks(prev => ({ ...prev, [weekNum]: !prev[weekNum] }))
+  }
+
+  async function saveSyllabus() {
+    if (!id || id === 'new') return
+    setSyllabusSaving(true)
+    try {
+      await classes.update(id, { syllabus })
+      setSyllabusSaved(true)
+      setTimeout(() => setSyllabusSaved(false), 2000)
+    } finally {
+      setSyllabusSaving(false)
+    }
+  }
+
+  async function saveInstructorNotes() {
+    if (!id || id === 'new') return
+    await classes.update(id, { instructor_notes: instructorNotes })
+  }
 
   function copyFromSession(sessionId) {
     if (!sessionId) { setCopyFromId(''); return }
@@ -801,6 +844,123 @@ export default function AdminClassDetail() {
             Suggest other classes to students when they book this one. Use <b style={{ color: 'var(--white)' }}>✦ Auto-populate</b> to pull suggestions from the category upsell settings.
           </div>
           <UpsellsPanel sessionId={cls.id} allSessions={allSessions} sessionName={cls.name} />
+        </div>
+      )}
+
+      {/* Syllabus — edit mode only */}
+      {!isNew && cls?.id && (
+        <div style={sectionCard}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div style={sectionTitle} style={{ marginBottom: 0 }}>Week-by-Week Syllabus</div>
+            <button
+              type="button"
+              className="btn btn-lime btn-sm"
+              onClick={saveSyllabus}
+              disabled={syllabusSaving}
+            >
+              {syllabusSaving ? 'Saving…' : syllabusSaved ? '✓ Saved' : 'Save Syllabus'}
+            </button>
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 16 }}>
+            Plan what you'll cover each week. Copied forward when duplicating seasons.
+          </div>
+
+          {/* Week rows */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {syllabus.map(entry => {
+              const isExpanded = expandedWeeks[entry.week]
+              const hasContent = entry.title || entry.content || entry.moves
+              return (
+                <div
+                  key={entry.week}
+                  style={{
+                    background: '#1a1a1a',
+                    border: `1px solid ${isExpanded ? 'rgba(204,255,0,0.2)' : 'var(--border, #222)'}`,
+                    borderRadius: 8,
+                    overflow: 'hidden',
+                  }}
+                >
+                  {/* Week header row */}
+                  <div
+                    onClick={() => toggleWeekExpanded(entry.week)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '10px 14px', cursor: 'pointer',
+                    }}
+                  >
+                    <span style={{
+                      flexShrink: 0, fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
+                      letterSpacing: '0.06em', color: 'var(--lime)',
+                      minWidth: 52,
+                    }}>
+                      Week {entry.week}
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="Week title (e.g. Intro to spins)"
+                      value={entry.title}
+                      onClick={e => e.stopPropagation()}
+                      onChange={e => setSyllabusWeek(entry.week, 'title', e.target.value)}
+                      onFocus={() => setExpandedWeeks(prev => ({ ...prev, [entry.week]: true }))}
+                      style={{
+                        flex: 1, background: 'transparent', border: 'none', outline: 'none',
+                        color: 'var(--white)', fontSize: 13, fontWeight: entry.title ? 600 : 400,
+                      }}
+                    />
+                    {hasContent && !isExpanded && (
+                      <span style={{ fontSize: 11, color: 'var(--grey)', flexShrink: 0 }}>has notes</span>
+                    )}
+                    <span style={{ fontSize: 12, color: 'var(--grey)', flexShrink: 0, marginLeft: 4 }}>
+                      {isExpanded ? '▲' : '▼'}
+                    </span>
+                  </div>
+
+                  {/* Expanded content */}
+                  {isExpanded && (
+                    <div style={{ padding: '0 14px 14px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div>
+                        <label style={{ ...labelStyle, marginBottom: 4 }}>Class Content</label>
+                        <textarea
+                          style={{ ...inputStyle, resize: 'vertical', minHeight: 70 }}
+                          placeholder="Describe what you'll cover this week…"
+                          value={entry.content}
+                          onChange={e => setSyllabusWeek(entry.week, 'content', e.target.value)}
+                          rows={3}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ ...labelStyle, marginBottom: 4 }}>Moves / Skills</label>
+                        <input
+                          type="text"
+                          style={inputStyle}
+                          placeholder="e.g. Fireman, body wave, chair spin"
+                          value={entry.moves}
+                          onChange={e => setSyllabusWeek(entry.week, 'moves', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Instructor Notes */}
+          <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border, #222)' }}>
+            <label style={labelStyle}>Instructor Notes</label>
+            <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 8 }}>
+              Persists season-to-season, visible to all instructors. Use for class quirks, student notes, injuries to watch.
+            </div>
+            <textarea
+              style={{ ...inputStyle, resize: 'vertical', minHeight: 90 }}
+              value={instructorNotes}
+              onChange={e => { setInstructorNotes(e.target.value) }}
+              onBlur={saveInstructorNotes}
+              placeholder="e.g. Pole 3 is wobbly — avoid for inverts. Several students have wrist injuries."
+              rows={4}
+            />
+            <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>Auto-saves when you click away.</div>
+          </div>
         </div>
       )}
 

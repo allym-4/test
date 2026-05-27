@@ -22,11 +22,11 @@ function todayLabel() {
 export default function DashboardPage() {
   const { user } = useAuth()
   const todayDow = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1
-  // My sessions (instructor-filtered by API)
-  const { data: sessionsData, loading: loadingSessions } = useApi(() => classes.list({ active: 'true' }))
-  // All sessions today (all instructors)
+  // My sessions (instructor-filtered by API) — current season only to avoid duplicate when next season is set up
+  const { data: sessionsData, loading: loadingSessions } = useApi(() => classes.list({ active: 'true', season_status: 'active' }))
+  // All sessions today (all instructors) — current season only
   const { data: allSessionsData, loading: loadingAllSessions } = useApi(() =>
-    client.get('/api/classes/sessions/', { params: { active: true } })
+    client.get('/api/classes/sessions/', { params: { active: true, season_status: 'active' } })
   )
   const { data: hwData } = useApi(() => homework.list({ status: 'active' }))
   const { data: unreadData } = useApi(() => client.get('/api/helpdesk/conversations/', { params: { unread: true } }))

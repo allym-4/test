@@ -127,9 +127,17 @@ function MyClassesTab() {
   const [view, setView] = useState('today')
   const [weekOffset, setWeekOffset] = useState(0)
   const [coverModal, setCoverModal] = useState(null)
+  const { user } = useAuth()
 
   const { data, loading } = useApi(() => classes.list({ instructor: 'me' }))
   const sessions = data?.results ?? data ?? []
+
+  // Cover assignments: occurrences where this instructor is the substitute
+  const { data: coverData } = useApi(() =>
+    user?.id ? client.get('/api/classes/occurrences/', { params: { substitute_instructor: user.id, upcoming: 'true' } }) : null,
+    [user?.id]
+  )
+  const coverOccs = coverData?.data?.results || coverData?.results || []
 
   const weekStart = getWeekStart(weekOffset)
   const today = new Date()
@@ -283,6 +291,51 @@ function MyClassesTab() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Cover assignments section */}
+      {coverOccs.length > 0 && (
+        <div style={{ marginTop: 24 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#ffaa00', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>
+            Cover Assignments
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {coverOccs.map(occ => {
+              const d = new Date(occ.date + 'T00:00')
+              const dayLabel = DAYS[d.getDay() === 0 ? 6 : d.getDay() - 1]
+              const dateNum = d.getDate()
+              const monthLabel = MONTHS[d.getMonth()]
+              const sessionId = occ.session || occ.session_detail?.id
+              const name = occ.session_name || occ.session_detail?.name || 'Class'
+              const timeStr = occ.start_time || occ.session_detail?.start_time
+              return (
+                <Link key={occ.id} to={`/classes/${sessionId}/attendance`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <div style={{ display: 'flex', alignItems: 'stretch', background: '#111', border: '1px solid rgba(255,170,0,0.25)', borderRadius: 14, overflow: 'hidden' }}>
+                    <div style={{ width: 4, flexShrink: 0, background: '#ffaa00' }} />
+                    <div style={{ width: 64, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '14px 8px', borderRight: '1px solid #1e1e1e', gap: 1 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: '#555', letterSpacing: '0.5px', textTransform: 'uppercase' }}>{dayLabel}</div>
+                      <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 24, color: '#ffaa00', lineHeight: 1.1 }}>{dateNum}</div>
+                      <div style={{ fontSize: 10, color: '#555' }}>{monthLabel}</div>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0, padding: '14px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+                        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15 }}>{name}</div>
+                        <span style={{ background: 'rgba(255,170,0,0.1)', color: '#ffaa00', borderRadius: 6, fontSize: 10, fontWeight: 700, padding: '2px 7px' }}>COVER</span>
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--grey)' }}>
+                        {timeStr ? fmt12(timeStr) : ''}
+                        {occ.session_detail?.studio_detail?.name && <span style={{ marginLeft: 8, color: '#444' }}>· {occ.session_detail.studio_detail.name}</span>}
+                      </div>
+                    </div>
+                    <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center' }}>
+                      <span style={{ fontSize: 12, color: 'var(--lime)', fontWeight: 700 }}>View →</span>
+                    </div>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
         </div>
       )}
 

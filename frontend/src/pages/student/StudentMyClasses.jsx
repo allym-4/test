@@ -135,7 +135,11 @@ function CancelPolicyModal({ enrolment, isWaitlist, onClose, onDone }) {
   async function loadSessions() {
     if (allSessions) return
     try {
-      const res = await classesApi.list({ active: true })
+      // Filter to same season as current enrolment — transfers are season-to-season only
+      const seasonId = enrolment.season_detail?.id || enrolment.class_session_detail?.season
+      const params = { active: true }
+      if (seasonId) params.season = seasonId
+      const res = await classesApi.list(params)
       const sessions = res.data?.results || res.data || []
       // Exclude the class they're already in
       setAllSessions(sessions.filter(s2 => s2.id !== enrolment.class_session))
@@ -656,6 +660,8 @@ export default function StudentMyClasses() {
   const { data: creditsData } = useApi(() => user?.id ? attendance.makeupCredits.list({ student: user.id, status: 'available' }) : null, [user?.id])
   const { data: studioSettings } = useApi(() => settingsApi.get(), [])
   const { data: balanceData } = useApi(() => user?.id ? paymentsApi.balance(user.id) : null, [user?.id])
+  // Fetch upcoming occurrences for all enrolled sessions to detect cover teachers
+  const { data: upcomingOccData } = useApi(() => user?.id ? classesApi.occurrences({ student: user.id, upcoming: 'true' }) : null, [user?.id])
   const isBlocked = balanceData?.booking_blocked === true
   const owingAmount = balanceData && parseFloat(balanceData.balance) < 0 ? Math.abs(parseFloat(balanceData.balance)) : null
 
@@ -677,6 +683,15 @@ export default function StudentMyClasses() {
   const casualItems = casualBookingsData?.results || casualBookingsData || []
   const availableCredits = creditsData?.results || creditsData || []
   const workshops = workshopsData?.results || workshopsData || []
+
+  // Map sessionId → next cover occurrence (substitute instructor set)
+  const coverBySession = {}
+  for (const occ of (upcomingOccData?.results || upcomingOccData?.data?.results || upcomingOccData || [])) {
+    if (occ.substitute_instructor && occ.session) {
+      const existing = coverBySession[occ.session]
+      if (!existing || occ.date < existing.date) coverBySession[occ.session] = occ
+    }
+  }
 
   const today = new Date().toISOString().slice(0, 10)
   const active = enrolments_.filter(e => e.status === 'active')
@@ -769,6 +784,8 @@ export default function StudentMyClasses() {
     const instructorId = s?.instructor_detail?.id
     const studio = s?.studio_detail?.name || ''
     const badgeColor = badge === 'ACTIVE' || badge === 'BOOKED' ? 'var(--lime)' : badge === 'WAITLISTED' ? 'var(--lav)' : 'var(--grey)'
+    const coverOcc = s?.id ? coverBySession[s.id] : null
+    const coverName = coverOcc?.substitute_instructor_detail?.display_name || coverOcc?.substitute_instructor_detail?.first_name || null
 
     return (
       <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
@@ -782,8 +799,16 @@ export default function StudentMyClasses() {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 700, fontSize: 15 }}>{s?.name}</div>
             <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>
-              {[studio, instructorName, 'Weeks 1–8'].filter(Boolean).join(' · ')}
+              {[studio, 'Weeks 1–8'].filter(Boolean).join(' · ')}
             </div>
+            {coverName ? (
+              <div style={{ fontSize: 12, marginTop: 2 }}>
+                <span style={{ color: '#ffaa00', fontWeight: 600 }}>COVER</span>
+                <span style={{ color: 'var(--grey)' }}> — {coverName}</span>
+              </div>
+            ) : instructorName ? (
+              <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{instructorName}</div>
+            ) : null}
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: badgeColor, border: `1px solid ${badgeColor}`, borderRadius: 20, padding: '2px 10px', marginBottom: showCancel ? 4 : 0, display: 'inline-block' }}>{badge}</div>
@@ -798,7 +823,7 @@ export default function StudentMyClasses() {
               onClick={() => navigate(`/portal/chat?instructor=${instructorId}&name=${encodeURIComponent(instructorName || 'your teacher')}`)}
               style={{ background: 'none', border: '1px solid rgba(204,255,0,0.25)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: 'var(--lime)', letterSpacing: '0.3px' }}
             >
-              💬 Message {instructorName || 'my teacher'}
+              💬 Message {coverName ? coverName : (instructorName || 'my teacher')}
             </button>
           </div>
         )}

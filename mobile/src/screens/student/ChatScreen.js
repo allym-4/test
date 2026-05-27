@@ -2,10 +2,11 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   FlatList, KeyboardAvoidingView, Platform, Alert, ActivityIndicator,
+  ScrollView,
 } from 'react-native'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { helpdesk, assistant } from '../../api'
+import { helpdesk, assistant, enrolments, classes } from '../../api'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -16,7 +17,7 @@ function formatTime(dateStr) {
 
 // ─── Tab bar ─────────────────────────────────────────────────────────────────
 
-const TABS = ['Studio', 'Assistant']
+const TABS = ['Studio', 'Classes', 'Assistant']
 
 function TabBar({ active, onChange }) {
   return (
@@ -32,6 +33,154 @@ function TabBar({ active, onChange }) {
         </TouchableOpacity>
       ))}
     </View>
+  )
+}
+
+// ─── Class Chat Tab ───────────────────────────────────────────────────────────
+
+function ClassChatBubble({ msg, userId }) {
+  const mine = msg.sender === userId || msg.sender?.id === userId
+  return (
+    <View style={[s.bubble, mine ? s.bubbleMine : s.bubbleTheirs]}>
+      {!mine && (
+        <Text style={s.senderName}>{msg.sender?.display_name ?? msg.sender?.first_name ?? 'Classmate'}</Text>
+      )}
+      <Text style={[s.bubbleText, mine && s.bubbleTextMine]}>{msg.body}</Text>
+      <Text style={[s.bubbleTime, mine && s.bubbleTimeMine]}>{formatTime(msg.created_at)}</Text>
+    </View>
+  )
+}
+
+function ClassChatConversation({ sessionId, sessionName, userId, onBack }) {
+  const [text, setText] = useState('')
+  const [sending, setSending] = useState(false)
+  const flatRef = useRef(null)
+
+  const { data, loading, refetch } = useApi(() => classes.chat.list(sessionId), [sessionId])
+  const messages = data?.messages ?? data ?? []
+
+  async function send() {
+    const body = text.trim()
+    if (!body) return
+    setSending(true)
+    setText('')
+    try {
+      await classes.chat.send(sessionId, { body })
+      refetch()
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.detail || 'Could not send message.')
+      setText(body)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: 1, borderBottomColor: '#222' }}>
+        <TouchableOpacity onPress={onBack} style={{ marginRight: 12, padding: 4 }}>
+          <Text style={{ color: '#ccff00', fontSize: 15, fontWeight: '700' }}>←</Text>
+        </TouchableOpacity>
+        <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff', flex: 1 }}>{sessionName}</Text>
+      </View>
+      {loading && <ActivityIndicator color="#ccff00" style={{ marginTop: 40 }} />}
+      {!loading && messages.length === 0 && (
+        <View style={s.emptyState}>
+          <Text style={s.emptyTitle}>No messages yet</Text>
+          <Text style={s.emptyBody}>Be the first to say something to your class!</Text>
+        </View>
+      )}
+      {!loading && messages.length > 0 && (
+        <FlatList
+          ref={flatRef}
+          data={messages}
+          keyExtractor={m => String(m.id)}
+          renderItem={({ item }) => <ClassChatBubble msg={item} userId={userId} />}
+          contentContainerStyle={s.messageList}
+          onContentSizeChange={() => flatRef.current?.scrollToEnd({ animated: true })}
+        />
+      )}
+      <View style={s.inputRow}>
+        <TextInput
+          style={s.input}
+          placeholder={`Message ${sessionName}…`}
+          placeholderTextColor="#555"
+          value={text}
+          onChangeText={setText}
+          multiline
+          maxLength={500}
+        />
+        <TouchableOpacity
+          style={[s.sendBtn, (!text.trim() || sending) && s.sendBtnDisabled]}
+          onPress={send}
+          disabled={!text.trim() || sending}
+          activeOpacity={0.8}
+        >
+          {sending
+            ? <ActivityIndicator size="small" color="#fff" />
+            : <Text style={s.sendBtnText}>Send</Text>
+          }
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
+  )
+}
+
+function ClassChatTab({ userId }) {
+  const [openSession, setOpenSession] = useState(null)
+
+  const { data: enrolData, loading } = useApi(
+    () => enrolments.list({ student: userId, status: 'active', enrolment_type: 'course' }),
+    [userId],
+  )
+  const activeEnrolments = enrolData?.results ?? enrolData ?? []
+
+  if (openSession) {
+    return (
+      <ClassChatConversation
+        sessionId={openSession.id}
+        sessionName={openSession.name}
+        userId={userId}
+        onBack={() => setOpenSession(null)}
+      />
+    )
+  }
+
+  if (loading) return <ActivityIndicator color="#ccff00" style={{ marginTop: 40 }} />
+
+  if (activeEnrolments.length === 0) {
+    return (
+      <View style={s.emptyState}>
+        <Text style={s.emptyTitle}>No active classes</Text>
+        <Text style={s.emptyBody}>Enrol in a class to join its group chat.</Text>
+      </View>
+    )
+  }
+
+  return (
+    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+      <Text style={{ fontSize: 12, color: '#555', fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 12 }}>Your classes this season</Text>
+      {activeEnrolments.map(enr => {
+        const sess = enr.class_session_detail
+        const name = sess?.name ?? enr.class_name ?? 'Class'
+        const day = sess?.day_of_week != null ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][sess.day_of_week] : null
+        const time = sess?.start_time ? sess.start_time.slice(0, 5) : null
+        return (
+          <TouchableOpacity
+            key={enr.id}
+            style={{ backgroundColor: '#111', borderWidth: 1, borderColor: '#222', borderRadius: 12, padding: 14, marginBottom: 10 }}
+            onPress={() => setOpenSession({ id: enr.class_session, name })}
+            activeOpacity={0.75}
+          >
+            <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff', marginBottom: 4 }}>{name}</Text>
+            {(day || time) && (
+              <Text style={{ fontSize: 12, color: '#666' }}>{[day, time].filter(Boolean).join('  ·  ')}</Text>
+            )}
+            <Text style={{ fontSize: 12, color: '#ccff00', marginTop: 6, fontWeight: '600' }}>Open chat →</Text>
+          </TouchableOpacity>
+        )
+      })}
+    </ScrollView>
   )
 }
 
@@ -241,10 +390,9 @@ export default function ChatScreen() {
   return (
     <View style={s.root}>
       <TabBar active={activeTab} onChange={setActiveTab} />
-      {activeTab === 0
-        ? <StudioTab userId={user?.id} />
-        : <AssistantTab />
-      }
+      {activeTab === 0 && <StudioTab userId={user?.id} />}
+      {activeTab === 1 && <ClassChatTab userId={user?.id} />}
+      {activeTab === 2 && <AssistantTab />}
     </View>
   )
 }

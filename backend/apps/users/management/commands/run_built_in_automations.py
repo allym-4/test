@@ -15,6 +15,7 @@ class Command(BaseCommand):
         self._parq_reminder()
         self._custom_rules()
         self._seasonal_checkin()
+        self._exemption_expiry_warning()
 
     def _seasonal_checkin(self):
         from django.core import management
@@ -23,6 +24,19 @@ class Command(BaseCommand):
             self.stdout.write('seasonal_checkin: done')
         except Exception as exc:
             self.stdout.write(f'seasonal_checkin: error — {exc}')
+
+    def _interpolate(self, text, student, extra=None):
+        ctx = {
+            'first_name': student.first_name or '',
+            'last_name': student.last_name or '',
+            'full_name': student.get_full_name() or '',
+            'studio_name': 'Duality Pole Studio',
+        }
+        if extra:
+            ctx.update(extra)
+        for k, v in ctx.items():
+            text = text.replace(f'{{{{{k}}}}}', str(v))
+        return text
 
     # ── 1. Re-engagement ────────────────────────────────────────────────────
     def _reengagement(self):
@@ -33,7 +47,11 @@ class Command(BaseCommand):
         if rule and not rule.enabled:
             return
 
-        cutoff = timezone.now() - timedelta(days=21)
+        timing = rule.timing if rule else {}
+        days_threshold = timing.get('days_threshold', 21)
+        cooldown_days = timing.get('cooldown_days', 14)
+
+        cutoff = timezone.now() - timedelta(days=days_threshold)
         students = User.objects.filter(role='student', is_active=True)
         sent = 0
         for student in students:
@@ -44,11 +62,11 @@ class Command(BaseCommand):
             if last_att and last_att.occurrence.date >= cutoff.date():
                 continue  # attended recently
 
-            # Don't re-send if we already sent one in the last 14 days
+            # Don't re-send if we already sent one in the cooldown window
             already = Notification.objects.filter(
                 recipient=student,
                 title__icontains="We miss you",
-                created_at__gte=timezone.now() - timedelta(days=14),
+                created_at__gte=timezone.now() - timedelta(days=cooldown_days),
             ).exists()
             if already:
                 continue
@@ -56,22 +74,26 @@ class Command(BaseCommand):
             Notification.objects.create(
                 recipient=student,
                 title='We miss you!',
-                body="It's been a while since we've seen you in class. We'd love to have you back — book your next session anytime.",
+                body=self._interpolate(
+                    "It's been a while since we've seen you in class. We'd love to have you back — book your next session anytime.",
+                    student,
+                ),
                 notification_type='info',
                 action_label='Book a Class',
                 action_url='/portal/book',
             )
             if student.email:
                 send_mail(
-                    subject="We miss you at Duality Pole Studio!",
-                    message=(
-                        f'Hi {student.first_name},\n\n'
-                        f"It's been a while since we've seen you in class and we miss you!\n\n"
-                        f'We\'d love to have you back. Log in anytime to book your next session.\n\n'
-                        f'If there\'s anything we can do to help — whether it\'s scheduling, '
-                        f'injuries, or anything else — just reply to this email.\n\n'
-                        f'Hope to see you soon!\n'
-                        f'The Duality Pole Studio team'
+                    subject=self._interpolate("We miss you at Duality Pole Studio!", student),
+                    message=self._interpolate(
+                        'Hi {{first_name}},\n\n'
+                        "It's been a while since we've seen you in class and we miss you!\n\n"
+                        "We'd love to have you back. Log in anytime to book your next session.\n\n"
+                        "If there's anything we can do to help — whether it's scheduling, "
+                        "injuries, or anything else — just reply to this email.\n\n"
+                        'Hope to see you soon!\n'
+                        'The Duality Pole Studio team',
+                        student,
                     ),
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[student.email],
@@ -80,7 +102,7 @@ class Command(BaseCommand):
             if rule:
                 AutomationRun.objects.create(
                     rule=rule, slug='reengagement', student=student,
-                    trigger_data={'days_since_last_visit': '21+'},
+                    trigger_data={'days_since_last_visit': f'{days_threshold}+'},
                     actions_taken=['Sent re-engagement email + notification'],
                     status='completed',
                 )
@@ -96,6 +118,10 @@ class Command(BaseCommand):
         rule = AutomationRule.objects.filter(slug='welfare_checkin').first()
         if rule and not rule.enabled:
             return
+
+        timing = rule.timing if rule else {}
+        cooldown_days = timing.get('cooldown_days', 14)
+        min_present_of_4 = timing.get('min_present_of_4', 2)
 
         students = User.objects.filter(role='student', is_active=True)
         sent = 0
@@ -113,13 +139,13 @@ class Command(BaseCommand):
                 continue
 
             present_count = sum(1 for r in recent if r.status == 'present')
-            if present_count >= 2:  # >= 50%
+            if present_count >= min_present_of_4:
                 continue
 
             already = Notification.objects.filter(
                 recipient=student,
                 title__icontains='checking in',
-                created_at__gte=timezone.now() - timedelta(days=14),
+                created_at__gte=timezone.now() - timedelta(days=cooldown_days),
             ).exists()
             if already:
                 continue
@@ -127,22 +153,26 @@ class Command(BaseCommand):
             Notification.objects.create(
                 recipient=student,
                 title='Just checking in on you',
-                body="We've noticed you've missed a few recent classes and wanted to check in. Is everything okay? Feel free to reach out if you need anything.",
+                body=self._interpolate(
+                    "We've noticed you've missed a few recent classes and wanted to check in. Is everything okay? Feel free to reach out if you need anything.",
+                    student,
+                ),
                 notification_type='info',
                 action_label='Message Us',
                 action_url='/portal/support',
             )
             if student.email:
                 send_mail(
-                    subject='Checking in — Duality Pole Studio',
-                    message=(
-                        f'Hi {student.first_name},\n\n'
-                        f"We've noticed you've missed a few recent classes and just wanted to check in — "
-                        f"is everything okay?\n\n"
-                        f'If there\'s anything we can do to help, whether it\'s an injury, scheduling '
-                        f'conflict, or anything else, please don\'t hesitate to reach out.\n\n'
-                        f'We\'re here for you!\n'
-                        f'The Duality Pole Studio team'
+                    subject=self._interpolate('Checking in — Duality Pole Studio', student),
+                    message=self._interpolate(
+                        'Hi {{first_name}},\n\n'
+                        "We've noticed you've missed a few recent classes and just wanted to check in — "
+                        "is everything okay?\n\n"
+                        "If there's anything we can do to help, whether it's an injury, scheduling "
+                        "conflict, or anything else, please don't hesitate to reach out.\n\n"
+                        "We're here for you!\n"
+                        'The Duality Pole Studio team',
+                        student,
                     ),
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[student.email],
@@ -186,18 +216,22 @@ class Command(BaseCommand):
             Notification.objects.create(
                 recipient=student,
                 title='Happy birthday! 🎂',
-                body="Wishing you a wonderful birthday from all of us at Duality Pole Studio. Hope you have an amazing day!",
+                body=self._interpolate(
+                    "Wishing you a wonderful birthday from all of us at Duality Pole Studio. Hope you have an amazing day!",
+                    student,
+                ),
                 notification_type='info',
             )
             if student.email:
                 send_mail(
-                    subject='Happy birthday from Duality Pole Studio! 🎂',
-                    message=(
-                        f'Hi {student.first_name},\n\n'
-                        f'Happy birthday from all of us at Duality Pole Studio! 🎂\n\n'
-                        f'We hope you have a wonderful day filled with joy.\n\n'
-                        f'With love,\n'
-                        f'The Duality Pole Studio team'
+                    subject=self._interpolate('Happy birthday from Duality Pole Studio! 🎂', student),
+                    message=self._interpolate(
+                        'Hi {{first_name}},\n\n'
+                        'Happy birthday from all of us at Duality Pole Studio! 🎂\n\n'
+                        'We hope you have a wonderful day filled with joy.\n\n'
+                        'With love,\n'
+                        'The Duality Pole Studio team',
+                        student,
                     ),
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[student.email],
@@ -223,11 +257,15 @@ class Command(BaseCommand):
         if rule and not rule.enabled:
             return
 
-        now = timezone.now()
-        window_start = now + timedelta(hours=24)
-        window_end = now + timedelta(hours=72)
+        timing = rule.timing if rule else {}
+        advance_hours = timing.get('advance_hours', 48)
+        window_hours = timing.get('window_hours', 72)
 
-        # Find trial enrolments whose next class occurrence is in 24-72 hours
+        now = timezone.now()
+        window_start = now + timedelta(hours=advance_hours)
+        window_end = now + timedelta(hours=window_hours)
+
+        # Find trial enrolments whose next class occurrence is in the window
         upcoming = ClassOccurrence.objects.filter(
             date__gte=window_start.date(),
             date__lte=window_end.date(),
@@ -267,22 +305,29 @@ class Command(BaseCommand):
                 Notification.objects.create(
                     recipient=student,
                     title='Please complete your health form',
-                    body=f'Your trial class is coming up! Please complete your PAR-Q health questionnaire before attending.',
+                    body=self._interpolate(
+                        'Your trial class is coming up! Please complete your PAR-Q health questionnaire before attending.',
+                        student,
+                    ),
                     notification_type='reminder',
                     action_label='Complete Form',
                     action_url='/portal/forms',
                 )
                 if student.email:
                     send_mail(
-                        subject='Please complete your health form before your class',
-                        message=(
-                            f'Hi {student.first_name},\n\n'
-                            f'Your trial class is coming up soon! Before you attend, '
-                            f'we ask all new students to complete a brief PAR-Q health questionnaire.\n\n'
-                            f'Please log in to your account and complete the form under "Forms" '
-                            f'before your class.\n\n'
-                            f'See you soon!\n'
-                            f'Duality Pole Studio'
+                        subject=self._interpolate(
+                            'Please complete your health form before your class',
+                            student,
+                        ),
+                        message=self._interpolate(
+                            'Hi {{first_name}},\n\n'
+                            'Your trial class is coming up soon! Before you attend, '
+                            'we ask all new students to complete a brief PAR-Q health questionnaire.\n\n'
+                            'Please log in to your account and complete the form under "Forms" '
+                            'before your class.\n\n'
+                            'See you soon!\n'
+                            'Duality Pole Studio',
+                            student,
                         ),
                         from_email=settings.DEFAULT_FROM_EMAIL,
                         recipient_list=[student.email],
@@ -391,23 +436,27 @@ class Command(BaseCommand):
         for action in rule.actions:
             action_type = action.get('type')
             if action_type == 'send_notification':
+                title = self._interpolate(action.get('title', rule.name), student)
+                body = self._interpolate(action.get('body', ''), student)
                 Notification.objects.create(
                     recipient=student,
-                    title=action.get('title', rule.name),
-                    body=action.get('body', ''),
+                    title=title,
+                    body=body,
                     notification_type='info',
                 )
-                actions_taken.append(f'Sent notification: {action.get("title", "")}')
+                actions_taken.append(f'Sent notification: {title}')
             elif action_type == 'send_email':
                 if student.email:
+                    subject = self._interpolate(action.get('subject', rule.name), student)
+                    body = self._interpolate(action.get('body', ''), student)
                     send_mail(
-                        subject=action.get('subject', rule.name),
-                        message=action.get('body', ''),
+                        subject=subject,
+                        message=body,
                         from_email=settings.DEFAULT_FROM_EMAIL,
                         recipient_list=[student.email],
                         fail_silently=True,
                     )
-                    actions_taken.append(f'Sent email: {action.get("subject", "")}')
+                    actions_taken.append(f'Sent email: {subject}')
             elif action_type == 'add_tag':
                 tag_name = action.get('tag', '')
                 if tag_name:
@@ -423,3 +472,32 @@ class Command(BaseCommand):
             actions_taken=actions_taken,
             status='completed',
         )
+
+    def _exemption_expiry_warning(self):
+        from apps.payments.models import BalanceExemption
+        from apps.users.models import Notification, User
+        from django.utils import timezone
+        today = timezone.localdate()
+        warning_date = today + timedelta(days=2)
+        # Find exemptions expiring in exactly 2 days that haven't been warned
+        expiring = BalanceExemption.objects.filter(end_date=warning_date, is_active=True)
+        sent = 0
+        for ex in expiring:
+            admins = User.objects.filter(role='admin', is_active=True)
+            for admin in admins:
+                already = Notification.objects.filter(
+                    recipient=admin,
+                    title__icontains='exemption expiring',
+                    body__icontains=ex.student.display_name,
+                    created_at__date=today,
+                ).exists()
+                if not already:
+                    Notification.objects.create(
+                        recipient=admin,
+                        title='Balance exemption expiring soon',
+                        body=f'{ex.student.display_name}\'s balance exemption expires in 2 days ({ex.end_date}). Extend or they will be blocked from booking.',
+                        notification_type='alert',
+                        action_url=f'/admin/students/{ex.student_id}',
+                    )
+                    sent += 1
+        self.stdout.write(f'exemption_expiry_warning: {sent} sent')

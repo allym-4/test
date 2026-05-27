@@ -5,6 +5,32 @@ import '../StudentsPage.css'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
+function exportCsv(rows) {
+  const headers = ['Student', 'Email', 'Class', 'Day', 'Season', 'Type', 'Status', 'Amount Paid', 'Enrolled Date']
+  const lines = [headers.join(','), ...rows.map(e => {
+    const s = e.class_session_detail
+    const st = e.student_detail
+    return [
+      `"${st?.display_name || ''}"`,
+      `"${st?.email || ''}"`,
+      `"${s?.name || ''}"`,
+      `"${s?.day_of_week != null ? DAYS[s.day_of_week] : ''}"`,
+      `"${e.season_detail?.name || ''}"`,
+      e.enrolment_type,
+      e.status,
+      e.amount_paid != null ? parseFloat(e.amount_paid).toFixed(2) : '',
+      e.enrolled_date ? e.enrolled_date.slice(0, 10) : '',
+    ].join(',')
+  })]
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `bookings-${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 const TYPE_TAG = {
   season:   'tag-lav',
   trial:    'tag-lav',
@@ -384,6 +410,10 @@ export default function AdminBookings() {
   const [viewing, setViewing] = useState(null)
   const [confirmCancel, setConfirmCancel] = useState(null)
   const [transferEnrol, setTransferEnrol] = useState(null)
+  const [selected, setSelected] = useState(new Set())
+  const [bulkConfirm, setBulkConfirm] = useState(null)
+  const [bulkWorking, setBulkWorking] = useState(false)
+  const [bulkMsg, setBulkMsg] = useState('')
 
   const all = data?.results || []
 
@@ -399,6 +429,50 @@ export default function AdminBookings() {
     return matchSearch && matchType && matchStatus && matchFrom && matchTo
   })
 
+  const allFilteredIds = filtered.map(e => e.id)
+  const allSelected = allFilteredIds.length > 0 && allFilteredIds.every(id => selected.has(id))
+  const someSelected = allFilteredIds.some(id => selected.has(id))
+  const selectedRows = filtered.filter(e => selected.has(e.id))
+
+  function toggleSelect(id) {
+    setSelected(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s })
+  }
+  function toggleAll() {
+    if (allSelected) setSelected(prev => { const s = new Set(prev); allFilteredIds.forEach(id => s.delete(id)); return s })
+    else setSelected(prev => { const s = new Set(prev); allFilteredIds.forEach(id => s.add(id)); return s })
+  }
+
+  async function runBulkAction(action) {
+    if (selectedRows.length === 0) return
+    setBulkWorking(true)
+    setBulkMsg('')
+    try {
+      if (action === 'export') {
+        exportCsv(selectedRows)
+        setBulkMsg(`Exported ${selectedRows.length} booking${selectedRows.length !== 1 ? 's' : ''}`)
+      } else if (action === 'reminder') {
+        const userIds = [...new Set(selectedRows.map(e => e.student))]
+        await users.bulkNotify({ title: 'Reminder from Duality', body: 'Just a friendly reminder about your upcoming class. See you soon! 🌟', target: 'user_ids', user_ids: userIds, send_email: true })
+        setBulkMsg(`Reminder sent to ${userIds.length} student${userIds.length !== 1 ? 's' : ''}`)
+      } else if (action === 'cancel') {
+        await Promise.all(selectedRows.map(e => enrolments.update(e.id, { status: 'cancelled' })))
+        setBulkMsg(`Cancelled ${selectedRows.length} booking${selectedRows.length !== 1 ? 's' : ''}`)
+        setSelected(new Set())
+        refetch()
+      } else if (action === 'waitlist') {
+        await Promise.all(selectedRows.map(e => enrolments.update(e.id, { status: 'waitlisted' })))
+        setBulkMsg(`Moved ${selectedRows.length} booking${selectedRows.length !== 1 ? 's' : ''} to waitlist`)
+        setSelected(new Set())
+        refetch()
+      }
+    } catch {
+      setBulkMsg('Something went wrong — please try again')
+    } finally {
+      setBulkWorking(false)
+      setBulkConfirm(null)
+    }
+  }
+
   return (
     <div>
       <div className="page-header">
@@ -407,24 +481,51 @@ export default function AdminBookings() {
           <div className="page-sub">Every booking across terms, casuals, trials and workshops</div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {someSelected && (
+            <span style={{ fontSize: 12, color: 'var(--grey)', alignSelf: 'center' }}>{selected.size} selected</span>
+          )}
           <select
-            style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--white)', padding: '7px 12px', fontSize: 13, outline: 'none' }}
+            style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: someSelected ? 'var(--white)' : 'var(--grey)', padding: '7px 12px', fontSize: 13, outline: 'none' }}
+            disabled={!someSelected || bulkWorking}
             onChange={e => {
               const a = e.target.value
               if (!a) return
-              alert(`Bulk action: ${a} applied to selected bookings`)
               e.target.value = ''
+              if (a === 'cancel') setBulkConfirm('cancel')
+              else if (a === 'waitlist') setBulkConfirm('waitlist')
+              else runBulkAction(a)
             }}
           >
-            <option value="">Bulk Actions</option>
-            <option value="Send reminder">Send reminder</option>
-            <option value="Export selected">Export selected</option>
-            <option value="Cancel selected">Cancel selected</option>
-            <option value="Add to waitlist">Add to waitlist</option>
+            <option value="">{someSelected ? 'Bulk Actions' : 'Select rows to bulk act'}</option>
+            <option value="reminder">Send reminder</option>
+            <option value="export">Export selected</option>
+            <option value="cancel">Cancel selected</option>
+            <option value="waitlist">Move to waitlist</option>
           </select>
           <button className="btn btn-lime btn-sm" onClick={() => setShowAdd(true)}>+ Add Booking</button>
         </div>
       </div>
+
+      {bulkMsg && (
+        <div style={{ background: 'rgba(204,255,0,0.08)', border: '1px solid rgba(204,255,0,0.2)', borderRadius: 8, padding: '10px 16px', fontSize: 13, color: 'var(--lime)', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {bulkMsg}
+          <button style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 14 }} onClick={() => setBulkMsg('')}>✕</button>
+        </div>
+      )}
+
+      {bulkConfirm && (
+        <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 8, padding: '12px 16px', fontSize: 13, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ flex: 1, color: '#ccc' }}>
+            {bulkConfirm === 'cancel'
+              ? `Cancel ${selectedRows.length} booking${selectedRows.length !== 1 ? 's' : ''}? This cannot be undone.`
+              : `Move ${selectedRows.length} booking${selectedRows.length !== 1 ? 's' : ''} to waitlist?`}
+          </span>
+          <button className="btn btn-xs" style={{ background: 'var(--red)', color: '#fff' }} disabled={bulkWorking} onClick={() => runBulkAction(bulkConfirm)}>
+            {bulkWorking ? 'Working…' : 'Confirm'}
+          </button>
+          <button className="btn btn-ghost btn-xs" onClick={() => setBulkConfirm(null)}>Cancel</button>
+        </div>
+      )}
 
       <div className="kpi-grid" style={{ marginBottom: 20 }}>
         {[
@@ -489,6 +590,9 @@ export default function AdminBookings() {
           <table>
             <thead>
               <tr>
+                <th style={{ width: 32 }}>
+                  <input type="checkbox" checked={allSelected} ref={el => el && (el.indeterminate = someSelected && !allSelected)} onChange={toggleAll} />
+                </th>
                 <th>Student</th>
                 <th>Class</th>
                 <th>Season / Date</th>
@@ -503,7 +607,10 @@ export default function AdminBookings() {
                 const s = e.class_session_detail
                 const st = e.student_detail
                 return (
-                  <tr key={e.id} className="clickable" onClick={() => setViewing(e)}>
+                  <tr key={e.id} className="clickable" onClick={() => setViewing(e)} style={selected.has(e.id) ? { background: 'rgba(204,255,0,0.04)' } : {}}>
+                    <td style={{ width: 32 }} onClick={ev => { ev.stopPropagation(); toggleSelect(e.id) }}>
+                      <input type="checkbox" checked={selected.has(e.id)} onChange={() => toggleSelect(e.id)} />
+                    </td>
                     <td>
                       <b>{st?.display_name || `Student ${e.student}`}</b>
                       {st?.email && <div style={{ fontSize: 11, color: 'var(--grey)' }}>{st.email}</div>}

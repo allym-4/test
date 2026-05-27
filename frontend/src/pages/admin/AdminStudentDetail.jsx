@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
-import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi, settings as settingsApi, classes, seasons as seasonsApi, tags as tagsApi } from '../../api'
+import { users, payments, enrolments, attendance, helpdesk, skills as skillsApi, forms as formsApi, settings as settingsApi, classes, seasons as seasonsApi, tags as tagsApi, homework } from '../../api'
 import client from '../../api/client'
 import { useAuth } from '../../contexts/AuthContext'
 import '../StudentsPage.css'
@@ -259,18 +259,20 @@ function BlockAccountModal({ student, onClose, onConfirm }) {
   )
 }
 
-function StudentNewPlanModal({ student, seasonsData, onClose, onSaved }) {
+function StudentNewPlanModal({ student, seasonsData, onClose, onSaved, outstandingBalance }) {
   const today = new Date().toISOString().slice(0, 10)
   const currentSeason = seasonsData.find(s => s.status === 'active') || seasonsData[0]
+  const initialAmount = outstandingBalance && outstandingBalance > 0 ? outstandingBalance.toFixed(2) : ''
   const [form, setForm] = useState({
     description: '',
-    total_amount: '',
+    total_amount: initialAmount,
     deposit: '',
     frequency: 'fortnightly',
     num_instalments: '4',
     start_date_type: 'today',
     custom_start_date: today,
     notes: '',
+    payment_method: 'card',
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -321,13 +323,15 @@ function StudentNewPlanModal({ student, seasonsData, onClose, onSaved }) {
         total_amount: parseFloat(form.total_amount),
         status: 'active',
         notes: form.notes,
+        payment_method: form.payment_method,
       })
       for (const ins of previewInstalments) {
         await payments.plans.createInstalment({ plan: res.data.id, amount: parseFloat(ins.amount), due_date: ins.due_date, status: 'pending' })
       }
       onSaved()
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to create plan')
+      const data = err.response?.data
+      setError((data && typeof data === 'object' ? Object.values(data).flat().join(' ') : null) || 'Failed to create plan')
     } finally {
       setSaving(false)
     }
@@ -346,9 +350,28 @@ function StudentNewPlanModal({ student, seasonsData, onClose, onSaved }) {
             <label>Description</label>
             <input value={form.description} onChange={e => set('description', e.target.value)} required placeholder="e.g. Season 4 — Level 2" />
           </div>
+          <div className="field">
+            <label>Payment Method</label>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {[
+                ['card', '💳 Card on file'],
+                ['prompt_card', '📲 Prompt to add card'],
+                ['cash', '💵 Cash'],
+                ['bank_transfer', '🏦 Bank transfer'],
+              ].map(([v, lbl]) => (
+                <button key={v} type="button" onClick={() => set('payment_method', v)}
+                  style={{ padding: '5px 12px', borderRadius: 8, border: '1px solid', borderColor: form.payment_method === v ? 'var(--lime)' : 'var(--border)', background: form.payment_method === v ? 'rgba(204,255,0,0.1)' : 'transparent', color: form.payment_method === v ? 'var(--lime)' : 'var(--grey)', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                  {lbl}
+                </button>
+              ))}
+            </div>
+            {form.payment_method === 'cash' && <div style={{ fontSize: 11, color: 'var(--amber)', marginTop: 6 }}>Student will be notified and cash payments tracked in their profile. You'll get a dashboard alert.</div>}
+            {form.payment_method === 'bank_transfer' && <div style={{ fontSize: 11, color: 'var(--amber)', marginTop: 6 }}>Student will be notified to arrange bank transfer. Mark instalments paid manually when received.</div>}
+            {form.payment_method === 'prompt_card' && <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 6 }}>Student will be prompted to save a card next time they log in.</div>}
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="field">
-              <label>Total Amount ($)</label>
+              <label>Total Amount ($){outstandingBalance > 0 && <span style={{ color: 'var(--amber)', fontSize: 11, marginLeft: 6 }}>← auto-filled from outstanding balance</span>}</label>
               <input type="number" step="0.01" value={form.total_amount} onChange={e => set('total_amount', e.target.value)} required placeholder="0.00" />
             </div>
             <div className="field">
@@ -890,6 +913,7 @@ export default function AdminStudentDetail() {
   const [showArchivedNotes, setShowArchivedNotes] = useState(false)
   const [skillLevel, setSkillLevel] = useState('Level 1')
   const [skillProgress, setSkillProgress] = useState({})
+  const [homeworkData, setHomeworkData] = useState([])
   const [regressionModal, setRegressionModal] = useState(null) // { skillName, level } | null
   const [regressionNote, setRegressionNote] = useState('')
   const [savingRegression, setSavingRegression] = useState(false)
@@ -932,6 +956,11 @@ export default function AdminStudentDetail() {
   const [expandedTrialId, setExpandedTrialId] = useState(null)
   const [chaseHistory, setChaseHistory] = useState(null)
   const [showNewPlanModal, setShowNewPlanModal] = useState(false)
+  const [showExemptionForm, setShowExemptionForm] = useState(false)
+  const [exemptionEndDate, setExemptionEndDate] = useState('')
+  const [exemptionNotes, setExemptionNotes] = useState('')
+  const [savingExemption, setSavingExemption] = useState(false)
+  const [exemptions, setExemptions] = useState([])
 
   useEffect(() => {
     users.get(id).then(res => {
@@ -945,10 +974,11 @@ export default function AdminStudentDetail() {
     skillsApi.list(student.id).then(res => {
       const map = {}
       for (const skill of (res.data || [])) {
-        map[skill.skill_name] = { self: skill.self_assessed, teacher: skill.teacher_confirmed, id: skill.id }
+        map[skill.skill_name] = { self: skill.self_assessed, self_rating: skill.self_rating || '', teacher: skill.teacher_confirmed, instructor_status: skill.instructor_status || 'pending', id: skill.id }
       }
       setSkillProgress(map)
     }).catch(() => setSkillProgress({}))
+    homework.submissions({ student: student.id }).then(r => setHomeworkData(r.data.results || r.data || [])).catch(() => setHomeworkData([]))
   }, [student?.id])
 
   useEffect(() => {
@@ -965,7 +995,7 @@ export default function AdminStudentDetail() {
     setLoadingChat(true)
     Promise.all([
       client.get('/api/users/assistant/chats/', { params: { user_id: student.id } })
-        .then(res => res.data || []).catch(() => []),
+        .then(res => res.data?.results || (Array.isArray(res.data) ? res.data : [])).catch(() => []),
       helpdesk.conversations({ student: student.id })
         .then(res => res.data?.results || res.data || []).catch(() => []),
     ]).then(([botMsgs, convos]) => {
@@ -1011,6 +1041,7 @@ export default function AdminStudentDetail() {
     client.get('/api/classes/casual-bookings/', { params: { student: student.id } }).then(r => setCasualBookingsData(r.data.results || r.data || [])).catch(() => {})
     classes.practice.credits.list({ student: student.id }).then(r => setPracticeCreditsData(r.data?.results || r.data || [])).catch(() => {})
     payments.chase.list({ student_id: id }).then(r => setChaseHistory(r.data?.results || r.data || [])).catch(() => setChaseHistory([]))
+    payments.exemptions({ student: student.id }).then(r => setExemptions(r.data || [])).catch(() => setExemptions([]))
   }, [student?.id])
 
   async function loadSeasonSessions(enrolment, overrideSeasonId) {
@@ -1047,27 +1078,43 @@ export default function AdminStudentDetail() {
     await reloadNotes()
   }
 
-  function toggleSkill(skillName, type) {
-    setSkillProgress(prev => {
-      const current = prev[skillName] || {}
-      const newVal = !current[type]
-      const updated = { ...prev, [skillName]: { ...current, [type]: newVal } }
-      const payload = {
-        skill_name: skillName,
-        level: skillLevel,
-        self_assessed: type === 'self' ? newVal : (current.self || false),
-        teacher_confirmed: type === 'teacher' ? newVal : (current.teacher || false),
-      }
-      // When toggling teacher confirmed, sync instructor_status to avoid stale state
-      if (type === 'teacher') {
-        payload.instructor_status = newVal ? 'approved' : 'pending'
-      }
-      skillsApi.save(student.id, payload).then(res => {
-        setSkillProgress(p => ({ ...p, [skillName]: { self: res.data.self_assessed, teacher: res.data.teacher_confirmed, instructor_status: res.data.instructor_status, id: res.data.id } }))
-      }).catch(() => {
-        setSkillProgress(p => ({ ...p, [skillName]: current }))
-      })
-      return updated
+  function cycleSelfRating(skillName) {
+    const current = skillProgress[skillName] || {}
+    const prev = current.self_rating || ''
+    const next = prev === '' ? 'almost' : prev === 'almost' ? 'yes' : ''
+    const payload = {
+      skill_name: skillName, level: skillLevel,
+      self_rating: next,
+      self_assessed: next === 'yes',
+      teacher_confirmed: current.teacher || false,
+      instructor_status: current.instructor_status || 'pending',
+    }
+    skillsApi.save(student.id, payload).then(res => {
+      setSkillProgress(p => ({ ...p, [skillName]: { ...p[skillName], self_rating: res.data.self_rating || '', self: res.data.self_assessed } }))
+    })
+  }
+
+  function cycleTeacherStatus(skillName) {
+    const current = skillProgress[skillName] || {}
+    const prevStatus = current.instructor_status || 'pending'
+    const nextStatus = prevStatus === 'pending' ? 'not_quite' : prevStatus === 'not_quite' ? 'approved' : 'pending'
+    const isApproved = nextStatus === 'approved'
+    if (current.teacher && isApproved === false) {
+      // Was approved, now demoting — use regression modal flow
+      const today = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })
+      setRegressionNote(`${skillName} was re-checked on ${today}. Not where it needs to be to gain approval for level progression`)
+      setRegressionModal({ skillName, level: skillLevel })
+      return
+    }
+    const payload = {
+      skill_name: skillName, level: skillLevel,
+      self_assessed: current.self || false,
+      self_rating: current.self_rating || '',
+      teacher_confirmed: isApproved,
+      instructor_status: nextStatus,
+    }
+    skillsApi.save(student.id, payload).then(res => {
+      setSkillProgress(p => ({ ...p, [skillName]: { ...p[skillName], teacher: res.data.teacher_confirmed, instructor_status: res.data.instructor_status || 'pending' } }))
     })
   }
 
@@ -1200,6 +1247,54 @@ export default function AdminStudentDetail() {
                   </div>
                   <span style={{ fontSize: 18, opacity: 0.5 }}>→</span>
                 </div>
+
+                {/* Exemption UI */}
+                {isOwing && (
+                  <div style={{ marginTop: 8, marginBottom: 8 }}>
+                    {exemptions.filter(e => !e.is_expired && e.is_active !== false).map(e => (
+                      <div key={e.id} style={{ background: 'rgba(255,170,0,0.08)', border: '1px solid rgba(255,170,0,0.25)', borderRadius: 6, padding: '8px 12px', fontSize: 12, color: 'var(--amber)', marginBottom: 6 }}>
+                        <strong>Exemption active</strong> until {e.end_date}{e.notes ? ` — ${e.notes}` : ''}
+                      </div>
+                    ))}
+                    {!showExemptionForm ? (
+                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--amber)', borderColor: 'rgba(255,170,0,0.3)' }} onClick={() => setShowExemptionForm(true)}>
+                        Apply Exemption
+                      </button>
+                    ) : (
+                      <div style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px', marginTop: 4 }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: 'var(--amber)' }}>Apply Balance Exemption</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                          <div className="field" style={{ marginBottom: 0 }}>
+                            <label style={{ fontSize: 11 }}>Exemption end date</label>
+                            <input type="date" value={exemptionEndDate} onChange={e => setExemptionEndDate(e.target.value)} style={{ background: '#111', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--white)', padding: '6px 8px', fontSize: 12 }} />
+                          </div>
+                          <div className="field" style={{ marginBottom: 0 }}>
+                            <label style={{ fontSize: 11 }}>Notes (visible to student)</label>
+                            <input value={exemptionNotes} onChange={e => setExemptionNotes(e.target.value)} placeholder="e.g. Payment plan agreed" style={{ background: '#111', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--white)', padding: '6px 8px', fontSize: 12 }} />
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button className="btn btn-ghost btn-xs" onClick={() => setShowExemptionForm(false)}>Cancel</button>
+                          <button className="btn btn-xs" style={{ background: 'rgba(255,170,0,0.15)', color: 'var(--amber)', border: '1px solid rgba(255,170,0,0.3)' }} disabled={!exemptionEndDate || savingExemption}
+                            onClick={async () => {
+                              setSavingExemption(true)
+                              try {
+                                await payments.createExemption({ student: student.id, end_date: exemptionEndDate, notes: exemptionNotes })
+                                const r = await payments.exemptions({ student: student.id })
+                                setExemptions(r.data || [])
+                                setShowExemptionForm(false)
+                                setExemptionEndDate('')
+                                setExemptionNotes('')
+                                await reloadNotes()
+                              } finally { setSavingExemption(false) }
+                            }}>
+                            {savingExemption ? 'Saving…' : 'Apply Exemption'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* ID check required */}
                 {student.id_check_required && (
@@ -1811,13 +1906,20 @@ export default function AdminStudentDetail() {
                                       {req.current_enrolment_detail?.class_session_detail?.name || 'Unknown class'}
                                     </div>
                                     {req.requested_session_detail && (
-                                      <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 4 }}>→ {req.requested_session_detail.name}</div>
+                                      <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 2 }}>
+                                        → {req.requested_session_detail.name}
+                                        {req.requested_season_name && <span style={{ color: 'var(--lime)', marginLeft: 6 }}>{req.requested_season_name}</span>}
+                                      </div>
+                                    )}
+                                    {req.spot_held && (
+                                      <div style={{ fontSize: 11, color: '#ffaa00', marginBottom: 4 }}>● Spot held in requested class</div>
                                     )}
                                     {req.notes && (
                                       <div style={{ fontSize: 12, color: 'var(--white)', marginTop: 4, padding: '6px 10px', background: '#1a1a1a', borderRadius: 6 }}>"{req.notes}"</div>
                                     )}
-                                    <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 6 }}>
-                                      {new Date(req.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                    <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                      <span>Requested: {new Date(req.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                      <span>Submitted by: {req.submitted_by_name || (req.admin_initiated ? 'Admin' : 'Student')}</span>
                                     </div>
                                   </div>
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end', flexShrink: 0 }}>
@@ -2096,31 +2198,71 @@ export default function AdminStudentDetail() {
                     <div key={level} className={`subtab ${skillLevel === level ? 'active' : ''}`} onClick={() => setSkillLevel(level)}>{level}</div>
                   ))}
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16, display: 'flex', gap: 16, alignItems: 'center' }}>
-                  <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: 'var(--lav)', marginRight: 4 }} />Self-assessed</span>
-                  <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: 'var(--lime)', marginRight: 4 }} />Teacher confirmed</span>
+                <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16, display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: 'var(--lime)', marginRight: 4 }} />Yes</span>
+                  <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: 'var(--amber)', marginRight: 4 }} />Almost</span>
+                  <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', border: '1px solid var(--lime)', marginRight: 4 }} />Not yet</span>
+                  <span style={{ color: '#555', fontSize: 11 }}>Left dot = student · Right dot = teacher</span>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
                   {(SKILL_LEVELS[skillLevel] || []).map(skill => {
                     const prog = skillProgress[skill] || {}
+                    const selfRating = prog.self_rating || ''
+                    const teacherStatus = prog.instructor_status || 'pending'
+                    const selfConfig = {
+                      yes:    { bg: 'var(--lime)',  border: 'var(--lime)',  title: 'Yes' },
+                      almost: { bg: 'var(--amber)', border: 'var(--amber)', title: 'Almost' },
+                      '':     { bg: 'none',         border: 'var(--lav)',   title: 'Not marked' },
+                    }
+                    const teacherConfig = {
+                      approved:  { bg: 'var(--lime)',  border: 'var(--lime)',  title: 'Approved' },
+                      not_quite: { bg: 'var(--amber)', border: 'var(--amber)', title: 'Not quite yet' },
+                      pending:   { bg: 'none',         border: 'var(--lime)',  title: 'Pending' },
+                    }
+                    const sc = selfConfig[selfRating] || selfConfig['']
+                    const tc = teacherConfig[teacherStatus] || teacherConfig['pending']
                     return (
                       <div key={skill} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <span style={{ fontSize: 13 }}>{skill}</span>
                         <div style={{ display: 'flex', gap: 6 }}>
-                          <div onClick={() => toggleSkill(skill, 'self')} style={{ width: 10, height: 10, borderRadius: '50%', background: prog.self ? 'var(--lav)' : 'none', border: '1px solid var(--lav)', cursor: 'pointer' }} title="Self-assessed" />
-                          <div onClick={() => {
-                            if (prog.teacher) {
-                              const today = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })
-                              setRegressionNote(`${skill} was re-checked on ${today}. Not where it needs to be to gain approval for level progression`)
-                              setRegressionModal({ skillName: skill, level: skillLevel })
-                            } else {
-                              toggleSkill(skill, 'teacher')
-                            }
-                          }} style={{ width: 10, height: 10, borderRadius: '50%', background: prog.teacher ? 'var(--lime)' : 'none', border: '1px solid var(--lime)', cursor: 'pointer' }} title="Teacher confirmed" />
+                          <div onClick={() => cycleSelfRating(skill)} style={{ width: 10, height: 10, borderRadius: '50%', background: sc.bg, border: `1px solid ${sc.border}`, cursor: 'pointer' }} title={`Student: ${sc.title}`} />
+                          <div onClick={() => cycleTeacherStatus(skill)} style={{ width: 10, height: 10, borderRadius: '50%', background: tc.bg, border: `1px solid ${tc.border}`, cursor: 'pointer' }} title={`Teacher: ${tc.title}`} />
                         </div>
                       </div>
                     )
                   })}
+                </div>
+
+                {/* Homework */}
+                <div style={{ marginTop: 28 }}>
+                  <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 13, marginBottom: 12 }}>Homework</div>
+                  {homeworkData.length === 0 ? (
+                    <div style={{ color: 'var(--grey)', fontSize: 13 }}>No homework assigned yet.</div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {homeworkData.map(sub => (
+                        <div key={sub.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, opacity: sub.assignment_detail?.status === 'closed' ? 0.5 : 1 }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>{sub.assignment_detail?.title || 'Homework'}</div>
+                            <div style={{ fontSize: 11, color: 'var(--grey)' }}>
+                              {sub.assignment_detail?.class_session_name || ''}{sub.assignment_detail?.due_date ? ` · Due ${new Date(sub.assignment_detail.due_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}` : ''}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+                            <span className={`tag ${sub.submitted_at ? 'tag-lime' : 'tag-grey'}`} style={{ fontSize: 10 }}>
+                              {sub.submitted_at ? '✓ Submitted' : 'Not submitted'}
+                            </span>
+                            {sub.assignment_detail?.status === 'active' && (
+                              <button className="btn btn-ghost btn-xs" onClick={async () => {
+                                await client.patch(`/api/homework/${sub.assignment_detail.id}/`, { status: 'closed' })
+                                setHomeworkData(prev => prev.map(s => s.id === sub.id ? { ...s, assignment_detail: { ...s.assignment_detail, status: 'closed' } } : s))
+                              }}>Archive</button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -2219,7 +2361,7 @@ export default function AdminStudentDetail() {
                       <button type="submit" className="btn btn-lime btn-sm" disabled={savingNote || !noteText.trim()}>{savingNote ? 'Saving…' : 'Save Note'}</button>
                       <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: 'var(--grey)' }}>
                         <input type="checkbox" checked={noteIsPermanent} onChange={e => setNoteIsPermanent(e.target.checked)} style={{ accentColor: 'var(--lime)' }} />
-                        Permanent note (always surfaces in action items)
+                        Permanent note (always surfaces in notes items)
                       </label>
                     </div>
                   </form>
@@ -2517,11 +2659,12 @@ export default function AdminStudentDetail() {
                       skill_name: regressionModal.skillName,
                       level: regressionModal.level,
                       self_assessed: skillProgress[regressionModal.skillName]?.self || false,
+                      self_rating: skillProgress[regressionModal.skillName]?.self_rating || '',
                       teacher_confirmed: false,
                       instructor_status: 'pending',
                     }
                     const res = await skillsApi.save(student.id, payload)
-                    setSkillProgress(p => ({ ...p, [regressionModal.skillName]: { self: res.data.self_assessed, teacher: res.data.teacher_confirmed, instructor_status: res.data.instructor_status, id: res.data.id } }))
+                    setSkillProgress(p => ({ ...p, [regressionModal.skillName]: { self: res.data.self_assessed, self_rating: res.data.self_rating || '', teacher: res.data.teacher_confirmed, instructor_status: res.data.instructor_status || 'pending', id: res.data.id } }))
                     await reloadNotes()
                     setRegressionModal(null)
                   } finally { setSavingRegression(false) }
@@ -3287,6 +3430,7 @@ export default function AdminStudentDetail() {
         <StudentNewPlanModal
           student={student}
           seasonsData={seasonsData || []}
+          outstandingBalance={bal < 0 ? Math.abs(bal) : 0}
           onClose={() => setShowNewPlanModal(false)}
           onSaved={() => {
             setShowNewPlanModal(false)

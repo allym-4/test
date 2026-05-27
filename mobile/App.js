@@ -83,17 +83,17 @@ function RootNavigator() {
       if (data?.type === 'announcement' || data?.type === 'notification') {
         navigationRef.current.navigate('Notifications')
       } else if (data?.type === 'message') {
-        navigationRef.current.navigate('Chat')
+        navigationRef.current.navigate('Community', { screen: 'Chat' })
       } else if (data?.type === 'homework') {
-        navigationRef.current.navigate('Homework')
+        navigationRef.current.navigate('Classes', { screen: 'Homework' })
       }
     },
   })
 
   if (loading || (user && (onboardingDone === null || viewMode === null))) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f9fafb' }}>
-        <ActivityIndicator size="large" color="#6366f1" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
+        <ActivityIndicator size="large" color="#ccff00" />
       </View>
     )
   }
@@ -139,7 +139,7 @@ function RootNavigator() {
 
 function AppWithStripe() {
   const { user } = useAuth()
-  const [stripePk, setStripePk] = useState('')
+  const [stripePk, setStripePk] = useState(null)
 
   useEffect(() => {
     if (user) {
@@ -151,7 +151,7 @@ function AppWithStripe() {
 
   return (
     <StripeProvider
-      publishableKey={stripePk || 'pk_live_placeholder'}
+      publishableKey={stripePk ?? 'pk_test_placeholder'}
       merchantIdentifier="merchant.com.dualitypole.app"
       urlScheme="dualitypole"
     >

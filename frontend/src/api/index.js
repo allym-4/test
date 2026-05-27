@@ -59,6 +59,10 @@ export const classes = {
     cancel: (id) => client.post(`/api/classes/practice/${id}/cancel/`),
     myBookings: () => client.get('/api/classes/practice/my-bookings/'),
     allBookings: (params) => client.get('/api/classes/practice/all-bookings/', { params }),
+    attendance: (id) => client.get(`/api/classes/practice/${id}/attendance/`),
+    updateAttendance: (id, data) => client.post(`/api/classes/practice/${id}/attendance/`, data),
+    addStudent: (id, student_id) => client.post(`/api/classes/practice/${id}/add-student/`, { student_id }),
+    removeStudent: (id, student_id) => client.post(`/api/classes/practice/${id}/remove-student/`, { student_id }),
     credits: {
       list: (params) => client.get('/api/classes/practice/credits/', { params }),
       create: (data) => client.post('/api/classes/practice/credits/', data),
@@ -180,6 +184,12 @@ export const payments = {
   cashPromises: {
     action: (id, data) => client.post(`/api/payments/cash-promises/${id}/action/`, data),
   },
+  chases: (params) => client.get('/api/payments/chase/', { params }),
+  sendChase: (data) => client.post('/api/payments/chase/', data),
+  exemptions: (params) => client.get('/api/payments/exemptions/', { params }),
+  createExemption: (data) => client.post('/api/payments/exemptions/', data),
+  updateExemption: (id, data) => client.patch(`/api/payments/exemptions/${id}/`, data),
+  balancePopupResponse: (data) => client.post('/api/payments/balance-popup-response/', data),
 }
 
 export const leads = {
@@ -282,6 +292,7 @@ export const users = {
   bulkImport: (formData) => client.post('/api/users/import/', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
+  bulkNotify: (data) => client.post('/api/users/bulk-notify/', data),
 }
 
 export const settings = {
@@ -314,6 +325,7 @@ export const automations = {
   list: () => client.get('/api/users/automations/'),
   toggle: (slug, enabled) => client.patch('/api/users/automations/', { slug, enabled }),
   saveActions: (slug, actions) => client.patch('/api/users/automations/', { slug, actions }),
+  saveTiming: (slug, timing) => client.patch('/api/users/automations/', { slug, timing }),
   create: (data) => client.post('/api/users/automations/', data),
   update: (id, data) => client.patch(`/api/users/automations/${id}/`, data),
   delete: (id) => client.delete(`/api/users/automations/${id}/`),

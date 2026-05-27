@@ -6,6 +6,104 @@ import { payments, notifications as notificationsApi, announcements as announcem
 import HelpPanel from './HelpPanel'
 import './StudentShell.css'
 
+function BalanceResponseModal({ ann, onDismiss }) {
+  const navigate = useNavigate()
+  const [responseType, setResponseType] = useState(null) // null | 'bank_transfer' | 'cash' | 'extension'
+  const [date, setDate] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [done, setDone] = useState(false)
+  const [error, setError] = useState(null)
+
+  async function handlePayNow() {
+    setSaving(true)
+    try {
+      await announcementsApi.dismiss(ann.id)
+    } catch { /* silent */ }
+    navigate('/my-account/payments')
+    onDismiss()
+  }
+
+  async function handleResponse() {
+    setSaving(true)
+    setError(null)
+    try {
+      await payments.balancePopupResponse({ response_type: responseType, date: date || undefined })
+      await announcementsApi.dismiss(ann.id)
+      setDone(true)
+      setTimeout(onDismiss, 1500)
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Something went wrong. Please try again.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (done) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+        <div style={{ background: '#1a1a1a', borderRadius: 16, padding: 28, maxWidth: 460, width: '100%', border: '1px solid #333', textAlign: 'center' }}>
+          <div style={{ fontSize: 28, marginBottom: 12 }}>✓</div>
+          <div style={{ color: '#ccff00', fontWeight: 700, fontSize: 16 }}>Response recorded</div>
+          <div style={{ color: '#888', fontSize: 13, marginTop: 8 }}>Our team will be in touch shortly.</div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: '#1a1a1a', borderRadius: 16, padding: 28, maxWidth: 460, width: '100%', border: '1px solid #333', boxShadow: '0 24px 80px rgba(0,0,0,0.7)' }}>
+        <h2 style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, color: '#fff', margin: '0 0 8px' }}>{ann.title}</h2>
+        <p style={{ fontSize: 14, color: '#aaa', lineHeight: 1.65, margin: '0 0 20px' }}>{ann.body}</p>
+
+        {error && <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#ff4444', marginBottom: 14 }}>{error}</div>}
+
+        {!responseType ? (
+          <div style={{ display: 'flex', gap: 10, flexDirection: 'column' }}>
+            <button onClick={handlePayNow} style={{ background: '#ccff00', color: '#000', fontWeight: 700, fontSize: 15, borderRadius: 10, padding: '13px 20px', cursor: 'pointer', border: 'none' }}>
+              Pay Now
+            </button>
+            <button onClick={() => setResponseType('bank_transfer')} style={{ background: 'rgba(204,255,0,0.08)', color: '#ccff00', fontWeight: 600, fontSize: 14, borderRadius: 10, padding: '12px 20px', cursor: 'pointer', border: '1px solid rgba(204,255,0,0.25)' }}>
+              I&apos;ve bank transferred
+            </button>
+            <button onClick={() => setResponseType('cash')} style={{ background: 'rgba(204,255,0,0.08)', color: '#ccff00', fontWeight: 600, fontSize: 14, borderRadius: 10, padding: '12px 20px', cursor: 'pointer', border: '1px solid rgba(204,255,0,0.25)' }}>
+              I&apos;ll bring cash
+            </button>
+            <button onClick={() => setResponseType('extension')} style={{ background: 'transparent', color: '#888', fontWeight: 600, fontSize: 14, borderRadius: 10, padding: '12px 20px', cursor: 'pointer', border: '1px solid #333' }}>
+              I need an extension
+            </button>
+          </div>
+        ) : responseType === 'extension' ? (
+          <div style={{ display: 'flex', gap: 10, flexDirection: 'column' }}>
+            <p style={{ fontSize: 13, color: '#aaa', margin: '0 0 8px' }}>Requesting an extension will pause your account until a team member reviews your situation. You may not be able to make new bookings until this is resolved.</p>
+            <button onClick={handleResponse} disabled={saving} style={{ background: 'rgba(255,170,0,0.15)', color: '#ffaa00', fontWeight: 700, fontSize: 15, borderRadius: 10, padding: '13px 20px', cursor: 'pointer', border: '1px solid rgba(255,170,0,0.3)' }}>
+              {saving ? 'Submitting…' : 'Request Extension'}
+            </button>
+            <button onClick={() => setResponseType(null)} style={{ background: 'transparent', color: '#888', fontWeight: 600, fontSize: 14, borderRadius: 10, padding: '12px 20px', cursor: 'pointer', border: '1px solid #333' }}>
+              Back
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 10, flexDirection: 'column' }}>
+            <div style={{ marginBottom: 4 }}>
+              <label style={{ fontSize: 12, color: '#aaa', display: 'block', marginBottom: 6 }}>
+                {responseType === 'bank_transfer' ? 'Date you transferred' : 'Date you will bring cash'}
+              </label>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ background: '#111', border: '1px solid #333', borderRadius: 8, color: '#fff', padding: '8px 12px', fontSize: 14, width: '100%', boxSizing: 'border-box' }} />
+            </div>
+            <button onClick={handleResponse} disabled={saving} style={{ background: '#ccff00', color: '#000', fontWeight: 700, fontSize: 15, borderRadius: 10, padding: '13px 20px', cursor: 'pointer', border: 'none' }}>
+              {saving ? 'Submitting…' : 'Confirm'}
+            </button>
+            <button onClick={() => setResponseType(null)} style={{ background: 'transparent', color: '#888', fontWeight: 600, fontSize: 14, borderRadius: 10, padding: '12px 20px', cursor: 'pointer', border: '1px solid #333' }}>
+              Back
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function renderBody(text) {
   const parts = text.split(/(\[[^\]]+\]\([^)]+\))/g)
   return parts.map((part, i) => {
@@ -21,6 +119,16 @@ function AnnouncementModalQueue({ modals, onDismissed }) {
   const ann = modals[idx]
   if (!ann) return null
 
+  const isBalancePopup = ann.title?.toLowerCase().includes('outstanding balance')
+
+  function advance() {
+    if (idx + 1 < modals.length) {
+      setIdx(i => i + 1)
+    } else {
+      onDismissed()
+    }
+  }
+
   async function dismiss() {
     setDismissing(true)
     try {
@@ -28,11 +136,11 @@ function AnnouncementModalQueue({ modals, onDismissed }) {
     } catch { /* silent */ } finally {
       setDismissing(false)
     }
-    if (idx + 1 < modals.length) {
-      setIdx(i => i + 1)
-    } else {
-      onDismissed()
-    }
+    advance()
+  }
+
+  if (isBalancePopup) {
+    return <BalanceResponseModal ann={ann} onDismiss={advance} />
   }
 
   return (

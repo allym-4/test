@@ -121,7 +121,9 @@ function BroadcastModal({ onClose }) {
   const [actionLabel, setActionLabel] = useState('')
   const [actionUrl, setActionUrl] = useState('')
   const [showCta, setShowCta] = useState(false)
+  const [extraCtas, setExtraCtas] = useState([])
   const [sendEmail, setSendEmail] = useState(false)
+  const [showAsModal, setShowAsModal] = useState(false)
   const [sending, setSending] = useState(false)
   const [done, setDone] = useState(null)
   const [error, setError] = useState(null)
@@ -142,8 +144,10 @@ function BroadcastModal({ onClose }) {
         title,
         body,
         send_email: sendEmail,
+        show_as_modal: showAsModal,
         action_label: showCta ? actionLabel : '',
         action_url: showCta ? actionUrl : '',
+        extra_ctas: showCta ? extraCtas.filter(c => c.label && c.url) : [],
       }
       if (target === 'session') {
         payload.target = `session:${sessionId}`
@@ -263,17 +267,49 @@ function BroadcastModal({ onClose }) {
             </div>
             {showCta && (
               <div style={{ background: 'rgba(204,255,0,0.04)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: 8, padding: '12px 14px', marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px' }}>Primary button</div>
                 <div className="field" style={{ marginBottom: 0 }}>
                   <label>Button label</label>
-                  <input value={actionLabel} onChange={e => setActionLabel(e.target.value)} placeholder="e.g. Add to enrolment, View schedule" />
+                  <input value={actionLabel} onChange={e => setActionLabel(e.target.value)} placeholder="e.g. Book now, View schedule" />
                 </div>
                 <div className="field" style={{ marginBottom: 0 }}>
                   <label>Button link</label>
                   <input value={actionUrl} onChange={e => setActionUrl(e.target.value)} placeholder="e.g. /portal/book" />
                 </div>
+
+                {extraCtas.map((cta, i) => (
+                  <div key={i} style={{ borderTop: '1px solid rgba(204,255,0,0.1)', paddingTop: 10 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <div style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.7px' }}>Button {i + 2}</div>
+                      <button type="button" onClick={() => setExtraCtas(prev => prev.filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>✕</button>
+                    </div>
+                    <div className="field" style={{ marginBottom: 8 }}>
+                      <label>Button label</label>
+                      <input value={cta.label} onChange={e => setExtraCtas(prev => prev.map((c, j) => j === i ? { ...c, label: e.target.value } : c))} placeholder="e.g. Not interested" />
+                    </div>
+                    <div className="field" style={{ marginBottom: 0 }}>
+                      <label>Button link</label>
+                      <input value={cta.url} onChange={e => setExtraCtas(prev => prev.map((c, j) => j === i ? { ...c, url: e.target.value } : c))} placeholder="e.g. /portal/notifications" />
+                    </div>
+                  </div>
+                ))}
+
+                {extraCtas.length < 3 && (
+                  <button type="button" onClick={() => setExtraCtas(prev => [...prev, { label: '', url: '' }])}
+                    style={{ background: 'none', border: '1px dashed rgba(204,255,0,0.25)', borderRadius: 6, color: 'var(--grey)', cursor: 'pointer', fontSize: 12, padding: '6px 12px', alignSelf: 'flex-start' }}>
+                    + Add another button
+                  </button>
+                )}
               </div>
             )}
 
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: 'var(--white)', textTransform: 'none', letterSpacing: 0 }}>
+                <input type="checkbox" checked={showAsModal} onChange={e => setShowAsModal(e.target.checked)} style={{ accentColor: 'var(--lime)', width: 14, height: 14 }} />
+                <span>Require dismissal — show as pop-up students must acknowledge before continuing</span>
+              </label>
+              {showAsModal && <div style={{ fontSize: 11, color: 'var(--amber)', marginTop: 4, marginLeft: 22 }}>Students will see a full-screen pop-up and must tap "Got it" before using the app.</div>}
+            </div>
             <div style={{ marginBottom: 18 }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: 'var(--white)', textTransform: 'none', letterSpacing: 0 }}>
                 <input type="checkbox" checked={sendEmail} onChange={e => setSendEmail(e.target.checked)} style={{ accentColor: 'var(--lime)', width: 14, height: 14 }} />

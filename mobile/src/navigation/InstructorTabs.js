@@ -17,6 +17,7 @@ import NotificationsScreen from '../screens/instructor/NotificationsScreen'
 import StudentDetailScreen from '../screens/instructor/StudentDetailScreen'
 import ClassDetailScreen from '../screens/instructor/ClassDetailScreen'
 import AssistantScreen from '../screens/instructor/AssistantScreen'
+import LeadsScreen from '../screens/instructor/LeadsScreen'
 
 const Tab = createBottomTabNavigator()
 const HomeStackNav = createNativeStackNavigator()
@@ -68,6 +69,7 @@ function HomeStack() {
       <HomeStackNav.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Notifications' }} />
       <HomeStackNav.Screen name="AttendanceHome" component={AttendanceScreen} options={{ title: 'Attendance' }} />
       <HomeStackNav.Screen name="StudentDetail" component={StudentDetailScreen} options={({ route }) => ({ title: route.params?.studentName ?? 'Student' })} />
+      <HomeStackNav.Screen name="Leads" component={LeadsScreen} options={{ title: 'Leads' }} />
     </HomeStackNav.Navigator>
   )
 }

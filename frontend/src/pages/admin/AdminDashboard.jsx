@@ -287,6 +287,11 @@ export default function AdminDashboard() {
   const [savingAction, setSavingAction] = useState(false)
   const [customActionItems, setCustomActionItems] = useState([])
   const [coverDoneId, setCoverDoneId] = useState(null)
+  const [coverSession, setCoverSession] = useState(null) // session being assigned cover
+  const [coverOccId, setCoverOccId] = useState(null) // occurrence id after upsert
+  const [coverInstructorId, setCoverInstructorId] = useState('')
+  const [assigningCover, setAssigningCover] = useState(false)
+  const [instructors, setInstructors] = useState([])
 
   const { data: seasonsData } = useApi(() => seasons.list())
   const activeSeason = seasonsData?.results?.find(s => s.status === 'active')
@@ -360,10 +365,40 @@ export default function AdminDashboard() {
     }
   }
 
-  async function coverSession(session) {
-    await upsertOccurrence(session, { cover_needed: true })
-    setCoverDoneId(session.id)
-    setTimeout(() => setCoverDoneId(null), 3000)
+  async function openCoverModal(session) {
+    setCoverSession(session)
+    setCoverInstructorId('')
+    setCoverOccId(null)
+    // Load instructors list if not already loaded
+    if (instructors.length === 0) {
+      const res = await users.list({ role: 'instructor' })
+      setInstructors(res.data?.results || res.data || [])
+    }
+    // Upsert the occurrence so we have an ID to assign cover to
+    const today = new Date().toISOString().slice(0, 10)
+    const res = await client.get('/api/classes/occurrences/', { params: { session: session.id, date: today } })
+    const existing = (res.data?.results || res.data || [])[0]
+    if (existing) {
+      setCoverOccId(existing.id)
+    } else {
+      const created = await client.post('/api/classes/occurrences/', { session: session.id, date: today, cover_needed: true })
+      setCoverOccId(created.data.id)
+    }
+  }
+
+  async function confirmAssignCover() {
+    if (!coverOccId || !coverInstructorId) return
+    setAssigningCover(true)
+    try {
+      await client.post(`/api/classes/occurrences/${coverOccId}/assign-cover/`, {
+        substitute_instructor_id: coverInstructorId,
+      })
+      setCoverDoneId(coverSession?.id)
+      setTimeout(() => setCoverDoneId(null), 3000)
+      setCoverSession(null)
+    } finally {
+      setAssigningCover(false)
+    }
   }
 
   async function cancelSession(session) {
@@ -689,8 +724,8 @@ export default function AdminDashboard() {
                         Attendance →
                       </button>
                       <div style={{ display: 'flex', gap: 4 }}>
-                        <button className="btn btn-ghost btn-xs" style={coverDoneId === s.id ? { color: 'var(--lime)' } : {}} onClick={() => coverSession(s)}>
-                          {coverDoneId === s.id ? '✓ COVER FLAGGED' : 'COVER'}
+                        <button className="btn btn-ghost btn-xs" style={coverDoneId === s.id ? { color: 'var(--lime)' } : {}} onClick={() => openCoverModal(s)}>
+                          {coverDoneId === s.id ? '✓ COVER ASSIGNED' : 'COVER'}
                         </button>
                         {confirmCancelId === s.id ? (
                           <>
@@ -1048,6 +1083,58 @@ export default function AdminDashboard() {
           student={chaseStudent}
           onClose={() => setChaseStudent(null)}
         />
+      )}
+
+      {coverSession && (
+        <div className="sd-overlay">
+          <div className="sd-modal" style={{ maxWidth: 460 }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 4 }}>Assign Cover</div>
+              <div style={{ fontSize: 13, color: 'var(--grey)' }}>
+                {coverSession.name} — {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][coverSession.day_of_week]}
+                {coverSession.start_time ? ` · ${coverSession.start_time.slice(0, 5)}` : ''}
+              </div>
+            </div>
+            <div style={{ padding: '20px 24px' }}>
+              <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>Select Covering Instructor</div>
+              {instructors.length === 0 ? (
+                <div style={{ fontSize: 13, color: 'var(--grey)', padding: '12px 0' }}>Loading instructors…</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {instructors.map(inst => (
+                    <button
+                      key={inst.id}
+                      onClick={() => setCoverInstructorId(String(inst.id))}
+                      style={{
+                        textAlign: 'left', padding: '12px 14px', borderRadius: 10, cursor: 'pointer',
+                        background: coverInstructorId === String(inst.id) ? 'rgba(204,255,0,0.1)' : '#1a1a1a',
+                        border: coverInstructorId === String(inst.id) ? '1px solid var(--lime)' : '1px solid var(--border)',
+                        color: '#fff', fontSize: 14,
+                      }}
+                    >
+                      <span style={{ fontWeight: 600 }}>{inst.first_name} {inst.last_name}</span>
+                      {inst.email && <span style={{ fontSize: 12, color: 'var(--grey)', marginLeft: 8 }}>{inst.email}</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 14 }}>
+                The covering instructor will receive an email confirmation and an in-app notification.
+              </div>
+            </div>
+            <div style={{ padding: '0 24px 20px', display: 'flex', gap: 8 }}>
+              <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setCoverSession(null)}>Cancel</button>
+              <button
+                className="btn btn-lime"
+                style={{ flex: 1 }}
+                disabled={!coverInstructorId || assigningCover}
+                onClick={confirmAssignCover}
+              >
+                {assigningCover ? 'Assigning…' : 'Assign Cover'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

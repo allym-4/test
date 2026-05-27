@@ -544,6 +544,8 @@ class AutomationRuleView(APIView):
             rule.actions = request.data['actions']
         if 'name' in request.data:
             rule.name = request.data['name']
+        if 'timing' in request.data:
+            rule.timing = request.data['timing']
         rule.save()
         return Response(AutomationRuleSerializer(rule).data)
 
@@ -745,6 +747,27 @@ class BulkNotificationView(APIView):
 
         action_label = request.data.get('action_label', '')
         action_url = request.data.get('action_url', '')
+        show_as_modal = bool(request.data.get('show_as_modal', False))
+        extra_ctas = request.data.get('extra_ctas', [])
+
+        # If show_as_modal, create an Announcement (which supports modal dismiss tracking)
+        # alongside the regular notification.
+        if show_as_modal:
+            audience = 'all' if target == 'all' else 'specific'
+            ann = Announcement.objects.create(
+                title=title,
+                body=body,
+                note_type='announcement',
+                created_by=request.user,
+                cta_label=action_label,
+                cta_url=action_url,
+                show_as_modal=True,
+                extra_ctas=extra_ctas,
+                audience=audience,
+            )
+            if audience == 'specific':
+                ann.audience_students.set([u.id for u in recipients])
+
         notifications = [
             Notification(
                 recipient=u,
@@ -1025,8 +1048,17 @@ class StudentSkillView(APIView):
         if not skill_name:
             return Response({'detail': 'skill_name required'}, status=400)
         defaults = {'level': level}
-        if 'self_assessed' in request.data:
+        if 'self_rating' in request.data:
+            defaults['self_rating'] = request.data['self_rating']
+            # Keep self_assessed in sync: True only if rating is 'yes'
+            defaults['self_assessed'] = request.data['self_rating'] == 'yes'
+        elif 'self_assessed' in request.data:
             defaults['self_assessed'] = request.data['self_assessed']
+            # Backward compat: derive self_rating from bool
+            if request.data['self_assessed']:
+                defaults.setdefault('self_rating', 'yes')
+            else:
+                defaults.setdefault('self_rating', '')
         if 'is_focus' in request.data and request.user.role in ('admin', 'instructor'):
             defaults['is_focus'] = request.data['is_focus']
         previously_confirmed = False
@@ -1113,6 +1145,7 @@ class StudentSkillSummaryView(APIView):
         progress_map = {
             s.skill_name: {
                 'self_assessed': s.self_assessed,
+                'self_rating': s.self_rating,
                 'teacher_confirmed': s.teacher_confirmed,
                 'instructor_status': s.instructor_status,
                 'is_focus': s.is_focus,
@@ -1131,6 +1164,7 @@ class StudentSkillSummaryView(APIView):
                         'id': skill.id,
                         'name': skill.name,
                         'self_assessed': prog.get('self_assessed', False),
+                        'self_rating': prog.get('self_rating', ''),
                         'teacher_confirmed': prog.get('teacher_confirmed', False),
                         'instructor_status': prog.get('instructor_status', 'pending'),
                     })
@@ -1155,6 +1189,7 @@ class StudentSkillSummaryView(APIView):
                         'id': None,
                         'name': s.skill_name,
                         'self_assessed': s.self_assessed,
+                        'self_rating': s.self_rating,
                         'teacher_confirmed': s.teacher_confirmed,
                         'instructor_status': s.instructor_status,
                     }

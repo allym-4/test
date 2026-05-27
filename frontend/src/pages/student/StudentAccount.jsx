@@ -1,7 +1,7 @@
-import { useState, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useRef, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
-import { auth, giftCards as giftCardsApi, referrals as referralsApi, lockers as lockersApi } from '../../api'
+import { auth, giftCards as giftCardsApi, referrals as referralsApi, lockers as lockersApi, payments } from '../../api'
 import { useApi } from '../../hooks/useApi'
 
 function ChangePasswordModal({ onClose }) {
@@ -58,6 +58,7 @@ function ChangePasswordModal({ onClose }) {
 
 export default function StudentAccount() {
   const { user, setUser } = useAuth()
+  const navigate = useNavigate()
   const [firstName, setFirstName] = useState(user?.first_name || '')
   const [lastName, setLastName] = useState(user?.last_name || '')
   const [phone, setPhone] = useState(user?.phone || '')
@@ -87,14 +88,15 @@ export default function StudentAccount() {
 
   async function handleLostKey() {
     if (!lockerData?.id) return
+    if (!window.confirm('Report your key as lost? A $50 replacement fee will be added to your account and we\'ll be in touch to arrange a new key.')) return
     try {
       await lockersApi.lostKey(lockerData.id)
-      setKeyLostMsg('Reported — we\'ll be in touch about the replacement fee.')
+      setKeyLostMsg('Reported — a $50 fee has been added. We\'ll be in touch about your replacement key.')
       refetchLocker()
-    } catch {
-      setKeyLostMsg('Something went wrong. Please email us.')
+    } catch (err) {
+      setKeyLostMsg(err.response?.data?.detail || 'Something went wrong. Please email us.')
     }
-    setTimeout(() => setKeyLostMsg(''), 6000)
+    setTimeout(() => setKeyLostMsg(''), 8000)
   }
   const myReferrals = referralData?.results || referralData || []
   const creditedReferrals = myReferrals.filter(r => r.status === 'credited')
@@ -137,6 +139,16 @@ export default function StudentAccount() {
   const [showGiftModal, setShowGiftModal] = useState(false)
   const [giftCode, setGiftCode] = useState('')
   const [giftMsg, setGiftMsg] = useState('')
+
+  // Balance and exemptions
+  const [balanceData, setBalanceData] = useState(null)
+  const [exemptions, setExemptions] = useState([])
+
+  useEffect(() => {
+    if (!user?.id) return
+    payments.balance(user.id).then(r => setBalanceData(r.data)).catch(() => {})
+    payments.exemptions().then(r => setExemptions(r.data || [])).catch(() => {})
+  }, [user?.id])
 
   // Referral code
   const referralCode = user?.referral_code || `SHARE${user?.id || ''}`
@@ -243,11 +255,28 @@ export default function StudentAccount() {
     }
   }
 
+  const balance = parseFloat(balanceData?.balance || '0')
+  const activeExemption = exemptions.find(e => !e.is_expired && e.is_active !== false) || null
+
   return (
     <div>
       <div className="page-header">
         <div className="page-title">Account</div>
       </div>
+
+      {balance < 0 && activeExemption && (
+        <div onClick={() => navigate('/my-account/payments')} style={{ cursor: 'pointer', background: 'rgba(255,170,0,0.08)', border: '1px solid rgba(255,170,0,0.3)', borderRadius: 10, padding: '12px 16px', marginBottom: 16 }}>
+          <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--amber)', marginBottom: 4, fontWeight: 700 }}>Account Balance</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--amber)', marginBottom: 4 }}>
+            -${Math.abs(balance).toFixed(2)}
+          </div>
+          <div style={{ fontSize: 12, color: 'rgba(255,170,0,0.8)' }}>
+            Balance owing, exemption applied until {activeExemption.end_date}
+            {activeExemption.notes ? ` — ${activeExemption.notes}` : ''}
+            {' '}— tap to view payments →
+          </div>
+        </div>
+      )}
 
       <div className="two-col-grid" style={{ maxWidth: 820 }}>
         {/* Left column */}

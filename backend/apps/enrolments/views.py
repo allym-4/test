@@ -323,6 +323,19 @@ class EnrolmentListView(generics.ListCreateAPIView):
                     'Please contact the studio for more information.'
                 )
 
+        # For student course enrolments, check held spots from transfer requests count against capacity
+        if user.role == 'student' and session and enrolment_type == 'course':
+            active_count = Enrolment.objects.filter(
+                class_session=session, status__in=('active', 'pending_displacement'), enrolment_type='course'
+            ).count()
+            held_count = ClassChangeRequest.objects.filter(
+                requested_session=session, spot_held=True, status__in=('pending', 'awaiting_response')
+            ).count()
+            if session.capacity and active_count + held_count >= session.capacity:
+                raise ValidationError(
+                    f'{session.name} is full — please join the waitlist.'
+                )
+
         if user.role == 'student':
             enrolment = serializer.save(student=user)
         else:
@@ -903,6 +916,7 @@ class ClassChangeRequestListCreateView(generics.ListCreateAPIView):
         change_request = serializer.save(
             student=student,
             admin_initiated=is_staff,
+            submitted_by=user,
         )
 
         from apps.helpdesk.models import Ticket, TicketMessage
@@ -944,16 +958,10 @@ class ClassChangeRequestListCreateView(generics.ListCreateAPIView):
         change_request.ticket = ticket
         change_request.save(update_fields=['ticket'])
 
-        # Auto-hold the spot if this is a transfer request and only 1 spot remains
+        # Always hold the spot for transfer requests so admin knows a place is being reserved
         if request_type == 'transfer' and change_request.requested_session_id:
-            target_session = change_request.requested_session
-            if target_session and target_session.capacity:
-                active_count = Enrolment.objects.filter(
-                    class_session=target_session, status='active'
-                ).count()
-                if active_count == target_session.capacity - 1:
-                    change_request.spot_held = True
-                    change_request.save(update_fields=['spot_held'])
+            change_request.spot_held = True
+            change_request.save(update_fields=['spot_held'])
 
         from apps.users.models import Notification
         Notification.objects.create(

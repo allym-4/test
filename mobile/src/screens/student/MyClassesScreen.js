@@ -906,6 +906,12 @@ function ClassItem({ item, cancellationWindowHours, noShowFee, cancellingAway, m
               {[timeStr, item.studio].filter(Boolean).join('  ·  ')}
             </Text>
           )}
+          {item.occurrence?.substitute_instructor_name ? (
+            <Text style={{ fontSize: 12, marginTop: 2 }}>
+              <Text style={{ color: '#ffaa00', fontWeight: '700' }}>COVER</Text>
+              <Text style={{ color: '#666' }}> — {item.occurrence.substitute_instructor_name}</Text>
+            </Text>
+          ) : null}
         </View>
 
         {/* Action buttons */}

@@ -55,7 +55,7 @@ class EnrolmentSerializer(serializers.ModelSerializer):
         occs = (
             ClassOccurrence.objects
             .filter(session_id=obj.class_session_id, date__gte=today)
-            .select_related('session')
+            .select_related('session', 'substitute_instructor')
             .order_by('date')
         )
         absent_ids = set(
@@ -69,6 +69,10 @@ class EnrolmentSerializer(serializers.ModelSerializer):
                 'date': occ.date.isoformat(),
                 'start_time': str(occ.session.start_time)[:5] if occ.session.start_time else None,
                 'marked_away': occ.id in absent_ids,
+                'substitute_instructor_name': (
+                    occ.substitute_instructor.display_name or occ.substitute_instructor.first_name
+                    if occ.substitute_instructor else None
+                ),
             }
             for occ in occs
         ]
@@ -100,6 +104,13 @@ class ClassChangeRequestSerializer(serializers.ModelSerializer):
     student_name = serializers.CharField(source='student.display_name', read_only=True)
     current_enrolment_detail = EnrolmentSerializer(source='current_enrolment', read_only=True)
     requested_session_detail = ClassSessionSerializer(source='requested_session', read_only=True)
+    submitted_by_name = serializers.CharField(source='submitted_by.display_name', read_only=True)
+    requested_season_name = serializers.SerializerMethodField()
+
+    def get_requested_season_name(self, obj):
+        if obj.requested_session and obj.requested_session.season:
+            return obj.requested_session.season.name
+        return None
 
     class Meta:
         model = ClassChangeRequest
@@ -107,8 +118,10 @@ class ClassChangeRequestSerializer(serializers.ModelSerializer):
             'id', 'student', 'student_name',
             'current_enrolment', 'current_enrolment_detail',
             'requested_session', 'requested_session_detail',
+            'requested_season_name',
             'request_type', 'cancellation_resolution',
             'notes', 'status', 'admin_notes', 'admin_initiated',
+            'submitted_by', 'submitted_by_name', 'spot_held',
             'created_at', 'resolved_at',
         )
         read_only_fields = ('id', 'student', 'status', 'admin_notes', 'created_at', 'resolved_at')

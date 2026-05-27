@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useApi } from '../../hooks/useApi'
-import { classes as classesApi, studios as studiosApi } from '../../api'
+import { classes as classesApi, studios as studiosApi, users as usersApi } from '../../api'
 
 function fmt(t) {
   if (!t) return ''
@@ -17,27 +17,229 @@ function fmtDate(d) {
 
 const EMPTY_SLOT = { studio: '', date: '', start_time: '', end_time: '', capacity: 6, notes: '', repeat_weeks: 1 }
 
+const ATT_STATUSES = [
+  { value: 'pending', label: 'Pending', color: 'var(--grey)' },
+  { value: 'present', label: 'Attended', color: 'var(--lime)' },
+  { value: 'no_show', label: 'No-show (fee)', color: 'var(--red)' },
+  { value: 'no_show_waived', label: 'No-show (no fee)', color: 'var(--amber)' },
+]
+
+function AttendanceRow({ booking, slotId, onUpdated }) {
+  const [busy, setBusy] = useState(false)
+
+  async function setStatus(newStatus) {
+    setBusy(true)
+    try {
+      await classesApi.practice.updateAttendance(slotId, {
+        student_id: booking.student,
+        attendance_status: newStatus,
+        kisi_access_granted: booking.kisi_access_granted,
+      })
+      onUpdated()
+    } catch {
+      // ignore
+    }
+    setBusy(false)
+  }
+
+  async function toggleKisi() {
+    setBusy(true)
+    try {
+      await classesApi.practice.updateAttendance(slotId, {
+        student_id: booking.student,
+        attendance_status: booking.attendance_status || 'pending',
+        kisi_access_granted: !booking.kisi_access_granted,
+      })
+      onUpdated()
+    } catch {
+      // ignore
+    }
+    setBusy(false)
+  }
+
+  async function remove() {
+    if (!confirm(`Remove ${booking.student_detail?.display_name} from this session?`)) return
+    setBusy(true)
+    try {
+      await classesApi.practice.removeStudent(slotId, booking.student)
+      onUpdated()
+    } catch {
+      // ignore
+    }
+    setBusy(false)
+  }
+
+  const currentStatus = ATT_STATUSES.find(s => s.value === (booking.attendance_status || 'pending'))
+
+  return (
+    <div style={{ padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 140 }}>
+          <div style={{ fontSize: 14, fontWeight: 600 }}>{booking.student_detail?.display_name}</div>
+          <div style={{ fontSize: 11, color: 'var(--grey)' }}>{booking.student_detail?.email}</div>
+          <div style={{ fontSize: 11, marginTop: 2, color: booking.is_free ? 'var(--lime)' : 'var(--lav)' }}>
+            {booking.is_free ? 'Free' : `$${parseFloat(booking.price_charged || 0).toFixed(0)}`}
+            {booking.payment_type ? ` · ${booking.payment_type}` : ''}
+          </div>
+        </div>
+
+        {/* Attendance status buttons */}
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+          {ATT_STATUSES.map(s => (
+            <button
+              key={s.value}
+              disabled={busy}
+              onClick={() => setStatus(s.value)}
+              style={{
+                fontSize: 11,
+                padding: '4px 8px',
+                borderRadius: 6,
+                border: `1px solid ${booking.attendance_status === s.value ? s.color : 'var(--border)'}`,
+                background: booking.attendance_status === s.value ? s.color + '22' : 'transparent',
+                color: booking.attendance_status === s.value ? s.color : 'var(--grey)',
+                cursor: busy ? 'default' : 'pointer',
+                fontWeight: booking.attendance_status === s.value ? 700 : 400,
+              }}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Kisi toggle */}
+        <button
+          disabled={busy}
+          onClick={toggleKisi}
+          title="Kisi access granted"
+          style={{
+            fontSize: 11,
+            padding: '4px 10px',
+            borderRadius: 6,
+            border: `1px solid ${booking.kisi_access_granted ? 'var(--lime)' : 'var(--border)'}`,
+            background: booking.kisi_access_granted ? 'rgba(204,255,0,0.12)' : 'transparent',
+            color: booking.kisi_access_granted ? 'var(--lime)' : 'var(--grey)',
+            cursor: busy ? 'default' : 'pointer',
+            fontWeight: booking.kisi_access_granted ? 700 : 400,
+          }}
+        >
+          {booking.kisi_access_granted ? '🔓 Kisi' : '🔒 Kisi'}
+        </button>
+
+        {/* Remove */}
+        <button
+          disabled={busy}
+          onClick={remove}
+          style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)', color: 'var(--red)', background: 'transparent', cursor: busy ? 'default' : 'pointer' }}
+        >
+          Remove
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function AddStudentRow({ slotId, onAdded }) {
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState([])
+  const [busy, setBusy] = useState(false)
+  const [searching, setSearching] = useState(false)
+  const timerRef = useRef(null)
+
+  useEffect(() => {
+    if (!query || query.length < 2) { setResults([]); return }
+    clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(async () => {
+      setSearching(true)
+      try {
+        const r = await usersApi.list({ search: query, role: 'student', page_size: 8 })
+        setResults(r.data?.results || r.data || [])
+      } catch {
+        setResults([])
+      }
+      setSearching(false)
+    }, 300)
+  }, [query])
+
+  async function addStudent(student) {
+    setBusy(true)
+    try {
+      await classesApi.practice.addStudent(slotId, student.id)
+      setQuery('')
+      setResults([])
+      onAdded()
+    } catch (e) {
+      alert(e.response?.data?.detail || 'Could not add student.')
+    }
+    setBusy(false)
+  }
+
+  return (
+    <div style={{ paddingTop: 14 }}>
+      <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Add student</div>
+      <div style={{ position: 'relative' }}>
+        <input
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Search by name or email…"
+          style={{ width: '100%', boxSizing: 'border-box' }}
+        />
+        {(results.length > 0 || searching) && (
+          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8, zIndex: 50, maxHeight: 220, overflowY: 'auto', marginTop: 4 }}>
+            {searching && <div style={{ padding: '10px 14px', fontSize: 13, color: 'var(--grey)' }}>Searching…</div>}
+            {results.map(s => (
+              <button
+                key={s.id}
+                disabled={busy}
+                onClick={() => addStudent(s)}
+                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', background: 'none', border: 'none', borderBottom: '1px solid var(--border)', cursor: 'pointer', color: '#fff' }}
+              >
+                <div style={{ fontSize: 13, fontWeight: 600 }}>{s.display_name || `${s.first_name} ${s.last_name}`.trim()}</div>
+                <div style={{ fontSize: 11, color: 'var(--grey)' }}>{s.email}</div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function AdminPractice() {
   const today = new Date().toISOString().split('T')[0]
   const [tab, setTab] = useState('upcoming')
   const [modal, setModal] = useState(null) // null | 'new' | slot object
   const [form, setForm] = useState(EMPTY_SLOT)
   const [busy, setBusy] = useState(false)
-  const [viewBookings, setViewBookings] = useState(null)
+  const [attendanceSlot, setAttendanceSlot] = useState(null)
+  const [attendanceData, setAttendanceData] = useState(null)
+  const [attLoading, setAttLoading] = useState(false)
 
   const { data: slotsData, refetch } = useApi(
     () => classesApi.practice.list(tab === 'past' ? { date_to: today } : { date_from: today }),
     [tab]
   )
   const { data: studiosData } = useApi(() => studiosApi.list(), [])
-  const { data: bookingsData } = useApi(
-    () => viewBookings ? classesApi.practice.allBookings({ slot: viewBookings.id }) : null,
-    [viewBookings]
-  )
 
   const slots = slotsData?.results || slotsData || []
   const studioList = studiosData?.results || studiosData || []
-  const bookings = bookingsData?.results || bookingsData || []
+
+  async function loadAttendance(slot) {
+    setAttendanceSlot(slot)
+    setAttLoading(true)
+    try {
+      const r = await classesApi.practice.attendance(slot.id)
+      setAttendanceData(r.data)
+    } catch {
+      setAttendanceData(null)
+    }
+    setAttLoading(false)
+  }
+
+  async function refreshAttendance() {
+    if (!attendanceSlot) return
+    await loadAttendance(attendanceSlot)
+    refetch()
+  }
 
   function openNew() {
     setForm({ ...EMPTY_SLOT, studio: studioList[0]?.id || '' })
@@ -120,10 +322,10 @@ export default function AdminPractice() {
 
       {/* Pricing info */}
       <div style={{ background: 'rgba(176,160,255,0.08)', border: '1px solid rgba(176,160,255,0.25)', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: 'var(--grey)', display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-        <span>💜 Enrolled students: <strong style={{ color: '#fff' }}>$20/hr</strong></span>
-        <span>👤 Non-enrolled: <strong style={{ color: '#fff' }}>$30/hr</strong></span>
-        <span style={{ color: 'var(--lime)' }}>✓ 3 classes enrolled this season: <strong>1 free/week</strong></span>
-        <span style={{ color: 'var(--lime)' }}>✓ 4+ classes enrolled: <strong>unlimited free</strong></span>
+        <span>Enrolled students: <strong style={{ color: '#fff' }}>$20/hr</strong></span>
+        <span>Non-enrolled: <strong style={{ color: '#fff' }}>$30/hr</strong></span>
+        <span style={{ color: 'var(--lime)' }}>3 classes enrolled this season: <strong>1 free/week</strong></span>
+        <span style={{ color: 'var(--lime)' }}>4+ classes enrolled: <strong>unlimited free</strong></span>
       </div>
 
       {/* Tabs */}
@@ -159,8 +361,8 @@ export default function AdminPractice() {
                 {slot.notes && <div style={{ fontSize: 12, color: 'var(--grey)', maxWidth: 200 }}>{slot.notes}</div>}
               </div>
               <div style={{ display: 'flex', gap: 6 }}>
-                <button className="btn btn-ghost btn-sm" onClick={() => setViewBookings(slot)}>
-                  👥 {slot.booked_count}
+                <button className="btn btn-ghost btn-sm" onClick={() => loadAttendance(slot)}>
+                  Attendance ({slot.booked_count})
                 </button>
                 <button className="btn btn-ghost btn-sm" onClick={() => openEdit(slot)}>Edit</button>
                 <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }} onClick={() => handleDelete(slot)}>Delete</button>
@@ -205,7 +407,7 @@ export default function AdminPractice() {
                   />
                   <span style={{ fontSize: 13, color: 'var(--grey)' }}>week{form.repeat_weeks !== 1 ? 's' : ''}</span>
                   {form.repeat_weeks > 1 && (
-                    <span style={{ fontSize: 11, color: 'var(--lime)' }}>→ creates {form.repeat_weeks} slots</span>
+                    <span style={{ fontSize: 11, color: 'var(--lime)' }}>creates {form.repeat_weeks} slots</span>
                   )}
                 </div>
               </div>
@@ -220,34 +422,62 @@ export default function AdminPractice() {
         </div>
       )}
 
-      {/* Bookings viewer */}
-      {viewBookings && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
-          onClick={e => { if (e.target === e.currentTarget) setViewBookings(null) }}>
-          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: 24, width: '100%', maxWidth: 480 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+      {/* Attendance panel */}
+      {attendanceSlot && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+          onClick={e => { if (e.target === e.currentTarget) { setAttendanceSlot(null); setAttendanceData(null) } }}>
+          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: 24, width: '100%', maxWidth: 560, maxHeight: '85vh', overflowY: 'auto' }}>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 }}>
               <div>
-                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16 }}>{viewBookings.studio_detail?.name}</div>
-                <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>{fmtDate(viewBookings.date)} · {fmt(viewBookings.start_time)}–{fmt(viewBookings.end_time)}</div>
-              </div>
-              <button className="btn btn-ghost btn-sm" onClick={() => setViewBookings(null)}>✕</button>
-            </div>
-            {bookings.length === 0 ? (
-              <div style={{ color: 'var(--grey)', fontSize: 13, textAlign: 'center', padding: '16px 0' }}>No bookings yet.</div>
-            ) : bookings.map(b => (
-              <div key={b.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 600 }}>{b.student_detail?.display_name}</div>
-                  <div style={{ fontSize: 12, color: 'var(--grey)' }}>{b.student_detail?.email}</div>
+                <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17 }}>
+                  {attendanceSlot.studio_detail?.name}
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 13, color: b.is_free ? 'var(--lime)' : 'var(--lav)', fontWeight: 600 }}>
-                    {b.is_free ? 'Free' : `$${parseFloat(b.price_charged).toFixed(0)}`}
+                <div style={{ fontSize: 12, color: 'var(--grey)', marginTop: 2 }}>
+                  {fmtDate(attendanceSlot.date)} · {fmt(attendanceSlot.start_time)}–{fmt(attendanceSlot.end_time)}
+                </div>
+                {attendanceData && (
+                  <div style={{ fontSize: 12, color: 'var(--lime)', marginTop: 4 }}>
+                    {attendanceData.bookings?.length || 0} / {attendanceSlot.capacity} booked
                   </div>
-                  <div style={{ fontSize: 10, color: b.status === 'confirmed' ? 'var(--lime)' : 'var(--red)', textTransform: 'uppercase' }}>{b.status}</div>
-                </div>
+                )}
               </div>
-            ))}
+              <button className="btn btn-ghost btn-sm" onClick={() => { setAttendanceSlot(null); setAttendanceData(null) }}>✕</button>
+            </div>
+
+            {/* Legend */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+              {ATT_STATUSES.map(s => (
+                <span key={s.value} style={{ fontSize: 10, color: s.color, border: `1px solid ${s.color}33`, borderRadius: 4, padding: '2px 6px' }}>
+                  {s.label}
+                </span>
+              ))}
+              <span style={{ fontSize: 10, color: 'var(--lime)', border: '1px solid rgba(204,255,0,0.2)', borderRadius: 4, padding: '2px 6px' }}>
+                Kisi = door access granted
+              </span>
+            </div>
+
+            {attLoading ? (
+              <div style={{ color: 'var(--grey)', fontSize: 13, textAlign: 'center', padding: '24px 0' }}>Loading…</div>
+            ) : !attendanceData ? (
+              <div style={{ color: 'var(--grey)', fontSize: 13, textAlign: 'center', padding: '24px 0' }}>Could not load attendance.</div>
+            ) : attendanceData.bookings?.length === 0 ? (
+              <div style={{ color: 'var(--grey)', fontSize: 13, textAlign: 'center', padding: '16px 0' }}>No bookings yet.</div>
+            ) : (
+              attendanceData.bookings.map(b => (
+                <AttendanceRow
+                  key={b.id}
+                  booking={b}
+                  slotId={attendanceSlot.id}
+                  onUpdated={refreshAttendance}
+                />
+              ))
+            )}
+
+            {/* Add student */}
+            {attendanceData && (
+              <AddStudentRow slotId={attendanceSlot.id} onAdded={refreshAttendance} />
+            )}
           </div>
         </div>
       )}

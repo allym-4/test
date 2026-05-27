@@ -20,6 +20,7 @@ function fmtDate(d) {
 export default function StudentPractice() {
   const [booking, setBooking] = useState(null)
   const [cancelling, setCancelling] = useState(null)
+  const [cancelResult, setCancelResult] = useState(null)
   const [result, setResult] = useState(null)
   const [busy, setBusy] = useState(false)
   const [savedCard, setSavedCard] = useState(null)
@@ -65,15 +66,22 @@ export default function StudentPractice() {
     setBusy(false)
   }
 
+  function hoursUntilSlot(b) {
+    if (!b?.slot?.date || !b?.slot?.start_time) return 99
+    const slotDt = new Date(`${b.slot.date}T${b.slot.start_time}`)
+    return (slotDt - new Date()) / 1000 / 3600
+  }
+
   async function handleCancel(b) {
     setBusy(true)
     try {
-      await classesApi.practice.cancel(b.slot.id)
+      const res = await classesApi.practice.cancel(b.slot.id)
       setCancelling(null)
+      setCancelResult(res.data)
       refetch()
       refetchMy()
     } catch {
-      // ignore
+      setCancelling(null)
     }
     setBusy(false)
   }
@@ -242,15 +250,44 @@ export default function StudentPractice() {
           onClick={e => { if (e.target === e.currentTarget) setCancelling(null) }}>
           <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: 24, maxWidth: 360, width: '100%' }}>
             <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17, marginBottom: 8 }}>Cancel practice booking?</div>
-            <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 16 }}>
+            <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 12 }}>
               {fmtDate(cancelling.slot?.date)} · {fmt(cancelling.slot?.start_time)}–{fmt(cancelling.slot?.end_time)} at {cancelling.slot?.studio_detail?.name}
             </div>
+            {/* Show credit/no-credit info based on time until slot */}
+            {hoursUntilSlot(cancelling) >= 4 ? (
+              <div style={{ background: 'rgba(204,255,0,0.08)', border: '1px solid rgba(204,255,0,0.2)', borderRadius: 8, padding: '10px 12px', marginBottom: 16, fontSize: 13, color: 'var(--lime)' }}>
+                More than 4 hours notice — you'll get a practice credit back to use on a future session.
+              </div>
+            ) : (
+              <div style={{ background: 'rgba(255,80,80,0.08)', border: '1px solid rgba(255,80,80,0.2)', borderRadius: 8, padding: '10px 12px', marginBottom: 16, fontSize: 13, color: 'var(--red)' }}>
+                Less than 4 hours until this session — no credit will be issued for late cancellations.
+                {cancelling.is_free && ' Your free weekly slot will be consumed.'}
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={() => setCancelling(null)}>Keep it</button>
               <button className="btn btn-sm" style={{ flex: 1, background: 'var(--red)', color: '#fff' }} disabled={busy} onClick={() => handleCancel(cancelling)}>
                 {busy ? 'Cancelling…' : 'Yes, cancel'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel result */}
+      {cancelResult && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: 24, maxWidth: 340, width: '100%', textAlign: 'center' }}>
+            <div style={{ fontSize: 32, marginBottom: 10 }}>{cancelResult.credit_issued ? '✓' : '✕'}</div>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17, marginBottom: 8 }}>Booking cancelled</div>
+            <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 16 }}>
+              {cancelResult.credit_issued
+                ? 'A practice credit has been added to your account — use it to book a future session.'
+                : cancelResult.late_cancel
+                ? 'Late cancellation — no credit has been issued.'
+                : 'Your booking has been cancelled.'}
+            </div>
+            <button className="btn btn-lime btn-sm" style={{ width: '100%' }} onClick={() => setCancelResult(null)}>Done</button>
           </div>
         </div>
       )}
