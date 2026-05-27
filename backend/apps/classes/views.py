@@ -2575,6 +2575,7 @@ class ClassSeasonEnrolmentsView(APIView):
                 'instructor': session.instructor.display_name if session.instructor else None,
                 'studio': session.studio.name if session.studio else None,
                 'season': season.name if season else None,
+                'season_id': season.id if season else None,
                 'capacity': session.capacity,
                 'enrolled_count': session.enrolled_count,
             },
