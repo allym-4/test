@@ -292,12 +292,22 @@ class PracticeBooking(models.Model):
         CONFIRMED = 'confirmed', 'Confirmed'
         CANCELLED = 'cancelled', 'Cancelled'
 
+    class AttendanceStatus(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        PRESENT = 'present', 'Present'
+        NO_SHOW = 'no_show', 'No-show (fee)'
+        NO_SHOW_WAIVED = 'no_show_waived', 'No-show (no fee)'
+
     slot = models.ForeignKey(PracticeSlot, on_delete=models.CASCADE, related_name='bookings')
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='practice_bookings')
     status = models.CharField(max_length=15, choices=Status.choices, default=Status.CONFIRMED)
     price_charged = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     is_free = models.BooleanField(default=False)
     payment_type = models.CharField(max_length=20, blank=True)
+    attendance_status = models.CharField(
+        max_length=15, choices=AttendanceStatus.choices, default=AttendanceStatus.PENDING
+    )
+    kisi_access_granted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

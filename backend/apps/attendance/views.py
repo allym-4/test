@@ -64,6 +64,7 @@ def bulk_save_register(request, occurrence_pk):
                 'no_show_fee_waived': record.get('no_show_fee_waived', False),
                 'note': record.get('note', ''),
                 'note_tag': record.get('note_tag', ''),
+                'kisi_access_granted': record.get('kisi_access_granted', False),
                 'recorded_by': request.user,
             }
         )

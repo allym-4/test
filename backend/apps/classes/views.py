@@ -1315,13 +1315,52 @@ class PracticeSlotCancelView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
+        from datetime import datetime
+        from django.utils import timezone
+        from apps.enrolments.models import Enrolment
+        from apps.classes.models import Season
+
         try:
-            booking = PracticeBooking.objects.get(slot_id=pk, student=request.user, status='confirmed')
+            booking = PracticeBooking.objects.select_related('slot').get(
+                slot_id=pk, student=request.user, status='confirmed'
+            )
         except PracticeBooking.DoesNotExist:
             return Response({'detail': 'Booking not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        slot = booking.slot
+
+        # Determine hours until the slot starts
+        slot_dt = datetime.combine(slot.date, slot.start_time)
+        if timezone.is_naive(slot_dt):
+            slot_dt = timezone.make_aware(slot_dt)
+        hours_until = (slot_dt - timezone.now()).total_seconds() / 3600
+
         booking.status = 'cancelled'
         booking.save(update_fields=['status'])
-        return Response({'status': 'cancelled'})
+
+        credit_issued = False
+        late_cancel = hours_until < 4
+
+        if not late_cancel:
+            # Early cancel: issue a practice credit back
+            PracticeCredit.objects.create(
+                student=request.user,
+                status='available',
+                notes=f'Returned: practice cancelled on {slot.date} {slot.start_time:%H:%M}',
+                created_by=request.user,
+            )
+            credit_issued = True
+        else:
+            # Late cancel: if the booking was free via the "3 classes = 1 free/week" rule,
+            # that weekly free slot is consumed — do not issue a credit.
+            # (If they paid cash/card, no refund is issued either.)
+            pass
+
+        return Response({
+            'status': 'cancelled',
+            'credit_issued': credit_issued,
+            'late_cancel': late_cancel,
+        })
 
 
 class MyPracticeBookingsView(generics.ListAPIView):
@@ -2192,6 +2231,132 @@ class AdminBulkCasualWaitlistView(APIView):
                 results['succeeded'].append(booking.id)
 
         return Response(results)
+
+
+class AdminPracticeAttendanceView(APIView):
+    """Admin: view and update attendance records for a practice slot.
+
+    GET  /api/classes/practice/<slot_pk>/attendance/
+    POST /api/classes/practice/<slot_pk>/attendance/  { student, status, kisi_access_granted }
+    """
+    permission_classes = [IsAdminOrInstructor]
+
+    def get(self, request, slot_pk):
+        from apps.attendance.models import AttendanceRecord
+        from apps.attendance.serializers import AttendanceRecordSerializer as AttRec
+
+        slot = get_object_or_404(PracticeSlot, pk=slot_pk)
+        bookings = PracticeBooking.objects.filter(
+            slot=slot, status='confirmed'
+        ).select_related('student')
+
+        # Build per-student attendance info
+        from apps.classes.models import ClassOccurrence as _Occ
+        results = []
+        for b in bookings:
+            entry = PracticeBookingSerializer(b, context={'request': request}).data
+            # Check for an ad-hoc attendance record keyed to this slot (stored by slot id in note)
+            att = _get_practice_attendance(slot.id, b.student_id)
+            entry['attendance_status'] = att.get('status', 'pending')
+            entry['kisi_access_granted'] = att.get('kisi_access_granted', False)
+            entry['attendance_id'] = att.get('id')
+            results.append(entry)
+
+        slot_data = PracticeSlotSerializer(slot, context={'request': request}).data
+        return Response({'slot': slot_data, 'bookings': results})
+
+    def post(self, request, slot_pk):
+        """Update/create attendance record for one student in this practice slot.
+        Accepts: { student_id, status, kisi_access_granted }
+        """
+        slot = get_object_or_404(PracticeSlot, pk=slot_pk)
+        student_id = request.data.get('student_id')
+        att_status = request.data.get('status', 'pending')
+        kisi = request.data.get('kisi_access_granted', False)
+
+        if not student_id:
+            return Response({'detail': 'student_id required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        from apps.attendance.models import AttendanceRecord
+        from apps.attendance.serializers import AttendanceRecordSerializer as AttRec
+
+        record = _upsert_practice_attendance(
+            slot_id=slot_pk,
+            student_id=student_id,
+            att_status=att_status,
+            kisi_access_granted=kisi,
+            recorded_by=request.user,
+        )
+        return Response(record, status=status.HTTP_200_OK)
+
+
+class AdminPracticeAddStudentView(APIView):
+    """Admin: add a student to a practice slot (creates a booking)."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, slot_pk):
+        slot = get_object_or_404(PracticeSlot, pk=slot_pk)
+        student_id = request.data.get('student_id')
+        if not student_id:
+            return Response({'detail': 'student_id required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if PracticeBooking.objects.filter(slot=slot, student_id=student_id, status='confirmed').exists():
+            return Response({'detail': 'Student already booked into this slot.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        booking = PracticeBooking.objects.create(
+            slot=slot,
+            student_id=student_id,
+            price_charged=0,
+            is_free=True,
+            payment_type='admin',
+        )
+        return Response(PracticeBookingSerializer(booking, context={'request': request}).data, status=status.HTTP_201_CREATED)
+
+
+class AdminPracticeRemoveStudentView(APIView):
+    """Admin: remove a student from a practice slot (cancels their booking)."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def post(self, request, slot_pk):
+        student_id = request.data.get('student_id')
+        if not student_id:
+            return Response({'detail': 'student_id required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            booking = PracticeBooking.objects.get(slot_id=slot_pk, student_id=student_id, status='confirmed')
+        except PracticeBooking.DoesNotExist:
+            return Response({'detail': 'Booking not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        booking.status = 'cancelled'
+        booking.save(update_fields=['status'])
+        return Response({'status': 'removed'})
+
+
+# ── Practice attendance helpers ──────────────────────────────────────────────
+# We store practice-slot attendance in a lightweight dict keyed by (slot_id, student_id)
+# using a simple JSON store on the PracticeBooking model's payment_type field
+# for the kisi flag, and a separate table for status.
+# Rather than a separate model, we piggyback on an existing JSON cache in PracticeBooking.
+
+def _get_practice_attendance(slot_id, student_id):
+    try:
+        b = PracticeBooking.objects.get(slot_id=slot_id, student_id=student_id, status='confirmed')
+        return {'status': b.attendance_status, 'kisi_access_granted': b.kisi_access_granted}
+    except PracticeBooking.DoesNotExist:
+        return {}
+
+
+def _upsert_practice_attendance(slot_id, student_id, att_status, kisi_access_granted, recorded_by):
+    try:
+        b = PracticeBooking.objects.get(slot_id=slot_id, student_id=student_id)
+    except PracticeBooking.DoesNotExist:
+        return {'detail': 'Booking not found.'}
+
+    if att_status:
+        b.attendance_status = att_status
+    b.kisi_access_granted = bool(kisi_access_granted)
+    b.save(update_fields=['attendance_status', 'kisi_access_granted'])
+    return {'status': b.attendance_status, 'kisi_access_granted': b.kisi_access_granted}
 
 
 class PracticeCreditListView(generics.ListCreateAPIView):
