@@ -525,48 +525,332 @@ function AddStudentModal({ sessionId, session, onClose, onAdded }) {
   )
 }
 
-// ── Email class modal ──────────────────────────────────────────────────────────
-function EmailClassModal({ sessionId, enrolled, onClose }) {
-  const [subject, setSubject] = useState('')
-  const [body, setBody] = useState('')
-  const [sending, setSending] = useState(false)
-  const [sent, setSent] = useState(false)
+// ── Contact class modal ────────────────────────────────────────────────────────
+function ContactClassModal({ sessionId, enrolled, onClose }) {
+  const [tab, setTab] = useState('email')
+
+  // Email tab state
+  const [emailSubject, setEmailSubject] = useState('')
+  const [emailBody, setEmailBody] = useState('')
+  const [emailSending, setEmailSending] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
+  const [emailError, setEmailError] = useState(null)
+
+  // Push tab state
+  const [pushMsg, setPushMsg] = useState('')
+  const [pushSending, setPushSending] = useState(false)
+  const [pushSent, setPushSent] = useState(false)
+  const [pushError, setPushError] = useState(null)
+
+  // Popup tab state
+  const [popupTitle, setPopupTitle] = useState('')
+  const [popupMsg, setPopupMsg] = useState('')
+  const [popupCtaLabel, setPopupCtaLabel] = useState('')
+  const [popupCtaUrl, setPopupCtaUrl] = useState('')
+  const [popupSending, setPopupSending] = useState(false)
+  const [popupSent, setPopupSent] = useState(false)
+  const [popupError, setPopupError] = useState(null)
+
+  async function handleSendEmail(e) {
+    e.preventDefault()
+    setEmailSending(true)
+    setEmailError(null)
+    try {
+      await client.post(`/api/classes/sessions/${sessionId}/email/`, { subject: emailSubject, body: emailBody, recipients: 'enrolled' })
+      setEmailSent(true)
+    } catch (err) {
+      setEmailError(err.response?.data?.detail || 'Failed to send.')
+      setEmailSending(false)
+    }
+  }
+
+  async function handleSendPush(e) {
+    e.preventDefault()
+    setPushSending(true)
+    setPushError(null)
+    try {
+      await client.post(`/api/classes/sessions/${sessionId}/notify/`, { message: pushMsg, type: 'push' })
+      setPushSent(true)
+    } catch (err) {
+      if (err.response?.status === 404) {
+        setPushError("Push notifications aren't enabled yet on this server.")
+      } else {
+        setPushError(err.response?.data?.detail || 'Failed to send push notification.')
+      }
+    } finally { setPushSending(false) }
+  }
+
+  async function handleSendPopup(e) {
+    e.preventDefault()
+    setPopupSending(true)
+    setPopupError(null)
+    try {
+      await client.post(`/api/classes/sessions/${sessionId}/notify/`, {
+        title: popupTitle,
+        message: popupMsg,
+        cta_label: popupCtaLabel || undefined,
+        cta_url: popupCtaUrl || undefined,
+        type: 'popup',
+      })
+      setPopupSent(true)
+    } catch (err) {
+      if (err.response?.status === 404) {
+        setPopupError("Push notifications aren't enabled yet on this server.")
+      } else {
+        setPopupError(err.response?.data?.detail || 'Failed to send pop-up alert.')
+      }
+    } finally { setPopupSending(false) }
+  }
+
+  const TABS = [
+    { key: 'email', label: 'Email' },
+    { key: 'push', label: 'Push Notification' },
+    { key: 'popup', label: 'Pop-up Alert' },
+  ]
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal-box" style={{ maxWidth: 520 }}>
+        <div className="modal-title">Contact Class<button className="modal-close" onClick={onClose}>✕</button></div>
+
+        {/* Tabs */}
+        <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: 16 }}>
+          {TABS.map(t => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTab(t.key)}
+              style={{
+                background: 'none', border: 'none', padding: '8px 14px', fontSize: 13, fontWeight: 600,
+                cursor: 'pointer', color: tab === t.key ? 'var(--lime)' : 'var(--grey)',
+                borderBottom: `2px solid ${tab === t.key ? 'var(--lime)' : 'transparent'}`,
+                marginBottom: -1,
+              }}
+            >{t.label}</button>
+          ))}
+        </div>
+
+        {/* Email tab */}
+        {tab === 'email' && (
+          emailSent ? (
+            <div>
+              <div style={{ fontSize: 14, color: 'var(--lime)', marginBottom: 16 }}>✓ Sent to {enrolled?.length || 0} enrolled students.</div>
+              <div className="modal-footer"><button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button></div>
+            </div>
+          ) : (
+            <form onSubmit={handleSendEmail}>
+              <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 12 }}>Sending to {enrolled?.length || 0} enrolled students.</div>
+              {emailError && <div style={{ fontSize: 13, color: 'var(--red)', marginBottom: 10 }}>{emailError}</div>}
+              <div className="field"><label>Subject</label><input required value={emailSubject} onChange={e => setEmailSubject(e.target.value)} /></div>
+              <div className="field"><label>Message</label><textarea required rows={5} value={emailBody} onChange={e => setEmailBody(e.target.value)} /></div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+                <button type="submit" className="btn btn-lime btn-sm" disabled={emailSending}>{emailSending ? 'Sending…' : 'Send Email'}</button>
+              </div>
+            </form>
+          )
+        )}
+
+        {/* Push tab */}
+        {tab === 'push' && (
+          pushSent ? (
+            <div>
+              <div style={{ fontSize: 14, color: 'var(--lime)', marginBottom: 16 }}>✓ Push notification sent.</div>
+              <div className="modal-footer"><button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button></div>
+            </div>
+          ) : (
+            <form onSubmit={handleSendPush}>
+              <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 12 }}>Send a push notification to students' mobile devices. Keep it short.</div>
+              {pushError && <div style={{ fontSize: 13, color: 'var(--red)', marginBottom: 10, background: 'rgba(255,80,80,0.08)', border: '1px solid rgba(255,80,80,0.2)', borderRadius: 8, padding: '8px 12px' }}>{pushError}</div>}
+              <div className="field">
+                <label>Message <span style={{ color: 'var(--grey)', fontWeight: 400 }}>({pushMsg.length}/160)</span></label>
+                <textarea required rows={3} maxLength={160} value={pushMsg} onChange={e => setPushMsg(e.target.value)} placeholder="Short message to send…" />
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+                <button type="submit" className="btn btn-lime btn-sm" disabled={pushSending}>{pushSending ? 'Sending…' : 'Send Notification'}</button>
+              </div>
+            </form>
+          )
+        )}
+
+        {/* Popup tab */}
+        {tab === 'popup' && (
+          popupSent ? (
+            <div>
+              <div style={{ fontSize: 14, color: 'var(--lime)', marginBottom: 16 }}>✓ Pop-up alert sent.</div>
+              <div className="modal-footer"><button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button></div>
+            </div>
+          ) : (
+            <form onSubmit={handleSendPopup}>
+              <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 12 }}>Display a pop-up alert in the student app.</div>
+              {popupError && <div style={{ fontSize: 13, color: 'var(--red)', marginBottom: 10, background: 'rgba(255,80,80,0.08)', border: '1px solid rgba(255,80,80,0.2)', borderRadius: 8, padding: '8px 12px' }}>{popupError}</div>}
+              <div className="field"><label>Title</label><input required value={popupTitle} onChange={e => setPopupTitle(e.target.value)} placeholder="e.g. Class update" /></div>
+              <div className="field"><label>Message</label><textarea required rows={3} value={popupMsg} onChange={e => setPopupMsg(e.target.value)} placeholder="Your message…" /></div>
+              <div className="field"><label>CTA Button Label <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(optional)</span></label><input value={popupCtaLabel} onChange={e => setPopupCtaLabel(e.target.value)} placeholder="e.g. Learn more" /></div>
+              <div className="field"><label>CTA URL <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(optional)</span></label><input value={popupCtaUrl} onChange={e => setPopupCtaUrl(e.target.value)} placeholder="https://…" /></div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+                <button type="submit" className="btn btn-lime btn-sm" disabled={popupSending}>{popupSending ? 'Sending…' : 'Send Alert'}</button>
+              </div>
+            </form>
+          )
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Cancel class modal (with credit options) ───────────────────────────────────
+function CancelClassModal({ sessionId, session, enrolled, onClose, onCancelled }) {
+  const [notifyStudents, setNotifyStudents] = useState(true)
+  const [reason, setReason] = useState('')
+  const [creditOption, setCreditOption] = useState('none')
+  const [defaultCreditAmount, setDefaultCreditAmount] = useState('')
+  const [perStudentCredits, setPerStudentCredits] = useState({})
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
 
-  async function handleSend(e) {
+  // Pre-fill default credit amounts when enrolled list changes
+  useEffect(() => {
+    if (enrolled) {
+      const map = {}
+      for (const e of enrolled) {
+        map[e.id] = e.incremental_price != null ? String(e.incremental_price) : ''
+      }
+      setPerStudentCredits(map)
+      // Default credit amount: first student's incremental price or blank
+      if (enrolled.length > 0 && enrolled[0].incremental_price != null) {
+        setDefaultCreditAmount(String(enrolled[0].incremental_price))
+      }
+    }
+  }, [enrolled])
+
+  async function handleCancel(e) {
     e.preventDefault()
-    setSending(true)
+    setSaving(true)
     setError(null)
     try {
-      await client.post(`/api/classes/sessions/${sessionId}/email/`, { subject, body, recipients: 'enrolled' })
-      setSent(true)
+      // Find the upcoming occurrence
+      const occRes = await client.get('/api/classes/occurrences/', { params: { session: sessionId } })
+      const occs = occRes.data?.results || []
+      const todayStr = new Date().toISOString().slice(0, 10)
+      const occ = occs.find(o => o.date >= todayStr) || occs[0]
+
+      if (occ) {
+        await client.patch(`/api/classes/occurrences/${occ.id}/`, { status: 'cancelled', notes: reason })
+      }
+
+      if (notifyStudents && reason) {
+        await client.post(`/api/classes/sessions/${sessionId}/email/`, {
+          subject: `Class cancelled — ${session?.name || 'your class'}`,
+          body: `Hi everyone,\n\nUnfortunately ${session?.name || 'your class'} has been cancelled.\n\n${reason ? `Reason: ${reason}\n\n` : ''}Sorry for any inconvenience.\n\nDuality Pole Studio`,
+          recipients: 'enrolled',
+        }).catch(() => {})
+      }
+
+      // Issue credits
+      if (creditOption === 'all' && parseFloat(defaultCreditAmount) > 0) {
+        await Promise.all((enrolled || []).map(e =>
+          client.post('/api/payments/', {
+            student: e.student_id,
+            amount: parseFloat(defaultCreditAmount),
+            payment_type: 'credit',
+            payment_method: 'account_credit',
+            description: `Cancelled class credit — ${session?.name || 'class'}`,
+          }).catch(() => {})
+        ))
+      } else if (creditOption === 'per_student') {
+        await Promise.all((enrolled || []).map(e => {
+          const amt = parseFloat(perStudentCredits[e.id] || 0)
+          if (!amt || amt <= 0) return Promise.resolve()
+          return client.post('/api/payments/', {
+            student: e.student_id,
+            amount: amt,
+            payment_type: 'credit',
+            payment_method: 'account_credit',
+            description: `Cancelled class credit — ${session?.name || 'class'}`,
+          }).catch(() => {})
+        }))
+      }
+
+      onCancelled()
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to send.')
-      setSending(false)
+      setError(err.response?.data?.detail || 'Could not cancel the class.')
+      setSaving(false)
     }
   }
 
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal-box" style={{ maxWidth: 500 }}>
-        <div className="modal-title">Email Class<button className="modal-close" onClick={onClose}>✕</button></div>
-        {sent ? (
-          <div>
-            <div style={{ fontSize: 14, color: 'var(--lime)', marginBottom: 16 }}>✓ Sent to {enrolled?.length || 0} enrolled students.</div>
-            <div className="modal-footer"><button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button></div>
+        <div className="modal-title" style={{ color: '#ff6b6b' }}>
+          Cancel Class — {session?.name}
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <form onSubmit={handleCancel}>
+          {error && <div style={{ fontSize: 13, color: 'var(--red)', marginBottom: 12, background: 'rgba(255,80,80,0.08)', border: '1px solid rgba(255,80,80,0.2)', borderRadius: 8, padding: '8px 12px' }}>{error}</div>}
+
+          {/* Notify section */}
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, marginBottom: 10 }}>
+              <input type="checkbox" checked={notifyStudents} onChange={e => setNotifyStudents(e.target.checked)} style={{ accentColor: 'var(--lime)' }} />
+              Notify enrolled students
+            </label>
+            {notifyStudents && (
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label>Message / Reason <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(optional)</span></label>
+                <textarea rows={3} value={reason} onChange={e => setReason(e.target.value)} placeholder="e.g. Instructor unwell, studio maintenance…" />
+              </div>
+            )}
           </div>
-        ) : (
-          <form onSubmit={handleSend}>
-            <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 12 }}>Sending to {enrolled?.length || 0} enrolled students.</div>
-            {error && <div style={{ fontSize: 13, color: 'var(--red)', marginBottom: 10 }}>{error}</div>}
-            <div className="field"><label>Subject</label><input required value={subject} onChange={e => setSubject(e.target.value)} /></div>
-            <div className="field"><label>Message</label><textarea required rows={5} value={body} onChange={e => setBody(e.target.value)} /></div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-              <button type="submit" className="btn btn-lime btn-sm" disabled={sending}>{sending ? 'Sending…' : 'Send Email'}</button>
-            </div>
-          </form>
-        )}
+
+          {/* Credit section */}
+          <div style={{ background: '#111', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--grey)', marginBottom: 10 }}>Refund / Credit</div>
+            {[
+              { value: 'none', label: 'No credit or refund' },
+              { value: 'all', label: 'Issue account credit to all students' },
+              { value: 'per_student', label: 'Review per-student' },
+            ].map(opt => (
+              <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 8, fontSize: 13 }}>
+                <input type="radio" name="creditOption" value={opt.value} checked={creditOption === opt.value} onChange={() => setCreditOption(opt.value)} style={{ accentColor: 'var(--lime)' }} />
+                {opt.label}
+              </label>
+            ))}
+            {creditOption === 'all' && (
+              <div className="field" style={{ marginTop: 10, marginBottom: 0 }}>
+                <label>Credit Amount per Student ($)</label>
+                <input type="number" step="0.01" min="0" value={defaultCreditAmount} onChange={e => setDefaultCreditAmount(e.target.value)} placeholder="e.g. 33.75" />
+              </div>
+            )}
+            {creditOption === 'per_student' && enrolled && enrolled.length > 0 && (
+              <div style={{ marginTop: 10 }}>
+                {enrolled.map(e => (
+                  <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                    <span style={{ flex: 1, fontSize: 13 }}>{e.student_name}</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={perStudentCredits[e.id] ?? ''}
+                      onChange={ev => setPerStudentCredits(m => ({ ...m, [e.id]: ev.target.value }))}
+                      placeholder="0.00"
+                      style={{ width: 90, background: 'var(--input, #1a1a1a)', border: '1px solid var(--border)', borderRadius: 6, color: '#fff', padding: '5px 8px', fontSize: 13, outline: 'none' }}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="modal-footer">
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Keep Class</button>
+            <button type="submit" className="btn btn-sm" style={{ background: 'rgba(255,107,107,0.15)', color: '#ff6b6b', border: '1px solid rgba(255,107,107,0.3)' }} disabled={saving}>
+              {saving ? 'Cancelling…' : 'Confirm Cancel'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )
@@ -584,6 +868,8 @@ export default function AdminClassEnrolments() {
 
   const [addStudentModal, setAddStudentModal] = useState(false)
   const [emailModal, setEmailModal] = useState(false)
+  const [contactModal, setContactModal] = useState(false)
+  const [cancelClassModal, setCancelClassModal] = useState(false)
   const [payModal, setPayModal] = useState(null)
   const [cancelModal, setCancelModal] = useState(null)
   const [transferModal, setTransferModal] = useState(null)
@@ -643,9 +929,10 @@ export default function AdminClassEnrolments() {
             {enrolled.length}/{session.capacity}
           </span>
           <button className="btn btn-ghost btn-sm" onClick={() => setAddStudentModal(true)}>+ Add Student</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setEmailModal(true)}>Email Class</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => setContactModal(true)}>Contact Class</button>
           <Link to={`/admin/classes/${id}`}><button className="btn btn-ghost btn-sm">Edit Class</button></Link>
           <Link to={`/admin/classes/${id}/attendance`}><button className="btn btn-ghost btn-sm">Attendance Register</button></Link>
+          <button className="btn btn-ghost btn-sm" style={{ color: '#ff6b6b', borderColor: 'rgba(255,107,107,0.3)' }} onClick={() => setCancelClassModal(true)}>Cancel Class</button>
         </div>
       </div>
 
@@ -873,10 +1160,28 @@ export default function AdminClassEnrolments() {
       )}
 
       {emailModal && (
-        <EmailClassModal
+        <ContactClassModal
           sessionId={id}
           enrolled={enrolled}
           onClose={() => setEmailModal(false)}
+        />
+      )}
+
+      {contactModal && (
+        <ContactClassModal
+          sessionId={id}
+          enrolled={enrolled}
+          onClose={() => setContactModal(false)}
+        />
+      )}
+
+      {cancelClassModal && (
+        <CancelClassModal
+          sessionId={id}
+          session={session}
+          enrolled={enrolled}
+          onClose={() => setCancelClassModal(false)}
+          onCancelled={() => { setCancelClassModal(false); load() }}
         />
       )}
 

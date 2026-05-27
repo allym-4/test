@@ -83,6 +83,15 @@ function enrollLabel(e, session) {
   return 'Course enrolment'
 }
 
+function weekNumber(occDate, seasonStart) {
+  return Math.ceil((new Date(occDate) - new Date(seasonStart)) / (7 * 24 * 60 * 60 * 1000)) + 1
+}
+
+function formatShortDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00')
+  return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
+}
+
 function ConvertTrialModal({ enrolment: e, onClose, onSuccess }) {
   const { data: studioData } = useApi(() => settingsApi.get(), [])
   const studio = studioData?.data || studioData || {}
@@ -266,6 +275,188 @@ function EmailAttendeesModal({ sessionId, occurrenceId, attendingStudents, onClo
   )
 }
 
+function ContactClassModal({ sessionId, occurrenceId, onClose }) {
+  const [tab, setTab] = useState('email')
+
+  // Email tab state
+  const [emailSubject, setEmailSubject] = useState('')
+  const [emailBody, setEmailBody] = useState('')
+  const [emailSending, setEmailSending] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
+  const [emailError, setEmailError] = useState(null)
+
+  // Push tab state
+  const [pushMsg, setPushMsg] = useState('')
+  const [pushSending, setPushSending] = useState(false)
+  const [pushSent, setPushSent] = useState(false)
+  const [pushError, setPushError] = useState(null)
+
+  // Popup tab state
+  const [popupTitle, setPopupTitle] = useState('')
+  const [popupMsg, setPopupMsg] = useState('')
+  const [popupCtaLabel, setPopupCtaLabel] = useState('')
+  const [popupCtaUrl, setPopupCtaUrl] = useState('')
+  const [popupSending, setPopupSending] = useState(false)
+  const [popupSent, setPopupSent] = useState(false)
+  const [popupError, setPopupError] = useState(null)
+
+  async function handleSendEmail(e) {
+    e.preventDefault()
+    setEmailSending(true)
+    setEmailError(null)
+    try {
+      await client.post(`/api/classes/sessions/${sessionId}/email/`, {
+        subject: emailSubject,
+        body: emailBody,
+        occurrence: occurrenceId,
+        recipients: 'enrolled',
+      })
+      setEmailSent(true)
+    } catch (err) {
+      setEmailError(err.response?.data?.detail || 'Failed to send email.')
+    } finally { setEmailSending(false) }
+  }
+
+  async function handleSendPush(e) {
+    e.preventDefault()
+    setPushSending(true)
+    setPushError(null)
+    try {
+      await client.post(`/api/classes/sessions/${sessionId}/notify/`, { message: pushMsg, type: 'push' })
+      setPushSent(true)
+    } catch (err) {
+      if (err.response?.status === 404) {
+        setPushError("Push notifications aren't enabled yet on this server.")
+      } else {
+        setPushError(err.response?.data?.detail || 'Failed to send push notification.')
+      }
+    } finally { setPushSending(false) }
+  }
+
+  async function handleSendPopup(e) {
+    e.preventDefault()
+    setPopupSending(true)
+    setPopupError(null)
+    try {
+      await client.post(`/api/classes/sessions/${sessionId}/notify/`, {
+        title: popupTitle,
+        message: popupMsg,
+        cta_label: popupCtaLabel || undefined,
+        cta_url: popupCtaUrl || undefined,
+        type: 'popup',
+      })
+      setPopupSent(true)
+    } catch (err) {
+      if (err.response?.status === 404) {
+        setPopupError("Push notifications aren't enabled yet on this server.")
+      } else {
+        setPopupError(err.response?.data?.detail || 'Failed to send pop-up alert.')
+      }
+    } finally { setPopupSending(false) }
+  }
+
+  const TABS = [
+    { key: 'email', label: 'Email' },
+    { key: 'push', label: 'Push Notification' },
+    { key: 'popup', label: 'Pop-up Alert' },
+  ]
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal-box" style={{ maxWidth: 520 }}>
+        <div className="modal-title">
+          Contact Class
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: 16 }}>
+          {TABS.map(t => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTab(t.key)}
+              style={{
+                background: 'none', border: 'none', padding: '8px 14px', fontSize: 13, fontWeight: 600,
+                cursor: 'pointer', color: tab === t.key ? 'var(--lime)' : 'var(--grey)',
+                borderBottom: `2px solid ${tab === t.key ? 'var(--lime)' : 'transparent'}`,
+                marginBottom: -1,
+              }}
+            >{t.label}</button>
+          ))}
+        </div>
+
+        {/* Email tab */}
+        {tab === 'email' && (
+          emailSent ? (
+            <div>
+              <div style={{ fontSize: 14, color: 'var(--lime)', marginBottom: 16 }}>✓ Email sent to enrolled students.</div>
+              <div className="modal-footer"><button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button></div>
+            </div>
+          ) : (
+            <form onSubmit={handleSendEmail}>
+              <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 12 }}>Send an email to all enrolled students in this class.</div>
+              {emailError && <div style={{ fontSize: 13, color: 'var(--red)', marginBottom: 10 }}>{emailError}</div>}
+              <div className="field"><label>Subject</label><input required value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="e.g. Important update about this week's class" /></div>
+              <div className="field"><label>Message</label><textarea required rows={5} value={emailBody} onChange={e => setEmailBody(e.target.value)} placeholder="Your message…" /></div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+                <button type="submit" className="btn btn-lime btn-sm" disabled={emailSending}>{emailSending ? 'Sending…' : 'Send Email'}</button>
+              </div>
+            </form>
+          )
+        )}
+
+        {/* Push tab */}
+        {tab === 'push' && (
+          pushSent ? (
+            <div>
+              <div style={{ fontSize: 14, color: 'var(--lime)', marginBottom: 16 }}>✓ Push notification sent.</div>
+              <div className="modal-footer"><button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button></div>
+            </div>
+          ) : (
+            <form onSubmit={handleSendPush}>
+              <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 12 }}>Send a push notification to students' mobile devices. Keep it short.</div>
+              {pushError && <div style={{ fontSize: 13, color: 'var(--red)', marginBottom: 10, background: 'rgba(255,80,80,0.08)', border: '1px solid rgba(255,80,80,0.2)', borderRadius: 8, padding: '8px 12px' }}>{pushError}</div>}
+              <div className="field">
+                <label>Message <span style={{ color: 'var(--grey)', fontWeight: 400 }}>({pushMsg.length}/160)</span></label>
+                <textarea required rows={3} maxLength={160} value={pushMsg} onChange={e => setPushMsg(e.target.value)} placeholder="Short message to send…" />
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+                <button type="submit" className="btn btn-lime btn-sm" disabled={pushSending}>{pushSending ? 'Sending…' : 'Send Notification'}</button>
+              </div>
+            </form>
+          )
+        )}
+
+        {/* Popup tab */}
+        {tab === 'popup' && (
+          popupSent ? (
+            <div>
+              <div style={{ fontSize: 14, color: 'var(--lime)', marginBottom: 16 }}>✓ Pop-up alert sent.</div>
+              <div className="modal-footer"><button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button></div>
+            </div>
+          ) : (
+            <form onSubmit={handleSendPopup}>
+              <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 12 }}>Display a pop-up alert in the student app.</div>
+              {popupError && <div style={{ fontSize: 13, color: 'var(--red)', marginBottom: 10, background: 'rgba(255,80,80,0.08)', border: '1px solid rgba(255,80,80,0.2)', borderRadius: 8, padding: '8px 12px' }}>{popupError}</div>}
+              <div className="field"><label>Title</label><input required value={popupTitle} onChange={e => setPopupTitle(e.target.value)} placeholder="e.g. Class update" /></div>
+              <div className="field"><label>Message</label><textarea required rows={3} value={popupMsg} onChange={e => setPopupMsg(e.target.value)} placeholder="Your message…" /></div>
+              <div className="field"><label>CTA Button Label <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(optional)</span></label><input value={popupCtaLabel} onChange={e => setPopupCtaLabel(e.target.value)} placeholder="e.g. Learn more" /></div>
+              <div className="field"><label>CTA URL <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(optional)</span></label><input value={popupCtaUrl} onChange={e => setPopupCtaUrl(e.target.value)} placeholder="https://…" /></div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+                <button type="submit" className="btn btn-lime btn-sm" disabled={popupSending}>{popupSending ? 'Sending…' : 'Send Alert'}</button>
+              </div>
+            </form>
+          )
+        )}
+      </div>
+    </div>
+  )
+}
+
 function CancelClassModal({ occurrence, session, onClose, onCancelled }) {
   const [reason, setReason] = useState('')
   const [notifyStudents, setNotifyStudents] = useState(true)
@@ -336,6 +527,7 @@ export default function AttendancePage() {
 
   const [session, setSession]         = useState(null)
   const [occurrence, setOccurrence]   = useState(null)
+  const [occurrences, setOccurrences] = useState([])
   const [students, setStudents]       = useState([])
   const [cancelledStudents, setCancelledStudents] = useState([])
   const [waitlist, setWaitlist]       = useState([])
@@ -356,9 +548,35 @@ export default function AttendancePage() {
   const [addStudentModal, setAddStudentModal] = useState(false)
   const [capacityOverride, setCapacityOverride] = useState(null)
   const [emailModal, setEmailModal]   = useState(false)
+  const [contactModal, setContactModal] = useState(false)
   const [cancelClassModal, setCancelClassModal] = useState(false)
 
   const today = new Date()
+
+  async function loadOccurrence(occ) {
+    setOccurrence(occ)
+    setSaved(false)
+    if (!occ) return
+    try {
+      const attRes = await attendance.list({ occurrence: occ.id })
+      const initial = {}
+      const initialNotes = {}
+      const initialNoteTags = {}
+      for (const r of (attRes.data.results || [])) {
+        initial[r.student] = r.status === 'no_show' && r.no_show_fee_waived ? 'no_show_waived' : r.status
+        initialNotes[r.student] = r.note || ''
+        initialNoteTags[r.student] = r.note_tag || ''
+      }
+      // Keep pending for unrecorded students
+      setRegister(prev => {
+        const merged = {}
+        for (const key of Object.keys(prev)) merged[key] = 'pending'
+        return { ...merged, ...initial }
+      })
+      setNotes(initialNotes)
+      setNoteTags(initialNoteTags)
+    } catch {}
+  }
 
   useEffect(() => {
     async function load() {
@@ -375,6 +593,7 @@ export default function AttendancePage() {
         const todayStr = new Date().toISOString().slice(0, 10)
         const occ = occs.find(o => o.date === todayStr) || occs[0] || null
         setSession(s)
+        setOccurrences(occs)
         setOccurrence(occ)
 
         const enrolled = enrolRes.data.results || []
@@ -477,10 +696,21 @@ export default function AttendancePage() {
     cancelled: Object.values(register).filter(v => v === 'cancelled').length,
   }
 
+  // Week selector calculations
+  const showWeekSelector = session?.season_start_date && occurrences.length > 1
+  const totalWeeks = session?.season_end_date && session?.season_start_date
+    ? Math.round((new Date(session.season_end_date) - new Date(session.season_start_date)) / (7 * 24 * 60 * 60 * 1000))
+    : null
+
   if (loading) return <div className="loading-center"><div className="spinner" /></div>
 
   const shownStudents = tab === 'attending' ? attendingStudents : awayStudents
   const isCancelledTab = tab === 'cancelled'
+
+  // Current week number for the dropdown label
+  const currentWeekNum = occurrence && session?.season_start_date
+    ? weekNumber(occurrence.date, session.season_start_date)
+    : null
 
   return (
     <div className="att-page">
@@ -502,8 +732,35 @@ export default function AttendancePage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
             <div>
               <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, lineHeight: 1.2 }}>{session?.name}</div>
-              <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 6, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                {occurrence && <span>{new Date(occurrence.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}</span>}
+              <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 6, display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+                {occurrence && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>{new Date(occurrence.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    {showWeekSelector && (
+                      <select
+                        value={occurrence?.id || ''}
+                        onChange={e => {
+                          const occ = occurrences.find(o => String(o.id) === String(e.target.value))
+                          if (occ) loadOccurrence(occ)
+                        }}
+                        style={{
+                          background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6,
+                          color: 'var(--lime)', fontSize: 11, fontWeight: 700, padding: '3px 8px',
+                          cursor: 'pointer', outline: 'none',
+                        }}
+                      >
+                        {occurrences.map(occ => {
+                          const wk = weekNumber(occ.date, session.season_start_date)
+                          return (
+                            <option key={occ.id} value={occ.id}>
+                              Week {wk}{totalWeeks ? ` / ${totalWeeks}` : ''} — {formatShortDate(occ.date)}{occ.status === 'cancelled' ? ' (cancelled)' : ''}
+                            </option>
+                          )
+                        })}
+                      </select>
+                    )}
+                  </span>
+                )}
                 {session?.start_time && <span>{fmt12(session.start_time)}</span>}
                 {session?.instructor_detail?.display_name && <span>{session.instructor_detail.display_name}</span>}
                 {session?.studio_detail?.name && <span>{session.studio_detail.name}</span>}
@@ -518,6 +775,42 @@ export default function AttendancePage() {
           </div>
         </div>
 
+        {/* Week selector tiles */}
+        {showWeekSelector && (
+          <div style={{
+            display: 'flex', gap: 8, overflowX: 'auto', WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'none', marginBottom: 16, paddingBottom: 4,
+          }}>
+            {occurrences.map(occ => {
+              const wk = weekNumber(occ.date, session.season_start_date)
+              const isActive = occ.id === occurrence?.id
+              const isCancelled = occ.status === 'cancelled'
+              return (
+                <button
+                  key={occ.id}
+                  onClick={() => loadOccurrence(occ)}
+                  style={{
+                    flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    padding: '8px 14px', borderRadius: 10, border: `1px solid ${isActive ? 'var(--lime)' : isCancelled ? 'rgba(255,107,107,0.3)' : 'var(--border)'}`,
+                    background: isActive ? 'rgba(204,255,0,0.07)' : isCancelled ? 'rgba(255,107,107,0.05)' : '#111',
+                    cursor: 'pointer', minWidth: 64,
+                  }}
+                >
+                  <span style={{ fontSize: 11, fontWeight: 700, color: isActive ? 'var(--lime)' : isCancelled ? '#ff8888' : 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Week {wk}
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: isActive ? '#fff' : isCancelled ? '#ff8888' : '#aaa', marginTop: 2 }}>
+                    {formatShortDate(occ.date)}
+                  </span>
+                  {isCancelled && (
+                    <span style={{ fontSize: 9, color: '#ff8888', marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.04em' }}>cancelled</span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
         {/* Action bar */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
           <button className="btn btn-lime btn-sm" onClick={markAllPresent}>Mark All Present</button>
@@ -531,7 +824,7 @@ export default function AttendancePage() {
                 const newCap = prompt('New capacity override:', capacityOverride ?? session?.capacity ?? '')
                 if (newCap && !isNaN(parseInt(newCap))) setCapacityOverride(parseInt(newCap))
               }}>Override Capacity</button>
-              <button className="btn btn-ghost btn-sm" onClick={() => setEmailModal(true)}>Email Attending</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setContactModal(true)}>Contact Class</button>
               <button className="btn btn-ghost btn-sm" style={{ color: '#ff6b6b', borderColor: 'rgba(255,107,107,0.3)' }} onClick={() => setCancelClassModal(true)}>Cancel Class</button>
             </>
           )}
@@ -961,13 +1254,22 @@ export default function AttendancePage() {
         />
       )}
 
-      {/* Email modal */}
+      {/* Email modal (kept for attending students) */}
       {emailModal && (
         <EmailAttendeesModal
           sessionId={id}
           occurrenceId={occurrence?.id}
           attendingStudents={attendingStudents}
           onClose={() => setEmailModal(false)}
+        />
+      )}
+
+      {/* Contact Class modal */}
+      {contactModal && (
+        <ContactClassModal
+          sessionId={id}
+          occurrenceId={occurrence?.id}
+          onClose={() => setContactModal(false)}
         />
       )}
 
