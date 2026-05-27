@@ -271,6 +271,10 @@ export const studios = {
   list: () => client.get('/api/classes/studios/'),
 }
 
+export const categories = {
+  list: (params) => client.get('/api/classes/categories/', { params }),
+}
+
 export const leads = {
   list: (params) => client.get('/api/leads/', { params }),
   update: (id, data) => client.patch(`/api/leads/${id}/`, data),

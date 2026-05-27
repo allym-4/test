@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useStripe } from '@stripe/stripe-react-native'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApi } from '../../hooks/useApi'
-import { classes, enrolments, seasons, attendance, settings as settingsApi, payments, forms as formsApi } from '../../api'
+import { classes, enrolments, seasons, attendance, settings as settingsApi, payments, forms as formsApi, categories as categoriesApi } from '../../api'
 import client from '../../api/client'
 import { fmt12 } from '../../utils/time'
 
@@ -1158,6 +1158,10 @@ export default function BookScreen({ navigation }) {
   const [showSeasonCheckout, setShowSeasonCheckout] = useState(false)
   const [selectedSeasonId, setSelectedSeasonId] = useState(null)
 
+  // Category filter state
+  const [allCategories, setAllCategories] = useState([])
+  const [filterCategory, setFilterCategory] = useState('all')
+
   // Filter state
   const [classLevelPillFilter, setClassLevelPillFilter] = useState(null)
   const [instructorFilter, setInstructorFilter] = useState(null)
@@ -1219,6 +1223,10 @@ export default function BookScreen({ navigation }) {
   useEffect(() => {
     if (user?.level) setLevelFilter(user.level)
   }, [user?.level])
+
+  useEffect(() => {
+    categoriesApi.list().then(r => setAllCategories(r.data?.results || r.data || [])).catch(() => {})
+  }, [])
 
   // ── API calls ──────────────────────────────────────────────────────────────
   const { data: pendingRequiredData } = useApi(() => formsApi.pendingRequired(), [user?.id])
@@ -1396,7 +1404,14 @@ export default function BookScreen({ navigation }) {
     return true
   }
 
-  const seasonFiltered = bookingSeasonSessions.filter(matchesFilters)
+  // Category chips: only categories that are visible and have sessions in the current booking season
+  const bookingSeasonCategoryIds = new Set(bookingSeasonSessions.map(s => s.category).filter(Boolean).map(String))
+  const availableCategories = allCategories.filter(cat => cat.is_visible && bookingSeasonCategoryIds.has(String(cat.id)))
+
+  let seasonFiltered = bookingSeasonSessions.filter(matchesFilters)
+  if (filterCategory !== 'all') {
+    seasonFiltered = seasonFiltered.filter(s => String(s.category) === filterCategory)
+  }
   const casualFiltered = casualSessions.filter(matchesFilters)
 
   // ── season handlers ────────────────────────────────────────────────────────
@@ -1669,6 +1684,7 @@ export default function BookScreen({ navigation }) {
               setDayFilter(null)
               setWeekFilter(null)
               setAvailableOnly(false)
+              setFilterCategory('all')
             }}
           >
             <Text style={[s.tabText, tab === key && s.tabTextActive]}>{label}</Text>
@@ -1775,6 +1791,33 @@ export default function BookScreen({ navigation }) {
                 )}
               </View>
             </View>
+
+            {/* ── Category chips ── */}
+            {availableCategories.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 0 }}>
+                <TouchableOpacity
+                  onPress={() => setFilterCategory('all')}
+                  style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: filterCategory === 'all' ? '#ccff00' : '#1a1a1a', marginRight: 6 }}
+                >
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: filterCategory === 'all' ? '#000' : '#888' }}>All</Text>
+                </TouchableOpacity>
+                {availableCategories.map(cat => {
+                  const active = filterCategory === String(cat.id)
+                  const colour = cat.colour || '#ccff00'
+                  return (
+                    <TouchableOpacity
+                      key={cat.id}
+                      onPress={() => setFilterCategory(active ? 'all' : String(cat.id))}
+                      style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, marginRight: 6,
+                        backgroundColor: active ? `${colour}22` : '#111',
+                        borderWidth: 1, borderColor: active ? colour : '#333' }}
+                    >
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: active ? colour : '#888' }}>{cat.name}</Text>
+                    </TouchableOpacity>
+                  )
+                })}
+              </ScrollView>
+            )}
 
             {/* ── Filters ── */}
             <View style={s.filterBar}>
