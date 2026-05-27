@@ -4,7 +4,7 @@ import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { useApi } from '../../hooks/useApi'
 import { useAuth } from '../../contexts/AuthContext'
-import { classes, enrolments, settings as settingsApi, seasons as seasonsApi, payments as paymentsApi, attendance as attendanceApi, helpdesk as helpdeskApi } from '../../api'
+import { classes, enrolments, settings as settingsApi, seasons as seasonsApi, payments as paymentsApi, attendance as attendanceApi, helpdesk as helpdeskApi, categories as categoriesApi } from '../../api'
 import CheckoutModal from '../../components/CheckoutModal'
 
 let _stripePromise = null
@@ -1743,6 +1743,7 @@ function SeasonTab({
   onJoinSeasonWaitlist,
   user,
   onAdminBlock,
+  allCategories = [],
 }) {
   const isMobile = useIsMobile()
   // Bookable seasons: active, OR upcoming once go_live_at has passed or bookings_open is true
@@ -1759,6 +1760,7 @@ function SeasonTab({
   const [filterDay, setFilterDay] = useState('all')
   const [filterInstructor, setFilterInstructor] = useState('all')
   const [filterTag, setFilterTag] = useState('all')
+  const [filterCategory, setFilterCategory] = useState('all')
   const [showEligibleOnly, setShowEligibleOnly] = useState(false)
   const [demoNoLevel, setDemoNoLevel] = useState(false)
   const [levelOverrideSession, setLevelOverrideSession] = useState(null)
@@ -1817,7 +1819,7 @@ function SeasonTab({
     ).entries()
   )
 
-  // Tag chip definitions
+  // Tag chip definitions (legacy fallback — only used if no categories configured)
   const TAG_CHIPS = [
     { id: 'first-timer', label: '🌟 First Timer Friendly', test: s => /virgin|level\s*1/i.test(s.name) },
     { id: 'pole', label: '🎀 Pole Levels', test: s => /level\s*[2-6]/i.test(s.name) },
@@ -1826,6 +1828,11 @@ function SeasonTab({
     { id: 'practice', label: '🧘 Practice Time', test: s => /practice/i.test(s.name) },
   ]
   const availableTags = TAG_CHIPS.filter(tag => seasonSessions.some(tag.test))
+
+  // Category chips — categories that have at least one visible session in this season
+  const availableCategories = allCategories.filter(cat =>
+    cat.is_visible && seasonSessions.some(s => String(s.category) === String(cat.id))
+  )
 
   // Perk nudge: next class incremental price
   const PERKS_COUNT = [3, 4]
@@ -1851,6 +1858,10 @@ function SeasonTab({
   if (filterTag !== 'all') {
     const tagDef = TAG_CHIPS.find(t => t.id === filterTag)
     if (tagDef) filtered = filtered.filter(tagDef.test)
+  }
+
+  if (filterCategory !== 'all') {
+    filtered = filtered.filter(s => String(s.category) === filterCategory)
   }
 
   if (showEligibleOnly) {
@@ -2018,8 +2029,37 @@ function SeasonTab({
 
             </div>
 
-            {/* Tag chips */}
-            {availableTags.length > 0 && (
+            {/* Category chips (dynamic) — or fall back to hardcoded tag chips */}
+            {availableCategories.length > 0 ? (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+                <button
+                  onClick={() => setFilterCategory('all')}
+                  style={{
+                    padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: 'none',
+                    background: filterCategory === 'all' ? '#ccff00' : '#1a1a1a',
+                    color: filterCategory === 'all' ? '#000' : '#888',
+                    transition: 'background 0.15s, color 0.15s',
+                  }}
+                >All</button>
+                {availableCategories.map(cat => {
+                  const active = filterCategory === String(cat.id)
+                  const colour = cat.colour || '#ccff00'
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => setFilterCategory(active ? 'all' : String(cat.id))}
+                      style={{
+                        padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                        border: `1px solid ${active ? colour : '#333'}`,
+                        background: active ? `${colour}22` : '#111',
+                        color: active ? colour : '#888',
+                        transition: 'all 0.15s',
+                      }}
+                    >{cat.name}</button>
+                  )
+                })}
+              </div>
+            ) : availableTags.length > 0 && (
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
                 <button
                   onClick={() => setFilterTag('all')}
@@ -2160,6 +2200,7 @@ export default function StudentBook() {
   const [appliedPromoCode, setAppliedPromoCode] = useState('')
   const { data: balanceData } = useApi(() => user?.id ? paymentsApi.balance(user.id) : null, [user?.id])
   const { data: sessionsData, loading } = useApi(() => classes.list())
+  const { data: categoriesData } = useApi(() => categoriesApi.list())
   const { data: studioSettings } = useApi(() => settingsApi.get())
   const { data: workshopsData, loading: loadingWorkshops, refetch: refetchWorkshops } = useApi(() => classes.workshops.list())
   const { data: seasonsData } = useApi(() => seasonsApi.list())
@@ -2718,6 +2759,7 @@ export default function StudentBook() {
           onProceedToCheckout={handleSeasonProceed}
           onJoinSeasonWaitlist={joinSeasonWaitlist}
           user={user}
+          allCategories={categoriesData?.results || categoriesData || []}
           onAdminBlock={async (session, restriction) => {
             const nm = restriction.levelName || restriction.className || session.name
             try {

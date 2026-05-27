@@ -230,7 +230,7 @@ class ClassSessionListView(generics.ListCreateAPIView):
             _auto_assign_skill_level(session)
 
     def get_queryset(self):
-        qs = ClassSession.objects.select_related('instructor', 'studio')
+        qs = ClassSession.objects.select_related('instructor', 'studio', 'category')
         season_id = self.request.query_params.get('season')
         # Only restrict to own sessions when no season filter — instructors
         # need to see the full timetable when picking a transfer target
@@ -241,6 +241,11 @@ class ClassSessionListView(generics.ListCreateAPIView):
             qs = qs.filter(is_active=True)
         if season_id:
             qs = qs.filter(season_id=season_id)
+        # Students only see sessions whose category is visible (or has no category)
+        if getattr(self.request.user, 'role', None) == 'student':
+            qs = qs.filter(
+                models.Q(category__isnull=True) | models.Q(category__is_visible=True)
+            )
         return qs
 
 
