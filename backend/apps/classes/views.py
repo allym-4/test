@@ -2546,6 +2546,25 @@ class ClassSeasonEnrolmentsView(APIView):
             })
         transfers_data.sort(key=lambda x: x['created_at'], reverse=True)
 
+        cancelled_qs = (
+            Enrolment.objects
+            .filter(class_session=session, status='cancelled')
+            .select_related('student')
+            .order_by('-cancelled_date')
+        )
+        cancelled_data = []
+        for e in cancelled_qs:
+            cancelled_data.append({
+                'id': e.id,
+                'student_id': e.student_id,
+                'student_name': e.student.display_name,
+                'student_level': e.student.level,
+                'student_phone': e.student.phone,
+                'cancelled_date': e.cancelled_date,
+                'notes': e.notes,
+                'enrolment_type': e.enrolment_type,
+            })
+
         return Response({
             'session': {
                 'id': session.id,
@@ -2562,4 +2581,5 @@ class ClassSeasonEnrolmentsView(APIView):
             'enrolled': enrolled_data,
             'waitlist': waitlist_data,
             'transfers': transfers_data,
+            'cancelled': cancelled_data,
         })

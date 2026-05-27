@@ -117,8 +117,11 @@ function ClassRow({ session, onOverrideCapacity }) {
 
       {/* Actions */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <Link to={`/admin/classes/${session.id}/season-enrolments`}>
+          <button className="btn btn-ghost btn-xs">See Enrolments</button>
+        </Link>
         <Link to={`/admin/classes/${session.id}/attendance`}>
-          <button className="btn btn-ghost btn-xs">View Roster</button>
+          <button className="btn btn-ghost btn-xs">Attendance</button>
         </Link>
         <button className="btn btn-ghost btn-xs" onClick={() => onOverrideCapacity(session)}>
           Override Numbers
@@ -319,12 +322,17 @@ export default function AdminSeasonOverview() {
         )}
       </div>
 
-      {/* Classes list */}
-      <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)', marginBottom: 14 }}>
-        Classes — Full Season Enrolments
+      {/* Classes list header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--grey)' }}>
+          Classes — Full Season Enrolments
+        </div>
+        <Link to={`/admin/timetable?newClass=1&season=${id}`}>
+          <button className="btn btn-ghost btn-sm" style={{ color: 'var(--lime)' }}>+ Add Class</button>
+        </Link>
       </div>
       <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16 }}>
-        These are students enrolled in the full course. Casual/catch-up attendees are tracked separately in the attendance register.
+        Casual/catch-up attendees are tracked separately in the attendance register.
       </div>
 
       {loadingSessions ? (
@@ -335,15 +343,27 @@ export default function AdminSeasonOverview() {
           <Link to="/admin/timetable" style={{ color: 'var(--lime)' }}>Go to Timetable</Link> to add classes.
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {sorted.map(s => (
-            <ClassRow
-              key={s.id}
-              session={s}
-              onOverrideCapacity={setOverrideSession}
-            />
-          ))}
-        </div>
+        /* Group by day of week */
+        (() => {
+          const byDay = {}
+          for (const s of sorted) {
+            const day = DAYS[s.day_of_week] || 'Other'
+            if (!byDay[day]) byDay[day] = []
+            byDay[day].push(s)
+          }
+          return Object.entries(byDay).map(([day, daySessions]) => (
+            <div key={day} style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--lime)', marginBottom: 10 }}>
+                {day}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {daySessions.map(s => (
+                  <ClassRow key={s.id} session={s} onOverrideCapacity={setOverrideSession} />
+                ))}
+              </div>
+            </div>
+          ))
+        })()
       )}
 
       {overrideSession && (
