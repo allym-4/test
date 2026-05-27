@@ -2316,11 +2316,7 @@ class AdminPracticeRemoveStudentView(APIView):
         return Response({'status': 'removed'})
 
 
-# ── Practice attendance helpers ──────────────────────────────────────────────
-# We store practice-slot attendance in a lightweight dict keyed by (slot_id, student_id)
-# using a simple JSON store on the PracticeBooking model's payment_type field
-# for the kisi flag, and a separate table for status.
-# Rather than a separate model, we piggyback on an existing JSON cache in PracticeBooking.
+# ── Practice attendance helpers (used by older code paths; attendance now stored on PracticeBooking) ──
 
 def _get_practice_attendance(slot_id, student_id):
     try:
