@@ -528,7 +528,12 @@ export const referrals = {
 }
 
 export const assistant = {
-  chat: (message) => client.post('/api/users/assistant/', { message }),
+  chat: (data) => {
+    if (data instanceof FormData) {
+      return client.post('/api/users/assistant/', data, { headers: { 'Content-Type': 'multipart/form-data' } })
+    }
+    return client.post('/api/users/assistant/', { message: data })
+  },
   chats: () => client.get('/api/users/assistant/chats/'),
   userChats: (userId) => client.get('/api/users/assistant/chats/', { params: { user_id: userId } }),
 }

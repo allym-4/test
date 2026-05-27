@@ -1929,6 +1929,31 @@ STUDENT_TOOLS = [
             "required": ["message"],
         },
     },
+    {
+        "name": "import_students_from_data",
+        "description": "Import students from structured data (CSV rows). Creates user accounts for new students.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "students": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "first_name": {"type": "string"},
+                            "last_name": {"type": "string"},
+                            "email": {"type": "string"},
+                            "phone": {"type": "string"},
+                            "level": {"type": "integer", "description": "1-6"},
+                        },
+                        "required": ["first_name", "last_name", "email"]
+                    }
+                },
+                "dry_run": {"type": "boolean", "description": "If true, preview only. If false, create accounts."}
+            },
+            "required": ["students"]
+        }
+    },
 ]
 
 # Keep backwards-compatible alias
@@ -2452,6 +2477,37 @@ def execute_tool(tool_name, tool_input, acting_user=None):
             )
         return f"Done — I've opened a support ticket and notified the team. Someone will follow up with you shortly. Ticket #{ticket.id}."
 
+    elif tool_name == 'import_students_from_data':
+        from apps.users.models import User as UserModel
+        students = tool_input.get('students', [])
+        dry_run = tool_input.get('dry_run', True)
+        results = []
+        for s in students:
+            email = s.get('email', '').strip().lower()
+            if not email:
+                results.append({'email': email, 'status': 'error', 'reason': 'No email'})
+                continue
+            if UserModel.objects.filter(email=email).exists():
+                results.append({'email': email, 'status': 'skip', 'reason': 'Already exists'})
+                continue
+            if not dry_run:
+                import secrets
+                UserModel.objects.create_user(
+                    username=email, email=email,
+                    first_name=s.get('first_name', ''),
+                    last_name=s.get('last_name', ''),
+                    phone=s.get('phone', ''),
+                    level=s.get('level', 1),
+                    role='student',
+                )
+            results.append({'email': email, 'status': 'create' if not dry_run else 'preview'})
+        created = sum(1 for r in results if r['status'] == 'create')
+        previewed = sum(1 for r in results if r['status'] == 'preview')
+        skipped = sum(1 for r in results if r['status'] == 'skip')
+        errors = sum(1 for r in results if r['status'] == 'error')
+        summary = f"{'Preview: ' if dry_run else ''}{previewed or created} students {'would be' if dry_run else ''} created, {skipped} skipped, {errors} errors."
+        return {'results': results, 'summary': summary}
+
     return f"Unknown tool: {tool_name}"
 
 
@@ -2463,6 +2519,20 @@ class AssistantView(APIView):
         message = (request.data.get('message') or request.data.get('query') or '').strip()
         if not message:
             return Response({'error': 'No message provided'}, status=400)
+
+        # Handle optional file attachment (CSV or plain text, up to 50KB)
+        uploaded_file = request.FILES.get('file')
+        if uploaded_file:
+            try:
+                file_contents = uploaded_file.read(50 * 1024).decode('utf-8', errors='replace')
+                message = (
+                    f"[Attached file: {uploaded_file.name}]\n"
+                    f"{file_contents}\n"
+                    f"---\n"
+                    f"User message: {message}"
+                )
+            except Exception:
+                pass  # If file reading fails, proceed with plain message
 
         api_key = os.environ.get('ANTHROPIC_API_KEY', '')
         if not ANTHROPIC_AVAILABLE or not api_key:

@@ -29,7 +29,9 @@ function ChatPane() {
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [attachedFile, setAttachedFile] = useState(null)
   const bottomRef = useRef()
+  const fileInputRef = useRef()
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -37,11 +39,21 @@ function ChatPane() {
 
   async function ask(query) {
     if (!query.trim() || loading) return
-    setMessages(ms => [...ms, { role: 'user', text: query }])
+    const displayText = attachedFile ? `${query} [📎 ${attachedFile.name}]` : query
+    setMessages(ms => [...ms, { role: 'user', text: displayText }])
     setInput('')
     setLoading(true)
     try {
-      const res = await assistant.chat(query)
+      let payload
+      if (attachedFile) {
+        payload = new FormData()
+        payload.append('message', query)
+        payload.append('file', attachedFile)
+      } else {
+        payload = query
+      }
+      setAttachedFile(null)
+      const res = await assistant.chat(payload)
       const reply = res.data?.response || res.data?.reply || 'No response received.'
       setMessages(ms => [...ms, { role: 'assistant', text: reply }])
     } catch (err) {
@@ -87,7 +99,32 @@ function ChatPane() {
         <div ref={bottomRef} />
       </div>
 
+      {attachedFile && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 6, padding: '4px 10px', fontSize: 12, color: 'var(--white)' }}>
+            <span>📎</span>
+            <span>{attachedFile.name}</span>
+            <button
+              onClick={() => { setAttachedFile(null); fileInputRef.current.value = '' }}
+              style={{ background: 'none', border: 'none', color: 'var(--grey)', cursor: 'pointer', fontSize: 14, padding: '0 0 0 4px', lineHeight: 1 }}
+            >✕</button>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv,.txt"
+          style={{ display: 'none' }}
+          onChange={e => setAttachedFile(e.target.files[0] || null)}
+        />
+        <button
+          onClick={() => fileInputRef.current.click()}
+          title="Attach CSV or text file"
+          style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, color: attachedFile ? 'var(--lime)' : 'var(--grey)', cursor: 'pointer', fontSize: 18, padding: '0 14px', flexShrink: 0 }}
+        >📎</button>
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
