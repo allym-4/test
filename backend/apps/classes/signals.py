@@ -148,18 +148,49 @@ def handle_season_published_generate_occurrences(sender, instance, created, **kw
     for session in sessions:
         # Find first weekday on or after start_date matching session.day_of_week
         days_ahead = (session.day_of_week - instance.start_date.weekday()) % 7
-        first_date = instance.start_date + datetime.timedelta(days=days_ahead)
+        first_possible = instance.start_date + datetime.timedelta(days=days_ahead)
+        # Respect start_week and end_week
+        first_date = first_possible + datetime.timedelta(weeks=(session.start_week - 1))
+        end_date_cutoff = first_possible + datetime.timedelta(weeks=(session.end_week - 1))
+        if end_date_cutoff > instance.end_date:
+            end_date_cutoff = instance.end_date
 
         current = first_date
-        for _ in range(8):
-            if current > instance.end_date:
-                break
+        while current <= end_date_cutoff:
             ClassOccurrence.objects.get_or_create(
                 session=session,
                 date=current,
                 defaults={'status': ClassOccurrence.Status.SCHEDULED},
             )
             current += datetime.timedelta(weeks=1)
+
+
+@receiver(post_save, sender='classes.ClassSession')
+def handle_session_saved_generate_occurrences(sender, instance, created, **kwargs):
+    """Auto-generate occurrences when a session is added to a season that's already published."""
+    if not instance.season_id or not instance.is_active:
+        return
+    season = instance.season
+    if not season.published_at:
+        return
+    import datetime
+    from apps.classes.models import ClassOccurrence
+    # Calculate start/end dates based on start_week and end_week
+    days_ahead = (instance.day_of_week - season.start_date.weekday()) % 7
+    first_possible = season.start_date + datetime.timedelta(days=days_ahead)
+    # Advance to start_week
+    first_date = first_possible + datetime.timedelta(weeks=(instance.start_week - 1))
+    end_date_cutoff = first_possible + datetime.timedelta(weeks=(instance.end_week - 1))
+    if end_date_cutoff > season.end_date:
+        end_date_cutoff = season.end_date
+    current = first_date
+    while current <= end_date_cutoff:
+        ClassOccurrence.objects.get_or_create(
+            session=instance,
+            date=current,
+            defaults={'status': ClassOccurrence.Status.SCHEDULED},
+        )
+        current += datetime.timedelta(weeks=1)
 
 
 @receiver(post_save, sender='classes.ClassOccurrence')

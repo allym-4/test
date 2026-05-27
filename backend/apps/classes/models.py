@@ -115,6 +115,8 @@ class ClassSession(models.Model):
         blank=True,
         help_text='What students need to know or be able to do before joining this class.'
     )
+    start_week = models.PositiveSmallIntegerField(default=1, help_text='Week number (1–8) this class starts running within the season.')
+    end_week = models.PositiveSmallIntegerField(default=8, help_text='Week number (1–8) this class stops running within the season.')
     created_at = models.DateTimeField(auto_now_add=True, null=True)
 
     class Meta:
