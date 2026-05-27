@@ -36,19 +36,14 @@ function timeToMinutes(t = '') {
   return (h || 0) * 60 + (m || 0)
 }
 
-function cardColors(name = '', conflicting = false) {
+function cardColors(studioName = '', isPractice = false, conflicting = false) {
   if (conflicting) return { bg: '#ff4444', text: '#fff', subText: 'rgba(255,255,255,0.75)' }
-  const n = name.toLowerCase()
-  if (n.includes('practice'))
-    return { bg: '#2a2a2a', text: '#888', subText: '#555' }
-  if (
-    n.includes('level') || n.includes('dance') || n.includes('strip') ||
-    n.includes('floor') || n.includes('chair') || n.includes('kiki') ||
-    n.includes('unravel') || n.includes('virgin') || n.includes('workshop') ||
-    n.includes('intensive') || n.includes('bootcamp')
-  )
-    return { bg: '#ccff00', text: '#000', subText: 'rgba(0,0,0,0.55)' }
-  return { bg: '#b0a0ff', text: '#000', subText: 'rgba(0,0,0,0.55)' }
+  if (isPractice) return { bg: '#2a2a2a', text: '#888', subText: '#555' }
+  const s = studioName.toLowerCase()
+  if (s.includes('box'))      return { bg: '#b0a0ff', text: '#000', subText: 'rgba(0,0,0,0.55)' }
+  if (s.includes('rhapsody')) return { bg: '#ccff00', text: '#000', subText: 'rgba(0,0,0,0.55)' }
+  // Janitor's Closet or unknown studio
+  return { bg: '#444', text: '#fff', subText: 'rgba(255,255,255,0.6)' }
 }
 
 function detectConflicts(sessions) {
@@ -77,7 +72,7 @@ function detectConflicts(sessions) {
 
 function SessionDetailModal({ session, onClose }) {
   if (!session) return null
-  const colors = cardColors(session.name)
+  const colors = cardColors(session.studio_detail?.name ?? '', session.isPractice ?? false)
   return (
     <div
       style={{
@@ -123,9 +118,16 @@ function SessionDetailModal({ session, onClose }) {
           {session.notes && <div><b style={{ color: '#fff' }}>Notes:</b> {session.notes}</div>}
         </div>
         <div style={{ marginTop: 20, display: 'flex', gap: 8 }}>
-          <Link to={`/admin/classes/${session.id}/attendance`}>
-            <button className="btn btn-lime btn-sm">Go to Attendance →</button>
-          </Link>
+          {!session.isPractice && (
+            <Link to={`/admin/classes/${session.id}/attendance`}>
+              <button className="btn btn-lime btn-sm">Go to Attendance →</button>
+            </Link>
+          )}
+          {session.isPractice && (
+            <Link to="/admin/practice-time">
+              <button className="btn btn-lime btn-sm">Manage Practice Time →</button>
+            </Link>
+          )}
           <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
         </div>
       </div>
@@ -136,7 +138,7 @@ function SessionDetailModal({ session, onClose }) {
 // ─── Calendar Card (stacked, no absolute positioning) ─────────────────────────
 
 function CalendarCard({ session, occurrence, dataMode = 'season', conflicting, onClick }) {
-  const colors     = cardColors(session.name, conflicting)
+  const colors     = cardColors(session.studio_detail?.name ?? '', session.isPractice ?? false, conflicting)
   const instructor = session.instructor_detail?.display_name || ''
   const firstName  = instructor.split(' ')[0]
   const capacity   = session.capacity || 0
@@ -389,6 +391,40 @@ export default function AdminTimetable() {
     return map
   }, [occData])
 
+  // Practice slots for the visible week — always shown on calendar
+  const shouldFetchPractice = view === 'calendar'
+  const { data: practiceData } = useApi(
+    () => shouldFetchPractice
+      ? classes.practice.list({ date_from: weekStartStr, date_to: weekEndStr, page_size: 100 })
+      : null,
+    [shouldFetchPractice, weekStartStr, weekEndStr]
+  )
+  // Convert practice slots to pseudo-sessions keyed by day index
+  const practiceSlots = useMemo(() => {
+    const list = practiceData?.results ?? (Array.isArray(practiceData) ? practiceData : [])
+    return list
+      .filter(p => p.is_active)
+      .map(p => {
+        const d = new Date(p.date + 'T00:00:00')
+        const dow = d.getDay() === 0 ? 6 : d.getDay() - 1  // Mon=0
+        const durationMins = p.duration_hours ? Math.round(p.duration_hours * 60) : 60
+        return {
+          id:               `practice-${p.id}`,
+          name:             'Practice Time',
+          day_of_week:      dow,
+          start_time:       p.start_time,
+          duration_minutes: durationMins,
+          capacity:         p.capacity,
+          enrolled_count:   p.booked_count ?? 0,
+          waitlist_count:   0,
+          studio_detail:    p.studio_detail,
+          instructor_detail: null,
+          isPractice:       true,
+          _practiceId:      p.id,
+        }
+      })
+  }, [practiceData])
+
   const seasonWeek      = getSeasonWeek(weekStart, seasonStart, seasonWeeks)
   const seasonWeekLabel = seasonWeek ? `${seasonLabel} — Week ${seasonWeek} of ${seasonWeeks}` : seasonLabel
 
@@ -501,6 +537,28 @@ export default function AdminTimetable() {
         </div>
       )}
 
+      {/* Studio colour legend */}
+      {view === 'calendar' && (
+        <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 8, display: 'flex', gap: 12, alignItems: 'center' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: '#ccff00', display: 'inline-block' }} />
+            Rhapsody
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: '#b0a0ff', display: 'inline-block' }} />
+            The Box
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: '#444', display: 'inline-block' }} />
+            Janitor's Closet
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: '#2a2a2a', border: '1px solid #555', display: 'inline-block' }} />
+            Practice Time
+          </span>
+        </div>
+      )}
+
       {/* Week data mode legend */}
       {mode === 'attend' && view === 'calendar' && dataMode === 'week' && (
         <div style={{ fontSize: 11, color: 'var(--grey)', marginBottom: 10, display: 'flex', gap: 14, alignItems: 'center' }}>
@@ -525,7 +583,7 @@ export default function AdminTimetable() {
       ) : view === 'calendar' ? (
         /* ── Calendar view (shared by both modes) ── */
         <CalendarGrid
-          sessions={sessions}
+          sessions={[...sessions, ...practiceSlots]}
           weekStart={weekStart}
           conflictIds={conflictIds}
           showConflicts={!conflictsDismissed}
