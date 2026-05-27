@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
-import { classes, categories as categoriesApi } from '../../api'
+import { classes, categories as categoriesApi, studios as studiosApi, seasons as seasonsApi } from '../../api'
 import { fmt12 } from '../../utils/time'
+import client from '../../api/client'
 
 const inputStyle = {
   width: '100%',
@@ -194,9 +195,20 @@ export default function AdminClassDetail() {
 
   const { data: categoriesData }   = useApi(() => categoriesApi.list(), [])
   const { data: allSessionsData }  = useApi(() => classes.list(), [])
+  const { data: studiosData }      = useApi(() => studiosApi.list(), [])
+  const { data: seasonsData }      = useApi(() => seasonsApi.list(), [])
+  const [instructors, setInstructors] = useState([])
+  useEffect(() => {
+    client.get('/api/users/?role=instructor').then(r => {
+      const users = r.data?.results || r.data || []
+      setInstructors(users)
+    })
+  }, [])
 
   const categoryList = categoriesData?.results || categoriesData || []
   const allSessions  = allSessionsData?.results || allSessionsData || []
+  const studioList   = studiosData?.results || studiosData || []
+  const seasonList   = seasonsData?.results || seasonsData || []
 
   const [form, setForm] = useState({
     name: '',
@@ -210,6 +222,13 @@ export default function AdminClassDetail() {
     prerequisites: '',
     skill_level: '',
     is_active: true,
+    season: '',
+    day_of_week: 0,
+    start_time: '18:00',
+    duration_minutes: 55,
+    capacity: 12,
+    instructor: '',
+    studio: '',
   })
   const [saving, setSaving]           = useState(false)
   const [error, setError]             = useState(null)
@@ -230,6 +249,13 @@ export default function AdminClassDetail() {
         prerequisites:        cls.prerequisites || '',
         skill_level:          cls.skill_level || '',
         is_active:            cls.is_active ?? true,
+        season:               cls.season || '',
+        day_of_week:          cls.day_of_week ?? 0,
+        start_time:           cls.start_time?.slice(0, 5) || '18:00',
+        duration_minutes:     cls.duration_minutes || 55,
+        capacity:             cls.capacity || 12,
+        instructor:           cls.instructor || '',
+        studio:               cls.studio || '',
       })
     }
   }, [cls])
@@ -259,6 +285,13 @@ export default function AdminClassDetail() {
         category:             form.category || null,
         skill_level:          form.skill_level || null,
         catchup_cutoff_weeks: form.catchup_cutoff_weeks !== '' ? parseInt(form.catchup_cutoff_weeks) : null,
+        season:               form.season || null,
+        instructor:           form.instructor || null,
+        studio:               form.studio || null,
+        start_time:           form.start_time ? form.start_time + ':00' : null,
+        day_of_week:          form.day_of_week,
+        duration_minutes:     form.duration_minutes ? parseInt(form.duration_minutes) : null,
+        capacity:             form.capacity ? parseInt(form.capacity) : null,
       }
       if (isNew) {
         await classes.create(payload)
@@ -294,7 +327,7 @@ export default function AdminClassDetail() {
               {isNew ? 'New Class' : (cls?.name || 'Edit Class')}
             </div>
             <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 2 }}>
-              Define the class type, description, and booking rules — scheduling is done in the Timetable.
+              Class setup — scheduling, descriptions, and booking rules.
             </div>
           </div>
         </div>
@@ -326,6 +359,65 @@ export default function AdminClassDetail() {
           {aiError}
         </div>
       )}
+
+      {/* Scheduling */}
+      <div style={sectionCard}>
+        <div style={sectionTitle}>Scheduling</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+          <div>
+            <label style={labelStyle}>Season</label>
+            <select style={inputStyle} value={form.season} onChange={e => set('season', e.target.value)}>
+              <option value="">— No season —</option>
+              {seasonList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={labelStyle}>Day</label>
+            <select style={inputStyle} value={form.day_of_week} onChange={e => set('day_of_week', parseInt(e.target.value))}>
+              {['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map((d,i) => (
+                <option key={i} value={i}>{d}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
+          <div>
+            <label style={labelStyle}>Start Time</label>
+            <input style={inputStyle} type="time" value={form.start_time} onChange={e => set('start_time', e.target.value)} />
+          </div>
+          <div>
+            <label style={labelStyle}>Duration (min)</label>
+            <input style={inputStyle} type="number" min="15" max="180" value={form.duration_minutes} onChange={e => set('duration_minutes', e.target.value)} />
+          </div>
+          <div>
+            <label style={labelStyle}>Capacity</label>
+            <input style={inputStyle} type="number" min="1" value={form.capacity} onChange={e => set('capacity', e.target.value)} />
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div>
+            <label style={labelStyle}>Instructor</label>
+            <select style={inputStyle} value={form.instructor} onChange={e => set('instructor', e.target.value)}>
+              <option value="">— None —</option>
+              {instructors.map(i => <option key={i.id} value={i.id}>{i.display_name || i.first_name + ' ' + i.last_name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={labelStyle}>Studio</label>
+            <select style={inputStyle} value={form.studio} onChange={e => {
+              set('studio', e.target.value)
+              const studio = studioList.find(s => String(s.id) === String(e.target.value))
+              if (studio) {
+                const poles = parseInt(studio.poles) || parseInt(studio.capacity) || null
+                if (poles) set('capacity', poles)
+              }
+            }}>
+              <option value="">— None —</option>
+              {studioList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
 
       {/* Class Details */}
       <div style={sectionCard}>

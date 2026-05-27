@@ -14,7 +14,7 @@ class UserMinimalSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'display_name', 'first_name', 'last_name', 'pronouns', 'role', 'date_of_birth', 'date_joined', 'total_classes_attended')
+        fields = ('id', 'display_name', 'first_name', 'last_name', 'pronouns', 'role', 'level', 'phone', 'date_of_birth', 'date_joined', 'total_classes_attended')
 
 
 class UserSerializer(serializers.ModelSerializer):

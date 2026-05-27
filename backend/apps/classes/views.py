@@ -2418,3 +2418,148 @@ RULES:
             return Response({'result': text})
         except Exception as e:
             return Response({'error': str(e)}, status=500)
+
+
+class ClassSeasonEnrolmentsView(APIView):
+    permission_classes = [IsAdminOrInstructor]
+
+    def get(self, request, pk):
+        from apps.enrolments.models import Enrolment, ClassChangeRequest
+
+        try:
+            session = ClassSession.objects.select_related('instructor', 'studio', 'season').get(pk=pk)
+        except ClassSession.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        season = session.season
+        season_id = season.id if season else None
+
+        PRICE_TIERS = [0, 270, 440, 580, 700, 800, 900]
+
+        def incremental_price(count):
+            if not count or count <= 0:
+                return None
+            idx = min(count, len(PRICE_TIERS) - 1)
+            return PRICE_TIERS[idx] - PRICE_TIERS[idx - 1]
+
+        def season_enrolment_count(student):
+            if not season_id:
+                return None
+            session_ids = ClassSession.objects.filter(season_id=season_id).values_list('id', flat=True)
+            return Enrolment.objects.filter(
+                student=student,
+                class_session_id__in=session_ids,
+                status='active',
+                enrolment_type='course',
+            ).count()
+
+        def is_new_to_duality(enrolment):
+            return not Enrolment.objects.filter(
+                student=enrolment.student,
+                enrolled_date__lt=enrolment.enrolled_date,
+                enrolment_type='course',
+            ).exists()
+
+        enrolled_qs = (
+            Enrolment.objects
+            .filter(class_session=session, status='active', enrolment_type='course')
+            .select_related('student')
+            .order_by('enrolled_date')
+        )
+
+        waitlist_qs = (
+            Enrolment.objects
+            .filter(class_session=session, status='waitlisted')
+            .select_related('student')
+            .order_by('waitlist_position', 'enrolled_date')
+        )
+
+        transfers_in = (
+            ClassChangeRequest.objects
+            .filter(requested_session=session, request_type='transfer')
+            .select_related('student', 'current_enrolment__class_session')
+        )
+
+        transfers_out = (
+            ClassChangeRequest.objects
+            .filter(current_enrolment__class_session=session, request_type='transfer')
+            .exclude(requested_session=session)
+            .select_related('student', 'requested_session')
+        )
+
+        enrolled_data = []
+        for e in enrolled_qs:
+            count = season_enrolment_count(e.student)
+            enrolled_data.append({
+                'id': e.id,
+                'student_id': e.student_id,
+                'student_name': e.student.display_name,
+                'student_level': e.student.level,
+                'enrolled_date': e.enrolled_date,
+                'is_first_visit': e.is_first_visit,
+                'level_override': e.level_override,
+                'flag_dismissed': e.flag_dismissed,
+                'is_new_to_duality': is_new_to_duality(e),
+                'season_enrolment_count': count,
+                'incremental_price': incremental_price(count),
+                'notes': e.notes,
+            })
+
+        waitlist_data = []
+        for e in waitlist_qs:
+            waitlist_data.append({
+                'id': e.id,
+                'student_id': e.student_id,
+                'student_name': e.student.display_name,
+                'student_level': e.student.level,
+                'waitlist_position': e.waitlist_position,
+                'enrolled_date': e.enrolled_date,
+            })
+
+        transfers_data = []
+        for t in transfers_in:
+            from_class = None
+            if t.current_enrolment and t.current_enrolment.class_session:
+                from_class = t.current_enrolment.class_session.name
+            transfers_data.append({
+                'id': t.id,
+                'direction': 'in',
+                'student_id': t.student_id,
+                'student_name': t.student.display_name,
+                'from_class': from_class,
+                'to_class': session.name,
+                'status': t.status,
+                'created_at': t.created_at,
+                'notes': t.notes,
+            })
+        for t in transfers_out:
+            transfers_data.append({
+                'id': t.id,
+                'direction': 'out',
+                'student_id': t.student_id,
+                'student_name': t.student.display_name,
+                'from_class': session.name,
+                'to_class': t.requested_session.name if t.requested_session else None,
+                'status': t.status,
+                'created_at': t.created_at,
+                'notes': t.notes,
+            })
+        transfers_data.sort(key=lambda x: x['created_at'], reverse=True)
+
+        return Response({
+            'session': {
+                'id': session.id,
+                'name': session.name,
+                'level': session.level,
+                'day_of_week': session.get_day_of_week_display(),
+                'start_time': str(session.start_time)[:5] if session.start_time else None,
+                'instructor': session.instructor.display_name if session.instructor else None,
+                'studio': session.studio.name if session.studio else None,
+                'season': season.name if season else None,
+                'capacity': session.capacity,
+                'enrolled_count': session.enrolled_count,
+            },
+            'enrolled': enrolled_data,
+            'waitlist': waitlist_data,
+            'transfers': transfers_data,
+        })

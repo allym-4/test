@@ -39,6 +39,7 @@ import AdminHelpdesk from './pages/admin/AdminHelpdesk'
 import AdminClasses from './pages/admin/AdminClasses'
 import AdminWorkshopDetail from './pages/admin/AdminWorkshopDetail'
 import AdminClassDetail from './pages/admin/AdminClassDetail'
+import AdminClassEnrolments from './pages/admin/AdminClassEnrolments'
 import AdminPaymentPlans from './pages/admin/AdminPaymentPlans'
 import AdminKisi from './pages/admin/AdminKisi'
 import AdminActionLog from './pages/admin/AdminActionLog'
@@ -195,6 +196,7 @@ export default function App() {
             <Route path="classes" element={<AdminClasses />} />
             <Route path="classes/new" element={<AdminClassDetail />} />
             <Route path="classes/:id" element={<AdminClassDetail />} />
+            <Route path="classes/:id/season-enrolments" element={<AdminClassEnrolments />} />
             <Route path="workshops/new" element={<AdminWorkshopDetail />} />
             <Route path="workshops/:id" element={<AdminWorkshopDetail />} />
             <Route path="payment-plans" element={<AdminPaymentPlans />} />

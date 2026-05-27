@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { classes, enrolments, attendance, payments, settings as settingsApi } from '../api'
 import { useApi } from '../hooks/useApi'
+import { useAuth } from '../contexts/AuthContext'
 import client from '../api/client'
 import './AttendancePage.css'
 import { fmt12 } from '../utils/time'
@@ -149,15 +150,198 @@ function ConvertTrialModal({ enrolment: e, onClose, onSuccess }) {
   )
 }
 
+function AddStudentModal({ sessionId, onClose, onAdded }) {
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState([])
+  const [searching, setSearching] = useState(false)
+  const [enrolType, setEnrolType] = useState('course')
+  const [adding, setAdding] = useState(null)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    if (!query.trim()) { setResults([]); return }
+    const t = setTimeout(async () => {
+      setSearching(true)
+      try {
+        const r = await client.get('/api/users/', { params: { search: query, role: 'student', limit: 10 } })
+        setResults(r.data?.results || r.data || [])
+      } finally { setSearching(false) }
+    }, 300)
+    return () => clearTimeout(t)
+  }, [query])
+
+  async function addStudent(student) {
+    setAdding(student.id)
+    setError(null)
+    try {
+      const r = await client.post('/api/enrolments/', { class_session: sessionId, student: student.id, enrolment_type: enrolType, status: 'active' })
+      onAdded(r.data)
+    } catch (err) {
+      setError(err.response?.data?.detail || err.response?.data?.non_field_errors?.[0] || 'Could not add student.')
+      setAdding(null)
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal-box" style={{ maxWidth: 460 }}>
+        <div className="modal-title">Add Student<button className="modal-close" onClick={onClose}>✕</button></div>
+        <div className="field">
+          <label>Enrolment Type</label>
+          <select value={enrolType} onChange={e => setEnrolType(e.target.value)}>
+            <option value="course">Course enrolment</option>
+            <option value="trial">Trial class</option>
+            <option value="casual">Casual drop-in</option>
+          </select>
+        </div>
+        <div className="field">
+          <label>Search student</label>
+          <input autoFocus placeholder="Name or email…" value={query} onChange={e => setQuery(e.target.value)} />
+        </div>
+        {error && <div style={{ fontSize: 13, color: 'var(--red)', marginBottom: 10 }}>{error}</div>}
+        {searching && <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 8 }}>Searching…</div>}
+        {results.map(s => (
+          <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #1e1e1e' }}>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 14 }}>{s.display_name || `${s.first_name} ${s.last_name}`}</div>
+              <div style={{ fontSize: 12, color: 'var(--grey)' }}>{s.level || 'No level'} · {s.email}</div>
+            </div>
+            <button className="btn btn-lime btn-xs" disabled={adding === s.id} onClick={() => addStudent(s)}>
+              {adding === s.id ? 'Adding…' : 'Add'}
+            </button>
+          </div>
+        ))}
+        <div className="modal-footer">
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function EmailAttendeesModal({ sessionId, occurrenceId, attendingStudents, onClose }) {
+  const [subject, setSubject] = useState('')
+  const [body, setBody] = useState('')
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
+  const [error, setError] = useState(null)
+
+  async function handleSend(e) {
+    e.preventDefault()
+    setSending(true)
+    setError(null)
+    try {
+      await client.post(`/api/classes/sessions/${sessionId}/email/`, { subject, body, occurrence: occurrenceId, recipients: 'attending' })
+      setSent(true)
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to send email.')
+    } finally { setSending(false) }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal-box" style={{ maxWidth: 500 }}>
+        <div className="modal-title">Email Attending Students<button className="modal-close" onClick={onClose}>✕</button></div>
+        {sent ? (
+          <div>
+            <div style={{ fontSize: 14, color: 'var(--lime)', marginBottom: 16 }}>✓ Email sent to {attendingStudents.length} student{attendingStudents.length !== 1 ? 's' : ''}.</div>
+            <div className="modal-footer"><button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button></div>
+          </div>
+        ) : (
+          <form onSubmit={handleSend}>
+            <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 12 }}>
+              Sending to {attendingStudents.length} attending student{attendingStudents.length !== 1 ? 's' : ''}.
+            </div>
+            {error && <div style={{ fontSize: 13, color: 'var(--red)', marginBottom: 10 }}>{error}</div>}
+            <div className="field"><label>Subject</label><input required value={subject} onChange={e => setSubject(e.target.value)} placeholder="e.g. Important update about today's class" /></div>
+            <div className="field"><label>Message</label><textarea required rows={5} value={body} onChange={e => setBody(e.target.value)} placeholder="Your message…" /></div>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+              <button type="submit" className="btn btn-lime btn-sm" disabled={sending}>{sending ? 'Sending…' : `Send to ${attendingStudents.length} students`}</button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function CancelClassModal({ occurrence, session, onClose, onCancelled }) {
+  const [reason, setReason] = useState('')
+  const [notifyStudents, setNotifyStudents] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+
+  async function handleCancel(e) {
+    e.preventDefault()
+    if (!occurrence) { setError('No occurrence found for today.'); return }
+    setSaving(true)
+    setError(null)
+    try {
+      await client.patch(`/api/classes/occurrences/${occurrence.id}/`, { status: 'cancelled', notes: reason })
+      if (notifyStudents && reason) {
+        await client.post(`/api/classes/sessions/${session.id}/email/`, {
+          subject: `Class cancelled — ${session.name}`,
+          body: `Hi everyone,\n\n${session.name} on ${occurrence.date} has been cancelled.\n\n${reason ? `Reason: ${reason}\n\n` : ''}Sorry for any inconvenience.\n\nDuality Pole Studio`,
+          occurrence: occurrence.id,
+          recipients: 'all',
+        }).catch(() => {})
+      }
+      onCancelled()
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Could not cancel the class.')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal-box" style={{ maxWidth: 420 }}>
+        <div className="modal-title" style={{ color: '#ff6b6b' }}>Cancel Class<button className="modal-close" onClick={onClose}>✕</button></div>
+        <form onSubmit={handleCancel}>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 14 }}>
+            This will cancel <b style={{ color: '#fff' }}>{session?.name}</b> for{' '}
+            {occurrence ? new Date(occurrence.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short' }) : 'today'} only.
+          </div>
+          {error && <div style={{ fontSize: 13, color: 'var(--red)', marginBottom: 10 }}>{error}</div>}
+          <div className="field">
+            <label>Reason <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(optional)</span></label>
+            <input value={reason} onChange={e => setReason(e.target.value)} placeholder="e.g. Instructor unwell" />
+          </div>
+          <div className="field">
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input type="checkbox" checked={notifyStudents} onChange={e => setNotifyStudents(e.target.checked)} style={{ accentColor: 'var(--lime)' }} />
+              Email enrolled students
+            </label>
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Keep Class</button>
+            <button type="submit" className="btn btn-sm" style={{ background: 'rgba(255,107,107,0.15)', color: '#ff6b6b', border: '1px solid rgba(255,107,107,0.3)' }} disabled={saving}>
+              {saving ? 'Cancelling…' : 'Confirm Cancel'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 export default function AttendancePage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
+  const isAdminPath = location.pathname.startsWith('/admin/')
+
   const [session, setSession]         = useState(null)
   const [occurrence, setOccurrence]   = useState(null)
   const [students, setStudents]       = useState([])
+  const [cancelledStudents, setCancelledStudents] = useState([])
   const [waitlist, setWaitlist]       = useState([])
   const [register, setRegister]       = useState({})
   const [balances, setBalances]       = useState({})
+  const [phones, setPhones]           = useState({})
   const [notes, setNotes]             = useState({})
   const [noteTags, setNoteTags]       = useState({})
   const [saving, setSaving]           = useState(false)
@@ -169,6 +353,10 @@ export default function AttendancePage() {
   const [noteTag, setNoteTag]         = useState('')
   const [saveBanner, setSaveBanner]   = useState(false)
   const [convertEnrol, setConvertEnrol] = useState(null)
+  const [addStudentModal, setAddStudentModal] = useState(false)
+  const [capacityOverride, setCapacityOverride] = useState(null)
+  const [emailModal, setEmailModal]   = useState(false)
+  const [cancelClassModal, setCancelClassModal] = useState(false)
 
   const today = new Date()
 
@@ -176,10 +364,11 @@ export default function AttendancePage() {
     async function load() {
       setLoading(true)
       try {
-        const [sessRes, occRes, enrolRes] = await Promise.all([
+        const [sessRes, occRes, enrolRes, cancelledRes] = await Promise.all([
           classes.get(id),
           classes.occurrences({ session: id }),
           enrolments.list({ session: id, status: 'active' }),
+          enrolments.list({ session: id, status: 'cancelled' }),
         ])
         const s = sessRes.data
         const occs = occRes.data.results || []
@@ -189,7 +378,9 @@ export default function AttendancePage() {
         setOccurrence(occ)
 
         const enrolled = enrolRes.data.results || []
+        const cancelled = cancelledRes.data.results || []
         setStudents(enrolled)
+        setCancelledStudents(cancelled)
 
         const initial = {}
         const initialNotes = {}
@@ -222,13 +413,16 @@ export default function AttendancePage() {
         setNoteTags(initialNoteTags)
 
         const balMap = {}
+        const phoneMap = {}
         await Promise.all(enrolled.map(async e => {
           try {
             const res = await payments.balance(e.student)
             balMap[e.student] = parseFloat(res.data.balance)
           } catch { balMap[e.student] = 0 }
+          if (e.student_detail?.phone) phoneMap[e.student] = e.student_detail.phone
         }))
         setBalances(balMap)
+        setPhones(phoneMap)
       } finally {
         setLoading(false)
       }
@@ -286,23 +480,61 @@ export default function AttendancePage() {
   if (loading) return <div className="loading-center"><div className="spinner" /></div>
 
   const shownStudents = tab === 'attending' ? attendingStudents : awayStudents
+  const isCancelledTab = tab === 'cancelled'
 
   return (
     <div className="att-page">
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
-        <Link to="/classes" style={{ fontSize: 12, color: 'var(--grey)', display: 'inline-block', marginBottom: 10, textDecoration: 'none' }}>← My Classes</Link>
-        <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, lineHeight: 1.2, marginBottom: 6 }}>{session?.name}</div>
-        <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 14 }}>
-          {occurrence ? new Date(occurrence.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : 'No occurrence today'}
-          {session?.start_time && <span> · {fmt12(session.start_time)}</span>}
-          {session?.studio_detail?.name && <span> · {session.studio_detail.name}</span>}
+        {/* Back link */}
+        {isAdminPath ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+            <button onClick={() => navigate('/admin/timetable')} style={{ background: 'none', border: 'none', color: 'var(--grey)', fontSize: 12, cursor: 'pointer', padding: 0 }}>← Timetable</button>
+            <Link to={`/admin/classes/${id}`} style={{ fontSize: 12, color: 'var(--lime)', textDecoration: 'none' }}>Edit Class</Link>
+            <Link to={`/admin/classes/${id}/season-enrolments`} style={{ fontSize: 12, color: 'var(--lav)', textDecoration: 'none' }}>Season Enrolments</Link>
+          </div>
+        ) : (
+          <Link to="/classes" style={{ fontSize: 12, color: 'var(--grey)', display: 'inline-block', marginBottom: 10, textDecoration: 'none' }}>← My Classes</Link>
+        )}
+
+        {/* Class info card */}
+        <div style={{ background: '#111', border: '1px solid var(--border, #222)', borderRadius: 12, padding: '16px 20px', marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+            <div>
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20, lineHeight: 1.2 }}>{session?.name}</div>
+              <div style={{ fontSize: 13, color: 'var(--grey)', marginTop: 6, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                {occurrence && <span>{new Date(occurrence.date + 'T00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}</span>}
+                {session?.start_time && <span>{fmt12(session.start_time)}</span>}
+                {session?.instructor_detail?.display_name && <span>{session.instructor_detail.display_name}</span>}
+                {session?.studio_detail?.name && <span>{session.studio_detail.name}</span>}
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: students.length >= (capacityOverride ?? session?.capacity ?? 0) ? '#ff6b6b' : 'var(--lime)' }}>
+                {students.length} / {capacityOverride ?? session?.capacity ?? '—'}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--grey)' }}>enrolled</div>
+            </div>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-ghost btn-sm" onClick={markAllPresent}>✓ All Present</button>
-          <button className={`btn btn-sm ${saved ? 'btn-ghost' : 'btn-lime'}`} onClick={handleSave} disabled={saving || !occurrence}>
+
+        {/* Action bar */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+          <button className="btn btn-lime btn-sm" onClick={markAllPresent}>Mark All Present</button>
+          <button className={`btn btn-sm ${saved ? 'btn-ghost' : 'btn-ghost'}`} style={{ border: '1px solid var(--border)' }} onClick={handleSave} disabled={saving || !occurrence}>
             {saving ? <span className="spinner" style={{ width: 14, height: 14 }} /> : saved ? '✓ Saved' : 'Save Register'}
           </button>
+          {isAdminPath && (
+            <>
+              <button className="btn btn-ghost btn-sm" onClick={() => setAddStudentModal(true)}>+ Add Student</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => {
+                const newCap = prompt('New capacity override:', capacityOverride ?? session?.capacity ?? '')
+                if (newCap && !isNaN(parseInt(newCap))) setCapacityOverride(parseInt(newCap))
+              }}>Override Capacity</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setEmailModal(true)}>Email Attending</button>
+              <button className="btn btn-ghost btn-sm" style={{ color: '#ff6b6b', borderColor: 'rgba(255,107,107,0.3)' }} onClick={() => setCancelClassModal(true)}>Cancel Class</button>
+            </>
+          )}
         </div>
       </div>
 
@@ -334,9 +566,10 @@ export default function AttendancePage() {
       {/* Tabs */}
       <div style={{ display: 'flex', borderBottom: '1px solid #1e1e1e', marginBottom: 16, overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
         {[
-          ['attending', `Attending (${attendingStudents.length})`],
+          ['attending', `Register (${attendingStudents.length})`],
           ['waitlist', `Waitlist (${waitlist.length})`],
           ['away', `Away (${awayStudents.length})`],
+          ['cancelled', `Cancelled (${cancelledStudents.length})`],
         ].map(([key, label]) => (
           <button
             key={key}
@@ -384,157 +617,284 @@ export default function AttendancePage() {
         </div>
       )}
 
-      {/* Attending / Away tabs */}
-      {tab !== 'waitlist' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {/* Cancelled tab */}
+      {tab === 'cancelled' && (
+        <div className="tbl-section">
+          {cancelledStudents.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--grey)', fontSize: 13 }}>No cancelled enrolments</div>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Level</th>
+                  <th>Type</th>
+                  <th>Cancelled</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cancelledStudents.map(e => {
+                  const st = e.student_detail
+                  return (
+                    <tr key={e.id}>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div className="avatar" style={{ background: avatarColor(st?.display_name || ''), width: 28, height: 28, fontSize: 12, flexShrink: 0 }}>
+                            {st?.first_name?.[0] || '?'}
+                          </div>
+                          <div>
+                            <div
+                              style={{ fontWeight: 600, fontSize: 14, cursor: 'pointer', textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.2)' }}
+                              onClick={() => navigate(isAdminPath ? `/admin/students/${e.student}` : `/students/${e.student}`)}
+                            >{st?.display_name}</div>
+                            {st?.pronouns && <div style={{ fontSize: 11, color: '#555' }}>{st.pronouns}</div>}
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ color: 'var(--grey)', fontSize: 12 }}>{st?.level || '—'}</td>
+                      <td>
+                        <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: '#1a1a1a', color: '#888' }}>
+                          {e.enrolment_type === 'trial' ? 'Trial' : e.enrolment_type === 'casual' ? 'Casual' : 'Enrolled'}
+                        </span>
+                      </td>
+                      <td style={{ color: 'var(--grey)', fontSize: 12 }}>
+                        {e.cancelled_date ? new Date(e.cancelled_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {/* Attending / Away tabs — table for admin, cards for others */}
+      {tab !== 'waitlist' && tab !== 'cancelled' && (
+        <>
           {shownStudents.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--grey)', fontSize: 13 }}>
               {tab === 'attending' ? 'No students attending' : 'No one marked away or cancelled'}
             </div>
-          ) : shownStudents.map(e => {
-            const st = e.student_detail
-            const status = register[e.student] || 'pending'
-            const owing = balances[e.student] < 0 ? Math.abs(balances[e.student]) : 0
-            const noteText_ = notes[e.student]
-            const noteTag_ = noteTags[e.student]
-            const isFirstTime = e.is_first_class || e.classes_attended === 0 || e.total_attendance === 0
-            const fromWaitlist = e.promoted_from_waitlist || e.from_waitlist
-            const milestones = getMilestones(st, today)
+          ) : isAdminPath ? (
+            /* ── Admin table view ── */
+            <div className="tbl-section">
+              <table>
+                <thead>
+                  <tr>
+                    <th style={{ minWidth: 200 }}>Student</th>
+                    <th>Type</th>
+                    <th>Contact</th>
+                    <th style={{ minWidth: 180 }}>Status</th>
+                    <th>Balance</th>
+                    <th style={{ minWidth: 160 }}>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {shownStudents.map(e => {
+                    const st = e.student_detail
+                    const status = register[e.student] || 'pending'
+                    const balance = balances[e.student]
+                    const noteText_ = notes[e.student] || ''
+                    const milestones = getMilestones(st, today)
+                    const isFirstTime = e.is_first_class || e.classes_attended === 0 || e.total_attendance === 0
 
-            return (
-              <div
-                key={e.student}
-                className="att-student-row"
-                style={{
-                  background: '#111', border: '1px solid #1e1e1e',
-                  borderRadius: 14, padding: '14px 16px',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                  {/* Avatar */}
-                  <div className="avatar" style={{ background: avatarColor(st?.display_name || ''), flexShrink: 0, marginTop: 2 }}>
-                    {st?.first_name?.[0] || '?'}
-                  </div>
+                    return (
+                      <tr key={e.student}>
+                        {/* Student */}
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div className="avatar" style={{ background: avatarColor(st?.display_name || ''), width: 32, height: 32, fontSize: 13, flexShrink: 0 }}>
+                              {st?.first_name?.[0] || '?'}
+                            </div>
+                            <div>
+                              <div
+                                style={{ fontWeight: 600, fontSize: 14, cursor: 'pointer', textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.2)' }}
+                                onClick={() => navigate(`/admin/students/${e.student}`)}
+                              >{st?.display_name}</div>
+                              {st?.pronouns && <div style={{ fontSize: 11, color: '#555' }}>{st.pronouns}</div>}
+                              {/* Milestone badges */}
+                              {(milestones.length > 0 || isFirstTime) && (
+                                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 3 }}>
+                                  {isFirstTime && (
+                                    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--lime)', background: 'rgba(204,255,0,0.08)', border: '1px solid rgba(204,255,0,0.2)', borderRadius: 4, padding: '1px 6px' }}>
+                                      First time
+                                    </span>
+                                  )}
+                                  {milestones.map((m, i) => (
+                                    <span key={i} style={{ fontSize: 10, fontWeight: 700, color: m.color, background: m.bg, border: `1px solid ${m.border}`, borderRadius: 4, padding: '1px 6px' }}>
+                                      {m.label}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
 
-                  {/* Left: identity + enrolment + callouts */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    {/* Name row */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 3 }}>
-                      <span
-                        style={{ fontWeight: 700, fontSize: 15, cursor: 'pointer', textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.2)' }}
-                        onClick={ev => { ev.stopPropagation(); navigate(`/students/${e.student}`) }}
-                      >{st?.display_name}</span>
-                      {st?.pronouns && <span style={{ fontSize: 12, color: '#555' }}>{st.pronouns}</span>}
-                    </div>
+                        {/* Type */}
+                        <td>
+                          {(() => {
+                            const typeMap = {
+                              trial:   { label: 'Trial',    bg: 'rgba(255,170,0,0.12)',   color: '#ffaa00' },
+                              casual:  { label: 'Casual',   bg: 'rgba(176,160,255,0.12)', color: '#b0a0ff' },
+                              makeup:  { label: 'Makeup',   bg: 'rgba(68,255,204,0.1)',   color: '#44ffcc' },
+                              course:  { label: 'Enrolled', bg: 'rgba(204,255,0,0.08)',   color: '#ccff00' },
+                            }
+                            const t = typeMap[e.enrolment_type] || { label: e.enrolment_type, bg: '#1a1a1a', color: '#888' }
+                            return (
+                              <div>
+                                <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: t.bg, color: t.color }}>
+                                  {t.label}
+                                </span>
+                                {e.enrolment_type === 'trial' && e.status === 'active' && (
+                                  <button className="btn btn-lime btn-xs" style={{ fontSize: 10, padding: '2px 8px', marginTop: 4, display: 'block' }}
+                                    onClick={() => setConvertEnrol(e)}>
+                                    Convert →
+                                  </button>
+                                )}
+                              </div>
+                            )
+                          })()}
+                        </td>
 
-                    {/* Enrolment type */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
-                      <span style={{ fontSize: 12, color: 'var(--grey)' }}>{enrollLabel(e, session)}</span>
-                      {e.enrolment_type === 'trial' && e.status === 'active' && (
-                        <button
-                          className="btn btn-lime btn-xs"
-                          style={{ fontSize: 10, padding: '2px 8px' }}
-                          onClick={ev => { ev.stopPropagation(); setConvertEnrol(e) }}
-                        >
-                          Convert to full →
-                        </button>
-                      )}
-                    </div>
+                        {/* Contact */}
+                        <td style={{ color: 'var(--grey)', fontSize: 12, whiteSpace: 'nowrap' }}>
+                          {st?.phone || phones[e.student] || '—'}
+                        </td>
 
-                    {/* Callout badges */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                      {isFirstTime && (
-                        <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--lime)', background: 'rgba(204,255,0,0.08)', border: '1px solid rgba(204,255,0,0.2)', borderRadius: 6, padding: '2px 8px' }}>
-                          🌟 FIRST TIME
-                        </span>
-                      )}
-                      {fromWaitlist && (
-                        <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--lav)', background: 'rgba(176,160,255,0.1)', border: '1px solid rgba(176,160,255,0.25)', borderRadius: 6, padding: '2px 8px' }}>
-                          WAITLIST PROMO
-                        </span>
-                      )}
-                      {owing > 0 && (
-                        <span style={{ fontSize: 11, fontWeight: 700, color: '#ff8888', background: 'rgba(255,80,80,0.08)', border: '1px solid rgba(255,80,80,0.25)', borderRadius: 6, padding: '2px 8px' }}>
-                          ⚠ ${Math.round(owing)} owing — collect today
-                        </span>
-                      )}
-                      {milestones.map((m, i) => (
-                        <span key={i} style={{ fontSize: 10, fontWeight: 700, color: m.color, background: m.bg, border: `1px solid ${m.border}`, borderRadius: 6, padding: '2px 8px' }}>
-                          {m.label}
-                        </span>
-                      ))}
-                    </div>
+                        {/* Status */}
+                        <td>
+                          <div>
+                            <select
+                              value={status}
+                              onChange={ev => setStatus(e.student, ev.target.value)}
+                              style={{
+                                background: '#0a0a0a',
+                                border: `1px solid ${STATUS_COLOR[status] || '#333'}55`,
+                                borderRadius: 6,
+                                padding: '5px 8px',
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: STATUS_COLOR[status] || '#fff',
+                                cursor: 'pointer',
+                                width: '100%',
+                                outline: 'none',
+                              }}
+                            >
+                              {STATUS_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                            </select>
+                            {status === 'no_show' && <div style={{ fontSize: 10, color: '#ff5050', marginTop: 2 }}>$20 fee will be charged</div>}
+                          </div>
+                        </td>
 
-                    {/* Inline note display */}
-                    {noteText_ && (
-                      <div style={{ marginTop: 8, display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                        {noteTag_ && (
-                          <span style={{ fontSize: 10, fontWeight: 700, color: NOTE_TAG_COLOR[noteTag_] || '#888', background: 'rgba(255,255,255,0.05)', border: `1px solid ${NOTE_TAG_COLOR[noteTag_] || '#333'}44`, borderRadius: 4, padding: '2px 6px', flexShrink: 0, marginTop: 1 }}>
-                            {noteTag_}
-                          </span>
-                        )}
-                        <span style={{ fontSize: 12, color: '#aaa', lineHeight: 1.4 }}>{noteText_}</span>
-                        <button
-                          onClick={() => { setNoteModal(e.student); setNoteText(notes[e.student] || ''); setNoteTag(noteTags[e.student] || '') }}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#555', fontSize: 11, padding: '1px 4px', flexShrink: 0 }}
-                        >Edit</button>
+                        {/* Balance */}
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          {balance === undefined ? (
+                            <span style={{ color: '#555' }}>—</span>
+                          ) : balance < 0 ? (
+                            <span style={{ fontSize: 12, fontWeight: 700, color: '#ff8888' }}>
+                              ${Math.abs(balance).toFixed(2)} owing
+                            </span>
+                          ) : (
+                            <span style={{ color: '#555' }}>—</span>
+                          )}
+                        </td>
+
+                        {/* Notes */}
+                        <td>
+                          {noteText_ ? (
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 4 }}>
+                              <span style={{ fontSize: 12, color: '#aaa', flex: 1 }}>{noteText_}</span>
+                              <button
+                                onClick={() => { setNoteModal(e.student); setNoteText(noteText_); setNoteTag(noteTags[e.student] || '') }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#555', fontSize: 11, padding: 0, flexShrink: 0 }}
+                              >Edit</button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => { setNoteModal(e.student); setNoteText(''); setNoteTag('') }}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#444', fontSize: 12 }}
+                            >+ Note</button>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            /* ── Instructor card view (non-admin) ── */
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {shownStudents.map(e => {
+                const st = e.student_detail
+                const status = register[e.student] || 'pending'
+                const owing = balances[e.student] < 0 ? Math.abs(balances[e.student]) : 0
+                const noteText_ = notes[e.student]
+                const noteTag_ = noteTags[e.student]
+                const isFirstTime = e.is_first_class || e.classes_attended === 0 || e.total_attendance === 0
+                const fromWaitlist = e.promoted_from_waitlist || e.from_waitlist
+                const milestones = getMilestones(st, today)
+
+                return (
+                  <div
+                    key={e.student}
+                    className="att-student-row"
+                    style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: 14, padding: '14px 16px' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                      <div className="avatar" style={{ background: avatarColor(st?.display_name || ''), flexShrink: 0, marginTop: 2 }}>
+                        {st?.first_name?.[0] || '?'}
                       </div>
-                    )}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 3 }}>
+                          <span style={{ fontWeight: 700, fontSize: 15 }}>{st?.display_name}</span>
+                          {st?.pronouns && <span style={{ fontSize: 12, color: '#555' }}>{st.pronouns}</span>}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+                          <span style={{ fontSize: 12, color: 'var(--grey)' }}>{enrollLabel(e, session)}</span>
+                          {e.enrolment_type === 'trial' && e.status === 'active' && (
+                            <button className="btn btn-lime btn-xs" style={{ fontSize: 10, padding: '2px 8px' }} onClick={() => setConvertEnrol(e)}>
+                              Convert to full →
+                            </button>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                          {isFirstTime && <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--lime)', background: 'rgba(204,255,0,0.08)', border: '1px solid rgba(204,255,0,0.2)', borderRadius: 6, padding: '2px 8px' }}>🌟 FIRST TIME</span>}
+                          {fromWaitlist && <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--lav)', background: 'rgba(176,160,255,0.1)', border: '1px solid rgba(176,160,255,0.25)', borderRadius: 6, padding: '2px 8px' }}>WAITLIST PROMO</span>}
+                          {owing > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: '#ff8888', background: 'rgba(255,80,80,0.08)', border: '1px solid rgba(255,80,80,0.25)', borderRadius: 6, padding: '2px 8px' }}>⚠ ${Math.round(owing)} owing</span>}
+                          {milestones.map((m, i) => <span key={i} style={{ fontSize: 10, fontWeight: 700, color: m.color, background: m.bg, border: `1px solid ${m.border}`, borderRadius: 6, padding: '2px 8px' }}>{m.label}</span>)}
+                        </div>
+                        {noteText_ && (
+                          <div style={{ marginTop: 8, display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                            {noteTag_ && <span style={{ fontSize: 10, fontWeight: 700, color: NOTE_TAG_COLOR[noteTag_] || '#888', background: 'rgba(255,255,255,0.05)', border: `1px solid ${NOTE_TAG_COLOR[noteTag_] || '#333'}44`, borderRadius: 4, padding: '2px 6px', flexShrink: 0, marginTop: 1 }}>{noteTag_}</span>}
+                            <span style={{ fontSize: 12, color: '#aaa', lineHeight: 1.4 }}>{noteText_}</span>
+                            <button onClick={() => { setNoteModal(e.student); setNoteText(notes[e.student] || ''); setNoteTag(noteTags[e.student] || '') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#555', fontSize: 11, padding: '1px 4px', flexShrink: 0 }}>Edit</button>
+                          </div>
+                        )}
+                      </div>
+                      <div className="att-right" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+                        {!noteText_ && (
+                          <button onClick={() => { setNoteModal(e.student); setNoteText(''); setNoteTag('') }} style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 8, cursor: 'pointer', padding: '5px 8px', fontSize: 11, color: 'var(--grey)' }}>+ Note</button>
+                        )}
+                        <select value={status} onChange={ev => setStatus(e.student, ev.target.value)} className="att-status-select"
+                          style={{ background: '#0a0a0a', border: `1px solid ${STATUS_COLOR[status] || '#333'}44`, borderRadius: 8, padding: '6px 10px', fontSize: 12, fontWeight: 600, color: STATUS_COLOR[status] || '#fff', cursor: 'pointer', minWidth: 170, outline: 'none' }}>
+                          {STATUS_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        </select>
+                        {status === 'no_show' && <span style={{ fontSize: 10, color: '#ff5050' }}>$20 fee will be charged</span>}
+                      </div>
+                    </div>
                   </div>
-
-                  {/* Right: add note + status */}
-                  <div className="att-right" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
-                    {/* Add note button (only when no note) */}
-                    {!noteText_ && (
-                      <button
-                        onClick={() => { setNoteModal(e.student); setNoteText(''); setNoteTag('') }}
-                        style={{
-                          background: '#1a1a1a', border: '1px solid #2a2a2a',
-                          borderRadius: 8, cursor: 'pointer',
-                          padding: '5px 8px', fontSize: 11,
-                          color: 'var(--grey)',
-                        }}
-                      >
-                        + Note
-                      </button>
-                    )}
-
-                    {/* Status select */}
-                    <select
-                      value={status}
-                      onChange={ev => setStatus(e.student, ev.target.value)}
-                      className="att-status-select"
-                      style={{
-                        background: '#0a0a0a',
-                        border: `1px solid ${STATUS_COLOR[status] || '#333'}44`,
-                        borderRadius: 8,
-                        padding: '6px 10px',
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: STATUS_COLOR[status] || '#fff',
-                        cursor: 'pointer',
-                        minWidth: 170,
-                        outline: 'none',
-                      }}
-                    >
-                      {STATUS_OPTS.map(o => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                      ))}
-                    </select>
-
-                    {status === 'no_show' && (
-                      <span style={{ fontSize: 10, color: '#ff5050' }}>$20 fee will be charged</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
+                )
+              })}
+            </div>
+          )}
+        </>
       )}
 
       {/* Bottom save */}
-      {tab !== 'waitlist' && (
+      {tab !== 'waitlist' && tab !== 'cancelled' && (
         <div style={{ marginTop: 16, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
           <button className="btn btn-ghost btn-sm" onClick={markAllPresent}>Mark All Present</button>
           <button className={`btn btn-sm ${saved ? 'btn-ghost' : 'btn-lime'}`} onClick={handleSave} disabled={saving || !occurrence}>
@@ -554,28 +914,20 @@ export default function AttendancePage() {
         />
       )}
 
+      {/* Note modal */}
       {noteModal && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setNoteModal(null)}>
           <div className="modal-box">
             <div className="modal-title">
-              Add a Note — {students.find(e => e.student === noteModal)?.student_detail?.display_name}
+              Note — {students.find(e => e.student === noteModal)?.student_detail?.display_name}
               <button className="modal-close" onClick={() => setNoteModal(null)}>✕</button>
             </div>
             <div className="field">
               <label>Tag</label>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 4 }}>
                 {NOTE_TAGS.map(t => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setNoteTag(noteTag === t.id ? '' : t.id)}
-                    style={{
-                      padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                      background: noteTag === t.id ? `${t.color}22` : '#1a1a1a',
-                      border: `1px solid ${noteTag === t.id ? t.color : '#2a2a2a'}`,
-                      color: noteTag === t.id ? t.color : '#888',
-                    }}
-                  >
+                  <button key={t.id} type="button" onClick={() => setNoteTag(noteTag === t.id ? '' : t.id)}
+                    style={{ padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: noteTag === t.id ? `${t.color}22` : '#1a1a1a', border: `1px solid ${noteTag === t.id ? t.color : '#2a2a2a'}`, color: noteTag === t.id ? t.color : '#888' }}>
                     {t.label}
                   </button>
                 ))}
@@ -583,33 +935,53 @@ export default function AttendancePage() {
             </div>
             <div className="field">
               <label>Note</label>
-              <textarea
-                rows={3}
-                value={noteText}
-                onChange={e => setNoteText(e.target.value)}
-                placeholder="e.g. Arrived late, left early, wrist injury noted…"
-                autoFocus
-              />
+              <textarea rows={3} value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="e.g. Arrived late, left early, wrist injury noted…" autoFocus />
             </div>
             <div className="modal-footer">
               <button className="btn btn-ghost btn-sm" onClick={() => setNoteModal(null)}>Cancel</button>
               {notes[noteModal] && (
-                <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }} onClick={() => {
-                  setNotes(n => ({ ...n, [noteModal]: '' }))
-                  setNoteTags(t => ({ ...t, [noteModal]: '' }))
-                  setNoteModal(null)
-                  setSaved(false)
-                }}>Remove</button>
+                <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }} onClick={() => { setNotes(n => ({ ...n, [noteModal]: '' })); setNoteTags(t => ({ ...t, [noteModal]: '' })); setNoteModal(null); setSaved(false) }}>Remove</button>
               )}
-              <button className="btn btn-lime btn-sm" onClick={() => {
-                setNotes(n => ({ ...n, [noteModal]: noteText }))
-                setNoteTags(t => ({ ...t, [noteModal]: noteTag }))
-                setNoteModal(null)
-                setSaved(false)
-              }}>Save Note</button>
+              <button className="btn btn-lime btn-sm" onClick={() => { setNotes(n => ({ ...n, [noteModal]: noteText })); setNoteTags(t => ({ ...t, [noteModal]: noteTag })); setNoteModal(null); setSaved(false) }}>Save Note</button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Add Student modal */}
+      {addStudentModal && (
+        <AddStudentModal
+          sessionId={id}
+          onClose={() => setAddStudentModal(false)}
+          onAdded={(newEnrolment) => {
+            setStudents(prev => [...prev, newEnrolment])
+            setRegister(r => ({ ...r, [newEnrolment.student]: 'pending' }))
+            setAddStudentModal(false)
+          }}
+        />
+      )}
+
+      {/* Email modal */}
+      {emailModal && (
+        <EmailAttendeesModal
+          sessionId={id}
+          occurrenceId={occurrence?.id}
+          attendingStudents={attendingStudents}
+          onClose={() => setEmailModal(false)}
+        />
+      )}
+
+      {/* Cancel class modal */}
+      {cancelClassModal && (
+        <CancelClassModal
+          occurrence={occurrence}
+          session={session}
+          onClose={() => setCancelClassModal(false)}
+          onCancelled={() => {
+            setCancelClassModal(false)
+            navigate('/admin/timetable')
+          }}
+        />
       )}
     </div>
   )
