@@ -967,7 +967,7 @@ export default function AdminStudentDetail() {
     setLoadingChat(true)
     Promise.all([
       client.get('/api/users/assistant/chats/', { params: { user_id: student.id } })
-        .then(res => res.data || []).catch(() => []),
+        .then(res => res.data?.results || (Array.isArray(res.data) ? res.data : [])).catch(() => []),
       helpdesk.conversations({ student: student.id })
         .then(res => res.data?.results || res.data || []).catch(() => []),
     ]).then(([botMsgs, convos]) => {
