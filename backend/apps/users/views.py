@@ -1254,6 +1254,17 @@ class TagDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAdminOrInstructor]
 
 
+class ApplyTagRulesView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request):
+        from django.core.management import call_command
+        from io import StringIO
+        out = StringIO()
+        call_command('apply_tag_rules', stdout=out)
+        return Response({'output': out.getvalue()})
+
+
 class StudentTagView(APIView):
     permission_classes = [IsAdminOrInstructor]
 

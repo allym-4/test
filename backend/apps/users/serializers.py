@@ -299,7 +299,7 @@ class StudentSkillSerializer(serializers.ModelSerializer):
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = ('id', 'name', 'colour', 'auto_rule', 'is_manual', 'created_at')
+        fields = ('id', 'name', 'colour', 'auto_rule', 'is_manual', 'rule_type', 'rule_params', 'created_at')
         read_only_fields = ('id', 'created_at')
 
 
