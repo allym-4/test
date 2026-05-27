@@ -87,14 +87,15 @@ export default function StudentAccount() {
 
   async function handleLostKey() {
     if (!lockerData?.id) return
+    if (!window.confirm('Report your key as lost? A $50 replacement fee will be added to your account and we\'ll be in touch to arrange a new key.')) return
     try {
       await lockersApi.lostKey(lockerData.id)
-      setKeyLostMsg('Reported — we\'ll be in touch about the replacement fee.')
+      setKeyLostMsg('Reported — a $50 fee has been added. We\'ll be in touch about your replacement key.')
       refetchLocker()
-    } catch {
-      setKeyLostMsg('Something went wrong. Please email us.')
+    } catch (err) {
+      setKeyLostMsg(err.response?.data?.detail || 'Something went wrong. Please email us.')
     }
-    setTimeout(() => setKeyLostMsg(''), 6000)
+    setTimeout(() => setKeyLostMsg(''), 8000)
   }
   const myReferrals = referralData?.results || referralData || []
   const creditedReferrals = myReferrals.filter(r => r.status === 'credited')

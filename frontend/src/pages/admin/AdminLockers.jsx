@@ -181,6 +181,7 @@ export default function AdminLockers() {
   // Stats
   const activeLockers = lockerList.filter(l => l.status !== 'pending_return')
   const pendingReturnLockers = lockerList.filter(l => l.status === 'pending_return')
+  const lostKeyLockers = lockerList.filter(l => l.key_lost)
   const freeLockers = activeLockers.filter(l => l.locker_type === 'complimentary').length
   const paidLockers = activeLockers.filter(l => l.locker_type === 'paid').length
   const overdue = activeLockers.filter(l => l.locker_type === 'paid' && l.payment_status === 'unpaid').length
@@ -328,6 +329,19 @@ export default function AdminLockers() {
           if (num >= 1 && num <= TOTAL_LOCKERS) openAssign(num)
         }}>+ Assign Locker</button>
       </div>
+
+      {/* Lost keys alert banner */}
+      {lostKeyLockers.length > 0 && (
+        <div style={{ background: 'rgba(255,68,68,0.08)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 10, padding: '12px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <div style={{ fontWeight: 700, color: 'var(--red)', marginBottom: 4 }}>⚠ {lostKeyLockers.length} Lost Key{lostKeyLockers.length > 1 ? 's' : ''} Reported</div>
+            <div style={{ fontSize: 12, color: '#aaa' }}>
+              {lostKeyLockers.map(l => `${l.assigned_to_detail?.display_name || 'Unknown'} — Locker #${l.number}`).join(' · ')}
+            </div>
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--grey)', flexShrink: 0 }}>Change lock &amp; issue new key, then click "Reset Key" on each locker.</div>
+        </div>
+      )}
 
       {/* Tab switcher */}
       {showNextSeasonTab && (

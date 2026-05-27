@@ -500,17 +500,37 @@ export default function AdminBilling() {
                               {nextDueDate ? new Date(nextDueDate + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : '—'}
                             </td>
                             <td>
-                              <span className={`tag ${plan.status === 'active' ? 'tag-lime' : plan.status === 'completed' ? 'tag-grey' : 'tag-amber'}`} style={{ fontSize: 10 }}>
-                                {plan.status}
-                              </span>
+                              {(() => {
+                                const isOverdue = (plan.instalments || []).some(i => i.status === 'overdue')
+                                const label = plan.status === 'completed' ? (remaining > 0.01 ? 'completed?' : 'completed') : isOverdue ? 'overdue' : plan.status
+                                const cls = plan.status === 'completed' ? (remaining > 0.01 ? 'tag-amber' : 'tag-grey') : isOverdue ? 'tag-red' : plan.status === 'active' ? 'tag-lime' : 'tag-amber'
+                                return <span className={`tag ${cls}`} style={{ fontSize: 10 }}>{label}</span>
+                              })()}
                             </td>
                             <td style={{ whiteSpace: 'nowrap' }}>
-                              {plan.status === 'active' && (
+                              {plan.status === 'active' && pendingInstalments.length > 0 && (
                                 <button
                                   className="btn btn-ghost btn-xs"
-                                  onClick={() => payments.plans.update(plan.id, { status: 'completed' }).then(refetchPlans)}
+                                  style={{ color: 'var(--lime)', fontSize: 11 }}
+                                  onClick={async () => {
+                                    const next = [...pendingInstalments].sort((a, b) => a.due_date.localeCompare(b.due_date))[0]
+                                    if (!next) return
+                                    if (!window.confirm(`Mark $${parseFloat(next.amount).toFixed(2)} instalment as paid?`)) return
+                                    await payments.plans.updateInstalment(next.id, { status: 'paid', paid_date: new Date().toISOString().slice(0, 10) })
+                                    refetchPlans()
+                                  }}
                                 >
-                                  Record Payment
+                                  Mark Next Paid
+                                </button>
+                              )}
+                              {plan.status === 'completed' && remaining > 0.01 && (
+                                <button
+                                  className="btn btn-ghost btn-xs"
+                                  style={{ color: 'var(--amber)', fontSize: 11 }}
+                                  title="Plan was marked completed but still has an outstanding balance"
+                                  onClick={() => payments.plans.update(plan.id, { status: 'active' }).then(refetchPlans)}
+                                >
+                                  Reopen
                                 </button>
                               )}
                             </td>
