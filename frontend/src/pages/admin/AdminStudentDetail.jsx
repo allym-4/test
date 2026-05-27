@@ -1133,6 +1133,34 @@ export default function AdminStudentDetail() {
                   <span style={{ fontSize: 18, opacity: 0.5 }}>→</span>
                 </div>
 
+                {/* ID check required */}
+                {student.id_check_required && (
+                  <div style={{
+                    marginBottom: 14, borderRadius: 10, padding: '14px 18px',
+                    background: 'rgba(255,170,0,0.1)', border: '1px solid rgba(255,170,0,0.35)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+                  }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--amber)' }}>⚠ ID check required</div>
+                      <div style={{ fontSize: 12, color: '#aaa', marginTop: 3 }}>
+                        This student registered close to the 18+ age requirement. Please verify their ID before allowing bookings.
+                      </div>
+                    </div>
+                    <button
+                      className="btn btn-ghost btn-xs"
+                      style={{ borderColor: 'rgba(255,170,0,0.4)', color: 'var(--amber)', flexShrink: 0 }}
+                      onClick={async () => {
+                        try {
+                          const res = await client.patch(`/api/users/${student.id}/`, { id_check_required: false })
+                          setStudent(s => ({ ...s, id_check_required: false }))
+                        } catch { alert('Failed to update — try again.') }
+                      }}
+                    >
+                      Mark ID verified ✓
+                    </button>
+                  </div>
+                )}
+
                 {/* Important notes (medical / injury / permanent) */}
                 {(notesData || []).filter(n => !n.archived && (n.is_permanent || n.tag === 'medical' || n.tag === 'injury')).length > 0 && (
                   <div style={{ marginBottom: 14 }}>

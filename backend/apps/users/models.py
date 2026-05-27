@@ -22,6 +22,7 @@ class User(AbstractUser):
     auto_charge_saved_card = models.BooleanField(default=False)
     booking_blocked = models.BooleanField(default=False)
     blocked_at = models.DateTimeField(null=True, blank=True, help_text='When booking_blocked was last set to True')
+    id_check_required = models.BooleanField(default=False, help_text='Flag for admin to verify this student is 18+. Auto-set when DOB is within 1 year of 18th birthday at registration.')
 
     bio = models.TextField(blank=True, help_text='Public bio shown on the Team page')
     instructor_tagline = models.CharField(max_length=200, blank=True, help_text='Short subtitle shown under the name on the Team page')
