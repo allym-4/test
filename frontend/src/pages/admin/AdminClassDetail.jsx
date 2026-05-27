@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
 import { classes, categories as categoriesApi, studios as studiosApi, seasons as seasonsApi } from '../../api'
 import { fmt12 } from '../../utils/time'
@@ -182,7 +182,16 @@ function UpsellsPanel({ sessionId, allSessions, sessionName }) {
 export default function AdminClassDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const isNew = !id || id === 'new'
+
+  function goBack() {
+    if (location.key !== 'default') {
+      navigate(-1)
+    } else {
+      navigate('/admin/classes')
+    }
+  }
 
   const [cls, setCls]         = useState(null)
   const [loading, setLoading] = useState(!isNew)
@@ -234,6 +243,7 @@ export default function AdminClassDetail() {
   const [error, setError]             = useState(null)
   const [aiLoading, setAiLoading]     = useState(null) // 'description' | 'first_timer_body' | null
   const [aiError, setAiError]         = useState(null)
+  const [copyFromId, setCopyFromId]   = useState('')
 
   useEffect(() => {
     if (cls) {
@@ -261,6 +271,29 @@ export default function AdminClassDetail() {
   }, [cls])
 
   function set(k, v) { setForm(f => ({ ...f, [k]: v })) }
+
+  function copyFromSession(sessionId) {
+    if (!sessionId) { setCopyFromId(''); return }
+    const src = allSessions.find(s => String(s.id) === String(sessionId))
+    if (!src) return
+    setCopyFromId(sessionId)
+    setForm(f => ({
+      ...f,
+      name:                 src.name || f.name,
+      description:          src.description || f.description,
+      first_timer_headline: src.first_timer_headline || f.first_timer_headline,
+      first_timer_body:     src.first_timer_body || f.first_timer_body,
+      catchup_cutoff_weeks: src.catchup_cutoff_weeks ?? f.catchup_cutoff_weeks,
+      level:                src.level || f.level,
+      session_type:         src.session_type || f.session_type,
+      duration_minutes:     src.duration_minutes || f.duration_minutes,
+      capacity:             src.capacity || f.capacity,
+      category:             src.category || f.category,
+      prerequisites:        src.prerequisites || f.prerequisites,
+      skill_level:          src.skill_level || f.skill_level,
+      // Do NOT copy: season, instructor, studio, day_of_week, start_time
+    }))
+  }
 
   async function generateWithAI(field) {
     setAiLoading(field)
@@ -298,7 +331,7 @@ export default function AdminClassDetail() {
       } else {
         await classes.update(id, payload)
       }
-      navigate('/admin/classes')
+      goBack()
     } catch (err) {
       setError(err.response?.data ? JSON.stringify(err.response.data) : 'Save failed')
       setSaving(false)
@@ -318,10 +351,11 @@ export default function AdminClassDetail() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Link
-            to="/admin/classes"
-            style={{ color: 'var(--grey)', textDecoration: 'none', fontSize: 20, lineHeight: 1, display: 'flex', alignItems: 'center' }}
-          >←</Link>
+          <button
+            type="button"
+            onClick={goBack}
+            style={{ background: 'none', border: 'none', color: 'var(--grey)', textDecoration: 'none', fontSize: 20, lineHeight: 1, display: 'flex', alignItems: 'center', cursor: 'pointer', padding: 0 }}
+          >←</button>
           <div>
             <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: 'var(--white, #fff)' }}>
               {isNew ? 'New Class' : (cls?.name || 'Edit Class')}
@@ -341,7 +375,7 @@ export default function AdminClassDetail() {
             </div>
             {form.is_active ? 'Active' : 'Inactive'}
           </label>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => navigate('/admin/classes')}>Cancel</button>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={goBack}>Cancel</button>
           <button type="submit" className="btn btn-lime btn-sm" disabled={saving}>
             {saving ? 'Saving…' : isNew ? 'Create Class' : 'Save Changes'}
           </button>
@@ -357,6 +391,40 @@ export default function AdminClassDetail() {
       {aiError && (
         <div style={{ background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--red, #e05555)', marginBottom: 20 }}>
           {aiError}
+        </div>
+      )}
+
+      {/* Copy settings from existing class (new only) */}
+      {isNew && allSessions.length > 0 && (
+        <div style={{ ...sectionCard, borderColor: 'rgba(204,255,0,0.15)' }}>
+          <div style={sectionTitle}>Copy settings from</div>
+          <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 12 }}>
+            Quickly populate this class from an existing one. Scheduling fields (season, instructor, studio, day, time) are left for you to set.
+          </div>
+          <select
+            style={inputStyle}
+            value={copyFromId}
+            onChange={e => copyFromSession(e.target.value)}
+          >
+            <option value="">— Select a class to copy from —</option>
+            {[...allSessions]
+              .sort((a, b) => {
+                const nameCompare = (a.name || '').localeCompare(b.name || '')
+                if (nameCompare !== 0) return nameCompare
+                return (b.season_start_date || '') > (a.season_start_date || '') ? 1 : -1
+              })
+              .map(s => (
+                <option key={s.id} value={s.id}>
+                  {s.name}{s.season_name || s.season_detail?.name ? ` — ${s.season_name || s.season_detail?.name}` : ''}
+                </option>
+              ))
+            }
+          </select>
+          {copyFromId && (
+            <div style={{ fontSize: 12, color: 'var(--lime)', marginTop: 8 }}>
+              ✓ Settings copied — review and adjust below.
+            </div>
+          )}
         </div>
       )}
 
@@ -440,7 +508,10 @@ export default function AdminClassDetail() {
           </div>
         </div>
         <div style={{ marginBottom: 16 }}>
-          <label style={labelStyle}>Category</label>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+            <label style={{ ...labelStyle, marginBottom: 0 }}>Category</label>
+            <Link to="/admin/categories" style={{ fontSize: 11, color: 'var(--lime)', textDecoration: 'none' }}>Manage categories →</Link>
+          </div>
           <select style={inputStyle} value={form.category} onChange={e => set('category', e.target.value)}>
             <option value="">— None —</option>
             {categoryList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -580,7 +651,7 @@ export default function AdminClassDetail() {
 
       {/* Bottom save */}
       <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', paddingBottom: 40 }}>
-        <button type="button" className="btn btn-ghost" onClick={() => navigate('/admin/classes')}>Cancel</button>
+        <button type="button" className="btn btn-ghost" onClick={goBack}>Cancel</button>
         <button type="submit" className="btn btn-lime" disabled={saving}>
           {saving ? 'Saving…' : isNew ? 'Create Class' : 'Save Changes'}
         </button>
