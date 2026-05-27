@@ -903,6 +903,7 @@ class ClassChangeRequestListCreateView(generics.ListCreateAPIView):
         change_request = serializer.save(
             student=student,
             admin_initiated=is_staff,
+            submitted_by=user,
         )
 
         from apps.helpdesk.models import Ticket, TicketMessage
@@ -944,16 +945,10 @@ class ClassChangeRequestListCreateView(generics.ListCreateAPIView):
         change_request.ticket = ticket
         change_request.save(update_fields=['ticket'])
 
-        # Auto-hold the spot if this is a transfer request and only 1 spot remains
+        # Always hold the spot for transfer requests so admin knows a place is being reserved
         if request_type == 'transfer' and change_request.requested_session_id:
-            target_session = change_request.requested_session
-            if target_session and target_session.capacity:
-                active_count = Enrolment.objects.filter(
-                    class_session=target_session, status='active'
-                ).count()
-                if active_count == target_session.capacity - 1:
-                    change_request.spot_held = True
-                    change_request.save(update_fields=['spot_held'])
+            change_request.spot_held = True
+            change_request.save(update_fields=['spot_held'])
 
         from apps.users.models import Notification
         Notification.objects.create(

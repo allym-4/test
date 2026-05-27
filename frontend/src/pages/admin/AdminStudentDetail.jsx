@@ -1906,13 +1906,20 @@ export default function AdminStudentDetail() {
                                       {req.current_enrolment_detail?.class_session_detail?.name || 'Unknown class'}
                                     </div>
                                     {req.requested_session_detail && (
-                                      <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 4 }}>→ {req.requested_session_detail.name}</div>
+                                      <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 2 }}>
+                                        → {req.requested_session_detail.name}
+                                        {req.requested_season_name && <span style={{ color: 'var(--lime)', marginLeft: 6 }}>{req.requested_season_name}</span>}
+                                      </div>
+                                    )}
+                                    {req.spot_held && (
+                                      <div style={{ fontSize: 11, color: '#ffaa00', marginBottom: 4 }}>● Spot held in requested class</div>
                                     )}
                                     {req.notes && (
                                       <div style={{ fontSize: 12, color: 'var(--white)', marginTop: 4, padding: '6px 10px', background: '#1a1a1a', borderRadius: 6 }}>"{req.notes}"</div>
                                     )}
-                                    <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 6 }}>
-                                      {new Date(req.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                    <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                      <span>Requested: {new Date(req.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                      <span>Submitted by: {req.submitted_by_name || (req.admin_initiated ? 'Admin' : 'Student')}</span>
                                     </div>
                                   </div>
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end', flexShrink: 0 }}>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
-import { classes, enrolments, attendance, payments, settings as settingsApi } from '../api'
+import { classes, enrolments, attendance, payments, settings as settingsApi, homework } from '../api'
 import { useApi } from '../hooks/useApi'
 import { useAuth } from '../contexts/AuthContext'
 import client from '../api/client'
@@ -555,6 +555,15 @@ export default function AttendancePage() {
   const [contactModal, setContactModal] = useState(false)
   const [cancelClassModal, setCancelClassModal] = useState(false)
   const [preMarkedAwayIds, setPreMarkedAwayIds] = useState(new Set())
+  const [instructorNotes, setInstructorNotes] = useState('')
+  const [savingNotes, setSavingNotes] = useState(false)
+  const [hwList, setHwList] = useState([])
+  const [showAddHw, setShowAddHw] = useState(false)
+  const [newHwTitle, setNewHwTitle] = useState('')
+  const [newHwDesc, setNewHwDesc] = useState('')
+  const [newHwDue, setNewHwDue] = useState('')
+  const [savingHw, setSavingHw] = useState(false)
+  const [showArchivedHw, setShowArchivedHw] = useState(false)
 
   const today = new Date()
 
@@ -602,6 +611,11 @@ export default function AttendancePage() {
         const todayStr = new Date().toISOString().slice(0, 10)
         const occ = occs.find(o => o.date === todayStr) || occs[0] || null
         setSession(s)
+        setInstructorNotes(s.instructor_notes || '')
+        try {
+          const hwRes = await homework.list({ session: id })
+          setHwList(hwRes.data?.results || hwRes.data || [])
+        } catch { setHwList([]) }
         setOccurrences(occs)
         setOccurrence(occ)
 
@@ -830,62 +844,6 @@ export default function AttendancePage() {
           </div>
         )}
 
-        {/* This Week's Plan — instructor view only */}
-        {!isAdminPath && currentWeekNum && (() => {
-          const syllabusEntry = Array.isArray(session?.syllabus)
-            ? session.syllabus.find(e => e.week === currentWeekNum)
-            : null
-          const hasEntry = syllabusEntry && (syllabusEntry.title || syllabusEntry.content || syllabusEntry.moves)
-          const hasNotes = session?.instructor_notes?.trim()
-          if (!hasEntry && !hasNotes) return null
-          return (
-            <div style={{
-              background: '#111', border: '1px solid var(--border, #222)', borderRadius: 12,
-              padding: '16px 20px', marginBottom: 16,
-            }}>
-              <div style={{
-                fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em',
-                color: 'var(--lime)', marginBottom: hasEntry ? 10 : 0,
-              }}>
-                Week {currentWeekNum} Plan
-              </div>
-              {hasEntry && (
-                <div>
-                  {syllabusEntry.title && (
-                    <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 6 }}>{syllabusEntry.title}</div>
-                  )}
-                  {syllabusEntry.content && (
-                    <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.5, marginBottom: syllabusEntry.moves ? 8 : 0, whiteSpace: 'pre-wrap' }}>
-                      {syllabusEntry.content}
-                    </div>
-                  )}
-                  {syllabusEntry.moves && (
-                    <div style={{ fontSize: 12, color: '#aaa', marginTop: 4 }}>
-                      <span style={{ color: 'var(--grey)', fontWeight: 600 }}>Moves: </span>
-                      {syllabusEntry.moves}
-                    </div>
-                  )}
-                </div>
-              )}
-              {hasNotes && (
-                <div style={{
-                  marginTop: hasEntry ? 14 : 0,
-                  background: 'rgba(255,170,0,0.06)',
-                  border: '1px solid rgba(255,170,0,0.25)',
-                  borderRadius: 8, padding: '10px 14px',
-                }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#ffaa00', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
-                    Instructor Notes
-                  </div>
-                  <div style={{ fontSize: 13, color: '#ccc', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
-                    {session.instructor_notes}
-                  </div>
-                </div>
-              )}
-            </div>
-          )
-        })()}
-
         {/* Action bar */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
           <button className="btn btn-lime btn-sm" onClick={markAllPresent}>Mark All Present</button>
@@ -901,9 +859,13 @@ export default function AttendancePage() {
               }}>Override Capacity</button>
               <button className="btn btn-ghost btn-sm" onClick={() => setContactModal(true)}>Message Class</button>
               <button className="btn btn-ghost btn-sm" style={{ color: '#ff6b6b', borderColor: 'rgba(255,107,107,0.3)' }} onClick={() => setCancelClassModal(true)}>Cancel Class</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => { setTab('homework'); setShowAddHw(true) }}>Add Homework</button>
             </>
           ) : (
-            <button className="btn btn-ghost btn-sm" onClick={() => setContactModal(true)}>Message Class</button>
+            <>
+              <button className="btn btn-ghost btn-sm" onClick={() => setContactModal(true)}>Message Class</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => { setTab('homework'); setShowAddHw(true) }}>Add Homework</button>
+            </>
           )}
         </div>
       </div>
@@ -940,6 +902,9 @@ export default function AttendancePage() {
           ['waitlist', `Waitlist (${waitlist.length})`],
           ['away', `Away (${awayStudents.length})`],
           ['cancelled', `Cancelled (${cancelledStudents.length})`],
+          ['syllabus', 'Syllabus'],
+          ['notes', 'Notes'],
+          ['homework', `Homework${hwList.filter(h => h.status === 'active').length > 0 ? ` (${hwList.filter(h => h.status === 'active').length})` : ''}`],
         ].map(([key, label]) => (
           <button
             key={key}
@@ -1264,6 +1229,209 @@ export default function AttendancePage() {
             </div>
           )}
         </>
+      )}
+
+      {/* Syllabus tab */}
+      {tab === 'syllabus' && (
+        <div>
+          {(!session?.syllabus || session.syllabus.length === 0) ? (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--grey)', fontSize: 13 }}>
+              No syllabus added yet. {isAdminPath && <Link to={`/admin/classes/${id}`} style={{ color: 'var(--lime)' }}>Edit in class settings →</Link>}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[...session.syllabus]
+                .sort((a, b) => (a.week || 0) - (b.week || 0))
+                .map(entry => {
+                  const isCurrentWeek = entry.week === currentWeekNum
+                  return (
+                    <div key={entry.week} style={{
+                      background: isCurrentWeek ? 'rgba(204,255,0,0.06)' : '#111',
+                      border: `1px solid ${isCurrentWeek ? 'rgba(204,255,0,0.3)' : '#1e1e1e'}`,
+                      borderRadius: 10, padding: '14px 16px',
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: entry.title || entry.content || entry.moves ? 8 : 0 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: isCurrentWeek ? 'var(--lime)' : 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                          Week {entry.week}{isCurrentWeek ? ' — This Week' : ''}
+                        </span>
+                        {entry.title && <span style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>{entry.title}</span>}
+                      </div>
+                      {entry.content && <div style={{ fontSize: 13, color: 'var(--grey)', lineHeight: 1.5, marginBottom: entry.moves ? 6 : 0, whiteSpace: 'pre-wrap' }}>{entry.content}</div>}
+                      {entry.moves && <div style={{ fontSize: 12, color: '#aaa' }}><span style={{ color: 'var(--grey)', fontWeight: 600 }}>Moves: </span>{entry.moves}</div>}
+                      {!entry.title && !entry.content && !entry.moves && <div style={{ fontSize: 12, color: '#444' }}>No content added for this week</div>}
+                    </div>
+                  )
+                })}
+            </div>
+          )}
+          {isAdminPath && (
+            <div style={{ marginTop: 12, fontSize: 12, color: 'var(--grey)', textAlign: 'center' }}>
+              <Link to={`/admin/classes/${id}`} style={{ color: 'var(--lime)' }}>Edit syllabus in class settings →</Link>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Notes tab */}
+      {tab === 'notes' && (
+        <div>
+          <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 12 }}>
+            These notes are saved permanently and visible to all instructors and cover teachers for this class.
+          </div>
+          <textarea
+            value={instructorNotes}
+            onChange={e => setInstructorNotes(e.target.value)}
+            placeholder="Add notes about this class — routines, student injuries, things to watch, quirks…"
+            rows={10}
+            style={{
+              width: '100%', background: '#111', border: '1px solid #222', borderRadius: 10,
+              color: '#fff', padding: '14px 16px', fontSize: 14, lineHeight: 1.6,
+              resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit',
+            }}
+          />
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+            <button
+              className="btn btn-lime btn-sm"
+              disabled={savingNotes}
+              onClick={async () => {
+                setSavingNotes(true)
+                try {
+                  await classes.update(id, { instructor_notes: instructorNotes })
+                  setSession(s => ({ ...s, instructor_notes: instructorNotes }))
+                } finally {
+                  setSavingNotes(false)
+                }
+              }}
+            >
+              {savingNotes ? 'Saving…' : 'Save Notes'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Homework tab */}
+      {tab === 'homework' && (
+        <div>
+          {/* Add homework form */}
+          {showAddHw && (
+            <div style={{ background: '#111', border: '1px solid #222', borderRadius: 12, padding: '16px 18px', marginBottom: 16 }}>
+              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>New Homework Assignment</div>
+              <input
+                placeholder="Title"
+                value={newHwTitle}
+                onChange={e => setNewHwTitle(e.target.value)}
+                style={{ width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: 8, color: '#fff', padding: '10px 12px', fontSize: 13, marginBottom: 8, boxSizing: 'border-box' }}
+              />
+              <textarea
+                placeholder="Description (optional)"
+                value={newHwDesc}
+                onChange={e => setNewHwDesc(e.target.value)}
+                rows={3}
+                style={{ width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: 8, color: '#fff', padding: '10px 12px', fontSize: 13, marginBottom: 8, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }}
+              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <label style={{ fontSize: 12, color: 'var(--grey)', flexShrink: 0 }}>Due date</label>
+                <input
+                  type="date"
+                  value={newHwDue}
+                  onChange={e => setNewHwDue(e.target.value)}
+                  style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 8, color: '#fff', padding: '8px 12px', fontSize: 13 }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => { setShowAddHw(false); setNewHwTitle(''); setNewHwDesc(''); setNewHwDue('') }}>Cancel</button>
+                <button
+                  className="btn btn-lime btn-sm"
+                  disabled={!newHwTitle.trim() || savingHw}
+                  onClick={async () => {
+                    setSavingHw(true)
+                    try {
+                      const res = await homework.create({ class_session: parseInt(id), title: newHwTitle.trim(), description: newHwDesc.trim(), due_date: newHwDue || null })
+                      setHwList(prev => [res.data, ...prev])
+                      setNewHwTitle(''); setNewHwDesc(''); setNewHwDue('')
+                      setShowAddHw(false)
+                    } finally {
+                      setSavingHw(false)
+                    }
+                  }}
+                >
+                  {savingHw ? 'Saving…' : 'Add Homework'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Active assignments */}
+          {hwList.filter(h => h.status === 'active').length === 0 && !showAddHw ? (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--grey)', fontSize: 13 }}>
+              No homework assigned yet.
+              <br />
+              <button className="btn btn-ghost btn-sm" style={{ marginTop: 12 }} onClick={() => setShowAddHw(true)}>+ Add Homework</button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {hwList.filter(h => h.status === 'active').map(hw => (
+                <div key={hw.id} style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: 10, padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: hw.description ? 4 : 0 }}>{hw.title}</div>
+                      {hw.description && <div style={{ fontSize: 12, color: 'var(--grey)', lineHeight: 1.5 }}>{hw.description}</div>}
+                      {hw.due_date && <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 6 }}>Due: {new Date(hw.due_date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</div>}
+                      {hw.submission_count > 0 && <div style={{ fontSize: 11, color: 'var(--lav)', marginTop: 4 }}>{hw.submission_count} submission{hw.submission_count !== 1 ? 's' : ''}</div>}
+                    </div>
+                    <button
+                      className="btn btn-ghost btn-xs"
+                      style={{ flexShrink: 0, color: 'var(--grey)', fontSize: 11 }}
+                      onClick={async () => {
+                        await homework.update(hw.id, { status: 'closed' })
+                        setHwList(prev => prev.map(h => h.id === hw.id ? { ...h, status: 'closed' } : h))
+                      }}
+                    >
+                      Archive
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Archived section */}
+          {hwList.filter(h => h.status === 'closed').length > 0 && (
+            <div style={{ marginTop: 20 }}>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => setShowArchivedHw(v => !v)}
+                style={{ marginBottom: 10, fontSize: 12 }}
+              >
+                {showArchivedHw ? '▼' : '▶'} Archived ({hwList.filter(h => h.status === 'closed').length})
+              </button>
+              {showArchivedHw && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {hwList.filter(h => h.status === 'closed').map(hw => (
+                    <div key={hw.id} style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: 10, padding: '12px 16px', opacity: 0.7 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 600, fontSize: 13, color: '#aaa', marginBottom: hw.description ? 2 : 0 }}>{hw.title}</div>
+                          {hw.description && <div style={{ fontSize: 12, color: '#555', lineHeight: 1.4 }}>{hw.description}</div>}
+                        </div>
+                        <button
+                          className="btn btn-ghost btn-xs"
+                          style={{ flexShrink: 0, color: 'var(--grey)', fontSize: 11 }}
+                          onClick={async () => {
+                            await homework.update(hw.id, { status: 'active' })
+                            setHwList(prev => prev.map(h => h.id === hw.id ? { ...h, status: 'active' } : h))
+                          }}
+                        >
+                          Restore
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Bottom save */}

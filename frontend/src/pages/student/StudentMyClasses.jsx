@@ -135,7 +135,11 @@ function CancelPolicyModal({ enrolment, isWaitlist, onClose, onDone }) {
   async function loadSessions() {
     if (allSessions) return
     try {
-      const res = await classesApi.list({ active: true })
+      // Filter to same season as current enrolment — transfers are season-to-season only
+      const seasonId = enrolment.season_detail?.id || enrolment.class_session_detail?.season
+      const params = { active: true }
+      if (seasonId) params.season = seasonId
+      const res = await classesApi.list(params)
       const sessions = res.data?.results || res.data || []
       // Exclude the class they're already in
       setAllSessions(sessions.filter(s2 => s2.id !== enrolment.class_session))
