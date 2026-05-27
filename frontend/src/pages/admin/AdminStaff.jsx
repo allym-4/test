@@ -602,7 +602,7 @@ export default function AdminStaff() {
                   </div>
                 ))}
               </div>
-              <button className="btn btn-ghost btn-sm" onClick={() => alert('Permission configuration coming soon')}>Edit role permissions</button>
+              <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 4 }}>Permissions are fixed per role. Change a staff member's role below to adjust their access.</div>
             </div>
           </div>
 
