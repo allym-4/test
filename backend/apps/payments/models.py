@@ -282,3 +282,18 @@ class PaymentChase(models.Model):
 
     def __str__(self):
         return f'{self.student.display_name} · Step {self.step} · {self.sent_at.date()}'
+
+
+class BalanceExemption(models.Model):
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='balance_exemptions')
+    end_date = models.DateField()
+    notes = models.TextField(blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='exemptions_created')
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'Exemption for {self.student.display_name} until {self.end_date}'

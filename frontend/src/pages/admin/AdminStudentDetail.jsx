@@ -2300,7 +2300,7 @@ export default function AdminStudentDetail() {
                       <button type="submit" className="btn btn-lime btn-sm" disabled={savingNote || !noteText.trim()}>{savingNote ? 'Saving…' : 'Save Note'}</button>
                       <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: 'var(--grey)' }}>
                         <input type="checkbox" checked={noteIsPermanent} onChange={e => setNoteIsPermanent(e.target.checked)} style={{ accentColor: 'var(--lime)' }} />
-                        Permanent note (always surfaces in action items)
+                        Permanent note (always surfaces in notes items)
                       </label>
                     </div>
                   </form>
