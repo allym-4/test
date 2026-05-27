@@ -33,6 +33,7 @@ class ClassSessionSerializer(serializers.ModelSerializer):
     studio_detail = StudioSerializer(source='studio', read_only=True)
     day_of_week_display = serializers.CharField(source='get_day_of_week_display', read_only=True)
     enrolled_count = serializers.ReadOnlyField()
+    held_count = serializers.SerializerMethodField()
     waitlist_count = serializers.SerializerMethodField()
     category_name = serializers.StringRelatedField(source='category', read_only=True)
     season_name = serializers.CharField(source='season.name', read_only=True, allow_null=True)
@@ -48,7 +49,7 @@ class ClassSessionSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'name', 'level', 'instructor', 'instructor_detail',
             'studio', 'studio_detail', 'day_of_week', 'day_of_week_display',
-            'start_time', 'end_time', 'duration_minutes', 'capacity', 'enrolled_count', 'waitlist_count',
+            'start_time', 'end_time', 'duration_minutes', 'capacity', 'enrolled_count', 'held_count', 'waitlist_count',
             'session_type', 'is_active', 'category', 'category_name',
             'season', 'season_name', 'season_start_date', 'season_end_date', 'season_bookings_open',
             'catchup_cutoff_weeks',
@@ -64,6 +65,12 @@ class ClassSessionSerializer(serializers.ModelSerializer):
             'syllabus', 'instructor_notes',
         )
         read_only_fields = ('id', 'enrolled_count', 'waitlist_count', 'instructor_detail', 'studio_detail', 'day_of_week_display', 'category_name', 'season_name', 'season_start_date', 'season_end_date', 'season_bookings_open', 'season_base_price', 'created_at', 'skill_level_name', 'end_time')
+
+    def get_held_count(self, obj):
+        from apps.enrolments.models import ClassChangeRequest
+        return ClassChangeRequest.objects.filter(
+            requested_session=obj, spot_held=True, status__in=('pending', 'awaiting_response')
+        ).count()
 
     def get_waitlist_count(self, obj):
         from apps.enrolments.models import Enrolment

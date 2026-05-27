@@ -323,6 +323,19 @@ class EnrolmentListView(generics.ListCreateAPIView):
                     'Please contact the studio for more information.'
                 )
 
+        # For student course enrolments, check held spots from transfer requests count against capacity
+        if user.role == 'student' and session and enrolment_type == 'course':
+            active_count = Enrolment.objects.filter(
+                class_session=session, status__in=('active', 'pending_displacement'), enrolment_type='course'
+            ).count()
+            held_count = ClassChangeRequest.objects.filter(
+                requested_session=session, spot_held=True, status__in=('pending', 'awaiting_response')
+            ).count()
+            if session.capacity and active_count + held_count >= session.capacity:
+                raise ValidationError(
+                    f'{session.name} is full — please join the waitlist.'
+                )
+
         if user.role == 'student':
             enrolment = serializer.save(student=user)
         else:

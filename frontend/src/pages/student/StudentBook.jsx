@@ -82,7 +82,8 @@ function SkeletonCard() {
 }
 
 function ClassCard({ session, onAddToCart, priceCasual, cartSessionId, isWaitlisted, waitlistType = 'waitlist' }) {
-  const spotsLeft = (session.capacity || 12) - (session.enrolled_count || 0)
+  // held_count accounts for spots reserved for pending transfer requests
+  const spotsLeft = (session.capacity || 12) - (session.enrolled_count || 0) - (session.held_count || 0)
   const isFull = spotsLeft <= 0
   const levelBadge = getLevelBadge(session.name)
   const inCart = cartSessionId === session.id
