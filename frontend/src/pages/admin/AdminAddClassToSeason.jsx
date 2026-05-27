@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { classes as classesApi, categories as categoriesApi, studios as studiosApi, users as usersApi } from '../../api'
+import { classes as classesApi, categories as categoriesApi, studios as studiosApi, users as usersApi, seasons as seasonsApi } from '../../api'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -65,38 +65,71 @@ function Toggle({ value, onChange }) {
 
 function TagChipSelector({ selectedIds, onChange }) {
   const [allTags, setAllTags] = useState([])
-  useEffect(() => {
+  const [newTagName, setNewTagName] = useState('')
+  const [addingTag, setAddingTag] = useState(false)
+
+  function loadTags() {
     classesApi.classTags.list().then(r => setAllTags(r.data?.results || r.data || []))
-  }, [])
+  }
+  useEffect(() => { loadTags() }, [])
 
   function toggle(id) {
     if (selectedIds.includes(id)) onChange(selectedIds.filter(x => x !== id))
     else onChange([...selectedIds, id])
   }
 
-  if (allTags.length === 0) return <div style={{ fontSize: 12, color: '#888' }}>No tags yet.</div>
+  async function handleAddTag() {
+    if (!newTagName.trim()) return
+    setAddingTag(true)
+    try {
+      const r = await classesApi.classTags.create({ name: newTagName.trim(), colour: '#ccff00' })
+      loadTags()
+      onChange([...selectedIds, r.data.id])
+      setNewTagName('')
+    } finally { setAddingTag(false) }
+  }
 
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-      {allTags.map(tag => {
-        const active = selectedIds.includes(tag.id)
-        return (
-          <div
-            key={tag.id}
-            onClick={() => toggle(tag.id)}
-            style={{
-              padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700,
-              cursor: 'pointer', userSelect: 'none',
-              background: active ? (tag.colour + '33') : 'transparent',
-              color: active ? tag.colour : '#888',
-              border: `1px solid ${active ? tag.colour : '#333'}`,
-              transition: 'all 0.15s',
-            }}
-          >
-            {tag.name}
-          </div>
-        )
-      })}
+    <div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+        {allTags.map(tag => {
+          const active = selectedIds.includes(tag.id)
+          return (
+            <div
+              key={tag.id}
+              onClick={() => toggle(tag.id)}
+              style={{
+                padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700,
+                cursor: 'pointer', userSelect: 'none',
+                background: active ? (tag.colour + '33') : 'transparent',
+                color: active ? tag.colour : '#888',
+                border: `1px solid ${active ? tag.colour : '#333'}`,
+                transition: 'all 0.15s',
+              }}
+            >
+              {tag.name}
+            </div>
+          )
+        })}
+        {allTags.length === 0 && <div style={{ fontSize: 12, color: '#888' }}>No tags yet — add one below.</div>}
+      </div>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input
+          value={newTagName}
+          onChange={e => setNewTagName(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+          placeholder="New tag name…"
+          style={{ ...inputStyle, width: 180 }}
+        />
+        <button
+          type="button"
+          onClick={handleAddTag}
+          disabled={!newTagName.trim() || addingTag}
+          style={{ background: 'rgba(204,255,0,0.1)', border: '1px solid rgba(204,255,0,0.3)', color: '#ccff00', borderRadius: 8, padding: '9px 14px', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap' }}
+        >
+          {addingTag ? '…' : '+ Add tag'}
+        </button>
+      </div>
     </div>
   )
 }
@@ -115,7 +148,18 @@ function emptyOccurrence() {
     priceOverride: '',
     instructorFee: '',
     requiresFullPayment: false,
+    exemptFromSeasonDiscount: false,
   }
+}
+
+function formatTime12h(time24) {
+  if (!time24) return ''
+  const [hStr, mStr] = time24.split(':')
+  const h = parseInt(hStr)
+  const m = mStr || '00'
+  const ampm = h >= 12 ? 'pm' : 'am'
+  const h12 = h % 12 || 12
+  return `${h12}:${m}${ampm}`
 }
 
 function OccurrenceBlock({ index, data, onChange, onRemove, studios, instructors, isFirst }) {
@@ -162,23 +206,35 @@ function OccurrenceBlock({ index, data, onChange, onRemove, studios, instructors
           </button>
         </div>
         {data.courseType === 'short' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 14 }}>
-            <div>
-              <label style={labelStyle}>Starting Week (1–8)</label>
-              <input
-                type="number" min={1} max={8} value={data.startWeek}
-                onChange={e => set('startWeek', parseInt(e.target.value) || 1)}
-                style={inputStyle}
-              />
+          <div style={{ marginTop: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+              <div>
+                <label style={labelStyle}>Starting Week (1–8)</label>
+                <input
+                  type="number" min={1} max={8} value={data.startWeek}
+                  onChange={e => set('startWeek', parseInt(e.target.value) || 1)}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Number of Weeks (1–8)</label>
+                <input
+                  type="number" min={1} max={8} value={data.numWeeks}
+                  onChange={e => set('numWeeks', parseInt(e.target.value) || 1)}
+                  style={inputStyle}
+                />
+              </div>
             </div>
-            <div>
-              <label style={labelStyle}>Number of Weeks (1–8)</label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
               <input
-                type="number" min={1} max={8} value={data.numWeeks}
-                onChange={e => set('numWeeks', parseInt(e.target.value) || 1)}
-                style={inputStyle}
+                type="checkbox"
+                checked={data.exemptFromSeasonDiscount}
+                onChange={e => set('exemptFromSeasonDiscount', e.target.checked)}
+                style={{ accentColor: '#ccff00' }}
               />
-            </div>
+              <span style={{ fontSize: 13, color: '#ccc' }}>Exempt from discount structure</span>
+              <span style={{ fontSize: 11, color: '#888' }}>(short course priced separately, not counted in multi-class discounts)</span>
+            </label>
           </div>
         )}
       </div>
@@ -528,29 +584,35 @@ function Step2({ details, setDetails, template, onBack, onNext, categories }) {
   )
 }
 
-function Step3({ occurrences, details, firstTimerAppropriate, studios, instructors, onBack, onConfirm, creating, error }) {
-  const DAYS_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+function Step3({ occurrences, details, firstTimerAppropriate, studios, instructors, season, onBack, onConfirm, creating, error }) {
+  const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
   function getCourseLabel(occ) {
-    if (occ.courseType === 'full') return 'Full Course (Weeks 1–8)'
+    if (occ.courseType === 'full') return `Full Course · Weeks 1–8`
     const sw = occ.startWeek
-    const ew = sw + occ.numWeeks - 1
-    return `Short Course (Weeks ${sw}–${ew})`
+    const ew = Math.min(8, sw + occ.numWeeks - 1)
+    return `Short Course · Weeks ${sw}–${ew}`
   }
 
   function getPriceLabel(occ) {
-    if (occ.priceOverride) return `$${occ.priceOverride}`
+    if (occ.priceOverride) return `$${parseFloat(occ.priceOverride).toFixed(0)}`
     return 'Standard ($270)'
   }
 
   function getInstructorName(id) {
     const found = instructors.find(i => String(i.id) === String(id))
-    return found ? (found.display_name || found.first_name + ' ' + found.last_name) : 'No instructor'
+    return found ? (found.display_name || found.first_name + ' ' + found.last_name) : '—'
   }
 
   function getStudioName(id) {
     const found = studios.find(s => String(s.id) === String(id))
-    return found ? found.name : 'No studio'
+    return found ? found.name : '—'
+  }
+
+  function formatSeasonDates() {
+    if (!season) return ''
+    const fmt = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : ''
+    return `${fmt(season.start_date)} – ${fmt(season.end_date)}`
   }
 
   return (
@@ -567,20 +629,28 @@ function Step3({ occurrences, details, firstTimerAppropriate, studios, instructo
           Occurrences to Create ({occurrences.length})
         </div>
         {occurrences.map((occ, i) => (
-          <div key={i} style={{ ...sectionCard, marginBottom: 14 }}>
-            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, marginBottom: 6 }}>{details.name || 'Unnamed class'}</div>
-            <div style={{ fontSize: 13, color: '#ccc', marginBottom: 4 }}>
-              {DAYS_SHORT[occ.dayOfWeek]} · {occ.startTime} · {occ.durationMinutes} min
+          <div key={i} style={{ ...sectionCard, marginBottom: 14, borderLeft: '3px solid #ccff00' }}>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17, marginBottom: 6 }}>
+              {details.name || 'Unnamed class'}
             </div>
-            <div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>
+            {season && (
+              <div style={{ fontSize: 12, color: '#ccff00', marginBottom: 6 }}>
+                {season.name} · {formatSeasonDates()}
+              </div>
+            )}
+            <div style={{ fontSize: 13, color: '#ddd', marginBottom: 4 }}>
+              {DAYS[occ.dayOfWeek]} · {formatTime12h(occ.startTime)} · {occ.durationMinutes} min
+            </div>
+            <div style={{ fontSize: 12, color: '#aaa', marginBottom: 4 }}>
               Instructor: {getInstructorName(occ.instructor)} · Studio: {getStudioName(occ.studio)}
             </div>
             <div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>
               {getCourseLabel(occ)} · Capacity: {occ.capacity}
             </div>
-            <div style={{ fontSize: 12, color: '#888' }}>
-              Price: {getPriceLabel(occ)}
-              {occ.requiresFullPayment && <span style={{ marginLeft: 8, color: '#ccff00' }}>Full payment required</span>}
+            <div style={{ fontSize: 12, color: '#888', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <span>Price: {getPriceLabel(occ)}</span>
+              {occ.requiresFullPayment && <span style={{ color: '#ccff00' }}>Full payment required</span>}
+              {occ.exemptFromSeasonDiscount && <span style={{ color: 'var(--amber, #ffaa00)' }}>Exempt from discount structure</span>}
             </div>
           </div>
         ))}
@@ -647,13 +717,15 @@ export default function AdminAddClassToSeason() {
 
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState(null)
+  const [seasonData, setSeasonData] = useState(null)
 
   useEffect(() => {
     classesApi.list({ page_size: 500 }).then(r => setAllSessions(r.data?.results || r.data || []))
     studiosApi.list().then(r => setStudios(r.data?.results || r.data || []))
     usersApi.list({ role: 'instructor', page_size: 200 }).then(r => setInstructors(r.data?.results || r.data || []))
     categoriesApi.list().then(r => setCategories(r.data?.results || r.data || []))
-  }, [])
+    seasonsApi.get(seasonId).then(r => setSeasonData(r.data)).catch(() => {})
+  }, [seasonId])
 
   // When template changes, pre-fill occurrence block defaults and class details
   function applyTemplate(t) {
@@ -716,6 +788,7 @@ export default function AdminAddClassToSeason() {
           price_override: occ.priceOverride ? parseFloat(occ.priceOverride) : null,
           instructor_fee: occ.instructorFee ? parseFloat(occ.instructorFee) : null,
           requires_full_payment: occ.requiresFullPayment,
+          exempt_from_season_discount: occ.exemptFromSeasonDiscount || false,
           first_timer_appropriate: firstTimerAppropriate,
           start_week: startWeek,
           end_week: endWeek,
@@ -817,6 +890,7 @@ export default function AdminAddClassToSeason() {
           firstTimerAppropriate={firstTimerAppropriate}
           studios={studios}
           instructors={instructors}
+          season={seasonData}
           onBack={() => setStep(2)}
           onConfirm={handleConfirm}
           creating={creating}

@@ -88,6 +88,7 @@ class ClassSession(models.Model):
     price_override = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Custom price for this class. Overrides standard tier pricing.")
     instructor_fee = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Amount to credit instructor's account per class attended.")
     requires_full_payment = models.BooleanField(default=False, help_text="If True, student must pay the full season fee upfront (no payment plan).")
+    exempt_from_season_discount = models.BooleanField(default=False, help_text="If True, this class is not counted in the incremental season discount structure.")
     auto_exempt_same_name = models.BooleanField(default=True, help_text="Students enrolled in a same-name session are auto-exempt from catch-up cutoff.")
     catchup_eligible_names = models.TextField(blank=True, help_text="Comma-separated class names eligible as catch-up destinations for this class.")
     tags = models.ManyToManyField('Tag', blank=True, related_name='sessions')

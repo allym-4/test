@@ -46,4 +46,8 @@ urlpatterns = [
     path('cancellation-offers/mine/', views.MyCancellationOffersView.as_view(), name='cancellation-offer-mine'),
     path('cancellation-offers/<int:pk>/resolve/', views.resolve_cancellation_offer, name='cancellation-offer-resolve'),
     path('occurrences/<int:occurrence_pk>/send-cancellation-offers/', views.send_cancellation_offers, name='send-cancellation-offers'),
+
+    path('exemptions/', views.BalanceExemptionView.as_view(), name='balance-exemptions'),
+    path('exemptions/<int:pk>/', views.BalanceExemptionDetailView.as_view(), name='balance-exemption-detail'),
+    path('balance-popup-response/', views.StudentBalancePopupResponseView.as_view(), name='balance-popup-response'),
 ]

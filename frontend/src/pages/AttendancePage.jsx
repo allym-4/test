@@ -554,6 +554,7 @@ export default function AttendancePage() {
   const [emailModal, setEmailModal]   = useState(false)
   const [contactModal, setContactModal] = useState(false)
   const [cancelClassModal, setCancelClassModal] = useState(false)
+  const [preMarkedAwayIds, setPreMarkedAwayIds] = useState(new Set())
 
   const today = new Date()
 
@@ -566,11 +567,15 @@ export default function AttendancePage() {
       const initial = {}
       const initialNotes = {}
       const initialNoteTags = {}
+      const awayIds = new Set()
       for (const r of (attRes.data.results || [])) {
-        initial[r.student] = r.status === 'no_show' && r.no_show_fee_waived ? 'no_show_waived' : r.status
+        const status = r.status === 'no_show' && r.no_show_fee_waived ? 'no_show_waived' : r.status
+        initial[r.student] = status
         initialNotes[r.student] = r.note || ''
         initialNoteTags[r.student] = r.note_tag || ''
+        if (r.marked_away_by_student || r.status === 'cancelled') awayIds.add(r.student)
       }
+      setPreMarkedAwayIds(awayIds)
       // Keep pending for unrecorded students
       setRegister(prev => {
         const merged = {}
@@ -608,13 +613,17 @@ export default function AttendancePage() {
         const initial = {}
         const initialNotes = {}
         const initialNoteTags = {}
+        const initialAwayIds = new Set()
         if (occ) {
           const attRes = await attendance.list({ occurrence: occ.id })
           for (const r of (attRes.data.results || [])) {
-            initial[r.student] = r.status === 'no_show' && r.no_show_fee_waived ? 'no_show_waived' : r.status
+            const status = r.status === 'no_show' && r.no_show_fee_waived ? 'no_show_waived' : r.status
+            initial[r.student] = status
             initialNotes[r.student] = r.note || ''
             initialNoteTags[r.student] = r.note_tag || ''
+            if (r.marked_away_by_student || r.status === 'cancelled') initialAwayIds.add(r.student)
           }
+          setPreMarkedAwayIds(initialAwayIds)
 
           // Load waitlist
           try {
@@ -689,8 +698,14 @@ export default function AttendancePage() {
   }
 
   const awayStatuses = ['no_show', 'no_show_waived', 'absent', 'cancelled']
-  const attendingStudents = students.filter(e => !awayStatuses.includes(register[e.student] || 'pending'))
-  const awayStudents = students.filter(e => awayStatuses.includes(register[e.student] || 'pending'))
+  // For instructor view: only pre-loaded self-marked-away students go to Away tab
+  // For admin view: status-based sorting as before
+  const attendingStudents = isAdminPath
+    ? students.filter(e => !awayStatuses.includes(register[e.student] || 'pending'))
+    : students.filter(e => !preMarkedAwayIds.has(e.student))
+  const awayStudents = isAdminPath
+    ? students.filter(e => awayStatuses.includes(register[e.student] || 'pending'))
+    : students.filter(e => preMarkedAwayIds.has(e.student))
 
   const counts = {
     present: Object.values(register).filter(v => v === 'present').length,
@@ -753,7 +768,7 @@ export default function AttendancePage() {
                           cursor: 'pointer', outline: 'none',
                         }}
                       >
-                        {occurrences.map(occ => {
+                        {[...occurrences].sort((a, b) => a.date.localeCompare(b.date)).map(occ => {
                           const wk = weekNumber(occ.date, session.season_start_date)
                           return (
                             <option key={occ.id} value={occ.id}>
@@ -785,7 +800,7 @@ export default function AttendancePage() {
             display: 'flex', gap: 8, overflowX: 'auto', WebkitOverflowScrolling: 'touch',
             scrollbarWidth: 'none', marginBottom: 16, paddingBottom: 4,
           }}>
-            {occurrences.map(occ => {
+            {[...occurrences].sort((a, b) => a.date.localeCompare(b.date)).map(occ => {
               const wk = weekNumber(occ.date, session.season_start_date)
               const isActive = occ.id === occurrence?.id
               const isCancelled = occ.status === 'cancelled'
@@ -821,16 +836,18 @@ export default function AttendancePage() {
           <button className={`btn btn-sm ${saved ? 'btn-ghost' : 'btn-ghost'}`} style={{ border: '1px solid var(--border)' }} onClick={handleSave} disabled={saving || !occurrence}>
             {saving ? <span className="spinner" style={{ width: 14, height: 14 }} /> : saved ? '✓ Saved' : 'Save Register'}
           </button>
-          {isAdminPath && (
+          {isAdminPath ? (
             <>
               <button className="btn btn-ghost btn-sm" onClick={() => setAddStudentModal(true)}>+ Add Student</button>
               <button className="btn btn-ghost btn-sm" onClick={() => {
                 const newCap = prompt('New capacity override:', capacityOverride ?? session?.capacity ?? '')
                 if (newCap && !isNaN(parseInt(newCap))) setCapacityOverride(parseInt(newCap))
               }}>Override Capacity</button>
-              <button className="btn btn-ghost btn-sm" onClick={() => setContactModal(true)}>Contact Class</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setContactModal(true)}>Message Class</button>
               <button className="btn btn-ghost btn-sm" style={{ color: '#ff6b6b', borderColor: 'rgba(255,107,107,0.3)' }} onClick={() => setCancelClassModal(true)}>Cancel Class</button>
             </>
+          ) : (
+            <button className="btn btn-ghost btn-sm" onClick={() => setContactModal(true)}>Message Class</button>
           )}
         </div>
       </div>
@@ -1146,7 +1163,10 @@ export default function AttendancePage() {
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 3 }}>
-                          <span style={{ fontWeight: 700, fontSize: 15 }}>{st?.display_name}</span>
+                          <span
+                            style={{ fontWeight: 700, fontSize: 15, cursor: 'pointer', textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.2)' }}
+                            onClick={() => navigate(`/admin/students/${e.student}`)}
+                          >{st?.display_name}</span>
                           {st?.pronouns && <span style={{ fontSize: 12, color: '#555' }}>{st.pronouns}</span>}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>

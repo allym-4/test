@@ -240,6 +240,7 @@ export default function AdminBilling() {
   const [drawerStudent, setDrawerStudent] = useState(null)
   const [noShowSelected, setNoShowSelected] = useState(new Set())
   const [chargingNoShows, setChargingNoShows] = useState(false)
+  const [chaseCounts, setChaseCounts] = useState({})
 
   const allPayments = paymentsData?.results || []
   const plans = plansData?.results || []
@@ -257,6 +258,22 @@ export default function AdminBilling() {
       } catch { map[s.id] = { balance: '0', name: s.display_name, id: s.id, first_name: s.first_name } }
     })).then(() => { setBalances(map); setLoadingBal(false) })
   }, [students.length])
+
+  useEffect(() => {
+    const owingList = Object.values(balances).filter(b => parseFloat(b.balance) < 0)
+    if (!owingList.length) return
+    const fetchCounts = async () => {
+      const counts = {}
+      await Promise.all(owingList.map(async b => {
+        try {
+          const r = await payments.chases({ student_id: b.id })
+          counts[b.id] = (r.data || []).length
+        } catch { counts[b.id] = 0 }
+      }))
+      setChaseCounts(counts)
+    }
+    fetchCounts()
+  }, [Object.keys(balances).length])
 
   async function chargeNoShowNow(p) {
     try {
@@ -356,7 +373,9 @@ export default function AdminBilling() {
                       <td style={{ color: 'var(--grey)' }}>${parseFloat(b.total_charged || 0).toFixed(2)}</td>
                       <td className="bal-pos">${parseFloat(b.total_paid || 0).toFixed(2)}</td>
                       <td style={{ whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
-                        <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => { setModalStudent(b); setActiveModal('chase') }}>Chase</button>
+                        <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => { setModalStudent(b); setActiveModal('chase') }}>
+                          Chase{chaseCounts[b.id] > 0 ? ` (${chaseCounts[b.id]})` : ''}
+                        </button>
                         <button className="btn btn-ghost btn-xs" style={{ marginRight: 4 }} onClick={() => { setModalStudent(b); setActiveModal('waive') }}>Waive</button>
                         <button className="btn btn-lime btn-xs" onClick={() => { setModalStudent(b); setActiveModal('payment') }}>Take Payment</button>
                       </td>

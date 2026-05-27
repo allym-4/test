@@ -52,7 +52,7 @@ class ClassSessionSerializer(serializers.ModelSerializer):
             'session_type', 'is_active', 'category', 'category_name',
             'season', 'season_name', 'season_start_date', 'season_end_date', 'season_bookings_open',
             'catchup_cutoff_weeks',
-            'price_override', 'instructor_fee', 'requires_full_payment',
+            'price_override', 'instructor_fee', 'requires_full_payment', 'exempt_from_season_discount',
             'auto_exempt_same_name', 'catchup_eligible_names',
             'first_timer_headline', 'first_timer_body', 'first_timer_appropriate',
             'description', 'prerequisites', 'created_at',

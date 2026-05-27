@@ -184,6 +184,12 @@ export const payments = {
   cashPromises: {
     action: (id, data) => client.post(`/api/payments/cash-promises/${id}/action/`, data),
   },
+  chases: (params) => client.get('/api/payments/chase/', { params }),
+  sendChase: (data) => client.post('/api/payments/chase/', data),
+  exemptions: (params) => client.get('/api/payments/exemptions/', { params }),
+  createExemption: (data) => client.post('/api/payments/exemptions/', data),
+  updateExemption: (id, data) => client.patch(`/api/payments/exemptions/${id}/`, data),
+  balancePopupResponse: (data) => client.post('/api/payments/balance-popup-response/', data),
 }
 
 export const leads = {
@@ -286,6 +292,7 @@ export const users = {
   bulkImport: (formData) => client.post('/api/users/import/', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
+  bulkNotify: (data) => client.post('/api/users/bulk-notify/', data),
 }
 
 export const settings = {

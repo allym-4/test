@@ -15,6 +15,7 @@ class Command(BaseCommand):
         self._parq_reminder()
         self._custom_rules()
         self._seasonal_checkin()
+        self._exemption_expiry_warning()
 
     def _seasonal_checkin(self):
         from django.core import management
@@ -471,3 +472,32 @@ class Command(BaseCommand):
             actions_taken=actions_taken,
             status='completed',
         )
+
+    def _exemption_expiry_warning(self):
+        from apps.payments.models import BalanceExemption
+        from apps.users.models import Notification, User
+        from django.utils import timezone
+        today = timezone.localdate()
+        warning_date = today + timedelta(days=2)
+        # Find exemptions expiring in exactly 2 days that haven't been warned
+        expiring = BalanceExemption.objects.filter(end_date=warning_date, is_active=True)
+        sent = 0
+        for ex in expiring:
+            admins = User.objects.filter(role='admin', is_active=True)
+            for admin in admins:
+                already = Notification.objects.filter(
+                    recipient=admin,
+                    title__icontains='exemption expiring',
+                    body__icontains=ex.student.display_name,
+                    created_at__date=today,
+                ).exists()
+                if not already:
+                    Notification.objects.create(
+                        recipient=admin,
+                        title='Balance exemption expiring soon',
+                        body=f'{ex.student.display_name}\'s balance exemption expires in 2 days ({ex.end_date}). Extend or they will be blocked from booking.',
+                        notification_type='alert',
+                        action_url=f'/admin/students/{ex.student_id}',
+                    )
+                    sent += 1
+        self.stdout.write(f'exemption_expiry_warning: {sent} sent')

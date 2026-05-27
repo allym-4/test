@@ -789,13 +789,28 @@ class PaymentChaseListCreateView(generics.ListCreateAPIView):
 
         # Send in-app notification
         try:
-            from apps.notifications.models import Notification
+            from apps.users.models import Notification
             Notification.objects.create(
-                user=student,
+                recipient=student,
                 title='Payment reminder',
                 body=message,
                 notification_type='payment',
             )
+        except Exception:
+            pass
+
+        # Send email reminder
+        try:
+            from django.core.mail import send_mail
+            from django.conf import settings
+            if student.email:
+                send_mail(
+                    subject='Payment reminder — Duality Pole Studio',
+                    message=message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[student.email],
+                    fail_silently=True,
+                )
         except Exception:
             pass
 
@@ -901,3 +916,163 @@ class OverdueCashPromisesView(APIView):
             for p in overdue
         ]
         return Response(data)
+
+
+class BalanceExemptionView(APIView):
+    """List and create balance exemptions for a student."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from .models import BalanceExemption
+        student_id = request.query_params.get('student')
+        if not student_id:
+            student_id = request.user.id
+        if request.user.role not in ('admin', 'instructor') and str(request.user.id) != str(student_id):
+            return Response({'detail': 'Forbidden'}, status=403)
+        exemptions = BalanceExemption.objects.filter(student_id=student_id, is_active=True)
+        from django.utils import timezone
+        today = timezone.localdate()
+        data = [
+            {
+                'id': e.id,
+                'end_date': str(e.end_date),
+                'notes': e.notes,
+                'created_by_name': e.created_by.display_name if e.created_by else '—',
+                'created_at': e.created_at.isoformat(),
+                'is_expired': e.end_date < today,
+            }
+            for e in exemptions
+        ]
+        return Response(data)
+
+    def post(self, request):
+        from .models import BalanceExemption
+        from apps.users.models import User, Notification, StaffNote
+        if request.user.role not in ('admin', 'instructor'):
+            return Response({'detail': 'Forbidden'}, status=403)
+        student_id = request.data.get('student')
+        end_date = request.data.get('end_date')
+        notes = request.data.get('notes', '')
+        if not student_id or not end_date:
+            return Response({'detail': 'student and end_date required'}, status=400)
+        try:
+            student = User.objects.get(pk=student_id)
+        except User.DoesNotExist:
+            return Response({'detail': 'Student not found'}, status=404)
+        # Deactivate old exemptions
+        BalanceExemption.objects.filter(student=student, is_active=True).update(is_active=False)
+        ex = BalanceExemption.objects.create(
+            student=student,
+            end_date=end_date,
+            notes=notes,
+            created_by=request.user,
+        )
+        # Add a staff note so it shows in the Notes tab
+        StaffNote.objects.create(
+            student=student,
+            created_by=request.user,
+            tag='general',
+            body=f'Balance exemption applied until {end_date}.' + (f' Notes: {notes}' if notes else ''),
+            is_permanent=True,
+        )
+        # Notify student
+        Notification.objects.create(
+            recipient=student,
+            title='Balance exemption applied',
+            body=f'An exemption has been applied to your account until {end_date}. You can continue to book classes until this date.',
+            notification_type='info',
+        )
+        return Response({'id': ex.id, 'end_date': str(ex.end_date), 'notes': ex.notes}, status=201)
+
+
+class BalanceExemptionDetailView(APIView):
+    """Update or deactivate a specific exemption."""
+    permission_classes = [IsAdminOrInstructor]
+
+    def patch(self, request, pk):
+        from .models import BalanceExemption
+        try:
+            ex = BalanceExemption.objects.get(pk=pk)
+        except BalanceExemption.DoesNotExist:
+            return Response({'detail': 'Not found'}, status=404)
+        if 'end_date' in request.data:
+            ex.end_date = request.data['end_date']
+        if 'notes' in request.data:
+            ex.notes = request.data['notes']
+        if 'is_active' in request.data:
+            ex.is_active = request.data['is_active']
+        ex.save()
+        return Response({'id': ex.id, 'end_date': str(ex.end_date), 'notes': ex.notes, 'is_active': ex.is_active})
+
+
+class StudentBalancePopupResponseView(APIView):
+    """Student responds to a balance popup — 'I need an extension', 'bank transferred', 'bring cash'."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        from apps.users.models import Notification, StaffNote
+        from django.utils import timezone
+        response_type = request.data.get('response_type')  # 'extension', 'bank_transfer', 'cash'
+        date = request.data.get('date')  # for bank_transfer / cash
+        student = request.user
+
+        if response_type == 'extension':
+            # Block further bookings until admin resolves
+            student.booking_blocked = True
+            student.blocked_at = timezone.now()
+            student.block_reason = 'Student requested extension on balance'
+            student.save(update_fields=['booking_blocked', 'blocked_at', 'block_reason'])
+            # Notify admins
+            from apps.users.models import User
+            admins = User.objects.filter(role='admin', is_active=True)
+            for admin in admins:
+                Notification.objects.create(
+                    recipient=admin,
+                    title=f'{student.display_name} requested a payment extension',
+                    body=f'{student.display_name} has responded to a balance popup requesting an extension. Their account has been paused. Review and apply an exemption or contact them.',
+                    notification_type='alert',
+                    action_url=f'/admin/students/{student.id}',
+                )
+            return Response({'status': 'extension_requested'})
+
+        elif response_type == 'bank_transfer':
+            date_str = date or str(timezone.localdate())
+            StaffNote.objects.create(
+                student=student,
+                created_by=None,
+                tag='general',
+                body=f'Student says they bank transferred on {date_str}. Please verify.',
+            )
+            from apps.users.models import User
+            admins = User.objects.filter(role='admin', is_active=True)
+            for admin in admins:
+                Notification.objects.create(
+                    recipient=admin,
+                    title=f'{student.display_name} says they bank transferred',
+                    body=f'{student.display_name} responded to their balance popup saying they bank transferred on {date_str}. Please verify the transfer.',
+                    notification_type='alert',
+                    action_url=f'/admin/students/{student.id}',
+                )
+            return Response({'status': 'bank_transfer_noted'})
+
+        elif response_type == 'cash':
+            date_str = date or str(timezone.localdate())
+            StaffNote.objects.create(
+                student=student,
+                created_by=None,
+                tag='general',
+                body=f'Student says they will bring cash on {date_str}.',
+            )
+            from apps.users.models import User
+            admins = User.objects.filter(role='admin', is_active=True)
+            for admin in admins:
+                Notification.objects.create(
+                    recipient=admin,
+                    title=f'{student.display_name} promised to bring cash',
+                    body=f'{student.display_name} responded to their balance popup saying they will bring cash on {date_str}.',
+                    notification_type='alert',
+                    action_url=f'/admin/students/{student.id}',
+                )
+            return Response({'status': 'cash_promised'})
+
+        return Response({'detail': 'Invalid response_type'}, status=400)

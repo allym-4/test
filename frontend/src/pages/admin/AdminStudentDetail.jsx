@@ -956,6 +956,11 @@ export default function AdminStudentDetail() {
   const [expandedTrialId, setExpandedTrialId] = useState(null)
   const [chaseHistory, setChaseHistory] = useState(null)
   const [showNewPlanModal, setShowNewPlanModal] = useState(false)
+  const [showExemptionForm, setShowExemptionForm] = useState(false)
+  const [exemptionEndDate, setExemptionEndDate] = useState('')
+  const [exemptionNotes, setExemptionNotes] = useState('')
+  const [savingExemption, setSavingExemption] = useState(false)
+  const [exemptions, setExemptions] = useState([])
 
   useEffect(() => {
     users.get(id).then(res => {
@@ -1036,6 +1041,7 @@ export default function AdminStudentDetail() {
     client.get('/api/classes/casual-bookings/', { params: { student: student.id } }).then(r => setCasualBookingsData(r.data.results || r.data || [])).catch(() => {})
     classes.practice.credits.list({ student: student.id }).then(r => setPracticeCreditsData(r.data?.results || r.data || [])).catch(() => {})
     payments.chase.list({ student_id: id }).then(r => setChaseHistory(r.data?.results || r.data || [])).catch(() => setChaseHistory([]))
+    payments.exemptions({ student: student.id }).then(r => setExemptions(r.data || [])).catch(() => setExemptions([]))
   }, [student?.id])
 
   async function loadSeasonSessions(enrolment, overrideSeasonId) {
@@ -1241,6 +1247,54 @@ export default function AdminStudentDetail() {
                   </div>
                   <span style={{ fontSize: 18, opacity: 0.5 }}>→</span>
                 </div>
+
+                {/* Exemption UI */}
+                {isOwing && (
+                  <div style={{ marginTop: 8, marginBottom: 8 }}>
+                    {exemptions.filter(e => !e.is_expired && e.is_active !== false).map(e => (
+                      <div key={e.id} style={{ background: 'rgba(255,170,0,0.08)', border: '1px solid rgba(255,170,0,0.25)', borderRadius: 6, padding: '8px 12px', fontSize: 12, color: 'var(--amber)', marginBottom: 6 }}>
+                        <strong>Exemption active</strong> until {e.end_date}{e.notes ? ` — ${e.notes}` : ''}
+                      </div>
+                    ))}
+                    {!showExemptionForm ? (
+                      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--amber)', borderColor: 'rgba(255,170,0,0.3)' }} onClick={() => setShowExemptionForm(true)}>
+                        Apply Exemption
+                      </button>
+                    ) : (
+                      <div style={{ background: '#1a1a1a', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px', marginTop: 4 }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: 'var(--amber)' }}>Apply Balance Exemption</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                          <div className="field" style={{ marginBottom: 0 }}>
+                            <label style={{ fontSize: 11 }}>Exemption end date</label>
+                            <input type="date" value={exemptionEndDate} onChange={e => setExemptionEndDate(e.target.value)} style={{ background: '#111', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--white)', padding: '6px 8px', fontSize: 12 }} />
+                          </div>
+                          <div className="field" style={{ marginBottom: 0 }}>
+                            <label style={{ fontSize: 11 }}>Notes (visible to student)</label>
+                            <input value={exemptionNotes} onChange={e => setExemptionNotes(e.target.value)} placeholder="e.g. Payment plan agreed" style={{ background: '#111', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--white)', padding: '6px 8px', fontSize: 12 }} />
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button className="btn btn-ghost btn-xs" onClick={() => setShowExemptionForm(false)}>Cancel</button>
+                          <button className="btn btn-xs" style={{ background: 'rgba(255,170,0,0.15)', color: 'var(--amber)', border: '1px solid rgba(255,170,0,0.3)' }} disabled={!exemptionEndDate || savingExemption}
+                            onClick={async () => {
+                              setSavingExemption(true)
+                              try {
+                                await payments.createExemption({ student: student.id, end_date: exemptionEndDate, notes: exemptionNotes })
+                                const r = await payments.exemptions({ student: student.id })
+                                setExemptions(r.data || [])
+                                setShowExemptionForm(false)
+                                setExemptionEndDate('')
+                                setExemptionNotes('')
+                                await reloadNotes()
+                              } finally { setSavingExemption(false) }
+                            }}>
+                            {savingExemption ? 'Saving…' : 'Apply Exemption'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* ID check required */}
                 {student.id_check_required && (
