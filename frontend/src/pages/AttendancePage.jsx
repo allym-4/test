@@ -557,6 +557,7 @@ export default function AttendancePage() {
   const [preMarkedAwayIds, setPreMarkedAwayIds] = useState(new Set())
   const [instructorNotes, setInstructorNotes] = useState('')
   const [savingNotes, setSavingNotes] = useState(false)
+  const [appendNote, setAppendNote] = useState('')
   const [hwList, setHwList] = useState([])
   const [showAddHw, setShowAddHw] = useState(false)
   const [newHwTitle, setNewHwTitle] = useState('')
@@ -1208,7 +1209,10 @@ export default function AttendancePage() {
                           <div style={{ marginTop: 8, display: 'flex', alignItems: 'flex-start', gap: 6 }}>
                             {noteTag_ && <span style={{ fontSize: 10, fontWeight: 700, color: NOTE_TAG_COLOR[noteTag_] || '#888', background: 'rgba(255,255,255,0.05)', border: `1px solid ${NOTE_TAG_COLOR[noteTag_] || '#333'}44`, borderRadius: 4, padding: '2px 6px', flexShrink: 0, marginTop: 1 }}>{noteTag_}</span>}
                             <span style={{ fontSize: 12, color: '#aaa', lineHeight: 1.4 }}>{noteText_}</span>
-                            <button onClick={() => { setNoteModal(e.student); setNoteText(notes[e.student] || ''); setNoteTag(noteTags[e.student] || '') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#555', fontSize: 11, padding: '1px 4px', flexShrink: 0 }}>Edit</button>
+                            {isAdmin
+                              ? <button onClick={() => { setNoteModal(e.student); setNoteText(notes[e.student] || ''); setNoteTag(noteTags[e.student] || '') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#555', fontSize: 11, padding: '1px 4px', flexShrink: 0 }}>Edit</button>
+                              : <button onClick={() => { setNotes(n => ({ ...n, [e.student]: '' })); setNoteTags(t => ({ ...t, [e.student]: '' })); setSaved(false) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ff5050', fontSize: 11, padding: '1px 4px', flexShrink: 0 }}>Resolve</button>
+                            }
                           </div>
                         )}
                       </div>
@@ -1278,34 +1282,83 @@ export default function AttendancePage() {
           <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 12 }}>
             These notes are saved permanently and visible to all instructors and cover teachers for this class.
           </div>
-          <textarea
-            value={instructorNotes}
-            onChange={e => setInstructorNotes(e.target.value)}
-            placeholder="Add notes about this class — routines, student injuries, things to watch, quirks…"
-            rows={10}
-            style={{
-              width: '100%', background: '#111', border: '1px solid #222', borderRadius: 10,
-              color: '#fff', padding: '14px 16px', fontSize: 14, lineHeight: 1.6,
-              resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit',
-            }}
-          />
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
-            <button
-              className="btn btn-lime btn-sm"
-              disabled={savingNotes}
-              onClick={async () => {
-                setSavingNotes(true)
-                try {
-                  await classes.update(id, { instructor_notes: instructorNotes })
-                  setSession(s => ({ ...s, instructor_notes: instructorNotes }))
-                } finally {
-                  setSavingNotes(false)
-                }
-              }}
-            >
-              {savingNotes ? 'Saving…' : 'Save Notes'}
-            </button>
-          </div>
+          {isAdmin ? (
+            <>
+              <textarea
+                value={instructorNotes}
+                onChange={e => setInstructorNotes(e.target.value)}
+                placeholder="Add notes about this class — routines, student injuries, things to watch, quirks…"
+                rows={10}
+                style={{
+                  width: '100%', background: '#111', border: '1px solid #222', borderRadius: 10,
+                  color: '#fff', padding: '14px 16px', fontSize: 14, lineHeight: 1.6,
+                  resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit',
+                }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+                <button
+                  className="btn btn-lime btn-sm"
+                  disabled={savingNotes}
+                  onClick={async () => {
+                    setSavingNotes(true)
+                    try {
+                      await classes.update(id, { instructor_notes: instructorNotes })
+                      setSession(s => ({ ...s, instructor_notes: instructorNotes }))
+                    } finally {
+                      setSavingNotes(false)
+                    }
+                  }}
+                >
+                  {savingNotes ? 'Saving…' : 'Save Notes'}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              {instructorNotes ? (
+                <div style={{ background: '#111', border: '1px solid #222', borderRadius: 10, padding: '14px 16px', fontSize: 14, color: '#ccc', lineHeight: 1.6, whiteSpace: 'pre-wrap', marginBottom: 16 }}>
+                  {instructorNotes}
+                </div>
+              ) : (
+                <div style={{ fontSize: 13, color: '#555', marginBottom: 16 }}>No notes yet for this class.</div>
+              )}
+              <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 8 }}>Add a note</div>
+              <textarea
+                value={appendNote}
+                onChange={e => setAppendNote(e.target.value)}
+                placeholder="Add something — injury update, class note, anything relevant…"
+                rows={4}
+                style={{
+                  width: '100%', background: '#111', border: '1px solid #222', borderRadius: 10,
+                  color: '#fff', padding: '14px 16px', fontSize: 14, lineHeight: 1.6,
+                  resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit',
+                }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+                <button
+                  className="btn btn-lime btn-sm"
+                  disabled={savingNotes || !appendNote.trim()}
+                  onClick={async () => {
+                    setSavingNotes(true)
+                    try {
+                      const now = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
+                      const byLine = user?.display_name || user?.first_name || 'Instructor'
+                      const entry = `[${now} — ${byLine}] ${appendNote.trim()}`
+                      const updated = instructorNotes ? `${instructorNotes}\n\n${entry}` : entry
+                      await classes.update(id, { instructor_notes: updated })
+                      setInstructorNotes(updated)
+                      setSession(s => ({ ...s, instructor_notes: updated }))
+                      setAppendNote('')
+                    } finally {
+                      setSavingNotes(false)
+                    }
+                  }}
+                >
+                  {savingNotes ? 'Saving…' : 'Add Note'}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -1466,7 +1519,7 @@ export default function AttendancePage() {
             <div className="field">
               <label>Tag</label>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 4 }}>
-                {NOTE_TAGS.map(t => (
+                {NOTE_TAGS.filter(t => isAdmin || t.id !== 'vibes').map(t => (
                   <button key={t.id} type="button" onClick={() => setNoteTag(noteTag === t.id ? '' : t.id)}
                     style={{ padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: noteTag === t.id ? `${t.color}22` : '#1a1a1a', border: `1px solid ${noteTag === t.id ? t.color : '#2a2a2a'}`, color: noteTag === t.id ? t.color : '#888' }}>
                     {t.label}
