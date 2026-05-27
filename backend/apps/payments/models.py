@@ -67,6 +67,8 @@ class PaymentPlan(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(blank=True)
     stripe_payment_method_id = models.CharField(max_length=100, blank=True, default='')
+    payment_method = models.CharField(max_length=20, blank=True, default='card',
+                                      choices=[('card', 'Card'), ('cash', 'Cash'), ('bank_transfer', 'Bank Transfer'), ('prompt_card', 'Prompt to Add Card')])
 
     class Meta:
         ordering = ['-created_at']

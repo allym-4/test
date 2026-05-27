@@ -259,18 +259,20 @@ function BlockAccountModal({ student, onClose, onConfirm }) {
   )
 }
 
-function StudentNewPlanModal({ student, seasonsData, onClose, onSaved }) {
+function StudentNewPlanModal({ student, seasonsData, onClose, onSaved, outstandingBalance }) {
   const today = new Date().toISOString().slice(0, 10)
   const currentSeason = seasonsData.find(s => s.status === 'active') || seasonsData[0]
+  const initialAmount = outstandingBalance && outstandingBalance > 0 ? outstandingBalance.toFixed(2) : ''
   const [form, setForm] = useState({
     description: '',
-    total_amount: '',
+    total_amount: initialAmount,
     deposit: '',
     frequency: 'fortnightly',
     num_instalments: '4',
     start_date_type: 'today',
     custom_start_date: today,
     notes: '',
+    payment_method: 'card',
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -321,13 +323,15 @@ function StudentNewPlanModal({ student, seasonsData, onClose, onSaved }) {
         total_amount: parseFloat(form.total_amount),
         status: 'active',
         notes: form.notes,
+        payment_method: form.payment_method,
       })
       for (const ins of previewInstalments) {
         await payments.plans.createInstalment({ plan: res.data.id, amount: parseFloat(ins.amount), due_date: ins.due_date, status: 'pending' })
       }
       onSaved()
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to create plan')
+      const data = err.response?.data
+      setError((data && typeof data === 'object' ? Object.values(data).flat().join(' ') : null) || 'Failed to create plan')
     } finally {
       setSaving(false)
     }
@@ -346,9 +350,28 @@ function StudentNewPlanModal({ student, seasonsData, onClose, onSaved }) {
             <label>Description</label>
             <input value={form.description} onChange={e => set('description', e.target.value)} required placeholder="e.g. Season 4 — Level 2" />
           </div>
+          <div className="field">
+            <label>Payment Method</label>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {[
+                ['card', '💳 Card on file'],
+                ['prompt_card', '📲 Prompt to add card'],
+                ['cash', '💵 Cash'],
+                ['bank_transfer', '🏦 Bank transfer'],
+              ].map(([v, lbl]) => (
+                <button key={v} type="button" onClick={() => set('payment_method', v)}
+                  style={{ padding: '5px 12px', borderRadius: 8, border: '1px solid', borderColor: form.payment_method === v ? 'var(--lime)' : 'var(--border)', background: form.payment_method === v ? 'rgba(204,255,0,0.1)' : 'transparent', color: form.payment_method === v ? 'var(--lime)' : 'var(--grey)', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                  {lbl}
+                </button>
+              ))}
+            </div>
+            {form.payment_method === 'cash' && <div style={{ fontSize: 11, color: 'var(--amber)', marginTop: 6 }}>Student will be notified and cash payments tracked in their profile. You'll get a dashboard alert.</div>}
+            {form.payment_method === 'bank_transfer' && <div style={{ fontSize: 11, color: 'var(--amber)', marginTop: 6 }}>Student will be notified to arrange bank transfer. Mark instalments paid manually when received.</div>}
+            {form.payment_method === 'prompt_card' && <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 6 }}>Student will be prompted to save a card next time they log in.</div>}
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="field">
-              <label>Total Amount ($)</label>
+              <label>Total Amount ($){outstandingBalance > 0 && <span style={{ color: 'var(--amber)', fontSize: 11, marginLeft: 6 }}>← auto-filled from outstanding balance</span>}</label>
               <input type="number" step="0.01" value={form.total_amount} onChange={e => set('total_amount', e.target.value)} required placeholder="0.00" />
             </div>
             <div className="field">
@@ -3346,6 +3369,7 @@ export default function AdminStudentDetail() {
         <StudentNewPlanModal
           student={student}
           seasonsData={seasonsData || []}
+          outstandingBalance={bal < 0 ? Math.abs(bal) : 0}
           onClose={() => setShowNewPlanModal(false)}
           onSaved={() => {
             setShowNewPlanModal(false)

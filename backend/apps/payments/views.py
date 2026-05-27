@@ -63,7 +63,25 @@ class PaymentPlanListView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         user = self.request.user
         if user.role in ('admin', 'instructor'):
-            serializer.save(created_by=user)
+            student_id = self.request.data.get('student')
+            save_kwargs = {'created_by': user}
+            if student_id:
+                save_kwargs['student_id'] = student_id
+            plan = serializer.save(**save_kwargs)
+            # Notify student if cash/bank transfer method was chosen
+            payment_method = self.request.data.get('payment_method', '')
+            if payment_method in ('cash', 'bank_transfer'):
+                from apps.users.models import Notification
+                method_label = 'Cash' if payment_method == 'cash' else 'Bank Transfer'
+                Notification.objects.create(
+                    recipient=plan.student,
+                    title=f'Payment plan created — {method_label}',
+                    body=f'A payment plan of ${plan.total_amount} has been set up for you ({plan.description}). '
+                         f'Please arrange {method_label.lower()} payment as per your agreed schedule.',
+                    notification_type='info',
+                    action_url='/my-account/payments',
+                    action_label='View payment plan',
+                )
         else:
             # Students request a plan for themselves; admin must activate it.
             # Use the PM ID passed from the frontend (captured after Stripe confirmation),
