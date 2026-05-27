@@ -1115,6 +1115,7 @@ export default function AdminStudents() {
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-ghost btn-sm" onClick={() => setShowBulkTag(true)}>Bulk Tag</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setShowBulkMembership(true)}>Bulk Membership</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowImport(true)}>Import CSV</button>
           <button className="btn btn-lime btn-sm" onClick={() => setShowAdd(true)}>+ Add Student</button>
         </div>
       </div>

@@ -293,6 +293,8 @@ export const users = {
   bulkImport: (formData) => client.post('/api/users/import/', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
+  import_students: (formData) => client.post('/api/users/import-students/', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  import_students_preview: (formData) => client.post('/api/users/import-students/?dry_run=true', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   bulkNotify: (data) => client.post('/api/users/bulk-notify/', data),
 }
 
