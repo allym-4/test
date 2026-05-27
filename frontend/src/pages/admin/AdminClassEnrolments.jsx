@@ -750,6 +750,7 @@ function ContactClassModal({ sessionId, enrolled, onClose }) {
             <form onSubmit={handleSendPopup}>
               <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 12 }}>Display a pop-up alert to {(enrolled || []).length} enrolled students.</div>
               {popupError && <div style={{ fontSize: 13, color: 'var(--red)', marginBottom: 10, background: 'rgba(255,80,80,0.08)', border: '1px solid rgba(255,80,80,0.2)', borderRadius: 8, padding: '8px 12px' }}>{popupError}</div>}
+              <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 4 }}>⚠ Pop-up alerts are not yet wired to the mobile app — this will be implemented in a future release.</div>
               <div className="field"><label>Title</label><input required value={popupTitle} onChange={e => setPopupTitle(e.target.value)} placeholder="e.g. Class update" /></div>
               <div className="field"><label>Message</label><textarea required rows={3} value={popupMsg} onChange={e => setPopupMsg(e.target.value)} placeholder="Your message…" /></div>
               <div style={{ marginBottom: 12 }}>
