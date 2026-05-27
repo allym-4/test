@@ -292,7 +292,7 @@ class InstructorPayRecordSerializer(serializers.ModelSerializer):
 class StudentSkillSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentSkill
-        fields = ('id', 'skill_name', 'level', 'self_assessed', 'teacher_confirmed', 'instructor_status', 'instructor_notes', 'is_focus', 'updated_at')
+        fields = ('id', 'skill_name', 'level', 'self_assessed', 'self_rating', 'teacher_confirmed', 'instructor_status', 'instructor_notes', 'is_focus', 'updated_at')
         read_only_fields = ('id', 'updated_at')
 
 

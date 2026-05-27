@@ -56,25 +56,28 @@ export default function StudentProgress() {
     .filter(l => (l.order ?? 0) < highestOrder)
     .flatMap(l => getSkillsForLevel(l).filter(s => !s.teacher_confirmed))
 
-  // Self-assessed state (local toggles before submit)
-  const [selfAssessed, setSelfAssessed] = useState({})
+  // Self-rating state (local toggles before submit) — maps skill name to 'yes' | 'almost' | ''
+  const [localSelfRatings, setLocalSelfRatings] = useState({})
 
-  function toggleSelf(skillName) {
-    setSelfAssessed(prev => ({ ...prev, [skillName]: !prev[skillName] }))
+  function cycleSelfRating(skillName, currentRating) {
+    const current = localSelfRatings[skillName] !== undefined ? localSelfRatings[skillName] : (currentRating || '')
+    const next = current === '' ? 'almost' : current === 'almost' ? 'yes' : ''
+    setLocalSelfRatings(prev => ({ ...prev, [skillName]: next }))
   }
 
-  const selfAssessedNames = Object.entries(selfAssessed).filter(([, v]) => v).map(([k]) => k)
+  const pendingRatings = Object.entries(localSelfRatings).filter(([, v]) => v !== undefined)
 
   function submitSelfAssessed() {
-    for (const name of selfAssessedNames) {
+    for (const [name, rating] of pendingRatings) {
       const levelName = activeLevel
       skillsApi.save(user.id, {
         skill_name: name,
-        self_assessed: true,
+        self_rating: rating,
+        self_assessed: rating === 'yes',
         level: levelName,
       }).catch(() => {})
     }
-    setSelfAssessed({})
+    setLocalSelfRatings({})
   }
 
   // Media / Resources
@@ -240,17 +243,18 @@ export default function StudentProgress() {
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
                     {pendingFromPrevious.map(skill => {
-                      const isSelf = selfAssessed[skill.name]
+                      const localRating = localSelfRatings[skill.name] !== undefined ? localSelfRatings[skill.name] : (skill.self_rating || '')
+                      const borderColor = localRating === 'yes' ? 'rgba(204,255,0,0.3)' : localRating === 'almost' ? 'rgba(255,170,0,0.3)' : 'rgba(255,170,0,0.15)'
                       return (
                         <div
                           key={`prev-${skill.id}`}
-                          onClick={() => toggleSelf(skill.name)}
+                          onClick={() => skill.instructor_status !== 'not_quite' && cycleSelfRating(skill.name, skill.self_rating)}
                           style={{
                             background: 'var(--card)',
-                            border: `1px solid ${isSelf ? 'rgba(255,170,0,0.3)' : 'rgba(255,170,0,0.15)'}`,
+                            border: `1px solid ${borderColor}`,
                             borderRadius: 10,
                             padding: '12px 14px',
-                            cursor: 'pointer',
+                            cursor: skill.instructor_status === 'not_quite' ? 'default' : 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
@@ -265,10 +269,14 @@ export default function StudentProgress() {
                             </div>
                           </div>
                           <div style={{ flexShrink: 0, textAlign: 'right' }}>
-                            {isSelf ? (
-                              <span style={{ fontSize: 10, color: 'var(--lime)' }}>✓ Self-assessed</span>
+                            {skill.instructor_status === 'not_quite' ? (
+                              <span style={{ fontSize: 10, color: 'var(--amber)' }}>Not quite yet</span>
+                            ) : localRating === 'yes' ? (
+                              <span style={{ fontSize: 10, color: 'var(--lime)' }}>✓ Ready</span>
+                            ) : localRating === 'almost' ? (
+                              <span style={{ fontSize: 10, color: 'var(--amber)' }}>≈ Almost</span>
                             ) : (
-                              <span style={{ fontSize: 10, color: 'var(--grey)' }}>Tap if ready</span>
+                              <span style={{ fontSize: 10, color: '#555' }}>Tap to rate</span>
                             )}
                           </div>
                         </div>
@@ -343,17 +351,19 @@ export default function StudentProgress() {
                     >
                       {levelSkills.map(skill => {
                         const unlocked = skill.teacher_confirmed
-                        const isSelf = selfAssessed[skill.name] || skill.self_assessed
+                        const localRating = localSelfRatings[skill.name] !== undefined ? localSelfRatings[skill.name] : (skill.self_rating || '')
+                        const notQuiteYet = !unlocked && skill.instructor_status === 'not_quite'
+                        const borderColor = unlocked ? 'rgba(204,255,0,0.3)' : localRating === 'yes' ? 'rgba(204,255,0,0.15)' : localRating === 'almost' ? 'rgba(255,170,0,0.15)' : 'var(--border)'
                         return (
                           <div
                             key={skill.id}
-                            onClick={() => !unlocked && toggleSelf(skill.name)}
+                            onClick={() => !unlocked && !notQuiteYet && cycleSelfRating(skill.name, skill.self_rating)}
                             style={{
                               background: 'var(--card)',
-                              border: `1px solid ${unlocked ? 'rgba(204,255,0,0.3)' : selfAssessed[skill.name] ? 'rgba(204,255,0,0.15)' : 'var(--border)'}`,
+                              border: `1px solid ${borderColor}`,
                               borderRadius: 10,
                               padding: '12px 14px',
-                              cursor: unlocked ? 'default' : 'pointer',
+                              cursor: unlocked || notQuiteYet ? 'default' : 'pointer',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'space-between',
@@ -368,13 +378,15 @@ export default function StudentProgress() {
                             </div>
                             <div style={{ flexShrink: 0, textAlign: 'right' }}>
                               {unlocked ? (
-                                <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--lime)' }} title="Unlocked" />
-                              ) : selfAssessed[skill.name] ? (
-                                <span style={{ fontSize: 10, color: 'var(--lime)' }}>✓ Self-assessed</span>
-                              ) : isSelf ? (
-                                <span style={{ fontSize: 10, color: 'var(--grey)' }}>Self-assessed</span>
+                                <span style={{ fontSize: 10, color: 'var(--lime)', fontWeight: 700 }}>✓ Unlocked</span>
+                              ) : notQuiteYet ? (
+                                <span style={{ fontSize: 10, color: 'var(--amber)' }}>Not quite yet</span>
+                              ) : localRating === 'yes' ? (
+                                <span style={{ fontSize: 10, color: 'var(--lime)' }}>✓ Ready</span>
+                              ) : localRating === 'almost' ? (
+                                <span style={{ fontSize: 10, color: 'var(--amber)' }}>≈ Almost</span>
                               ) : (
-                                <span style={{ fontSize: 10, color: 'var(--grey)' }}>Tap if ready</span>
+                                <span style={{ fontSize: 10, color: '#555' }}>Tap to rate</span>
                               )}
                             </div>
                           </div>
@@ -386,7 +398,7 @@ export default function StudentProgress() {
               )}
 
               {/* Sticky submit bar */}
-              {selfAssessedNames.length > 0 && (
+              {pendingRatings.length > 0 && (
                 <div
                   style={{
                     position: 'fixed',
@@ -403,10 +415,10 @@ export default function StudentProgress() {
                   }}
                 >
                   <span style={{ fontSize: 13, color: 'var(--grey)' }}>
-                    {selfAssessedNames.length} trick{selfAssessedNames.length > 1 ? 's' : ''} self-assessed
+                    {pendingRatings.length} trick{pendingRatings.length > 1 ? 's' : ''} rated
                   </span>
                   <button className="btn btn-lime btn-sm" onClick={submitSelfAssessed}>
-                    Submit {selfAssessedNames.length} trick{selfAssessedNames.length > 1 ? 's' : ''} to instructor
+                    Submit {pendingRatings.length} trick{pendingRatings.length > 1 ? 's' : ''} to instructor
                   </button>
                 </div>
               )}

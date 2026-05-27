@@ -41,10 +41,24 @@ class HomeworkSubmissionItemSerializer(serializers.ModelSerializer):
         read_only_fields = ('id',)
 
 
+class HomeworkAssignmentDetailSerializer(serializers.ModelSerializer):
+    class_session_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = HomeworkAssignment
+        fields = ('id', 'title', 'due_date', 'status', 'class_session_name')
+
+    def get_class_session_name(self, obj):
+        if obj.class_session:
+            return str(obj.class_session)
+        return ''
+
+
 class HomeworkSubmissionSerializer(serializers.ModelSerializer):
     student_detail = UserMinimalSerializer(source='student', read_only=True)
     student_name = serializers.CharField(source='student.display_name', read_only=True)
     assignment_title = serializers.CharField(source='assignment.title', read_only=True)
+    assignment_detail = HomeworkAssignmentDetailSerializer(source='assignment', read_only=True)
     reviewed_by_name = serializers.StringRelatedField(source='reviewed_by')
     reviewed = serializers.SerializerMethodField()
     items = HomeworkSubmissionItemSerializer(many=True, read_only=True)
@@ -52,7 +66,7 @@ class HomeworkSubmissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = HomeworkSubmission
         fields = (
-            'id', 'assignment', 'assignment_title', 'student', 'student_detail', 'student_name',
+            'id', 'assignment', 'assignment_title', 'assignment_detail', 'student', 'student_detail', 'student_name',
             'submitted_at', 'reviewed', 'reviewed_at', 'reviewed_by', 'reviewed_by_name',
             'instructor_notes', 'items',
         )

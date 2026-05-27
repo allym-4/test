@@ -458,10 +458,13 @@ class StudentSkill(models.Model):
         NOT_QUITE = 'not_quite', 'Not Quite Yet'
         NOT_APPROVED = 'not_approved', 'Not Approved'
 
+    SELF_RATING_CHOICES = [('yes', 'Yes'), ('almost', 'Almost'), ('no', 'No')]
+
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='skill_records')
     skill_name = models.CharField(max_length=100)
     level = models.CharField(max_length=50)
     self_assessed = models.BooleanField(default=False)
+    self_rating = models.CharField(max_length=10, blank=True, choices=SELF_RATING_CHOICES)
     teacher_confirmed = models.BooleanField(default=False)
     instructor_status = models.CharField(
         max_length=20, choices=InstructorStatus.choices, default=InstructorStatus.PENDING
