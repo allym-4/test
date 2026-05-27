@@ -6,6 +6,7 @@ import { useApi } from '../../hooks/useApi'
 import { useAuth } from '../../contexts/AuthContext'
 import { classes, enrolments, settings as settingsApi, seasons as seasonsApi, payments as paymentsApi, attendance as attendanceApi, helpdesk as helpdeskApi, categories as categoriesApi } from '../../api'
 import CheckoutModal from '../../components/CheckoutModal'
+import SetupCardModal from '../../components/SetupCardModal'
 
 let _stripePromise = null
 async function getStripe() {
@@ -82,58 +83,167 @@ function SkeletonCard() {
 }
 
 function ClassCard({ session, onAddToCart, priceCasual, cartSessionId, isWaitlisted, waitlistType = 'waitlist' }) {
+  const [showPendingModal, setShowPendingModal] = useState(false)
+  const [showSetupCard, setShowSetupCard] = useState(false)
+  const [cardSaved, setCardSaved] = useState(false)
+  const [joiningWaitlist, setJoiningWaitlist] = useState(false)
+
   // held_count accounts for spots reserved for pending transfer requests
   const spotsLeft = (session.capacity || 12) - (session.enrolled_count || 0) - (session.held_count || 0)
   const isFull = spotsLeft <= 0
+  // A casual holds the last physical spot — they'll be offered the season first
+  const casualHoldsSpot = !isFull && spotsLeft === 1 && session.has_upcoming_casual
+  // A transfer request has the spot held — it may open if the transfer falls through
+  const transferHoldsSpot = isFull && (session.held_count || 0) > 0
+  // Pending state: either a transfer or casual is "using" the last spot
+  const isPending = transferHoldsSpot || casualHoldsSpot
+
   const levelBadge = getLevelBadge(session.name)
   const inCart = cartSessionId === session.id
 
+  async function joinWaitlistWithCard() {
+    setJoiningWaitlist(true)
+    try {
+      await enrolments.create({ session: session.id, status: 'waitlisted', enrolment_type: 'course' })
+      onAddToCart(session, 'waitlist-done')
+      setShowPendingModal(false)
+    } catch {
+      // silently ignore duplicates
+      setShowPendingModal(false)
+    } finally {
+      setJoiningWaitlist(false)
+    }
+  }
+
+  const pendingMessage = transferHoldsSpot
+    ? 'A spot is pending a transfer — join the waitlist to be next in line.'
+    : "A casual is taking the last spot in one of the weeks. We'll offer them the chance to take the full season, and if they don't accept, the spot will be yours!"
+
   return (
-    <div style={{ background: 'var(--card)', border: `1px solid ${inCart ? 'var(--lime)' : 'var(--border)'}`, borderRadius: 12, padding: '16px 18px', transition: 'border-color 0.2s' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-        <div style={{ flex: 1, minWidth: 0, paddingRight: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 3 }}>
-            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15 }}>{session.name}</div>
-            {levelBadge && (
-              <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 5, background: levelBadge.bg, color: levelBadge.color, whiteSpace: 'nowrap' }}>
-                {levelBadge.label}
-              </span>
+    <>
+      <div style={{ background: 'var(--card)', border: `1px solid ${inCart ? 'var(--lime)' : isPending ? 'rgba(255,170,0,0.3)' : 'var(--border)'}`, borderRadius: 12, padding: '16px 18px', transition: 'border-color 0.2s' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+          <div style={{ flex: 1, minWidth: 0, paddingRight: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 3 }}>
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15 }}>{session.name}</div>
+              {levelBadge && (
+                <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 5, background: levelBadge.bg, color: levelBadge.color, whiteSpace: 'nowrap' }}>
+                  {levelBadge.label}
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--grey)' }}>
+              {DAYS[session.day_of_week]} · {session.start_time?.slice(0, 5)} – {session.end_time?.slice(0, 5)}
+            </div>
+            {session.studio_detail && (
+              <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{session.studio_detail.name}</div>
             )}
           </div>
-          <div style={{ fontSize: 12, color: 'var(--grey)' }}>
-            {DAYS[session.day_of_week]} · {session.start_time?.slice(0, 5)} – {session.end_time?.slice(0, 5)}
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, color: 'var(--lime)' }}>${priceCasual}</div>
+            <div style={{ fontSize: 10, color: 'var(--grey)' }}>per class</div>
           </div>
-          {session.studio_detail && (
-            <div style={{ fontSize: 11, color: 'var(--grey)', marginTop: 2 }}>{session.studio_detail.name}</div>
+        </div>
+
+        {session.instructor_detail && (
+          <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 10 }}>
+            Instructor: <span style={{ color: 'var(--white)' }}>{session.instructor_detail.display_name || session.instructor_detail.first_name}</span>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {isPending ? (
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6, background: 'rgba(255,170,0,0.12)', color: 'var(--amber)', display: 'inline-block' }}>
+              Spot Pending
+            </span>
+          ) : (
+            <SpotsLabel spotsLeft={spotsLeft} />
+          )}
+
+          {isWaitlisted ? (
+            <span style={{ fontSize: 12, color: 'var(--amber)', fontWeight: 700 }}>On Waitlist ✓</span>
+          ) : isPending ? (
+            <button className="btn btn-sm" style={{ background: 'rgba(255,170,0,0.15)', color: 'var(--amber)', border: '1px solid rgba(255,170,0,0.3)', fontSize: 12 }} onClick={() => setShowPendingModal(true)}>
+              Join Waitlist →
+            </button>
+          ) : isFull ? (
+            inCart ? (
+              <span style={{ fontSize: 12, color: 'var(--lime)', fontWeight: 700 }}>✓ Added</span>
+            ) : (
+              <button className="btn btn-ghost btn-sm" onClick={() => onAddToCart(session, waitlistType)}>Full — Join Waitlist</button>
+            )
+          ) : inCart ? (
+            <span style={{ fontSize: 12, color: 'var(--lime)', fontWeight: 700 }}>✓ Added</span>
+          ) : (
+            <button className="btn btn-lime btn-sm" onClick={() => onAddToCart(session)}>Book</button>
           )}
         </div>
-        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, color: 'var(--lime)' }}>${priceCasual}</div>
-          <div style={{ fontSize: 10, color: 'var(--grey)' }}>per class</div>
-        </div>
+
+        {/* Pending explanation shown inline under the badge */}
+        {isPending && !isWaitlisted && (
+          <div style={{ fontSize: 12, color: 'var(--amber)', marginTop: 8, lineHeight: 1.5, opacity: 0.85 }}>
+            {pendingMessage}
+          </div>
+        )}
       </div>
 
-      {session.instructor_detail && (
-        <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 10 }}>
-          Instructor: <span style={{ color: 'var(--white)' }}>{session.instructor_detail.display_name || session.instructor_detail.first_name}</span>
+      {/* Pending spot waitlist modal */}
+      {showPendingModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1002, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)', padding: 16 }}
+          onClick={e => e.target === e.currentTarget && setShowPendingModal(false)}>
+          <div style={{ background: '#111', borderRadius: 20, padding: '28px 24px', width: '100%', maxWidth: 480 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+              <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 20 }}>Spot Pending</div>
+              <button onClick={() => setShowPendingModal(false)} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 10, color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, padding: '8px 14px', cursor: 'pointer' }}>CLOSE</button>
+            </div>
+            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{session.name}</div>
+            <div style={{ fontSize: 13, color: '#666', marginBottom: 20 }}>
+              {DAYS[session.day_of_week]}{session.start_time ? ` · ${session.start_time.slice(0, 5)}` : ''}
+            </div>
+            <div style={{ background: 'rgba(255,170,0,0.08)', border: '1px solid rgba(255,170,0,0.25)', borderRadius: 12, padding: '16px 18px', marginBottom: 20, fontSize: 14, color: '#ddd', lineHeight: 1.7 }}>
+              {pendingMessage}
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--grey)', marginBottom: 20, lineHeight: 1.6 }}>
+              Join the waitlist and save your card details. You won't be charged unless a spot opens and you confirm — we'll notify you immediately.
+            </div>
+
+            {!cardSaved ? (
+              <>
+                <button
+                  onClick={() => setShowSetupCard(true)}
+                  style={{ width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: 12, padding: '14px', fontSize: 13, color: '#888', fontWeight: 600, cursor: 'pointer', marginBottom: 10, textAlign: 'left' }}
+                >
+                  💳 Save card details for when a spot opens →
+                </button>
+                <button
+                  onClick={joinWaitlistWithCard}
+                  disabled={joiningWaitlist}
+                  style={{ width: '100%', background: 'transparent', border: 'none', fontSize: 12, color: '#555', cursor: 'pointer', padding: '8px 0' }}
+                >
+                  {joiningWaitlist ? 'Adding…' : 'Join waitlist without saving card'}
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={joinWaitlistWithCard}
+                disabled={joiningWaitlist}
+                style={{ width: '100%', background: 'var(--amber)', color: '#000', border: 'none', borderRadius: 12, padding: '18px 0', fontWeight: 900, fontSize: 13, letterSpacing: 0.5, cursor: joiningWaitlist ? 'default' : 'pointer' }}
+              >
+                {joiningWaitlist ? '…' : '✓ Card saved — Add me to the waitlist'}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <SpotsLabel spotsLeft={spotsLeft} />
-        {isFull ? (
-          isWaitlisted ? (
-            <span style={{ fontSize: 12, color: 'var(--amber)', fontWeight: 700 }}>On Waitlist ✓</span>
-          ) : (
-            <button className="btn btn-ghost btn-sm" onClick={() => onAddToCart(session, waitlistType)}>Join Waitlist</button>
-          )
-        ) : inCart ? (
-          <span style={{ fontSize: 12, color: 'var(--lime)', fontWeight: 700 }}>✓ Added</span>
-        ) : (
-          <button className="btn btn-lime btn-sm" onClick={() => onAddToCart(session)}>Book</button>
-        )}
-      </div>
-    </div>
+      {/* Stripe card setup */}
+      {showSetupCard && (
+        <SetupCardModal
+          onSuccess={() => { setCardSaved(true); setShowSetupCard(false) }}
+          onClose={() => setShowSetupCard(false)}
+        />
+      )}
+    </>
   )
 }
 
@@ -2312,6 +2422,11 @@ export default function StudentBook() {
   const [casualLevelLockedOcc, setCasualLevelLockedOcc] = useState(null)
 
   function addToCart(session, type, price) {
+    if (type === 'waitlist-done') {
+      // Waitlist join already handled inside ClassCard (with card collection)
+      setBooked(b => [...b, session.id + '-waitlist'])
+      return
+    }
     if (type === 'waitlist' || type === 'casual-waitlist') {
       const enrolmentType = type === 'casual-waitlist' ? 'casual' : 'course'
       enrolments.create({ session: session.id, status: 'waitlisted', enrolment_type: enrolmentType })
