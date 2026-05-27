@@ -67,4 +67,5 @@ urlpatterns = [
     path('session-names/', views.SessionNamesView.as_view(), name='session-names'),
     path('revenue-stats/', views.RevenueStatsView.as_view(), name='revenue-stats'),
     path('sessions/generate-description/', views.GenerateClassDescriptionView.as_view(), name='generate-description'),
+    path('sessions/<int:pk>/season-enrolments/', views.ClassSeasonEnrolmentsView.as_view(), name='session-season-enrolments'),
 ]

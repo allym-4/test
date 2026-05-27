@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import { useApi } from '../../hooks/useApi'
 import { classes, seasons as seasonsApi } from '../../api'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import AddEditClassModal from '../../components/AddEditClassModal'
 import { fmt12 } from '../../utils/time'
 
@@ -331,6 +331,7 @@ function CalendarGrid({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AdminTimetable() {
+  const navigate = useNavigate()
   const [weekOffset, setWeekOffset]     = useState(0)
   const [view, setView]                 = useState('list')   // 'calendar' | 'list'
   const [dataMode, setDataMode]         = useState('season') // 'season' | 'week'
@@ -658,8 +659,7 @@ export default function AdminTimetable() {
                         return (
                           <div key={s.id} style={{ background: '#111', border: `1px solid ${isFull ? '#ff3333aa' : 'var(--border)'}`, borderRadius: 10 }}>
                             <div
-                              style={{ display: 'grid', gridTemplateColumns: '170px 1fr 160px 90px auto', alignItems: 'center', gap: 12, padding: '12px 16px', cursor: 'pointer' }}
-                              onClick={() => { setEditSession(s); setShowAddClass(true) }}
+                              style={{ display: 'grid', gridTemplateColumns: '170px 1fr 160px 90px auto', alignItems: 'center', gap: 12, padding: '12px 16px' }}
                             >
                               <div>
                                 <div style={{ fontWeight: 600, fontSize: 14 }}>{s.name}</div>
@@ -681,11 +681,9 @@ export default function AdminTimetable() {
                               <span className={`tag ${!s.is_active ? 'tag-grey' : isFull ? 'tag-amber' : 'tag-lime'}`} style={{ fontSize: 10 }}>
                                 {!s.is_active ? 'Inactive' : isFull ? 'Full' : 'Active'}
                               </span>
-                              <div style={{ display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
-                                <Link to={`/admin/classes/${s.id}/attendance`}>
-                                  <button className="btn btn-ghost btn-xs">Roster</button>
-                                </Link>
-                                <button className="btn btn-ghost btn-xs" onClick={() => { setEditSession(s); setShowAddClass(true) }}>Edit</button>
+                              <div style={{ display: 'flex', gap: 6 }}>
+                                <button className="btn btn-ghost btn-xs" onClick={() => navigate(`/admin/classes/${s.id}`)}>Edit Class</button>
+                                <button className="btn btn-ghost btn-xs" style={{ color: 'var(--lime)' }} onClick={() => navigate(`/admin/classes/${s.id}/season-enrolments`)}>See Enrolments</button>
                               </div>
                             </div>
                           </div>
