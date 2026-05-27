@@ -1389,10 +1389,37 @@ class CasualBookView(APIView):
                 today = _tz.localdate()
                 week_number = (today - season.start_date).days // 7 + 1
                 if week_number > session.catchup_cutoff_weeks:
-                    return Response(
-                        {'detail': f'Drop-in bookings for {session.name} closed after week {session.catchup_cutoff_weeks} of the season.'},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
+                    # Check auto_exempt_same_name: if student is enrolled in a session with the same name in this season
+                    exempt = False
+                    if session.auto_exempt_same_name:
+                        from apps.enrolments.models import Enrolment
+                        same_name_enrolled = Enrolment.objects.filter(
+                            student=request.user,
+                            class_session__name=session.name,
+                            class_session__season=season,
+                            status='active',
+                        ).exists()
+                        if same_name_enrolled:
+                            exempt = True
+
+                    # Check catchup_eligible_names: if student is enrolled in any of the listed class names
+                    if not exempt and session.catchup_eligible_names:
+                        eligible = [n.strip() for n in session.catchup_eligible_names.split(',') if n.strip()]
+                        if eligible:
+                            from apps.enrolments.models import Enrolment
+                            enrolled_names = set(Enrolment.objects.filter(
+                                student=request.user,
+                                class_session__season=season,
+                                status='active',
+                            ).values_list('class_session__name', flat=True))
+                            if enrolled_names & set(eligible):
+                                exempt = True
+
+                    if not exempt:
+                        return Response(
+                            {'detail': f'Drop-in bookings for {session.name} closed after week {session.catchup_cutoff_weeks} of the season.'},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
 
         if CasualBooking.objects.filter(
             occurrence=occurrence, student=request.user

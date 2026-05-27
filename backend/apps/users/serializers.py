@@ -151,6 +151,7 @@ class StudioSettingsSerializer(serializers.ModelSerializer):
             'xero_client_id', 'xero_client_secret', 'xero_tenant_id', 'xero_connected',
             'overdue_reminder_schedule',
             'trial_intro_headline', 'trial_intro_body',
+            'waiver_text',
         )
         read_only_fields = ('xero_connected', 'mailchimp_connected')
 
@@ -169,6 +170,7 @@ class StudioSettingsPublicSerializer(serializers.ModelSerializer):
             'studio_code', 'trial_intro_headline', 'trial_intro_body',
             'form_health_enabled', 'form_photo_consent_enabled', 'form_waiver_enabled', 'form_season_agreement_enabled',
             'form_health_required', 'form_photo_consent_required', 'form_waiver_required', 'form_season_agreement_required',
+            'waiver_text',
         )
 
 
@@ -271,11 +273,20 @@ class StudentFormSerializer(serializers.ModelSerializer):
 
 class InstructorPayRecordSerializer(serializers.ModelSerializer):
     instructor_name = serializers.StringRelatedField(source='instructor')
+    class_name = serializers.SerializerMethodField()
+
+    def get_class_name(self, obj):
+        if obj.occurrence_id:
+            try:
+                return obj.occurrence.session.name
+            except Exception:
+                pass
+        return obj.description
 
     class Meta:
         model = InstructorPayRecord
-        fields = ('id', 'instructor', 'instructor_name', 'amount', 'description', 'period_start', 'period_end', 'status', 'paid_at', 'created_at')
-        read_only_fields = ('id', 'created_at')
+        fields = ('id', 'instructor', 'instructor_name', 'occurrence', 'date', 'student_count', 'rate', 'class_name', 'amount', 'description', 'period_start', 'period_end', 'status', 'paid_at', 'created_at')
+        read_only_fields = ('id', 'created_at', 'class_name')
 
 
 class StudentSkillSerializer(serializers.ModelSerializer):

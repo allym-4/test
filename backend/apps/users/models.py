@@ -187,6 +187,7 @@ class StudioSettings(models.Model):
         default=False,
         help_text='When True, the automatic locker carry-over reminder is paused (e.g. capacity issue detected).',
     )
+    waiver_text = models.TextField(blank=True)
 
     class Meta:
         verbose_name = 'Studio Settings'
@@ -431,6 +432,10 @@ class InstructorPayRecord(models.Model):
         PAID = 'paid', 'Paid'
 
     instructor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pay_records')
+    occurrence = models.ForeignKey('classes.ClassOccurrence', null=True, blank=True, on_delete=models.SET_NULL, related_name='pay_records')
+    date = models.DateField(null=True, blank=True)
+    student_count = models.PositiveSmallIntegerField(null=True, blank=True)
+    rate = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     amount = models.DecimalField(max_digits=8, decimal_places=2)
     description = models.CharField(max_length=255, blank=True)
     period_start = models.DateField(null=True, blank=True)

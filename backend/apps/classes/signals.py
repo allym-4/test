@@ -321,18 +321,27 @@ def auto_credit_instructor(sender, instance, created, **kwargs):
     if not instructor or instructor.role not in ('instructor', 'admin'):
         return
 
-    from apps.payments.models import Payment
-    occ_ref = f'class-occ-{instance.pk}'
-    if Payment.objects.filter(reference=occ_ref, payment_type='credit').exists():
-        return  # already credited
+    from apps.users.models import InstructorPayRecord
 
-    rate = float(instructor.pay_rate or (30 if instructor.is_shadow_instructor else 40))
-    session_name = instance.session.name
+    # Guard: don't double-create
+    if InstructorPayRecord.objects.filter(occurrence=instance).exists():
+        return
+
+    session = instance.session
+    if session.instructor_fee:
+        rate = float(session.instructor_fee)
+    else:
+        rate = float(instructor.pay_rate or (30 if instructor.is_shadow_instructor else 40))
+
+    session_name = session.name
     date_str = instance.date.strftime('%-d %b %Y') if instance.date else ''
-    Payment.objects.create(
-        student=instructor,
-        payment_type='credit',
+    InstructorPayRecord.objects.create(
+        instructor=instructor,
+        occurrence=instance,
+        date=instance.date,
         amount=rate,
+        rate=rate,
+        student_count=None,
         description=f'Class pay — {session_name} {date_str}',
-        reference=occ_ref,
+        status='pending',
     )

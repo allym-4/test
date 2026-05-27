@@ -236,9 +236,42 @@ class EnrolmentListView(generics.ListCreateAPIView):
                 today = timezone.localdate()
                 week_number = (today - season.start_date).days // 7 + 1
                 if week_number > cutoff:
-                    raise ValidationError(
-                        f'Catch-up bookings for {session.name} closed after week {cutoff} of the season.'
-                    )
+                    # Check auto_exempt_same_name
+                    exempt = False
+                    if getattr(session, 'auto_exempt_same_name', False):
+                        same_name_enrolled = Enrolment.objects.filter(
+                            student=user,
+                            class_session__name=session.name,
+                            class_session__season=season,
+                            status='active',
+                        ).exists()
+                        if same_name_enrolled:
+                            exempt = True
+
+                    # Check catchup_eligible_names
+                    if not exempt:
+                        eligible_names_str = getattr(session, 'catchup_eligible_names', '')
+                        if eligible_names_str:
+                            eligible = [n.strip() for n in eligible_names_str.split(',') if n.strip()]
+                            if eligible:
+                                enrolled_names = set(Enrolment.objects.filter(
+                                    student=user,
+                                    class_session__season=season,
+                                    status='active',
+                                ).values_list('class_session__name', flat=True))
+                                if enrolled_names & set(eligible):
+                                    exempt = True
+
+                    if not exempt:
+                        raise ValidationError(
+                            f'Catch-up bookings for {session.name} closed after week {cutoff} of the season.'
+                        )
+
+        # Block payment plan for sessions that require full payment
+        if session and getattr(session, 'requires_full_payment', False):
+            payment_plan = self.request.data.get('payment_plan', False)
+            if payment_plan:
+                raise ValidationError(f'{session.name} requires full payment upfront and cannot be put on a payment plan.')
 
         # Block students with outstanding required forms from booking course/catchup
         if user.role == 'student' and enrolment_type in ('course', 'catchup', 'catch_up'):
