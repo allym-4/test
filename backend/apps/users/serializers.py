@@ -231,7 +231,7 @@ class ProductSerializer(serializers.ModelSerializer):
 class AutomationRuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = AutomationRule
-        fields = ('id', 'slug', 'enabled', 'name', 'description', 'trigger_type', 'conditions', 'actions', 'is_custom', 'created_at')
+        fields = ('id', 'slug', 'enabled', 'name', 'description', 'trigger_type', 'conditions', 'actions', 'timing', 'is_custom', 'created_at')
         read_only_fields = ('id', 'created_at')
 
 

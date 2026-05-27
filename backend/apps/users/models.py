@@ -300,6 +300,7 @@ class AutomationRule(models.Model):
     trigger_type = models.CharField(max_length=50, blank=True)
     conditions = models.JSONField(default=list, blank=True)
     actions = models.JSONField(default=list, blank=True)
+    timing = models.JSONField(default=dict, blank=True)
     is_custom = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
 

@@ -544,6 +544,8 @@ class AutomationRuleView(APIView):
             rule.actions = request.data['actions']
         if 'name' in request.data:
             rule.name = request.data['name']
+        if 'timing' in request.data:
+            rule.timing = request.data['timing']
         rule.save()
         return Response(AutomationRuleSerializer(rule).data)
 

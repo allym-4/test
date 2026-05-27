@@ -300,50 +300,126 @@ const DEFAULT_COPY = {
   locker_renewal_reminder: { subject: "Your locker expires at the end of the season", body: "Hi {{first_name}},\n\nYour locker (#{{locker_number}}) is due to expire at the end of the current season. Please contact us if you'd like to renew.\n\nDuality Pole Studio" },
 }
 
-function EditCopyModal({ slug, name, storedActions, onClose, onSave }) {
+const TIMING_FIELDS = {
+  reengagement: [
+    { key: 'days_threshold', label: 'Days without attendance before trigger', default: 21, min: 1, max: 365 },
+    { key: 'cooldown_days', label: 'Re-send cooldown (days)', default: 14, min: 1, max: 365 },
+  ],
+  welfare_checkin: [
+    { key: 'min_present_of_4', label: 'Minimum classes attended of last 4', default: 2, min: 0, max: 4 },
+    { key: 'cooldown_days', label: 'Re-send cooldown (days)', default: 14, min: 1, max: 365 },
+  ],
+  parq_reminder: [
+    { key: 'advance_hours', label: 'Hours in advance to send', default: 48, min: 1, max: 336 },
+    { key: 'window_hours', label: 'Send window (hours)', default: 72, min: 1, max: 336 },
+  ],
+  locker_renewal_reminder: [
+    { key: 'days_before', label: 'Days before expiry to notify', default: 14, min: 1, max: 60 },
+  ],
+}
+
+function EditBuiltinModal({ slug, name, storedActions, storedTiming, onClose, onSave }) {
   const defaults = DEFAULT_COPY[slug] || { subject: '', body: '' }
   const existing = storedActions?.find(a => a.type === 'send_email') || {}
   const [subject, setSubject] = useState(existing.subject || defaults.subject)
   const [body, setBody] = useState(existing.body || defaults.body)
+  const timingFields = TIMING_FIELDS[slug] || []
+  const [timingVals, setTimingVals] = useState(() => {
+    const t = storedTiming || {}
+    const init = {}
+    timingFields.forEach(f => { init[f.key] = t[f.key] !== undefined ? t[f.key] : f.default })
+    return init
+  })
   const [saving, setSaving] = useState(false)
 
   async function handleSave() {
     setSaving(true)
     try {
-      await automations.saveActions(slug, [{ type: 'send_email', subject, body }])
+      const saves = [automations.saveActions(slug, [{ type: 'send_email', subject, body }])]
+      if (timingFields.length > 0) {
+        saves.push(automations.saveTiming(slug, timingVals))
+      }
+      await Promise.all(saves)
       onSave()
     } finally {
       setSaving(false)
     }
   }
 
+  const inputStyle = { width: '100%', boxSizing: 'border-box', background: '#111', color: '#fff', border: '1px solid #333', borderRadius: 8, padding: '8px 12px', fontSize: 13 }
+  const labelStyle = { fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }
+
   return (
     <div className="sd-overlay" style={{ zIndex: 1000 }} onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="sd-modal" style={{ maxWidth: 560 }}>
         <div className="sd-header">
-          <div style={{ fontWeight: 700, fontSize: 15 }}>Edit Email Copy — {name}</div>
+          <div style={{ fontWeight: 700, fontSize: 15 }}>Edit Settings — {name}</div>
           <button className="modal-close-btn" onClick={onClose}>✕</button>
         </div>
-        <div className="sd-body">
+        <div className="sd-body" style={{ overflowY: 'auto', maxHeight: '80vh' }}>
+          {timingFields.length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 11, color: 'var(--lime)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: 12 }}>Timing Settings</div>
+              {timingFields.map(f => (
+                <div key={f.key} style={{ marginBottom: 12 }}>
+                  <label style={labelStyle}>{f.label}</label>
+                  <input
+                    type="number"
+                    min={f.min}
+                    max={f.max}
+                    value={timingVals[f.key]}
+                    onChange={e => setTimingVals(prev => ({ ...prev, [f.key]: parseInt(e.target.value) || f.default }))}
+                    style={{ ...inputStyle, width: 120 }}
+                  />
+                </div>
+              ))}
+              <div style={{ borderBottom: '1px solid #222', marginBottom: 20, marginTop: 20 }} />
+            </div>
+          )}
+
+          <div style={{ fontSize: 11, color: 'var(--lav)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: 12 }}>Email Copy</div>
           <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 14, lineHeight: 1.6 }}>
             Customise the email sent by this automation. Use variables like <code style={{ background: '#1a1a1a', padding: '1px 5px', borderRadius: 4 }}>{'{{first_name}}'}</code> to personalise.
           </div>
           <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>Subject</label>
-            <input value={subject} onChange={e => setSubject(e.target.value)} style={{ width: '100%', boxSizing: 'border-box' }} />
+            <label style={labelStyle}>Subject</label>
+            <input value={subject} onChange={e => setSubject(e.target.value)} style={inputStyle} />
           </div>
           <div style={{ marginBottom: 20 }}>
-            <label style={{ fontSize: 11, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>Body</label>
-            <textarea value={body} onChange={e => setBody(e.target.value)} rows={10} style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical', background: '#111', color: '#fff', border: '1px solid #333', borderRadius: 8, padding: '8px 12px', fontSize: 13, fontFamily: 'inherit', lineHeight: 1.6 }} />
+            <label style={labelStyle}>Body</label>
+            <textarea value={body} onChange={e => setBody(e.target.value)} rows={10} style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.6 }} />
           </div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-            <button className="btn btn-lime btn-sm" onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save Copy'}</button>
+            <button className="btn btn-lime btn-sm" onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save Settings'}</button>
           </div>
         </div>
       </div>
     </div>
   )
+}
+
+function getDynamicTrigger(slug, timing, defaultTrigger) {
+  switch (slug) {
+    case 'reengagement': {
+      const days = timing.days_threshold !== undefined ? timing.days_threshold : 21
+      return `${days} days no attendance`
+    }
+    case 'welfare_checkin': {
+      const min = timing.min_present_of_4 !== undefined ? timing.min_present_of_4 : 2
+      return `Attendance < ${min} of last 4 classes`
+    }
+    case 'parq_reminder': {
+      const hours = timing.advance_hours !== undefined ? timing.advance_hours : 48
+      return `Trial class booked + PAR-Q not submitted — send ${hours}h before`
+    }
+    case 'locker_renewal_reminder': {
+      const days = timing.days_before !== undefined ? timing.days_before : 14
+      return `Locker expires within ${days} days`
+    }
+    default:
+      return defaultTrigger
+  }
 }
 
 export default function AdminAutomations() {
@@ -441,10 +517,11 @@ export default function AdminAutomations() {
         />
       )}
       {editCopy && (
-        <EditCopyModal
+        <EditBuiltinModal
           slug={editCopy.slug}
           name={editCopy.name}
           storedActions={storedRulesMap[editCopy.slug]?.actions}
+          storedTiming={storedRulesMap[editCopy.slug]?.timing}
           onClose={() => setEditCopy(null)}
           onSave={() => { setEditCopy(null); loadData() }}
         />
@@ -500,6 +577,8 @@ export default function AdminAutomations() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {shown.map(a => {
               const enabled = loading ? a.defaultEnabled : (enabledMap[a.slug] ?? a.defaultEnabled)
+              const storedTiming = storedRulesMap[a.slug]?.timing || {}
+              const dynamicTrigger = getDynamicTrigger(a.slug, storedTiming, a.trigger)
               return (
                 <div key={a.slug} style={{ background: 'var(--card)', border: `1px solid ${enabled ? 'var(--border)' : '#111'}`, borderRadius: 12, padding: '16px 18px', opacity: enabled ? 1 : 0.65 }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
@@ -511,18 +590,16 @@ export default function AdminAutomations() {
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 10, lineHeight: 1.5 }}>{a.desc}</div>
                       <div style={{ display: 'flex', gap: 20, fontSize: 11 }}>
-                        <div><span style={{ color: 'var(--grey)' }}>Trigger: </span><span>{a.trigger}</span></div>
+                        <div><span style={{ color: 'var(--grey)' }}>Trigger: </span><span>{dynamicTrigger}</span></div>
                         <div><span style={{ color: 'var(--grey)' }}>Action: </span><span>{a.action}</span></div>
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                      {DEFAULT_COPY[a.slug] && (
-                        <button
-                          className="btn btn-ghost btn-xs"
-                          style={{ fontSize: 11, color: 'var(--lav)' }}
-                          onClick={() => setEditCopy({ slug: a.slug, name: a.name })}
-                        >Edit Copy</button>
-                      )}
+                      <button
+                        className="btn btn-ghost btn-xs"
+                        style={{ fontSize: 11, color: 'var(--lav)' }}
+                        onClick={() => setEditCopy({ slug: a.slug, name: a.name })}
+                      >Edit Settings</button>
                       <Toggle checked={enabled} onChange={() => toggle(a.slug)} />
                     </div>
                   </div>

@@ -318,6 +318,7 @@ export const automations = {
   list: () => client.get('/api/users/automations/'),
   toggle: (slug, enabled) => client.patch('/api/users/automations/', { slug, enabled }),
   saveActions: (slug, actions) => client.patch('/api/users/automations/', { slug, actions }),
+  saveTiming: (slug, timing) => client.patch('/api/users/automations/', { slug, timing }),
   create: (data) => client.post('/api/users/automations/', data),
   update: (id, data) => client.patch(`/api/users/automations/${id}/`, data),
   delete: (id) => client.delete(`/api/users/automations/${id}/`),
