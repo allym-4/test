@@ -213,6 +213,49 @@ class StripeChargeSavedCardView(APIView):
         })
 
 
+class StripeRefundView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request):
+        import stripe as stripe_lib
+        from django.conf import settings as django_settings
+        stripe_lib.api_key = django_settings.STRIPE_SECRET_KEY
+
+        payment_id = request.data.get('payment_id')
+        amount_cents = request.data.get('amount_cents')  # optional, for partial refund
+
+        if not payment_id:
+            return Response({'detail': 'payment_id required.'}, status=400)
+
+        try:
+            payment = Payment.objects.get(pk=payment_id)
+        except Payment.DoesNotExist:
+            return Response({'detail': 'Payment not found.'}, status=404)
+
+        if not payment.stripe_payment_intent_id:
+            return Response({'detail': 'No Stripe payment intent on this record.'}, status=400)
+
+        try:
+            refund_kwargs = {'payment_intent': payment.stripe_payment_intent_id}
+            if amount_cents:
+                refund_kwargs['amount'] = int(amount_cents)
+            refund = stripe_lib.Refund.create(**refund_kwargs)
+
+            # Record the refund as a Payment record
+            Payment.objects.create(
+                student=payment.student,
+                amount=-abs(payment.amount if not amount_cents else int(amount_cents) / 100),
+                payment_type='refund',
+                payment_method='card',
+                description=f'Stripe refund — {payment.description or "Payment"}',
+                reference=refund.id,
+            )
+
+            return Response({'refund_id': refund.id, 'status': refund.status})
+        except stripe_lib.error.StripeError as e:
+            return Response({'detail': str(e)}, status=400)
+
+
 @method_decorator(csrf_exempt, name='dispatch')
 class StripeWebhookView(APIView):
     permission_classes = [permissions.AllowAny]

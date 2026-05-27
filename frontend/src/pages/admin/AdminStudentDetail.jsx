@@ -6,7 +6,7 @@ import client from '../../api/client'
 import { useAuth } from '../../contexts/AuthContext'
 import '../StudentsPage.css'
 
-function PaymentDetailModal({ payment, onClose }) {
+function PaymentDetailModal({ payment, onClose, onRefunded }) {
   if (!payment) return null
   const METHOD_LABELS = { card: 'Credit/Debit Card', cash: 'Cash', bank_transfer: 'Bank Transfer', account_credit: 'Account Credit', other: 'Other' }
   const TYPE_LABELS = { payment: 'Payment received', charge: 'Invoice / Charge', refund: 'Refund', credit: 'Credit', no_show_fee: 'No-show Fee' }
@@ -57,6 +57,9 @@ function PaymentDetailModal({ payment, onClose }) {
                 <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--grey)' }}>{payment.stripe_payment_intent_id}</span>
               </div>
             )}
+            {payment.stripe_payment_intent_id && payment.payment_type === 'payment' && (
+              <StripeRefundButton payment={payment} onRefunded={onRefunded} />
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 12, color: 'var(--grey)' }}>Logged by</span>
               <span style={{ fontSize: 13 }}>{payment.created_by_name || 'System'}</span>
@@ -77,6 +80,62 @@ function PaymentDetailModal({ payment, onClose }) {
     </div>
   )
 }
+function StripeRefundButton({ payment, onRefunded }) {
+  const [open, setOpen] = useState(false)
+  const [amount, setAmount] = useState(String(Math.abs(payment.amount)))
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  async function handleRefund() {
+    setLoading(true)
+    setError(null)
+    try {
+      const cents = Math.round(parseFloat(amount) * 100)
+      await client.post('/api/payments/stripe/refund/', {
+        payment_id: payment.id,
+        amount_cents: cents,
+      })
+      setOpen(false)
+      if (onRefunded) onRefunded()
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Refund failed.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!open) {
+    return (
+      <button className="btn btn-ghost btn-xs" style={{ color: 'var(--red)', marginTop: 8 }} onClick={() => setOpen(true)}>
+        Refund via Stripe
+      </button>
+    )
+  }
+
+  return (
+    <div style={{ marginTop: 10, background: 'rgba(255,68,68,0.07)', border: '1px solid rgba(255,68,68,0.2)', borderRadius: 8, padding: '12px 14px' }}>
+      <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: 'var(--red)' }}>Refund via Stripe</div>
+      {error && <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 8 }}>{error}</div>}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <span style={{ fontSize: 12, color: 'var(--grey)' }}>Amount $</span>
+        <input
+          type="number"
+          step="0.01"
+          min="0.01"
+          max={Math.abs(payment.amount)}
+          value={amount}
+          onChange={e => setAmount(e.target.value)}
+          style={{ width: 90, background: '#1a1a1a', border: '1px solid #333', borderRadius: 6, color: '#fff', padding: '5px 8px', fontSize: 12 }}
+        />
+        <button className="btn btn-xs" style={{ background: 'var(--red)', color: '#fff', border: 'none' }} onClick={handleRefund} disabled={loading}>
+          {loading ? '…' : 'Confirm Refund'}
+        </button>
+        <button className="btn btn-ghost btn-xs" onClick={() => setOpen(false)}>Cancel</button>
+      </div>
+    </div>
+  )
+}
+
 import EditStudentModal from '../../components/EditStudentModal'
 import TakePaymentModal from '../../components/TakePaymentModal'
 import AddChargeModal from '../../components/AddChargeModal'
@@ -131,12 +190,21 @@ function avatarColor(name) {
   return AVATAR_COLORS[h]
 }
 
-const ATT_STATUS_TAG = {
-  present:   { label: 'Present',   cls: 'tag-lime' },
-  late:      { label: 'Late',      cls: 'tag-lav' },
-  no_show:   { label: 'No-show',   cls: 'tag-red' },
-  absent:    { label: 'Absent',    cls: 'tag-grey' },
-  cancelled: { label: 'Cancelled', cls: 'tag-grey' },
+function getAttTag(a, makeupCredits) {
+  if (a.status === 'present') return { label: 'Attended', cls: 'tag-lime' }
+  if (a.status === 'late') return { label: 'Late', cls: 'tag-amber' }
+  if (a.status === 'no_show') {
+    if (a.no_show_fee_charged) return { label: 'No-show · Fee charged', cls: 'tag-red' }
+    if (a.no_show_fee_waived) return { label: 'No-show · Fee waived', cls: 'tag-amber' }
+    return { label: 'No-show', cls: 'tag-red' }
+  }
+  if (a.status === 'absent') {
+    // If a makeup credit was issued for this occurrence, it was an early cancel (>4hrs)
+    const hadCredit = (makeupCredits || []).some(c => c.source_occurrence === a.occurrence)
+    if (hadCredit) return { label: 'Marked away · Credit issued', cls: 'tag-grey' }
+    return { label: 'Late cancel · No credit', cls: 'tag-amber' }
+  }
+  return { label: a.status, cls: 'tag-grey' }
 }
 
 function BlockAccountModal({ student, onClose, onConfirm }) {
@@ -1479,7 +1547,9 @@ export default function AdminStudentDetail() {
                   const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
                   const courseEnrols = (enrolData || []).filter(e => e.enrolment_type === 'course')
                   const activeEnrols = courseEnrols.filter(e => e.status === 'active')
-                  const waitlistedEnrols = (enrolData || []).filter(e => e.status === 'waitlisted')
+                  const waitlistedEnrols = (enrolData || []).filter(e =>
+                    e.status === 'waitlisted' || (e.status === 'cancelled' && e.waitlist_type)
+                  )
                   const activeSeason = (seasonsData || []).find(s => s.status === 'active')
                   const upcomingSeasons = (seasonsData || []).filter(s => s.status === 'upcoming' && s.bookings_open)
 
@@ -1703,9 +1773,14 @@ export default function AdminStudentDetail() {
                                         {DAYS[e.class_session_detail?.day_of_week]} {e.class_session_detail?.start_time?.slice(0,5)}
                                       </div>
                                     </div>
-                                    <span className="tag tag-amber" style={{ fontSize: 10 }}>
-                                      {e.waitlist_type === 'single' ? 'Single class' : 'Season waitlist'}
-                                    </span>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                                      <span className="tag tag-amber" style={{ fontSize: 10 }}>
+                                        {e.waitlist_type === 'single' ? 'Single class' : 'Season waitlist'}
+                                      </span>
+                                      {e.status === 'cancelled' && (
+                                        <span className="tag tag-grey" style={{ fontSize: 9, marginLeft: 4 }}>Archived</span>
+                                      )}
+                                    </div>
                                   </div>
                                 ))}
                               </div>
@@ -1834,7 +1909,7 @@ export default function AdminStudentDetail() {
                     <tbody>
                       {(attData || []).length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--grey)', padding: '24px 0' }}>No attendance records</td></tr>}
                       {(attData || []).map(a => {
-                        const tag = ATT_STATUS_TAG[a.status] || { label: a.status, cls: 'tag-grey' }
+                        const tag = getAttTag(a, makeupCreditsData)
                         return (
                           <tr key={a.id}>
                             <td style={{ color: 'var(--grey)', whiteSpace: 'nowrap' }}>{a.occurrence_detail?.date ? new Date(a.occurrence_detail.date + 'T00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : '—'}</td>
@@ -3197,7 +3272,15 @@ export default function AdminStudentDetail() {
       )}
 
       {selectedPayment && (
-        <PaymentDetailModal payment={selectedPayment} onClose={() => setSelectedPayment(null)} />
+        <PaymentDetailModal
+          payment={selectedPayment}
+          onClose={() => setSelectedPayment(null)}
+          onRefunded={() => {
+            setSelectedPayment(null)
+            payments.list({ student: student.id }).then(r => setPayData(r.data.results || []))
+            reloadBalance()
+          }}
+        />
       )}
 
       {showNewPlanModal && student && (
