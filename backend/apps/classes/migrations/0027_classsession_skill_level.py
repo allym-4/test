@@ -6,7 +6,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('classes', '0026_practicecredit'),
-        ('users', '0001_initial'),
+        ('users', '0013_skillgroup_skilllevel_tag_and_more'),
     ]
 
     operations = [
