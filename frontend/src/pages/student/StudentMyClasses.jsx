@@ -671,6 +671,7 @@ export default function StudentMyClasses() {
   const [classWaitlistLeaveEnrol, setClassWaitlistLeaveEnrol] = useState(null)
   const [displacementPopup, setDisplacementPopup] = useState(null)
   const [markAwayOcc, setMarkAwayOcc] = useState(null)
+  const [markAwayInlineId, setMarkAwayInlineId] = useState(null)
   const [cancelCasualBooking, setCancelCasualBooking] = useState(null)
 
   useEffect(() => {
