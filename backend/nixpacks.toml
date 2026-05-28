@@ -5,4 +5,4 @@ cmds = [
 ]
 
 [start]
-cmd = "gunicorn config.wsgi --log-file -"
+cmd = "gunicorn config.wsgi --bind 0.0.0.0:${PORT:-8000} --log-file -"
