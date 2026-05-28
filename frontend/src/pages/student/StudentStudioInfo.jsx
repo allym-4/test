@@ -192,7 +192,7 @@ export default function StudentStudioInfo() {
                   Got a question that isn't urgent? Submit a support ticket and we'll get back to you — usually within one business day.
                 </div>
                 <a
-                  href="/portal/forms"
+                  href="/portal/support"
                   style={{ display: 'inline-block', background: '#ccff00', color: '#000', fontWeight: 700, fontSize: 12, borderRadius: 8, padding: '9px 18px', textDecoration: 'none', letterSpacing: '0.4px' }}
                 >
                   SUBMIT A TICKET →

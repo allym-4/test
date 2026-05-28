@@ -1679,9 +1679,28 @@ function SeasonClassRow({ session, userLevel, selected, onToggle, onJoinWaitlist
 
 const ORDINALS = ['1st', '2nd', '3rd', '4th', '5th', '6th']
 const PERK_TAGLINES = {
-  2: "your second class works out cheaper per week",
-  3: "that's 3 oat lattes ☕",
-  4: "cheaper than a cocktail 🍸",
+  2: [
+    "your second class works out cheaper per week",
+    "two classes, more savings 💰",
+    "double the fun, lower the cost per class",
+    "the more you move, the less you pay 🖤",
+  ],
+  3: [
+    "that's 3 oat lattes ☕",
+    "free practice = extra pole time, on us",
+    "your body will thank you 🧘",
+    "three classes = free practice every week",
+  ],
+  4: [
+    "cheaper than a cocktail 🍸",
+    "locker + unlimited practice — you're basically living here",
+    "maximum perks unlocked 🔓",
+    "four classes and you basically own the place",
+  ],
+}
+
+function pickTagline(taglines) {
+  return taglines[Math.floor(Math.random() * taglines.length)]
 }
 
 function SeasonSidebar({ selectedSessions, seasonName, totalPrice, incrementalPrice, activeSeasonCount, onProceed, onRemove, nextClassIncPrice }) {
@@ -1791,7 +1810,8 @@ function SeasonSidebar({ selectedSessions, seasonName, totalPrice, incrementalPr
       {nextPerk && totalCount > 0 && (() => {
         const perWeek = nextClassIncPrice ? (nextClassIncPrice / 8).toFixed(2) : null
         const ordinal = ORDINALS[nextPerk.at - 1] || `${nextPerk.at}th`
-        const tagline = PERK_TAGLINES[nextPerk.at]
+        const taglines = PERK_TAGLINES[nextPerk.at]
+        const tagline = taglines ? pickTagline(taglines) : null
         return (
           <div style={{ fontSize: 12, marginBottom: 16, background: 'rgba(204,255,0,0.03)', border: '1px solid rgba(204,255,0,0.12)', borderRadius: 8, padding: '10px 12px', lineHeight: 1.5 }}>
             <div style={{ color: '#aaa', marginBottom: 3 }}>

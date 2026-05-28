@@ -34,13 +34,13 @@ const FAQS = [
 ]
 
 const CATEGORIES = [
-  'Attendance & Make-ups',
-  'Billing & Payments',
-  'Enrolment & Class Changes',
-  'Injury & Medical',
-  'Locker & Access',
-  'Technical Issue',
-  'Other',
+  { value: 'Booking', label: 'Attendance & Make-ups' },
+  { value: 'Billing', label: 'Billing & Payments' },
+  { value: 'Membership', label: 'Enrolment & Class Changes' },
+  { value: 'General', label: 'Injury & Medical' },
+  { value: 'General', label: 'Locker & Access' },
+  { value: 'Technical', label: 'Technical Issue' },
+  { value: 'General', label: 'Other' },
 ]
 
 function statusColor(status) {
@@ -249,7 +249,7 @@ export default function StudentSupport() {
                 <label style={{ fontSize: 12, color: 'var(--grey)', display: 'block', marginBottom: 6 }}>Category</label>
                 <select value={category} onChange={e => setCategory(e.target.value)} style={{ width: '100%' }}>
                   <option value="">Select a category…</option>
-                  {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                  {CATEGORIES.map(c => <option key={c.label} value={c.value}>{c.label}</option>)}
                 </select>
               </div>
               <div className="field" style={{ marginBottom: 14 }}>

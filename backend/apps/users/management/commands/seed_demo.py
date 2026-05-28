@@ -321,6 +321,25 @@ class Command(BaseCommand):
 
         self.stdout.write(f'  {len(session_index)} sessions ready')
 
+        self.stdout.write('Creating demo admin...')
+        admin_user, admin_created = User.objects.get_or_create(
+            username='demo_admin',
+            defaults=dict(
+                email='demo_admin@example.com',
+                first_name='Admin',
+                last_name='',
+                role='admin',
+                is_staff=True,
+                is_superuser=True,
+            ),
+        )
+        if admin_created:
+            admin_user.set_password('admin1234')
+            admin_user.save()
+            self.stdout.write('  Created demo_admin (password: admin1234)')
+        else:
+            self.stdout.write('  demo_admin already exists')
+
         self.stdout.write('Creating demo students...')
         students = {}
         for slug, first, last, pronouns, phone, level in DEMO_STUDENTS:

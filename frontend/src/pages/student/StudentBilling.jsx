@@ -92,7 +92,7 @@ export default function StudentBilling() {
       await helpdesk.submitTicket({
         subject: `${refundType === 'credit' ? 'Credit' : 'Refund'} request`,
         body: refundReason,
-        category: 'billing',
+        category: 'Billing',
       })
       setShowRefundModal(false)
       setRefundReason('')
