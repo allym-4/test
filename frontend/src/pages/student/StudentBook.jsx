@@ -1718,8 +1718,9 @@ function SeasonSidebar({ selectedSessions, seasonName, totalPrice, incrementalPr
 
   // Which perks are newly unlocked by this selection
   const unlockedPerks = PERKS.filter(p => totalCount >= p.at && (existingCount < p.at))
-  // Which perks are already active (from existing + new)
-  const activePerks = PERKS.filter(p => totalCount >= p.at)
+  // Which perks are active — level 4 (unlimited) supersedes level 3 (1 free/week)
+  const rawActivePerks = PERKS.filter(p => totalCount >= p.at)
+  const activePerks = totalCount >= 4 ? rawActivePerks.filter(p => p.at !== 3) : rawActivePerks
   // Next perk to unlock
   const nextPerk = PERKS.find(p => totalCount < p.at)
 
