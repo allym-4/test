@@ -1679,6 +1679,7 @@ function SeasonClassRow({ session, userLevel, selected, onToggle, onJoinWaitlist
 
 const ORDINALS = ['1st', '2nd', '3rd', '4th', '5th', '6th']
 const PERK_TAGLINES = {
+  2: "your second class works out cheaper per week",
   3: "that's 3 oat lattes ☕",
   4: "cheaper than a cocktail 🍸",
 }
@@ -1691,6 +1692,7 @@ function SeasonSidebar({ selectedSessions, seasonName, totalPrice, incrementalPr
 
   // Perk thresholds
   const PERKS = [
+    { at: 2, icon: '💸', label: 'cheaper per-class pricing' },
     { at: 3, icon: '🧘', label: '1 free practice session per week' },
     { at: 4, icon: '🔓', label: 'Unlimited free practice + free locker' },
   ]
